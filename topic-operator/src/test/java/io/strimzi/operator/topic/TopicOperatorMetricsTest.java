@@ -5,7 +5,6 @@
 package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.kroxylicious.testing.kafka.api.KafkaCluster;
 import io.kroxylicious.testing.kafka.junit5ext.KafkaClusterExtension;
@@ -14,23 +13,22 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
-import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient;
 import io.strimzi.operator.topic.cruisecontrol.CruiseControlHandler;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsProvider;
-import io.strimzi.operator.topic.model.ReconcilableTopic;
 import io.strimzi.operator.topic.model.TopicEvent.TopicUpsert;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.common.config.TopicConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 
@@ -42,6 +40,27 @@ import java.util.function.UnaryOperator;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION;
 import static io.strimzi.api.kafka.model.topic.KafkaTopic.RESOURCE_KIND;
+import static io.strimzi.operator.common.metrics.MetricsHolder.METRICS_RECONCILIATIONS;
+import static io.strimzi.operator.common.metrics.MetricsHolder.METRICS_RECONCILIATIONS_DURATION;
+import static io.strimzi.operator.common.metrics.MetricsHolder.METRICS_RECONCILIATIONS_FAILED;
+import static io.strimzi.operator.common.metrics.MetricsHolder.METRICS_RECONCILIATIONS_LOCKED;
+import static io.strimzi.operator.common.metrics.MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL;
+import static io.strimzi.operator.common.metrics.MetricsHolder.METRICS_RESOURCES;
+import static io.strimzi.operator.common.metrics.MetricsHolder.METRICS_RESOURCES_PAUSED;
+import static io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder.METRICS_ADD_FINALIZER_DURATION;
+import static io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder.METRICS_ALTER_CONFIGS_DURATION;
+import static io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder.METRICS_CC_TOPIC_CONFIG_DURATION;
+import static io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder.METRICS_CC_USER_TASKS_DURATION;
+import static io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder.METRICS_CREATE_PARTITIONS_DURATION;
+import static io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder.METRICS_CREATE_TOPICS_DURATION;
+import static io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder.METRICS_DELETE_TOPICS_DURATION;
+import static io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder.METRICS_DESCRIBE_CONFIGS_DURATION;
+import static io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder.METRICS_DESCRIBE_TOPICS_DURATION;
+import static io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder.METRICS_LIST_REASSIGNMENTS_DURATION;
+import static io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_MAX_BATCH_SIZE;
+import static io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_MAX_QUEUE_SIZE;
+import static io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder.METRICS_REMOVE_FINALIZER_DURATION;
+import static io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder.METRICS_UPDATE_TOPICS_DURATION;
 import static java.lang.String.format;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -53,60 +72,239 @@ import static org.mockito.Mockito.mock;
 @ExtendWith(KafkaClusterExtension.class)
 public class TopicOperatorMetricsTest {
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorMetricsTest.class);
-    private static final String NAMESPACE = "topic-operator-test";
+    
+    private static final String NAMESPACE = TopicOperatorTestUtil.namespaceName(TopicOperatorMetricsTest.class);
     private static final int MAX_QUEUE_SIZE = 200;
     private static final int MAX_BATCH_SIZE = 10;
     private static final long MAX_BATCH_LINGER_MS = 10_000;
-
-    private static KubernetesClient kubeClient;
-    private static TopicOperatorMetricsHolder metricsHolder;
-
+    
+    private static KubernetesClient kubernetesClient;
+    
     @BeforeAll
-    public static void beforeAll(TestInfo testInfo) {
-        TopicOperatorTestUtil.setupKubeCluster(testInfo, NAMESPACE);
-        kubeClient = new KubernetesClientBuilder().build();
-        metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null,
-            new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
+    public static void beforeAll() {
+        kubernetesClient = TopicOperatorUtil.createKubernetesClient();
+        TopicOperatorTestUtil.setupKubeCluster(kubernetesClient, NAMESPACE);
     }
 
     @AfterAll
-    public static void afterAll(TestInfo testInfo) {
-        TopicOperatorTestUtil.cleanupNamespace(kubeClient, testInfo, NAMESPACE);
-        TopicOperatorTestUtil.teardownKubeCluster(NAMESPACE);
-        kubeClient.close();
+    public static void afterAll() {
+        TopicOperatorTestUtil.deleteNamespace(kubernetesClient, NAMESPACE);
+        kubernetesClient.close();
+    }
+
+    @AfterEach
+    public void afterEach() {
+        TopicOperatorTestUtil.cleanupNamespace(kubernetesClient, NAMESPACE);
     }
 
     @Test
     public void eventHandlerMetrics() throws InterruptedException {
         var config = TopicOperatorConfig.buildFromMap(Map.of(
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092",
-            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE));
-        BatchingLoop mockQueue = mock(BatchingLoop.class);
-        TopicEventHandler eventHandler = new TopicEventHandler(config, mockQueue, metricsHolder);
-
-        int numOfTestResources = 100;
+            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE)
+        );
+        var metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
+        var eventHandler = new TopicEventHandler(config, mock(BatchingLoop.class), metricsHolder);
+        
+        var numOfTestResources = 100;
         for (int i = 0; i < numOfTestResources; i++) {
-            KafkaTopic kt = buildTopicWithVersion("t" + i);
-            eventHandler.onAdd(kt);
+            KafkaTopic kafkaTopic = buildTopicWithVersion("my-topic" + i);
+            eventHandler.onAdd(kafkaTopic);
         }
-        assertMetricMatches(MetricsHolder.METRICS_RESOURCES, "gauge", is(Double.valueOf(numOfTestResources)));
+        assertMetricMatches(metricsHolder, METRICS_RESOURCES, "gauge", is(Double.valueOf(numOfTestResources)));
 
         for (int i = 0; i < numOfTestResources; i++) {
-            KafkaTopic kt = buildTopicWithVersion("t" + i);
-            eventHandler.onDelete(kt, false);
+            KafkaTopic kafkaTopic = buildTopicWithVersion("my-topic" + i);
+            eventHandler.onDelete(kafkaTopic, false);
         }
-        assertMetricMatches(MetricsHolder.METRICS_RESOURCES, "gauge", is(0.0));
+        assertMetricMatches(metricsHolder, METRICS_RESOURCES, "gauge", is(0.0));
 
-        KafkaTopic t1 = buildTopicWithVersion("t1");
-        KafkaTopic t2 = buildTopicWithVersion("t2");
+        var t1 = buildTopicWithVersion("my-topic-1");
+        var t2 = buildTopicWithVersion("my-topic-2");
         t2.getMetadata().setAnnotations(Map.of(ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
         eventHandler.onUpdate(t1, t2);
-        assertMetricMatches(MetricsHolder.METRICS_RESOURCES_PAUSED, "gauge", is(1.0));
+        assertMetricMatches(metricsHolder, METRICS_RESOURCES_PAUSED, "gauge", is(1.0));
 
-        KafkaTopic t3 = buildTopicWithVersion("t3");
+        var t3 = buildTopicWithVersion("t3");
         t3.getMetadata().setAnnotations(Map.of(ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "false"));
         eventHandler.onUpdate(t2, t3);
-        assertMetricMatches(MetricsHolder.METRICS_RESOURCES_PAUSED, "gauge", is(0.0));
+        assertMetricMatches(metricsHolder, METRICS_RESOURCES_PAUSED, "gauge", is(0.0));
+    }
+
+    @Test
+    public void batchingLoopMetrics() throws InterruptedException {
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+            TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092",
+            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.MAX_QUEUE_SIZE.key(), String.valueOf(MAX_QUEUE_SIZE),
+            TopicOperatorConfig.MAX_BATCH_SIZE.key(), String.valueOf(MAX_BATCH_SIZE),
+            TopicOperatorConfig.MAX_BATCH_LINGER_MS.key(), String.valueOf(MAX_BATCH_LINGER_MS)
+        ));
+        var metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
+        var batchingLoop = new BatchingLoop(config, mock(BatchingTopicController.class), 1, mock(ItemStore.class), mock(Runnable.class), metricsHolder);
+        batchingLoop.start();
+        
+        var numOfTopicEvents = 100;
+        for (int i = 0; i < numOfTopicEvents; i++) {
+            if (i < numOfTopicEvents / 2) {
+                // create multiple events for the same topic
+                batchingLoop.offer(new TopicUpsert(0, NAMESPACE, "my-topic-0", "10010" + i));
+            } else {
+                batchingLoop.offer(new TopicUpsert(0, NAMESPACE, "my-topic-" + i, "100100"));
+            }
+        }
+        
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_MAX_QUEUE_SIZE, "gauge", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_MAX_QUEUE_SIZE, "gauge", lessThanOrEqualTo(Double.valueOf(MAX_QUEUE_SIZE)));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_MAX_BATCH_SIZE,  "gauge", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_MAX_BATCH_SIZE, "gauge", lessThanOrEqualTo(Double.valueOf(MAX_BATCH_SIZE)));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_LOCKED, "counter", greaterThan(0.0));
+        batchingLoop.stop();
+    }
+
+    @Test
+    public void batchingTopicControllerMetrics(KafkaCluster cluster) throws InterruptedException {
+        var kafkaAdminClient = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+            TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092",
+            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.USE_FINALIZERS.key(), "true",
+            TopicOperatorConfig.ENABLE_ADDITIONAL_METRICS.key(), "true",
+            TopicOperatorConfig.CRUISE_CONTROL_ENABLED.key(), "true"
+        ));
+        
+        var cruiseControlClient = Mockito.mock(CruiseControlClient.class);
+        var userTaskId = "8911ca89-351f-888-8d0f-9aade00e098h";
+        Mockito.doReturn(userTaskId).when(cruiseControlClient).topicConfiguration(anyList());
+        var userTaskResponse = new CruiseControlClient.UserTasksResponse(List.of(
+            new CruiseControlClient.UserTask("Active", null, null, userTaskId, System.currentTimeMillis())), 1);
+        Mockito.doReturn(userTaskResponse).when(cruiseControlClient).userTasks(Set.of(userTaskId));
+        
+        var metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null,
+            new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
+        var controller = new BatchingTopicController(config, Map.of("key", "VALUE"), 
+            new KubernetesHandler(config, metricsHolder, kubernetesClient), 
+            new KafkaHandler(config, metricsHolder, kafkaAdminClient),
+            metricsHolder, 
+            new CruiseControlHandler(config, metricsHolder, cruiseControlClient));
+
+        // create topics, 3 reconciliations, success
+        var t1 = createTopic("my-topic-a");
+        var t2 = createTopic("my-topic-b");
+        var t3 = createTopic("my-topic-c");
+        controller.onUpdate(List.of(
+            TopicOperatorTestUtil.reconcilableTopic(t1, NAMESPACE),
+            TopicOperatorTestUtil.reconcilableTopic(t2, NAMESPACE),
+            TopicOperatorTestUtil.reconcilableTopic(t3, NAMESPACE)
+        ));
+        
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS, "counter", is(3.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(3.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_CREATE_TOPICS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_ADD_FINALIZER_DURATION, "timer", greaterThan(0.0));
+        
+        // config change, 1 reconciliation, success
+        var t1ConfigChanged = updateTopic(TopicOperatorUtil.topicName(t1), kt -> {
+            kt.getSpec().setConfig(Map.of(TopicConfig.RETENTION_MS_CONFIG, "86400000"));
+            return kt;
+        });
+        controller.onUpdate(List.of(TopicOperatorTestUtil.reconcilableTopic(t1ConfigChanged, NAMESPACE)));
+        
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS, "counter", is(4.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(4.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_ALTER_CONFIGS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_UPDATE_TOPICS_DURATION, "timer", greaterThan(0.0));
+        
+        // increase partitions, 1 reconciliation, success
+        var t2PartIncreased = updateTopic(TopicOperatorUtil.topicName(t2), kt -> {
+            kt.getSpec().setPartitions(5);
+            return kt;
+        });
+        controller.onUpdate(List.of(TopicOperatorTestUtil.reconcilableTopic(t2PartIncreased, NAMESPACE)));
+
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS, "counter", is(5.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(5.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_CREATE_PARTITIONS_DURATION, "timer", greaterThan(0.0));
+
+        // decrease partitions, 1 reconciliation, fail
+        var t2PartDecreased = updateTopic(TopicOperatorUtil.topicName(t2), kt -> {
+            kt.getSpec().setPartitions(4);
+            return kt;
+        });
+        controller.onUpdate(List.of(TopicOperatorTestUtil.reconcilableTopic(t2PartDecreased, NAMESPACE)));
+
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS, "counter", is(6.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(5.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_FAILED, "counter", is(1.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
+
+        // increase replicas, 1 reconciliation, success
+        var t3ReplIncreased = updateTopic(TopicOperatorUtil.topicName(t3), kt -> {
+            kt.getSpec().setReplicas(2);
+            return kt;
+        });
+        controller.onUpdate(List.of(TopicOperatorTestUtil.reconcilableTopic(t3ReplIncreased, NAMESPACE)));
+
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS, "counter", is(7.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(6.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_FAILED, "counter", is(1.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_LIST_REASSIGNMENTS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_CC_TOPIC_CONFIG_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_CC_USER_TASKS_DURATION, "timer", greaterThan(0.0));
+
+        // unmanage topic, 1 reconciliation, success
+        var t1Unmanaged = updateTopic(TopicOperatorUtil.topicName(t1), kt -> {
+            kt.getMetadata().setAnnotations(Map.of(KubernetesHandler.ANNO_STRIMZI_IO_MANAGED, "false"));
+            return kt;
+        });
+        controller.onUpdate(List.of(TopicOperatorTestUtil.reconcilableTopic(t1Unmanaged, NAMESPACE)));
+
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS, "counter", is(8.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(7.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_FAILED, "counter", is(1.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
+        
+        // delete managed topics, 1 reconciliation, success
+        controller.onDelete(List.of(TopicOperatorTestUtil.reconcilableTopic(t2, NAMESPACE)));
+
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS, "counter", is(9.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(8.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_FAILED, "counter", is(1.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_DELETE_TOPICS_DURATION, "timer", greaterThan(0.0));
+
+        // delete unmanaged topic, 1 reconciliation, success
+        var t3Unmanaged = updateTopic(TopicOperatorUtil.topicName(t3), kt -> {
+            kt.getMetadata().setAnnotations(Map.of(KubernetesHandler.ANNO_STRIMZI_IO_MANAGED, "false"));
+            return kt;
+        });
+        controller.onDelete(List.of(TopicOperatorTestUtil.reconcilableTopic(t3Unmanaged, NAMESPACE)));
+
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS, "counter", is(10.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(9.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_FAILED, "counter", is(1.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
+        assertMetricMatches(metricsHolder, METRICS_REMOVE_FINALIZER_DURATION, "timer", greaterThan(0.0));
     }
 
     private KafkaTopic buildTopicWithVersion(String name) {
@@ -118,178 +316,9 @@ public class TopicOperatorMetricsTest {
             .endMetadata()
             .build();
     }
-
-    @Test
-    public void batchingLoopMetrics() throws InterruptedException {
-        BatchingLoop batchingLoop = createAndStartBatchingLoop();
-        int numOfTestResources = 100;
-        for (int i = 0; i < numOfTestResources; i++) {
-            if (i < numOfTestResources / 2) {
-                batchingLoop.offer(new TopicUpsert(0, NAMESPACE, "t0", "10010" + i));
-            } else {
-                batchingLoop.offer(new TopicUpsert(0, NAMESPACE, "t" + i, "100100"));
-            }
-        }
-        
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_MAX_QUEUE_SIZE, "gauge", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_MAX_QUEUE_SIZE, "gauge", lessThanOrEqualTo(Double.valueOf(MAX_QUEUE_SIZE)));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_MAX_BATCH_SIZE,  "gauge", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_MAX_BATCH_SIZE, "gauge", lessThanOrEqualTo(Double.valueOf(MAX_BATCH_SIZE)));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_LOCKED, "counter", greaterThan(0.0));
-        batchingLoop.stop();
-    }
     
-    private BatchingLoop createAndStartBatchingLoop() {
-        var controller = mock(BatchingTopicController.class);
-        var itemStore = mock(ItemStore.class);
-        var stopRunnable = mock(Runnable.class);
-        var config = TopicOperatorConfig.buildFromMap(Map.of(
-            TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092",
-            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
-            TopicOperatorConfig.MAX_QUEUE_SIZE.key(), String.valueOf(MAX_QUEUE_SIZE),
-            TopicOperatorConfig.MAX_BATCH_SIZE.key(), String.valueOf(MAX_BATCH_SIZE),
-            TopicOperatorConfig.MAX_BATCH_LINGER_MS.key(), String.valueOf(MAX_BATCH_LINGER_MS)
-        ));
-        var batchingLoop = new BatchingLoop(config, controller, 1, itemStore, stopRunnable, metricsHolder);
-        batchingLoop.start();
-        return batchingLoop;
-    }
-
-    @Test
-    public void batchingTopicControllerMetrics(KafkaCluster cluster) throws InterruptedException {
-        var kafkaAdmin = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
-        var config = Mockito.mock(TopicOperatorConfig.class);
-        Mockito.doReturn(NAMESPACE).when(config).namespace();
-        Mockito.doReturn(true).when(config).useFinalizer();
-        Mockito.doReturn(true).when(config).enableAdditionalMetrics();
-        Mockito.doReturn(true).when(config).cruiseControlEnabled();
-        
-        var cruiseControlClient = Mockito.mock(CruiseControlClient.class);
-        var userTaskId = "8911ca89-351f-888-8d0f-9aade00e098h";
-        Mockito.doReturn(userTaskId).when(cruiseControlClient).topicConfiguration(anyList());
-        var userTaskResponse = new CruiseControlClient.UserTasksResponse(List.of(new CruiseControlClient.UserTask("Active", null, null, userTaskId, System.currentTimeMillis())), 1);
-        Mockito.doReturn(userTaskResponse).when(cruiseControlClient).userTasks(Set.of(userTaskId));
-
-        var replicasChangeHandler = new CruiseControlHandler(config, metricsHolder, cruiseControlClient);
-        var controller = new BatchingTopicController(config, Map.of("key", "VALUE"), kubeClient, kafkaAdmin, metricsHolder, replicasChangeHandler);
-
-        // create topics, 3 reconciliations, success
-        var t1 = createTopic("t1", 2, 1);
-        var t2 = createTopic("t2", 2, 1);
-        var t3 = createTopic("t3", 2, 1);
-        controller.onUpdate(List.of(reconcilableTopic(t1), reconcilableTopic(t2), reconcilableTopic(t3)));
-        
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS, "counter", is(3.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(3.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_CREATE_TOPICS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_ADD_FINALIZER_DURATION, "timer", greaterThan(0.0));
-        
-        // config change, 1 reconciliation, success
-        var t1ConfigChanged = updateTopic("t1", kt -> {
-            kt.getSpec().setConfig(Map.of("retention.ms", "86400000"));
-            return kt;
-        });
-        controller.onUpdate(List.of(reconcilableTopic(t1ConfigChanged)));
-        
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS, "counter", is(4.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(4.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_ALTER_CONFIGS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_UPDATE_TOPICS_DURATION, "timer", greaterThan(0.0));
-        
-        // increase partitions, 1 reconciliation, success
-        var t2PartIncreased = updateTopic("t2", kt -> {
-            kt.getSpec().setPartitions(5);
-            return kt;
-        });
-        controller.onUpdate(List.of(reconcilableTopic(t2PartIncreased)));
-
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS, "counter", is(5.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(5.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_CREATE_PARTITIONS_DURATION, "timer", greaterThan(0.0));
-
-        // decrease partitions, 1 reconciliation, fail
-        var t2PartDecreased = updateTopic("t2", kt -> {
-            kt.getSpec().setPartitions(4);
-            return kt;
-        });
-        controller.onUpdate(List.of(reconcilableTopic(t2PartDecreased)));
-
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS, "counter", is(6.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(5.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_FAILED, "counter", is(1.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
-
-        // increase replicas, 1 reconciliation, success
-        var t3ReplIncreased = updateTopic("t3", kt -> {
-            kt.getSpec().setReplicas(2);
-            return kt;
-        });
-        controller.onUpdate(List.of(reconcilableTopic(t3ReplIncreased)));
-
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS, "counter", is(7.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(6.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_FAILED, "counter", is(1.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_LIST_REASSIGNMENTS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_CC_TOPIC_CONFIG_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_CC_USER_TASKS_DURATION, "timer", greaterThan(0.0));
-
-        // unmanage topic, 1 reconciliation, success
-        var t1Unmanaged = updateTopic("t1", kt -> {
-            kt.getMetadata().setAnnotations(Map.of(KubernetesHandler.ANNO_STRIMZI_IO_MANAGED, "false"));
-            return kt;
-        });
-        controller.onUpdate(List.of(reconcilableTopic(t1Unmanaged)));
-
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS, "counter", is(8.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(7.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_FAILED, "counter", is(1.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
-        
-        // delete managed topics, 1 reconciliation, success
-        controller.onDelete(List.of(reconcilableTopic(t2)));
-
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS, "counter", is(9.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(8.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_FAILED, "counter", is(1.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DELETE_TOPICS_DURATION, "timer", greaterThan(0.0));
-
-        // delete unmanaged topic, 1 reconciliation, success
-        var t3Unmanaged = updateTopic("t3", kt -> {
-            kt.getMetadata().setAnnotations(Map.of(KubernetesHandler.ANNO_STRIMZI_IO_MANAGED, "false"));
-            return kt;
-        });
-        controller.onDelete(List.of(reconcilableTopic(t3Unmanaged)));
-
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS, "counter", is(10.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(9.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_FAILED, "counter", is(1.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
-        assertMetricMatches(TopicOperatorMetricsHolder.METRICS_REMOVE_FINALIZER_DURATION, "timer", greaterThan(0.0));
-    }
-    
-    private KafkaTopic createTopic(String name, int partitions, int replicas) {
-        return Crds.topicOperation(kubeClient).inNamespace(NAMESPACE).
+    private KafkaTopic createTopic(String name) {
+        return Crds.topicOperation(kubernetesClient).inNamespace(NAMESPACE).
             resource(new KafkaTopicBuilder()
                 .withNewMetadata()
                     .withName(name)
@@ -297,23 +326,18 @@ public class TopicOperatorMetricsTest {
                     .addToLabels("key", "VALUE")
                 .endMetadata()
                 .withNewSpec()
-                    .withPartitions(partitions)
-                    .withReplicas(replicas)
+                    .withPartitions(2)
+                    .withReplicas(1)
                 .endSpec()
                 .build()).create();
     }
     
     private KafkaTopic updateTopic(String name, UnaryOperator<KafkaTopic> changer) {
-        var kt = Crds.topicOperation(kubeClient).inNamespace(NAMESPACE).withName(name).get();
-        return TopicOperatorTestUtil.modifyTopic(kubeClient, kt, changer);
+        var kafkaTopic = Crds.topicOperation(kubernetesClient).inNamespace(NAMESPACE).withName(name).get();
+        return TopicOperatorTestUtil.changeTopic(kubernetesClient, kafkaTopic, changer);
     }
     
-    private ReconcilableTopic reconcilableTopic(KafkaTopic kafkaTopic) {
-        return new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, NAMESPACE,
-            TopicOperatorUtil.topicName(kafkaTopic)), kafkaTopic, TopicOperatorUtil.topicName(kafkaTopic));
-    }
-    
-    private void assertMetricMatches(String name, String type, Matcher<Double> matcher) throws InterruptedException {
+    private void assertMetricMatches(MetricsHolder metricsHolder, String name, String type, Matcher<Double> matcher) throws InterruptedException {
         var found = false;
         var timeoutSec = 30;
         while (!found && --timeoutSec > 0) {

@@ -22,25 +22,26 @@ import java.util.Objects;
  */
 public class KubernetesHandler {
     static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KubernetesHandler.class);
+    
     /** Annotation for managing and unmanaging a KafkaTopic. */
     public static final String ANNO_STRIMZI_IO_MANAGED = "strimzi.io/managed";
     static final String FINALIZER_STRIMZI_IO_TO = "strimzi.io/topic-operator";
     
     private final TopicOperatorConfig config;
-    private final TopicOperatorMetricsHolder metrics;
-    private final KubernetesClient kubeClient;
+    private final TopicOperatorMetricsHolder metricsHolder;
+    private final KubernetesClient kubernetesClient;
 
     /**
      * Create a new instance.
-     * 
+     *
      * @param config Topic Operator configuration.
-     * @param metrics Metrics holder.
-     * @param kubeClient Kubernetes client.
+     * @param metricsHolder Metrics holder.
+     * @param kubernetesClient Kubernetes client.
      */
-    KubernetesHandler(TopicOperatorConfig config, TopicOperatorMetricsHolder metrics, KubernetesClient kubeClient) {
+    KubernetesHandler(TopicOperatorConfig config, TopicOperatorMetricsHolder metricsHolder, KubernetesClient kubernetesClient) {
         this.config = config;
-        this.metrics = metrics;
-        this.kubeClient = kubeClient;
+        this.metricsHolder = metricsHolder;
+        this.kubernetesClient = kubernetesClient;
     }
 
     /**
@@ -51,13 +52,13 @@ public class KubernetesHandler {
      */
     public KafkaTopic addFinalizer(ReconcilableTopic reconcilableTopic) {
         if (!reconcilableTopic.kt().getMetadata().getFinalizers().contains(FINALIZER_STRIMZI_IO_TO)) {
-            LOGGER.debugCr(reconcilableTopic.reconciliation(), "Adding finalizer {}", FINALIZER_STRIMZI_IO_TO);
-            var timerSample = TopicOperatorUtil.startExternalRequestTimer(metrics, config.enableAdditionalMetrics());
-            KafkaTopic edit = Crds.topicOperation(kubeClient).resource(reconcilableTopic.kt()).edit(old ->
+            LOGGER.traceCr(reconcilableTopic.reconciliation(), "Adding finalizer {}", FINALIZER_STRIMZI_IO_TO);
+            var timerSample = TopicOperatorUtil.startExternalRequestTimer(metricsHolder, config.enableAdditionalMetrics());
+            var withFinalizer = Crds.topicOperation(kubernetesClient).resource(reconcilableTopic.kt()).edit(old ->
                 new KafkaTopicBuilder(old).editOrNewMetadata().addToFinalizers(FINALIZER_STRIMZI_IO_TO).endMetadata().build());
-            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metrics::addFinalizerTimer, config.enableAdditionalMetrics(), config.namespace());
-            LOGGER.traceCr(reconcilableTopic.reconciliation(), "Added finalizer {}, resourceVersion now {}", FINALIZER_STRIMZI_IO_TO, TopicOperatorUtil.resourceVersion(edit));
-            return edit;
+            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::addFinalizerTimer, config.enableAdditionalMetrics(), config.namespace());
+            LOGGER.traceCr(reconcilableTopic.reconciliation(), "Added finalizer {}, resourceVersion now {}", FINALIZER_STRIMZI_IO_TO, TopicOperatorUtil.resourceVersion(withFinalizer));
+            return withFinalizer;
         }
         return reconcilableTopic.kt();
     }
@@ -70,13 +71,13 @@ public class KubernetesHandler {
      */
     public KafkaTopic removeFinalizer(ReconcilableTopic reconcilableTopic) {
         if (reconcilableTopic.kt().getMetadata().getFinalizers().contains(FINALIZER_STRIMZI_IO_TO)) {
-            LOGGER.debugCr(reconcilableTopic.reconciliation(), "Removing finalizer {}", FINALIZER_STRIMZI_IO_TO);
-            var timerSample = TopicOperatorUtil.startExternalRequestTimer(metrics, config.enableAdditionalMetrics());
-            var result = Crds.topicOperation(kubeClient).resource(reconcilableTopic.kt()).edit(old ->
+            LOGGER.traceCr(reconcilableTopic.reconciliation(), "Removing finalizer {}", FINALIZER_STRIMZI_IO_TO);
+            var timerSample = TopicOperatorUtil.startExternalRequestTimer(metricsHolder, config.enableAdditionalMetrics());
+            var withoutFinalizer = Crds.topicOperation(kubernetesClient).resource(reconcilableTopic.kt()).edit(old ->
                 new KafkaTopicBuilder(old).editOrNewMetadata().removeFromFinalizers(FINALIZER_STRIMZI_IO_TO).endMetadata().build());
-            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metrics::removeFinalizerTimer, config.enableAdditionalMetrics(), config.namespace());
-            LOGGER.traceCr(reconcilableTopic.reconciliation(), "Removed finalizer {}, resourceVersion now {}", FINALIZER_STRIMZI_IO_TO, TopicOperatorUtil.resourceVersion(result));
-            return result;
+            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::removeFinalizerTimer, config.enableAdditionalMetrics(), config.namespace());
+            LOGGER.traceCr(reconcilableTopic.reconciliation(), "Removed finalizer {}, resourceVersion now {}", FINALIZER_STRIMZI_IO_TO, TopicOperatorUtil.resourceVersion(withoutFinalizer));
+            return withoutFinalizer;
         } else {
             return reconcilableTopic.kt();
         }
@@ -86,9 +87,10 @@ public class KubernetesHandler {
      * Update the KafkaTopic status.
      * 
      * @param reconcilableTopic Reconcilable topic.
+     * @return KafkaTopic resource.
      */
-    public void updateStatus(ReconcilableTopic reconcilableTopic) {
-        var oldStatus = Crds.topicOperation(kubeClient)
+    public KafkaTopic updateStatus(ReconcilableTopic reconcilableTopic) {
+        var oldStatus = Crds.topicOperation(kubernetesClient)
             .inNamespace(reconcilableTopic.kt().getMetadata().getNamespace())
             .withName(reconcilableTopic.kt().getMetadata().getName()).get().getStatus();
         if (statusChanged(reconcilableTopic.kt(), oldStatus)) {
@@ -100,23 +102,25 @@ public class KubernetesHandler {
             reconcilableTopic.kt().getStatus().setTopicName(!TopicOperatorUtil.isManaged(reconcilableTopic.kt()) ? null
                 : oldStatus != null && oldStatus.getTopicName() != null ? oldStatus.getTopicName()
                 : TopicOperatorUtil.topicName(reconcilableTopic.kt()));
-            var updatedTopic = new KafkaTopicBuilder(reconcilableTopic.kt())
+            var update = new KafkaTopicBuilder(reconcilableTopic.kt())
                 .editOrNewMetadata()
-                .withResourceVersion(null)
+                    .withResourceVersion(null)
                 .endMetadata()
                 .withStatus(reconcilableTopic.kt().getStatus())
                 .build();
-            LOGGER.debugCr(reconcilableTopic.reconciliation(), "Updating status with {}", updatedTopic.getStatus());
-            var timerSample = TopicOperatorUtil.startExternalRequestTimer(metrics, config.enableAdditionalMetrics());
+            LOGGER.traceCr(reconcilableTopic.reconciliation(), "Updating status with {}", update.getStatus());
+            var timerSample = TopicOperatorUtil.startExternalRequestTimer(metricsHolder, config.enableAdditionalMetrics());
             try {
-                var got = Crds.topicOperation(kubeClient).resource(updatedTopic).updateStatus();
-                TopicOperatorUtil.stopExternalRequestTimer(timerSample, metrics::updateStatusTimer, config.enableAdditionalMetrics(), config.namespace());
+                var updated = Crds.topicOperation(kubernetesClient).resource(update).updateStatus();
+                TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::updateStatusTimer, config.enableAdditionalMetrics(), config.namespace());
                 LOGGER.traceCr(reconcilableTopic.reconciliation(), "Updated status to observedGeneration {}, resourceVersion {}",
-                    got.getStatus().getObservedGeneration(), got.getMetadata().getResourceVersion());
+                    updated.getStatus().getObservedGeneration(), updated.getMetadata().getResourceVersion());
+                return updated;
             } catch (Throwable e) {
                 LOGGER.errorOp("Status update failed: {}", e.getMessage());
             }
         }
+        return reconcilableTopic.kt();
     }
 
     private boolean statusChanged(KafkaTopic kt, KafkaTopicStatus oldStatus) {

@@ -24,6 +24,7 @@ import io.strimzi.operator.common.http.HealthCheckAndMetricsServer;
 import io.strimzi.operator.common.http.Liveness;
 import io.strimzi.operator.common.http.Readiness;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient;
 import io.strimzi.operator.topic.cruisecontrol.CruiseControlHandler;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsProvider;
@@ -40,10 +41,10 @@ public class TopicOperatorMain implements Liveness, Readiness {
     private static final long INFORMER_PERIOD_MS = 2_000;
 
     private final TopicOperatorConfig config;
-    private final KubernetesClient kubeClient;
-    private final Admin kafkaAdmin;
-
-    private final CruiseControlHandler cruiseControlHandler;
+    private final KubernetesClient kubernetesClient;
+    private final Admin kafkaAdminClient;
+    private final CruiseControlClient cruiseControlClient;
+    
     /* test */ final BatchingTopicController controller;
     private final BasicItemStore<KafkaTopic> itemStore;
     /* test */ final BatchingLoop queue;
@@ -53,20 +54,25 @@ public class TopicOperatorMain implements Liveness, Readiness {
     private SharedIndexInformer<KafkaTopic> informer; // guarded by this
     Thread shutdownHook; // guarded by this
 
-    TopicOperatorMain(TopicOperatorConfig config, KubernetesClient kubeClient, Admin kafkaAdmin) {
+    TopicOperatorMain(TopicOperatorConfig config, Admin kafkaAdminClient) {
         Objects.requireNonNull(config.namespace());
         Objects.requireNonNull(config.labelSelector());
         this.config = config;
-        this.kubeClient = kubeClient;
-        this.kafkaAdmin = kafkaAdmin;
+        this.kubernetesClient = TopicOperatorUtil.createKubernetesClient();
+        this.kafkaAdminClient = kafkaAdminClient;
+        this.cruiseControlClient = TopicOperatorUtil.createCruiseControlClient(config);
+        
         var selector = config.labelSelector().toMap();
         var metricsProvider = createMetricsProvider();
-        var metrics = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, Labels.fromMap(selector), metricsProvider);
-        this.cruiseControlHandler = new CruiseControlHandler(config, metrics);
-        this.controller = new BatchingTopicController(config, selector, kubeClient, kafkaAdmin, metrics, cruiseControlHandler);
+        var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, Labels.fromMap(selector), metricsProvider);
+        var kubeHandler = new KubernetesHandler(config, metricsHolder, kubernetesClient);
+        var kafkaHandler = new KafkaHandler(config, metricsHolder, kafkaAdminClient);
+        var cruiseControlHandler = new CruiseControlHandler(config, metricsHolder, cruiseControlClient);
+        
+        this.controller = new BatchingTopicController(config, selector, kubeHandler, kafkaHandler, metricsHolder, cruiseControlHandler);
         this.itemStore = new BasicItemStore<>(Cache::metaNamespaceKeyFunc);
-        this.queue = new BatchingLoop(config, controller, 1, itemStore, this::stop, metrics);
-        this.resourceEventHandler = new TopicEventHandler(config, queue, metrics);
+        this.queue = new BatchingLoop(config, controller, 1, itemStore, this::stop, metricsHolder);
+        this.resourceEventHandler = new TopicEventHandler(config, queue, metricsHolder);
         this.healthAndMetricsServer = new HealthCheckAndMetricsServer(8080, this, this, metricsProvider);
     }
 
@@ -83,7 +89,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
         healthAndMetricsServer.start();
         LOGGER.infoOp("Starting queue");
         queue.start();
-        informer = Crds.topicOperation(kubeClient)
+        informer = Crds.topicOperation(kubernetesClient)
                 .inNamespace(config.namespace())
                 // Do NOT use withLabels to filter the informer, since the controller is stateful
                 // (topics need to be added to removed from TopicController.topics if KafkaTopics transition between
@@ -128,11 +134,10 @@ public class TopicOperatorMain implements Liveness, Readiness {
                 informer.stop();
                 informer = null;
             }
-            if (cruiseControlHandler != null) {
-                cruiseControlHandler.stop();
-            }
             this.queue.stop();
-            this.kafkaAdmin.close();
+            this.kafkaAdminClient.close();
+            this.kubernetesClient.close();
+            this.cruiseControlClient.close();
             this.healthAndMetricsServer.stop();
             LOGGER.infoOp("Shutdown completed normally");
         } catch (InterruptedException e) {
@@ -142,19 +147,17 @@ public class TopicOperatorMain implements Liveness, Readiness {
     }
 
     /**
-     * Entrypoint.
-     *
      * @param args Command line args.
      * @throws Exception If bad things happen.
      */
     public static void main(String[] args) throws Exception {
         var config = TopicOperatorConfig.buildFromMap(System.getenv());
-        var operator = operator(config, TopicOperatorUtil.createKubeClient(), Admin.create(config.adminClientConfig()));
+        var operator = operator(config, TopicOperatorUtil.createKafkaAdminClient(config));
         operator.start();
     }
 
-    static TopicOperatorMain operator(TopicOperatorConfig config, KubernetesClient client, Admin admin) throws ExecutionException, InterruptedException {
-        return new TopicOperatorMain(config, client, admin);
+    static TopicOperatorMain operator(TopicOperatorConfig config, Admin kafkaAdmin) throws ExecutionException, InterruptedException {
+        return new TopicOperatorMain(config, kafkaAdmin);
     }
 
     @Override

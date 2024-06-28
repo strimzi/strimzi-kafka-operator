@@ -17,12 +17,8 @@ import io.strimzi.operator.topic.model.TopicState;
 import io.strimzi.operator.topic.model.UncheckedInterruptedException;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AlterConfigOp;
-import org.apache.kafka.clients.admin.AlterConfigsResult;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.CreatePartitionsResult;
-import org.apache.kafka.clients.admin.CreateTopicsResult;
-import org.apache.kafka.clients.admin.DeleteTopicsResult;
-import org.apache.kafka.clients.admin.DescribeClusterResult;
 import org.apache.kafka.clients.admin.DescribeConfigsResult;
 import org.apache.kafka.clients.admin.DescribeTopicsResult;
 import org.apache.kafka.clients.admin.NewPartitions;
@@ -68,20 +64,20 @@ public class KafkaHandler {
     public static final String MIN_INSYNC_REPLICAS = "min.insync.replicas";
     
     private final TopicOperatorConfig config;
-    private final TopicOperatorMetricsHolder metrics;
-    private final Admin kafkaAdmin;
+    private final TopicOperatorMetricsHolder metricsHolder;
+    private final Admin kafkaAdminClient;
 
     /**
      * Create a new instance.
      * 
      * @param config Topic Operator configuration.
-     * @param metrics Metrics holder.
-     * @param kafkaAdmin Kafka admin client.
+     * @param metricsHolder Metrics holder.
+     * @param kafkaAdminClient Kafka admin client.
      */
-    KafkaHandler(TopicOperatorConfig config, TopicOperatorMetricsHolder metrics, Admin kafkaAdmin) {
+    KafkaHandler(TopicOperatorConfig config, TopicOperatorMetricsHolder metricsHolder, Admin kafkaAdminClient) {
         this.config = config;
-        this.metrics = metrics;
-        this.kafkaAdmin = kafkaAdmin;
+        this.metricsHolder = metricsHolder;
+        this.kafkaAdminClient = kafkaAdminClient;
     }
 
     /**
@@ -94,16 +90,17 @@ public class KafkaHandler {
      *
      * @param configName The name of the configuration to retrieve.
      * @return A string containing the value of the requested configuration if found.
-     * @throws RuntimeException if there is an error during the operation. This exception wraps the underlying exception's message.
+     * @throws RuntimeException if there is an error during the operation. 
+     * This exception wraps the underlying exception's message.
      */
     public Optional<String> clusterConfig(String configName) {
         try {
-            DescribeClusterResult describeClusterResult = kafkaAdmin.describeCluster();
+            var describeClusterResult = kafkaAdminClient.describeCluster();
             var nodes = describeClusterResult.nodes().get();
             Map<ConfigResource, KafkaFuture<Map<ConfigResource, Config>>> futures = new HashMap<>();
             for (var node : nodes) {
                 ConfigResource nodeResource = new ConfigResource(ConfigResource.Type.BROKER, node.idString());
-                futures.put(nodeResource, kafkaAdmin.describeConfigs(Set.of(nodeResource)).all());
+                futures.put(nodeResource, kafkaAdminClient.describeConfigs(Set.of(nodeResource)).all());
             }
             for (var entry : futures.entrySet()) {
                 var nodeConfig = entry.getValue().get().get(entry.getKey());
@@ -129,17 +126,17 @@ public class KafkaHandler {
         }).collect(Collectors.toSet());
 
         LOGGER.debugOp("Admin.createTopics({})", newTopics);
-        var timerSample = TopicOperatorUtil.startExternalRequestTimer(metrics, config.enableAdditionalMetrics());
-        CreateTopicsResult ctr = kafkaAdmin.createTopics(newTopics);
+        var timerSample = TopicOperatorUtil.startExternalRequestTimer(metricsHolder, config.enableAdditionalMetrics());
+        var ctr = kafkaAdminClient.createTopics(newTopics);
         ctr.all().whenComplete((i, e) -> {
-            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metrics::createTopicsTimer, config.enableAdditionalMetrics(), config.namespace());
+            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::createTopicsTimer, config.enableAdditionalMetrics(), config.namespace());
             if (e != null) {
                 LOGGER.traceOp("Admin.createTopics({}) failed with {}", newTopics, String.valueOf(e));
             } else {
                 LOGGER.traceOp("Admin.createTopics({}) completed", newTopics);
             }
         });
-        Map<String, KafkaFuture<Void>> values = ctr.values();
+        var values = ctr.values();
         return TopicOperatorUtil.partitionedByError(reconcilableTopics.stream().map(reconcilableTopic -> {
             try {
                 values.get(reconcilableTopic.topicName()).get();
@@ -170,7 +167,7 @@ public class KafkaHandler {
         if (apparentlyDifferentRfTopics.isEmpty()) {
             return List.of();
         }
-        Set<TopicPartition> apparentDifferentRfPartitions = apparentlyDifferentRfTopics.stream()
+        var apparentDifferentRfPartitions = apparentlyDifferentRfTopics.stream()
             .flatMap(pair -> pair.getValue().description().partitions().stream()
                 .filter(pi -> {
                     // includes only the partitions of the topic with a RF that mismatches the desired RF
@@ -178,16 +175,16 @@ public class KafkaHandler {
                     return desiredRf != pi.replicas().size();
                 })
                 .map(pi -> new TopicPartition(pair.getKey().topicName(), pi.partition()))).collect(Collectors.toSet());
-
+        
         Map<TopicPartition, PartitionReassignment> reassignments;
         LOGGER.traceOp("Admin.listPartitionReassignments({})", apparentDifferentRfPartitions);
-        var timerSample = TopicOperatorUtil.startExternalRequestTimer(metrics, config.enableAdditionalMetrics());
+        var timerSample = TopicOperatorUtil.startExternalRequestTimer(metricsHolder, config.enableAdditionalMetrics());
         try {
-            reassignments = kafkaAdmin.listPartitionReassignments(apparentDifferentRfPartitions).reassignments().get();
-            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metrics::listReassignmentsTimer, config.enableAdditionalMetrics(), config.namespace());
+            reassignments = kafkaAdminClient.listPartitionReassignments(apparentDifferentRfPartitions).reassignments().get();
+            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::listReassignmentsTimer, config.enableAdditionalMetrics(), config.namespace());
             LOGGER.traceOp("Admin.listPartitionReassignments({}) completed", apparentDifferentRfPartitions);
         } catch (ExecutionException e) {
-            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metrics::listReassignmentsTimer, config.enableAdditionalMetrics(), config.namespace());
+            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::listReassignmentsTimer, config.enableAdditionalMetrics(), config.namespace());
             LOGGER.traceOp("Admin.listPartitionReassignments({}) failed with {}", apparentDifferentRfPartitions, e);
             return apparentlyDifferentRfTopics.stream().map(pair ->
                 new Pair<>(pair.getKey(), Either.<TopicOperatorException, TopicState>ofLeft(handleAdminException(e)))).toList();
@@ -228,13 +225,13 @@ public class KafkaHandler {
         if (someAlterConfigs.isEmpty()) {
             return new PartitionedByError<>(List.of(), List.of());
         }
-        Map<ConfigResource, Collection<AlterConfigOp>> alteredConfigs = someAlterConfigs.stream().collect(Collectors.toMap(entry -> buildTopicConfigResource(entry.getKey().topicName()), Pair::getValue));
+        var alteredConfigs = someAlterConfigs.stream().collect(Collectors.toMap(entry -> buildTopicConfigResource(entry.getKey().topicName()), Pair::getValue));
         LOGGER.debugOp("Admin.incrementalAlterConfigs({})", alteredConfigs);
-        var timerSample = TopicOperatorUtil.startExternalRequestTimer(metrics, config.enableAdditionalMetrics());
-        AlterConfigsResult acr = kafkaAdmin.incrementalAlterConfigs(alteredConfigs);
-        TopicOperatorUtil.stopExternalRequestTimer(timerSample, metrics::alterConfigsTimer, config.enableAdditionalMetrics(), config.namespace());
+        var timerSample = TopicOperatorUtil.startExternalRequestTimer(metricsHolder, config.enableAdditionalMetrics());
+        var acr = kafkaAdminClient.incrementalAlterConfigs(alteredConfigs);
+        TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::alterConfigsTimer, config.enableAdditionalMetrics(), config.namespace());
         acr.all().whenComplete((i, e) -> {
-            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metrics::alterConfigsTimer, config.enableAdditionalMetrics(), config.namespace());
+            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::alterConfigsTimer, config.enableAdditionalMetrics(), config.namespace());
             if (e != null) {
                 LOGGER.traceOp("Admin.incrementalAlterConfigs({}) failed with {}", alteredConfigs, String.valueOf(e));
             } else {
@@ -264,12 +261,12 @@ public class KafkaHandler {
         if (someCreatePartitions.isEmpty()) {
             return new PartitionedByError<>(List.of(), List.of());
         }
-        Map<String, NewPartitions> newPartitions = someCreatePartitions.stream().collect(Collectors.toMap(pair -> pair.getKey().topicName(), Pair::getValue));
+        var newPartitions = someCreatePartitions.stream().collect(Collectors.toMap(pair -> pair.getKey().topicName(), Pair::getValue));
         LOGGER.debugOp("Admin.createPartitions({})", newPartitions);
-        var timerSample = TopicOperatorUtil.startExternalRequestTimer(metrics, config.enableAdditionalMetrics());
-        CreatePartitionsResult cpr = kafkaAdmin.createPartitions(newPartitions);
+        var timerSample = TopicOperatorUtil.startExternalRequestTimer(metricsHolder, config.enableAdditionalMetrics());
+        CreatePartitionsResult cpr = kafkaAdminClient.createPartitions(newPartitions);
         cpr.all().whenComplete((i, e) -> {
-            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metrics::createPartitionsTimer, config.enableAdditionalMetrics(), config.namespace());
+            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::createPartitionsTimer, config.enableAdditionalMetrics(), config.namespace());
             if (e != null) {
                 LOGGER.traceOp("Admin.createPartitions({}) failed with {}", newPartitions, String.valueOf(e));
             } else {
@@ -296,22 +293,22 @@ public class KafkaHandler {
      * @param reconcilableTopics Topics to describe.
      * @return Result partitioned by error.
      */
-    public PartitionedByError<ReconcilableTopic, TopicState> describeTopic(List<ReconcilableTopic> reconcilableTopics) {
+    public PartitionedByError<ReconcilableTopic, TopicState> describeTopics(List<ReconcilableTopic> reconcilableTopics) {
         if (reconcilableTopics.isEmpty()) {
             return new PartitionedByError<>(List.of(), List.of());
         }
-        Set<ConfigResource> configResources = reconcilableTopics.stream()
+        var configResources = reconcilableTopics.stream()
             .map(reconcilableTopic -> buildTopicConfigResource(reconcilableTopic.topicName()))
             .collect(Collectors.toSet());
-        Set<String> tns = reconcilableTopics.stream().map(ReconcilableTopic::topicName).collect(Collectors.toSet());
+        var tns = reconcilableTopics.stream().map(ReconcilableTopic::topicName).collect(Collectors.toSet());
 
         DescribeTopicsResult describeTopicsResult;
         {
             LOGGER.debugOp("Admin.describeTopics({})", tns);
-            var timerSample = TopicOperatorUtil.startExternalRequestTimer(metrics, config.enableAdditionalMetrics());
-            describeTopicsResult = kafkaAdmin.describeTopics(tns);
+            var timerSample = TopicOperatorUtil.startExternalRequestTimer(metricsHolder, config.enableAdditionalMetrics());
+            describeTopicsResult = kafkaAdminClient.describeTopics(tns);
             describeTopicsResult.allTopicNames().whenComplete((i, e) -> {
-                TopicOperatorUtil.stopExternalRequestTimer(timerSample, metrics::describeTopicsTimer, config.enableAdditionalMetrics(), config.namespace());
+                TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::describeTopicsTimer, config.enableAdditionalMetrics(), config.namespace());
                 if (e != null) {
                     LOGGER.traceOp("Admin.describeTopics({}) failed with {}", tns, String.valueOf(e));
                 } else {
@@ -322,10 +319,10 @@ public class KafkaHandler {
         DescribeConfigsResult describeConfigsResult;
         {
             LOGGER.debugOp("Admin.describeConfigs({})", configResources);
-            var timerSample = TopicOperatorUtil.startExternalRequestTimer(metrics, config.enableAdditionalMetrics());
-            describeConfigsResult = kafkaAdmin.describeConfigs(configResources);
+            var timerSample = TopicOperatorUtil.startExternalRequestTimer(metricsHolder, config.enableAdditionalMetrics());
+            describeConfigsResult = kafkaAdminClient.describeConfigs(configResources);
             describeConfigsResult.all().whenComplete((i, e) -> {
-                TopicOperatorUtil.stopExternalRequestTimer(timerSample, metrics::describeConfigsTimer, config.enableAdditionalMetrics(), config.namespace());
+                TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::describeConfigsTimer, config.enableAdditionalMetrics(), config.namespace());
                 if (e != null) {
                     LOGGER.traceOp("Admin.describeConfigs({}) failed with {}", configResources, String.valueOf(e));
                 } else {
@@ -378,10 +375,10 @@ public class KafkaHandler {
         LOGGER.debugOp("Admin.deleteTopics({})", someDeleteTopics.topicNames());
 
         // Admin delete
-        var timerSample = TopicOperatorUtil.startExternalRequestTimer(metrics, config.enableAdditionalMetrics());
-        DeleteTopicsResult dtr = kafkaAdmin.deleteTopics(someDeleteTopics);
+        var timerSample = TopicOperatorUtil.startExternalRequestTimer(metricsHolder, config.enableAdditionalMetrics());
+        var dtr = kafkaAdminClient.deleteTopics(someDeleteTopics);
         dtr.all().whenComplete((i, e) -> {
-            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metrics::deleteTopicsTimer, config.enableAdditionalMetrics(), config.namespace());
+            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::deleteTopicsTimer, config.enableAdditionalMetrics(), config.namespace());
             if (e != null) {
                 LOGGER.traceOp("Admin.deleteTopics({}) failed with {}", someDeleteTopics.topicNames(), String.valueOf(e));
             } else {
@@ -389,20 +386,23 @@ public class KafkaHandler {
             }
         });
         var futuresMap = dtr.topicNameValues();
-        return TopicOperatorUtil.partitionedByError(reconcilableTopics.stream().map(reconcilableTopic -> {
-            try {
-                futuresMap.get(reconcilableTopic.topicName()).get();
-                return new Pair<>(reconcilableTopic, Either.ofRight(null));
-            } catch (ExecutionException e) {
-                if (e.getCause() instanceof UnknownTopicOrPartitionException) {
+        
+        return TopicOperatorUtil.partitionedByError(reconcilableTopics.stream()
+            .filter(reconcilableTopic -> futuresMap.get(reconcilableTopic.topicName()) != null)
+            .map(reconcilableTopic -> {
+                try {
+                    futuresMap.get(reconcilableTopic.topicName()).get();
                     return new Pair<>(reconcilableTopic, Either.ofRight(null));
-                } else {
-                    return new Pair<>(reconcilableTopic, Either.ofLeft(handleAdminException(e)));
+                } catch (ExecutionException e) {
+                    if (e.getCause() instanceof UnknownTopicOrPartitionException) {
+                        return new Pair<>(reconcilableTopic, Either.ofRight(null));
+                    } else {
+                        return new Pair<>(reconcilableTopic, Either.ofLeft(handleAdminException(e)));
+                    }
+                } catch (InterruptedException e) {
+                    throw new UncheckedInterruptedException(e);
                 }
-            } catch (InterruptedException e) {
-                throw new UncheckedInterruptedException(e);
-            }
-        }));
+            }));
     }
     
     private static NewTopic buildNewTopic(KafkaTopic kt, String topicName) {

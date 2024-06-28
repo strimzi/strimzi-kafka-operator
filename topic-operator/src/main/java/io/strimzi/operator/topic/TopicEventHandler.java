@@ -24,7 +24,7 @@ public class TopicEventHandler implements ResourceEventHandler<KafkaTopic> {
 
     private final TopicOperatorConfig config;
     private final BatchingLoop queue;
-    private final MetricsHolder metrics;
+    private final MetricsHolder metricsHolder;
     
     private long lastPeriodicTimestampMs;
 
@@ -33,20 +33,20 @@ public class TopicEventHandler implements ResourceEventHandler<KafkaTopic> {
      * 
      * @param config Topic Operator configuration.
      * @param queue Topic event queue.
-     * @param metrics Metrics holder.
+     * @param metricsHolder Metrics holder.
      */
-    TopicEventHandler(TopicOperatorConfig config, BatchingLoop queue, MetricsHolder metrics) {
+    TopicEventHandler(TopicOperatorConfig config, BatchingLoop queue, MetricsHolder metricsHolder) {
         this.config = config;
         this.queue = queue;
-        this.metrics = metrics;
+        this.metricsHolder = metricsHolder;
     }
 
     @Override
     public void onAdd(KafkaTopic obj) {
         LOGGER.debugOp("Informed about add event for topic {}", TopicOperatorUtil.topicName(obj));
-        metrics.resourceCounter(config.namespace()).incrementAndGet();
+        metricsHolder.resourceCounter(config.namespace()).incrementAndGet();
         if (isReconciliationPausedWithAnnotation(obj)) {
-            metrics.pausedResourceCounter(config.namespace()).incrementAndGet();
+            metricsHolder.pausedResourceCounter(config.namespace()).incrementAndGet();
         }
         queue.offer(new TopicUpsert(System.nanoTime(), obj.getMetadata().getNamespace(),
                 obj.getMetadata().getName(),
@@ -64,9 +64,9 @@ public class TopicEventHandler implements ResourceEventHandler<KafkaTopic> {
             LOGGER.debugOp("Informed about update event for topic {}", TopicOperatorUtil.topicName(newObj));
         }
         if (isReconciliationPausedWithAnnotation(oldObj) && !isReconciliationPausedWithAnnotation(newObj)) {
-            metrics.pausedResourceCounter(config.namespace()).decrementAndGet();
+            metricsHolder.pausedResourceCounter(config.namespace()).decrementAndGet();
         } else if (!isReconciliationPausedWithAnnotation(oldObj) && isReconciliationPausedWithAnnotation(newObj)) {
-            metrics.pausedResourceCounter(config.namespace()).incrementAndGet();
+            metricsHolder.pausedResourceCounter(config.namespace()).incrementAndGet();
         }
         queue.offer(new TopicUpsert(System.nanoTime(), newObj.getMetadata().getNamespace(),
                 newObj.getMetadata().getName(),
@@ -76,9 +76,9 @@ public class TopicEventHandler implements ResourceEventHandler<KafkaTopic> {
     @Override
     public void onDelete(KafkaTopic obj, boolean deletedFinalStateUnknown) {
         LOGGER.debugOp("Informed about delete event for topic {}", TopicOperatorUtil.topicName(obj));
-        metrics.resourceCounter(config.namespace()).decrementAndGet();
+        metricsHolder.resourceCounter(config.namespace()).decrementAndGet();
         if (isReconciliationPausedWithAnnotation(obj)) {
-            metrics.pausedResourceCounter(config.namespace()).decrementAndGet();
+            metricsHolder.pausedResourceCounter(config.namespace()).decrementAndGet();
         }
         if (config.useFinalizer()) {
             LOGGER.debugOp("Ignoring deletion of {} (using finalizers)", TopicOperatorUtil.topicName(obj));

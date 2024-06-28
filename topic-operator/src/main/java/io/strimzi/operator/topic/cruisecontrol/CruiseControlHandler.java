@@ -17,10 +17,6 @@ import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient.UserTasksResp
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.model.ReconcilableTopic;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,7 +28,6 @@ import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.PENDING;
 import static io.strimzi.operator.topic.TopicOperatorUtil.hasReplicasChange;
 import static io.strimzi.operator.topic.TopicOperatorUtil.topicNames;
 import static java.lang.String.format;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.logging.log4j.core.util.Throwables.getRootCause;
 
 /**
@@ -42,53 +37,22 @@ public class CruiseControlHandler {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(CruiseControlHandler.class);
     
     private final TopicOperatorConfig config;
-    private final TopicOperatorMetricsHolder metrics;
+    private final TopicOperatorMetricsHolder metricsHolder;
     private final CruiseControlClient cruiseControlClient;
 
     /**
      * Create a new instance.
      *
      * @param config Topic Operator configuration.
-     * @param metrics Metrics holder.
-     */
-    public CruiseControlHandler(TopicOperatorConfig config,
-                                TopicOperatorMetricsHolder metrics) {
-        this(config, metrics, CruiseControlClient.create(
-            config.cruiseControlHostname(),
-            config.cruiseControlPort(),
-            config.cruiseControlRackEnabled(),
-            config.cruiseControlSslEnabled(),
-            config.cruiseControlSslEnabled() ? getFileContent(config.cruiseControlCrtFilePath()) : null,
-            config.cruiseControlAuthEnabled(),
-            config.cruiseControlAuthEnabled() ? new String(getFileContent(config.cruiseControlApiUserPath()), UTF_8) : null,
-            config.cruiseControlAuthEnabled() ? new String(getFileContent(config.cruiseControlApiPassPath()), UTF_8) : null
-        ));
-    }
-
-    /**
-     * Create a new instance.
-     *
-     * @param config Topic Operator configuration.
-     * @param metrics Metrics holder.
+     * @param metricsHolder Metrics holder.
      * @param cruiseControlClient Cruise Control client.
      */
     public CruiseControlHandler(TopicOperatorConfig config,
-                                TopicOperatorMetricsHolder metrics,
+                                TopicOperatorMetricsHolder metricsHolder,
                                 CruiseControlClient cruiseControlClient) {
         this.config = config;
-        this.metrics = metrics;
+        this.metricsHolder = metricsHolder;
         this.cruiseControlClient = cruiseControlClient;
-    }
-
-    /**
-     * Stop the replicas change handler.
-     */
-    public void stop() {
-        try {
-            cruiseControlClient.close();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     /**
@@ -107,7 +71,7 @@ public class CruiseControlHandler {
         updateToPending(reconcilableTopics, "Replicas change pending");
         result.addAll(reconcilableTopics);
 
-        Timer.Sample timerSample = TopicOperatorUtil.startExternalRequestTimer(metrics, config.enableAdditionalMetrics());
+        Timer.Sample timerSample = TopicOperatorUtil.startExternalRequestTimer(metricsHolder, config.enableAdditionalMetrics());
         try {
             LOGGER.debugOp("Sending topic configuration request, topics {}", topicNames(reconcilableTopics));
             List<KafkaTopic> kafkaTopics = reconcilableTopics.stream().map(ReconcilableTopic::kt).collect(Collectors.toList());
@@ -116,7 +80,7 @@ public class CruiseControlHandler {
         } catch (Throwable t) {
             updateToFailed(result, format("Replicas change failed, %s", getRootCause(t).getMessage()));
         }
-        TopicOperatorUtil.stopExternalRequestTimer(timerSample, metrics::cruiseControlTopicConfig, config.enableAdditionalMetrics(), config.namespace());
+        TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::cruiseControlTopicConfig, config.enableAdditionalMetrics(), config.namespace());
         return result;
     }
 
@@ -140,7 +104,7 @@ public class CruiseControlHandler {
             .map(rt -> new ReconcilableTopic(new Reconciliation("", KafkaTopic.RESOURCE_KIND, "", ""), rt.kt(), rt.topicName()))
             .collect(Collectors.groupingBy(rt -> rt.kt().getStatus().getReplicasChange().getSessionId(), HashMap::new, Collectors.toList()));
 
-        Timer.Sample timerSample = TopicOperatorUtil.startExternalRequestTimer(metrics, config.enableAdditionalMetrics());
+        Timer.Sample timerSample = TopicOperatorUtil.startExternalRequestTimer(metricsHolder, config.enableAdditionalMetrics());
         try {
             LOGGER.debugOp("Sending user tasks request, Tasks {}", groupByUserTaskId.keySet());
             UserTasksResponse utr = cruiseControlClient.userTasks(groupByUserTaskId.keySet());
@@ -169,16 +133,8 @@ public class CruiseControlHandler {
         } catch (Throwable t) {
             updateToFailed(result, format("Replicas change failed, %s", getRootCause(t).getMessage()));
         }
-        TopicOperatorUtil.stopExternalRequestTimer(timerSample, metrics::cruiseControlUserTasks, config.enableAdditionalMetrics(), config.namespace());
+        TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::cruiseControlUserTasks, config.enableAdditionalMetrics(), config.namespace());
         return result;
-    }
-    
-    private static byte[] getFileContent(String filePath) {
-        try {
-            return Files.readAllBytes(Path.of(filePath));
-        } catch (IOException ioe) {
-            throw new UncheckedIOException(format("File not found: %s", filePath), ioe);
-        }
     }
 
     private void updateToPending(List<ReconcilableTopic> reconcilableTopics, String message) {

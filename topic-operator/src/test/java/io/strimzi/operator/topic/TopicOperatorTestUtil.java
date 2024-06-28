@@ -4,111 +4,153 @@
  */
 package io.strimzi.operator.topic;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.KubernetesClientTimeoutException;
+import io.fabric8.kubernetes.client.dsl.NamespaceListVisitFromServerGetDeleteRecreateWaitApplicable;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
-import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.KubeClusterResource;
-import io.strimzi.test.k8s.exceptions.KubeClusterException;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.topic.model.ReconcilableTopic;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.TestInfo;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static io.strimzi.api.kafka.model.topic.KafkaTopic.RESOURCE_KIND;
+import static io.strimzi.test.TestUtils.CRD_TOPIC;
+import static io.strimzi.test.TestUtils.USER_PATH;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class TopicOperatorTestUtil {
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorTestUtil.class);
+    
     private TopicOperatorTestUtil() { }
 
-    public static String namespace(KubernetesClient client, String name) {
-        Resource<Namespace> resource = client.namespaces().withName(name);
-        if (resource.get() == null) {
-            LOGGER.debug("Creating namespace {}", name);
-            client.namespaces().resource(new NamespaceBuilder().withNewMetadata().withName(name).endMetadata().build()).create();
-            waitUntilCondition(client.namespaces().withName(name), Objects::nonNull);
+    public static <T> String namespaceName(Class<T> clazz) {
+        return clazz != null ? clazz.getSimpleName().toLowerCase(Locale.ROOT) : "strimzi-topic-operator";
+    }
+
+    public static void setupKubeCluster(KubernetesClient kubernetesClient, String namespace) {
+        deleteNamespace(kubernetesClient, namespace);
+        createNamespace(kubernetesClient, namespace);
+        createOrReplace(kubernetesClient, "file://" + USER_PATH + "/../packaging/install/topic-operator/01-ServiceAccount-strimzi-topic-operator.yaml", namespace);
+        createOrReplace(kubernetesClient, "file://" + USER_PATH + "/../packaging/install/topic-operator/02-Role-strimzi-topic-operator.yaml", namespace);
+        createOrReplace(kubernetesClient, "file://" + USER_PATH + "/../packaging/install/topic-operator/03-RoleBinding-strimzi-topic-operator.yaml", namespace);
+        createOrReplace(kubernetesClient, "file://" + CRD_TOPIC);
+    }
+
+    private static void createOrReplace(KubernetesClient kubernetesClient, String resourcesPath) {
+        createOrReplace(kubernetesClient, resourcesPath, null);
+    }
+
+    private static void createOrReplace(KubernetesClient kubernetesClient, String resourcesPath, String namespace) {
+        if (kubernetesClient == null || resourcesPath == null || resourcesPath.isBlank()) {
+            throw new IllegalArgumentException();
         }
-        return name;
-    }
-
-    public static String testName(TestInfo testInfo) {
-        return testInfo.getTestMethod().map(m -> m.getName() + "() " + testInfo.getDisplayName().replaceAll("[\r\n]+", " ")).orElse("");
-    }
-
-    public static void setupKubeCluster(TestInfo testInfo, String namespace) {
-        KubeClusterResource.getInstance();
+        NamespaceListVisitFromServerGetDeleteRecreateWaitApplicable<HasMetadata> loadedResources;
         try {
-            cmdKubeClient().createNamespace(namespace);
-        } catch (KubeClusterException.AlreadyExists e) {
-            LOGGER.info("Namespace {} already exists, recreating", namespace);
-            try (var tmpClient = TopicOperatorUtil.createKubeClient()) {
-                cleanupNamespace(tmpClient, testInfo, namespace);
+            loadedResources = kubernetesClient.load(new BufferedInputStream(new URL(resourcesPath).openStream()));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        if (loadedResources != null && !loadedResources.items().isEmpty()) {
+            try {
+                LOGGER.info("Creating resources from {}", resourcesPath);
+                if (namespace == null || namespace.isBlank()) {
+                    loadedResources.create();
+                } else {
+                    loadedResources.inNamespace(namespace).create();
+                }
+            } catch (KubernetesClientException kce) {
+                if (kce.getCode() != HttpURLConnection.HTTP_CONFLICT) {
+                    throw kce;
+                } else {
+                    if (namespace == null || namespace.isBlank()) {
+                        loadedResources.update();
+                    } else {
+                        loadedResources.inNamespace(namespace).update();
+                    }
+                }
             }
-            cmdKubeClient().deleteNamespace(namespace);
-            cmdKubeClient().createNamespace(namespace);
         }
-        LOGGER.info("Creating " + "../packaging/install/topic-operator/02-Role-strimzi-topic-operator.yaml");
-        cmdKubeClient().create(TestUtils.USER_PATH + "/../packaging/install/topic-operator/02-Role-strimzi-topic-operator.yaml");
-        LOGGER.info("Creating " + TestUtils.CRD_TOPIC);
-        cmdKubeClient().create(TestUtils.CRD_TOPIC);
-        LOGGER.info("Creating " + TestUtils.USER_PATH + "/src/test/resources/TopicOperatorIT-rbac.yaml");
-        cmdKubeClient().create(TestUtils.USER_PATH + "/src/test/resources/TopicOperatorIT-rbac.yaml");
     }
-
-    public static void teardownKubeCluster(String namespace) {
-        cmdKubeClient()
-                .delete(TestUtils.USER_PATH + "/src/test/resources/TopicOperatorIT-rbac.yaml")
-                .delete(TestUtils.CRD_TOPIC)
-                .delete(TestUtils.USER_PATH + "/../packaging/install/topic-operator/02-Role-strimzi-topic-operator.yaml")
-                .deleteNamespace(namespace);
-    }
-
-    public static void cleanupNamespace(KubernetesClient client, TestInfo testInfo, String pop) {
-        LOGGER.debug("Cleaning up namespace {} after test {}", pop, testName(testInfo));
-        for (var kt : Crds.topicOperation(client).inNamespace(pop).list().getItems()) {
-            LOGGER.debug("Removing finalizer on {} after test {}", kt.getMetadata().getName(), testName(testInfo));
-            modifyTopic(client, kt, theKt -> {
-                theKt.getMetadata().getFinalizers().clear();
-                return theKt;
-            });
-        }
-        for (var kt : Crds.topicOperation(client).inNamespace(pop).list().getItems()) {
-            LOGGER.debug("Deleting KafkaTopic {} after test {}", kt.getMetadata().getName(), testName(testInfo));
-            Crds.topicOperation(client).resource(kt).delete();
-        }
-        for (var kt : Crds.topicOperation(client).inNamespace(pop).list().getItems()) {
-            waitUntilCondition(Crds.topicOperation(client).resource(kt), Objects::isNull);
+    
+    public static void createNamespace(KubernetesClient kubernetesClient, String name) {
+        Resource<Namespace> resource = kubernetesClient.namespaces().withName(name);
+        if (resource.get() == null) {
+            LOGGER.info("Creating namespace {}", name);
+            kubernetesClient.namespaces().resource(new NamespaceBuilder().withNewMetadata().withName(name).endMetadata().build()).create();
+            waitUntilCondition(kubernetesClient.namespaces().withName(name), Objects::nonNull);
         }
     }
 
-    public static KafkaTopic modifyTopic(KubernetesClient client, KafkaTopic kt, UnaryOperator<KafkaTopic> changer) {
-        String ns = kt.getMetadata().getNamespace();
-        String metadataName = kt.getMetadata().getName();
-        // Occasionally a single call to edit() will throw with a HTTP 409 (Conflict)
-        // so let's try up to 3 times
+    public static void deleteNamespace(KubernetesClient kubernetesClient, String name) {
+        Resource<Namespace> resource = kubernetesClient.namespaces().withName(name);
+        if (resource != null && resource.get() != null) {
+            LOGGER.info("Deleting namespace {}", name);
+            cleanupNamespace(kubernetesClient, name); // in case a previous test was interrupted leaving topics with finalizers
+            kubernetesClient.namespaces().resource(resource.get()).delete();
+            waitUntilCondition(kubernetesClient.namespaces().withName(name), Objects::isNull);
+        }
+    }
+
+    public static void cleanupNamespace(KubernetesClient kubernetesClient, String name) {
+        LOGGER.debug("Cleaning up namespace {}", name);
+        try {
+            var kafkaTopics = Crds.topicOperation(kubernetesClient).inNamespace(name).list();
+            for (var kafkaTopic : kafkaTopics.getItems()) {
+                LOGGER.debug("Removing finalizer on topic {}", kafkaTopic.getMetadata().getName());
+                changeTopic(kubernetesClient, kafkaTopic, theKt -> {
+                    theKt.getMetadata().getFinalizers().clear();
+                    return theKt;
+                });
+            }
+            for (var kafkaTopic : kafkaTopics.getItems()) {
+                LOGGER.debug("Deleting topic {}", kafkaTopic.getMetadata().getName());
+                Crds.topicOperation(kubernetesClient).resource(kafkaTopic).delete();
+                waitUntilCondition(Crds.topicOperation(kubernetesClient).resource(kafkaTopic), Objects::isNull);
+            }
+        } catch (KubernetesClientException e) {
+            if (e.getCode() != HttpURLConnection.HTTP_NOT_FOUND) {
+                LOGGER.error(e.getMessage());
+            }
+        }
+    }
+
+    public static ReconcilableTopic reconcilableTopic(KafkaTopic kafkaTopic, String namespace) {
+        return new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, namespace,
+            TopicOperatorUtil.topicName(kafkaTopic)), kafkaTopic, TopicOperatorUtil.topicName(kafkaTopic));
+    }
+
+    public static KafkaTopic changeTopic(KubernetesClient kubernetesClient, KafkaTopic kafkaTopic, UnaryOperator<KafkaTopic> changer) {
+        String namespace = kafkaTopic.getMetadata().getNamespace();
+        String metadataName = kafkaTopic.getMetadata().getName();
+        // occasionally a single call to edit() will throw with a HTTP 409 (Conflict), so let's try up to 3 times
         int i = 2;
         while (true) {
             try {
-                return Crds.topicOperation(client).inNamespace(ns).withName(metadataName).edit(changer);
+                return Crds.topicOperation(kubernetesClient).inNamespace(namespace).withName(metadataName).edit(changer);
             } catch (KubernetesClientException e) {
-                if (i == 0 || e.getCode() != 409 /* conflict */) {
+                if (i == 0 || e.getCode() != HttpURLConnection.HTTP_CONFLICT) {
                     throw e;
                 }
             }

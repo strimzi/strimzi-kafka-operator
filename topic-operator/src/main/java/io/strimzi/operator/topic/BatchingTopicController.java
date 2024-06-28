@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.topic;
 
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ConditionBuilder;
@@ -23,7 +22,6 @@ import io.strimzi.operator.topic.model.ReconcilableTopic;
 import io.strimzi.operator.topic.model.TopicOperatorException;
 import io.strimzi.operator.topic.model.TopicState;
 import io.strimzi.operator.topic.model.UncheckedInterruptedException;
-import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
@@ -67,9 +65,9 @@ public class BatchingTopicController {
     private final TopicOperatorConfig config;
     private final Map<String, String> selector;
 
-    private final KubernetesHandler kubeHandler;
+    private final KubernetesHandler kubernetesHandler;
     private final KafkaHandler kafkaHandler;
-    private final TopicOperatorMetricsHolder metrics;
+    private final TopicOperatorMetricsHolder metricsHolder;
     private final CruiseControlHandler cruiseControlHandler;
 
     // Key: topic name, Value: The KafkaTopics known to manage that topic
@@ -77,14 +75,14 @@ public class BatchingTopicController {
 
     BatchingTopicController(TopicOperatorConfig config,
                             Map<String, String> selector,
-                            KubernetesClient kubeClient,
-                            Admin kafkaAdmin,
-                            TopicOperatorMetricsHolder metrics,
+                            KubernetesHandler kubernetesHandler,
+                            KafkaHandler kafkaHandler,
+                            TopicOperatorMetricsHolder metricsHolder,
                             CruiseControlHandler cruiseControlHandler) {
         this.config = config;
         this.selector = Objects.requireNonNull(selector);
-        this.kubeHandler = new KubernetesHandler(config, metrics, kubeClient);
-        this.kafkaHandler = new KafkaHandler(config, metrics, kafkaAdmin);
+        this.kubernetesHandler = kubernetesHandler;
+        this.kafkaHandler = kafkaHandler;
 
         var skipClusterConfigReview = config.skipClusterConfigReview();
         if (!skipClusterConfigReview) {
@@ -97,7 +95,7 @@ public class BatchingTopicController {
             }
         }
 
-        this.metrics = metrics;
+        this.metricsHolder = metricsHolder;
         this.cruiseControlHandler = cruiseControlHandler;
     }
     
@@ -112,9 +110,9 @@ public class BatchingTopicController {
     }
     
     private List<ReconcilableTopic> addOrRemoveFinalizer(List<ReconcilableTopic> reconcilableTopics) {
-        List<ReconcilableTopic> collect = reconcilableTopics.stream()
+        var collect = reconcilableTopics.stream()
             .map(reconcilableTopic -> new ReconcilableTopic(reconcilableTopic.reconciliation(),
-                config.useFinalizer() ? kubeHandler.addFinalizer(reconcilableTopic) : kubeHandler.removeFinalizer(reconcilableTopic), reconcilableTopic.topicName()))
+                config.useFinalizer() ? kubernetesHandler.addFinalizer(reconcilableTopic) : kubernetesHandler.removeFinalizer(reconcilableTopic), reconcilableTopic.topicName()))
             .collect(Collectors.toList());
         LOGGER.traceOp("{} {} topics", config.useFinalizer() ? "Added finalizers to" : "Removed finalizers from", reconcilableTopics.size());
         return collect;
@@ -128,8 +126,8 @@ public class BatchingTopicController {
     }
 
     private boolean rememberReconcilableTopic(ReconcilableTopic reconcilableTopic) {
-        String tn = reconcilableTopic.topicName();
-        var existing = topics.computeIfAbsent(tn, k -> new ArrayList<>(1));
+        var topicName = reconcilableTopic.topicName();
+        var existing = topics.computeIfAbsent(topicName, k -> new ArrayList<>(1));
         KubeRef thisRef = new KubeRef(reconcilableTopic.kt());
         if (!existing.contains(thisRef)) {
             existing.add(thisRef);
@@ -153,9 +151,9 @@ public class BatchingTopicController {
     }
 
     private Either<TopicOperatorException, Boolean> validateSingleManagingResource(ReconcilableTopic reconcilableTopic) {
-        String tn = reconcilableTopic.topicName();
-        var existing = topics.get(tn);
-        KubeRef thisRef = new KubeRef(reconcilableTopic.kt());
+        var topicName = reconcilableTopic.topicName();
+        var existing = topics.get(topicName);
+        var thisRef = new KubeRef(reconcilableTopic.kt());
         if (existing.size() != 1) {
             var byCreationTime = existing.stream().sorted(Comparator.comparing(KubeRef::creationTime)).toList();
 
@@ -207,8 +205,8 @@ public class BatchingTopicController {
     }
 
     /**
-     * @param topics The topics to reconcile
-     * @throws InterruptedException If the thread was interrupted while blocking
+     * @param topics The topics to reconcile.
+     * @throws InterruptedException If the thread was interrupted while blocking.
      */
     void onUpdate(List<ReconcilableTopic> topics) throws InterruptedException {
         try {
@@ -252,14 +250,14 @@ public class BatchingTopicController {
         // process remaining
         var remainingAfterDeletions = partitionedByDeletion.get(false);
         var timerSamples = remainingAfterDeletions.stream().collect(
-            Collectors.toMap(identity(), rt -> startReconciliationTimer(metrics)));
+            Collectors.toMap(identity(), rt -> startReconciliationTimer(metricsHolder)));
         Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results = new HashMap<>();
         var partitionedByManaged = remainingAfterDeletions.stream().collect(Collectors.partitioningBy(reconcilableTopic -> TopicOperatorUtil.isManaged(reconcilableTopic.kt())));
         
         // process remaining unmanaged
         var unmanaged = partitionedByManaged.get(false);
         addOrRemoveFinalizer(unmanaged).forEach(rt -> putResult(results, rt, Either.ofRight(null)));
-        metrics.reconciliationsCounter(config.namespace()).increment(unmanaged.size());
+        metricsHolder.reconciliationsCounter(config.namespace()).increment(unmanaged.size());
 
         // process remaining managed, skipping paused KTs
         var partitionedByPaused = validateManagedTopics(partitionedByManaged).stream().filter(hasTopicSpec)
@@ -267,9 +265,9 @@ public class BatchingTopicController {
         partitionedByPaused.get(true).forEach(reconcilableTopic -> putResult(results, reconcilableTopic, Either.ofRight(null)));
 
         var mayNeedUpdate = partitionedByPaused.get(false);
-        metrics.reconciliationsCounter(config.namespace()).increment(mayNeedUpdate.size());
+        metricsHolder.reconciliationsCounter(config.namespace()).increment(mayNeedUpdate.size());
         var addedFinalizer = addOrRemoveFinalizer(mayNeedUpdate);
-        var currentStatesOrError = kafkaHandler.describeTopic(addedFinalizer);
+        var currentStatesOrError = kafkaHandler.describeTopics(addedFinalizer);
 
         // figure out necessary updates
         createMissingTopics(results, currentStatesOrError);
@@ -284,7 +282,7 @@ public class BatchingTopicController {
         // update statuses
         accumulateResults(results, alterConfigsResults, createPartitionsResults, checkReplicasChangesResults);
         updateStatuses(results);
-        timerSamples.keySet().forEach(rt -> stopReconciliationTimer(metrics, timerSamples.get(rt), config.namespace()));
+        timerSamples.keySet().forEach(rt -> stopReconciliationTimer(metricsHolder, timerSamples.get(rt), config.namespace()));
         LOGGER.traceOp("Reconciled batch of {} KafkaTopics", results.size());
     }
 
@@ -386,7 +384,7 @@ public class BatchingTopicController {
             return;
         }
 
-        Optional<String> clusterMinIsr = kafkaHandler.clusterConfig(KafkaHandler.MIN_INSYNC_REPLICAS);
+        var clusterMinIsr = kafkaHandler.clusterConfig(KafkaHandler.MIN_INSYNC_REPLICAS);
         for (ReconcilableTopic reconcilableTopic : reconcilableTopics) {
             var topicConfig = reconcilableTopic.kt().getSpec().getConfig();
             if (topicConfig != null) {
@@ -525,7 +523,7 @@ public class BatchingTopicController {
         return alterConfigs.get(false);
     }
 
-    private static List<Pair<ReconcilableTopic, NewPartitions>> partitionChanges(Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results, PartitionedByError<ReconcilableTopic, TopicState> currentStatesOrError) {
+    private List<Pair<ReconcilableTopic, NewPartitions>> partitionChanges(Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results, PartitionedByError<ReconcilableTopic, TopicState> currentStatesOrError) {
         // Determine partition changes
         PartitionedByError<ReconcilableTopic, NewPartitions> newPartitionsOrError = TopicOperatorUtil.partitionedByError(currentStatesOrError.ok().map(pair -> {
             var reconcilableTopic = pair.getKey();
@@ -557,7 +555,7 @@ public class BatchingTopicController {
     }
 
     private void deleteInternal(List<ReconcilableTopic> reconcilableTopics, boolean onDeletePath) {
-        metrics.reconciliationsCounter(config.namespace()).increment(reconcilableTopics.size());
+        metricsHolder.reconciliationsCounter(config.namespace()).increment(reconcilableTopics.size());
         var managedToDelete = reconcilableTopics.stream().filter(reconcilableTopic -> {
             if (TopicOperatorUtil.isManaged(reconcilableTopic.kt())) {
                 var e = validate(reconcilableTopic);
@@ -581,24 +579,24 @@ public class BatchingTopicController {
     }
 
     private void deleteUnmanagedTopic(ReconcilableTopic reconcilableTopic) {
-        var timerSample = startReconciliationTimer(metrics);
-        kubeHandler.removeFinalizer(reconcilableTopic);
+        var timerSample = startReconciliationTimer(metricsHolder);
+        kubernetesHandler.removeFinalizer(reconcilableTopic);
         forgetReconcilableTopic(reconcilableTopic);
-        TopicOperatorUtil.stopReconciliationTimer(metrics, timerSample, config.namespace());
-        metrics.successfulReconciliationsCounter(config.namespace()).increment();
+        TopicOperatorUtil.stopReconciliationTimer(metricsHolder, timerSample, config.namespace());
+        metricsHolder.successfulReconciliationsCounter(config.namespace()).increment();
     }
 
     private void deleteManagedTopics(List<ReconcilableTopic> reconcilableTopics, boolean onDeletePath, Stream<ReconcilableTopic> managedToDelete) {
         var timerSamples = reconcilableTopics.stream().collect(
-            Collectors.toMap(identity(), rt -> startReconciliationTimer(metrics)));
+            Collectors.toMap(identity(), rt -> startReconciliationTimer(metricsHolder)));
 
-        Set<String> topicNames = managedToDelete.map(ReconcilableTopic::topicName).collect(Collectors.toSet());
-        PartitionedByError<ReconcilableTopic, Object> deleteResult = kafkaHandler.deleteTopics(reconcilableTopics, topicNames);
+        var topicNames = managedToDelete.map(ReconcilableTopic::topicName).collect(Collectors.toSet());
+        var deleteResult = kafkaHandler.deleteTopics(reconcilableTopics, topicNames);
 
         // remove the finalizer and forget the topic
         deleteResult.ok().forEach(pair -> {
             try {
-                kubeHandler.removeFinalizer(pair.getKey());
+                kubernetesHandler.removeFinalizer(pair.getKey());
             } catch (KubernetesClientException e) {
                 // If this method be being called because the resource was deleted
                 // then we expect the PATCH will error with Not Found
@@ -607,7 +605,7 @@ public class BatchingTopicController {
                 }
             }
             forgetReconcilableTopic(pair.getKey());
-            metrics.successfulReconciliationsCounter(config.namespace()).increment();
+            metricsHolder.successfulReconciliationsCounter(config.namespace()).increment();
         });
 
         // join that to fail
@@ -625,16 +623,16 @@ public class BatchingTopicController {
                         entry.getKey().topicName(),
                         entry.getValue());
                 }
-                metrics.failedReconciliationsCounter(config.namespace()).increment();
+                metricsHolder.failedReconciliationsCounter(config.namespace()).increment();
             } else {
                 updateStatusForException(entry.getKey(), entry.getValue());
             }
         });
-        timerSamples.keySet().forEach(rt -> stopReconciliationTimer(metrics, timerSamples.get(rt), config.namespace()));
+        timerSamples.keySet().forEach(rt -> stopReconciliationTimer(metricsHolder, timerSamples.get(rt), config.namespace()));
     }
 
     private static Either<TopicOperatorException, NewPartitions> buildNewPartitions(Reconciliation reconciliation, KafkaTopic kt, int currentNumPartitions) {
-        int requested = kt.getSpec() == null || kt.getSpec().getPartitions() == null ? KafkaHandler.BROKER_DEFAULT : kt.getSpec().getPartitions();
+        var requested = kt.getSpec() == null || kt.getSpec().getPartitions() == null ? KafkaHandler.BROKER_DEFAULT : kt.getSpec().getPartitions();
         if (requested > currentNumPartitions) {
             LOGGER.debugCr(reconciliation, "Partition increase from {} to {}", currentNumPartitions, requested);
             return Either.ofRight(NewPartitions.increaseTo(requested));
@@ -662,7 +660,7 @@ public class BatchingTopicController {
                 }
             }
         }
-        HashSet<String> keysToRemove = configs.entries().stream()
+        var keysToRemove = configs.entries().stream()
                 .filter(configEntry -> configEntry.source() == ConfigEntry.ConfigSource.DYNAMIC_TOPIC_CONFIG)
                 .map(ConfigEntry::name).collect(Collectors.toCollection(HashSet::new));
         if (hasConfig(kt)) {
@@ -724,8 +722,8 @@ public class BatchingTopicController {
             new KafkaTopicStatusBuilder(reconcilableTopic.kt().getStatus())
                 .withConditions(conditions)
                 .build());
-        kubeHandler.updateStatus(reconcilableTopic);
-        metrics.successfulReconciliationsCounter(config.namespace()).increment();
+        kubernetesHandler.updateStatus(reconcilableTopic);
+        metricsHolder.successfulReconciliationsCounter(config.namespace()).increment();
     }
 
     private void addNonAlterableConfigsWarning(ReconcilableTopic reconcilableTopic,
@@ -781,7 +779,7 @@ public class BatchingTopicController {
                     .withLastTransitionTime(StatusUtils.iso8601Now())
                     .build()))
                 .build());
-        kubeHandler.updateStatus(reconcilableTopic);
-        metrics.failedReconciliationsCounter(config.namespace()).increment();
+        kubernetesHandler.updateStatus(reconcilableTopic);
+        metricsHolder.failedReconciliationsCounter(config.namespace()).increment();
     }
 }

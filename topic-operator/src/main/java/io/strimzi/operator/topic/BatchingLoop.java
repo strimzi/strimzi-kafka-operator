@@ -43,7 +43,7 @@ public class BatchingLoop {
 
     private final ItemStore<KafkaTopic> itemStore;
     private final Runnable stopRunnable;
-    private final TopicOperatorMetricsHolder metrics;
+    private final TopicOperatorMetricsHolder metricsHolder;
 
     /**
      * The set of topics currently being reconciled by a controller.
@@ -61,14 +61,14 @@ public class BatchingLoop {
      * @param maxThreads Max number of LoopRunnable threads.
      * @param itemStore Item store.
      * @param stopRunnable Stop runnable.
-     * @param metrics Metrics holder.
+     * @param metricsHolder Metrics holder.
      */
     public BatchingLoop(TopicOperatorConfig config,
                         BatchingTopicController controller,
                         int maxThreads,
                         ItemStore<KafkaTopic> itemStore,
                         Runnable stopRunnable,
-                        TopicOperatorMetricsHolder metrics) {
+                        TopicOperatorMetricsHolder metricsHolder) {
         this.maxQueueSize = config.maxQueueSize();
         this.maxBatchSize = config.maxBatchSize();
         this.maxBatchLingerMs = config.maxBatchLingerMs();
@@ -77,7 +77,7 @@ public class BatchingLoop {
         this.controller = controller;
         this.itemStore = itemStore;
         this.stopRunnable = stopRunnable;
-        this.metrics = metrics;
+        this.metricsHolder = metricsHolder;
 
         this.queue = new LinkedBlockingDeque<>(maxQueueSize);
         this.threads = new LoopRunnable[maxThreads];
@@ -115,7 +115,7 @@ public class BatchingLoop {
     public void offer(TopicEvent event) {
         if (queue.offerFirst(event)) {
             LOGGER.debugOp("Item {} added to front of queue", event);
-            metrics.reconciliationsMaxQueueSize(namespace).getAndUpdate(size -> Math.max(size, queue.size()));
+            metricsHolder.reconciliationsMaxQueueSize(namespace).getAndUpdate(size -> Math.max(size, queue.size()));
         } else {
             LOGGER.errorOp("Queue length {} exceeded, stopping operator. Please increase {} environment variable.",
                     maxQueueSize,
@@ -280,7 +280,7 @@ public class BatchingLoop {
                 addToBatch(batchId, batch, rejected, topicEvent);
             }
             LOGGER.traceOp("[Batch #{}] Filled with {} topics", batchId, batch.size());
-            metrics.reconciliationsMaxBatchSize(namespace).getAndUpdate(size -> Math.max(size, batch.size()));
+            metricsHolder.reconciliationsMaxBatchSize(namespace).getAndUpdate(size -> Math.max(size, batch.size()));
 
             // here we need a deque and can push `rejected` back on the front of the queue
             //      where they can be taken by the next thread.
@@ -308,7 +308,7 @@ public class BatchingLoop {
             } else {
                 LOGGER.debugOp("[Batch #{}] Rejecting item {}, already inflight", batchId, topicEvent);
                 rejected.add(topicEvent);
-                metrics.lockedReconciliationsCounter(namespace).increment();
+                metricsHolder.lockedReconciliationsCounter(namespace).increment();
             }
         }
     }

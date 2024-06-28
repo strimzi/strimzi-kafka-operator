@@ -10,13 +10,19 @@ import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
+import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.model.Either;
 import io.strimzi.operator.topic.model.Pair;
 import io.strimzi.operator.topic.model.PartitionedByError;
 import io.strimzi.operator.topic.model.ReconcilableTopic;
 import io.strimzi.operator.topic.model.TopicOperatorException;
+import org.apache.kafka.clients.admin.Admin;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -24,6 +30,8 @@ import java.util.stream.Stream;
 
 import static io.strimzi.operator.topic.KafkaHandler.BROKER_DEFAULT;
 import static io.strimzi.operator.topic.KubernetesHandler.ANNO_STRIMZI_IO_MANAGED;
+import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Provides utility methods for managing and interacting 
@@ -34,14 +42,51 @@ public class TopicOperatorUtil {
 
     /**
      * Create e new instance of Kubernetes client.
-     * 
+     *
      * @return Kubernetes client.
      */
-    public static KubernetesClient createKubeClient() {
+    public static KubernetesClient createKubernetesClient() {
         return new OperatorKubernetesClientBuilder(
-            "strimzi-topic-operator",
+            "strimzi-topic-operator-" + System.nanoTime(),
             TopicOperatorMain.class.getPackage().getImplementationVersion())
             .build();
+    }
+
+    /**
+     * Create e new instance of Kafka admin client.
+     *
+     * @param config Topic Operator configuration.
+     * @return Kafka admin client.
+     */
+    public static Admin createKafkaAdminClient(TopicOperatorConfig config) {
+        return Admin.create(config.adminClientConfig());
+    }
+
+    /**
+     * Create e new instance of Cruise Control client.
+     *
+     * @param config Topic Operator configuration.
+     * @return Cruise Control client.
+     */
+    public static CruiseControlClient createCruiseControlClient(TopicOperatorConfig config) {
+        return CruiseControlClient.create(
+            config.cruiseControlHostname(),
+            config.cruiseControlPort(),
+            config.cruiseControlRackEnabled(),
+            config.cruiseControlSslEnabled(),
+            config.cruiseControlSslEnabled() ? TopicOperatorUtil.getFileContent(config.cruiseControlCrtFilePath()) : null,
+            config.cruiseControlAuthEnabled(),
+            config.cruiseControlAuthEnabled() ? new String(TopicOperatorUtil.getFileContent(config.cruiseControlApiUserPath()), UTF_8) : null,
+            config.cruiseControlAuthEnabled() ? new String(TopicOperatorUtil.getFileContent(config.cruiseControlApiPassPath()), UTF_8) : null
+        );
+    }
+
+    private static byte[] getFileContent(String filePath) {
+        try {
+            return Files.readAllBytes(Path.of(filePath));
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(format("File not found: %s", filePath), ioe);
+        }
     }
 
     /**
@@ -51,14 +96,14 @@ public class TopicOperatorUtil {
      * @return Topic name.
      */
     public static String topicName(KafkaTopic kafkaTopic) {
-        String tn = null;
+        String name = null;
         if (kafkaTopic.getSpec() != null) {
-            tn = kafkaTopic.getSpec().getTopicName();
+            name = kafkaTopic.getSpec().getTopicName();
         }
-        if (tn == null) {
-            tn = kafkaTopic.getMetadata().getName();
+        if (name == null) {
+            name = kafkaTopic.getMetadata().getName();
         }
-        return tn;
+        return name;
     }
 
     /**
@@ -76,36 +121,36 @@ public class TopicOperatorUtil {
     /**
      * Start the reconciliation timer.
      *
-     * @param metrics Metrics holder.
+     * @param metricsHolder Metrics holder.
      * @return Timer sample.
      */
-    public static Timer.Sample startReconciliationTimer(TopicOperatorMetricsHolder metrics) {
-        return Timer.start(metrics.metricsProvider().meterRegistry());
+    public static Timer.Sample startReconciliationTimer(TopicOperatorMetricsHolder metricsHolder) {
+        return Timer.start(metricsHolder.metricsProvider().meterRegistry());
     }
 
     /**
      * Stop the reconciliation timer.
      *
-     * @param metrics Metrics holder.
+     * @param metricsHolder Metrics holder.
      * @param timerSample Timer sample.
      * @param namespace Namespace.
      */
-    public static void stopReconciliationTimer(TopicOperatorMetricsHolder metrics,
+    public static void stopReconciliationTimer(TopicOperatorMetricsHolder metricsHolder,
                                                Timer.Sample timerSample,
                                                String namespace) {
-        timerSample.stop(metrics.reconciliationsTimer(namespace));
+        timerSample.stop(metricsHolder.reconciliationsTimer(namespace));
     }
 
     /**
      * Start the external request timer.
      *
-     * @param metrics Metrics holder.
-     * @param enabled Whether additional metrics are enabled.
+     * @param metricsHolder Metrics holder.
+     * @param enabled Whether additional metricsHolder are enabled.
      * @return Timer sample.
      */
-    public static Timer.Sample startExternalRequestTimer(TopicOperatorMetricsHolder metrics,
+    public static Timer.Sample startExternalRequestTimer(TopicOperatorMetricsHolder metricsHolder,
                                                          boolean enabled) {
-        return enabled ? Timer.start(metrics.metricsProvider().meterRegistry()) : null;
+        return enabled ? Timer.start(metricsHolder.metricsProvider().meterRegistry()) : null;
     }
 
     /**
@@ -128,74 +173,74 @@ public class TopicOperatorUtil {
     /**
      * Whether {@link KafkaTopic} is managed.
      *
-     * @param kt Kafka topic.
+     * @param kafkaTopic Kafka topic.
      * @return True if the topic is managed.
      */
-    public static boolean isManaged(KafkaTopic kt) {
-        return kt.getMetadata() == null
-            || kt.getMetadata().getAnnotations() == null
-            || kt.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_MANAGED) == null
-            || !"false".equals(kt.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_MANAGED));
+    public static boolean isManaged(KafkaTopic kafkaTopic) {
+        return kafkaTopic.getMetadata() == null
+            || kafkaTopic.getMetadata().getAnnotations() == null
+            || kafkaTopic.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_MANAGED) == null
+            || !"false".equals(kafkaTopic.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_MANAGED));
     }
 
     /**
      * Whether {@link KafkaTopic} is paused.
      *
-     * @param kt Kafka topic.
+     * @param kafkaTopic Kafka topic.
      * @return True if the topic is paused.
      */
-    public static boolean isPaused(KafkaTopic kt) {
-        return Annotations.isReconciliationPausedWithAnnotation(kt);
+    public static boolean isPaused(KafkaTopic kafkaTopic) {
+        return Annotations.isReconciliationPausedWithAnnotation(kafkaTopic);
     }
 
     /**
      * Whether the {@link KafkaTopic} status has config.
      *
-     * @param kt Kafka topic.
+     * @param kafkaTopic Kafka topic.
      * @return True if there is config.
      */
-    public static boolean hasConfig(KafkaTopic kt) {
-        return kt.getSpec() != null && kt.getSpec().getConfig() != null;
+    public static boolean hasConfig(KafkaTopic kafkaTopic) {
+        return kafkaTopic.getSpec() != null && kafkaTopic.getSpec().getConfig() != null;
     }
 
     /**
-     * Whether the {@link KafkaTopic} status has replicas change.
+     * Whether the {@link KafkaTopic} kafkaTopicStatus has replicas change.
      *
-     * @param status Topic status.
-     * @return True if there is replicas change status.
+     * @param kafkaTopicStatus Topic kafkaTopicStatus.
+     * @return True if there is replicas change kafkaTopicStatus.
      */
-    public static boolean hasReplicasChange(KafkaTopicStatus status) {
-        return status != null && status.getReplicasChange() != null;
+    public static boolean hasReplicasChange(KafkaTopicStatus kafkaTopicStatus) {
+        return kafkaTopicStatus != null && kafkaTopicStatus.getReplicasChange() != null;
     }
 
     /**
      * Get KafkaTopic resource version.
      *
-     * @param kt Kafka topic.
+     * @param kafkaTopic Kafka topic.
      * @return Resource version.
      */
-    public static String resourceVersion(KafkaTopic kt) {
-        return kt == null || kt.getMetadata() == null ? "null" : kt.getMetadata().getResourceVersion();
+    public static String resourceVersion(KafkaTopic kafkaTopic) {
+        return kafkaTopic == null || kafkaTopic.getMetadata() == null ? "null" : kafkaTopic.getMetadata().getResourceVersion();
     }
 
     /**
      * Get number of partitions from {@link KafkaTopic} spec.
      *
-     * @param kt KafkaTopic resource.
+     * @param kafkaTopic KafkaTopic resource.
      * @return Partitions value.
      */
-    public static int partitions(KafkaTopic kt) {
-        return kt.getSpec().getPartitions() != null ? kt.getSpec().getPartitions() : BROKER_DEFAULT;
+    public static int partitions(KafkaTopic kafkaTopic) {
+        return kafkaTopic.getSpec().getPartitions() != null ? kafkaTopic.getSpec().getPartitions() : BROKER_DEFAULT;
     }
 
     /**
      * Get number of replicas from {@link KafkaTopic} spec.
      *
-     * @param kt KafkaTopic resource.
+     * @param kafkaTopic KafkaTopic resource.
      * @return Replicas value.
      */
-    public static short replicas(KafkaTopic kt) {
-        return kt.getSpec().getReplicas() != null ? kt.getSpec().getReplicas().shortValue() : BROKER_DEFAULT;
+    public static short replicas(KafkaTopic kafkaTopic) {
+        return kafkaTopic.getSpec().getReplicas() != null ? kafkaTopic.getSpec().getReplicas().shortValue() : BROKER_DEFAULT;
     }
 
     /**

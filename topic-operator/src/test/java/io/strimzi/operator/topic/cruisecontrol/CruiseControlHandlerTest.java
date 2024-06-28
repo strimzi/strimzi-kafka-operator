@@ -14,6 +14,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.topic.TopicOperatorConfig;
+import io.strimzi.operator.topic.TopicOperatorTestUtil;
 import io.strimzi.operator.topic.TopicOperatorUtil;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsProvider;
@@ -43,8 +44,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CruiseControlHandlerTest {
-    private static final String TEST_NAMESPACE = "cruise-control-test";
-    private static final String TEST_NAME = "my-topic";
+    private static final String NAMESPACE = TopicOperatorTestUtil.namespaceName(CruiseControlHandlerTest.class);
 
     private static TopicOperatorMetricsHolder metricsHolder;
     private static int serverPort;
@@ -91,7 +91,7 @@ public class CruiseControlHandlerTest {
     @ParameterizedTest
     @MethodSource("validConfigs")
     public void shouldSucceedWithValidConfig(TopicOperatorConfig config) {
-        var handler = new CruiseControlHandler(config, metricsHolder);
+        var handler = new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config));
 
         server.expectTopicConfigSuccessResponse(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
@@ -108,14 +108,15 @@ public class CruiseControlHandlerTest {
     public void shouldFailWithSslEnabledAndMissingCrtFile() {
         var config = TopicOperatorConfig.buildFromMap(Map.ofEntries(
             entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-            entry(TopicOperatorConfig.NAMESPACE.key(), TEST_NAMESPACE),
+            entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
             entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
             entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_CRT_FILE_PATH.key(), "/invalid/ca.crt")
         ));
 
-        RuntimeException thrown = assertThrows(RuntimeException.class, () -> new CruiseControlHandler(config, metricsHolder));
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> 
+            new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config)));
         assertThat(thrown.getMessage(), is("File not found: /invalid/ca.crt"));
     }
 
@@ -123,7 +124,7 @@ public class CruiseControlHandlerTest {
     public void shouldFailWithAuthEnabledAndUsernameFileNotFound() {
         var config = TopicOperatorConfig.buildFromMap(Map.ofEntries(
             entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-            entry(TopicOperatorConfig.NAMESPACE.key(), TEST_NAMESPACE),
+            entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
             entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
             entry(TopicOperatorConfig.CRUISE_CONTROL_AUTH_ENABLED.key(), "true"),
@@ -131,7 +132,8 @@ public class CruiseControlHandlerTest {
             entry(TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
         ));
 
-        RuntimeException thrown = assertThrows(RuntimeException.class, () -> new CruiseControlHandler(config, metricsHolder));
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> 
+            new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config)));
         assertThat(thrown.getMessage(), is("File not found: /invalid/username"));
     }
 
@@ -139,7 +141,7 @@ public class CruiseControlHandlerTest {
     public void shouldFailWithAuthEnabledAndPasswordFileNotFound() {
         var config = TopicOperatorConfig.buildFromMap(Map.ofEntries(
             entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-            entry(TopicOperatorConfig.NAMESPACE.key(), TEST_NAMESPACE),
+            entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
             entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
             entry(TopicOperatorConfig.CRUISE_CONTROL_AUTH_ENABLED.key(), "true"),
@@ -147,7 +149,8 @@ public class CruiseControlHandlerTest {
             entry(TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), "/invalid/password")
         ));
 
-        RuntimeException thrown = assertThrows(RuntimeException.class, () -> new CruiseControlHandler(config, metricsHolder));
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> 
+            new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config)));
         assertThat(thrown.getMessage(), is("File not found: /invalid/password"));
     }
 
@@ -155,12 +158,12 @@ public class CruiseControlHandlerTest {
     public void replicasChangeShouldFailWhenCruiseControlEndpointNotReachable() {
         var config = TopicOperatorConfig.buildFromMap(Map.ofEntries(
             entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-            entry(TopicOperatorConfig.NAMESPACE.key(), TEST_NAMESPACE),
+            entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
             entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "invalid"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort))
         ));
         
-        var handler = new CruiseControlHandler(config, metricsHolder);
+        var handler = new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config));
         
         var pending = buildPendingReconcilableTopics();
         var pendingAndOngoing = handler.requestPendingChanges(pending);
@@ -175,7 +178,7 @@ public class CruiseControlHandlerTest {
     public void replicasChangeShouldFailWhenCruiseControlReturnsErrorResponse() {
         var config = TopicOperatorConfig.buildFromMap(Map.ofEntries(
             entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-            entry(TopicOperatorConfig.NAMESPACE.key(), TEST_NAMESPACE),
+            entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
             entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
             entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
@@ -185,7 +188,7 @@ public class CruiseControlHandlerTest {
             entry(TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
         ));
 
-        var handler = new CruiseControlHandler(config, metricsHolder);
+        var handler = new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config));
 
         server.expectTopicConfigErrorResponse(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
@@ -203,7 +206,7 @@ public class CruiseControlHandlerTest {
     public void replicasChangeShouldFailWhenTheRequestTimesOut() {
         var config = TopicOperatorConfig.buildFromMap(Map.ofEntries(
             entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-            entry(TopicOperatorConfig.NAMESPACE.key(), TEST_NAMESPACE),
+            entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
             entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
             entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
@@ -213,7 +216,7 @@ public class CruiseControlHandlerTest {
             entry(TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
         ));
 
-        var handler = new CruiseControlHandler(config, metricsHolder);
+        var handler = new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config));
 
         server.expectTopicConfigRequestTimeout(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
@@ -230,7 +233,7 @@ public class CruiseControlHandlerTest {
     public void replicasChangeShouldFailWhenTheRequestIsUnauthorized() {
         var config = TopicOperatorConfig.buildFromMap(Map.ofEntries(
             entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-            entry(TopicOperatorConfig.NAMESPACE.key(), TEST_NAMESPACE),
+            entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
             entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
             entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
@@ -240,7 +243,7 @@ public class CruiseControlHandlerTest {
             entry(TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
         ));
 
-        var handler = new CruiseControlHandler(config, metricsHolder);
+        var handler = new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config));
 
         server.expectTopicConfigRequestUnauthorized(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
@@ -278,7 +281,8 @@ public class CruiseControlHandlerTest {
     }
 
     private List<ReconcilableTopic> buildPendingReconcilableTopics() {
-        int replicationFactor = 2;
+        var topicName = "my-topic";
+        var replicationFactor = 2;
         var status = new KafkaTopicStatusBuilder()
             .withConditions(List.of(new ConditionBuilder()
                 .withType("Ready")
@@ -288,8 +292,8 @@ public class CruiseControlHandlerTest {
             .build();
         var kafkaTopic = new KafkaTopicBuilder()
             .withNewMetadata()
-                .withName(TEST_NAME)
-                .withNamespace(TEST_NAMESPACE)
+                .withName(topicName)
+                .withNamespace(NAMESPACE)
                 .addToLabels("key", "VALUE")
             .endMetadata()
             .withNewSpec()
@@ -299,12 +303,13 @@ public class CruiseControlHandlerTest {
             .withStatus(status)
             .build();
         return List.of(new ReconcilableTopic(
-            new Reconciliation("test", RESOURCE_KIND, TEST_NAMESPACE, TEST_NAME), 
+            new Reconciliation("test", RESOURCE_KIND, NAMESPACE, topicName), 
             kafkaTopic, TopicOperatorUtil.topicName(kafkaTopic)));
     }
 
     private List<ReconcilableTopic> buildOngoingReconcilableTopics() {
-        int replicationFactor = 3;
+        var topicName = "my-topic";
+        var replicationFactor = 3;
         var status = new KafkaTopicStatusBuilder()
             .withConditions(List.of(new ConditionBuilder()
                 .withType("Ready")
@@ -319,8 +324,8 @@ public class CruiseControlHandlerTest {
             .build();
         var kafkaTopic = new KafkaTopicBuilder()
             .withNewMetadata()
-                .withName(TEST_NAME)
-                .withNamespace(TEST_NAMESPACE)
+                .withName(topicName)
+                .withNamespace(NAMESPACE)
                 .addToLabels("key", "VALUE")
             .endMetadata()
             .withNewSpec()
@@ -330,7 +335,7 @@ public class CruiseControlHandlerTest {
             .withStatus(status)
             .build();
         return List.of(new ReconcilableTopic(
-            new Reconciliation("test", RESOURCE_KIND, TEST_NAMESPACE, TEST_NAME), 
+            new Reconciliation("test", RESOURCE_KIND, NAMESPACE, topicName), 
             kafkaTopic, TopicOperatorUtil.topicName(kafkaTopic)));
     }
 
@@ -339,7 +344,7 @@ public class CruiseControlHandlerTest {
             // encryption and authentication disabled
             TopicOperatorConfig.buildFromMap(Map.ofEntries(
                 entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-                entry(TopicOperatorConfig.NAMESPACE.key(), TEST_NAMESPACE),
+                entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "false"),
@@ -349,7 +354,7 @@ public class CruiseControlHandlerTest {
             // encryption and authentication enabled
             TopicOperatorConfig.buildFromMap(Map.ofEntries(
                 entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-                entry(TopicOperatorConfig.NAMESPACE.key(), TEST_NAMESPACE),
+                entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
@@ -362,7 +367,7 @@ public class CruiseControlHandlerTest {
             // rack enabled
             TopicOperatorConfig.buildFromMap(Map.ofEntries(
                 entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-                entry(TopicOperatorConfig.NAMESPACE.key(), TEST_NAMESPACE),
+                entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_RACK_ENABLED.key(), "true"),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort))
@@ -371,7 +376,7 @@ public class CruiseControlHandlerTest {
             // encryption only
             TopicOperatorConfig.buildFromMap(Map.ofEntries(
                 entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-                entry(TopicOperatorConfig.NAMESPACE.key(), TEST_NAMESPACE),
+                entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
@@ -382,7 +387,7 @@ public class CruiseControlHandlerTest {
             // authentication only
             TopicOperatorConfig.buildFromMap(Map.ofEntries(
                 entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-                entry(TopicOperatorConfig.NAMESPACE.key(), TEST_NAMESPACE),
+                entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "false"),

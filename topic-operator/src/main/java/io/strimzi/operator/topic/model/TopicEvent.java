@@ -9,7 +9,7 @@ import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import java.util.Objects;
 
 /**
- * Represents a change in Kube relating to a KafkaTopic
+ * Represents a change in Kube relating to a KafkaTopic.
  */
 public sealed interface TopicEvent permits TopicEvent.TopicUpsert, TopicEvent.TopicDelete {
     /** @return Resource age in nanoseconds. */
@@ -31,10 +31,10 @@ public sealed interface TopicEvent permits TopicEvent.TopicUpsert, TopicEvent.To
     /**
      * Event representing the creation or update of a KafkaTopic in Kube.
      * Note that this may include the change which adds a metadata.deletionTimestamp.
-     * @param nanosStartOffset The {@link System#nanoTime()} at the point when this event was received
-     * @param namespace The namespace of the KafkaTopic
-     * @param name The name of the KafkaTopic
-     * @param resourceVersion The resourceVersion of the KafkaTopic
+     * @param nanosStartOffset The {@link System#nanoTime()} at the point when this event was received.
+     * @param namespace The namespace of the KafkaTopic.
+     * @param name The name of the KafkaTopic.
+     * @param resourceVersion The resourceVersion of the KafkaTopic.
      */
     record TopicUpsert(long nanosStartOffset, String namespace, String name, String resourceVersion) implements TopicEvent {
         @Override
@@ -68,8 +68,8 @@ public sealed interface TopicEvent permits TopicEvent.TopicUpsert, TopicEvent.To
     
     /**
      * Event representing the deletion of a KafkaTopic from Kube.
-     * @param nanosStartOffset The {@link System#nanoTime()} at the point when this event was received
-     * @param topic The topic that is being deleted
+     * @param nanosStartOffset The {@link System#nanoTime()} at the point when this event was received.
+     * @param topic The topic that is being deleted.
      */
     record TopicDelete(long nanosStartOffset, KafkaTopic topic) implements TopicEvent {
         @Override
