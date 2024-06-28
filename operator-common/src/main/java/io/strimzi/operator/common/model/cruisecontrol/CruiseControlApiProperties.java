@@ -16,21 +16,16 @@ public class CruiseControlApiProperties {
      * Rebalance Operator username for Cruise Control API.
      */
     public static final String REBALANCE_OPERATOR_USERNAME = "rebalance-operator";
-    
-    /**
-     * Healthcheck username for Cruise Control API.
-     */
-    public static final String HEALTHCHECK_USERNAME = "healthcheck";
 
-    /**
-     * Topic Operator username for Cruise Control API.
-     */
-    public static final String TOPIC_OPERATOR_USERNAME = "topic-operator";
-    
     /**
      * The key, within the data section of a Kubernetes Secret, for the Rebalance Operator password.
      */
     public static final String REBALANCE_OPERATOR_PASSWORD_KEY = "rebalance-operator.password";
+
+    /**
+     * Healthcheck username for Cruise Control API.
+     */
+    public static final String HEALTHCHECK_USERNAME = "healthcheck";
 
     /**
      * The key, within the data section of a Kubernetes Secret, for the healthcheck password.
@@ -41,7 +36,12 @@ public class CruiseControlApiProperties {
      * The key, within the data section of a Kubernetes Secret, for Cruise Control authentication file.
      */
     public static final String AUTH_FILE_KEY = "cruise-control.authFile";
-    
+
+    /**
+     * Topic Operator username for Cruise Control API.
+     */
+    public static final String TOPIC_OPERATOR_USERNAME = "topic-operator";
+
     /**
      * The key, within the data section of a Kubernetes Secret, for the Topic Operator username.
      */

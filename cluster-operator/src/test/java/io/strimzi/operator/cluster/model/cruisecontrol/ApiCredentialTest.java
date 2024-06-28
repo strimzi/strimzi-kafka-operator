@@ -32,6 +32,7 @@ import io.strimzi.test.annotations.ParallelTest;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import static io.strimzi.operator.common.Util.decodeFromBase64;
 import static io.strimzi.operator.common.Util.encodeToBase64;
@@ -55,6 +56,7 @@ public class ApiCredentialTest {
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
     private static final String SECRET_NAME = "secretName";
     private static final String SECRET_KEY = "secretKey";
+    private static final Pattern PATTERN =  new HashLoginServiceApiUsers().getPattern();
 
     private static final OwnerReference OWNER_REFERENCE = new OwnerReferenceBuilder()
             .withApiVersion("v1")
@@ -152,7 +154,7 @@ public class ApiCredentialTest {
     }
 
     private void assertParseThrows(String illegalConfig) {
-        assertThrows(InvalidConfigurationException.class, () -> ApiCredentials.parseEntriesFromString(illegalConfig));
+        assertThrows(InvalidConfigurationException.class, () -> ApiCredentials.parseEntriesFromString(illegalConfig, PATTERN));
     }
 
     @ParallelTest
@@ -162,7 +164,7 @@ public class ApiCredentialTest {
                         username1: password1,VIEWER
                         username2: password2,USER
                         """;
-        Map<String, ApiCredentials.UserEntry> entries =  ApiCredentials.parseEntriesFromString(config);
+        Map<String, ApiCredentials.UserEntry> entries =  ApiCredentials.parseEntriesFromString(config, PATTERN);
         assertThat(entries.get("username0").username(), is("username0"));
         assertThat(entries.get("username0").password(), is("password0"));
         assertThat(entries.get("username0").role(), is(ApiCredentials.Role.USER));
@@ -200,7 +202,7 @@ public class ApiCredentialTest {
     private void assertParseThrowsForUserManagedCreds(String illegalConfig) {
         illegalConfig = encodeToBase64(illegalConfig);
         Secret secret = createSecret(Map.of(SECRET_KEY, illegalConfig));
-        assertThrows(InvalidConfigurationException.class, () -> ApiCredentials.generateUserManagedApiCredentials(secret, SECRET_KEY));
+        assertThrows(InvalidConfigurationException.class, () -> ApiCredentials.generateUserManagedApiCredentials(secret, SECRET_KEY, PATTERN));
     }
 
     @ParallelTest
@@ -211,7 +213,7 @@ public class ApiCredentialTest {
                         username2: password2,USER
                         """);
         Secret secret = createSecret(Map.of(SECRET_KEY, config));
-        Map<String, ApiCredentials.UserEntry> entries =  ApiCredentials.generateUserManagedApiCredentials(secret, SECRET_KEY);
+        Map<String, ApiCredentials.UserEntry> entries =  ApiCredentials.generateUserManagedApiCredentials(secret, SECRET_KEY, PATTERN);
 
         assertThat(entries.get("username0").username(), is("username0"));
         assertThat(entries.get("username0").password(), is("password0"));
@@ -225,9 +227,9 @@ public class ApiCredentialTest {
         assertThat(entries.get("username2").password(), is("password2"));
         assertThat(entries.get("username2").role(), is(ApiCredentials.Role.USER));
 
-        assertThat(ApiCredentials.generateUserManagedApiCredentials(secret, null), is(Collections.emptyMap()));
-        assertThat(ApiCredentials.generateUserManagedApiCredentials(secret, "key"), is(Collections.emptyMap()));
-        assertThat(ApiCredentials.generateUserManagedApiCredentials(null, SECRET_KEY), is(Collections.emptyMap()));
+        assertThat(ApiCredentials.generateUserManagedApiCredentials(secret, null, PATTERN), is(Collections.emptyMap()));
+        assertThat(ApiCredentials.generateUserManagedApiCredentials(secret, "key", PATTERN), is(Collections.emptyMap()));
+        assertThat(ApiCredentials.generateUserManagedApiCredentials(null, SECRET_KEY, PATTERN), is(Collections.emptyMap()));
 
         assertParseThrowsForUserManagedCreds("""
                             username1: password1,USER
@@ -263,7 +265,7 @@ public class ApiCredentialTest {
         Map<String, String> map1 = Map.of("cruise-control.authFile",
                 encodeToBase64("rebalance-operator: password,ADMIN\n" +
                                      "healthcheck: password,USER"));
-        Map<String, ApiCredentials.UserEntry> entries =  ApiCredentials.generateCoManagedApiCredentials(mockPasswordGenerator, createSecret(map1));
+        Map<String, ApiCredentials.UserEntry> entries =  ApiCredentials.generateCoManagedApiCredentials(mockPasswordGenerator, createSecret(map1), PATTERN);
         assertThat(entries.get("rebalance-operator").username(), is("rebalance-operator"));
         assertThat(entries.get("rebalance-operator").password(), is("password"));
         assertThat(entries.get("rebalance-operator").role(), is(ApiCredentials.Role.ADMIN));
@@ -276,10 +278,10 @@ public class ApiCredentialTest {
         final Map<String, String> map2 = Map.of("cruise-control.authFile",
                 encodeToBase64("rebalance-operator: ,ADMIN\n" +
                                      "healthcheck: password,USER"));
-        assertThrows(InvalidConfigurationException.class, () -> ApiCredentials.generateCoManagedApiCredentials(mockPasswordGenerator, createSecret(map2)));
+        assertThrows(InvalidConfigurationException.class, () -> ApiCredentials.generateCoManagedApiCredentials(mockPasswordGenerator, createSecret(map2), PATTERN));
 
         // Test that new credentials are generated if they do not exist already
-        entries = ApiCredentials.generateCoManagedApiCredentials(mockPasswordGenerator, null);
+        entries = ApiCredentials.generateCoManagedApiCredentials(mockPasswordGenerator, null, PATTERN);
         assertThat(entries.get("rebalance-operator").username(), is(REBALANCE_OPERATOR_USERNAME));
         assertThat(entries.get("rebalance-operator").password(), is(not(emptyString())));
         assertThat(entries.get("rebalance-operator").role(), is(ApiCredentials.Role.ADMIN));
@@ -310,7 +312,7 @@ public class ApiCredentialTest {
                 userManagedApiSecret,
                 topicOperatorManagedApiSecret);
 
-        Map<String, ApiCredentials.UserEntry> userEntries =  ApiCredentials.parseEntriesFromString(decodeFromBase64(newCcApiUsersSecret.getData().get(AUTH_FILE_KEY)));
+        Map<String, ApiCredentials.UserEntry> userEntries =  ApiCredentials.parseEntriesFromString(decodeFromBase64(newCcApiUsersSecret.getData().get(AUTH_FILE_KEY)), PATTERN);
         assertThat(userEntries.get("rebalance-operator").username(), is(REBALANCE_OPERATOR_USERNAME));
         assertThat(userEntries.get("rebalance-operator").password(), is("password"));
         assertThat(userEntries.get("rebalance-operator").role(), is(ApiCredentials.Role.ADMIN));
@@ -338,7 +340,7 @@ public class ApiCredentialTest {
                 null,
                 null);
 
-        userEntries =  ApiCredentials.parseEntriesFromString(decodeFromBase64(newCcApiUsersSecret.getData().get(AUTH_FILE_KEY)));
+        userEntries =  ApiCredentials.parseEntriesFromString(decodeFromBase64(newCcApiUsersSecret.getData().get(AUTH_FILE_KEY)), PATTERN);
         assertThat(userEntries.get("rebalance-operator").username(), is(REBALANCE_OPERATOR_USERNAME));
         assertThat(userEntries.get("rebalance-operator").password(), is(not(emptyString())));
         assertThat(userEntries.get("rebalance-operator").role(), is(ApiCredentials.Role.ADMIN));
