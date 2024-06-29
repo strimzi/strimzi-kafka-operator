@@ -686,7 +686,7 @@ class LoggingChangeST extends AbstractST {
     }
 
     /**
-     * @description This test case verifies dynamic changes in KafkaConnect logging level.
+     * @description This test case verifies dynamic and non-dynamic changes in KafkaConnect logging level.
      *
      * @steps
      *  1. - Deploy Kafka cluster and KafkaConnect cluster, the latter with Log level Off.
@@ -698,16 +698,24 @@ class LoggingChangeST extends AbstractST {
      *     - log4j.properties file for given cluster has log level Info, and pods provide logs on respective level.
      *  6. - Create ConfigMap with necessary data for external logging and modify KafkaConnect custom resource to use external logging setting log level Off.
      *     - log4j.properties file for given cluster has log level Off, and pods provide no more logs.
+     *  7. - Disable the use of connector resources via annotations and verify KafkaConnect pod rolls.
+     *     - Verify that KafkaConnect deployment rolls
+     *  8. - Enable DEBUG logging via inline configuration
+     *     - Verify log lines contain DEBUG level messages after configuration changes.
+     *  9. - Check the propagation of logging level change to DEBUG under the condition where connector resources are not used.
+     *     - Validate that DEBUG logs are present and correct according to the log4j pattern.
      * @usecase
      *  - logging
      *  - logging-change
      *  - kafka-connect
+     *  - dynamic-configuration
+     *  - rolling-update
      */
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
-    void testDynamicallySetConnectLoggingLevels() {
+    void testDynamicallyAndNonDynamicSetConnectLoggingLevels() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final Pattern log4jPatternDebugLevel = Pattern.compile("^(?<date>[\\d-]+) (?<time>[\\d:,]+) DEBUG (?<message>.+)");
         final Pattern log4jPatternInfoLevel = Pattern.compile("^(?<date>[\\d-]+) (?<time>[\\d:,]+) INFO (?<message>.+)");
@@ -744,7 +752,7 @@ class LoggingChangeST extends AbstractST {
         NetworkPolicyResource.deployNetworkPolicyForResource(connect, KafkaConnectResources.componentName(testStorage.getClusterName()));
 
         final String scraperPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
-        final Map<String, String> connectPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector());
+        Map<String, String> connectPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector());
 
         LOGGER.info("Asserting if logs in connect Pods are without records in last 60 seconds");
         final Predicate<String> logsDisabled = pod -> !DEFAULT_LOG4J_PATTERN.matcher(StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), pod, "", "60s")).find();
@@ -757,7 +765,7 @@ class LoggingChangeST extends AbstractST {
         }, testStorage.getNamespaceName());
 
         // check if lines from Logs contain messages with log level DEBUG
-        final Predicate<String> hasLogLevelDebug = connectLogs -> connectLogs != null && !connectLogs.isEmpty() && log4jPatternDebugLevel.matcher(connectLogs).find();
+        Predicate<String> hasLogLevelDebug = connectLogs -> connectLogs != null && !connectLogs.isEmpty() && log4jPatternDebugLevel.matcher(connectLogs).find();
         KafkaConnectUtils.waitForConnectLogLevelChangePropagation(testStorage, connectPods, scraperPodName, hasLogLevelDebug, "DEBUG");
 
         assertThat("Connect Pod should not roll", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()), equalTo(connectPods));
@@ -822,6 +830,38 @@ class LoggingChangeST extends AbstractST {
         KafkaConnectUtils.waitForConnectLogLevelChangePropagation(testStorage, connectPods, scraperPodName, hasLogLevelOff, "OFF");
 
         assertThat("Connect Pod should not roll", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()), equalTo(connectPods));
+
+        // ##### 2nd phase - non-dynamic update of root logger with RollingUpdate  ####
+        connectPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector());
+        final String connectDepName = KafkaConnectResources.componentName(testStorage.getClusterName());
+
+        // set use connector resource to false
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(), kC -> {
+            final Map<String, String> annotations = kC.getMetadata().getAnnotations();
+
+            annotations.put(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "false");
+
+            kC.getMetadata().setAnnotations(annotations);
+        }, testStorage.getNamespaceName());
+
+        // KafkaConnect should roll because of change in annotation
+        StUtils.waitTillStrimziPodSetOrDeploymentRolled(testStorage.getNamespaceName(), connectDepName, connectReplicas, connectPods, testStorage.getKafkaConnectSelector());
+
+        connectPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector());
+
+        LOGGER.info("Changing rootLogger level from INFO to DEBUG with inline logging");
+        StUtils.waitUntilSupplierIsSatisfied("Changing rootLogger level from INFO to DEBUG with inline logging",
+            () -> {
+                KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(),
+                    kC -> kC.getSpec().setLogging(inlineLoggingDebugLevel), testStorage.getNamespaceName());
+                return true;
+            });
+        // KafkaConnect should roll because of rootLogger level change with STRIMZI_IO_USE_CONNECTOR_RESOURCES set to `false`
+        StUtils.waitTillStrimziPodSetOrDeploymentRolled(testStorage.getNamespaceName(), connectDepName, connectReplicas, connectPods, testStorage.getKafkaConnectSelector());
+
+        // check if lines from Logs contain messages with log level DEBUG
+        hasLogLevelDebug = connectLogs -> connectLogs != null && !connectLogs.isEmpty() && log4jPatternDebugLevel.matcher(connectLogs).find();
+        KafkaConnectUtils.waitForConnectLogLevelChangePropagation(testStorage, connectPods, scraperPodName, hasLogLevelDebug, "DEBUG");
     }
 
     @ParallelNamespaceTest
