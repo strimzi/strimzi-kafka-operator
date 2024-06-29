@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.model.common.Condition;
-import io.strimzi.api.kafka.model.kafka.JbodStorage;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaList;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
@@ -152,7 +151,6 @@ public class KafkaRebalanceAssemblyOperator
     private final CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator;
     private final SecretOperator secretOperations;
     private final LabelSelector kafkaSelector;
-    private boolean usingJbodStorage;
     private final ConfigMapOperator configMapOperator;
     private int cruiseControlPort;
 
@@ -379,13 +377,6 @@ public class KafkaRebalanceAssemblyOperator
             status.setConditions(new ArrayList<>(unknownAndDeprecatedConditions));
 
             return Future.succeededFuture(updateStatus(kafkaRebalance, status, null));
-        }
-
-        if (kafkaRebalance.getSpec().isRebalanceDisk() && !usingJbodStorage) {
-            String error = "Cannot set rebalanceDisk=true for Kafka clusters with a non-JBOD storage config. " +
-                "Intra-broker balancing only applies to Kafka deployments that use JBOD storage with multiple disks.";
-            LOGGER.errorCr(reconciliation, "Status updated to [NotReady] due to error: {}", new InvalidResourceException(error).getMessage());
-            return Future.succeededFuture(updateStatus(kafkaRebalance, new KafkaRebalanceStatus(), new InvalidResourceException(error)));
         }
 
         Promise<KafkaRebalanceStatus> reconcilePromise = Promise.promise();
@@ -1094,10 +1085,6 @@ public class KafkaRebalanceAssemblyOperator
                         KafkaRebalanceStatus status = new KafkaRebalanceStatus();
                         return Future.succeededFuture(updateStatus(kafkaRebalance, status,
                                 new InvalidResourceException(CruiseControlIssues.cruiseControlDisabled.getMessage())));
-                    }
-
-                    if (kafka.getSpec().getKafka().getStorage() instanceof JbodStorage) {
-                        usingJbodStorage = true;
                     }
 
                     String ccSecretName =  CruiseControlResources.secretName(clusterName);
