@@ -111,7 +111,7 @@
         <maven.checkstyle.version>3.3.0</maven.checkstyle.version>
         <maven.enforcer.version>3.0.0-M2</maven.enforcer.version>
         <maven.jar.version>3.1.0</maven.jar.version>
-        <sonatype.nexus.staging.version>1.6.13</sonatype.nexus.staging.version>
+        <sonatype.nexus.staging.version>1.7.0</sonatype.nexus.staging.version>
         <maven.spotbugs.version>4.7.3.4</maven.spotbugs.version>
         <maven.jacoco.version>0.8.12</maven.jacoco.version>
         <maven.exec.version>3.1.0</maven.exec.version>
