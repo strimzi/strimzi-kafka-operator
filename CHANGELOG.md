@@ -2,6 +2,7 @@
 
 ## 0.42.0
 
+* Add support for Kafka 3.7.1
 * The `UseKRaft` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.
   To use KRaft (ZooKeeper-less Apache Kafka), you still need to use the `strimzi.io/kraft: enabled` annotation on the `Kafka` custom resources or migrate from an existing ZooKeeper-based cluster.
 * Update the base image used by Strimzi containers from UBI8 to UBI9
