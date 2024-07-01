@@ -1318,6 +1318,28 @@ public class KafkaMirrorMakerClusterTest {
     }
 
     @ParallelTest
+    public void testGenerateDeploymentWithProducerOAuthWithAccessTokenLocation() {
+        KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
+                .editSpec()
+                .editProducer()
+                .withAuthentication(
+                        new KafkaClientAuthenticationOAuthBuilder()
+                                .withAccessTokenLocation("/var/run/secrets/kubernetes.io/serviceaccount/token")
+                                .build())
+                .endProducer()
+                .endSpec()
+                .build();
+
+        KafkaMirrorMakerCluster kc = KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
+        Deployment dep = kc.generateDeployment(emptyMap(), true, null, null);
+        Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
+
+        assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_SASL_MECHANISM_PRODUCER.equals(var.getName())).findFirst().orElseThrow().getValue(), is("oauth"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OAUTH_CONFIG_PRODUCER.equals(var.getName())).findFirst().orElseThrow().getValue().trim(),
+                is(String.format("%s=\"%s\"", ClientConfig.OAUTH_ACCESS_TOKEN_LOCATION, "/var/run/secrets/kubernetes.io/serviceaccount/token")));
+    }
+
+    @ParallelTest
     public void testGenerateDeploymentWithProducerOAuthWithRefreshToken() {
         KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
                 .editSpec()
