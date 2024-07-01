@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 0.43.0
+
+
 ## 0.42.0
 
 * Add support for Kafka 3.7.1
