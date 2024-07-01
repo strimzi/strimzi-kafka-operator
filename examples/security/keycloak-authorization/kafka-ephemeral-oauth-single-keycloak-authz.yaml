@@ -4,7 +4,7 @@ metadata:
   name: my-cluster
 spec:
   kafka:
-    version: 3.7.0
+    version: 3.7.1
     replicas: 1
     listeners:
       - name: tls
@@ -13,8 +13,8 @@ spec:
         tls: true
         authentication:
           type: oauth
-          validIssuerUri: https://${SSO_HOST}/auth/realms/kafka-authz
-          jwksEndpointUri: https://${SSO_HOST}/auth/realms/kafka-authz/protocol/openid-connect/certs
+          validIssuerUri: https://${SSO_HOST}/realms/kafka-authz
+          jwksEndpointUri: https://${SSO_HOST}/realms/kafka-authz/protocol/openid-connect/certs
           userNameClaim: preferred_username
           maxSecondsWithoutReauthentication: 3600
           tlsTrustedCertificates:
@@ -23,7 +23,7 @@ spec:
     authorization:
       type: keycloak
       clientId: kafka
-      tokenEndpointUri: https://${SSO_HOST}/auth/realms/kafka-authz/protocol/openid-connect/token
+      tokenEndpointUri: https://${SSO_HOST}/realms/kafka-authz/protocol/openid-connect/token
       tlsTrustedCertificates:
         - secretName: oauth-server-cert
           certificate: sso.crt

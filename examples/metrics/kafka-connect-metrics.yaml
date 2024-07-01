@@ -5,7 +5,7 @@ metadata:
   labels:
     app: my-connect-cluster
 spec:
-  version: 3.7.0
+  version: 3.7.1
   replicas: 1
   bootstrapServers: my-cluster-kafka-bootstrap:9092
   metricsConfig:
@@ -47,10 +47,18 @@ data:
         clientId: "$2"
         $3: "$4"
       help: "Kafka $1 JMX metric info version and commit-id"
-      type: GAUGE
+      type: UNTYPED
 
     #kafka.consumer:type=consumer-fetch-manager-metrics,client-id="{clientid}",topic="{topic}"", partition="{partition}"
-    - pattern: kafka.consumer<type=consumer-fetch-manager-metrics, client-id=(.+), topic=(.+), partition=(.+)><>(.+-total|compression-rate|.+-avg|.+-replica|.+-lag|.+-lead)
+    - pattern: kafka.consumer<type=consumer-fetch-manager-metrics, client-id=(.+), topic=(.+), partition=(.+)><>(.+-total)
+      name: kafka_consumer_fetch_manager_$4
+      labels:
+        clientId: "$1"
+        topic: "$2"
+        partition: "$3"
+      help: "Kafka Consumer JMX metric type consumer-fetch-manager-metrics"
+      type: COUNTER
+    - pattern: kafka.consumer<type=consumer-fetch-manager-metrics, client-id=(.+), topic=(.+), partition=(.+)><>(compression-rate|.+-avg|.+-replica|.+-lag|.+-lead)
       name: kafka_consumer_fetch_manager_$4
       labels:
         clientId: "$1"
@@ -60,7 +68,14 @@ data:
       type: GAUGE
 
     #kafka.producer:type=producer-topic-metrics,client-id="{clientid}",topic="{topic}"
-    - pattern: kafka.producer<type=producer-topic-metrics, client-id=(.+), topic=(.+)><>(.+-total|compression-rate|.+-avg|.+rate)
+    - pattern: kafka.producer<type=producer-topic-metrics, client-id=(.+), topic=(.+)><>(.+-total)
+      name: kafka_producer_topic_$3
+      labels:
+        clientId: "$1"
+        topic: "$2"
+      help: "Kafka Producer JMX metric type producer-topic-metrics"
+      type: COUNTER
+    - pattern: kafka.producer<type=producer-topic-metrics, client-id=(.+), topic=(.+)><>(compression-rate|.+-avg|.+rate)
       name: kafka_producer_topic_$3
       labels:
         clientId: "$1"
@@ -70,7 +85,14 @@ data:
 
     #kafka.connect:type=connect-node-metrics,client-id="{clientid}",node-id="{nodeid}"
     #kafka.consumer:type=consumer-node-metrics,client-id=consumer-1,node-id="{nodeid}"
-    - pattern: kafka.(.+)<type=(.+)-metrics, client-id=(.+), node-id=(.+)><>(.+-total|.+-avg|.+-rate)
+    - pattern: kafka.(.+)<type=(.+)-metrics, client-id=(.+), node-id=(.+)><>(.+-total)
+      name: kafka_$2_$5
+      labels:
+        clientId: "$3"
+        nodeId: "$4"
+      help: "Kafka $1 JMX metric type $2"
+      type: COUNTER
+    - pattern: kafka.(.+)<type=(.+)-metrics, client-id=(.+), node-id=(.+)><>(.+-avg|.+-rate)
       name: kafka_$2_$5
       labels:
         clientId: "$3"
@@ -82,7 +104,13 @@ data:
     #kafka.consumer:type=consumer-fetch-manager-metrics,client-id="{clientid}"
     #kafka.consumer:type=consumer-coordinator-metrics,client-id="{clientid}"
     #kafka.consumer:type=consumer-metrics,client-id="{clientid}"
-    - pattern: kafka.(.+)<type=(.+)-metrics, client-id=(.*)><>(.+-total|.+-avg|.+-bytes|.+-count|.+-ratio|.+-age|.+-flight|.+-threads|.+-connectors|.+-tasks|.+-ago)
+    - pattern: kafka.(.+)<type=(.+)-metrics, client-id=(.*)><>(.+-total)
+      name: kafka_$2_$4
+      labels:
+        clientId: "$3"
+      help: "Kafka $1 JMX metric type $2"
+      type: COUNTER
+    - pattern: kafka.(.+)<type=(.+)-metrics, client-id=(.*)><>(.+-avg|.+-bytes|.+-count|.+-ratio|.+-age|.+-flight|.+-threads|.+-connectors|.+-tasks|.+-ago)
       name: kafka_$2_$4
       labels:
         clientId: "$3"
@@ -114,7 +142,14 @@ data:
     #kafka.connect:type=source-task-metrics,connector="{connector}",task="{task}"
     #kafka.connect:type=sink-task-metrics,connector="{connector}",task="{task}"
     #kafka.connect:type=connector-task-metrics,connector="{connector}",task="{task}"
-    - pattern: kafka.connect<type=(.+)-metrics, connector=(.+), task=(.+)><>(.+-total|.+-count|.+-ms|.+-ratio|.+-seq-no|.+-rate|.+-max|.+-avg|.+-failures|.+-requests|.+-timestamp|.+-logged|.+-errors|.+-retries|.+-skipped)
+    - pattern: kafka.connect<type=(.+)-metrics, connector=(.+), task=(.+)><>(.+-total)
+      name: kafka_connect_$1_$4
+      labels:
+        connector: "$2"
+        task: "$3"
+      help: "Kafka Connect JMX metric type $1"
+      type: COUNTER
+    - pattern: kafka.connect<type=(.+)-metrics, connector=(.+), task=(.+)><>(.+-count|.+-ms|.+-ratio|.+-seq-no|.+-rate|.+-max|.+-avg|.+-failures|.+-requests|.+-timestamp|.+-logged|.+-errors|.+-retries|.+-skipped)
       name: kafka_connect_$1_$4
       labels:
         connector: "$2"
@@ -131,6 +166,10 @@ data:
       type: GAUGE
 
     #kafka.connect:type=connect-worker-metrics
+    - pattern: kafka.connect<type=connect-worker-metrics><>([a-z-]+-total)
+      name: kafka_connect_worker_$1
+      help: "Kafka Connect JMX metric worker"
+      type: COUNTER
     - pattern: kafka.connect<type=connect-worker-metrics><>([a-z-]+)
       name: kafka_connect_worker_$1
       help: "Kafka Connect JMX metric worker"
@@ -146,6 +185,10 @@ data:
       type: UNTYPED
 
     #kafka.connect:type=connect-worker-rebalance-metrics
+    - pattern: kafka.connect<type=connect-worker-rebalance-metrics><>([a-z-]+-total)
+      name: kafka_connect_worker_rebalance_$1
+      help: "Kafka Connect JMX metric rebalance information"
+      type: COUNTER
     - pattern: kafka.connect<type=connect-worker-rebalance-metrics><>([a-z-]+)
       name: kafka_connect_worker_rebalance_$1
       help: "Kafka Connect JMX metric rebalance information"

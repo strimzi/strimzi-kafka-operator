@@ -3,7 +3,7 @@ kind: KafkaMirrorMaker
 metadata:
   name: my-mirror-maker
 spec:
-  version: 3.7.0
+  version: 3.7.1
   replicas: 1
   consumer:
     bootstrapServers: cluster-a-kafka-bootstrap:9093 # Source cluster
@@ -11,11 +11,11 @@ spec:
     tls:
       trustedCertificates:
         - secretName: cluster-a-cluster-ca-cert
-          certificate: ca.crt
+          pattern: "*.crt"
   producer:
     bootstrapServers: cluster-b-kafka-bootstrap:9093 # Target cluster
     tls:
       trustedCertificates:
         - secretName: cluster-b-cluster-ca-cert
-          certificate: ca.crt
+          pattern: "*.crt"
   include: ".*"

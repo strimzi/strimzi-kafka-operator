@@ -245,10 +245,21 @@ spec:
                                     description: The name of the Secret containing the certificate.
                                   certificate:
                                     type: string
-                                    description: The name of the file certificate in the Secret.
+                                    description: The name of the file certificate in the secret.
+                                  pattern:
+                                    type: string
+                                    description: "Pattern for the certificate files in the secret. Use the link:https://en.wikipedia.org/wiki/Glob_(programming)[_glob syntax_] for the pattern. All files in the secret that match the pattern are used."
+                                oneOf:
+                                - properties:
+                                    certificate: {}
+                                  required:
+                                  - certificate
+                                - properties:
+                                    pattern: {}
+                                  required:
+                                  - pattern
                                 required:
                                 - secretName
-                                - certificate
                               description: Trusted certificates for TLS connection to the OAuth server.
                             tokenEndpointUri:
                               type: string
@@ -282,19 +293,19 @@ spec:
                             brokerCertChainAndKey:
                               type: object
                               properties:
-                                key:
-                                  type: string
-                                  description: The name of the private key in the Secret.
                                 secretName:
                                   type: string
                                   description: The name of the Secret containing the certificate.
                                 certificate:
                                   type: string
                                   description: The name of the file certificate in the Secret.
+                                key:
+                                  type: string
+                                  description: The name of the private key in the Secret.
                               required:
-                              - key
                               - secretName
                               - certificate
+                              - key
                               description: Reference to the `Secret` which holds the certificate and private key pair which will be used for this listener. The certificate can optionally contain the whole chain. This field can be used only with listeners with enabled TLS encryption.
                             class:
                               type: string
@@ -434,6 +445,9 @@ spec:
                                 * `Hostname`
 
                                 This field is used to select the preferred address type, which is checked first. If no address is found for this address type, the other types are checked in the default order. This field can only be used with `nodeport` type listener.
+                            publishNotReadyAddresses:
+                              type: boolean
+                              description: Configures whether the service endpoints are considered "ready" even if the Pods themselves are not. Defaults to `false`. This field can not be used with `internal` type listeners.
                           description: Additional listener configuration.
                         networkPolicyPeers:
                           type: array
@@ -499,7 +513,7 @@ spec:
                   config:
                     x-kubernetes-preserve-unknown-fields: true
                     type: object
-                    description: "Kafka broker config properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., log.dir, zookeeper.connect, zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers, node.id, process.roles, controller., metadata.log.dir, zookeeper.metadata.migration.enable (with the exception of: zookeeper.connection.timeout.ms, sasl.server.max.receive.size, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, ssl.secure.random.implementation, cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms, cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms, cruise.control.metrics.topic.min.insync.replicas, controller.quorum.election.backoff.max.ms, controller.quorum.election.timeout.ms, controller.quorum.fetch.timeout.ms)."
+                    description: "Kafka broker config properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., log.dir, zookeeper.connect, zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers, node.id, process.roles, controller., metadata.log.dir, zookeeper.metadata.migration.enable, client.quota.callback.static.kafka.admin., client.quota.callback.static.produce, client.quota.callback.static.fetch, client.quota.callback.static.storage.per.volume.limit.min.available., client.quota.callback.static.excluded.principal.name.list (with the exception of: zookeeper.connection.timeout.ms, sasl.server.max.receive.size, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, ssl.secure.random.implementation, cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms, cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms, cruise.control.metrics.topic.min.insync.replicas, controller.quorum.election.backoff.max.ms, controller.quorum.election.timeout.ms, controller.quorum.fetch.timeout.ms)."
                   storage:
                     type: object
                     properties:
@@ -687,10 +701,21 @@ spec:
                               description: The name of the Secret containing the certificate.
                             certificate:
                               type: string
-                              description: The name of the file certificate in the Secret.
+                              description: The name of the file certificate in the secret.
+                            pattern:
+                              type: string
+                              description: "Pattern for the certificate files in the secret. Use the link:https://en.wikipedia.org/wiki/Glob_(programming)[_glob syntax_] for the pattern. All files in the secret that match the pattern are used."
+                          oneOf:
+                          - properties:
+                              certificate: {}
+                            required:
+                            - certificate
+                          - properties:
+                              pattern: {}
+                            required:
+                            - pattern
                           required:
                           - secretName
-                          - certificate
                         description: Trusted certificates for TLS connection to the OAuth server.
                       tokenEndpointUri:
                         type: string
@@ -957,6 +982,13 @@ spec:
                           securityContext:
                             type: object
                             properties:
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               fsGroup:
                                 type: integer
                               fsGroupChangePolicy:
@@ -1661,6 +1693,13 @@ spec:
                             properties:
                               allowPrivilegeEscalation:
                                 type: boolean
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               capabilities:
                                 type: object
                                 properties:
@@ -1735,6 +1774,13 @@ spec:
                             properties:
                               allowPrivilegeEscalation:
                                 type: boolean
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               capabilities:
                                 type: object
                                 properties:
@@ -1906,6 +1952,48 @@ spec:
                     required:
                     - type
                     description: Configure the tiered storage feature for Kafka brokers.
+                  quotas:
+                    type: object
+                    properties:
+                      consumerByteRate:
+                        type: integer
+                        minimum: 0
+                        description: "A per-broker byte-rate quota for clients consuming from a broker, independent of their number. If clients consume at maximum speed, the quota is shared equally between all non-excluded consumers. Otherwise, the quota is divided based on each client's consumption rate."
+                      controllerMutationRate:
+                        type: number
+                        minimum: 0
+                        description: "The default client quota on the rate at which mutations are accepted per second for create topic requests, create partition requests, and delete topic requests, defined for each broker. The mutations rate is measured by the number of partitions created or deleted. Applied on a per-broker basis."
+                      excludedPrincipals:
+                        type: array
+                        items:
+                          type: string
+                        description: "List of principals that are excluded from the quota. The principals have to be prefixed with `User:`, for example `User:my-user;User:CN=my-other-user`."
+                      minAvailableBytesPerVolume:
+                        type: integer
+                        minimum: 0
+                        description: Stop message production if the available size (in bytes) of the storage is lower than or equal to this specified value. This condition is mutually exclusive with `minAvailableRatioPerVolume`.
+                      minAvailableRatioPerVolume:
+                        type: number
+                        minimum: 0
+                        maximum: 1
+                        description: Stop message production if the percentage of available storage space falls below or equals the specified ratio (set as a decimal representing a percentage). This condition is mutually exclusive with `minAvailableBytesPerVolume`.
+                      producerByteRate:
+                        type: integer
+                        minimum: 0
+                        description: "A per-broker byte-rate quota for clients producing to a broker, independent of their number. If clients produce at maximum speed, the quota is shared equally between all non-excluded producers. Otherwise, the quota is divided based on each client's production rate."
+                      requestPercentage:
+                        type: integer
+                        minimum: 0
+                        description: The default client quota limits the maximum CPU utilization of each client as a percentage of the network and I/O threads of each broker. Applied on a per-broker basis.
+                      type:
+                        type: string
+                        enum:
+                        - kafka
+                        - strimzi
+                        description: "Quotas plugin type. Currently, the supported types are `kafka` and `strimzi`. `kafka` quotas type uses Kafka's built-in quotas plugin. `strimzi` quotas type uses Strimzi quotas plugin."
+                    required:
+                    - type
+                    description: "Quotas plugin configuration for Kafka brokers allows setting quotas for disk usage, produce/fetch rates, and more. Supported plugin types include `kafka` (default) and `strimzi`. If not specified, the default `kafka` quotas plugin is used."
                 required:
                 - listeners
                 description: Configuration of the Kafka cluster.
@@ -2226,6 +2314,13 @@ spec:
                           securityContext:
                             type: object
                             properties:
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               fsGroup:
                                 type: integer
                               fsGroupChangePolicy:
@@ -2822,6 +2917,13 @@ spec:
                             properties:
                               allowPrivilegeEscalation:
                                 type: boolean
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               capabilities:
                                 type: object
                                 properties:
@@ -2932,7 +3034,11 @@ spec:
                       reconciliationIntervalSeconds:
                         type: integer
                         minimum: 0
-                        description: Interval between periodic reconciliations.
+                        description: Interval between periodic reconciliations in seconds. Ignored if reconciliationIntervalMs is set.
+                      reconciliationIntervalMs:
+                        type: integer
+                        minimum: 0
+                        description: Interval between periodic reconciliations in milliseconds.
                       zookeeperSessionTimeoutSeconds:
                         type: integer
                         minimum: 0
@@ -3116,7 +3222,11 @@ spec:
                       reconciliationIntervalSeconds:
                         type: integer
                         minimum: 0
-                        description: Interval between periodic reconciliations.
+                        description: Interval between periodic reconciliations in seconds. Ignored if reconciliationIntervalMs is set.
+                      reconciliationIntervalMs:
+                        type: integer
+                        minimum: 0
+                        description: Interval between periodic reconciliations in milliseconds.
                       zookeeperSessionTimeoutSeconds:
                         type: integer
                         minimum: 0
@@ -3412,6 +3522,13 @@ spec:
                           securityContext:
                             type: object
                             properties:
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               fsGroup:
                                 type: integer
                               fsGroupChangePolicy:
@@ -3902,6 +4019,13 @@ spec:
                             properties:
                               allowPrivilegeEscalation:
                                 type: boolean
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               capabilities:
                                 type: object
                                 properties:
@@ -3976,6 +4100,13 @@ spec:
                             properties:
                               allowPrivilegeEscalation:
                                 type: boolean
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               capabilities:
                                 type: object
                                 properties:
@@ -4050,6 +4181,13 @@ spec:
                             properties:
                               allowPrivilegeEscalation:
                                 type: boolean
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               capabilities:
                                 type: object
                                 properties:
@@ -4519,6 +4657,13 @@ spec:
                           securityContext:
                             type: object
                             properties:
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               fsGroup:
                                 type: integer
                               fsGroupChangePolicy:
@@ -5064,6 +5209,13 @@ spec:
                             properties:
                               allowPrivilegeEscalation:
                                 type: boolean
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               capabilities:
                                 type: object
                                 properties:
@@ -5138,6 +5290,13 @@ spec:
                             properties:
                               allowPrivilegeEscalation:
                                 type: boolean
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               capabilities:
                                 type: object
                                 properties:
@@ -5435,6 +5594,13 @@ spec:
                           securityContext:
                             type: object
                             properties:
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               fsGroup:
                                 type: integer
                               fsGroupChangePolicy:
@@ -5925,6 +6091,13 @@ spec:
                             properties:
                               allowPrivilegeEscalation:
                                 type: boolean
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               capabilities:
                                 type: object
                                 properties:
@@ -6159,6 +6332,13 @@ spec:
                           securityContext:
                             type: object
                             properties:
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               fsGroup:
                                 type: integer
                               fsGroupChangePolicy:
@@ -6667,6 +6847,13 @@ spec:
                             properties:
                               allowPrivilegeEscalation:
                                 type: boolean
+                              appArmorProfile:
+                                type: object
+                                properties:
+                                  localhostProfile:
+                                    type: string
+                                  type:
+                                    type: string
                               capabilities:
                                 type: object
                                 properties:

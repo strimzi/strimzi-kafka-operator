@@ -96,7 +96,7 @@ the documentation for more details.
 | `watchAnyNamespace`                         | Watch the whole Kubernetes cluster (all namespaces)                             | `false`                      |
 | `defaultImageRegistry`                      | Default image registry for all the images                                       | `quay.io`                    |
 | `defaultImageRepository`                    | Default image registry for all the images                                       | `strimzi`                    |
-| `defaultImageTag`                           | Default image tag for all the images except Kafka Bridge                        | `0.41.0`                     |
+| `defaultImageTag`                           | Default image tag for all the images except Kafka Bridge                        | `0.42.0`                     |
 | `image.registry`                            | Override default Cluster Operator image registry                                | `nil`                        |
 | `image.repository`                          | Override default Cluster Operator image repository                              | `nil`                        |
 | `image.name`                                | Cluster Operator image name                                                     | `cluster-operator`           |
@@ -160,7 +160,7 @@ the documentation for more details.
 | `kafkaBridge.image.registry`                | Override default Kafka Bridge image registry                                    | `quay.io`                    |
 | `kafkaBridge.image.repository`              | Override default Kafka Bridge image repository                                  | `strimzi`                    |
 | `kafkaBridge.image.name`                    | Kafka Bridge image name                                                         | `kafka-bridge`               |
-| `kafkaBridge.image.tag`                     | Override default Kafka Bridge image tag                                         | `0.28.0`                     |
+| `kafkaBridge.image.tag`                     | Override default Kafka Bridge image tag                                         | `0.29.0`                     |
 | `kafkaBridge.image.digest`                  | Override Kafka Bridge image tag with digest                                     | `nil`                        |
 | `kafkaExporter.image.registry`              | Override default Kafka Exporter image registry                                  | `nil`                        |
 | `kafkaExporter.image.repository`            | Override default Kafka Exporter image repository                                | `nil`                        |
@@ -179,9 +179,9 @@ the documentation for more details.
 | `kanikoExecutor.image.name`                 | Kaniko Executor image name                                                      | `kaniko-executor`            |
 | `kanikoExecutor.image.tag`                  | Override default Kaniko Executor image tag                                      | `nil`                        |
 | `kanikoExecutor.image.digest`               | Override Kaniko Executor image tag with digest                                  | `nil`                        |
-| `resources.limits.memory`                   | Memory constraint for limits                                                    | `256Mi`                      |
+| `resources.limits.memory`                   | Memory constraint for limits                                                    | `384Mi`                      |
 | `resources.limits.cpu`                      | CPU constraint for limits                                                       | `1000m`                      |
-| `resources.requests.memory`                 | Memory constraint for requests                                                  | `256Mi`                      |
+| `resources.requests.memory`                 | Memory constraint for requests                                                  | `384Mi`                      |
 | `livenessProbe.initialDelaySeconds`         | Liveness probe initial delay in seconds                                         | 10                           |
 | `livenessProbe.periodSeconds`               | Liveness probe period in seconds                                                | 30                           |
 | `readinessProbe.initialDelaySeconds`        | Readiness probe initial delay in seconds                                        | 10                           |
