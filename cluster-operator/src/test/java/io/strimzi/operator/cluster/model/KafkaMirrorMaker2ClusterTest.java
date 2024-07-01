@@ -15,6 +15,8 @@ import io.fabric8.kubernetes.api.model.HostAlias;
 import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSource;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -73,17 +75,6 @@ import io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
-import src.main.java.io.strimzi.operator.cluster.model.AbstractModel;
-import src.main.java.io.strimzi.operator.cluster.model.ImagePullPolicy;
-import src.main.java.io.strimzi.operator.cluster.model.JvmOptionUtils;
-import src.main.java.io.strimzi.operator.cluster.model.KafkaConnectCluster;
-import src.main.java.io.strimzi.operator.cluster.model.KafkaMirrorMaker2Cluster;
-import src.main.java.io.strimzi.operator.cluster.model.KafkaVersion;
-import src.main.java.io.strimzi.operator.cluster.model.MetricsAndLogging;
-import src.main.java.io.strimzi.operator.cluster.model.PodRevision;
-import src.main.java.io.strimzi.operator.cluster.model.PodSetUtils;
-import src.main.java.io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
-import src.main.java.io.strimzi.operator.cluster.model.VolumeUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -107,7 +98,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class KafkaMirrorMaker2ClusterTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
-    
     private final String namespace = "test";
     private final String clusterName = "foo";
     private final int replicas = 2;
@@ -502,7 +492,7 @@ public class KafkaMirrorMaker2ClusterTest {
                         .withSecretName("user1-secret")
                         .withPassword("password")
                     .endPasswordSecret()
-                .endKafkaClientAuthenticationScramSha512()  
+                .endKafkaClientAuthenticationScramSha512()
                 .build();
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
                 .editSpec()
@@ -932,33 +922,32 @@ public class KafkaMirrorMaker2ClusterTest {
                 .withHostnames("my-host-3")
                 .withIp("192.168.1.87")
                 .build();
-        
+
         ConfigMapVolumeSource configMap = new ConfigMapVolumeSourceBuilder()
                 .withName("configMap1")
                 .build();
-        
+
         PersistentVolumeClaimVolumeSource pvc = new PersistentVolumeClaimVolumeSourceBuilder()
                 .withClaimName("pvc-name")
                 .withReadOnly(true)
-                .withNewNodePublishSecretRef("example-secret-provider-class")
                 .build();
-        
+
         AdditionalVolume additionalVolumeConfigMap = new AdditionalVolumeBuilder()
                 .withName("config-map-volume-name")
                 .withConfigMap(configMap)
                 .build();
-        
+
         AdditionalVolume additionalVolumePvc = new AdditionalVolumeBuilder()
                 .withName("pvc-volume-name")
-                .withPersistentVolumeClaim(pvc)
+                .withPvc(pvc)
                 .build();
-        
+
         VolumeMount additionalVolumeMountConfigMap = new VolumeMountBuilder()
                 .withName("config-map-volume-name")
-                .withMountPath("/abc")
+                .withMountPath("/mnt/myconfigmap")
                 .withSubPath("def")
                 .build();
-        
+
         VolumeMount additionalVolumeMountPvc = new VolumeMountBuilder()
                 .withName("pvc-volume-name")
                 .withMountPath("/mnt/mypvc")
@@ -1037,12 +1026,11 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(pod.getSpec().getEnableServiceLinks(), is(false));
             assertThat(getVolume(pod, "strimzi-tmp").getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
             assertThat(getVolume(pod, additionalVolumeMountConfigMap.getName()).getConfigMap(), is(configMap));
-            assertThat(getVolume(pod, additionalVolumeMountPvc.getName()).getPvc(), is(pvc));
+            assertThat(getVolume(pod, additionalVolumeMountPvc.getName()).getPersistentVolumeClaim(), is(pvc));
             assertThat(getVolumeMount(pod.getSpec().getContainers().get(0), additionalVolumeMountConfigMap.getName()), is(additionalVolumeMountConfigMap));
             assertThat(getVolumeMount(pod.getSpec().getInitContainers().get(0), additionalVolumeMountPvc.getName()), is(additionalVolumeMountPvc));
 
         });
-
         // Check Service
         Service svc = kmm2.generateService();
         assertThat(svc.getMetadata().getLabels().entrySet().containsAll(svcLabels.entrySet()), is(true));
@@ -1065,11 +1053,11 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
         assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnots.entrySet()), is(true));
     }
-    
+
     private static Volume getVolume(Pod pod, String volumeName) {
         return pod.getSpec().getVolumes().stream().filter(volume -> volumeName.equals(volume.getName())).iterator().next();
     }
-    
+
     private static VolumeMount getVolumeMount(Container container, String volumeName) {
         return container.getVolumeMounts().stream().filter(volumeMount -> volumeName.equals(volumeMount.getName())).iterator().next();
     }
@@ -1679,7 +1667,7 @@ public class KafkaMirrorMaker2ClusterTest {
                                 .withSecretName("my-token-secret")
                                 .withKey("my-token-key")
                             .endAccessToken()
-                            .build())  
+                            .build())
                 .build();
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
                 .editSpec()
@@ -1755,7 +1743,7 @@ public class KafkaMirrorMaker2ClusterTest {
                 .build();
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
                 .editSpec()
-                    .withClusters(targetClusterWithOAuthWithClientSecret)                
+                .withClusters(targetClusterWithOAuthWithClientSecret)
                 .endSpec()
                 .build();
 
@@ -1825,7 +1813,7 @@ public class KafkaMirrorMaker2ClusterTest {
                     .build();
             KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
                     .editSpec()
-                        .withClusters(targetClusterWithOAuthWithMissingClientSecret)  
+                    .withClusters(targetClusterWithOAuthWithMissingClientSecret)
                     .endSpec()
                     .build();
 
@@ -1848,7 +1836,7 @@ public class KafkaMirrorMaker2ClusterTest {
                     .build();
             KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
                     .editSpec()
-                        .withClusters(targetClusterWithOAuthWithMissingUri)                      
+                    .withClusters(targetClusterWithOAuthWithMissingUri)
                     .endSpec()
                     .build();
 
@@ -1888,7 +1876,7 @@ public class KafkaMirrorMaker2ClusterTest {
                 .build();
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
                 .editSpec()
-                    .withClusters(targetClusterWithOAuthWithTls)                
+                .withClusters(targetClusterWithOAuthWithTls)
                 .endSpec()
                 .build();
 
