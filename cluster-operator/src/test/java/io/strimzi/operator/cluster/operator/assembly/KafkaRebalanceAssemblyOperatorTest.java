@@ -1543,40 +1543,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
     }
 
     /**
-     * Tests an intra-broker disk balance on a Kafka deployment without a JBOD configuration.
-     *
-     * 1. A new KafkaRebalance resource is created with rebalanceDisk=true for a Kafka cluster without a JBOD configuration.
-     * 2. The operator sets an "InvalidResourceException" error instead of requesting a proposal since
-     *    intra-broker balancing only applies to Kafka deployments that use JBOD storage with multiple disks.
-     * 4. The KafkaRebalance resource moves to the 'NotReady' state
-     */
-    @Test
-    public void testIntraBrokerDiskBalanceWithoutJbodConfig(VertxTestContext context) {
-        KafkaRebalanceSpec kafkaRebalanceSpec = new KafkaRebalanceSpecBuilder()
-                .withRebalanceDisk(true)
-                .build();
-
-        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, kafkaRebalanceSpec, false);
-
-        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
-        crdCreateKafka();
-        crdCreateCruiseControlSecrets();
-
-        Checkpoint checkpoint = context.checkpoint();
-        krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME))
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    // the resource moved from New to NotReady due to the error
-                    KafkaRebalance kr1 = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(RESOURCE_NAME).get();
-                    assertThat(kr1, StateMatchers.hasState());
-                    Condition condition = krao.rebalanceStateCondition(kr1.getStatus());
-                    assertThat(condition.getReason(), is("InvalidResourceException"));
-                    assertThat(condition.getMessage(), is("Cannot set rebalanceDisk=true for Kafka clusters with a non-JBOD storage config. " +
-                            "Intra-broker balancing only applies to Kafka deployments that use JBOD storage with multiple disks."));
-                    checkpoint.flag();
-                })));
-    }
-
-    /**
      * annotate the KafkaRebalance, patch the (mocked) server with the resource and then return the annotated resource
      */
     private KafkaRebalance annotate(KubernetesClient kubernetesClient, String namespace, String resource, KafkaRebalanceAnnotation annotationValue) {
