@@ -342,7 +342,9 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                     JsonArray userTasks = json.getJsonArray("userTasks");
                                     JsonObject statusJson = new JsonObject();
                                     if (userTasks.isEmpty()) {
-                                        // Cruise Control restarted
+                                        // This may happen if:
+                                        // 1. Cruise Control restarted so resetting the state because the tasks queue is not persisted
+                                        // 2. Task's retention time expired, or the cache has become full
                                         result.complete(new CruiseControlResponse(userTaskID, statusJson));
                                     } else {
                                         JsonObject jsonUserTask = userTasks.getJsonObject(0);

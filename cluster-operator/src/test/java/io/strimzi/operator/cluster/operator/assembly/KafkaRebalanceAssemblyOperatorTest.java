@@ -1453,7 +1453,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
     @Test
     public void shouldGenerateNewProposalWhenUserTaskNotFound(VertxTestContext context) throws IOException, URISyntaxException {
-
         cruiseControlServer.setupCCRebalanceResponse(2, CruiseControlEndpoints.REBALANCE);
 
         KafkaRebalance kr = new KafkaRebalanceBuilder(createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, true))
@@ -1479,9 +1478,8 @@ public class KafkaRebalanceAssemblyOperatorTest {
                     assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.Rebalancing);
                 }))
                 .compose(v -> {
-                    // Sets the user task to empty
+                    // Sets a user_tasks response with an empty task list simulating CC restart
                     cruiseControlServer.setupUserTasktoEmpty();
-
                     return krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()));
                 })
                 .onComplete(context.succeeding(v -> {
