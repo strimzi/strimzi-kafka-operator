@@ -59,7 +59,12 @@ import java.util.Map;
                                 name = "Roles",
                                 description = "Roles of the nodes in the pool",
                                 jsonPath = ".status.roles",
-                                type = "string")
+                                type = "string"),
+                    @Crd.Spec.AdditionalPrinterColumn(
+                        name = "NodeIds",
+                        description = "Node IDs used by Kafka nodes in this pool",
+                        jsonPath = ".status.nodeIds",
+                        type = "string")
                 }
         )
 )
