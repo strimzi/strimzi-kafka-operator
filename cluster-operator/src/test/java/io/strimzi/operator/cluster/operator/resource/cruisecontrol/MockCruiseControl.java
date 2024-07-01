@@ -515,6 +515,30 @@ public class MockCruiseControl {
     }
 
     /**
+     * Setup response when user task is not found
+     */
+    public void setupUserTasktoEmpty() {
+        // This simulates asking for the status with empty user task
+        JsonBody jsonEmptyUserTask = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-User-task-status-empty.json"));
+
+        server
+                .when(
+                        request()
+                                .withMethod("GET")
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.FETCH_COMPLETE.toString(), "true"))
+                                .withPath(CruiseControlEndpoints.USER_TASKS.toString())
+                                .withHeader(AUTH_HEADER)
+                                .withSecure(true))
+                .respond(
+                        response()
+                                .withBody(jsonEmptyUserTask)
+                                .withStatusCode(200)
+                                .withHeaders(header("User-Task-ID", USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID))
+                                .withDelay(TimeUnit.SECONDS, 0));
+    }
+
+    /**
      * Setup response of task being stopped.
      */
     public void setupCCStopResponse() {

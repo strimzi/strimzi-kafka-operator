@@ -1451,6 +1451,44 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 }));
     }
 
+    @Test
+    public void shouldGenerateNewProposalWhenUserTaskNotFound(VertxTestContext context) throws IOException, URISyntaxException {
+        cruiseControlServer.setupCCRebalanceResponse(2, CruiseControlEndpoints.REBALANCE);
+
+        KafkaRebalance kr = new KafkaRebalanceBuilder(createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, true))
+                .withNewStatus()
+                .withObservedGeneration(1L)
+                .withConditions(new ConditionBuilder()
+                        .withType("ProposalReady")
+                        .withStatus("True")
+                        .build())
+                .endStatus()
+                .build();
+
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).updateStatus();
+
+        crdCreateKafka();
+        crdCreateCruiseControlSecrets();
+
+        Checkpoint checkpoint = context.checkpoint();
+        krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME))
+                .onComplete(context.succeeding(v -> {
+                    // the resource moved to `Rebalancing` since auto-approval annotation is set on the resource
+                    assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.Rebalancing);
+                }))
+                .compose(v -> {
+                    // Sets a user_tasks response with an empty task list simulating CC restart
+                    cruiseControlServer.setupUserTasktoEmpty();
+                    return krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()));
+                })
+                .onComplete(context.succeeding(v -> {
+                    // the resource transitioned from 'Rebalancing' to 'PendingProposal'
+                    assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.PendingProposal);
+                    checkpoint.flag();
+                }));
+    }
+
     /**
      * Tests the transition from 'New' to 'NotReady' due to missing Kafka cluster label in the resource
      *
