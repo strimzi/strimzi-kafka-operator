@@ -789,19 +789,19 @@ public class KafkaConnectClusterTest {
         
         VolumeMount additionalVolumeMountConfigMap = new VolumeMountBuilder()
                 .withName("config-map-volume-name")
-                .withMountPath("/abc")
+                .withMountPath("/mnt/config")
                 .withSubPath("def")
                 .build();
         
         VolumeMount additionalVolumeMountSecret = new VolumeMountBuilder()
                 .withName("secret-volume-name")
-                .withMountPath("/def")
+                .withMountPath("/mnt/secret")
                 .withSubPath("abc")
                 .build();
         
         VolumeMount additionalVolumeMountEmptyDir = new VolumeMountBuilder()
                 .withName("empty-dir-volume-name")
-                .withMountPath("/hij")
+                .withMountPath("/mnt/empty-dir")
                 .withSubPath("def")
                 .build();
 

@@ -406,7 +406,7 @@ public class KafkaExporterTest {
         
         VolumeMount additionalVolumeMountConfigMap = new VolumeMountBuilder()
                 .withName("config-map-volume-name")
-                .withMountPath("/abc")
+                .withMountPath("/mnt/config-map-path")
                 .withSubPath("def")
                 .build();
 

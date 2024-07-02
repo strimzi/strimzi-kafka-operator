@@ -708,7 +708,7 @@ public class CruiseControlTest {
         
         List<VolumeMount> additionalVolumeMounts = singletonList(new VolumeMountBuilder()
                 .withName("secret-volume-name")
-                .withMountPath("/abc")
+                .withMountPath("/mnt/secret-volume-path")
                 .withSubPath("def")
                 .build());
 

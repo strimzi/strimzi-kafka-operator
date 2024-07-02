@@ -445,7 +445,7 @@ public class KafkaConnectBuildTest {
         
         VolumeMount additionalVolumeMount = new VolumeMountBuilder()
                 .withName("secret-volume-name")
-                .withMountPath("/abc")
+                .withMountPath("/mnt/secret-volume")
                 .withSubPath("def")
                 .build();
 

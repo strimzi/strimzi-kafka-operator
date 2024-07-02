@@ -260,7 +260,7 @@ public class EntityOperatorTest {
         
         List<VolumeMount> additionalVolumeMounts = singletonList(new VolumeMountBuilder()
                 .withName("secret-volume-name")
-                .withMountPath("/abc")
+                .withMountPath("/mnt/secret")
                 .withSubPath("def")
                 .build());
 

@@ -469,7 +469,7 @@ public class KafkaBridgeClusterTest {
         
         List<VolumeMount> additionalVolumeMounts = singletonList(new VolumeMountBuilder()
                 .withName("secret-volume-name")
-                .withMountPath("/abc")
+                .withMountPath("/mnt/secret")
                 .withSubPath("def")
                 .build());
 
@@ -851,7 +851,7 @@ public class KafkaBridgeClusterTest {
         
         VolumeMount additionalVolumeMount = new VolumeMountBuilder()
                 .withName("config-map-volume-name")
-                .withMountPath("/abc")
+                .withMountPath("/mnt/config-map")
                 .withSubPath("def")
                 .build();
         
