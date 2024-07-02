@@ -1213,25 +1213,14 @@ spec:
                                       format:
                                         type: string
                                 description: EmptyDir to use to populate the volume.
-                              csi:
+                              pvc:
                                 type: object
                                 properties:
-                                  driver:
+                                  claimName:
                                     type: string
-                                  fsType:
-                                    type: string
-                                  nodePublishSecretRef:
-                                    type: object
-                                    properties:
-                                      name:
-                                        type: string
                                   readOnly:
                                     type: boolean
-                                  volumeAttributes:
-                                    additionalProperties:
-                                      type: string
-                                    type: object
-                                description: CSI object to use to populate the volume.
+                                description: PVC object to use to populate the volume.
                           description: Additional volumes that can be mounted to the pod.
                       description: Template for Kafka Connect `Pods`.
                     apiService:
@@ -1393,6 +1382,8 @@ spec:
                                 type: string
                               readOnly:
                                 type: boolean
+                              recursiveReadOnly:
+                                type: string
                               subPath:
                                 type: string
                               subPathExpr:
@@ -1492,6 +1483,8 @@ spec:
                                 type: string
                               readOnly:
                                 type: boolean
+                              recursiveReadOnly:
+                                type: string
                               subPath:
                                 type: string
                               subPathExpr:
@@ -2123,25 +2116,14 @@ spec:
                                       format:
                                         type: string
                                 description: EmptyDir to use to populate the volume.
-                              csi:
+                              pvc:
                                 type: object
                                 properties:
-                                  driver:
+                                  claimName:
                                     type: string
-                                  fsType:
-                                    type: string
-                                  nodePublishSecretRef:
-                                    type: object
-                                    properties:
-                                      name:
-                                        type: string
                                   readOnly:
                                     type: boolean
-                                  volumeAttributes:
-                                    additionalProperties:
-                                      type: string
-                                    type: object
-                                description: CSI object to use to populate the volume.
+                                description: PVC object to use to populate the volume.
                           description: Additional volumes that can be mounted to the pod.
                       description: Template for Kafka Connect Build `Pods`. The build pod is used only on Kubernetes.
                     buildContainer:
@@ -2237,6 +2219,8 @@ spec:
                                 type: string
                               readOnly:
                                 type: boolean
+                              recursiveReadOnly:
+                                type: string
                               subPath:
                                 type: string
                               subPathExpr:

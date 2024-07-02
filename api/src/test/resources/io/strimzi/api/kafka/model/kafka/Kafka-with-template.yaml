@@ -161,8 +161,6 @@ spec:
             subPath: subPath1
           - name: example-configmap
             mountPath: /mnt/cm-volume
-          - name: temp
-            mountPath: /tmp/logs
           - name: example-pvc-volume
             mountPath: "/mnt/data"
       clientService:
