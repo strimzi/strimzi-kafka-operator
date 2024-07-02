@@ -630,7 +630,6 @@ class CrdGenerator {
     }
 
     private void checkClass(Class<?> crdClass) {
-        checkJsonInclude(crdClass);
         checkJsonPropertyOrder(crdClass);
 
         if (!isAbstract(crdClass.getModifiers())) {
@@ -648,6 +647,7 @@ class CrdGenerator {
         }
 
         if (crdClass.getName().startsWith("io.strimzi.api.")) {
+            checkJsonInclude(crdClass);
             checkInherits(crdClass, "io.strimzi.api.kafka.model.common.UnknownPropertyPreserving");
         }
 
@@ -656,7 +656,7 @@ class CrdGenerator {
 
     private void checkJsonInclude(Class<?> crdClass) {
         if (!crdClass.isAnnotationPresent(JsonInclude.class)) {
-            warn(crdClass + " is missing @JsonInclude");          // Changed temporarily to allow compilation of io.fabric8.kubernetes.api.model.Quantity
+            err(crdClass + " is missing @JsonInclude");
         } else if (!crdClass.getAnnotation(JsonInclude.class).value().equals(JsonInclude.Include.NON_NULL)
                 && !crdClass.getAnnotation(JsonInclude.class).value().equals(JsonInclude.Include.NON_DEFAULT)) {
             err(crdClass + " has a @JsonInclude value other than Include.NON_NULL");
@@ -666,7 +666,7 @@ class CrdGenerator {
     private void checkJsonPropertyOrder(Class<?> crdClass) {
         if (!isAbstract(crdClass.getModifiers())
                 && !crdClass.isAnnotationPresent(JsonPropertyOrder.class)) {
-            warn(crdClass + " is missing @JsonPropertyOrder");    // Changed temporarily to allow compilation of io.fabric8.kubernetes.api.model.Quantity
+            err(crdClass + " is missing @JsonPropertyOrder");
         }
     }
 
