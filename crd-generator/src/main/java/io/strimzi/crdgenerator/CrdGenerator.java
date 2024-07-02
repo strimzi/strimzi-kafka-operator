@@ -630,7 +630,6 @@ class CrdGenerator {
     }
 
     private void checkClass(Class<?> crdClass) {
-        checkJsonPropertyOrder(crdClass);
 
         if (!isAbstract(crdClass.getModifiers())) {
             checkForBuilderClass(crdClass, crdClass.getName() + "Builder");
@@ -648,6 +647,7 @@ class CrdGenerator {
 
         if (crdClass.getName().startsWith("io.strimzi.api.")) {
             checkJsonInclude(crdClass);
+            checkJsonPropertyOrder(crdClass);
             checkInherits(crdClass, "io.strimzi.api.kafka.model.common.UnknownPropertyPreserving");
         }
 
