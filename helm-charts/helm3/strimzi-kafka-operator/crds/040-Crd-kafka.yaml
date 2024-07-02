@@ -5,6 +5,7 @@ metadata:
   labels:
     app: strimzi
     strimzi.io/crd-install: "true"
+    component: kafkas.kafka.strimzi.io-crd
 spec:
   group: kafka.strimzi.io
   names:
@@ -13,216 +14,122 @@ spec:
     singular: kafka
     plural: kafkas
     shortNames:
-    - k
+      - k
     categories:
-    - strimzi
+      - strimzi
   scope: Namespaced
   conversion:
     strategy: None
   versions:
-  - name: v1beta2
-    served: true
-    storage: true
-    subresources:
-      status: {}
-    additionalPrinterColumns:
-    - name: Desired Kafka replicas
-      description: The desired number of Kafka replicas in the cluster
-      jsonPath: .spec.kafka.replicas
-      type: integer
-    - name: Desired ZK replicas
-      description: The desired number of ZooKeeper replicas in the cluster
-      jsonPath: .spec.zookeeper.replicas
-      type: integer
-    - name: Ready
-      description: The state of the custom resource
-      jsonPath: ".status.conditions[?(@.type==\"Ready\")].status"
-      type: string
-    - name: Metadata State
-      description: The state of the cluster metadata
-      jsonPath: .status.kafkaMetadataState
-      type: string
-    - name: Warnings
-      description: Warnings related to the custom resource
-      jsonPath: ".status.conditions[?(@.type==\"Warning\")].status"
-      type: string
-    schema:
-      openAPIV3Schema:
-        type: object
-        properties:
-          apiVersion:
-            type: string
-            description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
-          kind:
-            type: string
-            description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
-          metadata:
-            type: object
-          spec:
-            type: object
-            properties:
-              kafka:
-                type: object
-                properties:
-                  version:
-                    type: string
-                    description: The Kafka broker version. Defaults to the latest version. Consult the user documentation to understand the process required to upgrade or downgrade the version.
-                  metadataVersion:
-                    type: string
-                    description: "The KRaft metadata version used by the Kafka cluster. This property is ignored when running in ZooKeeper mode. If the property is not set, it defaults to the metadata version that corresponds to the `version` property."
-                  replicas:
-                    type: integer
-                    minimum: 1
-                    description: The number of pods in the cluster. This property is required when node pools are not used.
-                  image:
-                    type: string
-                    description: "The container image used for Kafka pods. If the property is not set, the default Kafka image version is determined based on the `version` configuration. The image names are specifically mapped to corresponding versions in the Cluster Operator configuration. Changing the Kafka image version does not automatically update the image versions for other components, such as Kafka Exporter. "
-                  listeners:
-                    type: array
-                    minItems: 1
-                    items:
-                      type: object
-                      properties:
-                        name:
-                          type: string
-                          pattern: "^[a-z0-9]{1,11}$"
-                          description: Name of the listener. The name will be used to identify the listener and the related Kubernetes objects. The name has to be unique within given a Kafka cluster. The name can consist of lowercase characters and numbers and be up to 11 characters long.
-                        port:
-                          type: integer
-                          minimum: 9092
-                          description: "Port number used by the listener inside Kafka. The port number has to be unique within a given Kafka cluster. Allowed port numbers are 9092 and higher with the exception of ports 9404 and 9999, which are already used for Prometheus and JMX. Depending on the listener type, the port number might not be the same as the port number that connects Kafka clients."
-                        type:
-                          type: string
-                          enum:
-                          - internal
-                          - route
-                          - loadbalancer
-                          - nodeport
-                          - ingress
-                          - cluster-ip
-                          description: "Type of the listener. The supported types are as follows: \n\n* `internal` type exposes Kafka internally only within the Kubernetes cluster.\n* `route` type uses OpenShift Routes to expose Kafka.\n* `loadbalancer` type uses LoadBalancer type services to expose Kafka.\n* `nodeport` type uses NodePort type services to expose Kafka.\n* `ingress` type uses Kubernetes Nginx Ingress to expose Kafka with TLS passthrough.\n* `cluster-ip` type uses a per-broker `ClusterIP` service.\n"
-                        tls:
-                          type: boolean
-                          description: Enables TLS encryption on the listener. This is a required property.
-                        authentication:
-                          type: object
-                          properties:
-                            accessTokenIsJwt:
-                              type: boolean
-                              description: Configure whether the access token is treated as JWT. This must be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
-                            checkAccessTokenType:
-                              type: boolean
-                              description: Configure whether the access token type check is performed or not. This should be set to `false` if the authorization server does not include 'typ' claim in JWT token. Defaults to `true`.
-                            checkAudience:
-                              type: boolean
-                              description: "Enable or disable audience checking. Audience checks identify the recipients of tokens. If audience checking is enabled, the OAuth Client ID also has to be configured using the `clientId` property. The Kafka broker will reject tokens that do not have its `clientId` in their `aud` (audience) claim.Default value is `false`."
-                            checkIssuer:
-                              type: boolean
-                              description: Enable or disable issuer checking. By default issuer is checked using the value configured by `validIssuerUri`. Default value is `true`.
-                            clientAudience:
-                              type: string
-                              description: The audience to use when making requests to the authorization server's token endpoint. Used for inter-broker authentication and for configuring OAuth 2.0 over PLAIN using the `clientId` and `secret` method.
-                            clientId:
-                              type: string
-                              description: OAuth Client ID which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
-                            clientScope:
-                              type: string
-                              description: The scope to use when making requests to the authorization server's token endpoint. Used for inter-broker authentication and for configuring OAuth 2.0 over PLAIN using the `clientId` and `secret` method.
-                            clientSecret:
-                              type: object
-                              properties:
-                                key:
-                                  type: string
-                                  description: The key under which the secret value is stored in the Kubernetes Secret.
-                                secretName:
-                                  type: string
-                                  description: The name of the Kubernetes Secret containing the secret value.
-                              required:
-                              - key
-                              - secretName
-                              description: Link to Kubernetes Secret containing the OAuth client secret which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
-                            connectTimeoutSeconds:
-                              type: integer
-                              description: "The connect timeout in seconds when connecting to authorization server. If not set, the effective connect timeout is 60 seconds."
-                            customClaimCheck:
-                              type: string
-                              description: JsonPath filter query to be applied to the JWT token or to the response of the introspection endpoint for additional token validation. Not set by default.
-                            disableTlsHostnameVerification:
-                              type: boolean
-                              description: Enable or disable TLS hostname verification. Default value is `false`.
-                            enableECDSA:
-                              type: boolean
-                              description: Enable or disable ECDSA support by installing BouncyCastle crypto provider. ECDSA support is always enabled. The BouncyCastle libraries are no longer packaged with Strimzi. Value is ignored.
-                            enableMetrics:
-                              type: boolean
-                              description: Enable or disable OAuth metrics. Default value is `false`.
-                            enableOauthBearer:
-                              type: boolean
-                              description: Enable or disable OAuth authentication over SASL_OAUTHBEARER. Default value is `true`.
-                            enablePlain:
-                              type: boolean
-                              description: Enable or disable OAuth authentication over SASL_PLAIN. There is no re-authentication support when this mechanism is used. Default value is `false`.
-                            failFast:
-                              type: boolean
-                              description: Enable or disable termination of Kafka broker processes due to potentially recoverable runtime errors during startup. Default value is `true`.
-                            fallbackUserNameClaim:
-                              type: string
-                              description: The fallback username claim to be used for the user id if the claim specified by `userNameClaim` is not present. This is useful when `client_credentials` authentication only results in the client id being provided in another claim. It only takes effect if `userNameClaim` is set.
-                            fallbackUserNamePrefix:
-                              type: string
-                              description: "The prefix to use with the value of `fallbackUserNameClaim` to construct the user id. This only takes effect if `fallbackUserNameClaim` is true, and the value is present for the claim. Mapping usernames and client ids into the same user id space is useful in preventing name collisions."
-                            groupsClaim:
-                              type: string
-                              description: JsonPath query used to extract groups for the user during authentication. Extracted groups can be used by a custom authorizer. By default no groups are extracted.
-                            groupsClaimDelimiter:
-                              type: string
-                              description: "A delimiter used to parse groups when they are extracted as a single String value rather than a JSON array. Default value is ',' (comma)."
-                            httpRetries:
-                              type: integer
-                              description: "The maximum number of retries to attempt if an initial HTTP request fails. If not set, the default is to not attempt any retries."
-                            httpRetryPauseMs:
-                              type: integer
-                              description: "The pause to take before retrying a failed HTTP request. If not set, the default is to not pause at all but to immediately repeat a request."
-                            includeAcceptHeader:
-                              type: boolean
-                              description: Whether the Accept header should be set in requests to the authorization servers. The default value is `true`.
-                            introspectionEndpointUri:
-                              type: string
-                              description: URI of the token introspection endpoint which can be used to validate opaque non-JWT tokens.
-                            jwksEndpointUri:
-                              type: string
-                              description: "URI of the JWKS certificate endpoint, which can be used for local JWT validation."
-                            jwksExpirySeconds:
-                              type: integer
-                              minimum: 1
-                              description: Configures how often are the JWKS certificates considered valid. The expiry interval has to be at least 60 seconds longer then the refresh interval specified in `jwksRefreshSeconds`. Defaults to 360 seconds.
-                            jwksIgnoreKeyUse:
-                              type: boolean
-                              description: Flag to ignore the 'use' attribute of `key` declarations in a JWKS endpoint response. Default value is `false`.
-                            jwksMinRefreshPauseSeconds:
-                              type: integer
-                              minimum: 0
-                              description: "The minimum pause between two consecutive refreshes. When an unknown signing key is encountered the refresh is scheduled immediately, but will always wait for this minimum pause. Defaults to 1 second."
-                            jwksRefreshSeconds:
-                              type: integer
-                              minimum: 1
-                              description: Configures how often are the JWKS certificates refreshed. The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`. Defaults to 300 seconds.
-                            listenerConfig:
-                              x-kubernetes-preserve-unknown-fields: true
-                              type: object
-                              description: Configuration to be used for a specific listener. All values are prefixed with listener.name._<listener_name>_.
-                            maxSecondsWithoutReauthentication:
-                              type: integer
-                              description: "Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. Not set by default - the authenticated session does not expire when the access token expires. This option only applies to SASL_OAUTHBEARER authentication mechanism (when `enableOauthBearer` is `true`)."
-                            readTimeoutSeconds:
-                              type: integer
-                              description: "The read timeout in seconds when connecting to authorization server. If not set, the effective read timeout is 60 seconds."
-                            sasl:
-                              type: boolean
-                              description: Enable or disable SASL on this listener.
-                            secrets:
-                              type: array
-                              items:
+    - name: v1beta2
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Desired Kafka replicas
+          description: The desired number of Kafka replicas in the cluster
+          jsonPath: .spec.kafka.replicas
+          type: integer
+        - name: Desired ZK replicas
+          description: The desired number of ZooKeeper replicas in the cluster
+          jsonPath: .spec.zookeeper.replicas
+          type: integer
+        - name: Ready
+          description: The state of the custom resource
+          jsonPath: ".status.conditions[?(@.type==\"Ready\")].status"
+          type: string
+        - name: Metadata State
+          description: The state of the cluster metadata
+          jsonPath: .status.kafkaMetadataState
+          type: string
+        - name: Warnings
+          description: Warnings related to the custom resource
+          jsonPath: ".status.conditions[?(@.type==\"Warning\")].status"
+          type: string
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            apiVersion:
+              type: string
+              description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
+            kind:
+              type: string
+              description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
+            metadata:
+              type: object
+            spec:
+              type: object
+              properties:
+                kafka:
+                  type: object
+                  properties:
+                    version:
+                      type: string
+                      description: The Kafka broker version. Defaults to the latest version. Consult the user documentation to understand the process required to upgrade or downgrade the version.
+                    metadataVersion:
+                      type: string
+                      description: "The KRaft metadata version used by the Kafka cluster. This property is ignored when running in ZooKeeper mode. If the property is not set, it defaults to the metadata version that corresponds to the `version` property."
+                    replicas:
+                      type: integer
+                      minimum: 1
+                      description: The number of pods in the cluster. This property is required when node pools are not used.
+                    image:
+                      type: string
+                      description: "The container image used for Kafka pods. If the property is not set, the default Kafka image version is determined based on the `version` configuration. The image names are specifically mapped to corresponding versions in the Cluster Operator configuration. Changing the Kafka image version does not automatically update the image versions for other components, such as Kafka Exporter. "
+                    listeners:
+                      type: array
+                      minItems: 1
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                            pattern: "^[a-z0-9]{1,11}$"
+                            description: Name of the listener. The name will be used to identify the listener and the related Kubernetes objects. The name has to be unique within given a Kafka cluster. The name can consist of lowercase characters and numbers and be up to 11 characters long.
+                          port:
+                            type: integer
+                            minimum: 9092
+                            description: "Port number used by the listener inside Kafka. The port number has to be unique within a given Kafka cluster. Allowed port numbers are 9092 and higher with the exception of ports 9404 and 9999, which are already used for Prometheus and JMX. Depending on the listener type, the port number might not be the same as the port number that connects Kafka clients."
+                          type:
+                            type: string
+                            enum:
+                              - internal
+                              - route
+                              - loadbalancer
+                              - nodeport
+                              - ingress
+                              - cluster-ip
+                            description: "Type of the listener. The supported types are as follows: \n\n* `internal` type exposes Kafka internally only within the Kubernetes cluster.\n* `route` type uses OpenShift Routes to expose Kafka.\n* `loadbalancer` type uses LoadBalancer type services to expose Kafka.\n* `nodeport` type uses NodePort type services to expose Kafka.\n* `ingress` type uses Kubernetes Nginx Ingress to expose Kafka with TLS passthrough.\n* `cluster-ip` type uses a per-broker `ClusterIP` service.\n"
+                          tls:
+                            type: boolean
+                            description: Enables TLS encryption on the listener. This is a required property.
+                          authentication:
+                            type: object
+                            properties:
+                              accessTokenIsJwt:
+                                type: boolean
+                                description: Configure whether the access token is treated as JWT. This must be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
+                              checkAccessTokenType:
+                                type: boolean
+                                description: Configure whether the access token type check is performed or not. This should be set to `false` if the authorization server does not include 'typ' claim in JWT token. Defaults to `true`.
+                              checkAudience:
+                                type: boolean
+                                description: "Enable or disable audience checking. Audience checks identify the recipients of tokens. If audience checking is enabled, the OAuth Client ID also has to be configured using the `clientId` property. The Kafka broker will reject tokens that do not have its `clientId` in their `aud` (audience) claim.Default value is `false`."
+                              checkIssuer:
+                                type: boolean
+                                description: Enable or disable issuer checking. By default issuer is checked using the value configured by `validIssuerUri`. Default value is `true`.
+                              clientAudience:
+                                type: string
+                                description: The audience to use when making requests to the authorization server's token endpoint. Used for inter-broker authentication and for configuring OAuth 2.0 over PLAIN using the `clientId` and `secret` method.
+                              clientId:
+                                type: string
+                                description: OAuth Client ID which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
+                              clientScope:
+                                type: string
+                                description: The scope to use when making requests to the authorization server's token endpoint. Used for inter-broker authentication and for configuring OAuth 2.0 over PLAIN using the `clientId` and `secret` method.
+                              clientSecret:
                                 type: object
                                 properties:
                                   key:
@@ -232,14 +139,153 @@ spec:
                                     type: string
                                     description: The name of the Kubernetes Secret containing the secret value.
                                 required:
-                                - key
-                                - secretName
-                              description: Secrets to be mounted to /opt/kafka/custom-authn-secrets/custom-listener-_<listener_name>-<port>_/_<secret_name>_.
-                            tlsTrustedCertificates:
-                              type: array
-                              items:
+                                  - key
+                                  - secretName
+                                description: Link to Kubernetes Secret containing the OAuth client secret which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
+                              connectTimeoutSeconds:
+                                type: integer
+                                description: "The connect timeout in seconds when connecting to authorization server. If not set, the effective connect timeout is 60 seconds."
+                              customClaimCheck:
+                                type: string
+                                description: JsonPath filter query to be applied to the JWT token or to the response of the introspection endpoint for additional token validation. Not set by default.
+                              disableTlsHostnameVerification:
+                                type: boolean
+                                description: Enable or disable TLS hostname verification. Default value is `false`.
+                              enableECDSA:
+                                type: boolean
+                                description: Enable or disable ECDSA support by installing BouncyCastle crypto provider. ECDSA support is always enabled. The BouncyCastle libraries are no longer packaged with Strimzi. Value is ignored.
+                              enableMetrics:
+                                type: boolean
+                                description: Enable or disable OAuth metrics. Default value is `false`.
+                              enableOauthBearer:
+                                type: boolean
+                                description: Enable or disable OAuth authentication over SASL_OAUTHBEARER. Default value is `true`.
+                              enablePlain:
+                                type: boolean
+                                description: Enable or disable OAuth authentication over SASL_PLAIN. There is no re-authentication support when this mechanism is used. Default value is `false`.
+                              failFast:
+                                type: boolean
+                                description: Enable or disable termination of Kafka broker processes due to potentially recoverable runtime errors during startup. Default value is `true`.
+                              fallbackUserNameClaim:
+                                type: string
+                                description: The fallback username claim to be used for the user id if the claim specified by `userNameClaim` is not present. This is useful when `client_credentials` authentication only results in the client id being provided in another claim. It only takes effect if `userNameClaim` is set.
+                              fallbackUserNamePrefix:
+                                type: string
+                                description: "The prefix to use with the value of `fallbackUserNameClaim` to construct the user id. This only takes effect if `fallbackUserNameClaim` is true, and the value is present for the claim. Mapping usernames and client ids into the same user id space is useful in preventing name collisions."
+                              groupsClaim:
+                                type: string
+                                description: JsonPath query used to extract groups for the user during authentication. Extracted groups can be used by a custom authorizer. By default no groups are extracted.
+                              groupsClaimDelimiter:
+                                type: string
+                                description: "A delimiter used to parse groups when they are extracted as a single String value rather than a JSON array. Default value is ',' (comma)."
+                              httpRetries:
+                                type: integer
+                                description: "The maximum number of retries to attempt if an initial HTTP request fails. If not set, the default is to not attempt any retries."
+                              httpRetryPauseMs:
+                                type: integer
+                                description: "The pause to take before retrying a failed HTTP request. If not set, the default is to not pause at all but to immediately repeat a request."
+                              includeAcceptHeader:
+                                type: boolean
+                                description: Whether the Accept header should be set in requests to the authorization servers. The default value is `true`.
+                              introspectionEndpointUri:
+                                type: string
+                                description: URI of the token introspection endpoint which can be used to validate opaque non-JWT tokens.
+                              jwksEndpointUri:
+                                type: string
+                                description: "URI of the JWKS certificate endpoint, which can be used for local JWT validation."
+                              jwksExpirySeconds:
+                                type: integer
+                                minimum: 1
+                                description: Configures how often are the JWKS certificates considered valid. The expiry interval has to be at least 60 seconds longer then the refresh interval specified in `jwksRefreshSeconds`. Defaults to 360 seconds.
+                              jwksIgnoreKeyUse:
+                                type: boolean
+                                description: Flag to ignore the 'use' attribute of `key` declarations in a JWKS endpoint response. Default value is `false`.
+                              jwksMinRefreshPauseSeconds:
+                                type: integer
+                                minimum: 0
+                                description: "The minimum pause between two consecutive refreshes. When an unknown signing key is encountered the refresh is scheduled immediately, but will always wait for this minimum pause. Defaults to 1 second."
+                              jwksRefreshSeconds:
+                                type: integer
+                                minimum: 1
+                                description: Configures how often are the JWKS certificates refreshed. The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`. Defaults to 300 seconds.
+                              listenerConfig:
+                                x-kubernetes-preserve-unknown-fields: true
+                                type: object
+                                description: Configuration to be used for a specific listener. All values are prefixed with listener.name._<listener_name>_.
+                              maxSecondsWithoutReauthentication:
+                                type: integer
+                                description: "Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. Not set by default - the authenticated session does not expire when the access token expires. This option only applies to SASL_OAUTHBEARER authentication mechanism (when `enableOauthBearer` is `true`)."
+                              readTimeoutSeconds:
+                                type: integer
+                                description: "The read timeout in seconds when connecting to authorization server. If not set, the effective read timeout is 60 seconds."
+                              sasl:
+                                type: boolean
+                                description: Enable or disable SASL on this listener.
+                              secrets:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    key:
+                                      type: string
+                                      description: The key under which the secret value is stored in the Kubernetes Secret.
+                                    secretName:
+                                      type: string
+                                      description: The name of the Kubernetes Secret containing the secret value.
+                                  required:
+                                    - key
+                                    - secretName
+                                description: Secrets to be mounted to /opt/kafka/custom-authn-secrets/custom-listener-_<listener_name>-<port>_/_<secret_name>_.
+                              tlsTrustedCertificates:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    secretName:
+                                      type: string
+                                      description: The name of the Secret containing the certificate.
+                                    certificate:
+                                      type: string
+                                      description: The name of the file certificate in the Secret.
+                                  required:
+                                    - secretName
+                                    - certificate
+                                description: Trusted certificates for TLS connection to the OAuth server.
+                              tokenEndpointUri:
+                                type: string
+                                description: "URI of the Token Endpoint to use with SASL_PLAIN mechanism when the client authenticates with `clientId` and a `secret`. If set, the client can authenticate over SASL_PLAIN by either setting `username` to `clientId`, and setting `password` to client `secret`, or by setting `username` to account username, and `password` to access token prefixed with `$accessToken:`. If this option is not set, the `password` is always interpreted as an access token (without a prefix), and `username` as the account username (a so called 'no-client-credentials' mode)."
+                              type:
+                                type: string
+                                enum:
+                                  - tls
+                                  - scram-sha-512
+                                  - oauth
+                                  - custom
+                                description: Authentication type. `oauth` type uses SASL OAUTHBEARER Authentication. `scram-sha-512` type uses SASL SCRAM-SHA-512 Authentication. `tls` type uses TLS Client Authentication. `tls` type is supported only on TLS listeners.`custom` type allows for any authentication type to be used.
+                              userInfoEndpointUri:
+                                type: string
+                                description: 'URI of the User Info Endpoint to use as a fallback to obtaining the user id when the Introspection Endpoint does not return information that can be used for the user id. '
+                              userNameClaim:
+                                type: string
+                                description: "Name of the claim from the JWT authentication token, Introspection Endpoint response or User Info Endpoint response which will be used to extract the user id. Defaults to `sub`."
+                              validIssuerUri:
+                                type: string
+                                description: URI of the token issuer used for authentication.
+                              validTokenType:
+                                type: string
+                                description: "Valid value for the `token_type` attribute returned by the Introspection Endpoint. No default value, and not checked by default."
+                            required:
+                              - type
+                            description: Authentication configuration for this listener.
+                          configuration:
+                            type: object
+                            properties:
+                              brokerCertChainAndKey:
                                 type: object
                                 properties:
+                                  key:
+                                    type: string
+                                    description: The name of the private key in the Secret.
                                   secretName:
                                     type: string
                                     description: The name of the Secret containing the certificate.
@@ -247,122 +293,38 @@ spec:
                                     type: string
                                     description: The name of the file certificate in the Secret.
                                 required:
-                                - secretName
-                                - certificate
-                              description: Trusted certificates for TLS connection to the OAuth server.
-                            tokenEndpointUri:
-                              type: string
-                              description: "URI of the Token Endpoint to use with SASL_PLAIN mechanism when the client authenticates with `clientId` and a `secret`. If set, the client can authenticate over SASL_PLAIN by either setting `username` to `clientId`, and setting `password` to client `secret`, or by setting `username` to account username, and `password` to access token prefixed with `$accessToken:`. If this option is not set, the `password` is always interpreted as an access token (without a prefix), and `username` as the account username (a so called 'no-client-credentials' mode)."
-                            type:
-                              type: string
-                              enum:
-                              - tls
-                              - scram-sha-512
-                              - oauth
-                              - custom
-                              description: Authentication type. `oauth` type uses SASL OAUTHBEARER Authentication. `scram-sha-512` type uses SASL SCRAM-SHA-512 Authentication. `tls` type uses TLS Client Authentication. `tls` type is supported only on TLS listeners.`custom` type allows for any authentication type to be used.
-                            userInfoEndpointUri:
-                              type: string
-                              description: 'URI of the User Info Endpoint to use as a fallback to obtaining the user id when the Introspection Endpoint does not return information that can be used for the user id. '
-                            userNameClaim:
-                              type: string
-                              description: "Name of the claim from the JWT authentication token, Introspection Endpoint response or User Info Endpoint response which will be used to extract the user id. Defaults to `sub`."
-                            validIssuerUri:
-                              type: string
-                              description: URI of the token issuer used for authentication.
-                            validTokenType:
-                              type: string
-                              description: "Valid value for the `token_type` attribute returned by the Introspection Endpoint. No default value, and not checked by default."
-                          required:
-                          - type
-                          description: Authentication configuration for this listener.
-                        configuration:
-                          type: object
-                          properties:
-                            brokerCertChainAndKey:
-                              type: object
-                              properties:
-                                key:
-                                  type: string
-                                  description: The name of the private key in the Secret.
-                                secretName:
-                                  type: string
-                                  description: The name of the Secret containing the certificate.
-                                certificate:
-                                  type: string
-                                  description: The name of the file certificate in the Secret.
-                              required:
-                              - key
-                              - secretName
-                              - certificate
-                              description: Reference to the `Secret` which holds the certificate and private key pair which will be used for this listener. The certificate can optionally contain the whole chain. This field can be used only with listeners with enabled TLS encryption.
-                            class:
-                              type: string
-                              description: "Configures a specific class for `Ingress` and `LoadBalancer` that defines which controller will be used. This field can only be used with `ingress` and `loadbalancer` type listeners. If not specified, the default controller is used. For an `ingress` listener, set the `ingressClassName` property in the `Ingress` resources. For a `loadbalancer` listener, set the `loadBalancerClass` property  in the `Service` resources."
-                            externalTrafficPolicy:
-                              type: string
-                              enum:
-                              - Local
-                              - Cluster
-                              description: "Specifies whether the service routes external traffic to node-local or cluster-wide endpoints. `Cluster` may cause a second hop to another node and obscures the client source IP. `Local` avoids a second hop for LoadBalancer and Nodeport type services and preserves the client source IP (when supported by the infrastructure). If unspecified, Kubernetes will use `Cluster` as the default.This field can be used only with `loadbalancer` or `nodeport` type listener."
-                            loadBalancerSourceRanges:
-                              type: array
-                              items:
+                                  - key
+                                  - secretName
+                                  - certificate
+                                description: Reference to the `Secret` which holds the certificate and private key pair which will be used for this listener. The certificate can optionally contain the whole chain. This field can be used only with listeners with enabled TLS encryption.
+                              class:
                                 type: string
-                              description: "A list of CIDR ranges (for example `10.0.0.0/8` or `130.211.204.1/32`) from which clients can connect to load balancer type listeners. If supported by the platform, traffic through the loadbalancer is restricted to the specified CIDR ranges. This field is applicable only for loadbalancer type services and is ignored if the cloud provider does not support the feature. This field can be used only with `loadbalancer` type listener."
-                            bootstrap:
-                              type: object
-                              properties:
-                                alternativeNames:
-                                  type: array
-                                  items:
-                                    type: string
-                                  description: Additional alternative names for the bootstrap service. The alternative names will be added to the list of subject alternative names of the TLS certificates.
-                                host:
+                                description: "Configures a specific class for `Ingress` and `LoadBalancer` that defines which controller will be used. This field can only be used with `ingress` and `loadbalancer` type listeners. If not specified, the default controller is used. For an `ingress` listener, set the `ingressClassName` property in the `Ingress` resources. For a `loadbalancer` listener, set the `loadBalancerClass` property  in the `Service` resources."
+                              externalTrafficPolicy:
+                                type: string
+                                enum:
+                                  - Local
+                                  - Cluster
+                                description: "Specifies whether the service routes external traffic to node-local or cluster-wide endpoints. `Cluster` may cause a second hop to another node and obscures the client source IP. `Local` avoids a second hop for LoadBalancer and Nodeport type services and preserves the client source IP (when supported by the infrastructure). If unspecified, Kubernetes will use `Cluster` as the default.This field can be used only with `loadbalancer` or `nodeport` type listener."
+                              loadBalancerSourceRanges:
+                                type: array
+                                items:
                                   type: string
-                                  description: The bootstrap host. This field will be used in the Ingress resource or in the Route resource to specify the desired hostname. This field can be used only with `route` (optional) or `ingress` (required) type listeners.
-                                nodePort:
-                                  type: integer
-                                  description: Node port for the bootstrap service. This field can be used only with `nodeport` type listener.
-                                loadBalancerIP:
-                                  type: string
-                                  description: The loadbalancer is requested with the IP address specified in this field. This feature depends on whether the underlying cloud provider supports specifying the `loadBalancerIP` when a load balancer is created. This field is ignored if the cloud provider does not support the feature.This field can be used only with `loadbalancer` type listener.
-                                annotations:
-                                  additionalProperties:
-                                    type: string
-                                  type: object
-                                  description: "Annotations that will be added to the `Ingress`, `Route`, or `Service` resource. You can use this field to configure DNS providers such as External DNS. This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners."
-                                labels:
-                                  additionalProperties:
-                                    type: string
-                                  type: object
-                                  description: "Labels that will be added to the `Ingress`, `Route`, or `Service` resource. This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners."
-                                externalIPs:
-                                  type: array
-                                  items:
-                                    type: string
-                                  description: External IPs associated to the nodeport service. These IPs are used by clients external to the Kubernetes cluster to access the Kafka brokers. This field is helpful when `nodeport` without `externalIP` is not sufficient. For example on bare-metal Kubernetes clusters that do not support Loadbalancer service types. This field can only be used with `nodeport` type listener.
-                              description: Bootstrap configuration.
-                            brokers:
-                              type: array
-                              items:
+                                description: "A list of CIDR ranges (for example `10.0.0.0/8` or `130.211.204.1/32`) from which clients can connect to load balancer type listeners. If supported by the platform, traffic through the loadbalancer is restricted to the specified CIDR ranges. This field is applicable only for loadbalancer type services and is ignored if the cloud provider does not support the feature. This field can be used only with `loadbalancer` type listener."
+                              bootstrap:
                                 type: object
                                 properties:
-                                  broker:
-                                    type: integer
-                                    description: ID of the kafka broker (broker identifier). Broker IDs start from 0 and correspond to the number of broker replicas.
-                                  advertisedHost:
-                                    type: string
-                                    description: The host name used in the brokers' `advertised.listeners`.
-                                  advertisedPort:
-                                    type: integer
-                                    description: The port number used in the brokers' `advertised.listeners`.
+                                  alternativeNames:
+                                    type: array
+                                    items:
+                                      type: string
+                                    description: Additional alternative names for the bootstrap service. The alternative names will be added to the list of subject alternative names of the TLS certificates.
                                   host:
                                     type: string
-                                    description: The broker host. This field will be used in the Ingress resource or in the Route resource to specify the desired hostname. This field can be used only with `route` (optional) or `ingress` (required) type listeners.
+                                    description: The bootstrap host. This field will be used in the Ingress resource or in the Route resource to specify the desired hostname. This field can be used only with `route` (optional) or `ingress` (required) type listeners.
                                   nodePort:
                                     type: integer
-                                    description: Node port for the per-broker service. This field can be used only with `nodeport` type listener.
+                                    description: Node port for the bootstrap service. This field can be used only with `nodeport` type listener.
                                   loadBalancerIP:
                                     type: string
                                     description: The loadbalancer is requested with the IP address specified in this field. This feature depends on whether the underlying cloud provider supports specifying the `loadBalancerIP` when a load balancer is created. This field is ignored if the cloud provider does not support the feature.This field can be used only with `loadbalancer` type listener.
@@ -370,7 +332,7 @@ spec:
                                     additionalProperties:
                                       type: string
                                     type: object
-                                    description: "Annotations that will be added to the `Ingress` or `Service` resource. You can use this field to configure DNS providers such as External DNS. This field can be used only with `loadbalancer`, `nodeport`, or `ingress` type listeners."
+                                    description: "Annotations that will be added to the `Ingress`, `Route`, or `Service` resource. You can use this field to configure DNS providers such as External DNS. This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners."
                                   labels:
                                     additionalProperties:
                                       type: string
@@ -381,57 +343,96 @@ spec:
                                     items:
                                       type: string
                                     description: External IPs associated to the nodeport service. These IPs are used by clients external to the Kubernetes cluster to access the Kafka brokers. This field is helpful when `nodeport` without `externalIP` is not sufficient. For example on bare-metal Kubernetes clusters that do not support Loadbalancer service types. This field can only be used with `nodeport` type listener.
-                                required:
-                                - broker
-                              description: Per-broker configurations.
-                            ipFamilyPolicy:
-                              type: string
-                              enum:
-                              - SingleStack
-                              - PreferDualStack
-                              - RequireDualStack
-                              description: "Specifies the IP Family Policy used by the service. Available options are `SingleStack`, `PreferDualStack` and `RequireDualStack`. `SingleStack` is for a single IP family. `PreferDualStack` is for two IP families on dual-stack configured clusters or a single IP family on single-stack clusters. `RequireDualStack` fails unless there are two IP families on dual-stack configured clusters. If unspecified, Kubernetes will choose the default value based on the service type."
-                            ipFamilies:
-                              type: array
-                              items:
+                                description: Bootstrap configuration.
+                              brokers:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    broker:
+                                      type: integer
+                                      description: ID of the kafka broker (broker identifier). Broker IDs start from 0 and correspond to the number of broker replicas.
+                                    advertisedHost:
+                                      type: string
+                                      description: The host name used in the brokers' `advertised.listeners`.
+                                    advertisedPort:
+                                      type: integer
+                                      description: The port number used in the brokers' `advertised.listeners`.
+                                    host:
+                                      type: string
+                                      description: The broker host. This field will be used in the Ingress resource or in the Route resource to specify the desired hostname. This field can be used only with `route` (optional) or `ingress` (required) type listeners.
+                                    nodePort:
+                                      type: integer
+                                      description: Node port for the per-broker service. This field can be used only with `nodeport` type listener.
+                                    loadBalancerIP:
+                                      type: string
+                                      description: The loadbalancer is requested with the IP address specified in this field. This feature depends on whether the underlying cloud provider supports specifying the `loadBalancerIP` when a load balancer is created. This field is ignored if the cloud provider does not support the feature.This field can be used only with `loadbalancer` type listener.
+                                    annotations:
+                                      additionalProperties:
+                                        type: string
+                                      type: object
+                                      description: "Annotations that will be added to the `Ingress` or `Service` resource. You can use this field to configure DNS providers such as External DNS. This field can be used only with `loadbalancer`, `nodeport`, or `ingress` type listeners."
+                                    labels:
+                                      additionalProperties:
+                                        type: string
+                                      type: object
+                                      description: "Labels that will be added to the `Ingress`, `Route`, or `Service` resource. This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners."
+                                    externalIPs:
+                                      type: array
+                                      items:
+                                        type: string
+                                      description: External IPs associated to the nodeport service. These IPs are used by clients external to the Kubernetes cluster to access the Kafka brokers. This field is helpful when `nodeport` without `externalIP` is not sufficient. For example on bare-metal Kubernetes clusters that do not support Loadbalancer service types. This field can only be used with `nodeport` type listener.
+                                  required:
+                                    - broker
+                                description: Per-broker configurations.
+                              ipFamilyPolicy:
                                 type: string
                                 enum:
-                                - IPv4
-                                - IPv6
-                              description: "Specifies the IP Families used by the service. Available options are `IPv4` and `IPv6`. If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting."
-                            createBootstrapService:
-                              type: boolean
-                              description: Whether to create the bootstrap service or not. The bootstrap service is created by default (if not specified differently). This field can be used with the `loadBalancer` type listener.
-                            finalizers:
-                              type: array
-                              items:
+                                  - SingleStack
+                                  - PreferDualStack
+                                  - RequireDualStack
+                                description: "Specifies the IP Family Policy used by the service. Available options are `SingleStack`, `PreferDualStack` and `RequireDualStack`. `SingleStack` is for a single IP family. `PreferDualStack` is for two IP families on dual-stack configured clusters or a single IP family on single-stack clusters. `RequireDualStack` fails unless there are two IP families on dual-stack configured clusters. If unspecified, Kubernetes will choose the default value based on the service type."
+                              ipFamilies:
+                                type: array
+                                items:
+                                  type: string
+                                  enum:
+                                    - IPv4
+                                    - IPv6
+                                description: "Specifies the IP Families used by the service. Available options are `IPv4` and `IPv6`. If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting."
+                              createBootstrapService:
+                                type: boolean
+                                description: Whether to create the bootstrap service or not. The bootstrap service is created by default (if not specified differently). This field can be used with the `loadBalancer` type listener.
+                              finalizers:
+                                type: array
+                                items:
+                                  type: string
+                                description: "A list of finalizers which will be configured for the `LoadBalancer` type Services created for this listener. If supported by the platform, the finalizer `service.kubernetes.io/load-balancer-cleanup` to make sure that the external load balancer is deleted together with the service.For more information, see https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#garbage-collecting-load-balancers. This field can be used only with `loadbalancer` type listeners."
+                              useServiceDnsDomain:
+                                type: boolean
+                                description: "Configures whether the Kubernetes service DNS domain should be used or not. If set to `true`, the generated addresses will contain the service DNS domain suffix (by default `.cluster.local`, can be configured using environment variable `KUBERNETES_SERVICE_DNS_DOMAIN`). Defaults to `false`.This field can be used only with `internal` and `cluster-ip` type listeners."
+                              maxConnections:
+                                type: integer
+                                description: The maximum number of connections we allow for this listener in the broker at any time. New connections are blocked if the limit is reached.
+                              maxConnectionCreationRate:
+                                type: integer
+                                description: The maximum connection creation rate we allow in this listener at any time. New connections will be throttled if the limit is reached.
+                              preferredNodePortAddressType:
                                 type: string
-                              description: "A list of finalizers which will be configured for the `LoadBalancer` type Services created for this listener. If supported by the platform, the finalizer `service.kubernetes.io/load-balancer-cleanup` to make sure that the external load balancer is deleted together with the service.For more information, see https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#garbage-collecting-load-balancers. This field can be used only with `loadbalancer` type listeners."
-                            useServiceDnsDomain:
-                              type: boolean
-                              description: "Configures whether the Kubernetes service DNS domain should be used or not. If set to `true`, the generated addresses will contain the service DNS domain suffix (by default `.cluster.local`, can be configured using environment variable `KUBERNETES_SERVICE_DNS_DOMAIN`). Defaults to `false`.This field can be used only with `internal` and `cluster-ip` type listeners."
-                            maxConnections:
-                              type: integer
-                              description: The maximum number of connections we allow for this listener in the broker at any time. New connections are blocked if the limit is reached.
-                            maxConnectionCreationRate:
-                              type: integer
-                              description: The maximum connection creation rate we allow in this listener at any time. New connections will be throttled if the limit is reached.
-                            preferredNodePortAddressType:
-                              type: string
-                              enum:
-                              - ExternalIP
-                              - ExternalDNS
-                              - InternalIP
-                              - InternalDNS
-                              - Hostname
-                              description: |-
-                                Defines which address type should be used as the node address. Available types are: `ExternalDNS`, `ExternalIP`, `InternalDNS`, `InternalIP` and `Hostname`. By default, the addresses will be used in the following order (the first one found will be used):
+                                enum:
+                                  - ExternalIP
+                                  - ExternalDNS
+                                  - InternalIP
+                                  - InternalDNS
+                                  - Hostname
+                                description: |-
+                                  Defines which address type should be used as the node address. Available types are: `ExternalDNS`, `ExternalIP`, `InternalDNS`, `InternalIP` and `Hostname`. By default, the addresses will be used in the following order (the first one found will be used):
 
-                                * `ExternalDNS`
-                                * `ExternalIP`
-                                * `InternalDNS`
-                                * `InternalIP`
-                                * `Hostname`
+                                  * `ExternalDNS`
+                                  * `ExternalIP`
+                                  * `InternalDNS`
+                                  * `InternalIP`
+                                  * `Hostname`
 
                                   This field is used to select the preferred address type, which is checked first. If no address is found for this address type, the other types are checked in the default order. This field can only be used with `nodeport` type listener.
                             description: Additional listener configuration.
