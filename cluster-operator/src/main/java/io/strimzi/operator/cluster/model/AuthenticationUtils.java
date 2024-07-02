@@ -85,13 +85,14 @@ public class AuthenticationUtils {
 
     private static void validateClientAuthenticationOAuth(KafkaClientAuthenticationOAuth auth) {
         boolean accessTokenCase = auth.getAccessToken() != null || auth.getAccessTokenLocation() != null;
+        boolean accessTokenLocationCase = auth.getAccessTokenLocation() != null;
         boolean refreshTokenCase = auth.getTokenEndpointUri() != null && auth.getClientId() != null && auth.getRefreshToken() != null;
         boolean clientSecretCase = auth.getTokenEndpointUri() != null && auth.getClientId() != null && auth.getClientSecret() != null;
         boolean passwordGrantCase = auth.getTokenEndpointUri() != null && auth.getClientId() != null && auth.getUsername() != null && auth.getPasswordSecret() != null;
         boolean clientAssertionCase = auth.getTokenEndpointUri() != null && auth.getClientId() != null && (auth.getClientAssertion() != null || auth.getClientAssertionLocation() != null);
 
         // If not one of valid cases throw exception
-        if (!(accessTokenCase || refreshTokenCase || clientSecretCase || passwordGrantCase || clientAssertionCase)) {
+        if (!(accessTokenCase || accessTokenLocationCase || refreshTokenCase || clientSecretCase || passwordGrantCase || clientAssertionCase)) {
             throw new InvalidResourceException("OAUTH authentication selected, but some options are missing. You have to specify one of the following combinations: [accessToken], [accessTokenLocation], [tokenEndpointUri, clientId, refreshToken], [tokenEndpointUri, clientId, clientSecret], [tokenEndpointUri, clientId, clientAssertion], [tokenEndpointUri, clientId, clientAssertionLocation], [tokenEndpointUri, username, password, clientId].");
         }
 
@@ -306,10 +307,10 @@ public class AuthenticationUtils {
         addOption(options, ClientConfig.OAUTH_SCOPE, oauth.getScope());
         addOption(options, ClientConfig.OAUTH_AUDIENCE, oauth.getAudience());
         if (oauth.isDisableTlsHostnameVerification()) {
-            options.put(ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, "");
+            options.put(ClientConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, "");
         }
         if (!oauth.isAccessTokenIsJwt()) {
-            options.put(ServerConfig.OAUTH_ACCESS_TOKEN_IS_JWT, "false");
+            options.put(ClientConfig.OAUTH_ACCESS_TOKEN_IS_JWT, "false");
         }
         addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_MAX_TOKEN_EXPIRY_SECONDS, oauth.getMaxTokenExpirySeconds());
         addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_CONNECT_TIMEOUT_SECONDS, oauth.getConnectTimeoutSeconds());
@@ -317,10 +318,10 @@ public class AuthenticationUtils {
         addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_HTTP_RETRIES, oauth.getHttpRetries());
         addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_HTTP_RETRY_PAUSE_MILLIS, oauth.getHttpRetryPauseMs());
         if (oauth.isEnableMetrics()) {
-            options.put(ServerConfig.OAUTH_ENABLE_METRICS, "true");
+            options.put(ClientConfig.OAUTH_ENABLE_METRICS, "true");
         }
         if (!oauth.isIncludeAcceptHeader()) {
-            options.put(ServerConfig.OAUTH_INCLUDE_ACCEPT_HEADER, "false");
+            options.put(ClientConfig.OAUTH_INCLUDE_ACCEPT_HEADER, "false");
         }
         String tokenPath = oauth.getAccessTokenLocation();
         if (tokenPath != null) {
