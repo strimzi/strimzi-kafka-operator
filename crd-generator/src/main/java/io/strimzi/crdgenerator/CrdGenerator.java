@@ -761,7 +761,7 @@ class CrdGenerator {
             List<String> expectedOrder = asList(order.value());
             for (String property : properties) {
                 if (!expectedOrder.contains(property)) {
-                    warn(crdClass + " has a property " + property + " which is not in the @JsonPropertyOrder");
+                    err(crdClass + " has a property " + property + " which is not in the @JsonPropertyOrder");
                 }
             }
         }
