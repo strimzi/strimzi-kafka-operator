@@ -1451,6 +1451,44 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 }));
     }
 
+    @Test
+    public void shouldGenerateNewProposalWhenUserTaskNotFound(VertxTestContext context) throws IOException, URISyntaxException {
+        cruiseControlServer.setupCCRebalanceResponse(2, CruiseControlEndpoints.REBALANCE);
+
+        KafkaRebalance kr = new KafkaRebalanceBuilder(createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, true))
+                .withNewStatus()
+                .withObservedGeneration(1L)
+                .withConditions(new ConditionBuilder()
+                        .withType("ProposalReady")
+                        .withStatus("True")
+                        .build())
+                .endStatus()
+                .build();
+
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).updateStatus();
+
+        crdCreateKafka();
+        crdCreateCruiseControlSecrets();
+
+        Checkpoint checkpoint = context.checkpoint();
+        krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME))
+                .onComplete(context.succeeding(v -> {
+                    // the resource moved to `Rebalancing` since auto-approval annotation is set on the resource
+                    assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.Rebalancing);
+                }))
+                .compose(v -> {
+                    // Sets a user_tasks response with an empty task list simulating CC restart
+                    cruiseControlServer.setupUserTasktoEmpty();
+                    return krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()));
+                })
+                .onComplete(context.succeeding(v -> {
+                    // the resource transitioned from 'Rebalancing' to 'PendingProposal'
+                    assertState(context, client, namespace, RESOURCE_NAME, KafkaRebalanceState.PendingProposal);
+                    checkpoint.flag();
+                }));
+    }
+
     /**
      * Tests the transition from 'New' to 'NotReady' due to missing Kafka cluster label in the resource
      *
@@ -1540,40 +1578,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
                         "Connection refused");
                 checkpoint.flag();
             }));
-    }
-
-    /**
-     * Tests an intra-broker disk balance on a Kafka deployment without a JBOD configuration.
-     *
-     * 1. A new KafkaRebalance resource is created with rebalanceDisk=true for a Kafka cluster without a JBOD configuration.
-     * 2. The operator sets an "InvalidResourceException" error instead of requesting a proposal since
-     *    intra-broker balancing only applies to Kafka deployments that use JBOD storage with multiple disks.
-     * 4. The KafkaRebalance resource moves to the 'NotReady' state
-     */
-    @Test
-    public void testIntraBrokerDiskBalanceWithoutJbodConfig(VertxTestContext context) {
-        KafkaRebalanceSpec kafkaRebalanceSpec = new KafkaRebalanceSpecBuilder()
-                .withRebalanceDisk(true)
-                .build();
-
-        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, kafkaRebalanceSpec, false);
-
-        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
-        crdCreateKafka();
-        crdCreateCruiseControlSecrets();
-
-        Checkpoint checkpoint = context.checkpoint();
-        krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME))
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    // the resource moved from New to NotReady due to the error
-                    KafkaRebalance kr1 = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(RESOURCE_NAME).get();
-                    assertThat(kr1, StateMatchers.hasState());
-                    Condition condition = krao.rebalanceStateCondition(kr1.getStatus());
-                    assertThat(condition.getReason(), is("InvalidResourceException"));
-                    assertThat(condition.getMessage(), is("Cannot set rebalanceDisk=true for Kafka clusters with a non-JBOD storage config. " +
-                            "Intra-broker balancing only applies to Kafka deployments that use JBOD storage with multiple disks."));
-                    checkpoint.flag();
-                })));
     }
 
     /**

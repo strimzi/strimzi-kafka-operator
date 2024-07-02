@@ -1,6 +1,7 @@
 # CHANGELOG
 
-## x.xx.x
+## 0.43.0
+
 Added support for additional volumes in CRDs:
 * Users can specify volumes and volumeMounts fields in the Kafka, KafkaConnect, KafkaBridge, KafkaMirrorMaker2, EntityOperator, CruiseControl, KafkaExporter, and Zookeeper CRDs.
 * Supported volume types include Secret, ConfigMap, EmptyDir, and PersistentVolumeClaims.
@@ -9,6 +10,7 @@ Added support for additional volumes in CRDs:
 
 ## 0.42.0
 
+* Add support for Kafka 3.7.1
 * The `UseKRaft` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.
   To use KRaft (ZooKeeper-less Apache Kafka), you still need to use the `strimzi.io/kraft: enabled` annotation on the `Kafka` custom resources or migrate from an existing ZooKeeper-based cluster.
 * Update the base image used by Strimzi containers from UBI8 to UBI9

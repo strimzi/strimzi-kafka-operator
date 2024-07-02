@@ -179,9 +179,9 @@ the documentation for more details.
 | `kanikoExecutor.image.name`                 | Kaniko Executor image name                                                      | `kaniko-executor`            |
 | `kanikoExecutor.image.tag`                  | Override default Kaniko Executor image tag                                      | `nil`                        |
 | `kanikoExecutor.image.digest`               | Override Kaniko Executor image tag with digest                                  | `nil`                        |
-| `resources.limits.memory`                   | Memory constraint for limits                                                    | `256Mi`                      |
+| `resources.limits.memory`                   | Memory constraint for limits                                                    | `384Mi`                      |
 | `resources.limits.cpu`                      | CPU constraint for limits                                                       | `1000m`                      |
-| `resources.requests.memory`                 | Memory constraint for requests                                                  | `256Mi`                      |
+| `resources.requests.memory`                 | Memory constraint for requests                                                  | `384Mi`                      |
 | `livenessProbe.initialDelaySeconds`         | Liveness probe initial delay in seconds                                         | 10                           |
 | `livenessProbe.periodSeconds`               | Liveness probe period in seconds                                                | 30                           |
 | `readinessProbe.initialDelaySeconds`        | Readiness probe initial delay in seconds                                        | 10                           |

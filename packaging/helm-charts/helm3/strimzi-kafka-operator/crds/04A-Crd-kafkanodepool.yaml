@@ -38,6 +38,10 @@ spec:
       description: Roles of the nodes in the pool
       jsonPath: .status.roles
       type: string
+    - name: NodeIds
+      description: Node IDs used by Kafka nodes in this pool
+      jsonPath: .status.nodeIds
+      type: string
     schema:
       openAPIV3Schema:
         type: object
