@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## x.xx.x
+Added support for additional volumes in CRDs:
+* Users can specify volumes and volumeMounts fields in the Kafka, KafkaConnect, KafkaBridge, KafkaMirrorMaker2, EntityOperator, CruiseControl, KafkaExporter, and Zookeeper CRDs.
+* Supported volume types include Secret, ConfigMap, EmptyDir, and PersistentVolumeClaims.
+* All additional mounted paths is mounted inside /mnt to ensure backwards compatibility for the evolution of kafka and this operator.
+* Example configurations and guidelines have been added to the documentation.
+
 ## 0.42.0
 
 * The `UseKRaft` feature gate moves to GA stage and is permanently enabled without the possibility to disable it.

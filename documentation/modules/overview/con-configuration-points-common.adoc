@@ -65,3 +65,54 @@ spec:
                       - fast-network
   # ...
 ----
+
+== Additional Volumes
+
+Strimzi supports specifying additional volumes and volume mounts in the following components:
+Kafka, KafkaConnect, KafkaBridge, KafkaMirrorMaker2, EntityOperator, CruiseControl,
+KafkaExporter, and Zookeeper. All additional mounted paths are located
+inside `/mnt` to ensure compatibility with future Kafka and Strimzi updates.
+
+This feature enables users to:
+
+- Access log files for enhanced monitoring and debugging.
+- Use additional configurations or secret management tools that require mounting extra volumes.
+- Analyze JVM issues (for example, heap dumps).
+
+Supported Volume Types
+
+- Secret
+- ConfigMap
+- EmptyDir
+- PersistentVolumeClaims
+
+[discrete]
+== Example configuration for additional volumes:
+[source,yaml,subs=attributes+]
+----
+kind: Kafka
+spec:
+  kafka:
+    template:
+      pod:
+        volumes:
+          - name: example-secret
+            secret:
+              secretName: secret-name
+          - name: example-configmap
+            configMap:
+              name: config-map-name
+          - name: temp
+            emptyDir: {}
+          - name: example-pvc-volume
+            persistentVolumeClaim:
+              claimName: myclaim
+      kafkaContainer:
+        volumeMounts:
+          - name: example-secret
+            mountPath: /mnt/secret-volume
+          - name: example-configmap
+            mountPath: /mnt/cm-volume
+          - name: example-pvc-volume
+            mountPath: /mnt/data
+----
