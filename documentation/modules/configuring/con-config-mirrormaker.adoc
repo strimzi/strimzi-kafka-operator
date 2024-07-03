@@ -19,7 +19,7 @@ The `KafkaMirrorMaker` resource will be removed from Strimzi when we adopt Apach
 As a replacement, use the `KafkaMirrorMaker2` custom resource with the xref:unidirectional_replication_activepassive[`IdentityReplicationPolicy`].
 
 .Example `KafkaMirrorMaker` custom resource configuration
-[source,yaml,subs="+quotes,attributes"]
+[source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaMirrorMakerApiVersion}
 kind: KafkaMirrorMaker
@@ -34,8 +34,8 @@ spec:
     offsetCommitInterval: 120000 # <5>
     tls: # <6>
       trustedCertificates:
-      - secretName: my-source-cluster-ca-cert
-        pattern: "*.crt"
+        - secretName: my-source-cluster-ca-cert
+          pattern: "*.crt"
     authentication: # <7>
       type: tls
       certificateAndKey:
@@ -50,8 +50,8 @@ spec:
     abortOnSendFailure: false # <9>
     tls:
       trustedCertificates:
-      - secretName: my-target-cluster-ca-cert
-        pattern: "*.crt"
+        - secretName: my-target-cluster-ca-cert
+          pattern: "*.crt"
     authentication:
       type: tls
       certificateAndKey:
