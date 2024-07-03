@@ -253,15 +253,15 @@ Decreasing the heartbeat interval reduces the chance of accidental rebalancing, 
 [source,env]
 ----
 # ...
-max.poll.records=500 # <1>
-session.timeout.ms=45000 # <2>
-heartbeat.interval.ms=3000 # <3>
+max.poll.records=100 # <1>
+session.timeout.ms=60000 # <2>
+heartbeat.interval.ms=10000 # <3>
 # ...
 ----
-<1> Sets the number of processed records returned from the consumer.
-<2> Adjust the heartbeat interval lower according to anticipated rebalances.
-<3> If no heartbeats are received by the Kafka broker before the timeout duration expires, the consumer is removed from the consumer group and a rebalance is initiated.
+<1> Set the number records returned to the consumer when calling the `poll()` method.
+<2> Set the timeout for detecting client failure. 
 If the broker configuration has a `group.min.session.timeout.ms` and `group.max.session.timeout.ms`, the session timeout value must be within that range.
+<3> Adjust the heartbeat interval lower according to anticipated rebalances.
 
 == Managing offset policy
 
@@ -300,22 +300,31 @@ The rebalancing of a partition between active consumers in a group is the time i
 * The consumers in the group to receive their assignments and start fetching
 
 Rebalances are triggered by changes in consumer health, network issues, configuration updates, and scaling events.
-This process can increase service downtime, especially if it occurs frequently, such as during rolling restarts of a consumer group cluster. 
+This process can increase service downtime, especially if it occurs frequently, such as during rolling restarts of consumers in a group.
+
 To minimize the impact of rebalances, consider the following strategies and configurations:
 
-Static membership:: Assign a unique identifier (`group.instance.id`) to each consumer instance. 
+Assess throughput and parallelism:: Assess the expected throughput (bytes and records per second) and parallelism (number of partitions) of the input topics against the number of consumers.
++
+If adjustments are needed, start by setting up static membership, adopting a partition assignment strategy, and setting a limit on the number of records returned using the `max.poll.records` property. 
+Add further configurations for timeouts and intervals, if required and with care, as these can introduce issues related to the handling of failures.
+
+Use static membership:: Assign a unique identifier (`group.instance.id`) to each consumer instance. 
 Static membership introduces persistence so static consumers retain partition assignments across restarts, reducing unnecessary rebalances. 
 
-Poll intervals and record limits:: 
-* Use the `max.poll.interval.ms` property to prevent rebalances caused by prolonged processing tasks by setting the maximum interval between polls.
-* Use the `max.poll.records` property to limit the number of records returned during each poll. 
-Processing fewer messages more efficiently can prevent delays.
+Adopt partition assignment strategies:: 
+* Use appropriate partition assignment strategies to reduce the number of partitions that need to be reassigned during a rebalance, minimizing the impact on active consumers.
+* The `org.apache.kafka.clients.consumer.CooperativeStickyAssignor` strategy is particularly effective, as it ensures minimal partition movement and better stability during rebalances.
 
-Session timeout and heartbeat intervals::
+Adjust record limits and poll intervals::
+* Use the `max.poll.records` property to limit the number of records returned during each poll. 
+Processing fewer messages more efficiently can prevent delays. 
+* Use the `max.poll.interval.ms` property to prevent rebalances caused by prolonged processing tasks by setting the maximum interval between calls to the `poll()` method.
+* Alternatively, consider pausing partitions to retrieve fewer records at a time.
+
+Adjust session timeout and heartbeat intervals::
 * Use the `session.timeout.ms` property to set a longer timeout to reduce rebalances caused by temporary network glitches or minor processing delays.
 * Adjust the `heartbeat.interval.ms` property to balance failure detection checks with minimizing unnecessary rebalances.
-
-Adopt partition assignment strategies:: Use appropriate partition assignment strategies to reduce the number of partitions that need to be reassigned during a rebalance, minimizing the impact on active consumers.
 
 Monitor consumer health:: Instability in consumer applications, such as frequent crashes, can trigger rebalances. 
 Use Kafka consumer metrics to monitor such things as rebalance rates, session timouts, and failed fetch requests.
@@ -337,10 +346,14 @@ partition.assignment.strategy=org.apache.kafka.clients.consumer.CooperativeStick
 To minimize the impact of rebalances during scaling of consumer groups, consider the following approaches:
 
 Set a rebalance delay:: Use the `group.initial.rebalance.delay.ms` property in the Kafka configuration to delay the time it takes for consumers to join a new consumer group before performing a rebalance.
+Introducing a delay helps avoid triggering several rebalances when starting multiple consumers near the same time. 
+The appropriate delay depends on the orchestration used and might not be suitable in some circumstances. 
 
 Avoid frequent scaling:: 
 * Keep the number of consumers stable, scaling only when necessary and in controlled increments.
 * Monitor system performance and adjust your scaling strategy as needed.
+** Lag per partition should be constant and low.
+** Records processed per second by consumers should match the records per second in the input topics.
 * Use the Kafka Exporter to check for consumer lag and determine if scaling is required.
 
 Implement dynamic scaling policies::
@@ -348,5 +361,7 @@ Implement dynamic scaling policies::
 * Define maximum and minimum replica counts for consumer groups.
 * Set periods between scaling events to prevent rapid scaling.
 
-NOTE: In cases where lengthy message processing is unavoidable, consider offloading such tasks to a pool of worker threads. 
-This parallel processing approach prevents delays and potential rebalances caused by overwhelming the consumer with a large volume of records.
+NOTE: In cases where lengthy message processing is unavoidable, consider pausing and resuming partitions as needed.
+If you pause all partitions, `poll()` returns no records, allowing you to keep calling it without overwhelming the consumers. 
+Alternatively, you can offload the processing tasks to a pool of worker threads. 
+This helps prevents delays and potential rebalances.
