@@ -6,11 +6,10 @@ package io.strimzi.systemtest.bridge;
 
 import io.fabric8.kubernetes.api.model.Service;
 import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
-import io.skodjob.annotations.TestTag;
-import io.skodjob.annotations.UseCase;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeSpecBuilder;
@@ -66,16 +65,10 @@ import static io.strimzi.systemtest.TestConstants.REGRESSION;
     afterTestSteps = {
         
     },
-    useCases = {
-        @UseCase(id = "auth-weird-username"),
-        @UseCase(id = "scram-sha-auth"),
-        @UseCase(id = "Avoiding 409 error")
-    },
-    tags = {
-        @TestTag(value = REGRESSION),
-        @TestTag(value = BRIDGE),
-        @TestTag(value = NODEPORT_SUPPORTED),
-        @TestTag(value = EXTERNAL_CLIENTS_USED)
+    labels = {
+        @Label("auth-weird-username"),
+        @Label("scram-sha-auth"),
+        @Label("Avoiding 409 error")
     }
 )
 public class HttpBridgeKafkaExternalListenersST extends AbstractST {
@@ -94,15 +87,9 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
             @Step(value = "Configure KafkaBridgeSpec with SCRAM-SHA authentication and TLS settings", expected = "KafkaBridgeSpec is built with the provided authentication and TLS settings"),
             @Step(value = "Invoke test method with weird username and bridge specification", expected = "Test runs successfully with no 409 error")
         },
-        useCases = {
-            @UseCase(id = "auth-weird-username"),
-            @UseCase(id = "scram-sha-auth")
-        },
-        tags = {
-            @TestTag(value = REGRESSION),
-            @TestTag(value = BRIDGE),
-            @TestTag(value = NODEPORT_SUPPORTED),
-            @TestTag(value = EXTERNAL_CLIENTS_USED)
+        labels = {
+            @Label("auth-weird-username"),
+            @Label("scram-sha-auth")
         }
     )
     void testScramShaAuthWithWeirdUsername() {
@@ -142,15 +129,9 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
             @Step(value = "Build KafkaBridgeSpec with the TLS authentication using the weird username", expected = "KafkaBridgeSpec is created with the given username and TLS configuration"),
             @Step(value = "Invoke testWeirdUsername method with created configurations", expected = "The method runs without any 409 error")
         },
-        useCases = {
-            @UseCase(id = "Creating a node port service"),
-            @UseCase(id = "Avoiding 409 error")
-        },
-        tags = {
-            @TestTag(value = REGRESSION),
-            @TestTag(value = BRIDGE),
-            @TestTag(value = NODEPORT_SUPPORTED),
-            @TestTag(value = EXTERNAL_CLIENTS_USED)
+        labels = {
+            @Label("Creating a node port service"),
+            @Label("Avoiding 409 error")
         }
     )
     void testTlsAuthWithWeirdUsername() {

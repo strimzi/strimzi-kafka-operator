@@ -13,17 +13,11 @@
 | 5. | Create Kafka user with SCRAM-SHA authentication | Kafka user is created and configured with SCRAM-SHA authentication |
 | 6. | Deploy HTTP bridge | HTTP bridge is deployed |
 
-**Use-cases:**
+**Labels:**
 
-* `tls-scram-authentication`
-* `message-production`
-* `message-consumption`
-
-**Tags:**
-
-* `internalclients`
-* `bridge`
-* `regression`
+* `tls-scram-authentication` (description file doesn't exists)
+* `message-production` (description file doesn't exists)
+* `message-consumption` (description file doesn't exists)
 
 <hr style="border:1px solid">
 
@@ -41,15 +35,9 @@
 | 4. | Send messages to Kafka using KafkaClients | Messages are successfully sent to the Kafka topic |
 | 5. | Wait for clients' success validation | Messages are successfully consumed from the Kafka topic |
 
-**Use-cases:**
+**Labels:**
 
-* `tls-scram-authentication`
-
-**Tags:**
-
-* `internalclients`
-* `bridge`
-* `regression`
+* `tls-scram-authentication` (description file doesn't exists)
 
 
 ## testSendSimpleMessageTlsScramSha
@@ -68,15 +56,9 @@
 | 6. | Start consuming messages via Kafka client | Messages are consumed successfully from the topic |
 | 7. | Wait for consumer success | Consumer finishes receiving messages without errors |
 
-**Use-cases:**
+**Labels:**
 
-* `tls-scram-authentication`
-* `message-production`
-* `message-consumption`
-
-**Tags:**
-
-* `internalclients`
-* `bridge`
-* `regression`
+* `tls-scram-authentication` (description file doesn't exists)
+* `message-production` (description file doesn't exists)
+* `message-consumption` (description file doesn't exists)
 

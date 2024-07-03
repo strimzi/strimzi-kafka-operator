@@ -8,18 +8,11 @@
 | - | - | - |
 | 1. | Deploy default cluster operator installation | Cluster operator is deployed |
 
-**Use-cases:**
+**Labels:**
 
-* `auth-weird-username`
-* `scram-sha-auth`
-* `Avoiding 409 error`
-
-**Tags:**
-
-* `regression`
-* `bridge`
-* `nodeport`
-* `externalclients`
+* `auth-weird-username` (description file doesn't exists)
+* `scram-sha-auth` (description file doesn't exists)
+* `Avoiding 409 error` (description file doesn't exists)
 
 <hr style="border:1px solid">
 
@@ -38,17 +31,10 @@
 | 5. | Configure KafkaBridgeSpec with SCRAM-SHA authentication and TLS settings | KafkaBridgeSpec is built with the provided authentication and TLS settings |
 | 6. | Invoke test method with weird username and bridge specification | Test runs successfully with no 409 error |
 
-**Use-cases:**
+**Labels:**
 
-* `auth-weird-username`
-* `scram-sha-auth`
-
-**Tags:**
-
-* `regression`
-* `bridge`
-* `nodeport`
-* `externalclients`
+* `auth-weird-username` (description file doesn't exists)
+* `scram-sha-auth` (description file doesn't exists)
 
 
 ## testTlsAuthWithWeirdUsername
@@ -64,15 +50,8 @@
 | 3. | Build KafkaBridgeSpec with the TLS authentication using the weird username | KafkaBridgeSpec is created with the given username and TLS configuration |
 | 4. | Invoke testWeirdUsername method with created configurations | The method runs without any 409 error |
 
-**Use-cases:**
+**Labels:**
 
-* `Creating a node port service`
-* `Avoiding 409 error`
-
-**Tags:**
-
-* `regression`
-* `bridge`
-* `nodeport`
-* `externalclients`
+* `Creating a node port service` (description file doesn't exists)
+* `Avoiding 409 error` (description file doesn't exists)
 

@@ -11,19 +11,12 @@
 | 3. | Create Kafka user with TLS configuration | Kafka user with TLS configuration is created |
 | 4. | Deploy HTTP bridge with TLS configuration | HTTP bridge is deployed with TLS configuration |
 
-**Use-cases:**
+**Labels:**
 
-* `message-sending`
-* `tls-verification`
-* `parallel-message-consumption`
-* `tls-message-transfer`
-
-**Tags:**
-
-* `regression`
-* `bridge`
-* `acceptance`
-* `internalclients`
+* `message-sending` (description file doesn't exists)
+* `tls-verification` (description file doesn't exists)
+* `parallel-message-consumption` (description file doesn't exists)
+* `tls-message-transfer` (description file doesn't exists)
 
 <hr style="border:1px solid">
 
@@ -43,17 +36,10 @@
 | 6. | Deploy the Kafka producer TLS client | TLS Kafka producer client starts successfully and begins sending messages. |
 | 7. | Verify message consumption | Messages are successfully consumed by the Kafka Bridge consumer. |
 
-**Use-cases:**
+**Labels:**
 
-* `parallel-message-consumption`
-* `tls-message-transfer`
-
-**Tags:**
-
-* `regression`
-* `bridge`
-* `acceptance`
-* `internalclients`
+* `parallel-message-consumption` (description file doesn't exists)
+* `tls-message-transfer` (description file doesn't exists)
 
 
 ## testSendSimpleMessageTls
@@ -71,15 +57,8 @@
 | 5. | Create Kafka client consumer with TLS configuration | Kafka client consumer is created with TLS configuration |
 | 6. | Verify that the consumer successfully receives messages | Consumer successfully receives the expected number of messages |
 
-**Use-cases:**
+**Labels:**
 
-* `message-sending`
-* `tls-verification`
-
-**Tags:**
-
-* `regression`
-* `bridge`
-* `acceptance`
-* `internalclients`
+* `message-sending` (description file doesn't exists)
+* `tls-verification` (description file doesn't exists)
 
