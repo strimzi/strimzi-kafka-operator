@@ -322,11 +322,7 @@ public class AuthenticationUtils {
         if (!oauth.isIncludeAcceptHeader()) {
             options.put(ClientConfig.OAUTH_INCLUDE_ACCEPT_HEADER, "false");
         }
-        String tokenPath = oauth.getAccessTokenLocation();
-        if (tokenPath != null) {
-            addOption(options, ClientConfig.OAUTH_ACCESS_TOKEN_LOCATION, tokenPath);
-        }
-
+        addOption(options, ClientConfig.OAUTH_ACCESS_TOKEN_LOCATION, oauth.getAccessTokenLocation());
         addOption(options, ClientConfig.OAUTH_CLIENT_ASSERTION_LOCATION, oauth.getClientAssertionLocation());
         addOption(options, ClientConfig.OAUTH_CLIENT_ASSERTION_TYPE, oauth.getClientAssertionType());
 
