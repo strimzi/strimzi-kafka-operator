@@ -64,7 +64,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private String groupsClaim;
     private String groupsClaimDelimiter;
     private String userInfoEndpointUri;
-    private Boolean checkAccessTokenType;
+    private boolean checkAccessTokenType = true;
     private String validTokenType;
     private boolean accessTokenIsJwt = true;
     private List<CertSecretSource> tlsTrustedCertificates;
@@ -83,7 +83,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private String clientAudience = null;
     private boolean enableMetrics = false;
     private boolean failFast = true;
-    private Boolean includeAcceptHeader;
+    private boolean includeAcceptHeader = true;
 
     @Description("Must be `" + TYPE_OAUTH + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -363,11 +363,11 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     @Description("Configure whether the access token type check is performed or not. This should be set to `false` " +
             "if the authorization server does not include 'typ' claim in JWT token. Defaults to `true`.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    public Boolean getCheckAccessTokenType() {
+    public boolean isCheckAccessTokenType() {
         return checkAccessTokenType;
     }
 
-    public void setCheckAccessTokenType(Boolean checkAccessTokenType) {
+    public void setCheckAccessTokenType(boolean checkAccessTokenType) {
         this.checkAccessTokenType = checkAccessTokenType;
     }
 
@@ -507,11 +507,11 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     @Description("Whether the Accept header should be set in requests to the authorization servers. The default value is `true`.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    public Boolean getIncludeAcceptHeader() {
+    public boolean isIncludeAcceptHeader() {
         return includeAcceptHeader;
     }
 
-    public void setIncludeAcceptHeader(Boolean includeAcceptHeader) {
+    public void setIncludeAcceptHeader(boolean includeAcceptHeader) {
         this.includeAcceptHeader = includeAcceptHeader;
     }
 }

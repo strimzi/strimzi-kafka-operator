@@ -597,7 +597,7 @@ public class KafkaBrokerConfigurationBuilder {
         addOptionIfNotNull(options, ServerConfig.OAUTH_GROUPS_CLAIM, oauth.getGroupsClaim());
         addOptionIfNotNull(options, ServerConfig.OAUTH_GROUPS_CLAIM_DELIMITER, oauth.getGroupsClaimDelimiter());
         addBooleanOptionIfFalse(options, ServerConfig.OAUTH_ACCESS_TOKEN_IS_JWT, oauth.isAccessTokenIsJwt());
-        addBooleanOptionIfFalse(options, ServerConfig.OAUTH_CHECK_ACCESS_TOKEN_TYPE, getOrDefault(oauth.getCheckAccessTokenType(), true));
+        addBooleanOptionIfFalse(options, ServerConfig.OAUTH_CHECK_ACCESS_TOKEN_TYPE, oauth.isCheckAccessTokenType());
         addOptionIfNotNull(options, ServerConfig.OAUTH_VALID_TOKEN_TYPE, oauth.getValidTokenType());
 
         if (oauth.isDisableTlsHostnameVerification()) {
@@ -619,7 +619,7 @@ public class KafkaBrokerConfigurationBuilder {
 
         addBooleanOptionIfTrue(options, ServerConfig.OAUTH_ENABLE_METRICS, oauth.isEnableMetrics());
         addBooleanOptionIfFalse(options, ServerConfig.OAUTH_FAIL_FAST, oauth.getFailFast());
-        addBooleanOptionIfFalse(options, ServerConfig.OAUTH_INCLUDE_ACCEPT_HEADER, getOrDefault(oauth.getIncludeAcceptHeader(), true));
+        addBooleanOptionIfFalse(options, ServerConfig.OAUTH_INCLUDE_ACCEPT_HEADER, oauth.isIncludeAcceptHeader());
 
         return options;
     }
