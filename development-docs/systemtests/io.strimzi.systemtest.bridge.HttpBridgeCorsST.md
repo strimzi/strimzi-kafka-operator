@@ -9,15 +9,10 @@
 | 1. | Set up Kafka Bridge and its configuration including CORS settings | Kafka Bridge is set up with the correct configuration |
 | 2. | Deploy required Kafka resources and scraper pod | Kafka resources and scraper pod are deployed and running |
 
-**Use-cases:**
+**Labels:**
 
-* `handle-cors-requests`
-* `security-validation`
-
-**Tags:**
-
-* `bridge`
-* `regression`
+* [handle-cors-requests](labels/handle-cors-requests.md)
+* `security-validation` (description file doesn't exists)
 
 <hr style="border:1px solid">
 
@@ -37,15 +32,10 @@
 | 6. | Send HTTP POST request to the Bridge | HTTP POST request is sent to the Bridge and a response is received |
 | 7. | Verify the response contains '403' and 'CORS Rejected - Invalid origin' | Response indicates the CORS request is rejected |
 
-**Use-cases:**
+**Labels:**
 
-* `handle-cors-requests`
-* `security-validation`
-
-**Tags:**
-
-* `bridge`
-* `regression`
+* [handle-cors-requests](labels/handle-cors-requests.md)
+* `security-validation` (description file doesn't exists)
 
 
 ## testCorsOriginAllowed
@@ -63,12 +53,7 @@
 | 5. | Send GET request to Kafka Bridge and capture the response | Response is captured from Bridge for GET request |
 | 6. | Check if the GET request response is '404 Not Found' | Response for GET request is 404 Not Found |
 
-**Use-cases:**
+**Labels:**
 
-* `validate_cors_handling_allowed_origin`
-
-**Tags:**
-
-* `bridge`
-* `regression`
+* `validate_cors_handling_allowed_origin` (description file doesn't exists)
 

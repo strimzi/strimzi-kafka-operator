@@ -5,11 +5,10 @@
 package io.strimzi.systemtest.bridge;
 
 import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
-import io.skodjob.annotations.TestTag;
-import io.skodjob.annotations.UseCase;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeHttpCors;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -55,13 +54,9 @@ import static org.hamcrest.Matchers.containsString;
         @Step(value = "Set up Kafka Bridge and its configuration including CORS settings", expected = "Kafka Bridge is set up with the correct configuration"),
         @Step(value = "Deploy required Kafka resources and scraper pod", expected = "Kafka resources and scraper pod are deployed and running")
     },
-    useCases = {
-        @UseCase(id = "handle-cors-requests"),
-        @UseCase(id = "security-validation")
-    },
-    tags = {
-        @TestTag(value = BRIDGE),
-        @TestTag(value = REGRESSION)
+    labels = {
+        @Label("handle-cors-requests"),
+        @Label("security-validation")
     }
 )
 public class HttpBridgeCorsST extends AbstractST {
@@ -84,12 +79,8 @@ public class HttpBridgeCorsST extends AbstractST {
             @Step(value = "Send GET request to Kafka Bridge and capture the response", expected = "Response is captured from Bridge for GET request"),
             @Step(value = "Check if the GET request response is '404 Not Found'", expected = "Response for GET request is 404 Not Found")
         },
-        useCases = {
-            @UseCase(id = "validate_cors_handling_allowed_origin")
-        },
-        tags = {
-            @TestTag(value = BRIDGE),
-            @TestTag(value = REGRESSION)
+        labels = {
+            @Label("validate_cors_handling_allowed_origin")
         }
     )
     void testCorsOriginAllowed() {
@@ -143,13 +134,9 @@ public class HttpBridgeCorsST extends AbstractST {
             @Step(value = "Send HTTP POST request to the Bridge", expected = "HTTP POST request is sent to the Bridge and a response is received"),
             @Step(value = "Verify the response contains '403' and 'CORS Rejected - Invalid origin'", expected = "Response indicates the CORS request is rejected")
         },
-        useCases = {
-            @UseCase(id = "handle-cors-requests"),
-            @UseCase(id = "security-validation")
-        },
-        tags = {
-            @TestTag(value = BRIDGE),
-            @TestTag(value = REGRESSION)
+        labels = {
+            @Label("handle-cors-requests"),
+            @Label("security-validation")
         }
     )
     void testCorsForbidden() {

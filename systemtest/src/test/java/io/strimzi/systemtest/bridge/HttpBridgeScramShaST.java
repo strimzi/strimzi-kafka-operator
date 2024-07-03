@@ -5,11 +5,10 @@
 package io.strimzi.systemtest.bridge;
 
 import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
-import io.skodjob.annotations.TestTag;
-import io.skodjob.annotations.UseCase;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.PasswordSecretSource;
@@ -57,15 +56,10 @@ import static io.strimzi.systemtest.TestConstants.REGRESSION;
     afterTestSteps = {
         
     },
-    useCases = {
-        @UseCase(id = "tls-scram-authentication"),
-        @UseCase(id = "message-production"),
-        @UseCase(id = "message-consumption"),
-    },
-    tags = {
-        @TestTag(value = INTERNAL_CLIENTS_USED),
-        @TestTag(value = BRIDGE),
-        @TestTag(value = REGRESSION)
+    labels = {
+        @Label("tls-scram-authentication"),
+        @Label("message-production"),
+        @Label("message-consumption"),
     }
 )
 class HttpBridgeScramShaST extends AbstractST {
@@ -85,15 +79,10 @@ class HttpBridgeScramShaST extends AbstractST {
             @Step(value = "Start consuming messages via Kafka client", expected = "Messages are consumed successfully from the topic"),
             @Step(value = "Wait for consumer success", expected = "Consumer finishes receiving messages without errors")
         },
-        useCases = {
-            @UseCase(id = "tls-scram-authentication"),
-            @UseCase(id = "message-production"),
-            @UseCase(id = "message-consumption")
-        },
-        tags = {
-            @TestTag(value = INTERNAL_CLIENTS_USED),
-            @TestTag(value = BRIDGE),
-            @TestTag(value = REGRESSION)
+        labels = {
+            @Label("tls-scram-authentication"),
+            @Label("message-production"),
+            @Label("message-consumption")
         }
     )
     void testSendSimpleMessageTlsScramSha() {
@@ -128,13 +117,8 @@ class HttpBridgeScramShaST extends AbstractST {
             @Step(value = "Send messages to Kafka using KafkaClients", expected = "Messages are successfully sent to the Kafka topic"),
             @Step(value = "Wait for clients' success validation", expected = "Messages are successfully consumed from the Kafka topic")
         },
-        useCases = {
-            @UseCase(id = "tls-scram-authentication")
-        },
-        tags = {
-            @TestTag(value = INTERNAL_CLIENTS_USED),
-            @TestTag(value = BRIDGE),
-            @TestTag(value = REGRESSION)
+        labels = {
+            @Label("tls-scram-authentication")
         }
     )
     void testReceiveSimpleMessageTlsScramSha() {

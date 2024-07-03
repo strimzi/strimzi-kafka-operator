@@ -7,11 +7,10 @@ package io.strimzi.systemtest.bridge;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
-import io.skodjob.annotations.TestTag;
-import io.skodjob.annotations.UseCase;
 import io.strimzi.api.kafka.model.bridge.KafkaBridge;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeStatus;
@@ -72,25 +71,20 @@ import static org.hamcrest.Matchers.containsString;
     beforeTestSteps = {
         @Step(value = "Initialize Test Storage and deploy Kafka and Kafka Bridge", expected = "Kafka and Kafka Bridge are deployed with necessary configuration")
     },
-    useCases = {
-        @UseCase(id = "send-simple-message"),
-        @UseCase(id = "label-verification"),
-        @UseCase(id = "simple-message-receive"),
-        @UseCase(id = "kafka-bridge-consumer"),
-        @UseCase(id = "update-configuration"),
-        @UseCase(id = "service_discovery_verification"),
-        @UseCase(id = "annotation-validation"),
-        @UseCase(id = "automated_test"),
-        @UseCase(id = "bridge-scaling"),
-        @UseCase(id = "bridge-stability"),
-        @UseCase(id = "scaling"),
-        @UseCase(id = "verify-custom-labels"),
-        @UseCase(id = "verify-custom-annotations")
-    },
-    tags = {
-        @TestTag(value = REGRESSION),
-        @TestTag(value = BRIDGE),
-        @TestTag(value = INTERNAL_CLIENTS_USED)
+    labels = {
+        @Label("send-simple-message"),
+        @Label("label-verification"),
+        @Label("simple-message-receive"),
+        @Label("kafka-bridge-consumer"),
+        @Label("update-configuration"),
+        @Label("service_discovery_verification"),
+        @Label("annotation-validation"),
+        @Label("automated_test"),
+        @Label("bridge-scaling"),
+        @Label("bridge-stability"),
+        @Label("scaling"),
+        @Label("verify-custom-labels"),
+        @Label("verify-custom-annotations")
     }
 )
 class HttpBridgeST extends AbstractST {
@@ -112,14 +106,9 @@ class HttpBridgeST extends AbstractST {
             @Step(value = "Verify Kafka Bridge pod labels", expected = "Labels for Kafka Bridge pods are correctly set and verified"),
             @Step(value = "Verify Kafka Bridge service labels", expected = "Labels for Kafka Bridge service are correctly set and verified")
         },
-        useCases = {
-            @UseCase(id = "send-simple-message"),
-            @UseCase(id = "label-verification")
-        },
-        tags = {
-            @TestTag(value = REGRESSION),
-            @TestTag(value = BRIDGE),
-            @TestTag(value = INTERNAL_CLIENTS_USED)
+        labels = {
+            @Label("send-simple-message"),
+            @Label("label-verification")
         }
     )
     void testSendSimpleMessage() {
@@ -162,14 +151,9 @@ class HttpBridgeST extends AbstractST {
             @Step(value = "Send messages using Kafka producer", expected = "Messages are sent to Kafka successfully"),
             @Step(value = "Verify message reception", expected = "All messages are received by Kafka Bridge consumer client")
         },
-        useCases = {
-            @UseCase(id = "simple-message-receive"),
-            @UseCase(id = "kafka-bridge-consumer")
-        },
-        tags = {
-            @TestTag(value = REGRESSION),
-            @TestTag(value = BRIDGE),
-            @TestTag(value = INTERNAL_CLIENTS_USED)
+        labels = {
+            @Label("simple-message-receive"),
+            @Label("kafka-bridge-consumer")
         }
     )
     void testReceiveSimpleMessage() {
@@ -210,13 +194,8 @@ class HttpBridgeST extends AbstractST {
             @Step(value = "Verify updated probe values and environment variables", expected = "The probe values and environment variables match the updated configuration"),
             @Step(value = "Verify Kafka Bridge configurations for producer and consumer", expected = "Producer and consumer configurations match the updated settings")
         },
-        useCases = {
-            @UseCase(id = "update_configuration")
-        },
-        tags = {
-            @TestTag(value = REGRESSION),
-            @TestTag(value = BRIDGE),
-            @TestTag(value = INTERNAL_CLIENTS_USED)
+        labels = {
+            @Label("update_configuration")
         }
     )
     void testCustomAndUpdatedValues() {
@@ -325,14 +304,9 @@ class HttpBridgeST extends AbstractST {
             @Step(value = "Convert the discovery annotation to a JsonArray", expected = "JsonArray representation of the discovery annotation is created"),
             @Step(value = "Validate the content of the JsonArray against expected values", expected = "The JsonArray matches the expected service discovery information")
         },
-        useCases = {
-            @UseCase(id = "service_discovery_verification"),
-            @UseCase(id = "annotation_validation")
-        },
-        tags = {
-            @TestTag(value = REGRESSION),
-            @TestTag(value = BRIDGE),
-            @TestTag(value = INTERNAL_CLIENTS_USED)
+        labels = {
+            @Label("service_discovery_verification"),
+            @Label("annotation_validation")
         }
     )
     void testDiscoveryAnnotation() {
@@ -353,14 +327,9 @@ class HttpBridgeST extends AbstractST {
             @Step(value = "Check the number of KafkaBridge pods after scaling", expected = "No KafkaBridge pods should be running"),
             @Step(value = "Verify the status of KafkaBridge", expected = "KafkaBridge status should indicate it is ready with zero replicas")
         },
-        useCases = {
-            @UseCase(id = "bridge-scaling"),
-            @UseCase(id = "bridge-stability")
-        },
-        tags = {
-            @TestTag(value = REGRESSION),
-            @TestTag(value = BRIDGE),
-            @TestTag(value = INTERNAL_CLIENTS_USED)
+        labels = {
+            @Label("bridge-scaling"),
+            @Label("bridge-stability")
         }
     )
     void testScaleBridgeToZero() {
@@ -396,13 +365,8 @@ class HttpBridgeST extends AbstractST {
             @Step(value = "Verify the number of replicas.", expected = "The number of replicas is as expected and the observed generation is correct."),
             @Step(value = "Check pod naming conventions.", expected = "Pod names should match the naming convention and be consistent.")
         },
-        useCases = {
-            @UseCase(id = "scaling")
-        },
-        tags = {
-            @TestTag(value = REGRESSION),
-            @TestTag(value = BRIDGE),
-            @TestTag(value = INTERNAL_CLIENTS_USED)
+        labels = {
+            @Label("scaling")
         }
     )
     void testScaleBridgeSubresource() {
@@ -450,13 +414,8 @@ class HttpBridgeST extends AbstractST {
             @Step(value = "Add another label to KafkaBridge resource", expected = "Pods are rolled with new label"),
             @Step(value = "Check that observed generation is 2 and the new label is present", expected = "Observed generation is 2 and label 'another=label' is present")
         },
-        useCases = {
-            @UseCase(id = "configure-deployment-strategy")
-        },
-        tags = {
-            @TestTag(value = REGRESSION),
-            @TestTag(value = BRIDGE),
-            @TestTag(value = INTERNAL_CLIENTS_USED)
+        labels = {
+            @Label("configure-deployment-strategy")
         }
     )
     void testConfigureDeploymentStrategy() {
@@ -515,14 +474,9 @@ class HttpBridgeST extends AbstractST {
             @Step(value = "Retrieve Kafka Bridge service with custom labels", expected = "Kafka Bridge service is retrieved with specified custom labels"),
             @Step(value = "Filter and validate custom labels and annotations", expected = "Custom labels and annotations match the expected values")
         },
-        useCases = {
-            @UseCase(id = "verify-custom-labels"),
-            @UseCase(id = "verify-custom-annotations")
-        },
-        tags = {
-            @TestTag(value = REGRESSION),
-            @TestTag(value = BRIDGE),
-            @TestTag(value = INTERNAL_CLIENTS_USED)
+        labels = {
+            @Label("verify-custom-labels"),
+            @Label("verify-custom-annotations")
         }
     )
     void testCustomBridgeLabelsAreProperlySet() {

@@ -5,11 +5,10 @@
 package io.strimzi.systemtest.bridge;
 
 import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
-import io.skodjob.annotations.TestTag;
-import io.skodjob.annotations.UseCase;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeSpec;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeSpecBuilder;
@@ -59,17 +58,11 @@ import static io.strimzi.systemtest.TestConstants.REGRESSION;
         @Step(value = "Create Kafka user with TLS configuration", expected = "Kafka user with TLS configuration is created"),
         @Step(value = "Deploy HTTP bridge with TLS configuration", expected = "HTTP bridge is deployed with TLS configuration")
     },
-    useCases = {
-        @UseCase(id = "message-sending"),
-        @UseCase(id = "tls-verification"),
-        @UseCase(id = "parallel-message-consumption"),
-        @UseCase(id = "tls-message-transfer")
-    },
-    tags = {
-        @TestTag(value = REGRESSION),
-        @TestTag(value = BRIDGE),
-        @TestTag(value = ACCEPTANCE),
-        @TestTag(value = INTERNAL_CLIENTS_USED)
+    labels = {
+        @Label("message-sending"),
+        @Label("tls-verification"),
+        @Label("parallel-message-consumption"),
+        @Label("tls-message-transfer")
     }
 )
 class HttpBridgeTlsST extends AbstractST {
@@ -88,15 +81,9 @@ class HttpBridgeTlsST extends AbstractST {
             @Step(value = "Create Kafka client consumer with TLS configuration", expected = "Kafka client consumer is created with TLS configuration"),
             @Step(value = "Verify that the consumer successfully receives messages", expected = "Consumer successfully receives the expected number of messages")
         },
-        useCases = {
-            @UseCase(id = "message-sending"),
-            @UseCase(id = "tls-verification")
-        },
-        tags = {
-            @TestTag(value = REGRESSION),
-            @TestTag(value = BRIDGE),
-            @TestTag(value = ACCEPTANCE),
-            @TestTag(value = INTERNAL_CLIENTS_USED)
+        labels = {
+            @Label("message-sending"),
+            @Label("tls-verification")
         }
     )
     void testSendSimpleMessageTls() {
@@ -132,15 +119,9 @@ class HttpBridgeTlsST extends AbstractST {
             @Step(value = "Deploy the Kafka producer TLS client", expected = "TLS Kafka producer client starts successfully and begins sending messages."),
             @Step(value = "Verify message consumption", expected = "Messages are successfully consumed by the Kafka Bridge consumer.")
         },
-        useCases = {
-            @UseCase(id = "parallel-message-consumption"),
-            @UseCase(id = "tls-message-transfer")
-        },
-        tags = {
-            @TestTag(value = REGRESSION),
-            @TestTag(value = BRIDGE),
-            @TestTag(value = ACCEPTANCE),
-            @TestTag(value = INTERNAL_CLIENTS_USED)
+        labels = {
+            @Label("parallel-message-consumption"),
+            @Label("tls-message-transfer")
         }
     )
     void testReceiveSimpleMessageTls() {

@@ -8,27 +8,21 @@
 | - | - | - |
 | 1. | Initialize Test Storage and deploy Kafka and Kafka Bridge | Kafka and Kafka Bridge are deployed with necessary configuration |
 
-**Use-cases:**
+**Labels:**
 
-* `send-simple-message`
-* `label-verification`
-* `simple-message-receive`
-* `kafka-bridge-consumer`
-* `update-configuration`
-* `service_discovery_verification`
-* `annotation-validation`
-* `automated_test`
-* `bridge-scaling`
-* `bridge-stability`
-* `scaling`
-* `verify-custom-labels`
-* `verify-custom-annotations`
-
-**Tags:**
-
-* `regression`
-* `bridge`
-* `internalclients`
+* `send-simple-message` (description file doesn't exists)
+* `label-verification` (description file doesn't exists)
+* `simple-message-receive` (description file doesn't exists)
+* `kafka-bridge-consumer` (description file doesn't exists)
+* `update-configuration` (description file doesn't exists)
+* `service_discovery_verification` (description file doesn't exists)
+* `annotation-validation` (description file doesn't exists)
+* `automated_test` (description file doesn't exists)
+* `bridge-scaling` (description file doesn't exists)
+* `bridge-stability` (description file doesn't exists)
+* `scaling` (description file doesn't exists)
+* `verify-custom-labels` (description file doesn't exists)
+* `verify-custom-annotations` (description file doesn't exists)
 
 <hr style="border:1px solid">
 
@@ -47,15 +41,9 @@
 | 5. | Add another label to KafkaBridge resource | Pods are rolled with new label |
 | 6. | Check that observed generation is 2 and the new label is present | Observed generation is 2 and label 'another=label' is present |
 
-**Use-cases:**
+**Labels:**
 
-* `configure-deployment-strategy`
-
-**Tags:**
-
-* `regression`
-* `bridge`
-* `internalclients`
+* `configure-deployment-strategy` (description file doesn't exists)
 
 
 ## testCustomAndUpdatedValues
@@ -73,15 +61,9 @@
 | 5. | Verify updated probe values and environment variables | The probe values and environment variables match the updated configuration |
 | 6. | Verify Kafka Bridge configurations for producer and consumer | Producer and consumer configurations match the updated settings |
 
-**Use-cases:**
+**Labels:**
 
-* `update_configuration`
-
-**Tags:**
-
-* `regression`
-* `bridge`
-* `internalclients`
+* `update_configuration` (description file doesn't exists)
 
 
 ## testCustomBridgeLabelsAreProperlySet
@@ -97,16 +79,10 @@
 | 3. | Retrieve Kafka Bridge service with custom labels | Kafka Bridge service is retrieved with specified custom labels |
 | 4. | Filter and validate custom labels and annotations | Custom labels and annotations match the expected values |
 
-**Use-cases:**
+**Labels:**
 
-* `verify-custom-labels`
-* `verify-custom-annotations`
-
-**Tags:**
-
-* `regression`
-* `bridge`
-* `internalclients`
+* `verify-custom-labels` (description file doesn't exists)
+* `verify-custom-annotations` (description file doesn't exists)
 
 
 ## testDiscoveryAnnotation
@@ -122,16 +98,10 @@
 | 3. | Convert the discovery annotation to a JsonArray | JsonArray representation of the discovery annotation is created |
 | 4. | Validate the content of the JsonArray against expected values | The JsonArray matches the expected service discovery information |
 
-**Use-cases:**
+**Labels:**
 
-* `service_discovery_verification`
-* `annotation_validation`
-
-**Tags:**
-
-* `regression`
-* `bridge`
-* `internalclients`
+* `service_discovery_verification` (description file doesn't exists)
+* `annotation_validation` (description file doesn't exists)
 
 
 ## testReceiveSimpleMessage
@@ -148,16 +118,10 @@
 | 4. | Send messages using Kafka producer | Messages are sent to Kafka successfully |
 | 5. | Verify message reception | All messages are received by Kafka Bridge consumer client |
 
-**Use-cases:**
+**Labels:**
 
-* `simple-message-receive`
-* `kafka-bridge-consumer`
-
-**Tags:**
-
-* `regression`
-* `bridge`
-* `internalclients`
+* `simple-message-receive` (description file doesn't exists)
+* `kafka-bridge-consumer` (description file doesn't exists)
 
 
 ## testScaleBridgeSubresource
@@ -173,15 +137,9 @@
 | 3. | Verify the number of replicas. | The number of replicas is as expected and the observed generation is correct. |
 | 4. | Check pod naming conventions. | Pod names should match the naming convention and be consistent. |
 
-**Use-cases:**
+**Labels:**
 
-* `scaling`
-
-**Tags:**
-
-* `regression`
-* `bridge`
-* `internalclients`
+* `scaling` (description file doesn't exists)
 
 
 ## testScaleBridgeToZero
@@ -199,16 +157,10 @@
 | 5. | Check the number of KafkaBridge pods after scaling | No KafkaBridge pods should be running |
 | 6. | Verify the status of KafkaBridge | KafkaBridge status should indicate it is ready with zero replicas |
 
-**Use-cases:**
+**Labels:**
 
-* `bridge-scaling`
-* `bridge-stability`
-
-**Tags:**
-
-* `regression`
-* `bridge`
-* `internalclients`
+* `bridge-scaling` (description file doesn't exists)
+* `bridge-stability` (description file doesn't exists)
 
 
 ## testSendSimpleMessage
@@ -229,14 +181,8 @@
 | 8. | Verify Kafka Bridge pod labels | Labels for Kafka Bridge pods are correctly set and verified |
 | 9. | Verify Kafka Bridge service labels | Labels for Kafka Bridge service are correctly set and verified |
 
-**Use-cases:**
+**Labels:**
 
-* `send-simple-message`
-* `label-verification`
-
-**Tags:**
-
-* `regression`
-* `bridge`
-* `internalclients`
+* `send-simple-message` (description file doesn't exists)
+* `label-verification` (description file doesn't exists)
 
