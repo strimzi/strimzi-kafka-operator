@@ -939,7 +939,7 @@ public class KafkaMirrorMaker2ClusterTest {
 
         AdditionalVolume additionalVolumePvc = new AdditionalVolumeBuilder()
                 .withName("pvc-volume-name")
-                .withPersistentVolumeClaim(pvc)
+                .withPvc(pvc)
                 .build();
 
         VolumeMount additionalVolumeMountConfigMap = new VolumeMountBuilder()
