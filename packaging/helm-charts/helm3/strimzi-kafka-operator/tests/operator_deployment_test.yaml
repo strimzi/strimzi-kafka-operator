@@ -46,9 +46,9 @@ tests:
     asserts:
       - isKind:
           of: Deployment
-      - equal:
+      - matchRegex:
           path: spec.template.spec.containers[0].image
-          value: quay.io/strimzi/operator:latest
+          pattern: 'quay.io/strimzi/operator:(latest|[0-9]+\.[0-9]+\.[0-9]+)'
 
   - it: should have custom image if details are provided
     set:
@@ -128,22 +128,22 @@ tests:
           value: STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES
       - matchRegex:
           path: spec.template.spec.containers[0].env[3].value
-          pattern: 'quay.io/strimzi/kafka:latest-kafka-[0-9]+\.[0-9]+\.[0-9]+'
+          pattern: 'quay.io/strimzi/kafka:(latest|[0-9]+\.[0-9]+\.[0-9]+)-kafka-[0-9]+\.[0-9]+\.[0-9]+'
       - matchRegex:
           path: spec.template.spec.containers[0].env[4].value
-          pattern: 'quay.io/strimzi/kafka:latest-kafka-[0-9]+\.[0-9]+\.[0-9]+'
+          pattern: 'quay.io/strimzi/kafka:(latest|[0-9]+\.[0-9]+\.[0-9]+)-kafka-[0-9]+\.[0-9]+\.[0-9]+'
       - matchRegex:
           path: spec.template.spec.containers[0].env[5].value
-          pattern: '[0-9]+\.[0-9]+\.[0-9]+=quay.io/strimzi/kafka:latest-kafka-[0-9]+\.[0-9]+\.[0-9]+'
+          pattern: '[0-9]+\.[0-9]+\.[0-9]+=quay.io/strimzi/kafka:(latest|[0-9]+\.[0-9]+\.[0-9]+)-kafka-[0-9]+\.[0-9]+\.[0-9]+'
       - matchRegex:
           path: spec.template.spec.containers[0].env[6].value
-          pattern: '[0-9]+\.[0-9]+\.[0-9]+=quay.io/strimzi/kafka:latest-kafka-[0-9]+\.[0-9]+\.[0-9]+'
+          pattern: '[0-9]+\.[0-9]+\.[0-9]+=quay.io/strimzi/kafka:(latest|[0-9]+\.[0-9]+\.[0-9]+)-kafka-[0-9]+\.[0-9]+\.[0-9]+'
       - matchRegex:
           path: spec.template.spec.containers[0].env[7].value
-          pattern: '[0-9]+\.[0-9]+\.[0-9]+=quay.io/strimzi/kafka:latest-kafka-[0-9]+\.[0-9]+\.[0-9]+'
+          pattern: '[0-9]+\.[0-9]+\.[0-9]+=quay.io/strimzi/kafka:(latest|[0-9]+\.[0-9]+\.[0-9]+)-kafka-[0-9]+\.[0-9]+\.[0-9]+'
       - matchRegex:
           path: spec.template.spec.containers[0].env[8].value
-          pattern: '[0-9]+\.[0-9]+\.[0-9]+=quay.io/strimzi/kafka:latest-kafka-[0-9]+\.[0-9]+\.[0-9]+'
+          pattern: '[0-9]+\.[0-9]+\.[0-9]+=quay.io/strimzi/kafka:(latest|[0-9]+\.[0-9]+\.[0-9]+)-kafka-[0-9]+\.[0-9]+\.[0-9]+'
 
   - it: should construct custom kafka images from specified image registry if provided
     set:
