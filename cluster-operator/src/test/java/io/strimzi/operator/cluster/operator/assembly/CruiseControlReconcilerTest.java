@@ -18,6 +18,7 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.BrokerCapacityBuilder;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpecBuilder;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.HashLoginServiceApiUsers;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.HashLoginServiceApiUsersBuilder;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityOperatorSpecBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -156,6 +157,7 @@ public class CruiseControlReconcilerTest {
         if (apiUsersEnabled) {
             kafka.getSpec().getCruiseControl().setApiUsers(
                 new HashLoginServiceApiUsersBuilder()
+                    .withType(HashLoginServiceApiUsers.TYPE_HASH_LOGIN_SERVICE)
                     .withNewValueFrom()
                         .withSecretKeyRef(
                             new SecretKeySelectorBuilder()

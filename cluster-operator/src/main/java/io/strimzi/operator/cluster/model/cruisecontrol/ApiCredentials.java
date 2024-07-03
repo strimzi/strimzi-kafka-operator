@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.ApiUsers;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
-import io.strimzi.api.kafka.model.kafka.cruisecontrol.HashLoginServiceApiUsers;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Util;
@@ -22,8 +21,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.AUTH_FILE_KEY;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.HEALTHCHECK_PASSWORD_KEY;
@@ -45,13 +42,13 @@ public class ApiCredentials {
             TOPIC_OPERATOR_USERNAME
     );
 
-    private final Type type;
+    private final ApiUsers apiUsers;
     private final String userManagedApiSecretName;
     private final String userManagedApiSecretKey;
     private final String namespace;
     private final String cluster;
     private final Labels labels;
-    private final CruiseControlSpec specSection;
+    private final CruiseControlSpec ccSpec;
     private final OwnerReference ownerReference;
 
     /**
@@ -61,21 +58,20 @@ public class ApiCredentials {
      * @param cluster           Name of the cluster to which this component belongs
      * @param labels            Labels for Cruise Control instance
      * @param ownerReference    Owner reference for Cruise Control instance
-     * @param ccSection         Custom resource section configuring Cruise Control API users
+     * @param ccSpec         Custom resource section configuring Cruise Control API users
      */
-    public ApiCredentials(String namespace, String cluster, Labels labels, OwnerReference ownerReference, CruiseControlSpec ccSection) {
+    public ApiCredentials(String namespace, String cluster, Labels labels, OwnerReference ownerReference, CruiseControlSpec ccSpec) {
         this.namespace = namespace;
         this.cluster = cluster;
         this.labels = labels;
         this.ownerReference = ownerReference;
-        this.specSection = ccSection;
+        this.ccSpec = ccSpec;
+        this.apiUsers = ApiUsers.create(ccSpec);
 
-        if (checkApiUsersConfig(ccSection)) {
-            type = Type.fromString(ccSection.getApiUsers().getType());
-            userManagedApiSecretName = ccSection.getApiUsers().getValueFrom().getSecretKeyRef().getName();
-            userManagedApiSecretKey = ccSection.getApiUsers().getValueFrom().getSecretKeyRef().getKey();
+        if (checkApiUsersConfig(ccSpec)) {
+            userManagedApiSecretName = ccSpec.getApiUsers().getValueFrom().getSecretKeyRef().getName();
+            userManagedApiSecretKey = ccSpec.getApiUsers().getValueFrom().getSecretKeyRef().getKey();
         } else {
-            type = null;
             userManagedApiSecretName = null;
             userManagedApiSecretKey = null;
         }
@@ -91,7 +87,7 @@ public class ApiCredentials {
     /**
      * @return  Returns user-managed API credentials secret key
      */
-    /* test */ String getUserManagedApiSecretKey() {
+    public String getUserManagedApiSecretKey() {
         return userManagedApiSecretKey;
     }
 
@@ -101,14 +97,14 @@ public class ApiCredentials {
      * @param ccSpec The Cruise Control spec to check.
      */
     private static boolean checkApiUsersConfig(CruiseControlSpec ccSpec)  {
-        HashLoginServiceApiUsers apiUsers = ccSpec.getApiUsers();
+        ApiUsers apiUsers = ccSpec.getApiUsers();
         if (apiUsers != null)    {
             if (apiUsers.getType() == null
                     || apiUsers.getValueFrom() == null
                     || apiUsers.getValueFrom().getSecretKeyRef() == null
                     || apiUsers.getValueFrom().getSecretKeyRef().getName() == null
                     || apiUsers.getValueFrom().getSecretKeyRef().getKey() == null) {
-                throw new InvalidResourceException("The configuration of the Cruise Control REST API users " +
+                throw new InvalidConfigurationException("The configuration of the Cruise Control REST API users " +
                         "referenced in spec.cruiseControl.apiUsers is invalid.");
             } else {
                 return true;
@@ -118,50 +114,19 @@ public class ApiCredentials {
     }
 
     /**
-     * Parse String containing API credential config into map of API user entries.
-     *
-     * @param config API credential config file as a String.
-     * @param pattern Regex pattern used to parse Cruise Control API Users configuration
-     *
-     * @return map of API credential entries containing username, password, and role.
-     */
-    /* test */ static Map<String, UserEntry> parseEntriesFromString(String config, Pattern pattern) {
-        Map<String, UserEntry> entries = new HashMap<>();
-        for (String line : config.split("\n")) {
-            Matcher matcher = pattern.matcher(line);
-            if (matcher.matches()) {
-                String[] parts = line.replaceAll("\\s", "").split(":");
-                String username = parts[0];
-                String password = parts[1].split(",")[0];
-                Role role = Role.fromString(parts[1].split(",")[1]);
-                if (entries.containsKey(username)) {
-                    throw new InvalidConfigurationException("Duplicate username found: " + "\"" + username + "\". "
-                            + "Cruise Control API credentials config must contain unique usernames");
-                }
-                entries.put(username, new UserEntry(username, password, role));
-            } else {
-                throw new InvalidConfigurationException("Invalid configuration provided: " +  "\"" + line + "\". " +
-                        "Cruise Control API credentials config must follow " +
-                        "HashLoginService's file format `username: password [,rolename ...]`");
-            }
-        }
-        return entries;
-    }
-
-    /**
      * Parses auth data from existing Topic Operator API user secret into map of API user entries.
      *
      * @param secret API user secret
      *
      * @return Map of API user entries containing user-managed API user credentials
      */
-    /* test */ static Map<String, UserEntry> generateToManagedApiCredentials(Secret secret) {
-        Map<String, UserEntry> entries = new HashMap<>();
+    /* test */ static Map<String, ApiUsers.UserEntry> generateToManagedApiCredentials(Secret secret) {
+        Map<String, ApiUsers.UserEntry> entries = new HashMap<>();
         if (secret != null) {
             if (secret.getData().containsKey(TOPIC_OPERATOR_USERNAME_KEY) && secret.getData().containsKey(TOPIC_OPERATOR_PASSWORD_KEY)) {
                 String username = Util.decodeFromBase64(secret.getData().get(TOPIC_OPERATOR_USERNAME_KEY));
                 String password = Util.decodeFromBase64(secret.getData().get(TOPIC_OPERATOR_PASSWORD_KEY));
-                entries.put(username, new UserEntry(username, password, Role.ADMIN));
+                entries.put(username, new ApiUsers.UserEntry(username, password, ApiUsers.Role.ADMIN));
             }
         }
         return entries;
@@ -172,25 +137,24 @@ public class ApiCredentials {
      *
      * @param secret API user secret
      * @param secretKey API user secret key
-     * @param pattern Regex pattern used to parse Cruise Control API Users configuration
      *
      * @return Map of API user entries containing user-managed API user credentials
      */
-    /* test */ static Map<String, UserEntry> generateUserManagedApiCredentials(Secret secret, String secretKey, Pattern pattern) {
-        Map<String, UserEntry> entries = new HashMap<>();
+    /* test */ static Map<String, ApiUsers.UserEntry> generateUserManagedApiCredentials(Secret secret, String secretKey, ApiUsers apiUsers) {
+        Map<String, ApiUsers.UserEntry> entries = new HashMap<>();
         if (secret != null) {
             if (secretKey != null && secret.getData().containsKey(secretKey)) {
                 String credentialsAsString = Util.decodeFromBase64(secret.getData().get(secretKey));
-                entries.putAll(parseEntriesFromString(credentialsAsString, pattern));
+                entries.putAll(apiUsers.parseEntriesFromString(credentialsAsString));
             }
         }
-        for (UserEntry entry : entries.values()) {
-            if (FORBIDDEN_USERNAMES.contains(entry.username())) {
+        for (ApiUsers.UserEntry entry : entries.values()) {
+            if (FORBIDDEN_USERNAMES.contains(entry.getUsername())) {
                 throw new InvalidConfigurationException("The following usernames for Cruise Control API are forbidden: " + FORBIDDEN_USERNAMES
-                        + " User provided Cruise Control API credentials contain illegal username: " + entry.username());
-            } else if (entry.role() == Role.ADMIN) {
-                throw new InvalidConfigurationException("The following roles for Cruise Control API are forbidden: " + Role.ADMIN
-                        + " User provided Cruise Control API credentials contain contains illegal role: " +  entry.role());
+                        + " User provided Cruise Control API credentials contain illegal username: " + entry.getUsername());
+            } else if (entry.getRole() == ApiUsers.Role.ADMIN) {
+                throw new InvalidConfigurationException("The following roles for Cruise Control API are forbidden: " + ApiUsers.Role.ADMIN
+                        + " User provided Cruise Control API credentials contain contains illegal role: " +  entry.getRole());
             }
         }
         return entries;
@@ -201,26 +165,25 @@ public class ApiCredentials {
      *
      * @param passwordGenerator The password generator for API users
      * @param secret API user secret
-     * @param pattern Regex pattern used to parse Cruise Control API Users configuration
      *
      * @return Map of API user entries containing Strimzi-managed API user credentials
      */
-    /* test */ static Map<String, UserEntry> generateCoManagedApiCredentials(PasswordGenerator passwordGenerator, Secret secret, Pattern pattern) {
-        Map<String, UserEntry> entries = new HashMap<>();
+    /* test */ static Map<String, ApiUsers.UserEntry> generateCoManagedApiCredentials(PasswordGenerator passwordGenerator, Secret secret, ApiUsers apiUser) {
+        Map<String, ApiUsers.UserEntry> entries = new HashMap<>();
 
         if (secret != null) {
             if (secret.getData().containsKey(AUTH_FILE_KEY)) {
                 String credentialsAsString = Util.decodeFromBase64(secret.getData().get(AUTH_FILE_KEY));
-                entries.putAll(parseEntriesFromString(credentialsAsString, pattern));
+                entries.putAll(apiUser.parseEntriesFromString(credentialsAsString));
             }
         }
 
         if (!entries.containsKey(REBALANCE_OPERATOR_USERNAME)) {
-            entries.put(REBALANCE_OPERATOR_USERNAME, new UserEntry(REBALANCE_OPERATOR_USERNAME, passwordGenerator.generate(), ApiCredentials.Role.ADMIN));
+            entries.put(REBALANCE_OPERATOR_USERNAME, new ApiUsers.UserEntry(REBALANCE_OPERATOR_USERNAME, passwordGenerator.generate(), ApiUsers.Role.ADMIN));
         }
 
         if (!entries.containsKey(HEALTHCHECK_USERNAME)) {
-            entries.put(HEALTHCHECK_USERNAME, new UserEntry(HEALTHCHECK_USERNAME, passwordGenerator.generate(), ApiCredentials.Role.USER));
+            entries.put(HEALTHCHECK_USERNAME, new ApiUsers.UserEntry(HEALTHCHECK_USERNAME, passwordGenerator.generate(), ApiUsers.Role.USER));
         }
 
         return entries;
@@ -240,39 +203,16 @@ public class ApiCredentials {
                                                               Secret cruiseControlApiSecret,
                                                               Secret userManagedApiSecret,
                                                               Secret topicOperatorManagedApiSecret) {
-
-        Pattern pattern = getApiUsersObject(type).getPattern();
-        Map<String, ApiCredentials.UserEntry> apiCredentials = new HashMap<>();
-        apiCredentials.putAll(generateCoManagedApiCredentials(passwordGenerator, cruiseControlApiSecret, pattern));
-        apiCredentials.putAll(generateUserManagedApiCredentials(userManagedApiSecret, userManagedApiSecretKey, pattern));
+        Map<String, ApiUsers.UserEntry> apiCredentials = new HashMap<>();
+        apiCredentials.putAll(generateCoManagedApiCredentials(passwordGenerator, cruiseControlApiSecret, apiUsers));
+        apiCredentials.putAll(generateUserManagedApiCredentials(userManagedApiSecret, userManagedApiSecretKey, apiUsers));
         apiCredentials.putAll(generateToManagedApiCredentials(topicOperatorManagedApiSecret));
 
         Map<String, String> data = new HashMap<>(3);
-        data.put(REBALANCE_OPERATOR_PASSWORD_KEY, Util.encodeToBase64(apiCredentials.get(REBALANCE_OPERATOR_USERNAME).password()));
-        data.put(HEALTHCHECK_PASSWORD_KEY, Util.encodeToBase64(apiCredentials.get(HEALTHCHECK_USERNAME).password()));
-        data.put(AUTH_FILE_KEY, Util.encodeToBase64(generateApiAuthFileAsString(type, apiCredentials)));
+        data.put(REBALANCE_OPERATOR_PASSWORD_KEY, Util.encodeToBase64(apiCredentials.get(REBALANCE_OPERATOR_USERNAME).getPassword()));
+        data.put(HEALTHCHECK_PASSWORD_KEY, Util.encodeToBase64(apiCredentials.get(HEALTHCHECK_USERNAME).getPassword()));
+        data.put(AUTH_FILE_KEY, Util.encodeToBase64(apiUsers.generateApiAuthFileAsString(apiCredentials)));
         return data;
-    }
-
-    /**
-     * Returns Cruise Control API auth credentials file as a String.
-     *
-     * @param type Type of the Cruise Control API Users configuration.
-     * @param entries Map of API user entries containing API user credentials.
-     *
-     * @return Returns Cruise Control API auth credentials file as a String.
-     */
-    private static String generateApiAuthFileAsString(Type type, Map<String, UserEntry> entries) {
-        StringBuilder sb = new StringBuilder();
-
-        if (type == Type.HASH_LOGIN_SERVICE) {
-            // Follows  Jetty's HashLoginService's file format: username: password [,rolename ...]
-            for (UserEntry e : entries.values()) {
-                sb.append(e.username).append(": ").append(e.password).append(", ").append(e.role).append("\n");
-            }
-        }
-
-        return sb.toString();
     }
 
     /**
@@ -294,75 +234,13 @@ public class ApiCredentials {
                                     Secret oldCruiseControlApiSecret,
                                     Secret userManagedApiSecret,
                                     Secret topicOperatorManagedApiSecret) {
-        if (specSection.getApiUsers() != null && userManagedApiSecret == null) {
+        if (ccSpec.getApiUsers() != null && userManagedApiSecret == null) {
             throw new InvalidResourceException("The configuration of the Cruise Control REST API users " +
-                    "references a secret: " +  "\"" + getUserManagedApiSecretName() + "\" that does not exist.");
+                    "references a secret: " +  "\"" +  userManagedApiSecretName + "\" that does not exist.");
         }
         Map<String, String> mapWithApiCredentials = generateMapWithApiCredentials(passwordGenerator,
                 oldCruiseControlApiSecret, userManagedApiSecret, topicOperatorManagedApiSecret);
         return ModelUtils.createSecret(CruiseControlResources.apiSecretName(cluster), namespace, labels, ownerReference,
                 mapWithApiCredentials, Collections.emptyMap(), Collections.emptyMap());
     }
-
-    /**
-     * By default Cruise Control defines three roles: VIEWER, USER and ADMIN.
-     * For more information checkout the upstream Cruise Control Wiki here:
-     * <a href="https://github.com/linkedin/cruise-control/wiki/Security#authorization">Cruise Control Security</a>
-     */
-    /* test */ enum Role {
-        /**
-         * VIEWER: has access to the most lightweight kafka_cluster_state, user_tasks, and review_board endpoints.
-         */
-        VIEWER,
-        /**
-         * USER: has access to all the GET endpoints except bootstrap and train.
-         */
-        USER,
-        /**
-         * ADMIN: has access to all endpoints.
-         */
-        ADMIN;
-
-        private static Role fromString(String s) {
-            return switch (s) {
-                case "VIEWER" -> VIEWER;
-                case "USER" -> USER;
-                case "ADMIN" -> ADMIN;
-                default -> throw new InvalidConfigurationException("Unknown role: " + s);
-            };
-        }
-    }
-
-    /**
-     * Type of the Cruise Control API Users configuration.
-     */
-    private enum Type {
-        /**
-         * HASH_LOGIN_SERVICE: Jetty's HashLoginService' file format: username: password [,rolename ...]
-         */
-        HASH_LOGIN_SERVICE;
-
-        private static Type fromString(String s) {
-            return switch (s) {
-                case  HashLoginServiceApiUsers.TYPE_HASH_LOGIN_SERVICE -> HASH_LOGIN_SERVICE;
-                default -> throw new InvalidConfigurationException("Unknown ApiUsers type: " + s);
-            };
-        }
-    }
-
-    /**
-     * @return API Users object of given type
-     */
-    private static ApiUsers getApiUsersObject(Type t) {
-        return switch (t) {
-            case HASH_LOGIN_SERVICE -> new HashLoginServiceApiUsers();
-            // Add other cases here for different subclasses
-            default -> throw new IllegalArgumentException("Unknown ApiUsers type: " + t);
-        };
-    }
-
-    /**
-     * Represents a single API user entry including name, password, and role.
-     */
-    /* test */ record UserEntry(String username, String password, Role role) { }
 }
