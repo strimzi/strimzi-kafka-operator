@@ -1068,14 +1068,14 @@ spec:
                                       format:
                                         type: string
                                 description: EmptyDir to use to populate the volume.
-                              pvc:
+                              persistentVolumeClaim:
                                 type: object
                                 properties:
                                   claimName:
                                     type: string
                                   readOnly:
                                     type: boolean
-                                description: PVC object to use to populate the volume.
+                                description: PersistentVolumeClaim object to use to populate the volume.
                           description: Additional volumes that can be mounted to the pod.
                       description: Template for Kafka Connect `Pods`.
                     apiService:
@@ -1971,14 +1971,14 @@ spec:
                                       format:
                                         type: string
                                 description: EmptyDir to use to populate the volume.
-                              pvc:
+                              persistentVolumeClaim:
                                 type: object
                                 properties:
                                   claimName:
                                     type: string
                                   readOnly:
                                     type: boolean
-                                description: PVC object to use to populate the volume.
+                                description: PersistentVolumeClaim object to use to populate the volume.
                           description: Additional volumes that can be mounted to the pod.
                       description: Template for Kafka Connect Build `Pods`. The build pod is used only on Kubernetes.
                     buildContainer:

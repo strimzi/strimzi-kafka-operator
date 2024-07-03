@@ -1522,14 +1522,14 @@ spec:
                                           format:
                                             type: string
                                     description: EmptyDir to use to populate the volume.
-                                  pvc:
+                                  persistentVolumeClaim:
                                     type: object
                                     properties:
                                       claimName:
                                         type: string
                                       readOnly:
                                         type: boolean
-                                    description: PVC object to use to populate the volume.
+                                    description: PersistentVolumeClaim object to use to populate the volume.
                               description: Additional volumes that can be mounted to the pod.
                           description: Template for Kafka `Pods`.
                         bootstrapService:
@@ -2966,14 +2966,14 @@ spec:
                                           format:
                                             type: string
                                     description: EmptyDir to use to populate the volume.
-                                  pvc:
+                                  persistentVolumeClaim:
                                     type: object
                                     properties:
                                       claimName:
                                         type: string
                                       readOnly:
                                         type: boolean
-                                    description: PVC object to use to populate the volume.
+                                    description: PersistentVolumeClaim object to use to populate the volume.
                               description: Additional volumes that can be mounted to the pod.
                           description: Template for ZooKeeper `Pods`.
                         clientService:
@@ -4266,14 +4266,14 @@ spec:
                                           format:
                                             type: string
                                     description: EmptyDir to use to populate the volume.
-                                  pvc:
+                                  persistentVolumeClaim:
                                     type: object
                                     properties:
                                       claimName:
                                         type: string
                                       readOnly:
                                         type: boolean
-                                    description: PVC object to use to populate the volume.
+                                    description: PersistentVolumeClaim object to use to populate the volume.
                               description: Additional volumes that can be mounted to the pod.
                           description: Template for Entity Operator `Pods`.
                         topicOperatorContainer:
@@ -5533,14 +5533,14 @@ spec:
                                           format:
                                             type: string
                                     description: EmptyDir to use to populate the volume.
-                                  pvc:
+                                  persistentVolumeClaim:
                                     type: object
                                     properties:
                                       claimName:
                                         type: string
                                       readOnly:
                                         type: boolean
-                                    description: PVC object to use to populate the volume.
+                                    description: PersistentVolumeClaim object to use to populate the volume.
                               description: Additional volumes that can be mounted to the pod.
                           description: Template for Cruise Control `Pods`.
                         apiService:
@@ -6582,14 +6582,14 @@ spec:
                                           format:
                                             type: string
                                     description: EmptyDir to use to populate the volume.
-                                  pvc:
+                                  persistentVolumeClaim:
                                     type: object
                                     properties:
                                       claimName:
                                         type: string
                                       readOnly:
                                         type: boolean
-                                    description: PVC object to use to populate the volume.
+                                    description: PersistentVolumeClaim object to use to populate the volume.
                               description: Additional volumes that can be mounted to the pod.
                           description: Template for JmxTrans `Pods`.
                         container:
@@ -7412,14 +7412,14 @@ spec:
                                           format:
                                             type: string
                                     description: EmptyDir to use to populate the volume.
-                                  pvc:
+                                  persistentVolumeClaim:
                                     type: object
                                     properties:
                                       claimName:
                                         type: string
                                       readOnly:
                                         type: boolean
-                                    description: PVC object to use to populate the volume.
+                                    description: PersistentVolumeClaim object to use to populate the volume.
                               description: Additional volumes that can be mounted to the pod.
                           description: Template for Kafka Exporter `Pods`.
                         service:
