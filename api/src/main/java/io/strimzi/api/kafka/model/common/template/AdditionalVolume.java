@@ -9,7 +9,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.EmptyDirVolumeSource;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSource;
-//import io.fabric8.kubernetes.api.model.EmptyDirVolumeSource;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
@@ -27,7 +26,7 @@ import java.util.Map;
  */
 @Buildable(editableEnabled = false, builderPackage = Constants.FABRIC8_KUBERNETES_API)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "name", "path", "subPath", "secret", "configMap", "emptyDir", "pvc" })
+@JsonPropertyOrder({ "name", "path", "subPath", "secret", "configMap", "emptyDir", "persistentVolumeClaim" })
 @EqualsAndHashCode
 @ToString
 public class AdditionalVolume implements UnknownPropertyPreserving {
@@ -35,7 +34,7 @@ public class AdditionalVolume implements UnknownPropertyPreserving {
     private SecretVolumeSource secret;
     private ConfigMapVolumeSource configMap;
     private EmptyDirVolumeSource emptyDir;
-    private PersistentVolumeClaimVolumeSource pvc;
+    private PersistentVolumeClaimVolumeSource persistentVolumeClaim;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Name to use for the volume. Required.")
@@ -81,15 +80,15 @@ public class AdditionalVolume implements UnknownPropertyPreserving {
         this.emptyDir = emptyDir;
     }
 
-    @Description("PVC object to use to populate the volume.")
+    @Description("PersistentVolumeClaim object to use to populate the volume.")
     @KubeLink(group = "core", version = "v1", kind = "persistentvolumeclaimvolumesource")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public PersistentVolumeClaimVolumeSource getPvc() {
-        return pvc;
+    public PersistentVolumeClaimVolumeSource getPersistentVolumeClaim() {
+        return persistentVolumeClaim;
     }
 
-    public void setPvc(PersistentVolumeClaimVolumeSource pvc) {
-        this.pvc = pvc;
+    public void setPersistentVolumeClaim(PersistentVolumeClaimVolumeSource persistentVolumeClaim) {
+        this.persistentVolumeClaim = persistentVolumeClaim;
     }
 
     @Override
