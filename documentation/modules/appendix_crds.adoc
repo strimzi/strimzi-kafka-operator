@@ -1234,9 +1234,9 @@ Used in: xref:type-PodTemplate-{context}[`PodTemplate`]
 |emptyDir
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#emptydirvolumesource-v1-core[EmptyDirVolumeSource]
 |EmptyDir to use to populate the volume.
-|pvc
+|persistentVolumeClaim
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#persistentvolumeclaimvolumesource-v1-core[PersistentVolumeClaimVolumeSource]
-|PVC object to use to populate the volume.
+|PersistentVolumeClaim object to use to populate the volume.
 |====
 
 [id='type-InternalServiceTemplate-{context}']
