@@ -1,0 +1,16 @@
+---
+nodeAffinity:
+  requiredDuringSchedulingIgnoredDuringExecution:
+    nodeSelectorTerms:
+    - matchExpressions:
+      - key: "failure-domain.beta.kubernetes.io/zone"
+        operator: "Exists"
+podAntiAffinity:
+  preferredDuringSchedulingIgnoredDuringExecution:
+  - podAffinityTerm:
+      labelSelector:
+        matchLabels:
+          strimzi.io/cluster: "my-cluster"
+          strimzi.io/name: "my-cluster-kafka"
+      topologyKey: "failure-domain.beta.kubernetes.io/zone"
+    weight: 100

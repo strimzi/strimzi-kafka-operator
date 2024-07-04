@@ -1,0 +1,40 @@
+apiVersion: v1alpha1
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    replicas: 1
+    listeners:
+      - name: plain
+        port: 9092
+        tls: false
+        type: internal
+    rack:
+      topologyKey: "failure-domain.beta.kubernetes.io/zone"
+    template:
+      pod:
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: kubernetes.io/e2e-az-name
+                  operator: In
+                  values:
+                  - e2e-az1
+                  - e2e-az2
+              - matchExpressions:
+                - key: kubernetes.io/e2e-az-name
+                  operator: In
+                  values:
+                    - e2e-az3
+                    - e2e-az4
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              preference:
+                matchExpressions:
+                - key: another-node-label-key
+                  operator: In
+                  values:
+                  - another-node-label-value

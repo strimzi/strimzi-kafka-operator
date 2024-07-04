@@ -1,0 +1,1 @@
+{"userTasks":[{"Status":"CompletedWithError","UserTaskId":"8a2538a5-f2c3-4df0-9240-fe1248d03002","StartMs":"1591625671598","originalResponse":"COMPLETED_WITH_ERROR","ClientIdentity":"127.0.0.1","RequestURL":"POST /kafkacruisecontrol/rebalance?dryrun\u003dtroo"}],"version":1}

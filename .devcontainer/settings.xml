@@ -1,0 +1,25 @@
+<!-- COPY OF ../settings.xml! -->
+<settings>
+    <interactiveMode>false</interactiveMode>
+    <profiles/>
+    <servers>
+        <server>
+            <id>github</id>
+            <username>${env.GITHUB_ACTOR}</username>
+            <password>${env.GITHUB_TOKEN}</password>
+        </server>
+        <server>
+            <id>cheetah-lib-processing-local-dev-repo</id>
+            <configuration>
+                <timeout>6000</timeout>                <!-- milliseconds -->
+                <httpConfiguration>
+                    <all>
+                        <connectionTimeout>5000</connectionTimeout>
+                        <readTimeout>5000</readTimeout>
+                    </all>
+                </httpConfiguration>
+            </configuration>
+        </server>
+    </servers>
+    <mirrors/>
+</settings>

@@ -1,0 +1,1 @@
+{"version":1,"progress":[{"operation":"Rebalance","operationProgress":[{"description":"Operation enqueued, waiting to be executed.","completionPercentage":100.0,"step":"PENDING","time-in-ms":127},{"description":"The job requires a cluster model and it is waiting to get the cluster model lock.","completionPercentage":100.0,"step":"WAITING_FOR_CLUSTER_MODEL","time-in-ms":461}]}]}
