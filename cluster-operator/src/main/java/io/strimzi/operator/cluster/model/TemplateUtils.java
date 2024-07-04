@@ -21,12 +21,6 @@ import java.util.Map;
  */
 public class TemplateUtils {
     /**
-     * This is a constant that represents a sensitive path in the file system.
-     * It is used to prevent the creation of volumes that mount to this path.
-     */
-    protected static final String SENSITIVE_PATH = "/tmp";
-
-    /**
      * This is a constant that represents an allowed mountable path in the file system.
      * It is used to prevent the creation of volumes outside this path.
      */
@@ -73,12 +67,6 @@ public class TemplateUtils {
         if (additionalVolumeMounts == null) {
             return;
         }
-        boolean isSensitivePath = additionalVolumeMounts.stream().anyMatch(additionalVolume -> additionalVolume.getMountPath().startsWith(SENSITIVE_PATH));
-
-        if (isSensitivePath) {
-            throw new RuntimeException("Sensitive path found in additional volumes");
-        }
-        
 
         boolean isForbiddenPath = additionalVolumeMounts.stream().anyMatch(additionalVolume -> !additionalVolume.getMountPath().startsWith(ALLOWED_MOUNT_PATH));
 

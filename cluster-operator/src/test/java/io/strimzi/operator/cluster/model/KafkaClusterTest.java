@@ -682,7 +682,7 @@ public class KafkaClusterTest {
         List<StrimziPodSet> podSets = kc.generatePodSets(false, null, null, i -> Map.of());
         PodSpec podSpec = podSets.get(0).getSpec().getPods().stream().map(PodSetUtils::mapToPod).toList().get(0).getSpec();
         assertThat(podSpec.getVolumes().stream().filter(volume -> "secret-volume-name".equals(volume.getName())).iterator().next().getSecret(), is(secret));
-        assertThat(podSpec.getContainers().get(0).getVolumeMounts().stream().filter(volumeMount -> "secret-volume-name".equals(volumeMount.getName())).iterator().next(), is(additionalVolume));
+        assertThat(podSpec.getContainers().get(0).getVolumeMounts().stream().filter(volumeMount -> "secret-volume-name".equals(volumeMount.getName())).iterator().next(), is(additionalVolumeMount));
     }
 
     @ParallelTest
