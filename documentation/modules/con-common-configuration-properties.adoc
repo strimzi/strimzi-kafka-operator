@@ -162,8 +162,8 @@ Configure resource requests and limits for components using `resources` properti
 
 Use the `KafkaNodePool` custom resource for the following components:
 
-* KRaft-based Kafka clusters (`spec.resources`)
-* ZooKeeper-based Kafka clusters using node pools (`spec.resources`)
+* KRaft-based Kafka nodes (`spec.resources`)
+* ZooKeeper-based Kafka nodes using node pools (`spec.resources`)
 
 Use the `Kafka` custom resource for the following components:
 
