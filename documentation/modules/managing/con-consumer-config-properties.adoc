@@ -254,14 +254,14 @@ Decreasing the heartbeat interval reduces the chance of accidental rebalancing, 
 ----
 # ...
 max.poll.records=100 # <1>
-session.timeout.ms=60000 # <2>
-heartbeat.interval.ms=10000 # <3>
+session.timeout.ms=30000 # <2>
+heartbeat.interval.ms=5000 # <3>
 # ...
 ----
 <1> Set the number records returned to the consumer when calling the `poll()` method.
 <2> Set the timeout for detecting client failure. 
 If the broker configuration has a `group.min.session.timeout.ms` and `group.max.session.timeout.ms`, the session timeout value must be within that range.
-<3> Adjust the heartbeat interval lower according to anticipated rebalances.
+<3> Adjust the heartbeat interval according to anticipated rebalances.
 
 == Managing offset policy
 
@@ -336,8 +336,8 @@ Use Kafka consumer metrics to monitor such things as rebalance rates, session ti
 group.instance.id=<unique_id>
 max.poll.interval.ms=300000
 max.poll.records=500
-session.timeout.ms=45000
-heartbeat.interval.ms=3000
+session.timeout.ms=30000
+heartbeat.interval.ms=5000
 partition.assignment.strategy=org.apache.kafka.clients.consumer.CooperativeStickyAssignor
 # ...
 ----
