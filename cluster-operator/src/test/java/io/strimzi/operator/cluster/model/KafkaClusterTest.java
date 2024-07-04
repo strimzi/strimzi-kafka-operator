@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelectorRequirementBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
-import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
@@ -681,7 +680,7 @@ public class KafkaClusterTest {
         assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnnotations.entrySet()), is(true));
         
         List<StrimziPodSet> podSets = kc.generatePodSets(false, null, null, i -> Map.of());
-        PodSpec podSpec = ((Pod) (podSets.get(0).getSpec().getPods().get(0))).getSpec();
+        PodSpec podSpec = podSets.get(0).getSpec().getPods().stream().map(PodSetUtils::mapToPod).toList().get(0).getSpec();
         assertThat(podSpec.getVolumes().stream().filter(volume -> "secret-volume-name".equals(volume.getName())).iterator().next().getSecret(), is(secret));
         assertThat(podSpec.getContainers().get(0).getVolumeMounts().stream().filter(volumeMount -> "secret-volume-name".equals(volumeMount.getName())).iterator().next(), is(additionalVolume));
     }
