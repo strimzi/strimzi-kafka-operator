@@ -654,10 +654,6 @@ public class KafkaBrokerConfigurationBuilder {
         }
     }
 
-    static <T> T getOrDefault(T option, T value) {
-        return option != null ? option : value;
-    }
-
     /**
      * Configures authorization for the Kafka cluster.
      *

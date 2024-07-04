@@ -299,7 +299,7 @@ public class AuthenticationUtils {
      * @return The OAuth JAAS configuration options.
      */
     public static Map<String, String> oauthJaasOptions(KafkaClientAuthenticationOAuth oauth) {
-        Map<String, String> options = new LinkedHashMap<>(15);
+        Map<String, String> options = new LinkedHashMap<>();
         addOption(options, ClientConfig.OAUTH_CLIENT_ID, oauth.getClientId());
         addOption(options, ClientConfig.OAUTH_PASSWORD_GRANT_USERNAME, oauth.getUsername());
         addOption(options, ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, oauth.getTokenEndpointUri());
