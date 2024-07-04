@@ -74,7 +74,7 @@ You can tune the configuration to handle high volumes of messages.
 For more information, see xref:con-high-volume-config-properties-{context}[Handling high volumes of messages].
 
 .Example `KafkaMirrorMaker2` custom resource configuration
-[source,yaml,subs="+quotes,attributes"]
+[source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaMirrorMaker2ApiVersion}
 kind: KafkaMirrorMaker2
@@ -95,8 +95,8 @@ spec:
     bootstrapServers: my-cluster-source-kafka-bootstrap:9092 # <7>
     tls: # <8>
       trustedCertificates:
-      - pattern: "*.crt"
-        secretName: my-cluster-source-cluster-ca-cert
+        - pattern: "*.crt"
+          secretName: my-cluster-source-cluster-ca-cert
   - alias: "my-cluster-target" # <9>
     authentication: # <10>
       certificateAndKey:
@@ -111,8 +111,8 @@ spec:
       status.storage.replication.factor: 1
     tls: # <13>
       trustedCertificates:
-      - pattern: "*.crt"
-        secretName: my-cluster-target-cluster-ca-cert
+        - pattern: "*.crt"
+          secretName: my-cluster-target-cluster-ca-cert
   mirrors: # <14>
   - sourceCluster: "my-cluster-source" # <15>
     targetCluster: "my-cluster-target" # <16>
