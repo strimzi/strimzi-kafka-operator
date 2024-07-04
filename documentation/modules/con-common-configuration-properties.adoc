@@ -158,9 +158,53 @@ If you set limits without requests or vice versa, Kubernetes uses the same value
 Setting equal requests and limits for resources guarantees quality of service, as
 Kubernetes will not kill containers unless they exceed their limits.
 
-You can configure resource requests and limits for one or more supported resources.
+Configure resource requests and limits for components using `resources` properties in the `spec` of following custom resources:
 
-.Example resource configuration
+Use the `KafkaNodePool` custom resource for the following components:
+
+* KRaft-based Kafka nodes (`spec.resources`)
+* ZooKeeper-based Kafka nodes using node pools (`spec.resources`)
+
+Use the `Kafka` custom resource for the following components:
+
+* Kafka for ZooKeeper-based clusters without node pools (`spec.kafka.resources`)
+* ZooKeeper (`spec.zookeeper.resources`)
+* Topic Operator (`spec.entityOperator.topicOperator.resources`)
+* User Operator (`spec.entityOperator.userOperator.resources`)
+* Cruise Control (`spec.cruiseControl.resources`)
+* Kafka Exporter (`spec.kafkaExporter.resources`)
+
+For other components, resources are configured in the corresponding custom resource. 
+For example:
+
+* `KafkaConnect` resource for Kafka Connect (`spec.resources`)
+* `KafkaMirrorMaker2` resource for MirrorMaker (`spec.resources`)
+* `KafkaBridge` resource for Kafka Bridge (`spec.resources`)
+
+.Example resource configuration for a node pool 
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaNodePoolApiVersion}
+kind: KafkaNodePool
+metadata:
+  name: pool-a
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  replicas: 3
+  roles:
+    - broker
+  resources:
+      requests:
+        memory: 64Gi
+        cpu: "8"
+      limits:
+        memory: 64Gi
+        cpu: "12"
+  # ...            
+----
+
+.Example resource configuration for the Topic Operator
 [source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -168,15 +212,7 @@ kind: Kafka
 metadata:
   name: my-cluster
 spec:
-  kafka:
-    #...
-    resources:
-      requests:
-        memory: 64Gi
-        cpu: "8"
-      limits:
-        memory: 64Gi
-        cpu: "12"
+  # ..
   entityOperator:
     #...
     topicOperator:
@@ -189,8 +225,6 @@ spec:
           memory: 512Mi
           cpu: "1"
 ----
-
-Resource requests and limits for the Topic Operator and User Operator are set in the `Kafka` resource.
 
 If the resource request is for more than the available free resources in the Kubernetes cluster, the pod is not scheduled.
 
