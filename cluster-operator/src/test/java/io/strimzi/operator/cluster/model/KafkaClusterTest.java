@@ -539,7 +539,7 @@ public class KafkaClusterTest {
         
         VolumeMount additionalVolumeMount = new VolumeMountBuilder()
                 .withName("secret-volume-name")
-                .withMountPath("/etc/secret-volume")
+                .withMountPath("/mnt/secret-volume")
                 .withSubPath("def")
                 .build();
 
