@@ -174,7 +174,7 @@ Then, use this file to create a secret with the following command:
 
 [source]
 ----
-kubectl create secret generic cruise-control-api-users-secret  --from-file=key=cruise-control-auth.txt
+kubectl create secret generic cruise-control-api-users-secret  --from-file=cruise-control-auth.txt=cruise-control-auth.txt
 ----
 
 Next, we reference the secret in the `spec.cruiseControl.apiUsers` section of the Kafka resource:
@@ -195,7 +195,7 @@ spec:
       valueFrom:
         secretKeyRef:
           name: cruise-control-api-users-secret
-          key: key
+          key: cruise-control-auth.txt
      ...
 ----
 

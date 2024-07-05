@@ -69,11 +69,11 @@ public class ApiCredentials {
         this.apiUsers = ApiUsers.create(ccSpec);
 
         if (checkApiUsersConfig(ccSpec)) {
-            userManagedApiSecretName = ccSpec.getApiUsers().getValueFrom().getSecretKeyRef().getName();
-            userManagedApiSecretKey = ccSpec.getApiUsers().getValueFrom().getSecretKeyRef().getKey();
+            this.userManagedApiSecretName = ccSpec.getApiUsers().getValueFrom().getSecretKeyRef().getName();
+            this.userManagedApiSecretKey = ccSpec.getApiUsers().getValueFrom().getSecretKeyRef().getKey();
         } else {
-            userManagedApiSecretName = null;
-            userManagedApiSecretKey = null;
+            this.userManagedApiSecretName = null;
+            this.userManagedApiSecretKey = null;
         }
     }
 
