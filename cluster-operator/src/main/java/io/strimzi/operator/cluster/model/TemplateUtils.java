@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.common.template.DeploymentStrategy;
 import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.common.template.HasMetadataTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
+import io.strimzi.operator.common.model.InvalidResourceException;
 
 import java.util.List;
 import java.util.Map;
@@ -71,7 +72,7 @@ public class TemplateUtils {
         boolean isForbiddenPath = additionalVolumeMounts.stream().anyMatch(additionalVolume -> !additionalVolume.getMountPath().startsWith(ALLOWED_MOUNT_PATH));
 
         if (isForbiddenPath) {
-            throw new RuntimeException(String.format("Forbidden path found in additional volumes. Should start with %s", ALLOWED_MOUNT_PATH));
+            throw new InvalidResourceException(String.format("Forbidden path found in additional volumes. Should start with %s", ALLOWED_MOUNT_PATH));
         }
 
         volumeMounts.addAll(additionalVolumeMounts);
