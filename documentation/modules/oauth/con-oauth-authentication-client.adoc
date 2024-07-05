@@ -67,7 +67,7 @@ SASL authentication properties support the following authentication methods:
 
 * OAuth 2.0 client credentials
 * OAuth 2.0 password grant (deprecated)
-* Access token
+* Access token / Service account token
 * Refresh token
 
 Add the authentication properties as JAAS configuration (`sasl.jaas.config` and `sasl.login.callback.handler.class`).
@@ -154,14 +154,25 @@ ssl.truststore.location=/tmp/truststore.p12
 ssl.truststore.password=$STOREPASS
 ssl.truststore.type=PKCS12
 sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
-  oauth.token.endpoint.uri="<token_endpoint_url>" \
-  oauth.access.token="<access_token>" \ # <1>
-  oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \
-  oauth.ssl.truststore.password="$STOREPASS" \
-  oauth.ssl.truststore.type="PKCS12" ;
-sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler  
+  oauth.access.token="<access_token>" ; # <1>
+sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
 ----
 <1> Long-lived access token for Kafka clients.
+
+[id='con-oauth-authentication-serviceaccount-token-{context}']
+.Example Kubernetes service account token configuration
+[source,properties,subs="+quotes,attributes"]
+----
+security.protocol=SASL_SSL
+sasl.mechanism=OAUTHBEARER
+ssl.truststore.location=/tmp/truststore.p12
+ssl.truststore.password=$STOREPASS
+ssl.truststore.type=PKCS12
+sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
+  oauth.access.token.location="/var/run/secrets/kubernetes.io/serviceaccount/token";  # <1>
+sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
+----
+<1> Location to the service account token on the filesystem (assuming that the client is deployed as a Kubernetes pod)
 
 [id='con-oauth-authentication-refresh-token-{context}']
 .Example refresh token configuration 
