@@ -186,6 +186,7 @@ public class KafkaConfiguration extends AbstractConfiguration {
             "ssl.truststore.location",
             "ssl.truststore.password",
             "ssl.truststore.type",
+            "super.users",
             "transaction.state.log.min.isr",
             "transaction.state.log.replication.factor",
             "queued.max.requests",
