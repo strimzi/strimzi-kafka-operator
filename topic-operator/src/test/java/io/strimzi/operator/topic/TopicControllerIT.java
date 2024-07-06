@@ -1681,8 +1681,8 @@ class TopicControllerIT {
     @ParameterizedTest
     @MethodSource("managedKafkaTopics")
     public void shouldFailCreationIfNoTopicAuthz(KafkaTopic kt,
-                                              @BrokerConfig(name = "auto.create.topics.enable", value = "false")
-                                              KafkaCluster kafkaCluster)
+                                                 @BrokerConfig(name = "auto.create.topics.enable", value = "false")
+                                                 KafkaCluster kafkaCluster)
             throws ExecutionException, InterruptedException {
         topicCreationFailsDueToAdminException(kt, kafkaCluster, new TopicAuthorizationException("not allowed"), "KafkaError");
     }
@@ -1690,14 +1690,14 @@ class TopicControllerIT {
     @ParameterizedTest
     @MethodSource("managedKafkaTopics")
     public void shouldFailCreationIfNpe(KafkaTopic kt,
-                                                 @BrokerConfig(name = "auto.create.topics.enable", value = "false")
-                                                 KafkaCluster kafkaCluster)
+                                        @BrokerConfig(name = "auto.create.topics.enable", value = "false")
+                                        KafkaCluster kafkaCluster)
             throws ExecutionException, InterruptedException {
         topicCreationFailsDueToAdminException(kt, kafkaCluster, new NullPointerException(), "InternalError");
     }
 
     private void topicCreationFailsDueToAdminException(KafkaTopic kt,
-                                                     KafkaCluster kafkaCluster,
+                                                       KafkaCluster kafkaCluster,
                                                        Throwable exception,
                                                        String expectedReason)
             throws ExecutionException, InterruptedException {
@@ -1723,8 +1723,8 @@ class TopicControllerIT {
     @ParameterizedTest
     @MethodSource("managedKafkaTopics")
     public void shouldFailAlterConfigIfNoTopicAuthz(KafkaTopic kt,
-                                                 @BrokerConfig(name = "auto.create.topics.enable", value = "false")
-                                                 KafkaCluster kafkaCluster)
+                                                    @BrokerConfig(name = "auto.create.topics.enable", value = "false")
+                                                    KafkaCluster kafkaCluster)
             throws ExecutionException, InterruptedException, TimeoutException {
         var config = topicOperatorConfig(NAMESPACE, kafkaCluster);
         kafkaAdminClientOp = new Admin[]{Mockito.spy(Admin.create(config.adminClientConfig()))};
@@ -1759,8 +1759,8 @@ class TopicControllerIT {
     @ParameterizedTest
     @MethodSource("managedKafkaTopics")
     public void shouldFailAddPartitionsIfNoTopicAuthz(KafkaTopic kt,
-                                                    @BrokerConfig(name = "auto.create.topics.enable", value = "false")
-                                                    KafkaCluster kafkaCluster)
+                                                      @BrokerConfig(name = "auto.create.topics.enable", value = "false")
+                                                      KafkaCluster kafkaCluster)
             throws ExecutionException, InterruptedException, TimeoutException {
         var config = topicOperatorConfig(NAMESPACE, kafkaCluster);
         kafkaAdminClientOp = new Admin[]{Mockito.spy(Admin.create(config.adminClientConfig()))};
@@ -1788,8 +1788,8 @@ class TopicControllerIT {
     @ParameterizedTest
     @MethodSource("managedKafkaTopics")
     public void shouldFailDeleteIfNoTopicAuthz(KafkaTopic kt,
-                                                      @BrokerConfig(name = "auto.create.topics.enable", value = "false")
-                                                      KafkaCluster kafkaCluster)
+                                               @BrokerConfig(name = "auto.create.topics.enable", value = "false")
+                                               KafkaCluster kafkaCluster)
             throws ExecutionException, InterruptedException, TimeoutException {
 
         // given
