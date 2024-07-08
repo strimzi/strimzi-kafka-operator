@@ -47,6 +47,7 @@ import java.util.stream.Stream;
 
 import static io.strimzi.operator.topic.TopicOperatorUtil.configValueAsString;
 import static io.strimzi.operator.topic.TopicOperatorUtil.hasConfig;
+import static io.strimzi.operator.topic.TopicOperatorUtil.partitionedByError;
 import static io.strimzi.operator.topic.TopicOperatorUtil.partitions;
 import static io.strimzi.operator.topic.TopicOperatorUtil.replicas;
 
@@ -297,10 +298,10 @@ public class KafkaHandler {
         if (reconcilableTopics.isEmpty()) {
             return new PartitionedByError<>(List.of(), List.of());
         }
-        var configResources = reconcilableTopics.stream()
+        Set<ConfigResource> configResources = reconcilableTopics.stream()
             .map(reconcilableTopic -> buildTopicConfigResource(reconcilableTopic.topicName()))
             .collect(Collectors.toSet());
-        var tns = reconcilableTopics.stream().map(ReconcilableTopic::topicName).collect(Collectors.toSet());
+        Set<String> tns = reconcilableTopics.stream().map(ReconcilableTopic::topicName).collect(Collectors.toSet());
 
         DescribeTopicsResult describeTopicsResult;
         {
@@ -333,7 +334,7 @@ public class KafkaHandler {
 
         var cs1 = describeTopicsResult.topicNameValues();
         var cs2 = describeConfigsResult.values();
-        return TopicOperatorUtil.partitionedByError(reconcilableTopics.stream().map(reconcilableTopic -> {
+        return partitionedByError(reconcilableTopics.stream().map(reconcilableTopic -> {
             Config configs = null;
             TopicDescription description = null;
             ExecutionException exception = null;
@@ -405,22 +406,22 @@ public class KafkaHandler {
             }));
     }
     
-    private static NewTopic buildNewTopic(KafkaTopic kt, String topicName) {
-        return new NewTopic(topicName, partitions(kt), replicas(kt)).configs(buildConfigsMap(kt));
+    private static NewTopic buildNewTopic(KafkaTopic kafkaTopic, String topicName) {
+        return new NewTopic(topicName, partitions(kafkaTopic), replicas(kafkaTopic)).configs(buildConfigsMap(kafkaTopic));
     }
 
-    private static Map<String, String> buildConfigsMap(KafkaTopic kt) {
+    private static Map<String, String> buildConfigsMap(KafkaTopic kafkaTopic) {
         Map<String, String> configs = new HashMap<>();
-        if (hasConfig(kt)) {
-            for (var entry : kt.getSpec().getConfig().entrySet()) {
+        if (hasConfig(kafkaTopic)) {
+            for (var entry : kafkaTopic.getSpec().getConfig().entrySet()) {
                 configs.put(entry.getKey(), configValueAsString(entry.getValue()));
             }
         }
         return configs;
     }
 
-    private static ConfigResource buildTopicConfigResource(String tn) {
-        return new ConfigResource(ConfigResource.Type.TOPIC, tn);
+    private static ConfigResource buildTopicConfigResource(String topicName) {
+        return new ConfigResource(ConfigResource.Type.TOPIC, topicName);
     }
 
     private static TopicOperatorException handleAdminException(ExecutionException e) {

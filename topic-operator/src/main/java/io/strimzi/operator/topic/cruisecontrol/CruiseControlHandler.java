@@ -136,7 +136,9 @@ public class CruiseControlHandler {
         TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::cruiseControlUserTasks, config.enableAdditionalMetrics(), config.namespace());
         return result;
     }
-
+    
+    // TODO we should try to get rid of side effects here too
+    
     private void updateToPending(List<ReconcilableTopic> reconcilableTopics, String message) {
         LOGGER.infoOp("{}, Topics: {}", message, topicNames(reconcilableTopics));
         reconcilableTopics.forEach(reconcilableTopic ->
