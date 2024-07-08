@@ -161,20 +161,20 @@ spec:
         description: 'All Kafka Connect containers have been down or in CrashLookBackOff status for 3 minutes'
     - alert: ConnectFailedConnector
       expr: sum(kafka_connect_connector_status{status="failed"}) > 0
-      for: 1m
+      for: 5m
       labels:
         severity: major
       annotations:
         summary: 'Kafka Connect Connector Failure'
-        description: 'One or more connectors have been in failed state for 1 minute,'
+        description: 'One or more connectors have been in failed state for 5 minutes,'
     - alert: ConnectFailedTask
       expr: sum(kafka_connect_worker_connector_failed_task_count) > 0
-      for: 1m
+      for: 5m
       labels:
         severity: major
       annotations:
         summary: 'Kafka Connect Task Failure'
-        description: 'One or more tasks have been in failed state for 1 minute.'
+        description: 'One or more tasks have been in failed state for 5 minutes.'
   - name: bridge
     rules:
     - alert: BridgeContainersDown
