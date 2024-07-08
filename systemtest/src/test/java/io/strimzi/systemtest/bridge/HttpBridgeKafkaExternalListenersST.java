@@ -67,8 +67,8 @@ import static io.strimzi.systemtest.TestConstants.REGRESSION;
     },
     labels = {
         @Label("auth-weird-username"),
-        @Label("scram-sha-auth"),
-        @Label("Avoiding 409 error")
+        @Label("scram_sha_auth"),
+        @Label("tls_auth"),
     }
 )
 public class HttpBridgeKafkaExternalListenersST extends AbstractST {
@@ -88,8 +88,7 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
             @Step(value = "Invoke test method with weird username and bridge specification", expected = "Test runs successfully with no 409 error")
         },
         labels = {
-            @Label("auth-weird-username"),
-            @Label("scram-sha-auth")
+            @Label("scram_sha_auth")
         }
     )
     void testScramShaAuthWithWeirdUsername() {
@@ -130,6 +129,7 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
             @Step(value = "Invoke testWeirdUsername method with created configurations", expected = "The method runs without any 409 error")
         },
         labels = {
+            @Label("tls_auth"),
             @Label("Creating a node port service"),
             @Label("Avoiding 409 error")
         }

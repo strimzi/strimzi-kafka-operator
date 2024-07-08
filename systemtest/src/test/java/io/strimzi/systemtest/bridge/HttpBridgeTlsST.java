@@ -56,9 +56,8 @@ import static io.strimzi.systemtest.TestConstants.REGRESSION;
     },
     labels = {
         @Label("message-sending"),
-        @Label("tls-verification"),
         @Label("parallel-message-consumption"),
-        @Label("tls-message-transfer")
+        @Label("tls")
     }
 )
 class HttpBridgeTlsST extends AbstractST {
@@ -79,7 +78,7 @@ class HttpBridgeTlsST extends AbstractST {
         },
         labels = {
             @Label("message-sending"),
-            @Label("tls-verification")
+            @Label("tls")
         }
     )
     void testSendSimpleMessageTls() {
@@ -117,7 +116,7 @@ class HttpBridgeTlsST extends AbstractST {
         },
         labels = {
             @Label("parallel-message-consumption"),
-            @Label("tls-message-transfer")
+            @Label("tls")
         }
     )
     void testReceiveSimpleMessageTls() {

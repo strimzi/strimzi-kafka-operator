@@ -63,7 +63,7 @@
 
 **Labels:**
 
-* [configuration](labels/configuration.md)
+* `configuration` (description file doesn't exist)
 
 
 ## testCustomBridgeLabelsAreProperlySet
@@ -81,8 +81,8 @@
 
 **Labels:**
 
-* [label](labels/label.md)
-* [annotation](labels/annotation.md)
+* `label` (description file doesn't exist)
+* `annotation` (description file doesn't exist)
 
 
 ## testDiscoveryAnnotation
@@ -183,7 +183,7 @@
 
 **Labels:**
 
-* [plaintext](labels/plaintext.md)
+* `plaintext` (description file doesn't exist)
 * `send-simple-message` (description file doesn't exist)
 * `label-verification` (description file doesn't exist)
 
