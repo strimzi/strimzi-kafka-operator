@@ -66,25 +66,26 @@ public abstract class ApiUsers implements UnknownPropertyPreserving {
     }
 
     /**
-     * Factory method to create and return an API Users object of the given type
+     * Checks if Cruise Control spec has valid ApiUsers config.
      *
-     * @return API Users object of given type
+     * @param apiUsers The Cruise Control apiUsers spec to check.
      */
-    public static ApiUsers create(CruiseControlSpec ccSpec) {
-        if (ccSpec.getApiUsers() == null || ccSpec.getApiUsers().getType() == null) {
-            // default configuration used for Strimzi-managed API users
-            return new HashLoginServiceApiUsers();
-        }
-
-        String type = ccSpec.getApiUsers().getType();
-        switch (type) {
-            case TYPE_HASH_LOGIN_SERVICE:
-                return new HashLoginServiceApiUsers();
-            default:
-                throw new IllegalArgumentException("Unknown ApiUsers type: " + type);
+    public static boolean checkApiUsersConfig(ApiUsers apiUsers)  {
+        if (apiUsers != null)    {
+            if (apiUsers.getType() == null
+                    || apiUsers.getValueFrom() == null
+                    || apiUsers.getValueFrom().getSecretKeyRef() == null
+                    || apiUsers.getValueFrom().getSecretKeyRef().getName() == null
+                    || apiUsers.getValueFrom().getSecretKeyRef().getKey() == null) {
+                throw new IllegalArgumentException("The configuration of the Cruise Control REST API users " +
+                        "referenced in spec.cruiseControl.apiUsers is invalid.");
+            } else {
+                return true;
+            }
+        } else {
+            return false;
         }
     }
-
     /**
      * Parse String containing API credential config into map of API user entries.
      *

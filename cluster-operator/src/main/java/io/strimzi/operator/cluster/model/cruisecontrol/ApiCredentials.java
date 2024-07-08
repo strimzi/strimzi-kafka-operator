@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.ApiUsers;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.HashLoginServiceApiUsers;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Util;
@@ -48,7 +49,6 @@ public class ApiCredentials {
     private final String namespace;
     private final String cluster;
     private final Labels labels;
-    private final CruiseControlSpec ccSpec;
     private final OwnerReference ownerReference;
 
     /**
@@ -65,12 +65,11 @@ public class ApiCredentials {
         this.cluster = cluster;
         this.labels = labels;
         this.ownerReference = ownerReference;
-        this.ccSpec = ccSpec;
-        this.apiUsers = ApiUsers.create(ccSpec);
+        this.apiUsers = ccSpec.getApiUsers();
 
-        if (checkApiUsersConfig(ccSpec)) {
-            this.userManagedApiSecretName = ccSpec.getApiUsers().getValueFrom().getSecretKeyRef().getName();
-            this.userManagedApiSecretKey = ccSpec.getApiUsers().getValueFrom().getSecretKeyRef().getKey();
+        if (apiUsers != null) {
+            this.userManagedApiSecretName = apiUsers.getValueFrom().getSecretKeyRef().getName();
+            this.userManagedApiSecretKey = apiUsers.getValueFrom().getSecretKeyRef().getKey();
         } else {
             this.userManagedApiSecretName = null;
             this.userManagedApiSecretKey = null;
@@ -81,36 +80,21 @@ public class ApiCredentials {
      * @return  Returns user-managed API credentials secret name
      */
     public String getUserManagedApiSecretName() {
-        return userManagedApiSecretName;
+        return this.userManagedApiSecretName;
     }
 
     /**
      * @return  Returns user-managed API credentials secret key
      */
-    public String getUserManagedApiSecretKey() {
-        return userManagedApiSecretKey;
+    /* test */ String getUserManagedApiSecretKey() {
+        return this.userManagedApiSecretKey;
     }
 
     /**
-     * Checks if Cruise Control spec has valid ApiUsers config.
-     *
-     * @param ccSpec The Cruise Control spec to check.
+     * @return  Returns ApiUsers object
      */
-    private static boolean checkApiUsersConfig(CruiseControlSpec ccSpec)  {
-        ApiUsers apiUsers = ccSpec.getApiUsers();
-        if (apiUsers != null)    {
-            if (apiUsers.getType() == null
-                    || apiUsers.getValueFrom() == null
-                    || apiUsers.getValueFrom().getSecretKeyRef() == null
-                    || apiUsers.getValueFrom().getSecretKeyRef().getName() == null
-                    || apiUsers.getValueFrom().getSecretKeyRef().getKey() == null) {
-                throw new InvalidConfigurationException("The configuration of the Cruise Control REST API users " +
-                        "referenced in spec.cruiseControl.apiUsers is invalid.");
-            } else {
-                return true;
-            }
-        }
-        return false;
+    /* test */ ApiUsers getApiUsers() {
+        return this.apiUsers;
     }
 
     /**
@@ -137,6 +121,7 @@ public class ApiCredentials {
      *
      * @param secret API user secret
      * @param secretKey API user secret key
+     * @param apiUsers API users config
      *
      * @return Map of API user entries containing user-managed API user credentials
      */
@@ -165,16 +150,17 @@ public class ApiCredentials {
      *
      * @param passwordGenerator The password generator for API users
      * @param secret API user secret
+     * @param apiUsers API users config
      *
      * @return Map of API user entries containing Strimzi-managed API user credentials
      */
-    /* test */ static Map<String, ApiUsers.UserEntry> generateCoManagedApiCredentials(PasswordGenerator passwordGenerator, Secret secret, ApiUsers apiUser) {
+    /* test */ static Map<String, ApiUsers.UserEntry> generateCoManagedApiCredentials(PasswordGenerator passwordGenerator, Secret secret, ApiUsers apiUsers) {
         Map<String, ApiUsers.UserEntry> entries = new HashMap<>();
 
         if (secret != null) {
             if (secret.getData().containsKey(AUTH_FILE_KEY)) {
                 String credentialsAsString = Util.decodeFromBase64(secret.getData().get(AUTH_FILE_KEY));
-                entries.putAll(apiUser.parseEntriesFromString(credentialsAsString));
+                entries.putAll(apiUsers.parseEntriesFromString(credentialsAsString));
             }
         }
 
@@ -203,6 +189,7 @@ public class ApiCredentials {
                                                               Secret cruiseControlApiSecret,
                                                               Secret userManagedApiSecret,
                                                               Secret topicOperatorManagedApiSecret) {
+        ApiUsers apiUsers = this.apiUsers == null ? new HashLoginServiceApiUsers() : this.apiUsers;
         Map<String, ApiUsers.UserEntry> apiCredentials = new HashMap<>();
         apiCredentials.putAll(generateCoManagedApiCredentials(passwordGenerator, cruiseControlApiSecret, apiUsers));
         apiCredentials.putAll(generateUserManagedApiCredentials(userManagedApiSecret, userManagedApiSecretKey, apiUsers));
@@ -234,7 +221,7 @@ public class ApiCredentials {
                                     Secret oldCruiseControlApiSecret,
                                     Secret userManagedApiSecret,
                                     Secret topicOperatorManagedApiSecret) {
-        if (ccSpec.getApiUsers() != null && userManagedApiSecret == null) {
+        if (apiUsers != null && userManagedApiSecret == null) {
             throw new InvalidResourceException("The configuration of the Cruise Control REST API users " +
                     "references a secret: " +  "\"" +  userManagedApiSecretName + "\" that does not exist.");
         }
