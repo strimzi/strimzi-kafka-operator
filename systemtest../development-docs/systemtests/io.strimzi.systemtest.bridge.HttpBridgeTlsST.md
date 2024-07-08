@@ -15,7 +15,7 @@
 
 * `message-sending` (description file doesn't exist)
 * `parallel-message-consumption` (description file doesn't exist)
-* [tls](labels/tls.md)
+* `tls` (description file doesn't exist)
 
 <hr style="border:1px solid">
 
@@ -38,7 +38,7 @@
 **Labels:**
 
 * `parallel-message-consumption` (description file doesn't exist)
-* [tls](labels/tls.md)
+* `tls` (description file doesn't exist)
 
 
 ## testSendSimpleMessageTls
@@ -59,5 +59,5 @@
 **Labels:**
 
 * `message-sending` (description file doesn't exist)
-* [tls](labels/tls.md)
+* `tls` (description file doesn't exist)
 

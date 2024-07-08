@@ -15,7 +15,7 @@
 
 **Labels:**
 
-* [scram_sha_auth](labels/scram_sha_auth.md)
+* `scram_sha_auth` (description file doesn't exist)
 * `message-production` (description file doesn't exist)
 * `message-consumption` (description file doesn't exist)
 
@@ -37,8 +37,8 @@
 
 **Labels:**
 
-* [scram_sha_auth](labels/scram_sha_auth.md)
-* [tls](labels/tls.md)
+* `scram_sha_auth` (description file doesn't exist)
+* `tls` (description file doesn't exist)
 
 
 ## testSendSimpleMessageTlsScramSha
@@ -59,8 +59,8 @@
 
 **Labels:**
 
-* [scram_sha_auth](labels/scram_sha_auth.md)
-* [tls](labels/tls.md)
+* `scram_sha_auth` (description file doesn't exist)
+* `tls` (description file doesn't exist)
 * `message-production` (description file doesn't exist)
 * `message-consumption` (description file doesn't exist)
 

@@ -107,6 +107,7 @@ class HttpBridgeST extends AbstractST {
             @Step(value = "Verify Kafka Bridge service labels", expected = "Labels for Kafka Bridge service are correctly set and verified")
         },
         labels = {
+            @Label("plaintext"),
             @Label("send-simple-message"),
             @Label("label-verification")
         }
@@ -195,7 +196,7 @@ class HttpBridgeST extends AbstractST {
             @Step(value = "Verify Kafka Bridge configurations for producer and consumer", expected = "Producer and consumer configurations match the updated settings")
         },
         labels = {
-            @Label("update_configuration")
+            @Label("configuration")
         }
     )
     void testCustomAndUpdatedValues() {
@@ -475,8 +476,8 @@ class HttpBridgeST extends AbstractST {
             @Step(value = "Filter and validate custom labels and annotations", expected = "Custom labels and annotations match the expected values")
         },
         labels = {
-            @Label("verify-custom-labels"),
-            @Label("verify-custom-annotations")
+            @Label("label"),
+            @Label("annotation")
         }
     )
     void testCustomBridgeLabelsAreProperlySet() {

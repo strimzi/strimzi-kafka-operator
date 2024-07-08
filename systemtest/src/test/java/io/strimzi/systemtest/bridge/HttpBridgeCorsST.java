@@ -55,8 +55,7 @@ import static org.hamcrest.Matchers.containsString;
         @Step(value = "Deploy required Kafka resources and scraper pod", expected = "Kafka resources and scraper pod are deployed and running")
     },
     labels = {
-        @Label("handle-cors-requests"),
-        @Label("security-validation")
+        @Label("cors_handling")
     }
 )
 public class HttpBridgeCorsST extends AbstractST {
@@ -80,7 +79,7 @@ public class HttpBridgeCorsST extends AbstractST {
             @Step(value = "Check if the GET request response is '404 Not Found'", expected = "Response for GET request is 404 Not Found")
         },
         labels = {
-            @Label("validate_cors_handling_allowed_origin")
+            @Label("cors_handling")
         }
     )
     void testCorsOriginAllowed() {
@@ -135,8 +134,7 @@ public class HttpBridgeCorsST extends AbstractST {
             @Step(value = "Verify the response contains '403' and 'CORS Rejected - Invalid origin'", expected = "Response indicates the CORS request is rejected")
         },
         labels = {
-            @Label("handle-cors-requests"),
-            @Label("security-validation")
+            @Label("cors_handling")
         }
     )
     void testCorsForbidden() {

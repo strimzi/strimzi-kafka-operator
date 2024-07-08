@@ -57,7 +57,7 @@ import static io.strimzi.systemtest.TestConstants.REGRESSION;
         
     },
     labels = {
-        @Label("tls-scram-authentication"),
+        @Label("scram_sha_auth"),
         @Label("message-production"),
         @Label("message-consumption"),
     }
@@ -80,7 +80,8 @@ class HttpBridgeScramShaST extends AbstractST {
             @Step(value = "Wait for consumer success", expected = "Consumer finishes receiving messages without errors")
         },
         labels = {
-            @Label("tls-scram-authentication"),
+            @Label("scram_sha_auth"),
+            @Label("tls"),
             @Label("message-production"),
             @Label("message-consumption")
         }
@@ -118,7 +119,8 @@ class HttpBridgeScramShaST extends AbstractST {
             @Step(value = "Wait for clients' success validation", expected = "Messages are successfully consumed from the Kafka topic")
         },
         labels = {
-            @Label("tls-scram-authentication")
+            @Label("scram_sha_auth"),
+            @Label("tls")
         }
     )
     void testReceiveSimpleMessageTlsScramSha() {

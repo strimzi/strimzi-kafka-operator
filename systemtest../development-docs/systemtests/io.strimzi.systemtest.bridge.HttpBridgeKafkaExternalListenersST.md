@@ -11,8 +11,8 @@
 **Labels:**
 
 * `auth-weird-username` (description file doesn't exist)
-* [scram_sha_auth](labels/scram_sha_auth.md)
-* [tls_auth](labels/tls_auth.md)
+* `scram_sha_auth` (description file doesn't exist)
+* `tls_auth` (description file doesn't exist)
 
 <hr style="border:1px solid">
 
@@ -33,7 +33,7 @@
 
 **Labels:**
 
-* [scram_sha_auth](labels/scram_sha_auth.md)
+* `scram_sha_auth` (description file doesn't exist)
 
 
 ## testTlsAuthWithWeirdUsername
@@ -51,7 +51,7 @@
 
 **Labels:**
 
-* [tls_auth](labels/tls_auth.md)
+* `tls_auth` (description file doesn't exist)
 * `Creating a node port service` (description file doesn't exist)
 * `Avoiding 409 error` (description file doesn't exist)
 

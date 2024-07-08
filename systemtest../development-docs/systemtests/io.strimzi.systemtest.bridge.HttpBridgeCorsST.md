@@ -11,7 +11,7 @@
 
 **Labels:**
 
-* [cors_handling](labels/cors_handling.md)
+* `cors_handling` (description file doesn't exist)
 
 <hr style="border:1px solid">
 
@@ -33,7 +33,7 @@
 
 **Labels:**
 
-* [cors_handling](labels/cors_handling.md)
+* `cors_handling` (description file doesn't exist)
 
 
 ## testCorsOriginAllowed
@@ -53,5 +53,5 @@
 
 **Labels:**
 
-* [cors_handling](labels/cors_handling.md)
+* `cors_handling` (description file doesn't exist)
 
