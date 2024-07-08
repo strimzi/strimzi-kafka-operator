@@ -51,6 +51,7 @@ For OAuth 2.0 authentication, you can use the following options:
 +
 --
 * Client ID and secret
+* Client ID and client assertion
 * Client ID and refresh token
 * Access token
 * Username and password
@@ -60,7 +61,7 @@ For OAuth 2.0 authentication, you can use the following options:
 For example, here OAuth 2.0 is assigned to the Kafka Bridge client using a client ID and secret, and TLS:
 +
 --
-.Example OAuth 2.0 authentication configuration
+.Example OAuth 2.0 authentication configuration using the client secret
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -83,6 +84,33 @@ spec:
 <1> Authentication type set to `oauth`.
 <2> URI of the token endpoint for authentication.
 <3> Certificates stored in X.509 format within the specified secrets for TLS connection to the authorization server.
+--
++
+Another example, here OAuth 2.0 is assigned to the Kafka Bridge client using a client ID and the location of the client assertion file, and TLS to connect to the authorization server:
++
+--
+.Example OAuth 2.0 authentication configuration using the client assertion
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaBridge
+metadata:
+  name: my-bridge
+spec:
+  # ...
+  authentication:
+    type: oauth # <1>
+    tokenEndpointUri: https://<auth_server_address>/<path_to_token_endpoint> # <2>
+    clientId: kafka-bridge
+    clientAssertionLocation: /var/run/secrets/sso/assertion # <3>
+    tlsTrustedCertificates: # <4>
+      - secretName: oauth-server-cert
+        pattern: "*.crt"
+----
+<1> Authentication type set to `oauth`.
+<2> URI of the token endpoint for authentication.
+<3> Path to the file on the disk that contains the assertion used to authenticate as the specified clientId. Usually some external operator service adds a mounted volume with that file to the deployed pod.
+<4> Certificates stored in X.509 format within the specified secrets for TLS connection to the authorization server.
 --
 +
 Another example, here OAuth 2.0 is assigned to the Kafka Bridge client using a service account token:
@@ -116,30 +144,28 @@ spec:
   authentication:
     # ...
     disableTlsHostnameVerification: true # <1>
-    checkAccessTokenType: false # <2>
-    accessTokenIsJwt: false # <3>
-    scope: any # <4>
-    audience: kafka # <5>
-    connectTimeoutSeconds: 60 # <6>
-    readTimeoutSeconds: 60 # <7>
-    httpRetries: 2 # <8>
-    httpRetryPauseMs: 300 # <9>
-    includeAcceptHeader: false # <10>
+    accessTokenIsJwt: false # <2>
+    scope: any # <3>
+    audience: kafka # <4>
+    connectTimeoutSeconds: 60 # <5>
+    readTimeoutSeconds: 60 # <6>
+    httpRetries: 2 # <7>
+    httpRetryPauseMs: 300 # <8>
+    includeAcceptHeader: false # <9>
 ----
 <1> (Optional) Disable TLS hostname verification. Default is `false`.
-<2> If the authorization server does not return a `typ` (type) claim inside the JWT token, you can apply `checkAccessTokenType: false` to skip the token type check. Default is `true`.
-<3> If you are using opaque tokens, you can apply `accessTokenIsJwt: false` so that access tokens are not treated as JWT tokens.
-<4> (Optional) The `scope` for requesting the token from the token endpoint.
+<2> If you are using opaque tokens, you can apply `accessTokenIsJwt: false` so that access tokens are not treated as JWT tokens.
+<3> (Optional) The `scope` for requesting the token from the token endpoint.
 An authorization server may require a client to specify the scope.
 In this case it is `any`.
-<5> (Optional) The `audience` for requesting the token from the token endpoint.
+<4> (Optional) The `audience` for requesting the token from the token endpoint.
 An authorization server may require a client to specify the audience.
 In this case it is `kafka`.
-<6> (Optional) The connect timeout in seconds when connecting to the authorization server. The default value is 60.
-<7> (Optional) The read timeout in seconds when connecting to the authorization server. The default value is 60.
-<8> (Optional) The maximum number of times to retry a failed HTTP request to the authorization server. The default value is `0`, meaning that no retries are performed. To use this option effectively, consider reducing the timeout times for the `connectTimeoutSeconds` and `readTimeoutSeconds` options. However, note that retries may prevent the current worker thread from being available to other requests, and if too many requests stall, it could make the Kafka broker unresponsive.
-<9> (Optional) The time to wait before attempting another retry of a failed HTTP request to the authorization server. By default, this time is set to zero, meaning that no pause is applied. This is because many issues that cause failed requests are per-request network glitches or proxy issues that can be resolved quickly. However, if your authorization server is under stress or experiencing high traffic, you may want to set this option to a value of 100 ms or more to reduce the load on the server and increase the likelihood of successful retries.
-<10> (Optional) Some authorization servers have issues with client sending `Accept: application/json` header. By setting `includeAcceptHeader: false` the header will not be sent. Default is `true`.
+<5> (Optional) The connect timeout in seconds when connecting to the authorization server. The default value is 60.
+<6> (Optional) The read timeout in seconds when connecting to the authorization server. The default value is 60.
+<7> (Optional) The maximum number of times to retry a failed HTTP request to the authorization server. The default value is `0`, meaning that no retries are performed. To use this option effectively, consider reducing the timeout times for the `connectTimeoutSeconds` and `readTimeoutSeconds` options. However, note that retries may prevent the current worker thread from being available to other requests, and if too many requests stall, it could make the Kafka broker unresponsive.
+<8> (Optional) The time to wait before attempting another retry of a failed HTTP request to the authorization server. By default, this time is set to zero, meaning that no pause is applied. This is because many issues that cause failed requests are per-request network glitches or proxy issues that can be resolved quickly. However, if your authorization server is under stress or experiencing high traffic, you may want to set this option to a value of 100 ms or more to reduce the load on the server and increase the likelihood of successful retries.
+<9> (Optional) Some authorization servers have issues with client sending `Accept: application/json` header. By setting `includeAcceptHeader: false` the header will not be sent. Default is `true`.
 --
 
 . Apply the changes to the resource configuration of the component.

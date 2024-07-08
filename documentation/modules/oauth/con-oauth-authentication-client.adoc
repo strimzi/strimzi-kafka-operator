@@ -75,6 +75,7 @@ Add the authentication properties as JAAS configuration (`sasl.jaas.config` and 
 If the client application is not configured with an access token directly, the client exchanges one of the following sets of credentials for an access token during Kafka session initiation:
 
 * Client ID and secret
+* Client ID and client assertion
 * Client ID, refresh token, and (optionally) a secret
 * Username and password, with client ID and (optionally) a secret
 
@@ -107,6 +108,41 @@ sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthL
 <4> URI of the authorization server token endpoint.
 <5> Client ID, which is the name used when creating the _client_ in the authorization server.
 <6> Client secret created when creating the _client_ in the authorization server.
+<7> The location contains the public key certificate (`truststore.p12`) for the authorization server.
+<8> The password for accessing the truststore.
+<9> The truststore type.
+<10> (Optional) The `scope` for requesting the token from the token endpoint.
+An authorization server may require a client to specify the scope.
+<11> (Optional) The `audience` for requesting the token from the token endpoint.
+An authorization server may require a client to specify the audience.
+
+[id='con-oauth-authentication-client-assertion-{context}']
+.Example client assertion configuration
+[source,properties,subs="+quotes,attributes"]
+----
+security.protocol=SASL_SSL # <1>
+sasl.mechanism=OAUTHBEARER # <2>
+ssl.truststore.location=/tmp/truststore.p12 <3>
+ssl.truststore.password=$STOREPASS
+ssl.truststore.type=PKCS12
+sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
+  oauth.token.endpoint.uri="<token_endpoint_url>" \ # <4>
+  oauth.client.id="<client_id>" \ # <5>
+  oauth.client.assertion="<client_assertion>" \ # <6>
+  oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \ <7>
+  oauth.ssl.truststore.password="$STOREPASS" \ <8>
+  oauth.ssl.truststore.type="PKCS12" \ <9>
+  oauth.scope="<scope>" \ # <10>
+  oauth.audience="<audience>" ; # <11>
+sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
+----
+<1> `SASL_SSL` security protocol for TLS-encrypted connections. Use `SASL_PLAINTEXT` over unencrypted connections for local development only.
+<2> The SASL mechanism specified as `OAUTHBEARER` or `PLAIN`.
+<3> The truststore configuration for secure access to the Kafka cluster.
+<4> URI of the authorization server token endpoint.
+<5> Client ID, which is the name used when creating the _client_ in the authorization server.
+<6> Client assertion, also known as private key JWT, created when creating the _client_ in the authorization server.
+An alternative to using `oauth.client.assertion` is to use `oauth.client.assertion.location` setting it to the filesystem path to the file containing the client assertion.
 <7> The location contains the public key certificate (`truststore.p12`) for the authorization server.
 <8> The password for accessing the truststore.
 <9> The truststore type.
