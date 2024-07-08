@@ -2,6 +2,7 @@
 
 ## 0.43.0
 
+* Added alerts for Connectors/Tasks in failed state.
 
 ## 0.42.0
 

@@ -159,20 +159,6 @@ spec:
       annotations:
         summary: 'All Kafka Connect containers down or in CrashLookBackOff status'
         description: 'All Kafka Connect containers have been down or in CrashLookBackOff status for 3 minutes'
-    - alert: ConnectFailedConnector
-      expr: sum(kafka_connect_connector_status{status="failed"}) > 0
-      labels:
-        severity: major
-      annotations:
-        summary: 'Kafka Connect Connector Failure'
-        description: 'Some connectors are failing, this can not be automatically recovered.'
-    - alert: ConnectFailedTask
-      expr: sum(kafka_connect_worker_connector_failed_task_count) > 0
-      labels:
-        severity: major
-      annotations:
-        summary: 'Kafka Connect Task Failure'
-        description: 'Some tasks are failing, this can not be automatically recovered.'
   - name: bridge
     rules:
     - alert: BridgeContainersDown
