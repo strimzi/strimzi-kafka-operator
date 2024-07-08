@@ -34,6 +34,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,9 +51,11 @@ import java.util.stream.Stream;
 import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.ONGOING;
 import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.PENDING;
 import static io.strimzi.operator.topic.TopicOperatorUtil.hasConfig;
+import static io.strimzi.operator.topic.TopicOperatorUtil.isPaused;
 import static io.strimzi.operator.topic.TopicOperatorUtil.startReconciliationTimer;
 import static io.strimzi.operator.topic.TopicOperatorUtil.stopReconciliationTimer;
 import static io.strimzi.operator.topic.TopicOperatorUtil.topicNames;
+import static java.lang.String.format;
 import static java.util.function.UnaryOperator.identity;
 
 /**
@@ -61,6 +64,7 @@ import static java.util.function.UnaryOperator.identity;
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:ClassDataAbstractionCoupling"})
 public class BatchingTopicController {
     static final ReconciliationLogger LOGGER = ReconciliationLogger.create(BatchingTopicController.class);
+    static final List<String> THROTTLING_CONFIG = List.of("follower.replication.throttled.replicas", "leader.replication.throttled.replicas");
 
     private final TopicOperatorConfig config;
     private final Map<String, String> selector;
@@ -271,25 +275,186 @@ public class BatchingTopicController {
 
         // figure out necessary updates
         createMissingTopics(results, currentStatesOrError);
-        List<Pair<ReconcilableTopic, Collection<AlterConfigOp>>> someAlterConfigs = configChanges(results, currentStatesOrError);
-        List<Pair<ReconcilableTopic, NewPartitions>> someCreatePartitions = partitionChanges(results, currentStatesOrError);
+        var alteredConfigs = findConfigChanges(results, currentStatesOrError);
+        var filteredAlterConfigs = filterConfigChanges(mayNeedUpdate, alteredConfigs);
+        var newPartitions = findPartitionChanges(results, currentStatesOrError);
 
         // execute those updates
-        var alterConfigsResults = kafkaHandler.alterConfigs(someAlterConfigs);
-        var createPartitionsResults = kafkaHandler.createPartitions(someCreatePartitions);
-        var checkReplicasChangesResults = checkReplicasChanges(reconcilableTopics, currentStatesOrError);
+        var alterConfigsResults = kafkaHandler.alterConfigs(filteredAlterConfigs);
+        var createPartitionsResults = kafkaHandler.createPartitions(newPartitions);
+        var handleReplicasChangesResults = handleReplicasChanges(reconcilableTopics, currentStatesOrError);
 
         // update statuses
-        accumulateResults(results, alterConfigsResults, createPartitionsResults, checkReplicasChangesResults);
+        accumulateResults(results, alterConfigsResults, createPartitionsResults, handleReplicasChangesResults);
         updateStatuses(results);
         timerSamples.keySet().forEach(rt -> stopReconciliationTimer(metricsHolder, timerSamples.get(rt), config.namespace()));
         LOGGER.traceOp("Reconciled batch of {} KafkaTopics", results.size());
     }
 
     /**
-     * Check topic replicas changes.
+     * Filters out config changes that should be ignored.
+     *
+     * @param reconcilableTopics Topics tha may need update.
+     * @param alterConfigPairs Determined alter config operations.
+     * @return Filtered alter config pairs.
+     */
+    private List<Pair<ReconcilableTopic, Collection<AlterConfigOp>>> filterConfigChanges(List<ReconcilableTopic> reconcilableTopics,
+                                                                                         List<Pair<ReconcilableTopic, Collection<AlterConfigOp>>> alterConfigPairs) {
+        List<Pair<ReconcilableTopic, Collection<AlterConfigOp>>> filteredAlterConfigPairs = new ArrayList<>();
+        for (var reconcilableTopic : reconcilableTopics) {
+            removeWarningConditions(reconcilableTopic, TopicOperatorException.Reason.INVALID_CONFIG, null);
+            var nonThrottlingConfigPairs = filterOutThrottlingConfig(reconcilableTopic, alterConfigPairs);
+            var alterableConfigPairs = filterOutNonAlterableConfig(reconcilableTopic, nonThrottlingConfigPairs);
+            if (!alterableConfigPairs.isEmpty()) {
+                filteredAlterConfigPairs.addAll(alterableConfigPairs);
+            }
+            var alterConfigOps = alterableConfigPairs.stream()
+                .map(Pair::getValue)
+                .flatMap(ops -> ops.stream())
+                .collect(Collectors.toList());
+            if (alterConfigOps.isEmpty()) {
+                LOGGER.debugCr(reconcilableTopic.reconciliation(), "No config change");
+            } else {
+                LOGGER.debugCr(reconcilableTopic.reconciliation(), "Config changes {}", alterConfigOps);
+            }
+        }
+        return filteredAlterConfigPairs.stream()
+            .filter(pair -> !pair.getValue().isEmpty())
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * <p>If Cruise Control integration is enabled, we ignore throttle configurations unless the user 
+     * explicitly set them in {@code .spec.config}, but we always give a warning.</p>
+     *
+     * <p>This avoids the issue caused by the race condition between Cruise Control that dynamically sets 
+     * them during throttled rebalances, and the operator that reverts them on periodic reconciliations.</p>
+     *
+     * @param reconcilableTopic Reconcilable topic.
+     * @param alterConfigPairs Determined alter config operations.
+     * @return Filtered alter config operations for this topic.
+     */
+    private List<Pair<ReconcilableTopic, Collection<AlterConfigOp>>> filterOutThrottlingConfig(ReconcilableTopic reconcilableTopic,
+                                                                                               List<Pair<ReconcilableTopic, Collection<AlterConfigOp>>> alterConfigPairs) {
+        if (config.cruiseControlEnabled()) {
+            return alterConfigPairs.stream()
+                .filter(pair -> Objects.equals(pair.getKey(), reconcilableTopic))
+                .map(pair -> {
+                    Collection<AlterConfigOp> filteredOps = pair.getValue().stream()
+                        .filter(op -> !(THROTTLING_CONFIG.contains(op.configEntry().name()) && !hasConfigProperty(reconcilableTopic.kt(), op.configEntry().name())))
+                        .collect(Collectors.toList());
+                    if (THROTTLING_CONFIG.stream().anyMatch(prop -> hasConfigProperty(reconcilableTopic.kt(), prop))) {
+                        THROTTLING_CONFIG.forEach(prop -> addWarningCondition(reconcilableTopic, TopicOperatorException.Reason.INVALID_CONFIG, format("Property %s may conflict with throttled rebalances", prop)));
+                    }
+                    return new Pair<>(pair.getKey(), filteredOps);
+                })
+                .collect(Collectors.toList());
+        } else {
+            return alterConfigPairs;
+        }
+    }
+
+    private static boolean hasConfigProperty(KafkaTopic kt, String prop) {
+        return hasConfig(kt) && kt.getSpec().getConfig().containsKey(prop);
+    }
+
+    private static boolean hasConditions(KafkaTopic kt) {
+        return kt.getStatus() != null && kt.getStatus().getConditions() != null;
+    }
+
+    private static void addWarningCondition(ReconcilableTopic reconcilableTopic, TopicOperatorException.Reason reason, String message) {
+        LOGGER.warnCr(reconcilableTopic.reconciliation(), message);
+        List<Condition> conditions = hasConditions(reconcilableTopic.kt())
+            ? reconcilableTopic.kt().getStatus().getConditions() : new ArrayList<>();
+        if (conditions.stream().filter(c -> Objects.equals(c.getReason(), reason.value)
+            && Objects.equals(c.getMessage(), message)).findFirst().isEmpty()) {
+            conditions.add(new ConditionBuilder()
+                .withReason(reason.value)
+                .withMessage(message)
+                .withStatus("True")
+                .withType("Warning")
+                .withLastTransitionTime(StatusUtils.iso8601Now())
+                .build());
+        }
+        reconcilableTopic.kt().setStatus(
+            new KafkaTopicStatusBuilder(reconcilableTopic.kt().getStatus())
+                .withConditions(conditions)
+                .build());
+    }
+
+    private static void removeWarningConditions(ReconcilableTopic reconcilableTopic, TopicOperatorException.Reason reason, String message) {
+        List<Condition> conditions = hasConditions(reconcilableTopic.kt())
+            ? reconcilableTopic.kt().getStatus().getConditions() : new ArrayList<>();
+        if (message == null) {
+            conditions.removeIf(c -> Objects.equals(c.getReason(), reason.value));
+        } else {
+            conditions.removeIf(c -> Objects.equals(c.getReason(), reason.value)
+                && Objects.equals(c.getMessage(), message));
+        }
+        reconcilableTopic.kt().setStatus(
+            new KafkaTopicStatusBuilder(reconcilableTopic.kt().getStatus())
+                .withConditions(conditions)
+                .build());
+    }
+
+    /**
+     * <p>The {@code STRIMZI_ALTERABLE_TOPIC_CONFIG} env var can be used to specify a comma separated list (allow list) 
+     * of Kafka topic configurations that can be altered by users through {@code .spec.config}. Keep in mind that 
+     * when changes are applied directly in Kafka, the operator will try to revert them with a warning.</p>
+     *
+     * <p>The default value is "ALL", which means no restrictions in changing {@code .spec.config}.
+     * The opposite is "NONE", which can be set to explicitly disable any change.</p>
+     *
+     * <p>This is useful in standalone mode when you have a Kafka service that restricts 
+     * alter operations to a subset of all the Kafka topic configurations.</p>
+     *
+     * @param reconcilableTopic Reconcilable topic.
+     * @param alterConfigPairs All alter config operations.
+     * @return Filtered alter config operations for this topic.
+     */
+    private List<Pair<ReconcilableTopic, Collection<AlterConfigOp>>> filterOutNonAlterableConfig(ReconcilableTopic reconcilableTopic,
+                                                                                                 List<Pair<ReconcilableTopic, Collection<AlterConfigOp>>> alterConfigPairs) {
+        var alterableConfigValue = config.alterableTopicConfig();
+        var specConfig = hasConfig(reconcilableTopic.kt())
+            ? reconcilableTopic.kt().getSpec().getConfig().keySet().stream().sorted().collect(Collectors.toList())
+            : Collections.emptyList();
+        var alterableConfig = alterableConfigValue != null
+            ? Arrays.stream(alterableConfigValue.replaceAll("\\s", "").split(",")).sorted().collect(Collectors.toList())
+            : Collections.emptyList();
+        if (alterableConfigValue != null && !alterableConfigValue.equalsIgnoreCase("ALL") && !alterableConfigValue.isEmpty() && hasConfig(reconcilableTopic.kt())) {
+            if (alterableConfigValue.equalsIgnoreCase("NONE") && hasConfig(reconcilableTopic.kt())) {
+                addWarningCondition(reconcilableTopic, TopicOperatorException.Reason.INVALID_CONFIG, format("All properties are ignored according to alterable config"));
+                return List.of();
+            } else {
+                // check spec config on topic creation
+                specConfig.forEach(prop -> {
+                    if (!alterableConfig.contains(prop) && !THROTTLING_CONFIG.contains(prop)) {
+                        addWarningCondition(reconcilableTopic, TopicOperatorException.Reason.INVALID_CONFIG, format("Property %s is ignored according to alterable config", prop));
+                    }
+                });
+                // check determined alter operations on update
+                return alterConfigPairs.stream()
+                    .filter(pair -> Objects.equals(pair.getKey(), reconcilableTopic))
+                    .map(pair -> {
+                        Collection<AlterConfigOp> filteredOps = pair.getValue().stream()
+                            .filter(op -> {
+                                String propName = op.configEntry().name();
+                                return alterableConfig.contains(propName) || THROTTLING_CONFIG.contains(propName);
+                            })
+                            .collect(Collectors.toList());
+                        return new Pair<>(pair.getKey(), filteredOps);
+                    })
+                    .collect(Collectors.toList());
+            }
+        } else {
+            return alterConfigPairs;
+        }
+    }
+
+    /**
+     * Handles topic replicas changes.
      * 
-     * <p>If Cruise Control integration is disabled, it simply returns an error for each change.</p>
+     * <p>If Cruise Control integration is disabled, it returns an error for each change.</p>
      * 
      * <p>
      * If Cruise Control integration is enabled, it runs the following operations in order:
@@ -303,12 +468,12 @@ public class BatchingTopicController {
      * was applied), or when the user reverts an invalid replicas change to the previous value.
      * <p>
      *
-     * @param reconcilableTopics Reconcilable topics from Kube
-     * @param currentStatesOrError Current topic state or error from Kafka
-     * @return Reconcilable topics partitioned by error
+     * @param reconcilableTopics Reconcilable topics from Kube.
+     * @param currentStatesOrError Current topic state or error from Kafka.
+     * @return Reconcilable topics partitioned by error.
      */
-    /* test */ PartitionedByError<ReconcilableTopic, Void> checkReplicasChanges(List<ReconcilableTopic> reconcilableTopics,
-                                                                                PartitionedByError<ReconcilableTopic, TopicState> currentStatesOrError) {
+    /* test */ PartitionedByError<ReconcilableTopic, Void> handleReplicasChanges(List<ReconcilableTopic> reconcilableTopics,
+                                                                                 PartitionedByError<ReconcilableTopic, TopicState> currentStatesOrError) {
         var differentRfResults = findDifferentRf(currentStatesOrError);
         Stream<Pair<ReconcilableTopic, Either<TopicOperatorException, Void>>> successStream;
 
@@ -509,7 +674,7 @@ public class BatchingTopicController {
         replicasChangeResults.errors().forEach(pair -> putResult(results, pair.getKey(), Either.ofLeft(pair.getValue())));
     }
 
-    private List<Pair<ReconcilableTopic, Collection<AlterConfigOp>>> configChanges(Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results, PartitionedByError<ReconcilableTopic, TopicState> currentStatesOrError) {
+    private List<Pair<ReconcilableTopic, Collection<AlterConfigOp>>> findConfigChanges(Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results, PartitionedByError<ReconcilableTopic, TopicState> currentStatesOrError) {
         // Determine config changes
         Map<Boolean, List<Pair<ReconcilableTopic, Collection<AlterConfigOp>>>> alterConfigs = currentStatesOrError.ok().map(pair -> {
             var reconcilableTopic = pair.getKey();
@@ -523,7 +688,7 @@ public class BatchingTopicController {
         return alterConfigs.get(false);
     }
 
-    private List<Pair<ReconcilableTopic, NewPartitions>> partitionChanges(Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results, PartitionedByError<ReconcilableTopic, TopicState> currentStatesOrError) {
+    private List<Pair<ReconcilableTopic, NewPartitions>> findPartitionChanges(Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results, PartitionedByError<ReconcilableTopic, TopicState> currentStatesOrError) {
         // Determine partition changes
         PartitionedByError<ReconcilableTopic, NewPartitions> newPartitionsOrError = TopicOperatorUtil.partitionedByError(currentStatesOrError.ok().map(pair -> {
             var reconcilableTopic = pair.getKey();
@@ -709,55 +874,21 @@ public class BatchingTopicController {
     }
 
     private void updateStatusForSuccess(ReconcilableTopic reconcilableTopic) {
-        List<Condition> conditions = new ArrayList<>();
-        conditions.add(new ConditionBuilder()
-              .withType(TopicOperatorUtil.isPaused(reconcilableTopic.kt()) ? "ReconciliationPaused" : "Ready")
-              .withStatus("True")
-              .withLastTransitionTime(StatusUtils.iso8601Now())
-              .build());
-
-        addNonAlterableConfigsWarning(reconcilableTopic, conditions);
-
+        List<Condition> conditions = hasConditions(reconcilableTopic.kt())
+            ? reconcilableTopic.kt().getStatus().getConditions() : new ArrayList<>();
+        // ready/paused condition is always first
+        conditions.removeIf(c -> Set.of("ReconciliationPaused", "Ready").contains(c.getType()));
+        conditions.add(0, new ConditionBuilder()
+            .withType(isPaused(reconcilableTopic.kt()) ? "ReconciliationPaused" : "Ready")
+            .withStatus("True")
+            .withLastTransitionTime(StatusUtils.iso8601Now())
+            .build());
         reconcilableTopic.kt().setStatus(
             new KafkaTopicStatusBuilder(reconcilableTopic.kt().getStatus())
                 .withConditions(conditions)
                 .build());
         kubernetesHandler.updateStatus(reconcilableTopic);
         metricsHolder.successfulReconciliationsCounter(config.namespace()).increment();
-    }
-
-    private void addNonAlterableConfigsWarning(ReconcilableTopic reconcilableTopic,
-                                               List<Condition> conditions) {
-        var readOnlyConfigs = new ArrayList<>();
-        var alterableConfigs = config.alterableTopicConfig();
-
-        if (reconcilableTopic != null && reconcilableTopic.kt() != null
-              && hasConfig(reconcilableTopic.kt()) && alterableConfigs != null) {
-            if (alterableConfigs.equalsIgnoreCase("NONE")) {
-                reconcilableTopic.kt().getSpec().getConfig().forEach((key, value) -> readOnlyConfigs.add(key));
-            } else if (!alterableConfigs.equalsIgnoreCase("ALL") && !alterableConfigs.isBlank()) {
-                var alterablePropertySet = Arrays.stream(alterableConfigs.replaceAll("\\s", "").split(","))
-                      .collect(Collectors.toSet());
-                reconcilableTopic.kt().getSpec().getConfig().forEach((key, value) -> {
-                    if (!alterablePropertySet.contains(key)) {
-                        readOnlyConfigs.add(key);
-                    }
-                });
-            }
-        }
-
-        if (!readOnlyConfigs.isEmpty()) {
-            var properties = String.join(", ", readOnlyConfigs.toArray(new String[0]));
-            var message = "These .spec.config properties are not configurable: [" + properties + "]";
-            LOGGER.warnCr(reconcilableTopic.reconciliation(), message);
-            conditions.add(new ConditionBuilder()
-                  .withMessage(message)
-                  .withReason("NotConfigurable")
-                  .withStatus("True")
-                  .withType("Warning")
-                  .withLastTransitionTime(StatusUtils.iso8601Now())
-                  .build());
-        }
     }
 
     private void updateStatusForException(ReconcilableTopic reconcilableTopic, Exception e) {
