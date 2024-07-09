@@ -1,6 +1,7 @@
 Configures listeners to connect to Kafka brokers within and outside Kubernetes.
 
-You configure the listeners in the `Kafka` resource.
+Configure Kafka broker listeners using the `listeners` property in the `Kafka` resource.
+Listeners are defined as an array.
 
 .Example `Kafka` resource showing listener configuration
 [source,yaml,subs="+attributes"]
@@ -46,28 +47,9 @@ spec:
     #...
 ----
 
-[id='property-generic-listeners-{context}']
-= `listeners`
-You configure Kafka broker listeners using the `listeners` property in the `Kafka` resource.
-Listeners are defined as an array.
-
-.Example listener configuration
-[source,yaml,subs="+attributes"]
-----
-listeners:
-  - name: plain
-    port: 9092
-    type: internal
-    tls: false
-----
-
 The name and port must be unique within the Kafka cluster.
-By specifying a unique name and port for each listener,
-you can configure multiple listeners.
+By specifying a unique name and port for each listener, you can configure multiple listeners.
 The name can be up to 25 characters long, comprising lower-case letters and numbers.
-
-[id='property-listener-port-{context}']
-= `port`
 
 The port number is the port used in the Kafka cluster, which might not be the same port used for access by a client.
 
@@ -79,17 +61,17 @@ For client connection, use the address and port for the bootstrap service of the
 You can retrieve this from the status of the `Kafka` resource.
 
 .Example command to retrieve the address and port for client connection
-[source,shell,subs=+quotes]
-kubectl get kafka _<kafka_cluster_name>_ -o=jsonpath='{.status.listeners[?(@.name=="_<listener_name>_")].bootstrapServers}{"\n"}'
+[source,shell]
+kubectl get kafka <kafka_cluster_name> -o=jsonpath='{.status.listeners[?(@.name=="<listener_name>")].bootstrapServers}{"\n"}'
 
 IMPORTANT: When configuring listeners for client access to brokers, you can use port 9092 or higher (9093, 9094, and so on), but with a few exceptions.
 The listeners cannot be configured to use the ports reserved for interbroker communication (9090 and 9091), Prometheus metrics (9404), and JMX (Java Management Extensions) monitoring (9999).
 
-= `type`
+= Specifying listener types
 
-The type is set as `internal`,
-or for external listeners, as `route`, `loadbalancer`, `nodeport`, `ingress` or `cluster-ip`.
-You can also configure a `cluster-ip` listener, a type of internal listener you can use to build custom access mechanisms.
+Set the type to `internal` for internal listeners. 
+For external listeners, choose from `route`, `loadbalancer`, `nodeport`, or `ingress`. 
+You can also configure a `cluster-ip` listener, which is an internal type used for building custom access mechanisms.
 
 internal:: You can configure internal listeners with or without encryption using the `tls` property.
 +
@@ -185,8 +167,6 @@ A new loadbalancer service is created for every Kafka broker pod.
 An additional loadbalancer is created to serve as a Kafka _bootstrap_ address.
 Loadbalancers listen to the specified port number, which is port `9094` in the following example.
 +
-You can use the `loadBalancerSourceRanges` property to configure xref:property-listener-config-source-ranges-reference[source ranges] to restrict access to the specified IP addresses.
-+
 .Example `loadbalancer` listener configuration
 [source,yaml,subs="+attributes"]
 ----
@@ -212,7 +192,6 @@ Kafka clients connect directly to the nodes of Kubernetes.
 An additional `NodePort` type of service is created to serve as a Kafka bootstrap address.
 +
 When configuring the advertised addresses for the Kafka broker pods, Strimzi uses the address of the node on which the given pod is running.
-You can use `preferredNodePortAddressType` property to configure the xref:property-listener-config-preferredNodePortAddressType-{context}[first address type checked as the node address].
 +
 .Example `nodeport` listener configuration
 [source,yaml,subs="+attributes"]
@@ -259,24 +238,8 @@ spec:
 
 ----
 
-[id='property-listener-tls-{context}']
-= `tls`
-
-The TLS property is required.
-To enable TLS encryption, set the `tls` property to `true`.
-For `route` and `ingress` type listeners, TLS encryption must be always enabled.
-
-= `authentication`
-
-Authentication for the listener can be specified as:
-
-* mTLS (`tls`)
-* SCRAM-SHA-512 (`scram-sha-512`)
-* Token-based OAuth 2.0 (`oauth`)
-* xref:type-KafkaListenerAuthenticationCustom-reference[Custom (`custom`)]
-
 [id='configuration-listener-network-policy-{context}']
-= `networkPolicyPeers`
+= Configuring network policies to restrict listener access
 
 Use `networkPolicyPeers` to configure network policies that restrict access to a listener at the network level.
 The following example shows a `networkPolicyPeers` configuration for a `plain` and a `tls` listener.

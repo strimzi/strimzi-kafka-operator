@@ -1,12 +1,6 @@
 Configuration for Kafka listeners.
 
-[id='property-listener-config-brokerCertChainAndKey-{context}']
-= `brokerCertChainAndKey`
-
-The `brokerCertChainAndKey` property is only used with listeners that have TLS encryption enabled.
-You can use the property to provide your own Kafka listener certificates.
-
-.Example configuration for a `loadbalancer` external listener with TLS encryption enabled
+.Example configuration for a `loadbalancer` type listener
 [source,yaml,subs="attributes+"]
 ----
 listeners:
@@ -22,50 +16,16 @@ listeners:
         secretName: my-secret
         certificate: my-listener-certificate.crt
         key: my-listener-key.key
-# ...
-----
-
-When the certificate or key in the `brokerCertChainAndKey` secret is updated, the operator will automatically detect it in the next reconciliation and trigger a rolling update of the Kafka brokers to reload the certificate.
-
-[id='property-listener-config-traffic-policy-{context}']
-= `externalTrafficPolicy`
-
-The `externalTrafficPolicy` property is used with `loadbalancer` and `nodeport` listeners.
-When exposing Kafka outside of Kubernetes you can choose `Local` or `Cluster`.
-`Local` avoids hops to other nodes and preserves the client IP, whereas `Cluster` does neither.
-The default is `Cluster`.
-
-[id='property-listener-config-source-ranges-{context}']
-= `loadBalancerSourceRanges`
-
-The `loadBalancerSourceRanges` property is only used with `loadbalancer` listeners.
-When exposing Kafka outside of Kubernetes use source ranges, in addition to labels and annotations, to customize how a service is created.
-
-.Example source ranges configured for a loadbalancer listener
-[source,yaml,subs=attributes+]
-----
-listeners:
-  #...
-  - name: external3
-    port: 9094
-    type: loadbalancer
-    tls: false
-    configuration:
       externalTrafficPolicy: Local
       loadBalancerSourceRanges:
         - 10.0.0.0/8
-        - 88.208.76.87/32
-      # ...
+        - 88.208.76.87/32  
 # ...
 ----
 
-[id='property-listener-config-class-{context}']
-= `class`
+When the certificate or key in the `brokerCertChainAndKey` secret is updated, the operator automatically detects it in the next reconciliation and triggers a rolling update of the Kafka brokers to reload the certificate.
 
-The `class` property is only used with `ingress` listeners.
-You can configure the `Ingress` class using the `class` property.
-
-.Example of an external listener of type `ingress` using `Ingress` class `nginx-internal`
+.Example `ingress` type listener using `nginx-internal` class
 [source,yaml,subs="attributes+"]
 ----
 listeners:
@@ -80,23 +40,7 @@ listeners:
 # ...
 ----
 
-[id='property-listener-config-preferredNodePortAddressType-{context}']
-= `preferredNodePortAddressType`
-
-The `preferredNodePortAddressType` property is only used with `nodeport` listeners.
-
-Use the `preferredNodePortAddressType` property in your listener configuration to specify the first address type checked as the node address.
-This property is useful, for example, if your deployment does not have DNS support, or you only want to expose a broker internally through an internal DNS or IP address.
-If an address of this type is found, it is used.
-If the preferred address type is not found, Strimzi proceeds through the types in the standard order of priority:
-
-. ExternalDNS
-. ExternalIP
-. Hostname
-. InternalDNS
-. InternalIP
-
-.Example of an external listener configured with a preferred node port address type
+.Example `nodeport` listener using a preferred node port address type
 [source,yaml,subs=attributes+]
 ----
 listeners:
@@ -111,16 +55,7 @@ listeners:
 # ...
 ----
 
-[id='property-listener-config-dns-{context}']
-= `useServiceDnsDomain`
-
-The `useServiceDnsDomain` property is only used with `internal` and `cluster-ip` listeners.
-It defines whether the fully-qualified DNS names that include the cluster service suffix (usually `.cluster.local`) are used.
-With `useServiceDnsDomain` set as `false`, the advertised addresses are generated without the service suffix; for example, `my-cluster-kafka-0.my-cluster-kafka-brokers.myproject.svc`.
-With `useServiceDnsDomain` set as `true`, the advertised addresses are generated with the service suffix; for example, `my-cluster-kafka-0.my-cluster-kafka-brokers.myproject.svc.cluster.local`.
-Default is `false`.
-
-.Example of an internal listener configured to use the Service DNS domain
+.Example `internal` listener using the service DNS domain
 [source,yaml,subs=attributes+]
 ----
 listeners:
@@ -134,5 +69,3 @@ listeners:
       # ...
 # ...
 ----
-
-If your Kubernetes cluster uses a different service suffix than `.cluster.local`, you can configure the suffix using the `KUBERNETES_SERVICE_DNS_DOMAIN` environment variable in the Cluster Operator configuration.

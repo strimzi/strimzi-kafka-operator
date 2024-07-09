@@ -1,7 +1,20 @@
 Configures a ZooKeeper cluster.
 
-[id='property-zookeeper-config-{context}']
-= `config`
+.Example ZooKeeper configuration
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+spec:
+  kafka:
+    # ...
+  zookeeper:
+    # ...
+    config:
+      autopurge.snapRetainCount: 3
+      autopurge.purgeInterval: 2
+    # ...
+----
 
 Use the `config` properties to configure ZooKeeper options as keys.
 
@@ -45,24 +58,8 @@ All other supported options are forwarded to ZooKeeper, including the following 
 
 * Any `ssl` configuration for xref:con-common-configuration-ssl-reference[supported TLS versions and cipher suites]
 
-.Example ZooKeeper configuration
-[source,yaml,subs="attributes+"]
-----
-apiVersion: {KafkaApiVersion}
-kind: Kafka
-spec:
-  kafka:
-    # ...
-  zookeeper:
-    # ...
-    config:
-      autopurge.snapRetainCount: 3
-      autopurge.purgeInterval: 2
-    # ...
-----
-
 [id='property-zookeeper-logging-{context}']
-= `logging`
+= Logging
 
 ZooKeeper has a configurable logger:
 

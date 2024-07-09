@@ -289,7 +289,7 @@ spec:
                   properties:
                     enabled:
                       type: boolean
-                      description: "Whether the HTTP consumer should be enabled or disabled, default is enabled."
+                      description: Whether the HTTP consumer should be enabled or disabled. The default is enabled (`true`).
                     timeoutSeconds:
                       type: integer
                       description: "The timeout in seconds for deleting inactive consumers, default is -1 (disabled)."
@@ -303,7 +303,7 @@ spec:
                   properties:
                     enabled:
                       type: boolean
-                      description: "Whether the HTTP producer should be enabled or disabled, default is enabled."
+                      description: Whether the HTTP producer should be enabled or disabled. The default is enabled (`true`).
                     config:
                       x-kubernetes-preserve-unknown-fields: true
                       type: object

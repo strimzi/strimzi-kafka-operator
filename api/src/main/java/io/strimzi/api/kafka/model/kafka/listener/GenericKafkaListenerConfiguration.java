@@ -67,11 +67,12 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
         this.brokerCertChainAndKey = brokerCertChainAndKey;
     }
 
-    @Description("Configures a specific class for `Ingress` and `LoadBalancer` that defines which controller will be used. " +
-            "This field can only be used with `ingress` and `loadbalancer` type listeners. " +
-            "If not specified, the default controller is used. " +
-            "For an `ingress` listener, set the `ingressClassName` property in the `Ingress` resources. " +
-            "For a `loadbalancer` listener, set the `loadBalancerClass` property  in the `Service` resources.")
+    @Description("Configures a specific class for `Ingress` and `LoadBalancer` that defines which controller is used. " +
+            "If not specified, the default controller is used.\n\n" +
+            "* For an `ingress` listener, set the `ingressClassName` property in the `Ingress` resources.\n" +
+            "* For a `loadbalancer` listener, set the `loadBalancerClass` property  in the `Service` resources.\n" +
+            "\n" +
+            "For `ingress` and `loadbalancer` listeners only.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty("class")
     public String getControllerClass() {
@@ -84,16 +85,16 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
 
     @Description("Defines which address type should be used as the node address. " +
             "Available types are: `ExternalDNS`, `ExternalIP`, `InternalDNS`, `InternalIP` and `Hostname`. " +
-            "By default, the addresses will be used in the following order (the first one found will be used):\n\n" +
+            "By default, the addresses are used in the following order (the first one found is used):\n\n" +
             "* `ExternalDNS`\n" +
             "* `ExternalIP`\n" +
             "* `InternalDNS`\n" +
             "* `InternalIP`\n" +
             "* `Hostname`\n" +
             "\n" +
-            "This field is used to select the preferred address type, which is checked first. " +
-            "If no address is found for this address type, the other types are checked in the default order. " +
-            "This field can only be used with `nodeport` type listener.")
+            "This property is used to select the preferred address type, which is checked first. " +
+            "If no address is found for this address type, the other types are checked in the default order." +
+            "For `nodeport` listeners only.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public NodeAddressType getPreferredNodePortAddressType() {
         return preferredNodePortAddressType;
@@ -103,11 +104,12 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
         this.preferredNodePortAddressType = preferredNodePortAddressType;
     }
 
-    @Description("Specifies whether the service routes external traffic to node-local or cluster-wide endpoints. " +
-            "`Cluster` may cause a second hop to another node and obscures the client source IP. " +
-            "`Local` avoids a second hop for LoadBalancer and Nodeport type services and preserves the client source IP (when supported by the infrastructure). " +
-            "If unspecified, Kubernetes will use `Cluster` as the default." +
-            "This field can be used only with `loadbalancer` or `nodeport` type listener.")
+    @Description("Specifies whether the service routes external traffic to cluster-wide or node-local endpoints:\n\n" +
+            "* `Cluster` may cause a second hop to another node and obscures the client source IP.\n" +
+            "* `Local` avoids a second hop for `LoadBalancer` and `Nodeport` type services and preserves the client source IP (when supported by the infrastructure).\n" +
+            "\n" +
+            "If unspecified, Kubernetes uses `Cluster` as the default. " +
+            "For `loadbalancer` or `nodeport` listeners only.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ExternalTrafficPolicy getExternalTrafficPolicy() {
         return externalTrafficPolicy;
@@ -117,10 +119,10 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
         this.externalTrafficPolicy = externalTrafficPolicy;
     }
 
-    @Description("A list of CIDR ranges (for example `10.0.0.0/8` or `130.211.204.1/32`) from which clients can connect to load balancer type listeners. " +
+    @Description("A list of CIDR ranges (for example `10.0.0.0/8` or `130.211.204.1/32`) from which clients can connect to loadbalancer listeners. " +
             "If supported by the platform, traffic through the loadbalancer is restricted to the specified CIDR ranges. " +
             "This field is applicable only for loadbalancer type services and is ignored if the cloud provider does not support the feature. " +
-            "This field can be used only with `loadbalancer` type listener.")
+            "For `loadbalancer` listeners only.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<String> getLoadBalancerSourceRanges() {
         return loadBalancerSourceRanges;
@@ -130,10 +132,10 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
         this.loadBalancerSourceRanges = loadBalancerSourceRanges;
     }
 
-    @Description("A list of finalizers which will be configured for the `LoadBalancer` type Services created for this listener. " +
+    @Description("A list of finalizers configured for the `LoadBalancer` type services created for this listener. " +
             "If supported by the platform, the finalizer `service.kubernetes.io/load-balancer-cleanup` to make sure that the external load balancer is deleted together with the service." +
             "For more information, see https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#garbage-collecting-load-balancers. " +
-            "This field can be used only with `loadbalancer` type listeners.")
+            "For `loadbalancer` listeners only.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<String> getFinalizers() {
         return finalizers;
@@ -143,11 +145,14 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
         this.finalizers = finalizers;
     }
 
-    @Description("Configures whether the Kubernetes service DNS domain should be used or not. " +
-            "If set to `true`, the generated addresses will contain the service DNS domain suffix " +
-            "(by default `.cluster.local`, can be configured using environment variable `KUBERNETES_SERVICE_DNS_DOMAIN`). " +
-            "Defaults to `false`." +
-            "This field can be used only with `internal` and `cluster-ip` type listeners.")
+    @Description("Configures whether the Kubernetes service DNS domain should be included in the generated addresses.\n\n" +
+            "* If set to `false`, the generated addresses do not contain the service DNS domain suffix. " +
+            "For example, `my-cluster-kafka-0.my-cluster-kafka-brokers.myproject.svc`.\n" +
+            "* If set to `true`, the generated addresses contain the service DNS domain suffix. " +
+            "For example, `my-cluster-kafka-0.my-cluster-kafka-brokers.myproject.svc.cluster.local`.\n" +
+            "\n" +
+            "The default is `.cluster.local`, but this is customizable using the environment variable `KUBERNETES_SERVICE_DNS_DOMAIN`. " +
+            "For `internal` and `cluster-ip` listeners only.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Boolean getUseServiceDnsDomain() {
         return useServiceDnsDomain;
@@ -198,10 +203,11 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
     }
 
     @Description("Specifies the IP Family Policy used by the service. " +
-            "Available options are `SingleStack`, `PreferDualStack` and `RequireDualStack`. " +
-            "`SingleStack` is for a single IP family. " +
-            "`PreferDualStack` is for two IP families on dual-stack configured clusters or a single IP family on single-stack clusters. " +
-            "`RequireDualStack` fails unless there are two IP families on dual-stack configured clusters. " +
+            "Available options are `SingleStack`, `PreferDualStack` and `RequireDualStack`:\n\n" +
+            "* `SingleStack` is for a single IP family.\n" +
+            "* `PreferDualStack` is for two IP families on dual-stack configured clusters or a single IP family on single-stack clusters.\n" +
+            "* `RequireDualStack` fails unless there are two IP families on dual-stack configured clusters.\n" +
+            "\n" +
             "If unspecified, Kubernetes will choose the default value based on the service type.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @PresentInVersions("v1beta2+")
@@ -228,7 +234,7 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
 
     @Description("Whether to create the bootstrap service or not. " +
             "The bootstrap service is created by default (if not specified differently). " +
-            "This field can be used with the `loadBalancer` type listener.")
+            "This field can be used with the `loadBalancer` listener.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public Boolean getCreateBootstrapService() {
         return createBootstrapService;
@@ -240,7 +246,7 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
     
     @Description("Configures whether the service endpoints are considered \"ready\" even if the Pods themselves are not. " +
             "Defaults to `false`. " +
-            "This field can not be used with `internal` type listeners.")
+            "This field can not be used with `internal` listeners.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Boolean getPublishNotReadyAddresses() {
         return publishNotReadyAddresses;

@@ -5,8 +5,32 @@ Configuration options relate to:
 * Goals configuration
 * Capacity limits for resource distribution goals
 
-[id='property-cruise-control-config-{context}']
-= `config`
+.Example Cruise Control configuration
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  cruiseControl:
+    # ...
+    config:
+      # Note that `default.goals` (superset) must also include all `hard.goals` (subset)
+      default.goals: >
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal,
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal
+      hard.goals: >
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal
+      cpu.balance.threshold: 1.1
+      metadata.max.age.ms: 300000
+      send.buffer.bytes: 131072
+      webserver.http.cors.enabled: true
+      webserver.http.cors.origin: "*"
+      webserver.http.cors.exposeheaders: "User-Task-ID,Content-Type"
+    # ...
+----
 
 Use the `config` properties to configure Cruise Control options as keys.
 
@@ -55,34 +79,6 @@ All other supported options are forwarded to Cruise Control, including the follo
 
 * Any `ssl` configuration for xref:con-common-configuration-ssl-reference[supported TLS versions and cipher suites]
 * Configuration for `webserver` properties to enable Cross-Origin Resource Sharing (CORS)
-
-
-.Example Cruise Control configuration
-[source,yaml,subs="attributes+"]
-----
-apiVersion: {KafkaApiVersion}
-kind: Kafka
-metadata:
-  name: my-cluster
-spec:
-  # ...
-  cruiseControl:
-    # ...
-    config:
-      # Note that `default.goals` (superset) must also include all `hard.goals` (subset)
-      default.goals: >
-        com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal,
-        com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal
-      hard.goals: >
-        com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal
-      cpu.balance.threshold: 1.1
-      metadata.max.age.ms: 300000
-      send.buffer.bytes: 131072
-      webserver.http.cors.enabled: true
-      webserver.http.cors.origin: "*"
-      webserver.http.cors.exposeheaders: "User-Task-ID,Content-Type"
-    # ...
-----
 
 [id='property-cruise-control-config-cors-{context}']
 = Cross-Origin Resource Sharing (CORS)
@@ -147,9 +143,8 @@ spec:
 # ...
 ----
 
-
 [id='property-cruise-control-broker-capacity-{context}']
-= brokerCapacity
+= Configuring capacity limits
 
 Cruise Control uses capacity limits to determine if optimization goals for resource capacity limits are being broken.
 There are four goals of this type:
@@ -194,7 +189,7 @@ spec:
 ----
 
 [id='property-cruise-control-capacity-overrides-{context}']
-= Capacity overrides
+= Configuring capacity overrides
 
 Brokers might be running on nodes with heterogeneous network or CPU resources.
 If that's the case, specify `overrides` that set the network capacity and CPU limits for each broker.
@@ -245,7 +240,7 @@ If none of the CPU capacity configurations are specified, the default CPU capaci
 For more information, refer to the xref:type-BrokerCapacity-reference[BrokerCapacity schema reference].
 
 [id='property-cruise-control-logging-{context}']
-= `logging`
+= Logging
 
 Cruise Control has its own configurable logger:
 

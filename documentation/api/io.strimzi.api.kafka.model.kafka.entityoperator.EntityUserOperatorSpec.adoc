@@ -1,7 +1,7 @@
 Configures the User Operator.
 
 [id='property-user-operator-logging-{context}']
-= `logging`
+= Logging
 
 The User Operator has a configurable logger:
 

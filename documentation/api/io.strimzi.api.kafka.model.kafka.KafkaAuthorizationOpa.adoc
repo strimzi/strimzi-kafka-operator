@@ -1,38 +1,11 @@
+Configures the `Kafka` custom resource to use Open Policy Agent authorization.
+
 To use link:https://www.openpolicyagent.org/[Open Policy Agent^] authorization, set the `type` property in the `authorization` section to the value `opa`,
 and configure OPA properties as required.
-Strimzi uses Open Policy Agent plugin for Kafka authorization as the authorizer.
+Strimzi uses the Open Policy Agent plugin for Kafka authorization as the authorizer.
 For more information about the format of the input data and policy examples, see {OPAAuthorizer}.
 
-= `url`
-The URL used to connect to the Open Policy Agent server.
-The URL has to include the policy which will be queried by the authorizer.
-**Required.**
-
-= `allowOnError`
-Defines whether a Kafka client should be allowed or denied by default when the authorizer fails to query the Open Policy Agent, for example, when it is temporarily unavailable.
-Defaults to `false` - all actions will be denied.
-
-= `initialCacheCapacity`
-Initial capacity of the local cache used by the authorizer to avoid querying the Open Policy Agent for every request.
-Defaults to `5000`.
-
-= `maximumCacheSize`
-Maximum capacity of the local cache used by the authorizer to avoid querying the Open Policy Agent for every request.
-Defaults to `50000`.
-
-= `expireAfterMs`
-The expiration of the records kept in the local cache to avoid querying the Open Policy Agent for every request.
-Defines how often the cached authorization decisions are reloaded from the Open Policy Agent server.
-In milliseconds.
-Defaults to `3600000` milliseconds (1 hour).
-
-= `tlsTrustedCertificates`
-Trusted certificates for TLS connection to the OPA server.
-
-= `superUsers`
-A list of user principals treated as super users, so that they are always allowed without querying the open Policy Agent policy.
-
-.An example of Open Policy Agent authorizer configuration
+.Example Open Policy Agent authorizer configuration
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaApiVersion}
@@ -51,8 +24,8 @@ spec:
       maximumCacheSize: 10000
       expireAfterMs: 60000
       superUsers:
-        - CN=fred
-        - sam
-        - CN=edward
+        - CN=client_1
+        - user_2
+        - CN=client_3
     # ...
 ----

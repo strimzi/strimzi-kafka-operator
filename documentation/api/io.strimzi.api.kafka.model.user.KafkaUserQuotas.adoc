@@ -1,28 +1,4 @@
-Kafka allows a user to set `quotas` to control the use of resources by clients.
-
-= `quotas`
-
-You can configure your clients to use the following types of quotas:
-
-* _Network usage_ quotas specify the byte rate threshold for each group of clients sharing a quota.
-* _CPU utilization_ quotas specify a window for broker requests from clients. The window is the percentage of time for clients to make requests. A client makes requests on the I/O threads and network threads of the broker.
-* _Partition mutation_ quotas limit the number of partition mutations which clients are allowed to make per second.
-
-A partition mutation quota prevents Kafka clusters from being overwhelmed by concurrent topic operations.
-Partition mutations occur in response to the following types of user requests:
-
-* Creating partitions for a new topic
-* Adding partitions to an existing topic
-* Deleting partitions from a topic
-
-You can configure a partition mutation quota to control the rate at which mutations are accepted for user requests.
-
-Using quotas for Kafka clients might be useful in a number of situations.
-Consider a wrongly configured Kafka producer which is sending requests at too high a rate.
-Such misconfiguration can cause a denial of service to other clients, so the problematic client ought to be blocked.
-By using a network limiting quota, it is possible to prevent this situation from significantly impacting other clients.
-
-Strimzi supports user-level quotas, but not client-level quotas.
+Configure clients to use quotas so that a user does not overload Kafka brokers.
 
 .Example Kafka user quota configuration
 [source,yaml,subs=attributes+]

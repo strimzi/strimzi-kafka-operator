@@ -52,9 +52,8 @@ public class GenericKafkaListenerConfigurationBootstrap implements UnknownProper
         this.alternativeNames = alternativeNames;
     }
 
-    @Description("The bootstrap host. " +
-            "This field will be used in the Ingress resource or in the Route resource to specify the desired hostname. " +
-            "This field can be used only with `route` (optional) or `ingress` (required) type listeners.")
+    @Description("Specifies the hostnames used by the bootstrap and per-broker services. " +
+        "For `route` (optional) or `ingress` (required) listeners only.") 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getHost() {
         return host;
@@ -64,9 +63,9 @@ public class GenericKafkaListenerConfigurationBootstrap implements UnknownProper
         this.host = host;
     }
 
-    @Description("Annotations that will be added to the `Ingress`, `Route`, or `Service` resource. " +
-            "You can use this field to configure DNS providers such as External DNS. " +
-            "This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners.")
+    @Description("Annotations added to `Ingress`, `Route`, or `Service` resources. " +
+            "You can use this property to configure DNS providers such as External DNS. " +
+            "For `loadbalancer`, `nodeport`, `route`, or `ingress` listeners only.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getAnnotations() {
         return annotations;
@@ -76,8 +75,8 @@ public class GenericKafkaListenerConfigurationBootstrap implements UnknownProper
         this.annotations = annotations;
     }
 
-    @Description("Labels that will be added to the `Ingress`, `Route`, or `Service` resource. " +
-            "This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners.")
+    @Description("Labels added to `Ingress`, `Route`, or `Service` resources. " +
+            "For `loadbalancer`, `nodeport`, `route`, or `ingress` listeners only.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getLabels() {
         return labels;
@@ -88,7 +87,7 @@ public class GenericKafkaListenerConfigurationBootstrap implements UnknownProper
     }
 
     @Description("Node port for the bootstrap service. " +
-            "This field can be used only with `nodeport` type listener.")
+            "For `nodeport` listeners only.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getNodePort() {
         return nodePort;
@@ -98,10 +97,10 @@ public class GenericKafkaListenerConfigurationBootstrap implements UnknownProper
         this.nodePort = nodePort;
     }
 
-    @Description("The loadbalancer is requested with the IP address specified in this field. " +
+    @Description("The loadbalancer is requested with the IP address specified in this property. " +
             "This feature depends on whether the underlying cloud provider supports specifying the `loadBalancerIP` when a load balancer is created. " +
-            "This field is ignored if the cloud provider does not support the feature." +
-            "This field can be used only with `loadbalancer` type listener.")
+            "This property is ignored if the cloud provider does not support the feature. " +
+            "For `loadbalancer` listeners only.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String getLoadBalancerIP() {
         return loadBalancerIP;
@@ -113,8 +112,8 @@ public class GenericKafkaListenerConfigurationBootstrap implements UnknownProper
 
     @Description("External IPs associated to the nodeport service. " + 
             "These IPs are used by clients external to the Kubernetes cluster to access the Kafka brokers. " +
-            "This field is helpful when `nodeport` without `externalIP` is not sufficient. For example on bare-metal Kubernetes clusters that do not support Loadbalancer service types. " +
-            "This field can only be used with `nodeport` type listener.")
+            "This property is helpful when `nodeport` without `externalIP` is not sufficient. For example on bare-metal Kubernetes clusters that do not support Loadbalancer service types. " +
+            "For `nodeport` listeners only.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<String> getExternalIPs() {
         return externalIPs;

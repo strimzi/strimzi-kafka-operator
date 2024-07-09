@@ -1,4 +1,24 @@
-Configures consumer options for the Kafka Bridge as keys.
+Configures consumer options for the Kafka Bridge.
+
+.Example Kafka Bridge consumer configuration
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaBridgeApiVersion}
+kind: KafkaBridge
+metadata:
+  name: my-bridge
+spec:
+  # ...
+  consumer:
+    enabled: true
+    timeoutSeconds: 60
+    config:
+      auto.offset.reset: earliest
+      enable.auto.commit: true
+    # ...
+----
+
+Use the `consumer.config` properties to configure Kafka options for the consumer as keys.
 
 The values can be one of the following JSON types:
 
@@ -28,34 +48,6 @@ If the `config` property contains an option that cannot be changed, it is disreg
 All other supported options are forwarded to Kafka Bridge, including the following exceptions to the options configured by Strimzi:
 
 * Any `ssl` configuration for xref:con-common-configuration-ssl-reference[supported TLS versions and cipher suites]
-
-[id='property-kafka-bridge-consumer-enabled-config-{context}']
-= `enabled`
-
-Enablement of the consumer can be controlled by setting the `enabled` field to `true` or `false`. Default is `true`.
-
-[id='property-kafka-bridge-consumer-timeout-config-{context}']
-= `timeoutSeconds`
-
-The timeout for deleting inactive consumers can be configured using `timeoutSeconds`, by default it is not enabled.
-
-.Example Kafka Bridge consumer configuration
-[source,yaml,subs="attributes+"]
-----
-apiVersion: {KafkaBridgeApiVersion}
-kind: KafkaBridge
-metadata:
-  name: my-bridge
-spec:
-  # ...
-  consumer:
-    enabled: true
-    timeoutSeconds: 60
-    config:
-      auto.offset.reset: earliest
-      enable.auto.commit: true
-    # ...
-----
 
 IMPORTANT: The Cluster Operator does not validate keys or values in the `config` object.
 If an invalid configuration is provided, the Kafka Bridge deployment might not start or might become unstable.

@@ -1,20 +1,5 @@
 Configures a MirrorMaker producer.
 
-[id='property-producer-abort-on-send-{context}']
-= `abortOnSendFailure`
-
-Use the `producer.abortOnSendFailure` property to configure how to handle message send failure from the producer.
-
-By default, if an error occurs when sending a message from Kafka MirrorMaker to a Kafka cluster:
-
-* The Kafka MirrorMaker container is terminated in Kubernetes.
-* The container is then recreated.
-
-If the `abortOnSendFailure` option is set to `false`, message sending errors are ignored.
-
-[id='property-producer-config-{context}']
-= `config`
-
 Use the `producer.config` properties to configure Kafka options for the producer as keys.
 
 The values can be one of the following JSON types:

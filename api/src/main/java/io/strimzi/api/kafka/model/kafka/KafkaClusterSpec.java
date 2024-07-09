@@ -254,7 +254,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
         this.metricsConfig = metricsConfig;
     }
 
-    @Description("Configures listeners of Kafka brokers")
+    @Description("Configures listeners to provide access to Kafka brokers.")
     @MinimumItems(1)
     @JsonProperty(required = true)
     public List<GenericKafkaListener> getListeners() {

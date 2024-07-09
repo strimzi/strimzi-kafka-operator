@@ -1,13 +1,8 @@
+Configures bootstrap service settings for listeners.
+
 Broker service equivalents of `nodePort`, `host`, `loadBalancerIP` and `annotations` properties are configured in the xref:type-GenericKafkaListenerConfigurationBroker-reference[`GenericKafkaListenerConfigurationBroker` schema].
 
-[id='property-listener-config-altnames-{context}']
-= `alternativeNames`
-
-You can specify alternative names for the bootstrap service.
-The names are added to the broker certificates and can be used for TLS hostname verification.
-The `alternativeNames` property is applicable to all types of listeners.
-
-.Example of an external `route` listener configured with an additional bootstrap address
+.Example `route` listener bootstrap configuration
 [source,yaml,subs="attributes+"]
 ----
 listeners:
@@ -23,62 +18,6 @@ listeners:
         alternativeNames:
           - example.hostname1
           - example.hostname2
-# ...
-----
-
-[id='property-listener-config-host-{context}']
-= `host`
-
-The `host` property is used with `route` and `ingress` listeners to specify the hostnames used by the bootstrap and per-broker services.
-
-A `host` property value is mandatory for `ingress` listener configuration, as the Ingress controller does not assign any hostnames automatically.
-Make sure that the hostnames resolve to the Ingress endpoints.
-Strimzi will not perform any validation that the requested hosts are available and properly routed to the Ingress endpoints.
-
-.Example of host configuration for an ingress listener
-[source,yaml,subs="attributes+"]
-----
-listeners:
-  #...
-  - name: external2
-    port: 9094
-    type: ingress
-    tls: true
-    authentication:
-      type: tls
-    configuration:
-      bootstrap:
-        host: bootstrap.myingress.com
-      brokers:
-      - broker: 0
-        host: broker-0.myingress.com
-      - broker: 1
-        host: broker-1.myingress.com
-      - broker: 2
-        host: broker-2.myingress.com
-# ...
-----
-
-By default, `route` listener hosts are automatically assigned by OpenShift.
-However, you can override the assigned route hosts by specifying hosts.
-
-Strimzi does not perform any validation that the requested hosts are available.
-You must ensure that they are free and can be used.
-
-.Example of host configuration for a route listener
-[source,yaml,subs="attributes+"]
-----
-# ...
-listeners:
-  #...
-  - name: external1
-    port: 9094
-    type: route
-    tls: true
-    authentication:
-      type: tls
-    configuration:
-      bootstrap:
         host: bootstrap.myrouter.com
       brokers:
       - broker: 0
@@ -86,20 +25,18 @@ listeners:
       - broker: 1
         host: broker-1.myrouter.com
       - broker: 2
-        host: broker-2.myrouter.com
+        host: broker-2.myrouter.com    
 # ...
 ----
 
-[id='property-listener-config-nodeport-{context}']
-= `nodePort`
+The `host` property is used with `route` and `ingress` listeners to specify the hostnames used by the bootstrap and per-broker services.
+By default, `route` listener hosts are automatically assigned by OpenShift.
+However, you can override the assigned route hosts by specifying hosts.
+A `host` property value is mandatory for `ingress` listener configuration, as the Ingress controller does not assign any hostnames automatically.
+Make sure that the hostnames resolve to the Ingress endpoints.
+Strimzi does not perform any validation that the hosts are available.
 
-By default, the port numbers used for the bootstrap and broker services are automatically assigned by Kubernetes.
-You can override the assigned node ports for `nodeport` listeners by specifying the requested port numbers.
-
-Strimzi does not perform any validation on the requested ports.
-You must ensure that they are free and available for use.
-
-.Example of an external listener configured with overrides for node ports
+.Example `nodeport` listener bootstrap configuration
 [source,yaml,subs="attributes+"]
 ----
 # ...
@@ -124,14 +61,11 @@ listeners:
 # ...
 ----
 
-[id='property-listener-config-lb-ip-{context}']
-= `loadBalancerIP`
+By default, the port numbers used for the bootstrap and broker services are automatically assigned by Kubernetes.
+You can override the assigned node ports for `nodeport` listeners by specifying the requested port numbers.
+Strimzi does not perform any validation that the ports are available.
 
-Use the `loadBalancerIP` property to request a specific IP address when creating a loadbalancer.
-Use this property when you need to use a loadbalancer with a specific IP address.
-The `loadBalancerIP` field is ignored if the cloud provider does not support the feature.
-
-.Example of an external listener of type `loadbalancer` with specific loadbalancer IP address requests
+.Example `loadbalancer` listener bootstrap configuration
 [source,yaml,subs="attributes+"]
 ----
 # ...
@@ -146,51 +80,27 @@ listeners:
     configuration:
       bootstrap:
         loadBalancerIP: 172.29.3.10
-      brokers:
-      - broker: 0
-        loadBalancerIP: 172.29.3.1
-      - broker: 1
-        loadBalancerIP: 172.29.3.2
-      - broker: 2
-        loadBalancerIP: 172.29.3.3
-# ...
-----
-
-[id='property-listener-config-annotations-{context}']
-= `annotations`
-
-Use the `annotations` property to add annotations to Kubernetes resources related to the listeners.
-You can use these annotations, for example, to instrument DNS tooling such as {KubernetesExternalDNS}, which automatically assigns DNS names to the loadbalancer services.
-
-.Example of an external listener of type `loadbalancer` using `annotations`
-[source,yaml,subs="attributes+"]
-----
-# ...
-listeners:
-  #...
-  - name: external3
-    port: 9094
-    type: loadbalancer
-    tls: true
-    authentication:
-      type: tls
-    configuration:
-      bootstrap:
         annotations:
           external-dns.alpha.kubernetes.io/hostname: kafka-bootstrap.mydomain.com.
           external-dns.alpha.kubernetes.io/ttl: "60"
       brokers:
-      - broker: 0
-        annotations:
-          external-dns.alpha.kubernetes.io/hostname: kafka-broker-0.mydomain.com.
-          external-dns.alpha.kubernetes.io/ttl: "60"
-      - broker: 1
-        annotations:
-          external-dns.alpha.kubernetes.io/hostname: kafka-broker-1.mydomain.com.
-          external-dns.alpha.kubernetes.io/ttl: "60"
-      - broker: 2
-        annotations:
-          external-dns.alpha.kubernetes.io/hostname: kafka-broker-2.mydomain.com.
-          external-dns.alpha.kubernetes.io/ttl: "60"
+        - broker: 0
+          annotations:
+            external-dns.alpha.kubernetes.io/hostname: kafka-broker-0.mydomain.com.
+            external-dns.alpha.kubernetes.io/ttl: "60"
+        - broker: 1
+          annotations:
+            external-dns.alpha.kubernetes.io/hostname: kafka-broker-1.mydomain.com.
+            external-dns.alpha.kubernetes.io/ttl: "60"
+        - broker: 2
+          annotations:
+            external-dns.alpha.kubernetes.io/hostname: kafka-broker-2.mydomain.com.
+            external-dns.alpha.kubernetes.io/ttl: "60"
 # ...
 ----
+
+Use the `loadBalancerIP` property when you must request a specific IP address when creating a loadbalancer.
+The property is ignored if the cloud provider does not support the feature.
+
+Use the `annotations` property to add annotations to Kubernetes resources related to the listeners.
+You can use these annotations, for example, to instrument DNS tooling such as {KubernetesExternalDNS}, which automatically assigns DNS names to the loadbalancer services.

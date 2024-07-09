@@ -99,8 +99,9 @@ public class AclRule implements UnknownPropertyPreserving {
         this.operation = operation;
     }
 
-    @Description("List of operations which will be allowed or denied. " +
-            "Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All.")
+    @Description("List of operations to allow or deny. " +
+            "Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All. " +
+            "Only certain operations work with the specified resource.")
     @Example("operations: [\"Read\",\"Write\"]")
     public List<AclOperation> getOperations() {
         return operations;

@@ -1,30 +1,12 @@
-To use custom authorization in Strimzi, you can configure your own `Authorizer` plugin to define Access Control Lists (ACLs).
+Configures the `Kafka` custom resource to use a custom authorizer and define Access Control Lists (ACLs).
 
 ACLs allow you to define which users have access to which resources at a granular level.
-
-Configure the `Kafka` custom resource to use custom authorization.
+Configure the `Kafka` custom resource to specify an authorizer class that implements the `org.apache.kafka.server.authorizer.Authorizer` interface to support custom ACLs.
 Set the `type` property in the `authorization` section to the value `custom`, and configure a list of super users.
+Super users are always allowed without querying ACL rules.
+Add additional configuration for initializing the custom authorizer using `Kafka.spec.kafka.config`.
 
-IMPORTANT: The custom authorizer must implement the `org.apache.kafka.server.authorizer.Authorizer` interface, and support configuration of super users using the `super.users` configuration property.
-
-[id='property-custom-authorization-authorizerclass-{context}']
-= `authorizerClass`
-
-(Required) Java class that implements the `org.apache.kafka.server.authorizer.Authorizer` interface to support custom ACLs.
-
-[id='property-custom-authorization-superusers-{context}']
-= `superUsers`
-A list of user principals treated as super users, so that they are always allowed without querying ACL rules.
-
-NOTE: The `super.user` configuration option in the `config` property in `Kafka.spec.kafka` is ignored.
-Designate super users in the `authorization` property instead.
-For more information, see xref:type-KafkaClusterSpec-reference[Kafka broker configuration].
-
-= Additional configuration options
-
-You can add additional configuration for initializing the custom authorizer using `Kafka.spec.kafka.config`.
-
-.An example of custom authorization configuration under `Kafka.spec`
+.Example `custom` authorization configuration
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -48,6 +30,9 @@ spec:
       authorization.custom.property2=value2
     # ...
 ----
+
+NOTE: The `super.user` configuration option in the `config` property in `Kafka.spec.kafka` is ignored.
+Designate super users in the `authorization` property instead. 
 
 = Adding custom authorizer JAR files to the container image
 
