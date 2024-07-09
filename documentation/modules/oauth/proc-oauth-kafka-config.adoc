@@ -110,6 +110,7 @@ spec:
 <1> Authentication type set to `oauth`.
 <2> URI of the token endpoint for authentication.
 <3> Path to the file on the disk that contains the assertion used to authenticate as the specified clientId. Usually some external operator service adds a mounted volume with that file to the deployed pod.
+The alternative is to use `clientAssertion` which refers to a Secret containing the client assertion value.
 <4> Certificates stored in X.509 format within the specified secrets for TLS connection to the authorization server.
 --
 +
@@ -130,11 +131,12 @@ spec:
     accessTokenLocation: /var/run/secrets/kubernetes.io/serviceaccount/token # <2>
 ----
 <1> Authentication type set to `oauth`.
-<2> Path to the service account token location.
+<2> Path to the service account token file location.
 --
 +
 Depending on how you apply OAuth 2.0 authentication, and the type of authorization server, there are additional configuration options you can use:
 +
+--
 .Additional configuration options
 [source,yaml,subs="+quotes,attributes"]
 ----
