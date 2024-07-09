@@ -7,24 +7,36 @@
 = Setting throughput and storage limits on brokers
 
 [role="_abstract"]
-Use the _Kafka Static Quota_ plugin to set throughput and storage limits on brokers in your Kafka cluster.
-You enable the plugin and set limits by configuring the `quotas` section of the `Kafka` resource.
-You can set a byte-rate threshold and storage quotas to put limits on the clients interacting with your brokers.
+This procedure describes how to set throughput and storage limits on brokers in your Kafka cluster.
+Enable a quota plugin and configure limits using `quotas` properties in the `Kafka` resource.
 
-NOTE: Only one quota plugin can be used in Kafka. 
-By enabling this plugin, the built-in Kafka quotas plugin is automatically disabled.
-This means that you won't see per-client quota metrics, but only aggregated quota metrics.
+* The `strimzi` type enables the _Kafka Static Quota_ plugin.
+* The `kafka` type enables the built-in Kafka plugin. 
 
-You can set byte-rate thresholds for producer and consumer bandwidth.
-The total limit is distributed across all clients accessing the broker.
-For example, you can set a byte-rate threshold of 40 MBps for producers.
-If two producers are running, they are each limited to a throughput of 20 MBps.
+Only one quota plugin can be enabled. 
+The built-in Kafka plugin is enabled by default.
+Enabling the `strimzi` plugin automatically disables the built-in plugin.
 
-Storage quotas enforce the throttling of Kafka producers based on Kafka disk storage utilization when it reaches the specified limit.
-You can specify the limit in bytes or percentage of available disk space.
-The limit applies to every disk individually.
-It prevents disks filling up too quickly and exceeding their capacity.
-Full disks can lead to issues that are hard to rectify.
+You can limit clients interacting with your brokers by setting byte-rate thresholds for producer and consumer bandwidth.
+
+* Using the `strimzi` plugin, the total limit is distributed across all clients. 
+For example, setting a 40 MBps producer byte-rate threshold limits two producers to 20 MBps each.
+* Using the `kafka` plugin, limits are applied per broker. 
+For example, setting a 20 MBps producer byte-rate threshold limits two producers to 20 MBps each.
+
+Additional `strimzi` plugin options:
+
+* Set storage quotas to throttle Kafka producers based on disk storage utilization. 
+Limits can be specified in bytes (`minAvailableBytesPerVolume`) or percentage (`minAvailableRatioPerVolume`) of available disk space, applying to each disk individually. 
+This prevents disks from filling up too quickly and exceeding capacity, which can cause issues that are hard to rectify.
+* Exclude specific users (clients) from the restrictions.
+
+Additional `kafka` plugin options:
+
+* Set CPU utilization limits for each client as a percentage of the network threads and I/O threads on a per-broker basis.
+* Set the number of concurrent partition creation and deletion operations (mutations) allowed per second on a per-broker basis.
+
+NOTE: With the `strimzi` plugin, you see only aggregated quota metrics, not per-client metrics.
 
 .Prerequisites
 
@@ -34,10 +46,11 @@ Full disks can lead to issues that are hard to rectify.
 
 . Add the plugin configuration to the `quotas` section of the `Kafka` resource.
 +
-The plugin configuration is shown in this example configuration.
+The `strimzi` plugin configuration is shown in this example.
 +
-.Example Kafka Static Quota plugin configuration
-[source,yaml,options="nowrap",subs="+attributes"]
+--
+.Example `strimzi` plugin configuration
+[source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaApiVersion}
 kind: Kafka
@@ -54,18 +67,39 @@ spec:
       excludedPrincipals: # <4>
         - my-user
 ----
-<1> Sets the producer byte-rate threshold. 1 MBps in this example.
-<2> Sets the consumer byte-rate threshold. 1 MBps in this example.
-<3> Sets the available bytes limit for storage. 500 GB in this example.
-<4> Sets the list of excluded users that are removed from the quota. `my-user` in this example.
+<1> Sets a producer byte-rate threshold of 1 MBps.
+<2> Sets a consumer byte-rate threshold of 1 MBps.
+<3> Sets an available bytes limit for storage of 500 GB.
+<4> Excludes `my-user` from the restrictions.
+--
++
+`minAvailableBytesPerVolume` and `minAvailableRatioPerVolume` are mutually exclusive.
+Only configure one of these parameters.
++
+.Example `kafka` plugin configuration
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    quotas:
+      type: kafka
+      producerByteRate: 1000000
+      consumerByteRate: 1000000
+      requestPercentage: 55 # <1>
+      controllerMutationRate: 50 # <2>
+----
+<1> Sets the CPU utilization limit to 55%.
+<2> Sets the controller mutation rate to 50.
 
 . Apply the changes to the `Kafka` configuration.
-
-NOTE: `minAvailableBytesPerVolume` and `minAvailableRatioPerVolume` are mutually exclusive.
-This means that only one of these parameters should be configured.
 
 [role="_additional-resources"]
 .Additional resources
 
 * link:{BookURLConfiguring}#type-QuotasPluginStrimzi-reference[`QuotasPluginStrimzi` schema reference^]
-* link:{BookURLConfiguring}#type-KafkaUserQuotas-reference[`KafkaUserQuotas` schema reference^]
+* link:{BookURLConfiguring}#type-QuotasPluginKafka-reference[`QuotasPluginKafka` schema reference^]
