@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.topic.cruisecontrol;
 
-import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicStatusBuilder;
 import io.strimzi.api.kafka.model.topic.ReplicasChangeStatusBuilder;
@@ -13,14 +12,12 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.topic.TopicOperatorConfig;
 import io.strimzi.operator.topic.TopicOperatorUtil;
 import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient.TaskState;
-import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient.UserTasksResponse;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.model.ReconcilableTopic;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.ONGOING;
@@ -71,11 +68,11 @@ public class CruiseControlHandler {
         updateToPending(reconcilableTopics, "Replicas change pending");
         result.addAll(reconcilableTopics);
 
-        Timer.Sample timerSample = TopicOperatorUtil.startExternalRequestTimer(metricsHolder, config.enableAdditionalMetrics());
+        var timerSample = TopicOperatorUtil.startExternalRequestTimer(metricsHolder, config.enableAdditionalMetrics());
         try {
             LOGGER.debugOp("Sending topic configuration request, topics {}", topicNames(reconcilableTopics));
-            List<KafkaTopic> kafkaTopics = reconcilableTopics.stream().map(ReconcilableTopic::kt).collect(Collectors.toList());
-            String userTaskId = cruiseControlClient.topicConfiguration(kafkaTopics);
+            var kafkaTopics = reconcilableTopics.stream().map(ReconcilableTopic::kt).collect(Collectors.toList());
+            var userTaskId = cruiseControlClient.topicConfiguration(kafkaTopics);
             updateToOngoing(result, "Replicas change ongoing", userTaskId);
         } catch (Throwable t) {
             updateToFailed(result, format("Replicas change failed, %s", getRootCause(t).getMessage()));
@@ -99,21 +96,21 @@ public class CruiseControlHandler {
         }
         result.addAll(reconcilableTopics);
         
-        Map<String, List<ReconcilableTopic>> groupByUserTaskId = reconcilableTopics.stream()
+        var groupByUserTaskId = reconcilableTopics.stream()
             .filter(rt -> hasReplicasChange(rt.kt().getStatus()) && rt.kt().getStatus().getReplicasChange().getSessionId() != null)
             .map(rt -> new ReconcilableTopic(new Reconciliation("", KafkaTopic.RESOURCE_KIND, "", ""), rt.kt(), rt.topicName()))
             .collect(Collectors.groupingBy(rt -> rt.kt().getStatus().getReplicasChange().getSessionId(), HashMap::new, Collectors.toList()));
 
-        Timer.Sample timerSample = TopicOperatorUtil.startExternalRequestTimer(metricsHolder, config.enableAdditionalMetrics());
+        var timerSample = TopicOperatorUtil.startExternalRequestTimer(metricsHolder, config.enableAdditionalMetrics());
         try {
             LOGGER.debugOp("Sending user tasks request, Tasks {}", groupByUserTaskId.keySet());
-            UserTasksResponse utr = cruiseControlClient.userTasks(groupByUserTaskId.keySet());
-            if (utr.userTasks().isEmpty()) {
+            var userTasksResponse = cruiseControlClient.userTasks(groupByUserTaskId.keySet());
+            if (userTasksResponse.userTasks().isEmpty()) {
                 // Cruise Control restarted: reset the state because the tasks queue is not persisted
                 // this may also happen when the tasks' retention time expires, or the cache becomes full
                 updateToPending(result, "Task not found, Resetting the state");
             } else {
-                for (var userTask : utr.userTasks()) {
+                for (var userTask : userTasksResponse.userTasks()) {
                     String userTaskId = userTask.userTaskId();
                     TaskState state = TaskState.get(userTask.status());
                     switch (state) {
@@ -136,8 +133,6 @@ public class CruiseControlHandler {
         TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::cruiseControlUserTasks, config.enableAdditionalMetrics(), config.namespace());
         return result;
     }
-    
-    // TODO we should try to get rid of side effects here too
     
     private void updateToPending(List<ReconcilableTopic> reconcilableTopics, String message) {
         LOGGER.infoOp("{}, Topics: {}", message, topicNames(reconcilableTopics));

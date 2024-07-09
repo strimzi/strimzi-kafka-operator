@@ -44,9 +44,9 @@ public class Results {
     public void recordLeftResults(Stream<Pair<ReconcilableTopic, TopicOperatorException>> errors) {
         errors.forEach(pair -> recordResult(pair.getKey(), Either.ofLeft(pair.getValue())));
     }
-    
+
     private void recordResult(ReconcilableTopic key,
-                             Either<TopicOperatorException, Object> result) {
+                              Either<TopicOperatorException, Object> result) {
         results.compute(key, (k, v) -> {
             if (v == null) { // use given result if there is no existing result
                 return result;
