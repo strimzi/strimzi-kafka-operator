@@ -15,7 +15,12 @@ Cruise Control is recommended for this type of operation as it xref:cruise-contr
 
 Scaling topic replication factor up and down:: Increase or decrease the replication factor of your Kafka topics. To do this, you must create a partition reassignment plan that identifies the existing replication assignment across partitions and an updated assignment with the replication factor changes.
 
-Changing the preferred leader:: Change the preferred leader of a Kafka partition. This can be useful if the current preferred leader is unavailable or if you want to redistribute load across the brokers in the cluster. To do this, you must create a partition reassignment plan that specifies the new preferred leader for each partition by changing the order of replicas.
+Changing the preferred leader:: Change the preferred leader of a Kafka partition. 
+In Kafka, the preferred leader is the replica that serves as the leader for a partition.
+Changing the preferred leader can be useful if the current preferred leader is unavailable or if you want to redistribute load across the brokers in the cluster.
+To do this, you must create a partition reassignment plan that specifies the new preferred leader for each partition by changing the order of replicas. 
+In leader election within Kafka, the preferred leader is prioritized by the order of replicas. The first broker in the order of replicas is designated as the preferred leader. 
+This designation is important for load balancing by distributing partition leaders across the Kafka cluster.
 
 Changing the log directories to use a specific JBOD volume:: Change the log directories of your Kafka brokers to use a specific JBOD volume. This can be useful if you want to move your Kafka data to a different disk or storage device. To do this, you must create a partition reassignment plan that specifies the new log directory for each topic.
 
