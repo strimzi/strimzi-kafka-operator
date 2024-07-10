@@ -1,0 +1,211 @@
+suite: strimzi operator deployment
+release:
+  name: strimzi-test
+  namespace: strimzi-test-namespace
+templates:
+  - 060-Deployment-strimzi-cluster-operator.yaml
+tests:
+  - it: should have same namespace as release
+    set:
+      .test: latest
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.namespace
+          value: strimzi-test-namespace
+
+  - it: should have take replicas from values
+    set:
+      replicas: 4
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.replicas
+          value: 4
+
+  - it: should not set revisionHistoryLimit if not provided
+    asserts:
+      - isKind:
+          of: Deployment
+      - notExists:
+          path: spec.revisionHistoryLimit
+
+  - it: should set revisionHistoryLimit if provided
+    set:
+      revisionHistoryLimit: 5
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.revisionHistoryLimit
+          value: 5
+
+  - it: should have latest image with default image registry when no image is provided
+    asserts:
+      - isKind:
+          of: Deployment
+      - matchRegex:
+          path: spec.template.spec.containers[0].image
+          pattern: 'quay.io/strimzi/operator:(latest|[0-9]+\.[0-9]+\.[0-9]+)'
+
+  - it: should have custom image if details are provided
+    set:
+      image:
+        registry: test.registry.com
+        repository: test-repo
+        name: tets-operator
+        tag: test-tag
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: test.registry.com/test-repo/tets-operator:test-tag
+
+  - it: should set STRIMZI_NAMESPACE to wildcard if watchAnyNamespace is true
+    set:
+      watchAnyNamespace: true
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.template.spec.containers[0].env[0].name
+          value: STRIMZI_NAMESPACE
+      - equal:
+          path: spec.template.spec.containers[0].env[0].value
+          value: "*"
+
+  - it: should set STRIMZI_NAMESPACE to release namespace if watchAnyNamespace is false
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.template.spec.containers[0].env[0].name
+          value: STRIMZI_NAMESPACE
+      - equal:
+          path: spec.template.spec.containers[0].env[0].valueFrom.fieldRef.fieldPath
+          value: metadata.namespace
+
+  - it: should set STRIMZI_NAMESPACE to comma separated specified namespaces and deployment namespace if watchNamespaces is specified
+    set:
+      watchAnyNamespace: false
+      watchNamespaces:
+        - test-namespace
+        - test-namespace2
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.template.spec.containers[0].env[0].name
+          value: STRIMZI_NAMESPACE
+      - equal:
+          path: spec.template.spec.containers[0].env[0].value
+          value: "test-namespace,test-namespace2,strimzi-test-namespace"
+
+  - it: should construct all kafka images from default image registry if not provided
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.template.spec.containers[0].env[3].name
+          value: STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE
+      - equal:
+          path: spec.template.spec.containers[0].env[4].name
+          value: STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE
+      - equal:
+          path: spec.template.spec.containers[0].env[5].name
+          value: STRIMZI_KAFKA_IMAGES
+      - equal:
+          path: spec.template.spec.containers[0].env[6].name
+          value: STRIMZI_KAFKA_CONNECT_IMAGES
+      - equal:
+          path: spec.template.spec.containers[0].env[7].name
+          value: STRIMZI_KAFKA_MIRROR_MAKER_IMAGES
+      - equal:
+          path: spec.template.spec.containers[0].env[8].name
+          value: STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[3].value
+          pattern: 'quay.io/strimzi/kafka:(latest|[0-9]+\.[0-9]+\.[0-9]+)-kafka-[0-9]+\.[0-9]+\.[0-9]+'
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[4].value
+          pattern: 'quay.io/strimzi/kafka:(latest|[0-9]+\.[0-9]+\.[0-9]+)-kafka-[0-9]+\.[0-9]+\.[0-9]+'
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[5].value
+          pattern: '[0-9]+\.[0-9]+\.[0-9]+=quay.io/strimzi/kafka:(latest|[0-9]+\.[0-9]+\.[0-9]+)-kafka-[0-9]+\.[0-9]+\.[0-9]+'
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[6].value
+          pattern: '[0-9]+\.[0-9]+\.[0-9]+=quay.io/strimzi/kafka:(latest|[0-9]+\.[0-9]+\.[0-9]+)-kafka-[0-9]+\.[0-9]+\.[0-9]+'
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[7].value
+          pattern: '[0-9]+\.[0-9]+\.[0-9]+=quay.io/strimzi/kafka:(latest|[0-9]+\.[0-9]+\.[0-9]+)-kafka-[0-9]+\.[0-9]+\.[0-9]+'
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[8].value
+          pattern: '[0-9]+\.[0-9]+\.[0-9]+=quay.io/strimzi/kafka:(latest|[0-9]+\.[0-9]+\.[0-9]+)-kafka-[0-9]+\.[0-9]+\.[0-9]+'
+
+  - it: should construct custom kafka images from specified image registry if provided
+    set:
+      kafka:
+        image:
+          registry: test.registry.com
+          repository: test-repo
+          name: kafka-test
+          tagPrefix: test-tag
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[5].name
+          value: STRIMZI_KAFKA_IMAGES
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[5].value
+          pattern: '[0-9]+\.[0-9]+\.[0-9]+=test.registry.com/test-repo/kafka-test:test-tag-kafka-[0-9]+\.[0-9]+\.[0-9]+'
+
+  - it: should set IMAGE_PULL_SECRETS literally if provided as string
+    set:
+      image:
+        imagePullSecrets: test-secret
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.template.spec.imagePullSecrets[0].name
+          value: test-secret
+      - equal:
+          path: spec.template.spec.containers[0].env[16].name
+          value: STRIMZI_IMAGE_PULL_SECRETS
+      - equal:
+          path: spec.template.spec.containers[0].env[16].value
+          value: test-secret
+
+  - it: should set IMAGE_PULL_SECRETS as comma separated list if provided as array
+    set:
+      image:
+        imagePullSecrets:
+          - name: test-secret
+          - name: test-secret2
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.template.spec.imagePullSecrets[0].name
+          value: test-secret
+      - equal:
+          path: spec.template.spec.imagePullSecrets[1].name
+          value: test-secret2
+      - equal:
+          path: spec.template.spec.containers[0].env[16].name
+          value: STRIMZI_IMAGE_PULL_SECRETS
+      - equal:
+          path: spec.template.spec.containers[0].env[16].value
+          value: test-secret,test-secret2
+
+  - it: should fail if imagePullSecrets is not correctly formatted
+    set:
+      image:
+        imagePullSecrets:
+          - test-secret
+          - test-secret2
+    asserts:
+      - failedTemplate:
+          errorMessage: 'executing "strimzi.listPluck" at <.>: wrong type for value; expected map[string]interface {}; got string'

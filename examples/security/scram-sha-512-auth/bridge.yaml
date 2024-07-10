@@ -20,11 +20,11 @@ spec:
     - resource:
         type: topic
         name: my-topic
-        operations:
-          - Create
-          - Describe
-          - Read
-          - Write
+      operations:
+        - Create
+        - Describe
+        - Read
+        - Write
 ---
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaBridge
@@ -36,7 +36,7 @@ spec:
   tls:
     trustedCertificates:
     - secretName: my-cluster-cluster-ca-cert
-      certificate: ca.crt
+      pattern: "*.crt"
   authentication:
     type: scram-sha-512
     username: my-bridge

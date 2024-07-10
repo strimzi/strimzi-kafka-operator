@@ -41,7 +41,6 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 10,
   "links": [],
   "panels": [
     {
@@ -1307,7 +1306,7 @@
             "cellOptions": {
               "type": "auto"
             },
-            "filterable": false,
+            "filterable": true,
             "inspect": false
           },
           "mappings": [],
@@ -1329,12 +1328,16 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "partition"
+              "options": "Latency"
             },
             "properties": [
               {
+                "id": "unit",
+                "value": "dtdurationms"
+              },
+              {
                 "id": "custom.width",
-                "value": 76
+                "value": 127
               }
             ]
           },
@@ -1346,79 +1349,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 76
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Current"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 65
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Average"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 70
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Min"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 45
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Max"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 41
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Time"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 155
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Source"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 267
+                "value": 71
               }
             ]
           }
@@ -1432,68 +1363,20 @@
       },
       "id": 41,
       "options": {
-        "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
         "frameIndex": 0,
         "showHeader": true,
-        "sortBy": [
-          {
-            "desc": false,
-            "displayName": "Time"
-          }
-        ]
+        "sortBy": []
       },
       "pluginVersion": "7.4.5",
       "targets": [
         {
-          "datasource": "${DS_PROMETHEUS}",
           "exemplar": false,
-          "expr": "sum(kafka_connect_mirror_mirrorcheckpointconnector_checkpoint_latency_ms{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"}) by (source, target)",
+          "expr": "sum by (source, target, topic, partition, group) (kafka_connect_mirror_mirrorcheckpointconnector_checkpoint_latency_ms{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"})",
           "format": "table",
           "instant": true,
           "interval": "",
           "legendFormat": "",
           "refId": "A"
-        },
-        {
-          "datasource": "${DS_PROMETHEUS}",
-          "exemplar": true,
-          "expr": "sum(kafka_connect_mirror_mirrorcheckpointconnector_checkpoint_latency_ms_avg{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"}) by (source, target)",
-          "format": "table",
-          "hide": false,
-          "instant": true,
-          "interval": "",
-          "legendFormat": "",
-          "refId": "B"
-        },
-        {
-          "datasource": "${DS_PROMETHEUS}",
-          "exemplar": true,
-          "expr": "sum(kafka_connect_mirror_mirrorcheckpointconnector_checkpoint_latency_ms_min{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"}) by (source, target)",
-          "format": "table",
-          "hide": false,
-          "instant": true,
-          "interval": "",
-          "legendFormat": "",
-          "refId": "C"
-        },
-        {
-          "datasource": "${DS_PROMETHEUS}",
-          "exemplar": true,
-          "expr": "sum(kafka_connect_mirror_mirrorcheckpointconnector_checkpoint_latency_ms_max{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"}) by (source, target)",
-          "format": "table",
-          "hide": false,
-          "instant": true,
-          "interval": "",
-          "legendFormat": "",
-          "refId": "D"
         }
       ],
       "title": "Offset Synchronization Latency",
@@ -1501,40 +1384,30 @@
         {
           "id": "organize",
           "options": {
-            "excludeByName": {},
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "container": true,
+              "endpoint": true,
+              "instance": true
+            },
             "indexByName": {
               "Time": 0,
-              "Value": 3,
-              "partition": 2,
+              "Value": 6,
+              "group": 2,
+              "partition": 3,
+              "source": 4,
+              "target": 5,
               "topic": 1
             },
             "renameByName": {
-              "Value": "Lag",
-              "partition": "Partition",
-              "topic": "Topic"
-            }
-          }
-        },
-        {
-          "id": "merge",
-          "options": {}
-        },
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {},
-            "indexByName": {},
-            "renameByName": {
-              "Value #A": "Current",
-              "Value #Avg": "Average",
-              "Value #B": "Average",
-              "Value #C": "Min",
-              "Value #D": "Max",
+              "group": "Group",
+              "instance": "",
               "partition": "Partition",
               "source": "Source",
               "target": "Target",
               "topic": "Topic",
-              "{partition=\"2\", topic=\"my-cluster-source.kafka-test-apps\"}": "Min"
+              "Value": "Latency"
             }
           }
         }
@@ -2146,7 +2019,7 @@
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
-          "expr": "sum(jvm_memory_bytes_used{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"}) by (kubernetes_pod_name)",
+          "expr": "sum(jvm_memory_used_bytes{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"}) by (kubernetes_pod_name)",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,
@@ -2448,6 +2321,6 @@
   },
   "timezone": "",
   "title": "Strimzi Kafka Mirror Maker 2",
-  "version": 8,
+  "version": 9,
   "weekStart": ""
 }
