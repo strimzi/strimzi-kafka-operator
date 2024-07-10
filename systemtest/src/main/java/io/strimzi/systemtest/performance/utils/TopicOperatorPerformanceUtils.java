@@ -111,6 +111,18 @@ public class TopicOperatorPerformanceUtils {
             });
     }
 
+    /**
+     * Creates Kafka topics within a specified range and waits until their status is ready.
+     *
+     * @param start             the starting index of the Kafka topics to create
+     * @param end               the ending index of the Kafka topics to create
+     * @param currentContext    the current test context
+     * @param testStorage       storage containing test information such as namespace, cluster, and topic names
+     *
+     * <p>Note: The {@code ResourceManager.setTestContext(currentContext);} is needed because this method is invoked in a new thread.
+     * Therefore, if you do not set the context, you would end up with a NullPointerException (NPE) because a new thread does not hold
+     * the state of the {@code ExtensionContext}, and so you need to set it.</p>
+     */
     private static void performCreationWithWait(int start, int end, ExtensionContext currentContext, TestStorage testStorage) {
         ResourceManager.setTestContext(currentContext);
         LOGGER.info("Creating Kafka topics from index {} to {}", start, end);
@@ -120,6 +132,19 @@ public class TopicOperatorPerformanceUtils {
             start, end, CustomResourceStatus.Ready, ConditionStatus.True);
     }
 
+    /**
+     * Modifies Kafka topics within a specified range and waits until their configuration is updated.
+     *
+     * @param start                      the starting index of the Kafka topics to modify
+     * @param end                        the ending index of the Kafka topics to modify
+     * @param currentContext             the current test context
+     * @param testStorage                storage containing test information such as namespace and topic names
+     * @param kafkaTopicConfigToModify   configuration to modify in the Kafka topics
+     *
+     * <p>Note: The {@code ResourceManager.setTestContext(currentContext);} is needed because this method is invoked in a new thread.
+     * Therefore, if you do not set the context, you would end up with a NullPointerException (NPE) because a new thread does not hold
+     * the state of the {@code ExtensionContext}, and so you need to set it.</p>
+     */
     private static void performModificationWithWait(int start, int end, ExtensionContext currentContext, TestStorage testStorage, Map<String, Object> kafkaTopicConfigToModify) {
         ResourceManager.setTestContext(currentContext);
         LOGGER.info("Modifying Kafka topics from index {} to {}", start, end);
@@ -129,6 +154,18 @@ public class TopicOperatorPerformanceUtils {
             start, end, kafkaTopicConfigToModify);
     }
 
+    /**
+     * Deletes Kafka topics within a specified range and waits until they are fully deleted.
+     *
+     * @param start         the starting index of the Kafka topics to delete
+     * @param end           the ending index of the Kafka topics to delete
+     * @param currentContext the current test context
+     * @param testStorage   storage containing test information such as namespace and topic names
+     *
+     * <p>Note: The {@code ResourceManager.setTestContext(currentContext);} is needed because this method is invoked in a new thread.
+     * Therefore, if you do not set the context, you would end up with a NullPointerException (NPE) because a new thread does not hold
+     * the state of the {@code ExtensionContext}, and so you need to set it.</p>
+     */
     private static void performDeletionWithWait(int start, int end, ExtensionContext currentContext, TestStorage testStorage) {
         ResourceManager.setTestContext(currentContext);
         LOGGER.info("Deleting Kafka topics from index {} to {}", start, end);
@@ -190,7 +227,7 @@ public class TopicOperatorPerformanceUtils {
             // boundary between tests => less likelihood that tests would influence each other
             LOGGER.info("Cooling down");
             try {
-                Thread.sleep(30_000);
+                Thread.sleep(5_000);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
