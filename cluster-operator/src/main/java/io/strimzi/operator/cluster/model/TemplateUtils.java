@@ -16,6 +16,7 @@ import io.strimzi.operator.common.model.InvalidResourceException;
 
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * Shared methods for working with Strimzi API templates
@@ -26,16 +27,16 @@ public class TemplateUtils {
      * It is used to prevent the creation of volumes outside this path.
      */
     protected static final String ALLOWED_MOUNT_PATH = "/mnt";
+    public final static Pattern VOLUME_NAME_REGEX = Pattern.compile("^(?=.{0,63}$)[a-zA-Z0-9][a-zA-Z0-9-._]*[a-zA-Z0-9]$");
 
     /**
      * Extracts custom labels configured through the Strimzi API resource templates. This method deals the null checks
      * and makes the code using it more easy to read.
      *
-     * @param template  The resource template
-     *
-     * @return  Map with custom labels from the template or null if not set
+     * @param template The resource template
+     * @return Map with custom labels from the template or null if not set
      */
-    public static Map<String, String> labels(HasMetadataTemplate template)   {
+    public static Map<String, String> labels(HasMetadataTemplate template) {
         if (template != null
                 && template.getMetadata() != null) {
             return template.getMetadata().getLabels();
@@ -52,6 +53,29 @@ public class TemplateUtils {
      */
     public static void addAdditionalVolumes(PodTemplate templatePod, List<Volume> existingVolumes) {
         if (templatePod.getAdditionalVolumes() != null) {
+
+            // Extract the names and paths of the existing volumes
+            List<String> existingVolumeNames = existingVolumes.stream().map(Volume::getName).toList();
+
+            // Check if there are any invalid volume names
+            List<String> invalidNames = existingVolumeNames.stream().filter(name -> !VOLUME_NAME_REGEX.matcher(name).matches()).toList();
+
+            // Find duplicate names in the additional volumes
+            List<String> duplicateNames = templatePod.getAdditionalVolumes().stream()
+                    .map(AdditionalVolume::getName)
+                    .filter(existingVolumeNames::contains)
+                    .toList();
+
+            // Throw an exception if there are any invalid volume names
+            if (!invalidNames.isEmpty()) {
+                throw new InvalidResourceException("Volume names " + invalidNames + " are invalid and do not match the pattern " + VOLUME_NAME_REGEX);
+            }
+
+            // Throw an exception if duplicates are found
+            if (!duplicateNames.isEmpty()) {
+                throw new InvalidResourceException("Duplicate volume names found in additional volumes: " + duplicateNames);
+            }
+
             templatePod.getAdditionalVolumes().forEach(volumeConfig -> existingVolumes.add(createVolumeFromConfig(volumeConfig)));
         }
     }
@@ -59,7 +83,7 @@ public class TemplateUtils {
     /**
      * Add additional volume mounts to the given list of volume mounts. Validation is performed to ensure none of the
      * additional volume mount paths are forbidden.
-     * 
+     *
      * @param volumeMounts           The list of volume mounts to be added to
      * @param additionalVolumeMounts The list of volume mounts to add
      * @throws RuntimeException If a forbidden mount path is used.
@@ -103,11 +127,10 @@ public class TemplateUtils {
      * Extracts custom annotations configured through the Strimzi API resource templates. This method deals the null
      * checks and makes the code using it more easy to read.
      *
-     * @param template  The resource template
-     *
-     * @return  Map with custom annotations from the template or null if not set
+     * @param template The resource template
+     * @return Map with custom annotations from the template or null if not set
      */
-    public static Map<String, String> annotations(HasMetadataTemplate template)   {
+    public static Map<String, String> annotations(HasMetadataTemplate template) {
         if (template != null
                 && template.getMetadata() != null) {
             return template.getMetadata().getAnnotations();
@@ -119,12 +142,11 @@ public class TemplateUtils {
     /**
      * Extracts the deployment strategy configuration from the Deployment template
      *
-     * @param template      Deployment template which maybe contains custom deployment strategy configuration
-     * @param defaultValue  The default value which should be used if the deployment strategy is not set
-     *
-     * @return  Custom deployment strategy or default value if not defined
+     * @param template     Deployment template which maybe contains custom deployment strategy configuration
+     * @param defaultValue The default value which should be used if the deployment strategy is not set
+     * @return Custom deployment strategy or default value if not defined
      */
-    public static DeploymentStrategy deploymentStrategy(DeploymentTemplate template, DeploymentStrategy defaultValue)  {
+    public static DeploymentStrategy deploymentStrategy(DeploymentTemplate template, DeploymentStrategy defaultValue) {
         return template != null && template.getDeploymentStrategy() != null ? template.getDeploymentStrategy() : defaultValue;
     }
 }
