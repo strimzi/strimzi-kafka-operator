@@ -137,6 +137,7 @@ public class ServiceAccountOperatorTest extends AbstractNamespacedResourceOperat
 
         ServiceAccount current = new ServiceAccountBuilder()
                 .withNewMetadata()
+                    .withAnnotations(Map.of(ServiceAccountOperator.OPENSHIFT_IO_INTERNAL_REGISTRY_PULL_SECRET_REF, "pullSecretName1"))
                     .withNamespace(NAMESPACE)
                     .withName(RESOURCE_NAME)
                 .endMetadata()
@@ -182,6 +183,61 @@ public class ServiceAccountOperatorTest extends AbstractNamespacedResourceOperat
                     assertThat(saCaptor.getValue().getImagePullSecrets(), is(imagePullSecrets));
                     assertThat(saCaptor.getValue().getMetadata().getLabels().get("lKey"), is("lValue"));
                     assertThat(saCaptor.getValue().getMetadata().getAnnotations().get("aKey"), is("aValue"));
+                    assertThat(saCaptor.getValue().getMetadata().getAnnotations().get(ServiceAccountOperator.OPENSHIFT_IO_INTERNAL_REGISTRY_PULL_SECRET_REF), is("pullSecretName1"));
+
+                    async.flag();
+                }));
+    }
+
+    @Test
+    public void testSecretsPatchingNoChange(VertxTestContext context)   {
+        List<ObjectReference> secrets = List.of(
+                new ObjectReferenceBuilder().withName("secretName1").build(),
+                new ObjectReferenceBuilder().withName("secretName2").build()
+        );
+
+        List<LocalObjectReference> imagePullSecrets = List.of(
+                new LocalObjectReferenceBuilder().withName("pullSecretName1").build(),
+                new LocalObjectReferenceBuilder().withName("pullSecretName2").build()
+        );
+
+        ServiceAccount current = new ServiceAccountBuilder()
+                .withNewMetadata()
+                    .withAnnotations(Map.of(ServiceAccountOperator.OPENSHIFT_IO_INTERNAL_REGISTRY_PULL_SECRET_REF, "pullSecretName1"))
+                    .withNamespace(NAMESPACE)
+                    .withName(RESOURCE_NAME)
+                .endMetadata()
+                .withSecrets(secrets)
+                .withImagePullSecrets(imagePullSecrets)
+                .build();
+
+        ServiceAccount desired = new ServiceAccountBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(RESOURCE_NAME)
+                .endMetadata()
+                .build();
+
+        Resource mockResource = mock(resourceType());
+        when(mockResource.get()).thenReturn(current);
+        when(mockResource.patch(any(), any())).thenReturn(desired);
+        when(mockResource.withPropagationPolicy(DeletionPropagation.FOREGROUND)).thenReturn(mockResource);
+
+        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
+        when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
+
+        MixedOperation mockCms = mock(MixedOperation.class);
+        when(mockCms.inNamespace(matches(NAMESPACE))).thenReturn(mockNameable);
+
+        KubernetesClient mockClient = mock(clientType());
+        mocker(mockClient, mockCms);
+
+        ServiceAccountOperator op = new ServiceAccountOperator(vertx, mockClient);
+
+        Checkpoint async = context.checkpoint();
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, desired)
+                .onComplete(context.succeeding(rr -> {
+                    verify(mockResource, never()).patch(any(), any(ServiceAccount.class));
 
                     async.flag();
                 }));

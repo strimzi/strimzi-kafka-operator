@@ -14,10 +14,14 @@ import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
+import java.util.Map;
+
 /**
  * Operator for managing Service Accounts
  */
 public class ServiceAccountOperator extends AbstractNamespacedResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, ServiceAccountResource> {
+    /* test */ static final String OPENSHIFT_IO_INTERNAL_REGISTRY_PULL_SECRET_REF = "openshift.io/internal-registry-pull-secret-ref";
+
     /**
      * Constructor
      * @param vertx The Vertx instance
@@ -40,6 +44,27 @@ public class ServiceAccountOperator extends AbstractNamespacedResourceOperator<K
 
         if (desired.getImagePullSecrets() == null || desired.getImagePullSecrets().isEmpty())    {
             desired.setImagePullSecrets(current.getImagePullSecrets());
+        }
+
+        // OpenShift 4.16 will create an image pull secret, add it to the image pull secrets list, and attach an
+        // annotation openshift.io/internal-registry-pull-secret-ref to the Service Account with the name of the image
+        // pull secret. If Strimzi removes this annotation by patching the resource in the next reconciliation,
+        // OpenShift will create another Secret, add it to the image pull secret list and add back the annotation.
+        // This way, every reconciliation will for every Service Account make OCP generate new Secret and in a little
+        // while, the namespace is full of these Secrets.
+        //
+        // The code below recovers the annotation from the original resource when patching it and reads it to the
+        // desired Service Account to avoid removing the annotation and triggering OCP to create a new Secret. This is
+        // not a great solution, but until we have Server Side Apply support, this is the best we can do.
+        if (current.getMetadata() != null
+                && current.getMetadata().getAnnotations() != null
+                && current.getMetadata().getAnnotations().containsKey(OPENSHIFT_IO_INTERNAL_REGISTRY_PULL_SECRET_REF))  {
+            if (desired.getMetadata().getAnnotations() != null
+                    && !desired.getMetadata().getAnnotations().containsKey(OPENSHIFT_IO_INTERNAL_REGISTRY_PULL_SECRET_REF)) {
+                desired.getMetadata().getAnnotations().put(OPENSHIFT_IO_INTERNAL_REGISTRY_PULL_SECRET_REF, current.getMetadata().getAnnotations().get(OPENSHIFT_IO_INTERNAL_REGISTRY_PULL_SECRET_REF));
+            } else if (desired.getMetadata().getAnnotations() == null)    {
+                desired.getMetadata().setAnnotations(Map.of(OPENSHIFT_IO_INTERNAL_REGISTRY_PULL_SECRET_REF, current.getMetadata().getAnnotations().get(OPENSHIFT_IO_INTERNAL_REGISTRY_PULL_SECRET_REF)));
+            }
         }
 
         return super.internalUpdate(reconciliation, namespace, name, current, desired);
