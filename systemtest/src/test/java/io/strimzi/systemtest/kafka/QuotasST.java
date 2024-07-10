@@ -132,8 +132,6 @@ public class QuotasST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaQuotasPluginWithBandwidthLimitation() {
-        assumeFalse(cluster.isMinikube() || cluster.isMicroShift());
-
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String excludedPrincipal = "User:" + testStorage.getUsername();
 
