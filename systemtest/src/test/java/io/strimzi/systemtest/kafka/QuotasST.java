@@ -34,6 +34,7 @@ import java.util.Collections;
 
 import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.QUOTAS_PLUGIN;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
@@ -131,6 +132,7 @@ public class QuotasST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
+    @Tag(REGRESSION)
     void testKafkaQuotasPluginWithBandwidthLimitation() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String excludedPrincipal = "User:" + testStorage.getUsername();
