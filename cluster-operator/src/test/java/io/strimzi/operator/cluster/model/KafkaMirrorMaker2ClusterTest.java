@@ -943,13 +943,13 @@ public class KafkaMirrorMaker2ClusterTest {
                 .build();
 
         VolumeMount additionalVolumeMountConfigMap = new VolumeMountBuilder()
-                .withName("config-map-volume-name")
+                .withName("config-map-volume-name-2")
                 .withMountPath("/mnt/myconfigmap")
                 .withSubPath("def")
                 .build();
 
         VolumeMount additionalVolumeMountPvc = new VolumeMountBuilder()
-                .withName("pvc-volume-name")
+                .withName("pvc-volume-name-2")
                 .withMountPath("/mnt/mypvc")
                 .build();
 
@@ -1025,8 +1025,8 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(pod.getSpec().getHostAliases(), containsInAnyOrder(hostAlias1, hostAlias2));
             assertThat(pod.getSpec().getEnableServiceLinks(), is(false));
             assertThat(getVolume(pod, "strimzi-tmp").getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
-            assertThat(getVolume(pod, additionalVolumeMountConfigMap.getName()).getConfigMap(), is(configMap));
-            assertThat(getVolume(pod, additionalVolumeMountPvc.getName()).getPersistentVolumeClaim(), is(pvc));
+            assertThat(getVolume(pod, additionalVolumeConfigMap.getName()).getConfigMap(), is(configMap));
+            assertThat(getVolume(pod, additionalVolumePvc.getName()).getPersistentVolumeClaim(), is(pvc));
             assertThat(getVolumeMount(pod.getSpec().getContainers().get(0), additionalVolumeMountConfigMap.getName()), is(additionalVolumeMountConfigMap));
             assertThat(getVolumeMount(pod.getSpec().getInitContainers().get(0), additionalVolumeMountPvc.getName()), is(additionalVolumeMountPvc));
 

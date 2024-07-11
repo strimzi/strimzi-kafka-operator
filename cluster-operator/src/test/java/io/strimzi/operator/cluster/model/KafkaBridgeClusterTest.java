@@ -850,7 +850,7 @@ public class KafkaBridgeClusterTest {
                 .build();
         
         VolumeMount additionalVolumeMount = new VolumeMountBuilder()
-                .withName("config-map-volume-name")
+                .withName("config-map-volume-name-2")
                 .withMountPath("/mnt/config-map")
                 .withSubPath("def")
                 .build();
@@ -873,7 +873,7 @@ public class KafkaBridgeClusterTest {
 
         Deployment deployment = assertRackAwareDeploymentConfigured(resource, "quay.io/strimzi/operator:latest");
         assertThat(getVolume(deployment, "config-map-volume-name").getConfigMap(), is(configMap));
-        assertThat(getVolumeMount(deployment.getSpec().getTemplate().getSpec().getInitContainers().get(0), "config-map-volume-name"), is(additionalVolumeMount));
+        assertThat(getVolumeMount(deployment.getSpec().getTemplate().getSpec().getInitContainers().get(0), "config-map-volume-name-2"), is(additionalVolumeMount));
 
     }
     

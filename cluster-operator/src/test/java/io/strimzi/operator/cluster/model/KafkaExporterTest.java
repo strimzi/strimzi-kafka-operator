@@ -405,7 +405,7 @@ public class KafkaExporterTest {
                 .build();
         
         VolumeMount additionalVolumeMountConfigMap = new VolumeMountBuilder()
-                .withName("config-map-volume-name")
+                .withName("config-map-volume-name-2")
                 .withMountPath("/mnt/config-map-path")
                 .withSubPath("def")
                 .build();
@@ -464,7 +464,7 @@ public class KafkaExporterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(tolerations));
         assertThat(dep.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
         assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
-        assertThat(getVolume(dep.getSpec().getTemplate().getSpec(), additionalVolumeMountConfigMap.getName()).getConfigMap(), is(configMap));
+        assertThat(getVolume(dep.getSpec().getTemplate().getSpec(), additionalVolumeConfigMap.getName()).getConfigMap(), is(configMap));
         assertThat(getVolumeMount(dep.getSpec().getTemplate().getSpec().getContainers().get(0), additionalVolumeMountConfigMap.getName()), is(additionalVolumeMountConfigMap));
 
         // Check Service Account

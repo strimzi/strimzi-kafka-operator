@@ -178,9 +178,6 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
 
             AuthenticationUtils.configureClientAuthenticationVolumes(mirrorMaker2Cluster.getAuthentication(), volumeList, mirrorMaker2Cluster.getAlias() + "-oauth-certs", isOpenShift, mirrorMaker2Cluster.getAlias() + '-',  true);
         }
-        if (templatePod != null) {
-            addAdditionalVolumes(templatePod, volumeList);
-        }
         return volumeList;
     }
 
