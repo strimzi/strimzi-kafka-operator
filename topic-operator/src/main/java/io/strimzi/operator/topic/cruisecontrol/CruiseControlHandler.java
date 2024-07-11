@@ -17,12 +17,11 @@ import io.strimzi.operator.topic.model.Results;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.ONGOING;
 import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.PENDING;
-import static io.strimzi.operator.topic.TopicOperatorUtil.hasReplicasChange;
+import static io.strimzi.operator.topic.TopicOperatorUtil.hasReplicasChangeStatus;
 import static io.strimzi.operator.topic.TopicOperatorUtil.topicNames;
 import static java.lang.String.format;
 import static org.apache.logging.log4j.core.util.Throwables.getRootCause;
@@ -96,7 +95,7 @@ public class CruiseControlHandler {
         }
         
         var groupByUserTaskId = reconcilableTopics.stream()
-            .filter(rt -> hasReplicasChange(rt.kt().getStatus()) && rt.kt().getStatus().getReplicasChange().getSessionId() != null)
+            .filter(rt -> hasReplicasChangeStatus(rt.kt()) && rt.kt().getStatus().getReplicasChange().getSessionId() != null)
             .map(rt -> new ReconcilableTopic(new Reconciliation("", KafkaTopic.RESOURCE_KIND, "", ""), rt.kt(), rt.topicName()))
             .collect(Collectors.groupingBy(rt -> rt.kt().getStatus().getReplicasChange().getSessionId(), HashMap::new, Collectors.toList()));
 
@@ -121,7 +120,7 @@ public class CruiseControlHandler {
                             break;
                         case ACTIVE:
                         case IN_EXECUTION:
-                            // do nothing
+                            results.addAll(updateToOngoing(reconcilableTopics, "Replicas change ongoing", userTaskId));
                             break;
                     }
                 }
@@ -135,56 +134,14 @@ public class CruiseControlHandler {
     }
 
     /**
-     * Finalize pending but completed changes.
-     * These are pending changes left orphan by Cruise Control restart or a user revert.
-     * 
-     * @param reconcilableTopics Topics with pending replicas change.
-     * @param differentRfMap Topics with different replication factor.
+     * Complete zombie changes.
+     * These are pending but completed replication factor changes caused by Cruise Control restart or user revert.
+     *
+     * @param reconcilableTopics Pending but completed replicas changes.
      * @return Results with status updates.
      */
-    public Results finalizePendingChanges(List<ReconcilableTopic> reconcilableTopics, Map<String, ReconcilableTopic> differentRfMap) {
-        var results = new Results();
-        var completed = reconcilableTopics.stream()
-            .filter(rt -> !differentRfMap.containsKey(rt.topicName()) && !hasFailedReplicasChange(rt.kt()))
-            .collect(Collectors.toList());
-        var reverted = reconcilableTopics.stream()
-            .filter(rt -> !differentRfMap.containsKey(rt.topicName()) && hasFailedReplicasChange(rt.kt()))
-            .toList();
-        completed.addAll(reverted);
-        if (!completed.isEmpty()) {
-            results.addAll(updateToCompleted(completed, "Replicas change completed or reverted"));
-        }
-        return results;
-    }
-
-    /**
-     * @param kafkaTopic Kafka topic.
-     * @return Whether this topic has a pending replicas change or not.
-     */
-    public static boolean hasPendingReplicasChange(KafkaTopic kafkaTopic) {
-        return TopicOperatorUtil.hasReplicasChange(kafkaTopic.getStatus())
-            && kafkaTopic.getStatus().getReplicasChange().getState() == PENDING
-            && kafkaTopic.getStatus().getReplicasChange().getSessionId() == null;
-    }
-
-    /**
-     * @param kafkaTopic Kafka topic.
-     * @return Whether this topic has an ongoing replicas change or not.
-     */
-    public static boolean hasOngoingReplicasChange(KafkaTopic kafkaTopic) {
-        return TopicOperatorUtil.hasReplicasChange(kafkaTopic.getStatus())
-            && kafkaTopic.getStatus().getReplicasChange().getState() == ONGOING
-            && kafkaTopic.getStatus().getReplicasChange().getSessionId() != null;
-    }
-
-    /**
-     * @param kafkaTopic Kafka topic.
-     * @return Whether this topic has a failed replicas change or not.
-     */
-    public static boolean hasFailedReplicasChange(KafkaTopic kafkaTopic) {
-        return TopicOperatorUtil.hasReplicasChange(kafkaTopic.getStatus())
-            && kafkaTopic.getStatus().getReplicasChange().getState() == PENDING
-            && kafkaTopic.getStatus().getReplicasChange().getMessage() != null;
+    public Results completeZombieChanges(List<ReconcilableTopic> reconcilableTopics) {
+        return updateToCompleted(reconcilableTopics, "Replicas change completed or reverted");
     }
     
     private Results updateToPending(List<ReconcilableTopic> reconcilableTopics, String message) {
@@ -203,17 +160,20 @@ public class CruiseControlHandler {
     private Results updateToOngoing(List<ReconcilableTopic> reconcilableTopics, String message, String userTaskId) {
         var results = new Results();
         LOGGER.infoOp("{}, Topics: {}", message, topicNames(reconcilableTopics));
-        reconcilableTopics.forEach(reconcilableTopic ->
+        reconcilableTopics.forEach(reconcilableTopic -> {
+            var targetReplicas = hasReplicasChangeStatus(reconcilableTopic.kt())
+                ? reconcilableTopic.kt().getStatus().getReplicasChange().getTargetReplicas()
+                : reconcilableTopic.kt().getSpec().getReplicas();
             results.setReplicasChange(reconcilableTopic,
                 new ReplicasChangeStatusBuilder()
                     .withState(ONGOING)
-                    .withTargetReplicas(reconcilableTopic.kt().getSpec().getReplicas())
+                    .withTargetReplicas(targetReplicas)
                     .withSessionId(userTaskId)
-                    .build())
-        );
+                    .build());
+        });
         return results;
     }
-
+    
     private Results updateToCompleted(List<ReconcilableTopic> reconcilableTopics, String message) {
         var results = new Results();
         LOGGER.infoOp("{}, Topics: {}", message, topicNames(reconcilableTopics));
@@ -226,12 +186,20 @@ public class CruiseControlHandler {
     private Results updateToFailed(List<ReconcilableTopic> reconcilableTopics, String message) {
         var results = new Results();
         LOGGER.errorOp("{}, Topics: {}", message, topicNames(reconcilableTopics));
-        reconcilableTopics.forEach(reconcilableTopic ->
+        reconcilableTopics.forEach(reconcilableTopic -> {
+            var state = hasReplicasChangeStatus(reconcilableTopic.kt())
+                ? reconcilableTopic.kt().getStatus().getReplicasChange().getState()
+                : PENDING;
+            var targetReplicas = hasReplicasChangeStatus(reconcilableTopic.kt())
+                ? reconcilableTopic.kt().getStatus().getReplicasChange().getTargetReplicas()
+                : reconcilableTopic.kt().getSpec().getReplicas();
             results.setReplicasChange(reconcilableTopic,
-                new ReplicasChangeStatusBuilder(reconcilableTopic.kt().getStatus().getReplicasChange())
+                new ReplicasChangeStatusBuilder()
+                    .withState(state)
+                    .withTargetReplicas(targetReplicas)
                     .withMessage(message)
-                    .build())
-        );
+                    .build());
+        });
         return results;
     }
 }

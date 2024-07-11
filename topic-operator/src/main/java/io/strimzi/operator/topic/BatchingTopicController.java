@@ -49,13 +49,14 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.ONGOING;
+import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.PENDING;
 import static io.strimzi.operator.topic.TopicOperatorUtil.hasConfig;
+import static io.strimzi.operator.topic.TopicOperatorUtil.hasReplicasChangeStatus;
 import static io.strimzi.operator.topic.TopicOperatorUtil.isPaused;
 import static io.strimzi.operator.topic.TopicOperatorUtil.partitionedByError;
 import static io.strimzi.operator.topic.TopicOperatorUtil.startReconciliationTimer;
 import static io.strimzi.operator.topic.TopicOperatorUtil.stopReconciliationTimer;
-import static io.strimzi.operator.topic.cruisecontrol.CruiseControlHandler.hasOngoingReplicasChange;
-import static io.strimzi.operator.topic.cruisecontrol.CruiseControlHandler.hasPendingReplicasChange;
 import static java.lang.String.format;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.partitioningBy;
@@ -770,11 +771,11 @@ public class BatchingTopicController {
         if (config.cruiseControlEnabled()) {
             var differentRfMap = differentRfResults.ok().map(Pair::getKey).toList()
                 .stream().collect(Collectors.toMap(ReconcilableTopic::topicName, Function.identity()));
-
+            
             // process new and pending changes
             var pending = topicsMatching(reconcilableTopics, kt -> hasPendingReplicasChange(kt));
             var brandNew = differentRfMap.values().stream()
-                .filter(rt -> !hasPendingReplicasChange(rt.kt()) && !hasOngoingReplicasChange(rt.kt()))
+                .filter(rt -> !hasReplicasChangeStatus(rt.kt()))
                 .toList();
             pending.addAll(brandNew);
             warnTooLargeMinIsr(pending);
@@ -783,9 +784,20 @@ public class BatchingTopicController {
             // process ongoing changes
             var ongoing = topicsMatching(reconcilableTopics, kt -> hasOngoingReplicasChange(kt));
             results.addAll(cruiseControlHandler.requestOngoingChanges(ongoing));
-
-            // finalize completed and reverted changes
-            results.addAll(cruiseControlHandler.finalizePendingChanges(pending, differentRfMap));
+            
+            // complete zombie changes
+            var completed = reconcilableTopics.stream()
+                .filter(rt -> !differentRfMap.containsKey(rt.topicName())
+                    && pending.contains(rt) && !hasFailedReplicasChange(rt.kt()))
+                .collect(Collectors.toList());
+            var reverted = reconcilableTopics.stream()
+                .filter(rt -> !differentRfMap.containsKey(rt.topicName())
+                    && pending.contains(rt) && hasFailedReplicasChange(rt.kt()))
+                .toList();
+            completed.addAll(reverted);
+            if (!completed.isEmpty()) {
+                results.addAll(cruiseControlHandler.completeZombieChanges(completed));
+            }
             
         } else {
             results.setLeftResults(differentRfResults.ok().map(pair -> {
@@ -793,7 +805,7 @@ public class BatchingTopicController {
                 var specReplicas = TopicOperatorUtil.replicas(reconcilableTopic.kt());
                 var partitions = pair.getValue().partitionsWithDifferentRfThan(specReplicas);
                 return new Pair<>(reconcilableTopic, new TopicOperatorException.NotSupported(
-                    "Replication factor change not supported, but required for partitions " + partitions));
+                    format("Replication factor change not supported, but required for partitions %s", partitions)));
             }));
         }
         
@@ -845,7 +857,25 @@ public class BatchingTopicController {
     private List<ReconcilableTopic> topicsMatching(List<ReconcilableTopic> reconcilableTopics, Predicate<KafkaTopic> status) {
         return reconcilableTopics.stream().filter(rt -> status.test(rt.kt())).collect(Collectors.toList());
     }
+    
+    private static boolean hasPendingReplicasChange(KafkaTopic kafkaTopic) {
+        return hasReplicasChangeStatus(kafkaTopic)
+            && kafkaTopic.getStatus().getReplicasChange().getState() == PENDING
+            && kafkaTopic.getStatus().getReplicasChange().getSessionId() == null;
+    }
+    
+    private static boolean hasOngoingReplicasChange(KafkaTopic kafkaTopic) {
+        return hasReplicasChangeStatus(kafkaTopic)
+            && kafkaTopic.getStatus().getReplicasChange().getState() == ONGOING
+            && kafkaTopic.getStatus().getReplicasChange().getSessionId() != null;
+    }
 
+    private static boolean hasFailedReplicasChange(KafkaTopic kafkaTopic) {
+        return hasReplicasChangeStatus(kafkaTopic)
+            && kafkaTopic.getStatus().getReplicasChange().getState() == PENDING
+            && kafkaTopic.getStatus().getReplicasChange().getMessage() != null;
+    }
+    
     private void updateStatuses(Results results) {
         // update statues with the overall results
         results.forEachRightResult((reconcilableTopic, ignored) ->

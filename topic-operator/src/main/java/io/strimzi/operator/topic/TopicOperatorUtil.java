@@ -7,7 +7,6 @@ package io.strimzi.operator.topic;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
-import io.strimzi.api.kafka.model.topic.KafkaTopicStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient;
@@ -204,13 +203,13 @@ public class TopicOperatorUtil {
     }
 
     /**
-     * Whether the {@link KafkaTopic} kafkaTopicStatus has replicas change.
+     * Whether the {@link KafkaTopic} status has replicas change status.
      *
-     * @param kafkaTopicStatus Topic kafkaTopicStatus.
-     * @return True if there is replicas change kafkaTopicStatus.
+     * @param kafkaTopic Kafka topic.
+     * @return True if there is replicas change status.
      */
-    public static boolean hasReplicasChange(KafkaTopicStatus kafkaTopicStatus) {
-        return kafkaTopicStatus != null && kafkaTopicStatus.getReplicasChange() != null;
+    public static boolean hasReplicasChangeStatus(KafkaTopic kafkaTopic) {
+        return kafkaTopic.getStatus() != null && kafkaTopic.getStatus().getReplicasChange() != null;
     }
 
     /**

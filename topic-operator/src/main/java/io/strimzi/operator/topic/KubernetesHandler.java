@@ -127,7 +127,7 @@ public class KubernetesHandler {
         return oldStatusOrTopicNameMissing(oldStatus)
             || nonPausedAndDifferentGenerations(kt, oldStatus)
             || differentConditions(kt.getStatus().getConditions(), oldStatus.getConditions())
-            || replicasChangesDiffer(kt, oldStatus);
+            || replicasChangeDiffer(kt, oldStatus);
     }
 
     private boolean oldStatusOrTopicNameMissing(KafkaTopicStatus oldStatus) {
@@ -161,10 +161,12 @@ public class KubernetesHandler {
     }
 
     @SuppressWarnings("BooleanExpressionComplexity")
-    private boolean replicasChangesDiffer(KafkaTopic kt, KafkaTopicStatus oldStatus) {
-        return kt.getStatus().getReplicasChange() == null && oldStatus.getReplicasChange() != null
-            || kt.getStatus().getReplicasChange() != null && oldStatus.getReplicasChange() == null
-            || (kt.getStatus().getReplicasChange() != null && oldStatus.getReplicasChange() != null
-            && !Objects.equals(kt.getStatus().getReplicasChange(), oldStatus.getReplicasChange()));
+    private boolean replicasChangeDiffer(KafkaTopic kt, KafkaTopicStatus oldStatus) {
+        var newReplicasChangeStatus = kt.getStatus().getReplicasChange();
+        var oldReplicasChangeStatus = oldStatus.getReplicasChange();
+        return newReplicasChangeStatus == null && oldReplicasChangeStatus != null
+            || newReplicasChangeStatus != null && oldReplicasChangeStatus == null
+            || (newReplicasChangeStatus != null && oldReplicasChangeStatus != null
+                && !Objects.equals(newReplicasChangeStatus, oldReplicasChangeStatus));
     }
 }

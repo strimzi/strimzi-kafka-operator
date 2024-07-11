@@ -70,7 +70,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -327,7 +326,7 @@ class BatchingTopicControllerTest {
         var cruiseControlHandler = Mockito.mock(CruiseControlHandler.class);
         Mockito.doReturn(pendingResults).when(cruiseControlHandler).requestPendingChanges(anyList());
         Mockito.doReturn(new Results()).when(cruiseControlHandler).requestOngoingChanges(anyList());
-        Mockito.doReturn(new Results()).when(cruiseControlHandler).finalizePendingChanges(anyList(), anyMap());
+        Mockito.doReturn(new Results()).when(cruiseControlHandler).completeZombieChanges(anyList());
         
         // run test
         var metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
@@ -408,7 +407,7 @@ class BatchingTopicControllerTest {
         var cruiseControlHandler = Mockito.mock(CruiseControlHandler.class);
         Mockito.doReturn(new Results()).when(cruiseControlHandler).requestPendingChanges(anyList());
         Mockito.doReturn(new Results()).when(cruiseControlHandler).requestOngoingChanges(anyList());
-        Mockito.doReturn(completedResults).when(cruiseControlHandler).finalizePendingChanges(anyList(), anyMap());
+        Mockito.doReturn(completedResults).when(cruiseControlHandler).completeZombieChanges(anyList());
         
         var reconcilableTopics = List.of(reconcilableTopic);
         PartitionedByError<ReconcilableTopic, TopicState> currentStatesOrError = new PartitionedByError<>(List.of(), List.of());
@@ -486,7 +485,7 @@ class BatchingTopicControllerTest {
         var cruiseControlHandler = Mockito.mock(CruiseControlHandler.class);
         Mockito.doReturn(new Results()).when(cruiseControlHandler).requestPendingChanges(anyList());
         Mockito.doReturn(new Results()).when(cruiseControlHandler).requestOngoingChanges(anyList());
-        Mockito.doReturn(completedResults).when(cruiseControlHandler).finalizePendingChanges(anyList(), anyMap());
+        Mockito.doReturn(completedResults).when(cruiseControlHandler).completeZombieChanges(anyList());
 
         var reconcilableTopics = List.of(reconcilableTopic);
         PartitionedByError<ReconcilableTopic, TopicState> currentStatesOrError = new PartitionedByError<>(List.of(), List.of());
