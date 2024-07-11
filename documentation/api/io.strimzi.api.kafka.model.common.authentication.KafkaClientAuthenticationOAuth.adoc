@@ -60,12 +60,12 @@ authentication:
     key: access-token
 ----
 
-.An example of OAuth client authentication using an access token provided in the form of the file on the mounted filesystem
+.An example of OAuth client authentication using an access token (service account token in this case) provided in the form of the file on the mounted filesystem
 [source,yaml,subs=attributes+]
 ----
 authentication:
   type: oauth
-  accessTokenLocation: `/path/to/token/file`
+  accessTokenLocation: `/var/run/secrets/kubernetes.io/serviceaccount/token`
 ----
 
 .Username and password
