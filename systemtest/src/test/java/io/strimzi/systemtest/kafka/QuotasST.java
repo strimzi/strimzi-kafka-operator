@@ -181,7 +181,6 @@ public class QuotasST extends AbstractST {
         KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withMessageCount(100)
             .withMessage(String.join("", Collections.nCopies(2000, "#")))
-            .withAdditionalConfig("delivery.timeout.ms=10000\nrequest.timeout.ms=10000\n")
             .build();
 
         LOGGER.info("Sending messages with normal user, quota applies");
