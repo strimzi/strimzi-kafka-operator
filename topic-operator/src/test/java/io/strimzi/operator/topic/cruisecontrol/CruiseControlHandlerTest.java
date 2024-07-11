@@ -19,6 +19,7 @@ import io.strimzi.operator.topic.TopicOperatorUtil;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsProvider;
 import io.strimzi.operator.topic.model.ReconcilableTopic;
+import io.strimzi.operator.topic.model.Results;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -41,6 +42,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.number.OrderingComparison.greaterThan;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CruiseControlHandlerTest {
@@ -101,7 +103,7 @@ public class CruiseControlHandlerTest {
         server.expectUserTasksSuccessResponse(apiUserFile, apiPassFile);
         var ongoing = buildOngoingReconcilableTopics();
         var completedAndFailed = handler.requestOngoingChanges(ongoing);
-        assertCompleted(completedAndFailed);
+        assertCompleted(ongoing, completedAndFailed);
     }
     
     @Test
@@ -167,11 +169,11 @@ public class CruiseControlHandlerTest {
         
         var pending = buildPendingReconcilableTopics();
         var pendingAndOngoing = handler.requestPendingChanges(pending);
-        assertFailedWithMessage(pendingAndOngoing, "Replicas change failed, Connection failed");
+        assertFailedWithMessage(pending, pendingAndOngoing, "Replicas change failed, Connection failed");
 
         var ongoing = buildOngoingReconcilableTopics();
         var completedAndFailed = handler.requestOngoingChanges(ongoing);
-        assertFailedWithMessage(completedAndFailed, "Replicas change failed, Connection failed");
+        assertFailedWithMessage(ongoing, completedAndFailed, "Replicas change failed, Connection failed");
     }
 
     @Test
@@ -193,12 +195,12 @@ public class CruiseControlHandlerTest {
         server.expectTopicConfigErrorResponse(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
         var pendingAndOngoing = handler.requestPendingChanges(pending);
-        assertFailedWithMessage(pendingAndOngoing, "Replicas change failed, Request failed (500), Cluster model not ready");
+        assertFailedWithMessage(pending, pendingAndOngoing, "Replicas change failed, Request failed (500), Cluster model not ready");
 
         server.expectUserTasksErrorResponse(apiUserFile, apiPassFile);
         var ongoing = buildOngoingReconcilableTopics();
         var completedAndFailed = handler.requestOngoingChanges(ongoing);
-        assertFailedWithMessage(completedAndFailed, "Replicas change failed, Request failed (500), " +
+        assertFailedWithMessage(ongoing, completedAndFailed, "Replicas change failed, Request failed (500), " +
             "Error processing GET request '/user_tasks' due to: 'Error happened in fetching response for task 9730e4fb-ea41-4e2d-b053-9be2310589b5'.");
     }
 
@@ -221,12 +223,12 @@ public class CruiseControlHandlerTest {
         server.expectTopicConfigRequestTimeout(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
         var pendingAndOngoing = handler.requestPendingChanges(pending);
-        assertFailedWithMessage(pendingAndOngoing, "Replicas change failed, Request failed (408)");
+        assertFailedWithMessage(pending, pendingAndOngoing, "Replicas change failed, Request failed (408)");
 
         server.expectUserTasksRequestTimeout(apiUserFile, apiPassFile);
         var ongoing = buildOngoingReconcilableTopics();
         var completedAndFailed = handler.requestOngoingChanges(ongoing);
-        assertFailedWithMessage(completedAndFailed, "Replicas change failed, Request failed (408)");
+        assertFailedWithMessage(ongoing, completedAndFailed, "Replicas change failed, Request failed (408)");
     }
 
     @Test
@@ -248,36 +250,38 @@ public class CruiseControlHandlerTest {
         server.expectTopicConfigRequestUnauthorized(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
         var pendingAndOngoing = handler.requestPendingChanges(pending);
-        assertFailedWithMessage(pendingAndOngoing, "Replicas change failed, Request failed (401), Authorization error");
+        assertFailedWithMessage(pending, pendingAndOngoing, "Replicas change failed, Request failed (401), Authorization error");
 
         server.expectUserTasksRequestUnauthorized(apiUserFile, apiPassFile);
         var ongoing = buildOngoingReconcilableTopics();
         var completedAndFailed = handler.requestOngoingChanges(ongoing);
-        assertFailedWithMessage(completedAndFailed, "Replicas change failed, Request failed (401), Authorization error");
+        assertFailedWithMessage(ongoing, completedAndFailed, "Replicas change failed, Request failed (401), Authorization error");
     }
 
-    private static void assertOngoing(List<ReconcilableTopic> input, List<ReconcilableTopic> output) {
-        assertThat(output.isEmpty(), is(false));
-        var outputKt = output.stream().findFirst().get().kt();
-        assertThat(outputKt.getStatus().getReplicasChange(), is(notNullValue()));
-        assertThat(outputKt.getStatus().getReplicasChange().getMessage(), is(nullValue()));
-        assertThat(outputKt.getStatus().getReplicasChange().getSessionId(), is(notNullValue()));
-        assertThat(outputKt.getStatus().getReplicasChange().getState(), is(ONGOING));
-        var inputKt = input.stream().findFirst().get().kt();
-        assertThat(outputKt.getStatus().getReplicasChange().getTargetReplicas(), is(inputKt.getSpec().getReplicas()));
+    private static void assertOngoing(List<ReconcilableTopic> input, Results output) {
+        assertThat(output.size(), greaterThan(0));
+        var inputRt = input.get(0);
+        var outputRcs = output.getReplicasChange(inputRt);
+        assertThat(outputRcs, is(notNullValue()));
+        assertThat(outputRcs.getMessage(), is(nullValue()));
+        assertThat(outputRcs.getSessionId(), is(notNullValue()));
+        assertThat(outputRcs.getState(), is(ONGOING));
+        assertThat(outputRcs.getTargetReplicas(), is(inputRt.kt().getSpec().getReplicas()));
     }
 
-    private static void assertCompleted(List<ReconcilableTopic> output) {
-        assertThat(output.isEmpty(), is(false));
-        var kt = output.stream().findFirst().get().kt();
-        assertThat(kt.getStatus().getReplicasChange(), is(nullValue()));
+    private static void assertCompleted(List<ReconcilableTopic> input, Results output) {
+        assertThat(output.size(), greaterThan(0));
+        var inputRt = input.get(0);
+        var outputRcs = output.getReplicasChange(inputRt);
+        assertThat(outputRcs, is(nullValue()));
     }
 
-    private static void assertFailedWithMessage(List<ReconcilableTopic> output, String message) {
-        assertThat(output.isEmpty(), is(false));
-        var outputKt = output.stream().findFirst().get().kt();
-        assertThat(outputKt.getStatus().getReplicasChange(), is(notNullValue()));
-        assertThat(outputKt.getStatus().getReplicasChange().getMessage(), is(message));
+    private static void assertFailedWithMessage(List<ReconcilableTopic> input, Results output, String message) {
+        assertThat(output.size(), greaterThan(0));
+        var inputRt = input.get(0);
+        var outputRcs = output.getReplicasChange(inputRt);
+        assertThat(outputRcs, is(notNullValue()));
+        assertThat(outputRcs.getMessage(), is(message));
     }
 
     private List<ReconcilableTopic> buildPendingReconcilableTopics() {
@@ -304,7 +308,7 @@ public class CruiseControlHandlerTest {
             .build();
         return List.of(new ReconcilableTopic(
             new Reconciliation("test", RESOURCE_KIND, NAMESPACE, topicName), 
-            kafkaTopic, TopicOperatorUtil.topicName(kafkaTopic)));
+            kafkaTopic, topicName));
     }
 
     private List<ReconcilableTopic> buildOngoingReconcilableTopics() {
@@ -336,7 +340,7 @@ public class CruiseControlHandlerTest {
             .build();
         return List.of(new ReconcilableTopic(
             new Reconciliation("test", RESOURCE_KIND, NAMESPACE, topicName), 
-            kafkaTopic, TopicOperatorUtil.topicName(kafkaTopic)));
+            kafkaTopic, topicName));
     }
 
     private static List<TopicOperatorConfig> validConfigs() {

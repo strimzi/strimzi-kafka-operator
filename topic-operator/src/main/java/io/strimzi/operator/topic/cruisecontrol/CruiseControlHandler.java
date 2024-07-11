@@ -5,7 +5,6 @@
 package io.strimzi.operator.topic.cruisecontrol;
 
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
-import io.strimzi.api.kafka.model.topic.KafkaTopicStatusBuilder;
 import io.strimzi.api.kafka.model.topic.ReplicasChangeStatusBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -14,10 +13,11 @@ import io.strimzi.operator.topic.TopicOperatorUtil;
 import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient.TaskState;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.model.ReconcilableTopic;
+import io.strimzi.operator.topic.model.Results;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.ONGOING;
@@ -58,27 +58,27 @@ public class CruiseControlHandler {
      * Note that this method also updates the KafkaTopic status.
      * 
      * @param reconcilableTopics Pending replicas changes.
-     * @return Replicas changes with status update.
+     * @return Results with status updates.
      */
-    public List<ReconcilableTopic> requestPendingChanges(List<ReconcilableTopic> reconcilableTopics) {
-        List<ReconcilableTopic> result = new ArrayList<>();
+    public Results requestPendingChanges(List<ReconcilableTopic> reconcilableTopics) {
+        var results = new Results();
         if (reconcilableTopics.isEmpty()) {
-            return result;
+            return results;
         }
-        updateToPending(reconcilableTopics, "Replicas change pending");
-        result.addAll(reconcilableTopics);
+        results.addAll(updateToPending(reconcilableTopics, "Replicas change pending"));
 
         var timerSample = TopicOperatorUtil.startExternalRequestTimer(metricsHolder, config.enableAdditionalMetrics());
         try {
             LOGGER.debugOp("Sending topic configuration request, topics {}", topicNames(reconcilableTopics));
             var kafkaTopics = reconcilableTopics.stream().map(ReconcilableTopic::kt).collect(Collectors.toList());
             var userTaskId = cruiseControlClient.topicConfiguration(kafkaTopics);
-            updateToOngoing(result, "Replicas change ongoing", userTaskId);
+            results.addAll(updateToOngoing(reconcilableTopics, "Replicas change ongoing", userTaskId));
         } catch (Throwable t) {
-            updateToFailed(result, format("Replicas change failed, %s", getRootCause(t).getMessage()));
+            results.addAll(updateToFailed(reconcilableTopics, format("Replicas change failed, %s", getRootCause(t).getMessage())));
         }
         TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::cruiseControlTopicConfig, config.enableAdditionalMetrics(), config.namespace());
-        return result;
+        
+        return results;
     }
 
     /**
@@ -87,14 +87,13 @@ public class CruiseControlHandler {
      * Note that this method also updates the KafkaTopic status.
      *
      * @param reconcilableTopics Ongoing replicas changes.
-     * @return Replicas changes with status update.
+     * @return Results with status updates.
      */
-    public List<ReconcilableTopic> requestOngoingChanges(List<ReconcilableTopic> reconcilableTopics) {
-        List<ReconcilableTopic> result = new ArrayList<>();
+    public Results requestOngoingChanges(List<ReconcilableTopic> reconcilableTopics) {
+        var results = new Results();
         if (reconcilableTopics.isEmpty()) {
-            return result;
+            return results;
         }
-        result.addAll(reconcilableTopics);
         
         var groupByUserTaskId = reconcilableTopics.stream()
             .filter(rt -> hasReplicasChange(rt.kt().getStatus()) && rt.kt().getStatus().getReplicasChange().getSessionId() != null)
@@ -108,17 +107,17 @@ public class CruiseControlHandler {
             if (userTasksResponse.userTasks().isEmpty()) {
                 // Cruise Control restarted: reset the state because the tasks queue is not persisted
                 // this may also happen when the tasks' retention time expires, or the cache becomes full
-                updateToPending(result, "Task not found, Resetting the state");
+                results.addAll(updateToPending(reconcilableTopics, "Task not found, Resetting the state"));
             } else {
                 for (var userTask : userTasksResponse.userTasks()) {
                     String userTaskId = userTask.userTaskId();
                     TaskState state = TaskState.get(userTask.status());
                     switch (state) {
                         case COMPLETED:
-                            updateToCompleted(groupByUserTaskId.get(userTaskId), "Replicas change completed");
+                            results.addAll(updateToCompleted(groupByUserTaskId.get(userTaskId), "Replicas change completed"));
                             break;
                         case COMPLETED_WITH_ERROR:
-                            updateToFailed(groupByUserTaskId.get(userTaskId), "Replicas change completed with error");
+                            results.addAll(updateToFailed(groupByUserTaskId.get(userTaskId), "Replicas change completed with error"));
                             break;
                         case ACTIVE:
                         case IN_EXECUTION:
@@ -128,38 +127,111 @@ public class CruiseControlHandler {
                 }
             }
         } catch (Throwable t) {
-            updateToFailed(result, format("Replicas change failed, %s", getRootCause(t).getMessage()));
+            results.addAll(updateToFailed(reconcilableTopics, format("Replicas change failed, %s", getRootCause(t).getMessage())));
         }
         TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::cruiseControlUserTasks, config.enableAdditionalMetrics(), config.namespace());
-        return result;
+        
+        return results;
+    }
+
+    /**
+     * Finalize pending but completed changes.
+     * These are pending changes left orphan by Cruise Control restart or a user revert.
+     * 
+     * @param reconcilableTopics Topics with pending replicas change.
+     * @param differentRfMap Topics with different replication factor.
+     * @return Results with status updates.
+     */
+    public Results finalizePendingChanges(List<ReconcilableTopic> reconcilableTopics, Map<String, ReconcilableTopic> differentRfMap) {
+        var results = new Results();
+        var completed = reconcilableTopics.stream()
+            .filter(rt -> !differentRfMap.containsKey(rt.topicName()) && !hasFailedReplicasChange(rt.kt()))
+            .collect(Collectors.toList());
+        var reverted = reconcilableTopics.stream()
+            .filter(rt -> !differentRfMap.containsKey(rt.topicName()) && hasFailedReplicasChange(rt.kt()))
+            .toList();
+        completed.addAll(reverted);
+        if (!completed.isEmpty()) {
+            results.addAll(updateToCompleted(completed, "Replicas change completed or reverted"));
+        }
+        return results;
+    }
+
+    /**
+     * @param kafkaTopic Kafka topic.
+     * @return Whether this topic has a pending replicas change or not.
+     */
+    public static boolean hasPendingReplicasChange(KafkaTopic kafkaTopic) {
+        return TopicOperatorUtil.hasReplicasChange(kafkaTopic.getStatus())
+            && kafkaTopic.getStatus().getReplicasChange().getState() == PENDING
+            && kafkaTopic.getStatus().getReplicasChange().getSessionId() == null;
+    }
+
+    /**
+     * @param kafkaTopic Kafka topic.
+     * @return Whether this topic has an ongoing replicas change or not.
+     */
+    public static boolean hasOngoingReplicasChange(KafkaTopic kafkaTopic) {
+        return TopicOperatorUtil.hasReplicasChange(kafkaTopic.getStatus())
+            && kafkaTopic.getStatus().getReplicasChange().getState() == ONGOING
+            && kafkaTopic.getStatus().getReplicasChange().getSessionId() != null;
+    }
+
+    /**
+     * @param kafkaTopic Kafka topic.
+     * @return Whether this topic has a failed replicas change or not.
+     */
+    public static boolean hasFailedReplicasChange(KafkaTopic kafkaTopic) {
+        return TopicOperatorUtil.hasReplicasChange(kafkaTopic.getStatus())
+            && kafkaTopic.getStatus().getReplicasChange().getState() == PENDING
+            && kafkaTopic.getStatus().getReplicasChange().getMessage() != null;
     }
     
-    private void updateToPending(List<ReconcilableTopic> reconcilableTopics, String message) {
+    private Results updateToPending(List<ReconcilableTopic> reconcilableTopics, String message) {
+        var results = new Results();
         LOGGER.infoOp("{}, Topics: {}", message, topicNames(reconcilableTopics));
         reconcilableTopics.forEach(reconcilableTopic ->
-            reconcilableTopic.kt().setStatus(new KafkaTopicStatusBuilder(reconcilableTopic.kt().getStatus())
-                .withReplicasChange(new ReplicasChangeStatusBuilder()
-                    .withState(PENDING).withTargetReplicas(reconcilableTopic.kt().getSpec().getReplicas()).build()).build()));
+            results.setReplicasChange(reconcilableTopic, 
+                new ReplicasChangeStatusBuilder()
+                    .withState(PENDING)
+                    .withTargetReplicas(reconcilableTopic.kt().getSpec().getReplicas())
+                    .build())
+        );
+        return results;
     }
     
-    private void updateToOngoing(List<ReconcilableTopic> reconcilableTopics, String message, String userTaskId) {
+    private Results updateToOngoing(List<ReconcilableTopic> reconcilableTopics, String message, String userTaskId) {
+        var results = new Results();
         LOGGER.infoOp("{}, Topics: {}", message, topicNames(reconcilableTopics));
         reconcilableTopics.forEach(reconcilableTopic ->
-            reconcilableTopic.kt().setStatus(new KafkaTopicStatusBuilder(reconcilableTopic.kt().getStatus())
-                .editOrNewReplicasChange().withState(ONGOING).withSessionId(userTaskId).endReplicasChange().build()));
+            results.setReplicasChange(reconcilableTopic,
+                new ReplicasChangeStatusBuilder()
+                    .withState(ONGOING)
+                    .withTargetReplicas(reconcilableTopic.kt().getSpec().getReplicas())
+                    .withSessionId(userTaskId)
+                    .build())
+        );
+        return results;
     }
-    
-    private void updateToCompleted(List<ReconcilableTopic> reconcilableTopics, String message) {
+
+    private Results updateToCompleted(List<ReconcilableTopic> reconcilableTopics, String message) {
+        var results = new Results();
         LOGGER.infoOp("{}, Topics: {}", message, topicNames(reconcilableTopics));
         reconcilableTopics.forEach(reconcilableTopic ->
-            reconcilableTopic.kt().setStatus(new KafkaTopicStatusBuilder(reconcilableTopic.kt().getStatus())
-                .withReplicasChange(null).build()));
+            results.setReplicasChange(reconcilableTopic, null)
+        );
+        return results;
     }
     
-    private void updateToFailed(List<ReconcilableTopic> reconcilableTopics, String message) {
+    private Results updateToFailed(List<ReconcilableTopic> reconcilableTopics, String message) {
+        var results = new Results();
         LOGGER.errorOp("{}, Topics: {}", message, topicNames(reconcilableTopics));
         reconcilableTopics.forEach(reconcilableTopic ->
-            reconcilableTopic.kt().setStatus(new KafkaTopicStatusBuilder(reconcilableTopic.kt().getStatus())
-                .editOrNewReplicasChange().withMessage(message).endReplicasChange().build()));
+            results.setReplicasChange(reconcilableTopic,
+                new ReplicasChangeStatusBuilder(reconcilableTopic.kt().getStatus().getReplicasChange())
+                    .withMessage(message)
+                    .build())
+        );
+        return results;
     }
 }

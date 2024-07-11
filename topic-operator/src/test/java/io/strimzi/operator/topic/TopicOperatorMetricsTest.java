@@ -255,9 +255,10 @@ public class TopicOperatorMetricsTest {
             return kt;
         });
         controller.onUpdate(List.of(TopicOperatorTestUtil.reconcilableTopic(t3ReplIncreased, NAMESPACE)));
+        controller.onUpdate(List.of(TopicOperatorTestUtil.reconcilableTopic(t3ReplIncreased, NAMESPACE)));
 
-        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS, "counter", is(7.0));
-        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(6.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS, "counter", is(8.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(7.0));
         assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_FAILED, "counter", is(1.0));
         assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
         assertMetricMatches(metricsHolder, METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
@@ -273,8 +274,8 @@ public class TopicOperatorMetricsTest {
         });
         controller.onUpdate(List.of(TopicOperatorTestUtil.reconcilableTopic(t1Unmanaged, NAMESPACE)));
 
-        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS, "counter", is(8.0));
-        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(7.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS, "counter", is(9.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(8.0));
         assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_FAILED, "counter", is(1.0));
         assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
         assertMetricMatches(metricsHolder, METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
@@ -283,8 +284,8 @@ public class TopicOperatorMetricsTest {
         // delete managed topics, 1 reconciliation, success
         controller.onDelete(List.of(TopicOperatorTestUtil.reconcilableTopic(t2, NAMESPACE)));
 
-        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS, "counter", is(9.0));
-        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(8.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS, "counter", is(10.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(9.0));
         assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_FAILED, "counter", is(1.0));
         assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
         assertMetricMatches(metricsHolder, METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
@@ -298,8 +299,8 @@ public class TopicOperatorMetricsTest {
         });
         controller.onDelete(List.of(TopicOperatorTestUtil.reconcilableTopic(t3Unmanaged, NAMESPACE)));
 
-        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS, "counter", is(10.0));
-        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(9.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS, "counter", is(11.0));
+        assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(10.0));
         assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_FAILED, "counter", is(1.0));
         assertMetricMatches(metricsHolder, METRICS_RECONCILIATIONS_DURATION, "timer", greaterThan(0.0));
         assertMetricMatches(metricsHolder, METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));

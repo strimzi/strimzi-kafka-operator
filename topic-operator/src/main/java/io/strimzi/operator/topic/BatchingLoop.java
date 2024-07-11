@@ -163,7 +163,6 @@ public class BatchingLoop {
      * A thread that services the head of the {@link #queue}.
      */
     class LoopRunnable extends Thread {
-
         private volatile boolean stopRequested = false;
 
         LoopRunnable(String name) {
@@ -172,21 +171,21 @@ public class BatchingLoop {
         }
 
         static final ReconciliationLogger LOGGER = ReconciliationLogger.create(LoopRunnable.class);
-        private volatile long lastLoop = System.nanoTime();
+        private volatile long lastLoopNs = System.nanoTime();
 
         long msSinceLastLoop() {
-            return (System.nanoTime() - lastLoop) / 1_000_000;
+            return (System.nanoTime() - lastLoopNs) / 1_000_000;
         }
 
         @Override
         public void run() {
             LOGGER.debugOp("Entering run()");
-            Batch batch = new Batch(maxBatchSize);
-            int batchId = 0;
-            lastLoop = System.nanoTime();
+            var batch = new Batch(maxBatchSize);
+            var batchId = 0;
+            lastLoopNs = System.nanoTime();
             while (!runOnce(batchId, batch)) {
                 batchId++;
-                lastLoop = System.nanoTime();
+                lastLoopNs = System.nanoTime();
             }
             LOGGER.debugOp("Exiting run()");
         }
@@ -258,20 +257,20 @@ public class BatchingLoop {
             LOGGER.traceOp("[Batch #{}] Filling", batchId);
             List<TopicEvent> rejected = new ArrayList<>();
 
-            final long deadlineNanoTime = System.nanoTime() + maxBatchLingerMs * 1_000_000;
+            var deadlineNs = System.nanoTime() + maxBatchLingerMs * 1_000_000;
             while (true) {
                 if (batch.size() >= maxBatchSize) {
                     LOGGER.traceOp("[Batch #{}] Reached maxBatchSize, batch complete", batchId, maxBatchSize);
                     break;
                 }
 
-                long timeoutNs = deadlineNanoTime - System.nanoTime();
+                var timeoutNs = deadlineNs - System.nanoTime();
                 if (timeoutNs <= 0) {
                     LOGGER.traceOp("[Batch #{}] {}ms linger expired", batchId, maxBatchLingerMs);
                     break;
                 }
                 LOGGER.traceOp("[Batch #{}] Taking next item from deque head with timeout {}ns", batchId, timeoutNs);
-                TopicEvent topicEvent = queue.pollFirst(timeoutNs, TimeUnit.NANOSECONDS);
+                var topicEvent = queue.pollFirst(timeoutNs, TimeUnit.NANOSECONDS);
 
                 if (topicEvent == null) {
                     LOGGER.traceOp("[Batch #{}] Linger expired, batch complete", batchId);
@@ -296,7 +295,7 @@ public class BatchingLoop {
             // E.g. upset then delete is equivalent to just a delete
             // It's actually a bit tricky since you have to process the events in reverse order to correctly
             // simplify them, so `Batch` would have to be something like a `Map<Ref, List<TopicEvent>>`.
-            KubeRef ref = topicEvent.toRef();
+            var ref = topicEvent.toRef();
             if (inFlight.add(ref)) {
                 // wasn't already inflight
                 LOGGER.debugOp("[Batch #{}] Adding {}", batchId, topicEvent);
