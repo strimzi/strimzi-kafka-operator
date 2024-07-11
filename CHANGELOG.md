@@ -2,6 +2,8 @@
 
 ## 0.43.0
 
+* Added alerts for Connectors/Tasks in failed state.
+
 Added support for additional volumes in CRDs:
 * Users can specify volumes and volumeMounts fields in the Kafka, KafkaConnect, KafkaBridge, KafkaMirrorMaker2, EntityOperator, CruiseControl, KafkaExporter, and Zookeeper CRDs.
 * Supported volume types include Secret, ConfigMap, EmptyDir, and PersistentVolumeClaims.

@@ -3,7 +3,7 @@ kind: KafkaMirrorMaker2
 metadata:
   name: my-mirror-maker-2
 spec:
-  version: 3.7.0
+  version: 3.7.1
   replicas: 1
   connectCluster: "cluster-b" # Must be the target custer
   clusters:
