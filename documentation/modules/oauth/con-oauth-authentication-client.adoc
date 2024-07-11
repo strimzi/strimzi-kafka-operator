@@ -66,9 +66,9 @@ When a client obtains an access token, no further communication with the authori
 SASL authentication properties support the following authentication methods:  
 
 * OAuth 2.0 client credentials
-* OAuth 2.0 password grant (deprecated)
 * Access token or Service account token
 * Refresh token
+* OAuth 2.0 password grant (deprecated)
 
 Add the authentication properties as JAAS configuration (`sasl.jaas.config` and `sasl.login.callback.handler.class`).
 
@@ -120,36 +120,24 @@ An authorization server may require a client to specify the audience.
 .Example client assertion configuration
 [source,properties,subs="+quotes,attributes"]
 ----
-security.protocol=SASL_SSL # <1>
-sasl.mechanism=OAUTHBEARER # <2>
-ssl.truststore.location=/tmp/truststore.p12 <3>
+security.protocol=SASL_SSL
+sasl.mechanism=OAUTHBEARER
+ssl.truststore.location=/tmp/truststore.p12
 ssl.truststore.password=$STOREPASS
 ssl.truststore.type=PKCS12
 sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
-  oauth.token.endpoint.uri="<token_endpoint_url>" \ # <4>
-  oauth.client.id="<client_id>" \ # <5>
-  oauth.client.assertion="<client_assertion>" \ # <6>
-  oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \ <7>
-  oauth.ssl.truststore.password="$STOREPASS" \ <8>
-  oauth.ssl.truststore.type="PKCS12" \ <9>
-  oauth.scope="<scope>" \ # <10>
-  oauth.audience="<audience>" ; # <11>
+  oauth.token.endpoint.uri="<token_endpoint_url>" \
+  oauth.client.id="<client_id>" \
+  oauth.client.assertion="<client_assertion>" \ # <1>
+  oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \
+  oauth.ssl.truststore.password="$STOREPASS" \
+  oauth.ssl.truststore.type="PKCS12" \
+  oauth.scope="<scope>" \
+  oauth.audience="<audience>" ;
 sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
 ----
-<1> `SASL_SSL` security protocol for TLS-encrypted connections. Use `SASL_PLAINTEXT` over unencrypted connections for local development only.
-<2> The SASL mechanism specified as `OAUTHBEARER` or `PLAIN`.
-<3> The truststore configuration for secure access to the Kafka cluster.
-<4> URI of the authorization server token endpoint.
-<5> Client ID, which is the name used when creating the _client_ in the authorization server.
-<6> Client assertion (private key JWT) created when configuring the client in the authorization server.
+<1> Client assertion (private key JWT) created when configuring the client in the authorization server.
 Alternatively, use `oauth.client.assertion.location` to specify the filesystem path to the client assertion file.
-<7> The location contains the public key certificate (`truststore.p12`) for the authorization server.
-<8> The password for accessing the truststore.
-<9> The truststore type.
-<10> (Optional) The `scope` for requesting the token from the token endpoint.
-An authorization server may require a client to specify the scope.
-<11> (Optional) The `audience` for requesting the token from the token endpoint.
-An authorization server may require a client to specify the audience.
 
 [id='con-oauth-authentication-password-grants-{context}']
 .Example password grants configuration 
@@ -208,7 +196,7 @@ sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginMo
   oauth.access.token.location="/var/run/secrets/kubernetes.io/serviceaccount/token";  # <1>
 sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
 ----
-<1> Location of the service account token on the filesystem (assuming that the client is deployed as a Kubernetes pod)
+<1> Location to the service account token on the filesystem (assuming that the client is deployed as a Kubernetes pod)
 
 [id='con-oauth-authentication-refresh-token-{context}']
 .Example refresh token configuration 

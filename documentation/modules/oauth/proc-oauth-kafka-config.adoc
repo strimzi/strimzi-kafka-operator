@@ -99,20 +99,17 @@ metadata:
 spec:
   # ...
   authentication:
-    type: oauth # <1>
-    tokenEndpointUri: https://<auth_server_address>/<path_to_token_endpoint> # <2>
+    type: oauth
+    tokenEndpointUri: https://<auth_server_address>/<path_to_token_endpoint>
     clientId: kafka-bridge
-    clientAssertionLocation: /var/run/secrets/sso/assertion # <3>
-    tlsTrustedCertificates: # <4>
+    clientAssertionLocation: /var/run/secrets/sso/assertion # <1>
+    tlsTrustedCertificates:
       - secretName: oauth-server-cert
         pattern: "*.crt"
 ----
-<1> Authentication type set to `oauth`.
-<2> URI of the token endpoint for authentication.
-<3> Filesystem path to the client assertion file used for authenticating the client. 
-This file is typically added to the deployed pod by an external operator service. 
+<1> Filesystem path to the client assertion file used for authenticating the client.
+This file is typically added to the deployed pod by an external operator service.
 Alternatively, use `clientAssertion` to refer to a secret containing the client assertion value.
-<4> Certificates stored in X.509 format within the specified secrets for TLS connection to the authorization server.
 --
 +
 Here, OAuth 2.0 is assigned to the Kafka Bridge client using a service account token:
@@ -128,11 +125,10 @@ metadata:
 spec:
   # ...
   authentication:
-    type: oauth # <1>
-    accessTokenLocation: /var/run/secrets/kubernetes.io/serviceaccount/token # <2>
+    type: oauth
+    accessTokenLocation: /var/run/secrets/kubernetes.io/serviceaccount/token # <1>
 ----
-<1> Authentication type set to `oauth`.
-<2> Path to the service account token file location.
+<1> Path to the service account token file location.
 --
 +
 Depending on how you apply OAuth 2.0 authentication, and the type of authorization server, there are additional configuration options you can use:
