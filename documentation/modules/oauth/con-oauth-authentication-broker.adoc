@@ -171,27 +171,24 @@ To configure the listener for Kubernetes service accounts, the Kubernetes API se
   type: loadbalancer
   tls: true
   authentication:
-    type: oauth # <1>
-    validIssuerUri: https://kubernetes.default.svc.cluster.local # <2>
-    jwksEndpointUri: https://kubernetes.default.svc.cluster.local/openid/v1/jwks # <3>
-    serverBearerTokenLocation: /var/run/secrets/kubernetes.io/serviceaccount/token # <4>
-    checkAccessTokenType: false # <5>
-    includeAcceptHeader: false # <6>
-    tlsTrustedCertificates: # <7>
+    type: oauth
+    validIssuerUri: https://kubernetes.default.svc.cluster.local # <1>
+    jwksEndpointUri: https://kubernetes.default.svc.cluster.local/openid/v1/jwks # <2>
+    serverBearerTokenLocation: /var/run/secrets/kubernetes.io/serviceaccount/token # <3>
+    checkAccessTokenType: false # <4>
+    includeAcceptHeader: false # <5>
+    tlsTrustedCertificates:
       - secretName: oauth-server-cert
         pattern: "*.crt"
-    maxSecondsWithoutReauthentication: 3600 # <8>
-    customClaimCheck: "@.['kubernetes.io'] && @.['kubernetes.io'].['namespace'] in ['example']" # <9>
+    maxSecondsWithoutReauthentication: 3600
+    customClaimCheck: "@.['kubernetes.io'] && @.['kubernetes.io'].['namespace'] in ['example']" # <6>
 ----
-<1> Listener type set to `oauth`.
-<2> URI of the token issuer used for authentication. Must use FQDN, including the `.cluster.local` extension, which may vary based on the Kubernetes cluster configuration.
-<3> URI of the JWKS certificate endpoint used for local JWT validation. Must use FQDN, including the `.cluster.local` extension, which may vary based on the Kubernetes cluster configuration.
-<4> Location of the access token used by the Kafka broker to authenticate to the Kubernetes API server in order to access the `jwksEndpointUri`.
-<5> Skip the access token type check, as the claim for this is not present in service account tokens.
-<6> Skip sending `Accept` header in HTTP requests to the JWKS endpoint, as the Kubernetes API server does not support it.
-<7> Certificates stored in X.509 format within the specified secrets for TLS connection to the authorization server.
-<8> Activates the Kafka re-authentication mechanism that enforces session expiry to the same length of time as the access token. If the specified value is less than the time left for the access token to expire, then the client will have to re-authenticate before the actual token expiry. By default, the session does not expire when the access token expires, and the client does not attempt re-authentication.
-<9> (Optional) Additional constraints that JWT token has to fulfill in order to be accepted, expressed as JsonPath filter query. In this example the service account has to belong to `example` namespace in order to be allowed to authenticate.
+<1> URI of the token issuer used for authentication. Must use FQDN, including the `.cluster.local` extension, which may vary based on the Kubernetes cluster configuration.
+<2> URI of the JWKS certificate endpoint used for local JWT validation. Must use FQDN, including the `.cluster.local` extension, which may vary based on the Kubernetes cluster configuration.
+<3> Location to the access token used by the Kafka broker to authenticate to the Kubernetes API server in order to access the `jwksEndpointUri`.
+<4> Skip the access token type check, as the claim for this is not present in service account tokens.
+<5> Skip sending `Accept` header in HTTP requests to the JWKS endpoint, as the Kubernetes API server does not support it.
+<6> (Optional) Additional constraints that JWT token has to fulfill in order to be accepted, expressed as JsonPath filter query. In this example the service account has to belong to `example` namespace in order to be allowed to authenticate.
 
 The above configuration uses the `sub` claim from the service account JWT token as the user ID. For example, the default service account for pods deployed in  the `example` namespace has the username: `system:serviceaccount:example:default`.
 
