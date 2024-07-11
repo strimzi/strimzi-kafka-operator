@@ -199,4 +199,17 @@ public class Results {
     public List<Pair<ReconcilableTopic, Collection<AlterConfigOp>>> getConfigChanges() {
         return this.configChanges;
     }
+
+    /**
+     * @param reconcilableTopic Reconcilable topic.
+     * @return Alter config ops.
+     */
+    public Collection<AlterConfigOp> getConfigChanges(ReconcilableTopic reconcilableTopic) {
+        var result = this.configChanges.stream().filter(pair -> pair.getKey().equals(reconcilableTopic)).findFirst();
+        if (result.isPresent()) {
+            return result.get().getValue();
+        } else {
+            return null;
+        }
+    }
 }

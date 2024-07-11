@@ -553,6 +553,16 @@ public class BatchingTopicController {
         results.addAll(nonThrottlingConfigResults);
         var alterableConfigResults = filterOutNonAlterableConfig(nonThrottlingConfigResults, reconcilableTopics);
         results.addAll(alterableConfigResults);
+
+        reconcilableTopics.forEach(reconcilableTopic -> {
+            var configChanges = alterableConfigResults.getConfigChanges(reconcilableTopic);
+            if (configChanges != null && configChanges.isEmpty()) {
+                LOGGER.debugCr(reconcilableTopic.reconciliation(), "Config changes {}", configChanges);
+            } else {
+                LOGGER.debugCr(reconcilableTopic.reconciliation(), "No config change");
+            }
+        });
+        
         return results;
     }
 
