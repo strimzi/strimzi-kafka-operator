@@ -258,7 +258,7 @@ The username extraction process also depends on your authorization server; in pa
 NOTE: The `PLAIN` mechanism does not support password grant authentication. 
 Use either client credentials (client ID + secret) or an access token for authentication.
 
-.Example additional (optional) configuration settings
+.Example optional configuration settings
 [source,yaml,subs="+quotes,attributes"]
 ----
   # ...
@@ -289,10 +289,10 @@ Use either client credentials (client ID + secret) or an access token for authen
 ----
 <1> If your authorization server does not provide an `iss` claim, it is not possible to perform an issuer check. In this situation, set `checkIssuer` to `false` and do not specify a `validIssuerUri`. Default is `true`.
 <2> If your authorization server provides an `aud` (audience) claim, and you want to enforce an audience check, set `checkAudience` to `true`. Audience checks identify the intended recipients of tokens. As a result, the Kafka broker will reject tokens that do not have its `clientId` in their `aud` claim. Default is `false`.
-<3> The prefix used when constructing the user id. Only takes effect if `userNameClaim` is configured.
+<3> The prefix used when constructing the user ID. This only takes effect if `userNameClaim` is configured.
 <4> An authorization server may not provide a single attribute to identify both regular users and clients. When a client authenticates in its own name, the server might provide a _client ID_. When a user authenticates using a username and password to obtain a refresh token or an access token, the server might provide a _username_ attribute in addition to a client ID. Use this fallback option to specify the username claim (attribute) to use if a primary user ID attribute is not available. If necessary, a JsonPath expression like `"['client.info'].['client.id']"` can be used to retrieve the fallback username  to retrieve the username from nested JSON attributes within a token.
 <5> In situations where `fallbackUserNameClaim` is applicable, it may also be necessary to prevent name collisions between the values of the username claim, and those of the fallback username claim. Consider a situation where a client called `producer` exists, but also a regular user called `producer` exists. In order to differentiate between the two, you can use this property to add a prefix to the user ID of the client.
-<6> The location of the access token for Kafka broker to use to authenticate to Kubernetes API server in order to access the protected endpoints. Authorization server has to support `Bearer` authentication. That's an alternative to specifying `clientId` and `clientSecret` which uses `Basic` authentication.
+<6> The location of the access token used by the Kafka broker to authenticate to the Kubernetes API server for accessing protected endpoints. The authorization server must support `OAUTHBEARER` authentication. This is an alternative to specifying `clientId` and `clientSecret`, which uses `PLAIN` authentication.
 <7> (Only applicable when using `introspectionEndpointUri`) Depending on the authorization server you are using, the introspection endpoint may or may not return the _token type_ attribute, or it may contain different values. You can specify a valid token type value that the response from the introspection endpoint has to contain.
 <8> (Only applicable when using `introspectionEndpointUri`) The authorization server may be configured or implemented in such a way to not provide any identifiable information in an introspection endpoint response. In order to obtain the user ID, you can configure the URI of the `userinfo` endpoint as a fallback. The `userNameClaim`, `fallbackUserNameClaim`, and `fallbackUserNamePrefix` settings are applied to the response of `userinfo` endpoint.
 <9> Set this to `false` to disable the `OAUTHBEARER` mechanism on the listener. At least one of `PLAIN` or `OAUTHBEARER` has to be enabled. Default is `true`.
