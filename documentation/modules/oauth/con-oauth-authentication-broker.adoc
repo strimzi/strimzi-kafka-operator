@@ -158,9 +158,9 @@ If you want to use Kafka ACL authorization, identify the user by their username 
 <10> The minimum pause in seconds between consecutive attempts to refresh JWKS public keys. When an unknown signing key is encountered, the JWKS keys refresh is scheduled outside the regular periodic schedule with at least the specified pause since the last refresh attempt. The refreshing of keys follows the rule of exponential backoff, retrying on unsuccessful refreshes with ever increasing pause, until it reaches `jwksRefreshSeconds`. The default value is 1.
 
 [id='con-oauth-authentication-broker-serviceaccounts-{context}']
-.Configuring fast local JWT token validation for using Kubernetes service accounts
+.Configuring fast local JWT token validation with Kubernetes service accounts
 
-In order to configure the listener for use with Kubernetes service accounts the Kubernetes API server has to be used as an authorization server.
+To configure the listener for Kubernetes service accounts, the Kubernetes API server must be used as the authorization server.
 
 .Example configuration for fast local JWT token validation using Kubernetes API server as authorization server
 [source,yaml,subs="+quotes,attributes"]
@@ -184,16 +184,16 @@ In order to configure the listener for use with Kubernetes service accounts the 
     customClaimCheck: "@.['kubernetes.io'] && @.['kubernetes.io'].['namespace'] in ['example']" # <9>
 ----
 <1> Listener type set to `oauth`.
-<2> URI of the token issuer used for authentication. FQDN has to be used - including the `.cluster.local` extension, which may be different if configured differently by Kubernetes cluster administrator.
-<3> URI of the JWKS certificate endpoint used for local JWT validation. FQDN has to be used - including the `.cluster.local` extension, which may be different if configured differently by Kubernetes cluster administrator.
-<4> The location of the access token for Kafka broker to use to authenticate to Kubernetes API server in order to access the `jwksEndpointUri`.
-<5> Turn off the checking of access token type as the claim for that is not present in service account tokens.
-<6> Don't send `Accept` header when performing HTTP requests to the JWKS endpoint as Kubernetes API server doesn't like it.
+<2> URI of the token issuer used for authentication. Must use FQDN, including the `.cluster.local` extension, which may vary based on the Kubernetes cluster configuration.
+<3> URI of the JWKS certificate endpoint used for local JWT validation. Must use FQDN, including the `.cluster.local` extension, which may vary based on the Kubernetes cluster configuration.
+<4> Location of the access token used by the Kafka broker to authenticate to the Kubernetes API server in order to access the `jwksEndpointUri`.
+<5> Skip the access token type check, as the claim for this is not present in service account tokens.
+<6> Skip sending `Accept` header in HTTP requests to the JWKS endpoint, as the Kubernetes API server does not support it.
 <7> Certificates stored in X.509 format within the specified secrets for TLS connection to the authorization server.
 <8> Activates the Kafka re-authentication mechanism that enforces session expiry to the same length of time as the access token. If the specified value is less than the time left for the access token to expire, then the client will have to re-authenticate before the actual token expiry. By default, the session does not expire when the access token expires, and the client does not attempt re-authentication.
 <9> (Optional) Additional constraints that JWT token has to fulfill in order to be accepted, expressed as JsonPath filter query. In this example the service account has to belong to `example` namespace in order to be allowed to authenticate.
 
-The above configuration will use `sub` claim from the service account JWT token as the user id. For example, the default service account for pods deployed in `example` namespace will have the username: `system:serviceaccount:example:default`.
+The above configuration uses the `sub` claim from the service account JWT token as the user ID. For example, the default service account for pods deployed in  the `example` namespace has the username: `system:serviceaccount:example:default`.
 
 Note that the `tlsTrustedCertificates` is configured to point to a manually created Secret that contains the Kubernetes API server public certificate, which is mounted to the running pods under `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt`.
 The Secret can be created using the following command:

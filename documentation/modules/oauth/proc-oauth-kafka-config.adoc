@@ -86,10 +86,10 @@ spec:
 <3> Certificates stored in X.509 format within the specified secrets for TLS connection to the authorization server.
 --
 +
-Another example, here OAuth 2.0 is assigned to the Kafka Bridge client using a client ID and the location of the client assertion file, and TLS to connect to the authorization server:
+In this example, OAuth 2.0 is assigned to the Kafka Bridge client using a client ID and the location of a client assertion file, with TLS to connect to the authorization server:
 +
 --
-.Example OAuth 2.0 authentication configuration using the client assertion
+.Example OAuth 2.0 authentication configuration using client assertion
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -109,12 +109,13 @@ spec:
 ----
 <1> Authentication type set to `oauth`.
 <2> URI of the token endpoint for authentication.
-<3> Path to the file on the disk that contains the assertion used to authenticate as the specified clientId. Usually some external operator service adds a mounted volume with that file to the deployed pod.
-The alternative is to use `clientAssertion` which refers to a Secret containing the client assertion value.
+<3> Filesystem path to the client assertion file used for authenticating the client. 
+This file is typically added to the deployed pod by an external operator service. 
+Alternatively, use `clientAssertion` to refer to a secret containing the client assertion value.
 <4> Certificates stored in X.509 format within the specified secrets for TLS connection to the authorization server.
 --
 +
-Another example, here OAuth 2.0 is assigned to the Kafka Bridge client using a service account token:
+Here, OAuth 2.0 is assigned to the Kafka Bridge client using a service account token:
 +
 --
 .Example OAuth 2.0 authentication configuration using the service account token

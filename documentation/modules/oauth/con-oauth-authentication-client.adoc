@@ -67,7 +67,7 @@ SASL authentication properties support the following authentication methods:
 
 * OAuth 2.0 client credentials
 * OAuth 2.0 password grant (deprecated)
-* Access token / Service account token
+* Access token or Service account token
 * Refresh token
 
 Add the authentication properties as JAAS configuration (`sasl.jaas.config` and `sasl.login.callback.handler.class`).
@@ -141,8 +141,8 @@ sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthL
 <3> The truststore configuration for secure access to the Kafka cluster.
 <4> URI of the authorization server token endpoint.
 <5> Client ID, which is the name used when creating the _client_ in the authorization server.
-<6> Client assertion, also known as private key JWT, created when creating the _client_ in the authorization server.
-An alternative to using `oauth.client.assertion` is to use `oauth.client.assertion.location` setting it to the filesystem path to the file containing the client assertion.
+<6> Client assertion (private key JWT) created when configuring the client in the authorization server.
+Alternatively, use `oauth.client.assertion.location` to specify the filesystem path to the client assertion file.
 <7> The location contains the public key certificate (`truststore.p12`) for the authorization server.
 <8> The password for accessing the truststore.
 <9> The truststore type.
@@ -208,7 +208,7 @@ sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginMo
   oauth.access.token.location="/var/run/secrets/kubernetes.io/serviceaccount/token";  # <1>
 sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
 ----
-<1> Location to the service account token on the filesystem (assuming that the client is deployed as a Kubernetes pod)
+<1> Location of the service account token on the filesystem (assuming that the client is deployed as a Kubernetes pod)
 
 [id='con-oauth-authentication-refresh-token-{context}']
 .Example refresh token configuration 

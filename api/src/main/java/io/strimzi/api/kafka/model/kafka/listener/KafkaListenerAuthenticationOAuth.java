@@ -287,7 +287,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.introspectionEndpointUri = introspectionEndpointUri;
     }
 
-    @Description("Path to the file on the local filesystem that contains a bearer token to be used instead of client_id and secret when authenticating to authorization server")
+    @Description("Path to the file on the local filesystem that contains a bearer token to be used instead of client ID and secret when authenticating to authorization server.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getServerBearerTokenLocation() {
         return serverBearerTokenLocation;
@@ -308,10 +308,10 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.userNameClaim = userNameClaim;
     }
 
-    @Description("The prefix to use with the value of `userNameClaim` to construct the user id. " +
-            "This only takes effect if `userNameClaim` is specified, and the value is present for the claim. " +
-            "When used in combination with `fallbackUserNameClaims` it ensures consistent mapping of usernames and client ids " +
-            "into the same user id space and prevents name collisions.")
+    @Description("The prefix to use with the value of `userNameClaim` to construct the user ID. " +
+            "This only takes effect if `userNameClaim` is specified and the value is present for the claim. " +
+            "When used in combination with `fallbackUserNameClaims`, it ensures consistent mapping of usernames and client IDs " +
+            "into the same user ID space and prevents name collisions.")
     public String getUserNamePrefix() {
         return userNamePrefix;
     }
@@ -320,8 +320,8 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.userNamePrefix = userNamePrefix;
     }
 
-    @Description("The fallback username claim to be used for the user id if the claim specified by `userNameClaim` is not present. " +
-            "This is useful when `client_credentials` authentication only results in the client id being provided in another claim. " +
+    @Description("The fallback username claim to be used for the user ID if the claim specified by `userNameClaim` is not present. " +
+            "This is useful when `client_credentials` authentication only results in the client ID being provided in another claim. " +
             "It only takes effect if `userNameClaim` is set.")
     public String getFallbackUserNameClaim() {
         return fallbackUserNameClaim;
