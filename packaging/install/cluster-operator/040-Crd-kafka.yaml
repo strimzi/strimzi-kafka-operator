@@ -1529,6 +1529,13 @@ spec:
                                     readOnly:
                                       type: boolean
                                   description: PersistentVolumeClaim object to use to populate the volume.
+                              oneOf:
+                              - properties:
+                                  secret: {}
+                                  configMap: {}
+                                  emptyDir: {}
+                                  persistentVolumeClaim: {}
+                                required: []
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for Kafka `Pods`.
                       bootstrapService:
@@ -2973,6 +2980,13 @@ spec:
                                     readOnly:
                                       type: boolean
                                   description: PersistentVolumeClaim object to use to populate the volume.
+                              oneOf:
+                              - properties:
+                                  secret: {}
+                                  configMap: {}
+                                  emptyDir: {}
+                                  persistentVolumeClaim: {}
+                                required: []
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for ZooKeeper `Pods`.
                       clientService:
@@ -4273,6 +4287,13 @@ spec:
                                     readOnly:
                                       type: boolean
                                   description: PersistentVolumeClaim object to use to populate the volume.
+                              oneOf:
+                              - properties:
+                                  secret: {}
+                                  configMap: {}
+                                  emptyDir: {}
+                                  persistentVolumeClaim: {}
+                                required: []
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for Entity Operator `Pods`.
                       topicOperatorContainer:
@@ -5540,6 +5561,13 @@ spec:
                                     readOnly:
                                       type: boolean
                                   description: PersistentVolumeClaim object to use to populate the volume.
+                              oneOf:
+                              - properties:
+                                  secret: {}
+                                  configMap: {}
+                                  emptyDir: {}
+                                  persistentVolumeClaim: {}
+                                required: []
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for Cruise Control `Pods`.
                       apiService:
@@ -6589,6 +6617,13 @@ spec:
                                     readOnly:
                                       type: boolean
                                   description: PersistentVolumeClaim object to use to populate the volume.
+                              oneOf:
+                              - properties:
+                                  secret: {}
+                                  configMap: {}
+                                  emptyDir: {}
+                                  persistentVolumeClaim: {}
+                                required: []
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for JmxTrans `Pods`.
                       container:
@@ -7419,6 +7454,13 @@ spec:
                                     readOnly:
                                       type: boolean
                                   description: PersistentVolumeClaim object to use to populate the volume.
+                              oneOf:
+                              - properties:
+                                  secret: {}
+                                  configMap: {}
+                                  emptyDir: {}
+                                  persistentVolumeClaim: {}
+                                required: []
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for Kafka Exporter `Pods`.
                       service:

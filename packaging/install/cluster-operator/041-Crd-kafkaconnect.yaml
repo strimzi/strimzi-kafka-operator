@@ -1075,6 +1075,13 @@ spec:
                                 readOnly:
                                   type: boolean
                               description: PersistentVolumeClaim object to use to populate the volume.
+                          oneOf:
+                          - properties:
+                              secret: {}
+                              configMap: {}
+                              emptyDir: {}
+                              persistentVolumeClaim: {}
+                            required: []
                         description: Additional volumes that can be mounted to the pod.
                     description: Template for Kafka Connect `Pods`.
                   apiService:
@@ -1978,6 +1985,13 @@ spec:
                                 readOnly:
                                   type: boolean
                               description: PersistentVolumeClaim object to use to populate the volume.
+                          oneOf:
+                          - properties:
+                              secret: {}
+                              configMap: {}
+                              emptyDir: {}
+                              persistentVolumeClaim: {}
+                            required: []
                         description: Additional volumes that can be mounted to the pod.
                     description: Template for Kafka Connect Build `Pods`. The build pod is used only on Kubernetes.
                   buildContainer:

@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
+import io.strimzi.crdgenerator.annotations.OneOf;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -27,6 +28,14 @@ import java.util.Map;
 @Buildable(editableEnabled = false, builderPackage = Constants.FABRIC8_KUBERNETES_API)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "name", "path", "subPath", "secret", "configMap", "emptyDir", "persistentVolumeClaim" })
+@OneOf({
+    @OneOf.Alternative({
+        @OneOf.Alternative.Property(value = "secret", required = false),
+        @OneOf.Alternative.Property(value = "configMap", required = false),
+        @OneOf.Alternative.Property(value = "emptyDir", required = false),
+        @OneOf.Alternative.Property(value = "persistentVolumeClaim", required = false)
+        })
+})
 @EqualsAndHashCode
 @ToString
 public class AdditionalVolume implements UnknownPropertyPreserving {

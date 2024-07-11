@@ -1064,6 +1064,13 @@ spec:
                                 readOnly:
                                   type: boolean
                               description: PersistentVolumeClaim object to use to populate the volume.
+                          oneOf:
+                          - properties:
+                              secret: {}
+                              configMap: {}
+                              emptyDir: {}
+                              persistentVolumeClaim: {}
+                            required: []
                         description: Additional volumes that can be mounted to the pod.
                     description: Template for Kafka Bridge `Pods`.
                   apiService:
