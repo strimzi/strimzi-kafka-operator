@@ -16,11 +16,20 @@ Cruise Control is recommended for this type of operation as it xref:cruise-contr
 Scaling topic replication factor up and down:: Increase or decrease the replication factor of your Kafka topics. To do this, you must create a partition reassignment plan that identifies the existing replication assignment across partitions and an updated assignment with the replication factor changes.
 
 Changing the preferred leader:: Change the preferred leader of a Kafka partition. 
-In Kafka, the preferred leader is the replica that serves as the leader for a partition.
-Changing the preferred leader can be useful if the current preferred leader is unavailable or if you want to redistribute load across the brokers in the cluster.
+In Kafka, the partition leader is the replica that serves as the leader for a partition. 
+However, the partition leader is not always the preferred leader; for example, if the preferred leader is out of sync or if the broker goes offline, another replica may temporarily become the leader.
++
+Changing the preferred leader can be useful if you want to redistribute load across the brokers in the cluster.
+If the preferred leader is unavailable, another in-sync replica is automatically elected as leader, or the partition goes offline if there are no in-sync replicas. 
+A background thread moves the leader role to the preferred replica when it is in sync. 
+Therefore, changing the preferred replicas only makes sense in the context of a cluster rebalancing. 
++
 To do this, you must create a partition reassignment plan that specifies the new preferred leader for each partition by changing the order of replicas. 
-In leader election within Kafka, the preferred leader is prioritized by the order of replicas. The first broker in the order of replicas is designated as the preferred leader. 
+In Kafka's leader election process, the preferred leader is prioritized by the order of replicas. 
+The first broker in the order of replicas is designated as the preferred leader. 
 This designation is important for load balancing by distributing partition leaders across the Kafka cluster.
+However, this alone might not be sufficient for optimal load balancing, as some partitions may have higher usage than others. 
+Cruise Control can help address this by providing more comprehensive cluster rebalancing.
 
 Changing the log directories to use a specific JBOD volume:: Change the log directories of your Kafka brokers to use a specific JBOD volume. This can be useful if you want to move your Kafka data to a different disk or storage device. To do this, you must create a partition reassignment plan that specifies the new log directory for each topic.
 
