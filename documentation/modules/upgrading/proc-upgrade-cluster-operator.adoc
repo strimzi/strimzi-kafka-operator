@@ -23,7 +23,7 @@ NOTE: Refer to the documentation supporting a specific version of Strimzi for in
 
 .Procedure
 
-. Take note of any configuration changes made to the existing Cluster Operator resources in the `/install/cluster-operator` directory.
+. Take note of any configuration changes made during the previous Cluster Operator installation.
 +
 Any changes will be *overwritten* by the new version of the Cluster Operator.
 
