@@ -19,15 +19,17 @@ Enabling the `strimzi` plugin automatically disables the built-in plugin.
 
 You can limit clients interacting with your brokers by setting byte-rate thresholds for producer and consumer bandwidth.
 
-* Using the `strimzi` plugin, the total limit is distributed across all clients. 
-For example, setting a 40 MBps producer byte-rate threshold limits two producers to 20 MBps each.
-* Using the `kafka` plugin, limits are applied per broker. 
-For example, setting a 20 MBps producer byte-rate threshold limits two producers to 20 MBps each.
+* Using the strimzi plugin, the total limit is distributed dynamically across all clients.
+For example, if you set a 40 MBps producer byte-rate threshold, the distribution across two producers is not static. 
+If one producer is using 10 MBps, the other can use up to 30 MBps.
+* Using the `kafka` plugin, limits are applied per broker.
+For example, setting a 20 MBps producer byte-rate threshold limits each producer to 20 MBps on a per-broker basis.
 
 Additional `strimzi` plugin options:
 
 * Set storage quotas to throttle Kafka producers based on disk storage utilization. 
 Limits can be specified in bytes (`minAvailableBytesPerVolume`) or percentage (`minAvailableRatioPerVolume`) of available disk space, applying to each disk individually. 
+When any broker in the cluster exceeds the configured disk threshold, clients are throttled. 
 This prevents disks from filling up too quickly and exceeding capacity, which can cause issues that are hard to rectify.
 * Exclude specific users (clients) from the restrictions.
 
@@ -94,7 +96,7 @@ spec:
       controllerMutationRate: 50 # <2>
 ----
 <1> Sets the CPU utilization limit to 55%.
-<2> Sets the controller mutation rate to 50.
+<2> Sets the controller mutation rate to 50 operations per second.
 
 . Apply the changes to the `Kafka` configuration.
 
