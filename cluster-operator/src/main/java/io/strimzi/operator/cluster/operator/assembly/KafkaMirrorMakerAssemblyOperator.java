@@ -40,6 +40,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * <p>Assembly operator for a "Kafka Mirror Maker" assembly, which manages:</p>
@@ -124,6 +125,10 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                 .compose(i -> mirrorHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(reconciliation, namespace, mirror.getComponentName(), 1_000, operationTimeoutMs))
                 .onComplete(reconciliationResult -> {
                         StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaMirrorMakerStatus, reconciliationResult.cause());
+
+                        // Add warning about Mirror Maker 1 being deprecated and removed soon
+                        LOGGER.warnCr(reconciliation, "Mirror Maker 1 is deprecated and will be removed in Apache Kafka 4.0.0. Please migrate to Mirror Maker 2.");
+                        StatusUtils.addConditionsToStatus(kafkaMirrorMakerStatus, Set.of(StatusUtils.buildWarningCondition("MirrorMaker1Deprecation", "Mirror Maker 1 is deprecated and will be removed in Apache Kafka 4.0.0. Please migrate to Mirror Maker 2.")));
 
                         kafkaMirrorMakerStatus.setReplicas(mirror.getReplicas());
                         kafkaMirrorMakerStatus.setLabelSelector(mirror.getSelectorLabels().toSelectorString());
