@@ -1,7 +1,25 @@
 Configures Kafka MirrorMaker.
 
+[id='property-mm-include-{context}']
+= `include`
+
+Use the `include` property to configure a list of topics that Kafka MirrorMaker mirrors from the source to the target Kafka cluster.
+
+The property allows any regular expression from the simplest case with a single topic name to complex patterns.
+For example, you can mirror topics A and B using `A|B` or all topics using `*`.
+You can also pass multiple regular expressions separated by commas to the Kafka MirrorMaker.
+
+[id='property-mm-producer-consumer-{context}']
+= `KafkaMirrorMakerConsumerSpec` and `KafkaMirrorMakerProducerSpec`
+
+Use the `KafkaMirrorMakerConsumerSpec` and `KafkaMirrorMakerProducerSpec` to configure source (consumer) and target (producer) clusters.
+
+Kafka MirrorMaker always works together with two Kafka clusters (source and target).
+To establish a connection, the bootstrap servers for the source and the target Kafka clusters are specified as comma-separated lists of `_HOSTNAME:PORT_` pairs.
+Each comma-separated list contains one or more Kafka brokers or a `Service` pointing to Kafka brokers specified as a `_HOSTNAME:PORT_` pair.
+
 [id='property-mm-loggers-{context}']
-= Logging
+= `logging`
 
 Kafka MirrorMaker has its own configurable logger:
 
