@@ -34,7 +34,7 @@ examples
 ├── mirror-maker <4>
 ├── metrics <5>
 ├── kafka <6>
-│   └── nodepools <7>
+│   └── kraft <7>
 ├── cruise-control <8>
 ├── connect <9>
 └── bridge <10>
@@ -42,10 +42,10 @@ examples
 <1> `KafkaUser` custom resource configuration, which is managed by the User Operator.
 <2> `KafkaTopic` custom resource configuration, which is managed by Topic Operator.
 <3> Authentication and authorization configuration for Kafka components. Includes example configuration for TLS and SCRAM-SHA-512 authentication. The Keycloak example includes `Kafka` custom resource configuration and a Keycloak realm specification. You can use the example to try Keycloak authorization services. There is also an example with enabled `oauth` authentication and `keycloak` authorization metrics.
-<4> `Kafka` custom resource configuration for a deployment of Mirror Maker. Includes example configuration for replication policy and synchronization frequency.
+<4> `KafkaMirrorMaker` and `KafkaMirrorMaker2` custom resource configurations for a deployment of MirrorMaker. Includes example configuration for replication policy and synchronization frequency.
 <5> xref:assembly-metrics-config-files-{context}[Metrics configuration], including Prometheus installation and Grafana dashboard files.
-<6> `Kafka` custom resource configuration for a deployment of Kafka. Includes example configuration for an ephemeral or persistent single or multi-node deployment.
-<7> `KafkaNodePool` configuration for Kafka nodes in a Kafka cluster. Includes example configuration for nodes in clusters that use KRaft (Kafka Raft metadata) mode or ZooKeeper.  
+<6> `Kafka` and `KafkaNodePool` custom resource configurations for a deployment of Kafka clusters that use ZooKeeper mode. Includes example configuration for an ephemeral or persistent single or multi-node deployment.
+<7> `Kafka` and `KafkaNodePool` configurations for a deployment of Kafka clusters that use KRaft (Kafka Raft metadata) mode.
 <8> `Kafka` custom resource with a deployment configuration for Cruise Control. Includes `KafkaRebalance` custom resources to generate optimization proposals from Cruise Control, with example configurations to use the default or user optimization goals.
 <9> `KafkaConnect` and `KafkaConnector` custom resource configuration for a deployment of Kafka Connect. Includes example configurations for a single or multi-node deployment.
 <10> `KafkaBridge` custom resource configuration for a deployment of Kafka Bridge.

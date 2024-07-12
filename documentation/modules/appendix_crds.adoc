@@ -2277,7 +2277,7 @@ include::../api/io.strimzi.api.kafka.model.connect.KafkaConnectSpec.adoc[levelof
 |The configuration of tracing in Kafka Connect.
 |template
 |xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
-|Template for Kafka Connect and Kafka Mirror Maker 2 resources. The template allows users to specify how the `Pods`, `Service`, and other services are generated.
+|Template for Kafka Connect and Kafka MirrorMaker 2 resources. The template allows users to specify how the `Pods`, `Service`, and other services are generated.
 |externalConfiguration
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 |Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
@@ -4030,7 +4030,7 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |The configuration of tracing in Kafka Connect.
 |template
 |xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
-|Template for Kafka Connect and Kafka Mirror Maker 2 resources. The template allows users to specify how the `Pods`, `Service`, and other services are generated.
+|Template for Kafka Connect and Kafka MirrorMaker 2 resources. The template allows users to specify how the `Pods`, `Service`, and other services are generated.
 |externalConfiguration
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 |Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
