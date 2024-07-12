@@ -28,6 +28,7 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
      */
     protected static final List<String> CRUISE_CONTROL_GOALS_LIST = List.of(
             CruiseControlGoals.RACK_AWARENESS_GOAL.toString(),
+            CruiseControlGoals.RACK_AWARENESS_DISTRIBUTION_GOAL.toString(),
             CruiseControlGoals.MIN_TOPIC_LEADERS_PER_BROKER_GOAL.toString(),
             CruiseControlGoals.REPLICA_CAPACITY_GOAL.toString(),
             CruiseControlGoals.DISK_CAPACITY_GOAL.toString(),
