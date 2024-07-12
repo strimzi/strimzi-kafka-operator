@@ -5,6 +5,9 @@ Configuration options relate to:
 * Goals configuration
 * Capacity limits for resource distribution goals
 
+The `config` properties are one part of the overall configuration for the resource.
+Use the `config` properties to configure Cruise Control options as keys.
+
 .Example Cruise Control configuration
 [source,yaml,subs="attributes+"]
 ----
@@ -31,8 +34,6 @@ spec:
       webserver.http.cors.exposeheaders: "User-Task-ID,Content-Type"
     # ...
 ----
-
-Use the `config` properties to configure Cruise Control options as keys.
 
 The values can be one of the following JSON types:
 

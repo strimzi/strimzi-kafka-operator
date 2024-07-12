@@ -1,6 +1,12 @@
-Configuration for Kafka listeners.
+Configures Kafka listeners.
 
-.Example configuration for a `loadbalancer` type listener
+[id='property-listener-config-brokerCertChainAndKey-{context}']
+= Providing your own listener certificates
+
+The `brokerCertChainAndKey` property is for listeners that have TLS encryption enabled only. 
+Use this property to provide your own Kafka listener certificates.
+
+.Example `loadbalancer` listener configuration to provide certificates
 [source,yaml,subs="attributes+"]
 ----
 listeners:
@@ -25,6 +31,48 @@ listeners:
 
 When the certificate or key in the `brokerCertChainAndKey` secret is updated, the operator automatically detects it in the next reconciliation and triggers a rolling update of the Kafka brokers to reload the certificate.
 
+[id='property-listener-config-traffic-policy-{context}']
+= Avoiding hops to other nodes
+
+The `externalTrafficPolicy` property is used with `loadbalancer` and `nodeport` listeners.
+When exposing Kafka outside of Kubernetes, you can choose `Local` or `Cluster`.
+`Local` avoids hops to other nodes and preserves the client IP, whereas `Cluster` does neither.
+The default is `Cluster`.
+
+[id='property-listener-config-source-ranges-{context}']
+= Providing CIDR source ranges for a loadbalancer
+
+The `loadBalancerSourceRanges` property is for `loadbalancer` listeners only. 
+When exposing Kafka outside of Kubernetes, use CIDR (Classless Inter-Domain Routing) source ranges in addition to labels and annotations to customize how a service is created.
+
+.Example `loadbalancer` listener configuration to provide source ranges
+[source,yaml,subs="attributes+"]
+----
+listeners:
+  #...
+  - name: external3
+    port: 9094
+    type: loadbalancer
+    tls: true
+    authentication:
+      type: tls
+    configuration:
+      brokerCertChainAndKey:
+        secretName: my-secret
+        certificate: my-listener-certificate.crt
+        key: my-listener-key.key
+      externalTrafficPolicy: Local
+      loadBalancerSourceRanges:
+        - 10.0.0.0/8
+        - 88.208.76.87/32  
+# ...
+----
+
+[id='property-listener-config-class-{context}']
+= Specifying an Ingress class
+
+The `class` property is for `ingress` listeners only and is used to configure an Ingress class.
+
 .Example `ingress` type listener using `nginx-internal` class
 [source,yaml,subs="attributes+"]
 ----
@@ -40,6 +88,21 @@ listeners:
 # ...
 ----
 
+[id='property-listener-config-preferredNodePortAddressType-{context}']
+= Specifying a preferred node port address type
+
+The `preferredNodePortAddressType` property is for `nodeport` listeners only.
+Use this property in your listener configuration to specify the first address type checked as the node address. 
+This property is useful, for example, if your deployment does not have DNS support or you only want to expose a broker internally through an internal DNS or IP address. 
+
+If an address of this type is found, it is used. If the preferred address type is not found, Strimzi proceeds through the types in the standard order of priority:
+
+* ExternalDNS
+* ExternalIP
+* Hostname
+* InternalDNS
+* InternalIP
+
 .Example `nodeport` listener using a preferred node port address type
 [source,yaml,subs=attributes+]
 ----
@@ -54,6 +117,15 @@ listeners:
       # ...
 # ...
 ----
+
+[id='property-listener-config-dns-{context}']
+= Using fully-qualified DNS names
+
+The `useServiceDnsDomain` property is for `internal` and `cluster-ip` listeners. 
+It defines whether the fully-qualified DNS names that include the cluster service suffix (usually `.cluster.local`) are used. 
+
+* Set to `false` (default) to generate advertised addresses without the service suffix; for example, `my-cluster-kafka-0.my-cluster-kafka-brokers.myproject.svc`. 
+* Set to `true` to generate advertised addresses with the service suffix; for example, `my-cluster-kafka-0.my-cluster-kafka-brokers.myproject.svc.cluster.local`.
 
 .Example `internal` listener using the service DNS domain
 [source,yaml,subs=attributes+]

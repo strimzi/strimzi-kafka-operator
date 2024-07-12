@@ -24,8 +24,8 @@ spec:
       maximumCacheSize: 10000
       expireAfterMs: 60000
       superUsers:
-        - CN=client_1
-        - user_2
-        - CN=client_3
+        - CN=user-1
+        - user-2
+        - CN=user-3
     # ...
 ----

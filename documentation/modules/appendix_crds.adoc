@@ -430,8 +430,8 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerCo
 |string
 |Configures a specific class for `Ingress` and `LoadBalancer` that defines which controller is used. If not specified, the default controller is used.
 
-* For an `ingress` listener, set the `ingressClassName` property in the `Ingress` resources.
-* For a `loadbalancer` listener, set the `loadBalancerClass` property  in the `Service` resources.
+* For an `ingress` listener, the operator uses this property to set the `ingressClassName` property in the `Ingress` resources.
+* For a `loadbalancer` listener, the operator uses this property to set the `loadBalancerClass` property  in the `Service` resources.
 
 For `ingress` and `loadbalancer` listeners only.
 |externalTrafficPolicy
@@ -465,7 +465,7 @@ If unspecified, Kubernetes will choose the default value based on the service ty
 |Specifies the IP Families used by the service. Available options are `IPv4` and `IPv6`. If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting.
 |createBootstrapService
 |boolean
-|Whether to create the bootstrap service or not. The bootstrap service is created by default (if not specified differently). This field can be used with the `loadBalancer` listener.
+|Whether to create the bootstrap service or not. The bootstrap service is created by default (if not specified differently). This field can be used with the `loadbalancer` listener.
 |finalizers
 |string array
 |A list of finalizers configured for the `LoadBalancer` type services created for this listener. If supported by the platform, the finalizer `service.kubernetes.io/load-balancer-cleanup` to make sure that the external load balancer is deleted together with the service.For more information, see https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#garbage-collecting-load-balancers. For `loadbalancer` listeners only.
@@ -540,7 +540,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerCo
 |Additional alternative names for the bootstrap service. The alternative names will be added to the list of subject alternative names of the TLS certificates.
 |host
 |string
-|Specifies the hostnames used by the bootstrap and per-broker services. For `route` (optional) or `ingress` (required) listeners only.
+|Specifies the hostname used for the bootstrap resource. For `route` (optional) or `ingress` (required) listeners only. Ensure the hostname resolves to the Ingress endpoints; no validation is performed by Strimzi.
 |nodePort
 |integer
 |Node port for the bootstrap service. For `nodeport` listeners only.

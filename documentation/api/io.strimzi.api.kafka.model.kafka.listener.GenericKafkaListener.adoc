@@ -51,6 +51,9 @@ The name and port must be unique within the Kafka cluster.
 By specifying a unique name and port for each listener, you can configure multiple listeners.
 The name can be up to 25 characters long, comprising lower-case letters and numbers.
 
+[id='property-listener-port-{context}']
+= Specifying a port number
+
 The port number is the port used in the Kafka cluster, which might not be the same port used for access by a client.
 
 * `loadbalancer` listeners use the specified port number, as do `internal` and `cluster-ip` listeners
@@ -167,6 +170,8 @@ A new loadbalancer service is created for every Kafka broker pod.
 An additional loadbalancer is created to serve as a Kafka _bootstrap_ address.
 Loadbalancers listen to the specified port number, which is port `9094` in the following example.
 +
+You can use the `loadBalancerSourceRanges` property to configure xref:property-listener-config-source-ranges-reference[source ranges] to restrict access to the specified IP addresses.
++
 .Example `loadbalancer` listener configuration
 [source,yaml,subs="+attributes"]
 ----
@@ -192,6 +197,8 @@ Kafka clients connect directly to the nodes of Kubernetes.
 An additional `NodePort` type of service is created to serve as a Kafka bootstrap address.
 +
 When configuring the advertised addresses for the Kafka broker pods, Strimzi uses the address of the node on which the given pod is running.
++
+You can use `preferredNodePortAddressType` property to configure the xref:property-listener-config-preferredNodePortAddressType-{context}[first address type checked as the node address].
 +
 .Example `nodeport` listener configuration
 [source,yaml,subs="+attributes"]

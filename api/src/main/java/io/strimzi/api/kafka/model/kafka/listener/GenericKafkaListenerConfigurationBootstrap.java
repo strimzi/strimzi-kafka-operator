@@ -52,8 +52,9 @@ public class GenericKafkaListenerConfigurationBootstrap implements UnknownProper
         this.alternativeNames = alternativeNames;
     }
 
-    @Description("Specifies the hostnames used by the bootstrap and per-broker services. " +
-        "For `route` (optional) or `ingress` (required) listeners only.") 
+    @Description("Specifies the hostname used for the bootstrap resource. " +
+        "For `route` (optional) or `ingress` (required) listeners only. " +
+        "Ensure the hostname resolves to the Ingress endpoints; no validation is performed by Strimzi.") 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getHost() {
         return host;

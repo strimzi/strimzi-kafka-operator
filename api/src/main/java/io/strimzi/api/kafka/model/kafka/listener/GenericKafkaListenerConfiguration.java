@@ -69,8 +69,8 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
 
     @Description("Configures a specific class for `Ingress` and `LoadBalancer` that defines which controller is used. " +
             "If not specified, the default controller is used.\n\n" +
-            "* For an `ingress` listener, set the `ingressClassName` property in the `Ingress` resources.\n" +
-            "* For a `loadbalancer` listener, set the `loadBalancerClass` property  in the `Service` resources.\n" +
+            "* For an `ingress` listener, the operator uses this property to set the `ingressClassName` property in the `Ingress` resources.\n" +
+            "* For a `loadbalancer` listener, the operator uses this property to set the `loadBalancerClass` property  in the `Service` resources.\n" +
             "\n" +
             "For `ingress` and `loadbalancer` listeners only.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -234,7 +234,7 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
 
     @Description("Whether to create the bootstrap service or not. " +
             "The bootstrap service is created by default (if not specified differently). " +
-            "This field can be used with the `loadBalancer` listener.")
+            "This field can be used with the `loadbalancer` listener.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public Boolean getCreateBootstrapService() {
         return createBootstrapService;

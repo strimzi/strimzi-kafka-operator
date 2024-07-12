@@ -1,5 +1,8 @@
 Configures a ZooKeeper cluster.
 
+The `config` properties are one part of the overall configuration for the resource.
+Use the `config` properties to configure ZooKeeper options as keys.
+
 .Example ZooKeeper configuration
 [source,yaml,subs="attributes+"]
 ----
@@ -15,8 +18,6 @@ spec:
       autopurge.purgeInterval: 2
     # ...
 ----
-
-Use the `config` properties to configure ZooKeeper options as keys.
 
 The values can be one of the following JSON types:
 

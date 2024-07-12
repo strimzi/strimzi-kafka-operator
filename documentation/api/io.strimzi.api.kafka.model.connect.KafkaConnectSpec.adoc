@@ -1,5 +1,8 @@
 Configures a Kafka Connect cluster.
 
+The `config` properties are one part of the overall configuration for the resource.
+Use the `config` properties to configure Kafka Connect options as keys.
+
 .Example Kafka Connect configuration
 [source,yaml,subs="attributes+"]
 ----
@@ -23,8 +26,6 @@ spec:
     status.storage.replication.factor: 3
   # ...
 ----
-
-Use the `config` properties to configure Kafka Connect options as keys.
 
 The values can be one of the following JSON types:
 

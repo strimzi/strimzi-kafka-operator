@@ -41,5 +41,3 @@ data:
 The `secretName` property contains the name of the `Secret`, and the `password` property contains the name of the key under which the password is stored inside the `Secret`.
 
 IMPORTANT: Do not specify the actual password in the `password` property.
-
-

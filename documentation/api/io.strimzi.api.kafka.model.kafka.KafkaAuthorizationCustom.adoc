@@ -21,9 +21,9 @@ spec:
       type: custom
       authorizerClass: io.mycompany.CustomAuthorizer
       superUsers:
-        - CN=client_1
-        - user_2
-        - CN=client_3
+        - CN=user-1
+        - user-2
+        - CN=user-3
     # ...
     config:
       authorization.custom.property1=value1
