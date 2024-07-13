@@ -590,7 +590,7 @@ public class CaReconciler {
                 .compose(dep -> {
                     if (dep != null) {
                         LOGGER.infoCr(reconciliation, "Rolling Deployment {} due to {}", deploymentName, reason);
-                        return deploymentOperator.rollingUpdate(reconciliation, reconciliation.namespace(), deploymentName, operationTimeoutMs);
+                        return deploymentOperator.singlePodDeploymentRollingUpdate(reconciliation, reconciliation.namespace(), deploymentName, operationTimeoutMs);
                     } else {
                         return Future.succeededFuture();
                     }
