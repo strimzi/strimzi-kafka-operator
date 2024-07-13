@@ -27,6 +27,13 @@ public class TemplateUtils {
      * It is used to prevent the creation of volumes outside this path.
      */
     protected static final String ALLOWED_MOUNT_PATH = "/mnt";
+    /**
+     * This Pattern defines a regex for validating volume names with the following criteria:
+     * Length: Must contain at most 63 characters.
+     * Characters: Can only contain lowercase alphanumeric characters, '-', '.', or '_'.
+     * Start: Must start with an alphanumeric character.
+     * End: Must end with an alphanumeric character.
+     **/
     public final static Pattern VOLUME_NAME_REGEX = Pattern.compile("^(?=.{0,63}$)[a-zA-Z0-9][a-zA-Z0-9-._]*[a-zA-Z0-9]$");
 
     /**

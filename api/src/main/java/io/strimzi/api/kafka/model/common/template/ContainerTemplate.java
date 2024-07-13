@@ -39,16 +39,16 @@ public class ContainerTemplate implements UnknownPropertyPreserving {
     private List<ContainerEnvVar> env;
     private SecurityContext securityContext;
     private Map<String, Object> additionalProperties;
-    private List<VolumeMount> additionalVolumeMounts;
+    private List<VolumeMount> volumeMounts;
     
     @Description("Additional volume mounts which should be applied to the container")
     @JsonProperty("volumeMounts")
     public List<VolumeMount> getAdditionalVolumeMounts() {
-        return additionalVolumeMounts;
+        return volumeMounts;
     }
 
     public void setAdditionalVolumeMounts(List<VolumeMount> additionalVolumeMounts) {
-        this.additionalVolumeMounts = additionalVolumeMounts;
+        this.volumeMounts = additionalVolumeMounts;
     }
 
     @Description("Environment variables which should be applied to the container.")
