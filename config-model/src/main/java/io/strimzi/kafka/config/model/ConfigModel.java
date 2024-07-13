@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -28,6 +29,8 @@ public class ConfigModel {
     @JsonProperty("enum")
     private List<String> values;
     private String pattern;
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    private boolean caseInsensitive = false;
 
     /**
      * @return The scope of the parameter.
@@ -142,6 +145,22 @@ public class ConfigModel {
     }
 
     /**
+     * @return  Flag indicating whether the option is case sensitive ot not
+     */
+    public boolean getCaseInsensitive() {
+        return caseInsensitive;
+    }
+
+    /**
+     * Sets the flag indicating whether the option is case sensitive ot not
+     *
+     * @param caseInsensitive   Flag indicating if the value is case sensitive or not
+     */
+    public void setCaseInsensitive(boolean caseInsensitive) {
+        this.caseInsensitive = caseInsensitive;
+    }
+
+    /**
      * Validates the option
      *
      * @param configName    Name of the option
@@ -176,11 +195,24 @@ public class ConfigModel {
 
     private List<String> validateString(String configName, String value) {
         List<String> errors = emptyList();
-        if (getValues() != null
-                && !getValues().contains(value)) {
-            errors = new ArrayList<>(1);
-            errors.add(configName + " has value '" + value + "' which is not one of the allowed values: " + getValues());
+
+        if (getValues() != null)    {
+            if (getCaseInsensitive())   {
+                // It is case-insensitive value
+                //     => we convert the String to upper case as that is what the Kafka validator does
+                if (!getValues().contains(value.toUpperCase(Locale.ROOT))) {
+                    errors = new ArrayList<>(1);
+                    errors.add(configName + " has value '" + value + "' which is not one of the allowed values (case-insensitive): " + getValues());
+                }
+            } else {
+                // It is case-sensitive value => we validate it as it is
+                if (!getValues().contains(value)) {
+                    errors = new ArrayList<>(1);
+                    errors.add(configName + " has value '" + value + "' which is not one of the allowed values: " + getValues());
+                }
+            }
         }
+
         if (getPattern() != null
                 && !value.matches(getPattern())) {
             if (errors.isEmpty()) {
@@ -188,6 +220,7 @@ public class ConfigModel {
             }
             errors.add(configName + " has value '" + value + "' which does not match the required pattern: " + getPattern());
         }
+
         return errors;
     }
 
@@ -291,6 +324,13 @@ public class ConfigModel {
                     errors = new ArrayList<>(1);
                 }
                 errors.add(maximumErrorMsg(configName, value));
+            }
+            if (getPattern() != null
+                    && !value.matches(getPattern())) {
+                if (errors.isEmpty()) {
+                    errors = new ArrayList<>(1);
+                }
+                errors.add(configName + " has value '" + value + "' which does not match the required pattern: " + getPattern());
             }
         } catch (NumberFormatException e) {
             errors = singletonList(numFormatMsg(configName, value, "an int"));

@@ -135,7 +135,7 @@
         <fasterxml.jackson-jaxrs.version>2.16.2</fasterxml.jackson-jaxrs.version>
         <vertx.version>4.5.9</vertx.version>
         <vertx-junit5.version>4.5.9</vertx-junit5.version>
-        <kafka.version>3.7.1</kafka.version>
+        <kafka.version>3.8.0</kafka.version>
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
         <zookeeper.version>3.8.4</zookeeper.version>
         <snappy.version>1.1.10.5</snappy.version>
@@ -168,7 +168,7 @@
         <rest-assured.version>4.4.0</rest-assured.version>
         <rest-assured-json-path.version>4.4.0</rest-assured-json-path.version>
         <bouncycastle.version>1.76</bouncycastle.version>
-        <kroxylicious-testing.version>0.8.1</kroxylicious-testing.version>
+        <kroxylicious-testing.version>0.9.0</kroxylicious-testing.version>
         <kindcontainer.version>1.4.6</kindcontainer.version>
         <junit4.version>4.13.2</junit4.version>
         <skodjob.version>0.1.1</skodjob.version>
