@@ -8,7 +8,8 @@
 [role="_abstract"]
 This procedure describes how to upgrade a Cluster Operator deployment to use Strimzi {ProductVersion}.
 
-Follow this procedure if you deployed the Cluster Operator using the installation YAML files.
+Follow this procedure if you deployed the Cluster Operator using the installation YAML files in the `install/cluster-operator/` directory. 
+The steps include the necessary configuration changes when the Cluster Operator watches multiple or all namespaces.
 
 The availability of Kafka clusters managed by the Cluster Operator is not affected by the upgrade operation.
 
@@ -18,22 +19,49 @@ NOTE: Refer to the documentation supporting a specific version of Strimzi for in
 
 * An existing Cluster Operator deployment is available.
 * You have xref:downloads-{context}[downloaded the release artifacts for Strimzi {ProductVersion}].
+* You need an account with permission to create and manage `CustomResourceDefinition` and RBAC (`ClusterRole`, and `RoleBinding`) resources.
 
 .Procedure
 
-. Take note of any configuration changes made to the existing Cluster Operator resources (in the `/install/cluster-operator` directory).
+. Take note of any configuration changes made during the previous Cluster Operator installation.
++
 Any changes will be *overwritten* by the new version of the Cluster Operator.
 
 . Update your custom resources to reflect the supported configuration options available for Strimzi version {ProductVersion}.
 
-. Update the Cluster Operator.
-
-.. Modify the installation files for the new Cluster Operator version according to the namespace the Cluster Operator is running in.
+. Modify the installation files for the new Cluster Operator version to reflect the namespace in which the Cluster Operator is running.
 +
 include::../../shared/snip-cluster-operator-namespace-sed.adoc[]
+
+. If you modified environment variables in the `Deployment` configuration, edit the
+`060-Deployment-strimzi-cluster-operator.yaml` file to use those environment variables.
 +
-.. If you modified one or more environment variables in your existing Cluster Operator `Deployment`, edit the
-`install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` file to use those environment variables.
+** If the Cluster Operator is watching multiple namespaces, add the list of namespaces to the `STRIMZI_NAMESPACE` environment variable.
+** If the Cluster Operator is watching all namespaces, specify `value: "*"` for the `STRIMZI_NAMESPACE` environment variable.
+
+. If the Cluster Operator is watching more than one namespace, update the role bindings.
++
+** If watching multiple namespaces, replace the `namespace` in the `RoleBinding` installation files with the actual namespace name and create the role bindings for *each* namespace:
++
+.Creating role bindings for a namespace
+[source,shell]
+----
+kubectl create -f install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml -n <watched_namespace>
+kubectl create -f install/cluster-operator/023-RoleBinding-strimzi-cluster-operator.yaml -n <watched_namespace>
+kubectl create -f install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml -n <watched_namespace>
+----
++
+For example, if the Cluster Operator is watching three namespaces, create three sets of role bindings by substituting `<watched_namespace>` with the name of each namespace.
++
+** If watching all namespaces, recreate the cluster role bindings that grant cluster-wide access (if needed):
++
+.Granting cluster-wide access using role bindings
+[source,shell]
+----
+kubectl create clusterrolebinding strimzi-cluster-operator-namespaced --clusterrole=strimzi-cluster-operator-namespaced --serviceaccount my-cluster-operator-namespace:strimzi-cluster-operator
+kubectl create clusterrolebinding strimzi-cluster-operator-watched --clusterrole=strimzi-cluster-operator-watched --serviceaccount my-cluster-operator-namespace:strimzi-cluster-operator
+kubectl create clusterrolebinding strimzi-cluster-operator-entity-operator-delegation --clusterrole=strimzi-entity-operator --serviceaccount my-cluster-operator-namespace:strimzi-cluster-operator
+----
 
 . When you have an updated configuration, deploy it along with the rest of the installation resources:
 +
@@ -44,17 +72,16 @@ kubectl replace -f install/cluster-operator
 +
 Wait for the rolling updates to complete.
 
-. If the new Operator version no longer supports the Kafka version you are upgrading from, the Cluster Operator returns an error message to say the version is not supported.
-Otherwise, no error message is returned.
-
-* If the error message is returned, upgrade to a Kafka version that is supported by the new Cluster Operator version:
-
+. If the new operator version no longer supports the Kafka version you are upgrading from, an error message is returned.
++
+To resolve this, upgrade to a supported Kafka version:
++
+--
 .. Edit the `Kafka` custom resource.
-
 .. Change the `spec.kafka.version` property to a supported Kafka version.
-
-* If the error message is _not_ returned, go to the next step.
-You will upgrade the Kafka version later.
+--
++
+If no error message is returned, you can proceed to the next step and upgrade the Kafka version later.
 
 . Get the image for the Kafka pod to ensure the upgrade was successful:
 +

@@ -45,13 +45,13 @@ spec:
 
 . For each namespace listed, install the `RoleBindings`.
 +
-In this example, we replace `_watched-namespace_` in these commands with the namespaces listed in the previous step,
+In this example, we replace `watched-namespace` in these commands with the namespaces listed in the previous step,
 repeating them for `watched-namespace-1`, `watched-namespace-2`, `watched-namespace-3`:
 +
-[source,shell,subs="+quotes,attributes+"]
-kubectl create -f install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml -n _<watched_namespace>_
-kubectl create -f install/cluster-operator/023-RoleBinding-strimzi-cluster-operator.yaml -n _<watched_namespace>_
-kubectl create -f install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml -n _<watched_namespace>_
+[source,shell]
+kubectl create -f install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml -n <watched_namespace>
+kubectl create -f install/cluster-operator/023-RoleBinding-strimzi-cluster-operator.yaml -n <watched_namespace>
+kubectl create -f install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml -n <watched_namespace>
 
 . Deploy the Cluster Operator:
 +

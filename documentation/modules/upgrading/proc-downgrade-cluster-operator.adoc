@@ -22,9 +22,10 @@ If a feature gate is permanently enabled, you may need to downgrade to a version
 
 .Procedure
 
-. Take note of any configuration changes made to the existing Cluster Operator resources (in the `/install/cluster-operator` directory).
-Any changes will be *overwritten* by the previous version of the Cluster Operator.
+. Take note of any configuration changes made during the previous Cluster Operator installation.
 +
+Any changes will be *overwritten* by the previous version of the Cluster Operator.
+
 . Revert your custom resources to reflect the supported configuration options available for the version of Strimzi you are downgrading to.
 
 . Update the Cluster Operator.
