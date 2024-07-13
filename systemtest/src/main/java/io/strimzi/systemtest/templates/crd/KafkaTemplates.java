@@ -252,17 +252,26 @@ public class KafkaTemplates {
         return defaultKafka(kafka, clusterName, kafkaReplicas, zookeeperReplicas)
             .editSpec()
                 .editKafka()
-                    // faster cluster model generation tuning: reduce reporting and metadata refresh intervals
+                    // faster cluster model generation tuning
                     .addToConfig("cruise.control.metrics.reporter.metrics.reporting.interval.ms", 5_000)
                     .addToConfig("cruise.control.metrics.reporter.metadata.max.age.ms", 4_000)
+                    .addToConfig("cruise.control.metrics.topic.replication.factor", 1)
+                    .addToConfig("cruise.control.metrics.topic.min.insync.replicas", 1)
                 .endKafka()
                 .editCruiseControl()
-                    // Extend active users tasks
+                    // extend active users tasks
                     .addToConfig("max.active.user.tasks", 10)
-                    // faster cluster model generation tuning: reduce sampling and metadata refresh intervals
+                    // faster cluster model generation tuning
                     .addToConfig("metric.sampling.interval.ms", 5_000)
                     .addToConfig("cruise.control.metrics.reporter.metrics.reporting.interval.ms", 5_000)
                     .addToConfig("metadata.max.age.ms", 4_000)
+                    .addToConfig("sample.store.topic.replication.factor", 1)
+                    .addToConfig("partition.sample.store.topic.partition.count", 1)
+                    .addToConfig("broker.sample.store.topic.partition.count", 1)
+                    .addToConfig("skip.sample.store.topic.rack.awareness.check", true)
+                    .addToConfig("partition.metrics.window.ms", 10_000)
+                    .addToConfig("broker.metrics.window.ms", 10_000)
+                    .addToConfig("monitor.state.update.interval.ms", 10_000)
                 .endCruiseControl()
             .endSpec();
     }
