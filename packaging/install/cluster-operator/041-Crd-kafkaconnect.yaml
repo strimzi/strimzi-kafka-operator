@@ -149,13 +149,13 @@ spec:
                     required:
                     - key
                     - secretName
-                    description: Link to Kubernetes Secret containing the client assertion which was manually configured for the client.
+                    description: Link to Kubernetes secret containing the client assertion which was manually configured for the client.
                   clientAssertionLocation:
                     type: string
                     description: Path to the file containing the client assertion to be used for authentication.
                   clientAssertionType:
                     type: string
-                    description: "The client assertion type. If not set, and `clientAssertion` or `clientAssertionLocation` is configured, then this value defaults to `urn:ietf:params:oauth:client-assertion-type:jwt-bearer`."
+                    description: "The client assertion type. If not set, and either `clientAssertion` or `clientAssertionLocation` is configured, this value defaults to `urn:ietf:params:oauth:client-assertion-type:jwt-bearer`."
                   clientId:
                     type: string
                     description: OAuth Client ID which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
