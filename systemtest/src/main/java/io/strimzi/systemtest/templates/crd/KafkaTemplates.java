@@ -252,16 +252,31 @@ public class KafkaTemplates {
         return defaultKafka(kafka, clusterName, kafkaReplicas, zookeeperReplicas)
             .editSpec()
                 .editKafka()
-                    // faster cluster model generation tuning
+                    .addToConfig("cruise.control.metrics.reporter.metrics.reporting.interval.ms", 5_000)
+                    .addToConfig("cruise.control.metrics.reporter.metadata.max.age.ms", 4_000)
+                .endKafka()
+                .editCruiseControl()
+                    .addToConfig("max.active.user.tasks", 10)
+                    .addToConfig("metric.sampling.interval.ms", 5_000)
+                    .addToConfig("cruise.control.metrics.reporter.metrics.reporting.interval.ms", 5_000)
+                    .addToConfig("metadata.max.age.ms", 4_000)
+                .endCruiseControl()
+            .endSpec();
+    }
+
+    public static KafkaBuilder kafkaWithCruiseControlTunedForFastModelGeneration(String clusterName, int kafkaReplicas, int zookeeperReplicas) {
+        Kafka kafka = KafkaTemplates.getKafkaFromYaml(TestConstants.PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG, false);
+
+        return KafkaTemplates.defaultKafka(kafka, clusterName, kafkaReplicas, zookeeperReplicas)
+            .editSpec()
+                .editKafka()
                     .addToConfig("cruise.control.metrics.reporter.metrics.reporting.interval.ms", 5_000)
                     .addToConfig("cruise.control.metrics.reporter.metadata.max.age.ms", 4_000)
                     .addToConfig("cruise.control.metrics.topic.replication.factor", 1)
                     .addToConfig("cruise.control.metrics.topic.min.insync.replicas", 1)
                 .endKafka()
                 .editCruiseControl()
-                    // extend active users tasks
                     .addToConfig("max.active.user.tasks", 10)
-                    // faster cluster model generation tuning
                     .addToConfig("metric.sampling.interval.ms", 5_000)
                     .addToConfig("cruise.control.metrics.reporter.metrics.reporting.interval.ms", 5_000)
                     .addToConfig("metadata.max.age.ms", 4_000)
