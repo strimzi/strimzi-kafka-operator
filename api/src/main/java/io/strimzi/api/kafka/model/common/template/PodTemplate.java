@@ -199,12 +199,12 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
     @Description("Additional volumes that can be mounted to the pod.")
     @JsonProperty("volumes")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public List<AdditionalVolume> getAdditionalVolumes() {
+    public List<AdditionalVolume> getVolumes() {
         return volumes;
     }
 
-    public void setAdditionalVolumes(List<AdditionalVolume> additionalVolumes) {
-        this.volumes = additionalVolumes;
+    public void setVolumes(List<AdditionalVolume> volumes) {
+        this.volumes = volumes;
     }
 
     @Override

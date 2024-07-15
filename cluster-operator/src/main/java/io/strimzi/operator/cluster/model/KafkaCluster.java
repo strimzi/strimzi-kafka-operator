@@ -1400,7 +1400,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * Generates the volume mounts for a Kafka container
      *
      * @param storage   Storage configuration for which the volume mounts should be generated
-     * @param volumeMounts Additional volume mounts to include in the returned list
+     * @param additionalVolumeMounts Additional volume mounts to include in the returned list
      *
      * @return  List of volume mounts
      */
@@ -1454,7 +1454,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         List<VolumeMount> volumeMountList = new ArrayList<>();
         volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
         if (pool.templateInitContainer != null) {
-            addAdditionalVolumeMounts(volumeMountList, pool.templateInitContainer.getAdditionalVolumeMounts());
+            addAdditionalVolumeMounts(volumeMountList, pool.templateInitContainer.getVolumeMounts());
         }
         return volumeMountList;
     }
@@ -1548,7 +1548,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 pool.resources,
                 getEnvVars(pool),
                 getContainerPortList(pool),
-                getVolumeMounts(pool.storage, pool.templateContainer == null ? Collections.emptyList() : pool.templateContainer.getAdditionalVolumeMounts()),
+                getVolumeMounts(pool.storage, pool.templateContainer == null ? Collections.emptyList() : pool.templateContainer.getVolumeMounts()),
                 ProbeUtils.defaultBuilder(livenessProbeOptions).withNewExec().withCommand("/opt/kafka/kafka_liveness.sh").endExec().build(),
                 ProbeUtils.defaultBuilder(readinessProbeOptions).withNewExec().withCommand("/opt/kafka/kafka_readiness.sh").endExec().build(),
                 imagePullPolicy

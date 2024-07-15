@@ -345,7 +345,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         volumeMounts.add(createVolumeMount(CruiseControl.API_AUTH_CONFIG_VOLUME_NAME, CruiseControl.API_AUTH_CONFIG_VOLUME_MOUNT));
         volumeMounts.add(createVolumeMount(CONFIG_VOLUME_NAME, CONFIG_VOLUME_MOUNT));
         if (templateContainer != null) {
-            addAdditionalVolumeMounts(volumeMounts, templateContainer.getAdditionalVolumeMounts());
+            addAdditionalVolumeMounts(volumeMounts, templateContainer.getVolumeMounts());
         }
         return volumeMounts;
     }

@@ -43,12 +43,12 @@ public class ContainerTemplate implements UnknownPropertyPreserving {
     
     @Description("Additional volume mounts which should be applied to the container")
     @JsonProperty("volumeMounts")
-    public List<VolumeMount> getAdditionalVolumeMounts() {
+    public List<VolumeMount> getVolumeMounts() {
         return volumeMounts;
     }
 
-    public void setAdditionalVolumeMounts(List<VolumeMount> additionalVolumeMounts) {
-        this.volumeMounts = additionalVolumeMounts;
+    public void setVolumeMounts(List<VolumeMount> volumeMounts) {
+        this.volumeMounts = volumeMounts;
     }
 
     @Description("Environment variables which should be applied to the container.")

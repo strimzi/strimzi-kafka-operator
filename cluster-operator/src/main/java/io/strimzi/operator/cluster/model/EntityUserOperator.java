@@ -244,7 +244,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
         volumeMounts.add(VolumeUtils.createVolumeMount(EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
         
         if (templateContainer != null) {
-            addAdditionalVolumeMounts(volumeMounts, templateContainer.getAdditionalVolumeMounts());
+            addAdditionalVolumeMounts(volumeMounts, templateContainer.getVolumeMounts());
         }
         return volumeMounts;
     }

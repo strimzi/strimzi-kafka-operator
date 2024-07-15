@@ -59,7 +59,7 @@ public class TemplateUtils {
      * @param existingVolumes The list of existing volumes to which the additional volumes will be added.
      */
     public static void addAdditionalVolumes(PodTemplate templatePod, List<Volume> existingVolumes) {
-        if (templatePod.getAdditionalVolumes() != null) {
+        if (templatePod.getVolumes() != null) {
 
             // Extract the names and paths of the existing volumes
             List<String> existingVolumeNames = existingVolumes.stream().map(Volume::getName).toList();
@@ -68,7 +68,7 @@ public class TemplateUtils {
             List<String> invalidNames = existingVolumeNames.stream().filter(name -> !VOLUME_NAME_REGEX.matcher(name).matches()).toList();
 
             // Find duplicate names in the additional volumes
-            List<String> duplicateNames = templatePod.getAdditionalVolumes().stream()
+            List<String> duplicateNames = templatePod.getVolumes().stream()
                     .map(AdditionalVolume::getName)
                     .filter(existingVolumeNames::contains)
                     .toList();
@@ -83,7 +83,7 @@ public class TemplateUtils {
                 throw new InvalidResourceException("Duplicate volume names found in additional volumes: " + duplicateNames);
             }
 
-            templatePod.getAdditionalVolumes().forEach(volumeConfig -> existingVolumes.add(createVolumeFromConfig(volumeConfig)));
+            templatePod.getVolumes().forEach(volumeConfig -> existingVolumes.add(createVolumeFromConfig(volumeConfig)));
         }
     }
 

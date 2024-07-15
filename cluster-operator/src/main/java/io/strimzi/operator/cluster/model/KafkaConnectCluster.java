@@ -446,7 +446,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         volumeMountList.addAll(getExternalConfigurationVolumeMounts());
 
         if (templateContainer != null) {
-            addAdditionalVolumeMounts(volumeMountList, templateContainer.getAdditionalVolumeMounts());
+            addAdditionalVolumeMounts(volumeMountList, templateContainer.getVolumeMounts());
         }
         return volumeMountList;
     }
@@ -455,7 +455,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         List<VolumeMount> volumeMountList = new ArrayList<>();
         volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
         if (templateInitContainer != null) {
-            addAdditionalVolumeMounts(volumeMountList, templateInitContainer.getAdditionalVolumeMounts());
+            addAdditionalVolumeMounts(volumeMountList, templateInitContainer.getVolumeMounts());
         }
         return volumeMountList;
     }
