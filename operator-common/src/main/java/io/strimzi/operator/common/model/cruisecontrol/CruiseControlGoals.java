@@ -14,6 +14,11 @@ public enum CruiseControlGoals {
     RACK_AWARENESS_GOAL("com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal"),
 
     /**
+     * Rack aware distribution goal
+     */
+    RACK_AWARENESS_DISTRIBUTION_GOAL("com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareDistributionGoal"),
+
+    /**
      * Minimum topic leaders per broker goal
      */
     MIN_TOPIC_LEADERS_PER_BROKER_GOAL("com.linkedin.kafka.cruisecontrol.analyzer.goals.MinTopicLeadersPerBrokerGoal"),
