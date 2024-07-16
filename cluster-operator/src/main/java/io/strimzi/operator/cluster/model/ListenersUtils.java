@@ -45,7 +45,7 @@ public class ListenersUtils {
      *
      * @param listener  Listener to check
      *
-     * @return  True if the listener uses OAuth authentication. False otherwise.
+     * @return  True if the listener is configured to use OAuth authentication. False otherwise.
      */
     public static boolean isListenerWithOAuth(GenericKafkaListener listener) {
         if (listener.getAuth() == null || listener.getAuth().getType() == null)

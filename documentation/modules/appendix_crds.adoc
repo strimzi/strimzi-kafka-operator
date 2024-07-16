@@ -336,6 +336,12 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |includeAcceptHeader
 |boolean
 |Whether the Accept header should be set in requests to the authorization servers. The default value is `true`.
+|serverBearerTokenLocation
+|string
+|Path to the file on the local filesystem that contains a bearer token to be used instead of client_id and secret when authenticating to authorization server.
+|userNamePrefix
+|string
+|The prefix to use with the value of `userNameClaim` to construct the user id. This only takes effect if `userNameClaim` is specified, and the value is present for the claim. When used in combination with `fallbackUserNameClaims` it ensures consistent mapping of usernames and client ids into the same user id space and prevents name collisions.
 |====
 
 [id='type-GenericSecretSource-{context}']
@@ -2532,6 +2538,21 @@ It must have the value `oauth` for the type `KafkaClientAuthenticationOAuth`.
 |includeAcceptHeader
 |boolean
 |Whether the Accept header should be set in requests to the authorization servers. The default value is `true`.
+|accessTokenLocation
+|string
+|Path to the token file containing an access token to be used for authentication.
+|clientAssertion
+|xref:type-GenericSecretSource-{context}[`GenericSecretSource`]
+|Link to Kubernetes Secret containing the client assertion which was manually configured for the client.
+|clientAssertionLocation
+|string
+|Path to the file containing the client assertion to be used for authentication.
+|clientAssertionType
+|string
+|The client assertion type. If not set, and `clientAssertion` or `clientAssertionLocation` is configured, then this value defaults to `urn:ietf:params:oauth:client-assertion-type:jwt-bearer`.
+|saslExtensions
+|map
+|SASL extensions parameters.
 |====
 
 [id='type-JaegerTracing-{context}']

@@ -17,6 +17,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Configures the Kafka client authentication using SASl OAUTHBEARER mechanism in client based components
@@ -30,7 +31,8 @@ import java.util.List;
 @JsonPropertyOrder({"type", "clientId", "username", "scope", "audience", "tokenEndpointUri", "connectTimeoutSeconds",
     "readTimeoutSeconds", "httpRetries", "httpRetryPauseMs", "clientSecret", "passwordSecret", "accessToken",
     "refreshToken", "tlsTrustedCertificates", "disableTlsHostnameVerification", "maxTokenExpirySeconds",
-    "accessTokenIsJwt", "enableMetrics", "includeAcceptHeader"})
+    "accessTokenIsJwt", "enableMetrics", "includeAcceptHeader", "accessTokenLocation",
+    "clientAssertion", "clientAssertionLocation", "clientAssertionType", "saslExtensions"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
@@ -48,6 +50,7 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
     private GenericSecretSource clientSecret;
     private PasswordSecretSource passwordSecret;
     private GenericSecretSource accessToken;
+    private String accessTokenLocation;
     private GenericSecretSource refreshToken;
     private List<CertSecretSource> tlsTrustedCertificates;
     private boolean disableTlsHostnameVerification = false;
@@ -55,6 +58,10 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
     private boolean accessTokenIsJwt = true;
     private boolean enableMetrics = false;
     private boolean includeAcceptHeader = true;
+    private GenericSecretSource clientAssertion;
+    private String clientAssertionLocation;
+    private String clientAssertionType;
+    private Map<String, String> saslExtensions;
 
     @Description("Must be `" + TYPE_OAUTH + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -166,6 +173,16 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
         this.accessToken = accessToken;
     }
 
+    @Description("Path to the token file containing an access token to be used for authentication.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getAccessTokenLocation() {
+        return accessTokenLocation;
+    }
+
+    public void setAccessTokenLocation(String path) {
+        this.accessTokenLocation = path;
+    }
+
     @Description("Link to Kubernetes Secret containing the refresh token which can be used to obtain access token from the authorization server.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public GenericSecretSource getRefreshToken() {
@@ -255,5 +272,46 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
 
     public void setIncludeAcceptHeader(boolean includeAcceptHeader) {
         this.includeAcceptHeader = includeAcceptHeader;
+    }
+
+    @Description("Link to Kubernetes Secret containing the client assertion which was manually configured for the client.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public GenericSecretSource getClientAssertion() {
+        return clientAssertion;
+    }
+
+    public void setClientAssertion(GenericSecretSource clientAssertion) {
+        this.clientAssertion = clientAssertion;
+    }
+
+    @Description("Path to the file containing the client assertion to be used for authentication.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getClientAssertionLocation() {
+        return clientAssertionLocation;
+    }
+
+    public void setClientAssertionLocation(String path) {
+        this.clientAssertionLocation = path;
+    }
+
+    @Description("The client assertion type. If not set, and `clientAssertion` or `clientAssertionLocation` is configured, " +
+            "then this value defaults to `urn:ietf:params:oauth:client-assertion-type:jwt-bearer`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getClientAssertionType() {
+        return clientAssertionType;
+    }
+
+    public void setClientAssertionType(String assertionType) {
+        this.clientAssertionType = assertionType;
+    }
+
+    @Description("SASL extensions parameters")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Map<String, String> getSaslExtensions() {
+        return saslExtensions;
+    }
+
+    public void setSaslExtensions(Map<String, String> saslExtensions) {
+        this.saslExtensions = saslExtensions;
     }
 }

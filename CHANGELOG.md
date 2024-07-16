@@ -3,6 +3,9 @@
 ## 0.43.0
 
 * Added alerts for Connectors/Tasks in failed state.
+* Additional OAuth configuration options have been added for 'oauth' authentication on the listener and the client. 
+  On the listener `serverBearerTokenLocation` and `userNamePrefix` have been added. 
+  On the client `accessTokenLocation`, `clientAssertion`, `clientAssertionLocation`, `clientAssertionType`, and `saslExtensions` have been added.
 
 ## 0.42.0
 
