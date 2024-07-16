@@ -80,8 +80,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 @ExtendWith(KafkaClusterExtension.class)
 class BatchingTopicControllerTest {
     private static final String NAMESPACE = TopicOperatorTestUtil.namespaceName(BatchingTopicControllerTest.class);
-    private static final String ALTERABLE_TOPIC_CONFIGS = "compression.type, max.message.bytes, " +
-        "message.timestamp.difference.max.ms, message.timestamp.type, retention.bytes, retention.ms";
 
     private static KubernetesClient kubernetesClient;
     private final Admin[] kafkaAdminClient = new Admin[] {null};
