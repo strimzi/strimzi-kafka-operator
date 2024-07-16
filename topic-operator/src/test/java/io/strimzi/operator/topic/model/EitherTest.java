@@ -13,7 +13,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EitherTest {
-
     private final Either<String, Integer> right = Either.ofRight(1);
     private final Either<String, Integer> left = Either.ofLeft("A");
 
@@ -65,5 +64,4 @@ class EitherTest {
         assertEquals("Right(1)", right.toString());
         assertEquals("Left(A)", left.toString());
     }
-
 }
