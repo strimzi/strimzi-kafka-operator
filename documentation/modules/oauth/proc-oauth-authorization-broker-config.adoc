@@ -60,9 +60,9 @@ spec:
       delegateToKafkaAcls: false <4>
       disableTlsHostnameVerification: false <5>
       superUsers: <6>
-        - CN=client_1
-        - user_2
-        - CN=client_3
+        - CN=user-1
+        - user-2
+        - CN=user-3
       tlsTrustedCertificates: <7>
         - secretName: oauth-server-cert
           pattern: "*.crt"

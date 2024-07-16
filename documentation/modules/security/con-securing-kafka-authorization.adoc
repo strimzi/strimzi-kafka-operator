@@ -29,8 +29,17 @@ and are supported by all authorization mechanisms.
 To designate super users for a Kafka cluster, add a list of user principals to the `superUsers` property.
 If a user uses mTLS authentication, the username is the common name from the TLS certificate subject prefixed with `CN=`.
 If you are not using the User Operator and using your own certificates for mTLS, the username is the full certificate subject.
-A full certificate subject can have the following fields: `CN=user,OU=my_ou,O=my_org,L=my_location,ST=my_state,C=my_country_code`. 
-Omit any fields that are not present.
+
+A full certificate subject can include the following fields: 
+
+* `CN=<common_name>`
+* `OU=<organizational_unit>`
+* `O=<organization>` 
+* `L=<locality>`
+* `ST=<state>`
+* `C=<country_code>` 
+
+Omit any fields that are not applicable.
 
 .An example configuration with super users
 [source,yaml,subs="attributes+"]
@@ -46,11 +55,11 @@ spec:
     authorization:
       type: simple
       superUsers:
-        - CN=client_1
-        - user_2
-        - CN=client_3
-        - CN=client_4,OU=my_ou,O=my_org,L=my_location,ST=my_state,C=US
-        - CN=client_5,OU=my_ou,O=my_org,C=GB
-        - CN=client_6,O=my_org
+        - CN=user-1
+        - user-2
+        - CN=user-3
+        - CN=user-4,OU=my-ou,O=my-org,L=my-location,ST=my-state,C=US
+        - CN=user-5,OU=my-ou,O=my-org,C=GB
+        - CN=user-6,O=my-org
     # ...
 ----

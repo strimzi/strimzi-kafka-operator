@@ -1,5 +1,6 @@
-To configure custom authentication, set the `type` property to `custom`.
+Configures custom authentication for listeners.
 
+To configure custom authentication, set the `type` property to `custom`.
 Custom authentication allows for any type of Kafka-supported authentication to be used.
 
 .Example custom OAuth authentication configuration
@@ -36,16 +37,10 @@ A protocol map is generated that uses the `sasl` and `tls` values to determine w
 * SASL = True, TLS = False -> SASL_PLAINTEXT
 * SASL = False, TLS = False -> PLAINTEXT
 
-= `listenerConfig`
-Listener configuration specified using `listenerConfig` is prefixed with `listener.name._<listener_name>-<port>_`.
-For example, `sasl.enabled.mechanisms` becomes `listener.name._<listener_name>-<port>_.sasl.enabled.mechanisms`.
-
-= `secrets`
-Secrets are mounted to `/opt/kafka/custom-authn-secrets/custom-listener-_<listener_name>-<port>_/_<secret_name>_` in the Kafka broker nodes' containers.
-
+Secrets are mounted to `/opt/kafka/custom-authn-secrets/custom-listener-<listener_name>-<port>/<secret_name>` in the Kafka broker nodes' containers.
 For example, the mounted secret (`example`) in the example configuration would be located at `/opt/kafka/custom-authn-secrets/custom-listener-oauth-bespoke-9093/example`.
 
-= Principal builder
+= Setting a custom principal builder
 You can set a custom principal builder in the Kafka cluster configuration.
 However, the principal builder is subject to the following requirements:
 

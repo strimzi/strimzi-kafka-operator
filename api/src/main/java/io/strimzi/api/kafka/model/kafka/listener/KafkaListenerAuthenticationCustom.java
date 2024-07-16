@@ -55,7 +55,7 @@ public class KafkaListenerAuthenticationCustom extends KafkaListenerAuthenticati
         this.sasl = enabled;
     }
 
-    @Description("Configuration to be used for a specific listener. All values are prefixed with listener.name._<listener_name>_.")
+    @Description("Configuration to be used for a specific listener. All values are prefixed with `listener.name.<listener_name>`.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Map<String, Object> getListenerConfig() {
         return listenerConfig;
@@ -65,7 +65,7 @@ public class KafkaListenerAuthenticationCustom extends KafkaListenerAuthenticati
         this.listenerConfig = config;
     }
 
-    @Description("Secrets to be mounted to /opt/kafka/custom-authn-secrets/custom-listener-_<listener_name>-<port>_/_<secret_name>_")
+    @Description("Secrets to be mounted to `/opt/kafka/custom-authn-secrets/custom-listener-<listener_name>-<port>/<secret_name>`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public List<GenericSecretSource> getSecrets() {
         return secrets;

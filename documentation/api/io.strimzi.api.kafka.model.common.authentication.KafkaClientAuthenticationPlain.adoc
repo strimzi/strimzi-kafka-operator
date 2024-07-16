@@ -1,13 +1,20 @@
 To configure SASL-based PLAIN authentication, set the `type` property to `plain`.
-SASL PLAIN authentication mechanism requires a username and password.
+The SASL PLAIN authentication mechanism requires a username and password.
+
+.An example SASL-based PLAIN client authentication configuration for Kafka Connect
+[source,yaml,subs=attributes+]
+----
+authentication:
+  type: plain
+  username: my-connect-username
+  passwordSecret:
+    secretName: my-connect-secret-name
+    password: my-password-field-name
+----
 
 WARNING: The SASL PLAIN mechanism will transfer the username and password across the network in cleartext.
 Only use SASL PLAIN authentication if TLS encryption is enabled.
 
-= `username`
-Specify the username in the `username` property.
-
-= `passwordSecret`
 In the `passwordSecret` property, specify a link to a `Secret` containing the password.
 
 You can use the secrets created by the User Operator.
@@ -15,14 +22,14 @@ You can use the secrets created by the User Operator.
 If required, create a text file that contains the password, in cleartext, to use for authentication:
 
 [source,shell,subs="+quotes"]
-echo -n _PASSWORD_ > _MY-PASSWORD_.txt
+echo -n <password> > <my_password>.txt
 
 You can then create a `Secret` from the text file, setting your own field name (key) for the password:
 
 [source,shell,subs="+quotes"]
-kubectl create secret generic _MY-CONNECT-SECRET-NAME_ --from-file=_MY-PASSWORD-FIELD-NAME_=./_MY-PASSWORD_.txt
+kubectl create secret generic <my-connect-secret-name> --from-file=<my_password_field_name>=./<my_password>.txt
 
-.Example Secret for PLAIN client authentication for Kafka Connect
+.Example secret for PLAIN client authentication for Kafka Connect
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: v1
@@ -37,14 +44,3 @@ data:
 The `secretName` property contains the name of the `Secret` and the `password` property contains the name of the key under which the password is stored inside the `Secret`.
 
 IMPORTANT: Do not specify the actual password in the `password` property.
-
-.An example SASL based PLAIN client authentication configuration
-[source,yaml,subs=attributes+]
-----
-authentication:
-  type: plain
-  username: my-connect-username
-  passwordSecret:
-    secretName: my-connect-secret-name
-    password: my-password-field-name
-----
