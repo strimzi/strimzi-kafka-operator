@@ -1,8 +1,9 @@
-You can see example configuration for the `nodePort`, `host`, `loadBalancerIP` and `annotations` properties in the xref:type-GenericKafkaListenerConfigurationBootstrap-reference[`GenericKafkaListenerConfigurationBootstrap` schema],
-which configures bootstrap service overrides.
+Configures broker settings for listeners.
+
+Example configuration for the `host`, `nodePort`, `loadBalancerIP`, and `annotations` properties is shown in the xref:type-GenericKafkaListenerConfiguration-reference[`GenericKafkaListenerConfiguration` schema] section.
 
 [id='property-listener-config-broker-{context}']
-.Overriding advertised addresses for brokers
+= Overriding advertised addresses for brokers
 
 By default, Strimzi tries to automatically determine the hostnames and ports that your Kafka cluster advertises to its clients.
 This is not sufficient in all situations, because the infrastructure on which Strimzi is running might not provide the right hostname or port through which Kafka can be accessed.
@@ -20,8 +21,6 @@ listeners:
     port: 9094
     type: route
     tls: true
-    authentication:
-      type: tls
     configuration:
       brokers:
       - broker: 0
