@@ -122,7 +122,7 @@ listeners:
 ----
 
 [id='property-listener-config-host-{context}']
-= Specifying the hostname for the bootstrap resource
+= Specifying the hostname
 
 To specify the hostname used for the bootstrap resource or brokers, use the `host` property.
 The `host` property is for `route` and `ingress` listeners only.
