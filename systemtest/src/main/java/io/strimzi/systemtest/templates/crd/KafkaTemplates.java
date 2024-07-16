@@ -256,6 +256,7 @@ public class KafkaTemplates {
                     .addToConfig("cruise.control.metrics.reporter.metadata.max.age.ms", 4_000)
                 .endKafka()
                 .editCruiseControl()
+                    // the following configurations are set for better reliability and stability of CC related tests
                     .addToConfig("max.active.user.tasks", 10)
                     .addToConfig("metric.sampling.interval.ms", 5_000)
                     .addToConfig("cruise.control.metrics.reporter.metrics.reporting.interval.ms", 5_000)
