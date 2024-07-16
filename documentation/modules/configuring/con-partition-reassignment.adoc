@@ -16,8 +16,7 @@ Cruise Control is recommended for this type of operation as it xref:cruise-contr
 Scaling topic replication factor up and down:: Increase or decrease the replication factor of your Kafka topics. To do this, you must create a partition reassignment plan that identifies the existing replication assignment across partitions and an updated assignment with the replication factor changes.
 
 Changing the preferred leader:: Change the preferred leader of a Kafka partition. 
-In Kafka, the partition leader is the replica that serves as the leader for a partition. 
-However, the partition leader is not always the preferred leader; for example, if the preferred leader is out of sync or if the broker goes offline, another replica may temporarily become the leader.
+In Kafka, the partition leader is the only partition that accepts writes from message producers, and therefore has the most complete log across all replicas. 
 +
 Changing the preferred leader can be useful if you want to redistribute load across the brokers in the cluster.
 If the preferred leader is unavailable, another in-sync replica is automatically elected as leader, or the partition goes offline if there are no in-sync replicas. 
