@@ -21,36 +21,36 @@ Listener configuration supports the following token validation options:
 The authorization server provides a JWKS endpoint with public certificates that are used to validate signatures on the tokens.
 * You can use a call to a token introspection endpoint provided by an authorization server.
 Each time a new Kafka broker connection is established, the broker passes the access token received from the client to the authorization server.
-The Kafka broker checks the response to confirm whether or not the token is valid.
+The Kafka broker checks the response to confirm whether the token is valid.
 
 NOTE: An authorization server might only allow the use of opaque access tokens, which means that local token validation is not possible.
 
 Kafka client credentials can also be configured for the following types of authentication:
 
 * Direct local access using a previously generated long-lived access token
-* Contact with the authorization server for a new access token to be issued (using a client ID and a secret, or a refresh token, or a username and a password)
+* Contact with the authorization server for a new access token to be issued (using a client ID and credentials, or a refresh token, or a username and a password)
 
 == Example client authentication flows using the SASL `OAUTHBEARER` mechanism
 
 You can use the following communication flows for Kafka authentication using the SASL `OAUTHBEARER` mechanism.
 
 [id='oauth-introspection-endpoint-{context}']
-.Client using client ID and secret, with broker delegating validation to authorization server
+.Client using client ID and credentials, with broker delegating validation to authorization server
 
 image:oauth-introspection-endpoint.png[Client using client ID and secret with broker delegating validation to authorization server]
 
-. The Kafka client requests an access token from the authorization server using a client ID and secret, and optionally a refresh token. Alternatively, the client may authenticate using a username and a password.
+. The Kafka client requests an access token from the authorization server using a client ID and credentials, and optionally a refresh token. Alternatively, the client may authenticate using a username and a password.
 . The authorization server generates a new access token.
 . The Kafka client authenticates with the Kafka broker using the SASL `OAUTHBEARER` mechanism to pass the access token.
 . The Kafka broker validates the access token by calling a token introspection endpoint on the authorization server using its own client ID and secret.
 . A Kafka client session is established if the token is valid.
 
 [id='oauth-jwt-{context}']
-.Client using client ID and secret, with broker performing fast local token validation
+.Client using client ID and credentials, with broker performing fast local token validation
 
-image:oauth-jwt-signature.png[Client using client ID and secret with broker performing fast local token validation]
+image:oauth-jwt-signature.png[Client using client ID and credentials with broker performing fast local token validation]
 
-. The Kafka client authenticates with the authorization server from the token endpoint, using a client ID and secret, and optionally a refresh token. Alternatively, the client may authenticate using a username and a password.
+. The Kafka client authenticates with the authorization server from the token endpoint, using a client ID and credentials, and optionally a refresh token. Alternatively, the client may authenticate using a username and a password.
 . The authorization server generates a new access token.
 . The Kafka client authenticates with the Kafka broker using the SASL `OAUTHBEARER` mechanism to pass the access token.
 . The Kafka broker validates the access token locally using a JWT token signature check, and local token introspection.

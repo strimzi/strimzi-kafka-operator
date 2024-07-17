@@ -54,7 +54,7 @@ Additionally, it handles login credentials for clients using the OAuth 2.0 passw
 
 Configure the client to use credentials or access tokens for OAuth 2.0 authentication. 
 
-Using client credentials:: Using client credentials involves configuring the client with the necessary credentials (client ID and secret) to obtain a valid access token from an authorization server. This is the simplest mechanism.
+Using client credentials:: Using client credentials involves configuring the client with the necessary credentials (client ID and secret, or client ID and client assertion) to obtain a valid access token from an authorization server. This is the simplest mechanism.
 Using access tokens:: Using access tokens, the client is configured with a valid long-lived access token or refresh token obtained from an authorization server. 
 Using access tokens adds more complexity because there is an additional dependency on authorization server tools.
 If you are using long-lived access tokens, you may need to configure the client in the authorization server to increase the maximum lifetime of the token.
@@ -83,7 +83,7 @@ NOTE: You can also specify authentication properties as environment variables, o
 For Java system properties, you can set them using `setProperty` and pass them on the command line using the `-D` option.
 
 [id='con-oauth-authentication-client-credentials-{context}']
-.Example client credentials configuration 
+.Example client credentials configuration using the client secret
 [source,properties,subs="+quotes,attributes"]
 ----
 security.protocol=SASL_SSL # <1>
@@ -117,7 +117,7 @@ An authorization server may require a client to specify the scope.
 An authorization server may require a client to specify the audience.
 
 [id='con-oauth-authentication-client-assertion-{context}']
-.Example client assertion configuration
+.Example client credentials configuration using the client assertion
 [source,properties,subs="+quotes,attributes"]
 ----
 security.protocol=SASL_SSL
@@ -132,10 +132,13 @@ sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginMo
   oauth.client.assertion.type="urn:ietf:params:oauth:client-assertion-type:jwt-bearer" \ # <2>
   oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \
   oauth.ssl.truststore.password="$STOREPASS" \
-  oauth.ssl.truststore.type="PKCS12" ;
+  oauth.ssl.truststore.type="PKCS12" \
+  oauth.scope="<scope>" \
+  oauth.audience="<audience>" ;
 sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
 ----
-<1> Client assertion (private key JWT) token file containing the client assertion. Alternatively, use `oauth.client.assertion` configuration option to specify the client assertion value in clear text.
+<1> Path to the client assertion file used for authenticating the client. This file is a private key file as an alternative to the client secret.
+Alternatively, use `oauth.client.assertion` option to specify the client assertion value in clear text.
 <2> (Optional) Sometimes you may need to specify the client assertion type. In not specified, the default value is `urn:ietf:params:oauth:client-assertion-type:jwt-bearer`.
 
 [id='con-oauth-authentication-password-grants-{context}']
@@ -180,7 +183,7 @@ sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginMo
   oauth.access.token="<access_token>" ; # <1>
 sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
 ----
-<1> Long-lived access token for Kafka clients.
+<1> Long-lived access token for Kafka clients. Alternatively, `oauth.access.token.location` option can be used to specify the file that contains the access token.
 
 [id='con-oauth-authentication-serviceaccount-token-{context}']
 .Example Kubernetes service account token configuration
