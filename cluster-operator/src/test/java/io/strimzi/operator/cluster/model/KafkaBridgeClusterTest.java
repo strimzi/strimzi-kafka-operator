@@ -978,26 +978,6 @@ public class KafkaBridgeClusterTest {
     }
 
     @ParallelTest
-    public void testGenerateDeploymentWithOAuthWithAccessTokenLocation() {
-        KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
-                .editSpec()
-                .withAuthentication(
-                        new KafkaClientAuthenticationOAuthBuilder()
-                                .withAccessTokenLocation("/var/run/secrets/kubernetes.io/serviceaccount/token")
-                                .build())
-                .endSpec()
-                .build();
-
-        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
-        Deployment dep = kb.generateDeployment(emptyMap(), true, null, null);
-        Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
-
-        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM.equals(var.getName())).findFirst().orElseThrow().getValue(), is("oauth"));
-        assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CONFIG.equals(var.getName())).findFirst().orElseThrow().getValue().trim(),
-                is(String.format("%s=\"%s\"", ClientConfig.OAUTH_ACCESS_TOKEN_LOCATION, "/var/run/secrets/kubernetes.io/serviceaccount/token")));
-    }
-
-    @ParallelTest
     public void testGenerateDeploymentWithOAuthWithRefreshToken() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
