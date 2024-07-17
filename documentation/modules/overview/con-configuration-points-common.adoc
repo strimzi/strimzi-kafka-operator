@@ -85,10 +85,10 @@ All additional mounted paths are located inside `/mnt` to ensure compatibility w
 
 Supported Volume Types
 
-- Secret
-- ConfigMap
-- EmptyDir
-- PersistentVolumeClaims
+* Secret
+* ConfigMap
+* EmptyDir
+* PersistentVolumeClaims
 
 [discrete]
 == Example configuration for additional volumes:
