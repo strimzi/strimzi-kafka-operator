@@ -97,6 +97,7 @@ Supported Volume Types
 kind: Kafka
 spec:
   kafka:
+    # ...
     template:
       pod:
         volumes:
