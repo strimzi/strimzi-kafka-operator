@@ -48,7 +48,8 @@ Token provision can be configured to use the following methods:
 +
 --
 * Client ID and secret (using the OAuth 2.0 _client credentials mechanism_)
-* Long-lived access token
+* Client ID and client assertion
+* Long-lived access token or Service account token
 * Long-lived refresh token obtained manually
 --
 +
@@ -60,7 +61,7 @@ Consider using `PLAIN` only with Kafka clients that do not support `OAUTHBEARER`
 Using the `PLAIN` authentication mechanism, credentials exchange can be configured to use the following methods: 
 +
 --
-* Client ID and secret (using the the OAuth 2.0 _client credentials mechanism_)
+* Client ID and secret (using the OAuth 2.0 _client credentials mechanism_)
 * Long-lived access token +
 Regardless of the method used, the client must provide `username` and `password` properties to Kafka. 
 --
@@ -235,6 +236,26 @@ Depending on the authorization server, you typically have to specify a `clientId
 <3> Client Secret and client ID is used for authentication.
 <4> The token claim (or key) that contains the actual username used to identify the user. Its value depends on the authorization server. If necessary, a JsonPath expression like `"['user.info'].['user.id']"` can be used to retrieve the username from nested JSON attributes within a token. 
 <5> (Optional) Activates the Kafka re-authentication mechanism that enforces session expiry to the same length of time as the access token. If the specified value is less than the time left for the access token to expire, then the client will have to re-authenticate before the actual token expiry. By default, the session does not expire when the access token expires, and the client does not attempt re-authentication.
+
+[id='con-oauth-authentication-broker-protected-{context}']
+.Authenticating brokers to the authorization server protected endpoints
+
+Usually, the certificates endpoint of the authorization server (`jwksEndpointUri`) is publicly accessible, while the introspection endpoint (`introspectionEndpointUri`) is protected.
+However, this may vary depending on the authorization server configuration.
+
+The Kafka broker can authenticate to the authorization server's protected endpoints in one of two ways using HTTP authentication schemes:
+
+* **HTTP Basic authentication** uses a client ID and secret.
+* **HTTP Bearer authentication** uses a bearer token.
+
+To configure HTTP Basic authentication, set the following properties:
+
+* `clientId`
+* `clientSecret`
+
+For HTTP Bearer authentication, set the following property:
+
+* `serverBearerTokenLocation` to specify the file path on disk containing the bearer token.
 
 [id='con-oauth-authentication-broker-additional-{context}']
 .Including additional configuration options

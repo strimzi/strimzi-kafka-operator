@@ -128,16 +128,15 @@ ssl.truststore.type=PKCS12
 sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
   oauth.token.endpoint.uri="<token_endpoint_url>" \
   oauth.client.id="<client_id>" \
-  oauth.client.assertion="<client_assertion>" \ # <1>
+  oauth.client.assertion.location="<path_to_client_assertion_token_file>" \ # <1>
+  oauth.client.assertion.type="urn:ietf:params:oauth:client-assertion-type:jwt-bearer" \ # <2>
   oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \
   oauth.ssl.truststore.password="$STOREPASS" \
-  oauth.ssl.truststore.type="PKCS12" \
-  oauth.scope="<scope>" \
-  oauth.audience="<audience>" ;
+  oauth.ssl.truststore.type="PKCS12" ;
 sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
 ----
-<1> Client assertion (private key JWT) created when configuring the client in the authorization server.
-Alternatively, use `oauth.client.assertion.location` to specify the filesystem path to the client assertion file.
+<1> Client assertion (private key JWT) token file containing the client assertion. Alternatively, use `oauth.client.assertion` configuration option to specify the client assertion value in clear text.
+<2> (Optional) Sometimes you may need to specify the client assertion type. In not specified, the default value is `urn:ietf:params:oauth:client-assertion-type:jwt-bearer`.
 
 [id='con-oauth-authentication-password-grants-{context}']
 .Example password grants configuration 
