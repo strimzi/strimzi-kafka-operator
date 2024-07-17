@@ -69,16 +69,17 @@ spec:
 == Additional Volumes
 
 Strimzi supports specifying additional volumes and volume mounts in the following components:
-- Kafka
-- Kafka Connect
-- Kafka Bridge
-- Kafka MirrorMaker2
-- Entity Operator
-- Cruise Control
-- Kafka Exporter
-- Zookeeper
-- User Operator
-- Topic Operator
+
+* Kafka
+* Kafka Connect
+* Kafka Bridge
+* Kafka MirrorMaker2
+* Entity Operator
+* Cruise Control
+* Kafka Exporter
+* Zookeeper
+* User Operator
+* Topic Operator
 
 All additional mounted paths are located inside `/mnt` to ensure compatibility with future Kafka and Strimzi updates.
 
