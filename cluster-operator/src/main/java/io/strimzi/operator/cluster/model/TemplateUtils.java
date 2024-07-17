@@ -43,7 +43,7 @@ public class TemplateUtils {
      * @param template The resource template
      * @return Map with custom labels from the template or null if not set
      */
-    public static Map<String, String> labels(HasMetadataTemplate template) {
+    public static Map<String, String> labels(HasMetadataTemplate template)   {
         if (template != null
                 && template.getMetadata() != null) {
             return template.getMetadata().getLabels();
@@ -59,7 +59,10 @@ public class TemplateUtils {
      * @param existingVolumes The list of existing volumes to which the additional volumes will be added.
      */
     public static void addAdditionalVolumes(PodTemplate templatePod, List<Volume> existingVolumes) {
-        if (templatePod.getVolumes() != null) {
+        boolean checkForNotNull = templatePod != null || templatePod.getVolumes() == null;
+        if (checkForNotNull) {
+            return;
+        }
 
             // Extract the names and paths of the existing volumes
             List<String> existingVolumeNames = existingVolumes.stream().map(Volume::getName).toList();
@@ -84,7 +87,6 @@ public class TemplateUtils {
             }
 
             templatePod.getVolumes().forEach(volumeConfig -> existingVolumes.add(createVolumeFromConfig(volumeConfig)));
-        }
     }
 
     /**
@@ -96,7 +98,7 @@ public class TemplateUtils {
      * @throws RuntimeException If a forbidden mount path is used.
      */
     public static void addAdditionalVolumeMounts(List<VolumeMount> volumeMounts, List<VolumeMount> additionalVolumeMounts) {
-        if (additionalVolumeMounts == null) {
+        if (additionalVolumeMounts == null || volumeMounts == null) {
             return;
         }
 
@@ -134,10 +136,11 @@ public class TemplateUtils {
      * Extracts custom annotations configured through the Strimzi API resource templates. This method deals the null
      * checks and makes the code using it more easy to read.
      *
-     * @param template The resource template
-     * @return Map with custom annotations from the template or null if not set
+     * @param template  The resource template
+     *
+     * @return  Map with custom annotations from the template or null if not set
      */
-    public static Map<String, String> annotations(HasMetadataTemplate template) {
+    public static Map<String, String> annotations(HasMetadataTemplate template)   {
         if (template != null
                 && template.getMetadata() != null) {
             return template.getMetadata().getAnnotations();

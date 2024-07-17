@@ -1743,7 +1743,7 @@ public class KafkaMirrorMaker2ClusterTest {
                 .build();
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
                 .editSpec()
-                .withClusters(targetClusterWithOAuthWithClientSecret)
+                    .withClusters(targetClusterWithOAuthWithClientSecret)
                 .endSpec()
                 .build();
 
@@ -1836,7 +1836,7 @@ public class KafkaMirrorMaker2ClusterTest {
                     .build();
             KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
                     .editSpec()
-                    .withClusters(targetClusterWithOAuthWithMissingUri)
+                        .withClusters(targetClusterWithOAuthWithMissingUri)
                     .endSpec()
                     .build();
 
@@ -1876,7 +1876,7 @@ public class KafkaMirrorMaker2ClusterTest {
                 .build();
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
                 .editSpec()
-                .withClusters(targetClusterWithOAuthWithTls)
+                    .withClusters(targetClusterWithOAuthWithTls)
                 .endSpec()
                 .build();
 

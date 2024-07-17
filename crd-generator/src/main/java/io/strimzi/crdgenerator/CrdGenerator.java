@@ -645,7 +645,7 @@ class CrdGenerator {
             }
         }
 
-        if (crdClass.getName().startsWith("io.strimzi.api.")) {
+        if (crdClass.getName().startsWith("io.strimzi.")) {
             checkInherits(crdClass, "io.strimzi.api.kafka.model.common.UnknownPropertyPreserving");
             checkJsonInclude(crdClass);
             checkJsonPropertyOrder(crdClass);

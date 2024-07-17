@@ -573,10 +573,9 @@ public class ZookeeperCluster extends AbstractModel implements SupportsMetrics, 
         volumeMountList.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount(ZOOKEEPER_NODE_CERTIFICATES_VOLUME_NAME, ZOOKEEPER_NODE_CERTIFICATES_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount(ZOOKEEPER_CLUSTER_CA_VOLUME_NAME, ZOOKEEPER_CLUSTER_CA_VOLUME_MOUNT));
-        
-        if (templateContainer != null) {
-            addAdditionalVolumeMounts(volumeMountList, templateContainer.getVolumeMounts());
-        }
+
+        addAdditionalVolumeMounts(volumeMountList, templateContainer.getVolumeMounts());
+
 
         return volumeMountList;
     }
