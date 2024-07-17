@@ -221,7 +221,7 @@ public class ApiCredentials {
                                     Secret oldCruiseControlApiSecret,
                                     Secret userManagedApiSecret,
                                     Secret topicOperatorManagedApiSecret) {
-        if (apiUsers != null && userManagedApiSecret == null) {
+        if (this.apiUsers != null && userManagedApiSecret == null) {
             throw new InvalidResourceException("The configuration of the Cruise Control REST API users " +
                     "references a secret: " +  "\"" +  userManagedApiSecretName + "\" that does not exist.");
         }

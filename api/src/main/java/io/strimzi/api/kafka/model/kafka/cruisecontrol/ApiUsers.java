@@ -66,27 +66,6 @@ public abstract class ApiUsers implements UnknownPropertyPreserving {
     }
 
     /**
-     * Checks if Cruise Control spec has valid ApiUsers config.
-     *
-     * @param apiUsers The Cruise Control apiUsers spec to check.
-     */
-    public static boolean checkApiUsersConfig(ApiUsers apiUsers)  {
-        if (apiUsers != null)    {
-            if (apiUsers.getType() == null
-                    || apiUsers.getValueFrom() == null
-                    || apiUsers.getValueFrom().getSecretKeyRef() == null
-                    || apiUsers.getValueFrom().getSecretKeyRef().getName() == null
-                    || apiUsers.getValueFrom().getSecretKeyRef().getKey() == null) {
-                throw new IllegalArgumentException("The configuration of the Cruise Control REST API users " +
-                        "referenced in spec.cruiseControl.apiUsers is invalid.");
-            } else {
-                return true;
-            }
-        } else {
-            return false;
-        }
-    }
-    /**
      * Parse String containing API credential config into map of API user entries.
      *
      * @param config API credential config file as a String.
