@@ -14,7 +14,7 @@ Enable a quota plugin and configure limits using `quotas` properties in the `Kaf
 
 There are two types of quota plugins available:
 
-* The `strimzi` type enables the _Kafka Static Quota_ plugin.
+* The `strimzi` type enables the _Strimzi Quotas_ plugin.
 * The `kafka` type enables the built-in Kafka plugin. 
 
 Only one quota plugin can be enabled at a time. 
@@ -40,7 +40,7 @@ NOTE: With the `strimzi` plugin, you see only aggregated quota metrics, not per-
 The `kafka` plugin applies throughput limits on a per-user, per-broker basis and includes additional CPU and operation rate limits.
 
 * Limits are applied per user and per broker. 
-For example, setting a 20 MBps producer byte-rate threshold limits each producer to 20 MBps on a per-broker basis across all connections for that user. 
+For example, setting a 20 MBps producer byte-rate threshold limits each user to 20 MBps on a per-broker basis across all producer connections for that user. 
 There is no total throughput limit as there is in the `strimzi` plugin.
 Limits can be overridden by xref:con-configuring-client-quotas-str[user-specific quota configurations].
 * CPU utilization limits for each client can be set as a percentage of the network threads and I/O threads on a per-broker basis.
