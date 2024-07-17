@@ -41,7 +41,8 @@ public class KafkaBridgeConsumerSpec extends KafkaBridgeClientSpec {
     }
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    @Description("Whether the HTTP consumer should be enabled or disabled, default is enabled.")
+    @Description("Whether the HTTP consumer should be enabled or disabled. " +
+        "The default is enabled (`true`).")
     public boolean isEnabled() {
         return enabled;
     }

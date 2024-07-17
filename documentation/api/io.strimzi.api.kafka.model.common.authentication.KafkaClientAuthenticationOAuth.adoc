@@ -48,6 +48,7 @@ authentication:
 You can configure the access token used for authentication with the Kafka broker directly.
 In this case, you do not specify the `tokenEndpointUri`.
 In the `accessToken` property, specify a link to a `Secret` containing the access token.
+Alternatively, use `accessTokenLocation` property, and specify a path to the token file.
 
 .Example access token only configuration
 [source,yaml,subs=attributes+]
@@ -57,6 +58,14 @@ authentication:
   accessToken:
     secretName: my-access-token-secret
     key: access-token
+----
+
+.An example of OAuth client authentication using an access token provided in the form of the file on the mounted filesystem
+[source,yaml,subs=attributes+]
+----
+authentication:
+  type: oauth
+  accessTokenLocation: `/path/to/token/file`
 ----
 
 .Username and password

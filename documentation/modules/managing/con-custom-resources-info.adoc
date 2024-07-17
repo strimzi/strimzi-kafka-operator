@@ -38,8 +38,8 @@ m|Strimzi resource      |Long name          |Short name
 | Kafka User            | kafkauser         | ku
 | Kafka Connect         | kafkaconnect      | kc
 | Kafka Connector       | kafkaconnector    | kctr
-| Kafka Mirror Maker    | kafkamirrormaker  | kmm
-| Kafka Mirror Maker 2  | kafkamirrormaker2 | kmm2
+| Kafka MirrorMaker     | kafkamirrormaker  | kmm
+| Kafka MirrorMaker 2   | kafkamirrormaker2 | kmm2
 | Kafka Bridge          | kafkabridge       | kb
 | Kafka Rebalance       | kafkarebalance    | kr
 

@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.resource.kubernetes;
 
-import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -12,6 +11,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.Future;
@@ -21,6 +21,7 @@ import io.vertx.core.Vertx;
  * Operations for {@code Deployment}s.
  */
 public class DeploymentOperator extends AbstractScalableNamespacedResourceOperator<KubernetesClient, Deployment, DeploymentList, RollableScalableResource<Deployment>> {
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(DeploymentOperator.class);
 
     private final PodOperator podOperations;
 
@@ -62,32 +63,29 @@ public class DeploymentOperator extends AbstractScalableNamespacedResourceOperat
     }
 
     /**
-     * Asynchronously roll the deployment returning a Future which will complete once all the pods have been rolled
-     * and the Deployment is ready.
+     * Asynchronously roll a single-pod Deployment returning a Future which will complete once the Pod has been rolled
+     * and the Deployment is ready. This is used to roll components such as Entity Operator, Kafka Exporter or Cruise
+     * Control that always run with a single Pod.
      *
-     * @param reconciliation The reconciliation
-     * @param namespace The namespace of the deployment
-     * @param name The name of the deployment
-     * @param operationTimeoutMs The timeout
-     * @return A future which completes when all the pods in the deployment have been restarted.
+     * @param reconciliation        The reconciliation marker
+     * @param namespace             The namespace of the deployment
+     * @param name                  The name of the deployment
+     * @param operationTimeoutMs    The operation timeout
+     *
+     * @return A future which completes when the pods in the deployment has been restarted.
      */
-    public Future<Void> rollingUpdate(Reconciliation reconciliation, String namespace, String name, long operationTimeoutMs) {
-        return getAsync(namespace, name)
-                .compose(deployment -> deletePod(reconciliation, namespace, name))
+    public Future<Void> singlePodDeploymentRollingUpdate(Reconciliation reconciliation, String namespace, String name, long operationTimeoutMs) {
+        return podOperations.listAsync(namespace, Labels.EMPTY.withStrimziName(name))
+                .compose(pods -> {
+                    if (pods != null && !pods.isEmpty())    {
+                        return podOperations.deleteAsync(reconciliation, namespace, pods.get(0).getMetadata().getName(), true);
+                    } else {
+                        LOGGER.warnCr(reconciliation, "No Pods were found for Deployment {} in namespace {}", name, namespace);
+                        // We return success as there is nothing to roll
+                        return Future.succeededFuture();
+                    }
+                })
                 .compose(ignored -> readiness(reconciliation, namespace, name, 1_000, operationTimeoutMs));
-    }
-
-    /**
-     * Asynchronously delete the given pod.
-     * @param reconciliation The reconciliation
-     * @param namespace The namespace of the pod.
-     * @param name The name of the pod.
-     * @return A Future which will complete once all the pods has been deleted.
-     */
-    public Future<ReconcileResult<Pod>> deletePod(Reconciliation reconciliation, String namespace, String name) {
-        Labels labels = Labels.EMPTY.withStrimziName(name);
-        String podName = podOperations.list(namespace, labels).get(0).getMetadata().getName();
-        return podOperations.reconcile(reconciliation, namespace, podName, null);
     }
 
     @Override

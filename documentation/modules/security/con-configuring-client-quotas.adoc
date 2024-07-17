@@ -6,11 +6,18 @@
 = Configuring user quotas
 
 [role="_abstract"]
-Configure the `spec` for the `KafkaUser` resource to enforce quotas so that a user does not overload the Kafka brokers.
+Configure the `spec` for the `KafkaUser` resource to enforce quotas so that a user does not overload Kafka brokers.
 Set size-based network usage and time-based CPU utilization thresholds.
-You can also add a partition mutation quota to control the rate at which requests to change partitions are accepted for user requests.
 
-.An example `KafkaUser` with user quotas
+Partition mutations occur in response to the following types of user requests:
+
+* Creating partitions for a new topic
+* Adding partitions to an existing topic
+* Deleting partitions from a topic
+
+You can also add a partition mutation quota to control the rate at which requests to change partitions are accepted.
+
+.Example `KafkaUser` with user quotas
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaUserApiVersion}
@@ -32,4 +39,9 @@ spec:
 <3> CPU utilization limit as a percentage of time for a client group.
 <4> Number of concurrent partition creation and deletion operations (mutations) allowed per second.
 
-For more information on these properties, see the link:{BookURLConfiguring}#type-KafkaUserQuotas-reference[`KafkaUserQuotas` schema reference^].
+Using quotas for Kafka clients might be useful in a number of situations.
+Consider a wrongly configured Kafka producer which is sending requests at too high a rate.
+Such misconfiguration can cause a denial of service to other clients, so the problematic client ought to be blocked.
+By using a network limiting quota, it is possible to prevent this situation from significantly impacting other clients.
+
+NOTE: Strimzi supports user-level quotas, but not client-level quotas.

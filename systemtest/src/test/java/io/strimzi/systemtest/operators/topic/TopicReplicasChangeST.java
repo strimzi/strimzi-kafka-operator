@@ -443,7 +443,7 @@ public class TopicReplicasChangeST extends AbstractST {
         );
         
         // we need to deploy Kafka with CC enabled (to have RF feature)
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(sharedTestStorage.getClusterName(), 3, 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithCruiseControlTunedForFastModelGeneration(sharedTestStorage.getClusterName(), 3, 3)
                     .editMetadata()
                         .withNamespace(sharedTestStorage.getNamespaceName())
                     .endMetadata()
@@ -454,7 +454,7 @@ public class TopicReplicasChangeST extends AbstractST {
                             .endTopicOperator()
                         .endEntityOperator()
                         .editCruiseControl()
-                            // faster cluster model generation tuning: reserve some resources at startup
+                            // reserve some resources at startup for faster cluster model generation
                             .withResources(new ResourceRequirementsBuilder()
                                 .addToLimits("memory", new Quantity("1Gi"))
                                 .addToRequests("memory", new Quantity("1Gi"))

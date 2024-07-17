@@ -17,31 +17,14 @@ template:
       runAsUser: 1000001
       fsGroup: 0
     terminationGracePeriodSeconds: 120
-# ...
-----
-
-[id='property-hostaliases-config-{context}']
-= `hostAliases`
-
-Use the `hostAliases` property to a specify a list of hosts and IP addresses,
-which are injected into the `/etc/hosts` file of the pod.
-
-This configuration is especially useful for Kafka Connect or MirrorMaker when a connection outside of the cluster is also requested by users.
-
-.Example `hostAliases` configuration
-[source,yaml,subs=attributes+]
-----
-apiVersion: {KafkaConnectApiVersion}
-kind: KafkaConnect
-#...
-spec:
-  # ...
-  template:
-    pod:
-      hostAliases:
+    hostAliases:
       - ip: "192.168.1.86"
         hostnames:
         - "my-host-1"
         - "my-host-2"
-      #...
+    #...
 ----
+
+Use the `hostAliases` property to a specify a list of hosts and IP addresses,
+which are injected into the `/etc/hosts` file of the pod.
+This configuration is especially useful for Kafka Connect or MirrorMaker when a connection outside of the cluster is also requested by users.

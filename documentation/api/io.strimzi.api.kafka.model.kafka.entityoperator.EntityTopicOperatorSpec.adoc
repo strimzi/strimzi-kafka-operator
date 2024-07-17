@@ -1,7 +1,7 @@
 Configures the Topic Operator.
 
 [id='property-topic-operator-logging-{context}']
-= `logging`
+= Logging
 
 The Topic Operator has a configurable logger:
 

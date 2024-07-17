@@ -1,33 +1,29 @@
-Configures a Kafka cluster.
+Configures a Kafka cluster using the `Kafka` custom resource.
 
-[id='property-kafka-listeners-{context}']
-= `listeners`
+The `config` properties are one part of the overall configuration for the resource.
+Use the `config` properties to configure Kafka broker options as keys.
 
-Use the `listeners` property to configure listeners to provide access to Kafka brokers.
-
-.Example configuration of a plain (unencrypted) listener without authentication
-
-[source,yaml,subs=attributes+]
+.Example Kafka configuration
+[source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaApiVersion}
 kind: Kafka
+metadata:
+  name: my-cluster
 spec:
   kafka:
+    version: {DefaultKafkaVersion}
+    metadataVersion: {DefaultKafkaMetadataVersion}
     # ...
-    listeners:
-      - name: plain
-        port: 9092
-        type: internal
-        tls: false
-    # ...
-  zookeeper:
-    # ...
+    config:
+      auto.create.topics.enable: "false"
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+      default.replication.factor: 3
+      min.insync.replicas: 2
+# ...
 ----
-
-[id='property-kafka-config-{context}']
-= `config`
-
-Use the `config` properties to configure Kafka broker options as keys.
 
 The values can be one of the following JSON types:
 
@@ -91,42 +87,13 @@ All other supported options are forwarded to Kafka, including the following exce
 ** `controller.quorum.election.timeout.ms`
 ** `controller.quorum.fetch.timeout.ms`
 
-.Example Kafka broker configuration
-[source,yaml,subs="attributes+"]
-----
-apiVersion: {KafkaApiVersion}
-kind: Kafka
-metadata:
-  name: my-cluster
-spec:
-  kafka:
-    # ...
-    config:
-      num.partitions: 1
-      num.recovery.threads.per.data.dir: 1
-      default.replication.factor: 3
-      offsets.topic.replication.factor: 3
-      transaction.state.log.replication.factor: 3
-      transaction.state.log.min.isr: 1
-      log.retention.hours: 168
-      log.segment.bytes: 1073741824
-      log.retention.check.interval.ms: 300000
-      num.network.threads: 3
-      num.io.threads: 8
-      socket.send.buffer.bytes: 102400
-      socket.receive.buffer.bytes: 102400
-      socket.request.max.bytes: 104857600
-      group.initial.rebalance.delay.ms: 0
-      zookeeper.connection.timeout.ms: 6000
-    # ...
-----
-
 [id='property-kafka-brokerRackInitImage-{context}']
-= `brokerRackInitImage`
+= Configuring rack awareness and init container images
 
+Rack awareness is enabled using the `rack` property.
 When rack awareness is enabled, Kafka broker pods use init container to collect the labels from the Kubernetes cluster nodes.
-The container image used for this container can be configured using the `brokerRackInitImage` property.
-When the `brokerRackInitImage` field is missing, the following images are used in order of priority:
+The container image for this init container can be specified using the `brokerRackInitImage` property. 
+If the `brokerRackInitImage` field is not provided, the images used are prioritized as follows:
 
 . Container image specified in `STRIMZI_DEFAULT_KAFKA_INIT_IMAGE` environment variable in the Cluster Operator configuration.
 . `{DockerKafkaInit}` container image.
@@ -147,12 +114,12 @@ spec:
     # ...
 ----
 
-NOTE: Overriding container images is recommended only in special situations, where you need to use a different container registry.
-For example, because your network does not allow access to the container registry used by Strimzi. In this case, you should either copy the Strimzi images or build them from the source.
-If the configured image is not compatible with Strimzi images, it might not work properly.
+NOTE: Overriding container images is recommended only in special situations, such as when your network does not allow access to the container registry used by Strimzi. 
+In such cases, you should either copy the Strimzi images or build them from the source. 
+Be aware that if the configured image is not compatible with Strimzi images, it might not work properly.
 
 [id='property-kafka-logging-{context}']
-= `logging`
+= Logging
 
 Kafka has its own configurable loggers, which include the following:
 

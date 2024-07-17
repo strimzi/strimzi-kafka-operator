@@ -103,7 +103,7 @@ spec:
                           description: "Type of the listener. The supported types are as follows: \n\n* `internal` type exposes Kafka internally only within the Kubernetes cluster.\n* `route` type uses OpenShift Routes to expose Kafka.\n* `loadbalancer` type uses LoadBalancer type services to expose Kafka.\n* `nodeport` type uses NodePort type services to expose Kafka.\n* `ingress` type uses Kubernetes Nginx Ingress to expose Kafka with TLS passthrough.\n* `cluster-ip` type uses a per-broker `ClusterIP` service.\n"
                         tls:
                           type: boolean
-                          description: Enables TLS encryption on the listener. This is a required property.
+                          description: "Enables TLS encryption on the listener. This is a required property. For `route` and `ingress` type listeners, TLS encryption must be always enabled."
                         authentication:
                           type: object
                           properties:
@@ -210,7 +210,7 @@ spec:
                             listenerConfig:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: Configuration to be used for a specific listener. All values are prefixed with listener.name._<listener_name>_.
+                              description: Configuration to be used for a specific listener. All values are prefixed with `listener.name.<listener_name>`.
                             maxSecondsWithoutReauthentication:
                               type: integer
                               description: "Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. Not set by default - the authenticated session does not expire when the access token expires. This option only applies to SASL_OAUTHBEARER authentication mechanism (when `enableOauthBearer` is `true`)."
@@ -234,7 +234,10 @@ spec:
                                 required:
                                 - key
                                 - secretName
-                              description: Secrets to be mounted to /opt/kafka/custom-authn-secrets/custom-listener-_<listener_name>-<port>_/_<secret_name>_.
+                              description: Secrets to be mounted to `/opt/kafka/custom-authn-secrets/custom-listener-<listener_name>-<port>/<secret_name>`.
+                            serverBearerTokenLocation:
+                              type: string
+                              description: Path to the file on the local filesystem that contains a bearer token to be used instead of client_id and secret when authenticating to authorization server.
                             tlsTrustedCertificates:
                               type: array
                               items:
@@ -278,6 +281,9 @@ spec:
                             userNameClaim:
                               type: string
                               description: "Name of the claim from the JWT authentication token, Introspection Endpoint response or User Info Endpoint response which will be used to extract the user id. Defaults to `sub`."
+                            userNamePrefix:
+                              type: string
+                              description: "The prefix to use with the value of `userNameClaim` to construct the user id. This only takes effect if `userNameClaim` is specified, and the value is present for the claim. When used in combination with `fallbackUserNameClaims` it ensures consistent mapping of usernames and client ids into the same user id space and prevents name collisions."
                             validIssuerUri:
                               type: string
                               description: URI of the token issuer used for authentication.
@@ -309,18 +315,30 @@ spec:
                               description: Reference to the `Secret` which holds the certificate and private key pair which will be used for this listener. The certificate can optionally contain the whole chain. This field can be used only with listeners with enabled TLS encryption.
                             class:
                               type: string
-                              description: "Configures a specific class for `Ingress` and `LoadBalancer` that defines which controller will be used. This field can only be used with `ingress` and `loadbalancer` type listeners. If not specified, the default controller is used. For an `ingress` listener, set the `ingressClassName` property in the `Ingress` resources. For a `loadbalancer` listener, set the `loadBalancerClass` property  in the `Service` resources."
+                              description: |-
+                                Configures a specific class for `Ingress` and `LoadBalancer` that defines which controller is used. If not specified, the default controller is used.
+
+                                * For an `ingress` listener, the operator uses this property to set the `ingressClassName` property in the `Ingress` resources.
+                                * For a `loadbalancer` listener, the operator uses this property to set the `loadBalancerClass` property  in the `Service` resources.
+
+                                For `ingress` and `loadbalancer` listeners only.
                             externalTrafficPolicy:
                               type: string
                               enum:
                               - Local
                               - Cluster
-                              description: "Specifies whether the service routes external traffic to node-local or cluster-wide endpoints. `Cluster` may cause a second hop to another node and obscures the client source IP. `Local` avoids a second hop for LoadBalancer and Nodeport type services and preserves the client source IP (when supported by the infrastructure). If unspecified, Kubernetes will use `Cluster` as the default.This field can be used only with `loadbalancer` or `nodeport` type listener."
+                              description: |-
+                                Specifies whether the service routes external traffic to cluster-wide or node-local endpoints:
+
+                                * `Cluster` may cause a second hop to another node and obscures the client source IP.
+                                * `Local` avoids a second hop for `LoadBalancer` and `Nodeport` type services and preserves the client source IP (when supported by the infrastructure).
+
+                                If unspecified, Kubernetes uses `Cluster` as the default. For `loadbalancer` or `nodeport` listeners only.
                             loadBalancerSourceRanges:
                               type: array
                               items:
                                 type: string
-                              description: "A list of CIDR ranges (for example `10.0.0.0/8` or `130.211.204.1/32`) from which clients can connect to load balancer type listeners. If supported by the platform, traffic through the loadbalancer is restricted to the specified CIDR ranges. This field is applicable only for loadbalancer type services and is ignored if the cloud provider does not support the feature. This field can be used only with `loadbalancer` type listener."
+                              description: "A list of CIDR ranges (for example `10.0.0.0/8` or `130.211.204.1/32`) from which clients can connect to loadbalancer listeners. If supported by the platform, traffic through the loadbalancer is restricted to the specified CIDR ranges. This field is applicable only for loadbalancer type services and is ignored if the cloud provider does not support the feature. For `loadbalancer` listeners only."
                             bootstrap:
                               type: object
                               properties:
@@ -331,28 +349,28 @@ spec:
                                   description: Additional alternative names for the bootstrap service. The alternative names will be added to the list of subject alternative names of the TLS certificates.
                                 host:
                                   type: string
-                                  description: The bootstrap host. This field will be used in the Ingress resource or in the Route resource to specify the desired hostname. This field can be used only with `route` (optional) or `ingress` (required) type listeners.
+                                  description: Specifies the hostname used for the bootstrap resource. For `route` (optional) or `ingress` (required) listeners only. Ensure the hostname resolves to the Ingress endpoints; no validation is performed by Strimzi.
                                 nodePort:
                                   type: integer
-                                  description: Node port for the bootstrap service. This field can be used only with `nodeport` type listener.
+                                  description: Node port for the bootstrap service. For `nodeport` listeners only.
                                 loadBalancerIP:
                                   type: string
-                                  description: The loadbalancer is requested with the IP address specified in this field. This feature depends on whether the underlying cloud provider supports specifying the `loadBalancerIP` when a load balancer is created. This field is ignored if the cloud provider does not support the feature.This field can be used only with `loadbalancer` type listener.
+                                  description: The loadbalancer is requested with the IP address specified in this property. This feature depends on whether the underlying cloud provider supports specifying the `loadBalancerIP` when a load balancer is created. This property is ignored if the cloud provider does not support the feature. For `loadbalancer` listeners only.
                                 annotations:
                                   additionalProperties:
                                     type: string
                                   type: object
-                                  description: "Annotations that will be added to the `Ingress`, `Route`, or `Service` resource. You can use this field to configure DNS providers such as External DNS. This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners."
+                                  description: "Annotations added to `Ingress`, `Route`, or `Service` resources. You can use this property to configure DNS providers such as External DNS. For `loadbalancer`, `nodeport`, `route`, or `ingress` listeners only."
                                 labels:
                                   additionalProperties:
                                     type: string
                                   type: object
-                                  description: "Labels that will be added to the `Ingress`, `Route`, or `Service` resource. This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners."
+                                  description: "Labels added to `Ingress`, `Route`, or `Service` resources. For `loadbalancer`, `nodeport`, `route`, or `ingress` listeners only."
                                 externalIPs:
                                   type: array
                                   items:
                                     type: string
-                                  description: External IPs associated to the nodeport service. These IPs are used by clients external to the Kubernetes cluster to access the Kafka brokers. This field is helpful when `nodeport` without `externalIP` is not sufficient. For example on bare-metal Kubernetes clusters that do not support Loadbalancer service types. This field can only be used with `nodeport` type listener.
+                                  description: External IPs associated to the nodeport service. These IPs are used by clients external to the Kubernetes cluster to access the Kafka brokers. This property is helpful when `nodeport` without `externalIP` is not sufficient. For example on bare-metal Kubernetes clusters that do not support Loadbalancer service types. For `nodeport` listeners only.
                               description: Bootstrap configuration.
                             brokers:
                               type: array
@@ -401,7 +419,14 @@ spec:
                               - SingleStack
                               - PreferDualStack
                               - RequireDualStack
-                              description: "Specifies the IP Family Policy used by the service. Available options are `SingleStack`, `PreferDualStack` and `RequireDualStack`. `SingleStack` is for a single IP family. `PreferDualStack` is for two IP families on dual-stack configured clusters or a single IP family on single-stack clusters. `RequireDualStack` fails unless there are two IP families on dual-stack configured clusters. If unspecified, Kubernetes will choose the default value based on the service type."
+                              description: |-
+                                Specifies the IP Family Policy used by the service. Available options are `SingleStack`, `PreferDualStack` and `RequireDualStack`:
+
+                                * `SingleStack` is for a single IP family.
+                                * `PreferDualStack` is for two IP families on dual-stack configured clusters or a single IP family on single-stack clusters.
+                                * `RequireDualStack` fails unless there are two IP families on dual-stack configured clusters.
+
+                                If unspecified, Kubernetes will choose the default value based on the service type.
                             ipFamilies:
                               type: array
                               items:
@@ -412,15 +437,21 @@ spec:
                               description: "Specifies the IP Families used by the service. Available options are `IPv4` and `IPv6`. If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting."
                             createBootstrapService:
                               type: boolean
-                              description: Whether to create the bootstrap service or not. The bootstrap service is created by default (if not specified differently). This field can be used with the `loadBalancer` type listener.
+                              description: Whether to create the bootstrap service or not. The bootstrap service is created by default (if not specified differently). This field can be used with the `loadbalancer` listener.
                             finalizers:
                               type: array
                               items:
                                 type: string
-                              description: "A list of finalizers which will be configured for the `LoadBalancer` type Services created for this listener. If supported by the platform, the finalizer `service.kubernetes.io/load-balancer-cleanup` to make sure that the external load balancer is deleted together with the service.For more information, see https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#garbage-collecting-load-balancers. This field can be used only with `loadbalancer` type listeners."
+                              description: "A list of finalizers configured for the `LoadBalancer` type services created for this listener. If supported by the platform, the finalizer `service.kubernetes.io/load-balancer-cleanup` to make sure that the external load balancer is deleted together with the service.For more information, see https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#garbage-collecting-load-balancers. For `loadbalancer` listeners only."
                             useServiceDnsDomain:
                               type: boolean
-                              description: "Configures whether the Kubernetes service DNS domain should be used or not. If set to `true`, the generated addresses will contain the service DNS domain suffix (by default `.cluster.local`, can be configured using environment variable `KUBERNETES_SERVICE_DNS_DOMAIN`). Defaults to `false`.This field can be used only with `internal` and `cluster-ip` type listeners."
+                              description: |-
+                                Configures whether the Kubernetes service DNS domain should be included in the generated addresses.
+
+                                * If set to `false`, the generated addresses do not contain the service DNS domain suffix. For example, `my-cluster-kafka-0.my-cluster-kafka-brokers.myproject.svc`.
+                                * If set to `true`, the generated addresses contain the service DNS domain suffix. For example, `my-cluster-kafka-0.my-cluster-kafka-brokers.myproject.svc.cluster.local`.
+
+                                The default is `.cluster.local`, but this is customizable using the environment variable `KUBERNETES_SERVICE_DNS_DOMAIN`. For `internal` and `cluster-ip` listeners only.
                             maxConnections:
                               type: integer
                               description: The maximum number of connections we allow for this listener in the broker at any time. New connections are blocked if the limit is reached.
@@ -436,7 +467,7 @@ spec:
                               - InternalDNS
                               - Hostname
                               description: |-
-                                Defines which address type should be used as the node address. Available types are: `ExternalDNS`, `ExternalIP`, `InternalDNS`, `InternalIP` and `Hostname`. By default, the addresses will be used in the following order (the first one found will be used):
+                                Defines which address type should be used as the node address. Available types are: `ExternalDNS`, `ExternalIP`, `InternalDNS`, `InternalIP` and `Hostname`. By default, the addresses are used in the following order (the first one found is used):
 
                                 * `ExternalDNS`
                                 * `ExternalIP`
@@ -444,10 +475,10 @@ spec:
                                 * `InternalIP`
                                 * `Hostname`
 
-                                This field is used to select the preferred address type, which is checked first. If no address is found for this address type, the other types are checked in the default order. This field can only be used with `nodeport` type listener.
+                                This property is used to select the preferred address type, which is checked first. If no address is found for this address type, the other types are checked in the default order.For `nodeport` listeners only.
                             publishNotReadyAddresses:
                               type: boolean
-                              description: Configures whether the service endpoints are considered "ready" even if the Pods themselves are not. Defaults to `false`. This field can not be used with `internal` type listeners.
+                              description: Configures whether the service endpoints are considered "ready" even if the Pods themselves are not. Defaults to `false`. This field can not be used with `internal` listeners.
                           description: Additional listener configuration.
                         networkPolicyPeers:
                           type: array
@@ -509,7 +540,7 @@ spec:
                       - port
                       - type
                       - tls
-                    description: Configures listeners of Kafka brokers.
+                    description: Configures listeners to provide access to Kafka brokers.
                   config:
                     x-kubernetes-preserve-unknown-fields: true
                     type: object

@@ -35,7 +35,7 @@ import java.util.List;
     "accessTokenIsJwt", "tlsTrustedCertificates", "disableTlsHostnameVerification", "enableECDSA",
     "maxSecondsWithoutReauthentication", "enablePlain", "tokenEndpointUri", "enableOauthBearer", "customClaimCheck",
     "connectTimeoutSeconds", "readTimeoutSeconds", "httpRetries", "httpRetryPauseMs", "clientScope", "clientAudience",
-    "enableMetrics", "failFast", "includeAcceptHeader"})
+    "enableMetrics", "failFast", "includeAcceptHeader", "serverBearerTokenLocation", "userNamePrefix"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthentication {
@@ -56,7 +56,9 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private Integer jwksExpirySeconds;
     private boolean jwksIgnoreKeyUse = false;
     private String introspectionEndpointUri;
+    private String serverBearerTokenLocation;
     private String userNameClaim;
+    private String userNamePrefix;
     private String fallbackUserNameClaim;
     private String fallbackUserNamePrefix;
     private String groupsClaim;
@@ -285,6 +287,16 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.introspectionEndpointUri = introspectionEndpointUri;
     }
 
+    @Description("Path to the file on the local filesystem that contains a bearer token to be used instead of client_id and secret when authenticating to authorization server")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getServerBearerTokenLocation() {
+        return serverBearerTokenLocation;
+    }
+
+    public void setServerBearerTokenLocation(String serverBearerTokenLocation) {
+        this.serverBearerTokenLocation = serverBearerTokenLocation;
+    }
+
     @Description("Name of the claim from the JWT authentication token, Introspection Endpoint response or User Info Endpoint response " +
             "which will be used to extract the user id. Defaults to `sub`.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -294,6 +306,18 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setUserNameClaim(String userNameClaim) {
         this.userNameClaim = userNameClaim;
+    }
+
+    @Description("The prefix to use with the value of `userNameClaim` to construct the user id. " +
+            "This only takes effect if `userNameClaim` is specified, and the value is present for the claim. " +
+            "When used in combination with `fallbackUserNameClaims` it ensures consistent mapping of usernames and client ids " +
+            "into the same user id space and prevents name collisions.")
+    public String getUserNamePrefix() {
+        return userNamePrefix;
+    }
+
+    public void setUserNamePrefix(String userNamePrefix) {
+        this.userNamePrefix = userNamePrefix;
     }
 
     @Description("The fallback username claim to be used for the user id if the claim specified by `userNameClaim` is not present. " +

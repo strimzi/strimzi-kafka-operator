@@ -1,5 +1,1 @@
-Configures TLS trusted certificates for connecting KafkaConnect, KafkaBridge, KafkaMirror, KafkaMirrorMaker2 to the cluster.
-
-= `trustedCertificates`
-
-Provide a list of secrets using the xref:con-common-configuration-trusted-certificates-reference[`trustedCertificates` property].
+Configures xref:con-common-configuration-trusted-certificates-reference[TLS trusted certificates] for connecting KafkaConnect, KafkaBridge, KafkaMirror, KafkaMirrorMaker2 to the cluster.

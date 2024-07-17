@@ -26,7 +26,7 @@ Finding the optimal configuration depends on factors such as workload, infrastru
 The following tools help with Kafka tuning:
 
 * Cruise Control generates optimization proposals that you can use to assess and implement a cluster rebalance
-* Kafka Static Quota plugin sets limits on brokers
+* Strimzi Quotas plugin sets limits on brokers
 * Rack configuration spreads broker partitions across racks and allows consumers to fetch data from the nearest replica
 
 //Tips to optimize the performance of brokers, and producer and consumer clients

@@ -84,7 +84,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.adoc[leveloffs
 |The container image used for Kafka pods. If the property is not set, the default Kafka image version is determined based on the `version` configuration. The image names are specifically mapped to corresponding versions in the Cluster Operator configuration. Changing the Kafka image version does not automatically update the image versions for other components, such as Kafka Exporter. 
 |listeners
 |xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`] array
-|Configures listeners of Kafka brokers.
+|Configures listeners to provide access to Kafka brokers.
 |config
 |map
 |Kafka broker config properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., log.dir, zookeeper.connect, zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers, node.id, process.roles, controller., metadata.log.dir, zookeeper.metadata.migration.enable, client.quota.callback.static.kafka.admin., client.quota.callback.static.produce, client.quota.callback.static.fetch, client.quota.callback.static.storage.per.volume.limit.min.available., client.quota.callback.static.excluded.principal.name.list (with the exception of: zookeeper.connection.timeout.ms, sasl.server.max.receive.size, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, ssl.secure.random.implementation, cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms, cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms, cruise.control.metrics.topic.min.insync.replicas, controller.quorum.election.backoff.max.ms, controller.quorum.election.timeout.ms, controller.quorum.fetch.timeout.ms).
@@ -167,7 +167,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener.a
 
 |tls
 |boolean
-|Enables TLS encryption on the listener. This is a required property.
+|Enables TLS encryption on the listener. This is a required property. For `route` and `ingress` type listeners, TLS encryption must be always enabled.
 |authentication
 |xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`], xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`]
 |Authentication configuration for this listener.
@@ -336,6 +336,12 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |includeAcceptHeader
 |boolean
 |Whether the Accept header should be set in requests to the authorization servers. The default value is `true`.
+|serverBearerTokenLocation
+|string
+|Path to the file on the local filesystem that contains a bearer token to be used instead of client_id and secret when authenticating to authorization server.
+|userNamePrefix
+|string
+|The prefix to use with the value of `userNameClaim` to construct the user id. This only takes effect if `userNameClaim` is specified, and the value is present for the claim. When used in combination with `fallbackUserNameClaims` it ensures consistent mapping of usernames and client ids into the same user id space and prevents name collisions.
 |====
 
 [id='type-GenericSecretSource-{context}']
@@ -401,10 +407,10 @@ It must have the value `custom` for the type `KafkaListenerAuthenticationCustom`
 |Enable or disable SASL on this listener.
 |listenerConfig
 |map
-|Configuration to be used for a specific listener. All values are prefixed with listener.name._<listener_name>_.
+|Configuration to be used for a specific listener. All values are prefixed with `listener.name.<listener_name>`.
 |secrets
 |xref:type-GenericSecretSource-{context}[`GenericSecretSource`] array
-|Secrets to be mounted to /opt/kafka/custom-authn-secrets/custom-listener-_<listener_name>-<port>_/_<secret_name>_.
+|Secrets to be mounted to `/opt/kafka/custom-authn-secrets/custom-listener-<listener_name>-<port>/<secret_name>`.
 |====
 
 [id='type-GenericKafkaListenerConfiguration-{context}']
@@ -428,13 +434,23 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerCo
 |Reference to the `Secret` which holds the certificate and private key pair which will be used for this listener. The certificate can optionally contain the whole chain. This field can be used only with listeners with enabled TLS encryption.
 |class
 |string
-|Configures a specific class for `Ingress` and `LoadBalancer` that defines which controller will be used. This field can only be used with `ingress` and `loadbalancer` type listeners. If not specified, the default controller is used. For an `ingress` listener, set the `ingressClassName` property in the `Ingress` resources. For a `loadbalancer` listener, set the `loadBalancerClass` property  in the `Service` resources.
+|Configures a specific class for `Ingress` and `LoadBalancer` that defines which controller is used. If not specified, the default controller is used.
+
+* For an `ingress` listener, the operator uses this property to set the `ingressClassName` property in the `Ingress` resources.
+* For a `loadbalancer` listener, the operator uses this property to set the `loadBalancerClass` property  in the `Service` resources.
+
+For `ingress` and `loadbalancer` listeners only.
 |externalTrafficPolicy
 |string (one of [Local, Cluster])
-|Specifies whether the service routes external traffic to node-local or cluster-wide endpoints. `Cluster` may cause a second hop to another node and obscures the client source IP. `Local` avoids a second hop for LoadBalancer and Nodeport type services and preserves the client source IP (when supported by the infrastructure). If unspecified, Kubernetes will use `Cluster` as the default.This field can be used only with `loadbalancer` or `nodeport` type listener.
+|Specifies whether the service routes external traffic to cluster-wide or node-local endpoints:
+
+* `Cluster` may cause a second hop to another node and obscures the client source IP.
+* `Local` avoids a second hop for `LoadBalancer` and `Nodeport` type services and preserves the client source IP (when supported by the infrastructure).
+
+If unspecified, Kubernetes uses `Cluster` as the default. For `loadbalancer` or `nodeport` listeners only.
 |loadBalancerSourceRanges
 |string array
-|A list of CIDR ranges (for example `10.0.0.0/8` or `130.211.204.1/32`) from which clients can connect to load balancer type listeners. If supported by the platform, traffic through the loadbalancer is restricted to the specified CIDR ranges. This field is applicable only for loadbalancer type services and is ignored if the cloud provider does not support the feature. This field can be used only with `loadbalancer` type listener.
+|A list of CIDR ranges (for example `10.0.0.0/8` or `130.211.204.1/32`) from which clients can connect to loadbalancer listeners. If supported by the platform, traffic through the loadbalancer is restricted to the specified CIDR ranges. This field is applicable only for loadbalancer type services and is ignored if the cloud provider does not support the feature. For `loadbalancer` listeners only.
 |bootstrap
 |xref:type-GenericKafkaListenerConfigurationBootstrap-{context}[`GenericKafkaListenerConfigurationBootstrap`]
 |Bootstrap configuration.
@@ -443,19 +459,30 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerCo
 |Per-broker configurations.
 |ipFamilyPolicy
 |string (one of [RequireDualStack, SingleStack, PreferDualStack])
-|Specifies the IP Family Policy used by the service. Available options are `SingleStack`, `PreferDualStack` and `RequireDualStack`. `SingleStack` is for a single IP family. `PreferDualStack` is for two IP families on dual-stack configured clusters or a single IP family on single-stack clusters. `RequireDualStack` fails unless there are two IP families on dual-stack configured clusters. If unspecified, Kubernetes will choose the default value based on the service type.
+|Specifies the IP Family Policy used by the service. Available options are `SingleStack`, `PreferDualStack` and `RequireDualStack`:
+
+* `SingleStack` is for a single IP family.
+* `PreferDualStack` is for two IP families on dual-stack configured clusters or a single IP family on single-stack clusters.
+* `RequireDualStack` fails unless there are two IP families on dual-stack configured clusters.
+
+If unspecified, Kubernetes will choose the default value based on the service type.
 |ipFamilies
 |string (one or more of [IPv6, IPv4]) array
 |Specifies the IP Families used by the service. Available options are `IPv4` and `IPv6`. If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting.
 |createBootstrapService
 |boolean
-|Whether to create the bootstrap service or not. The bootstrap service is created by default (if not specified differently). This field can be used with the `loadBalancer` type listener.
+|Whether to create the bootstrap service or not. The bootstrap service is created by default (if not specified differently). This field can be used with the `loadbalancer` listener.
 |finalizers
 |string array
-|A list of finalizers which will be configured for the `LoadBalancer` type Services created for this listener. If supported by the platform, the finalizer `service.kubernetes.io/load-balancer-cleanup` to make sure that the external load balancer is deleted together with the service.For more information, see https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#garbage-collecting-load-balancers. This field can be used only with `loadbalancer` type listeners.
+|A list of finalizers configured for the `LoadBalancer` type services created for this listener. If supported by the platform, the finalizer `service.kubernetes.io/load-balancer-cleanup` to make sure that the external load balancer is deleted together with the service.For more information, see https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#garbage-collecting-load-balancers. For `loadbalancer` listeners only.
 |useServiceDnsDomain
 |boolean
-|Configures whether the Kubernetes service DNS domain should be used or not. If set to `true`, the generated addresses will contain the service DNS domain suffix (by default `.cluster.local`, can be configured using environment variable `KUBERNETES_SERVICE_DNS_DOMAIN`). Defaults to `false`.This field can be used only with `internal` and `cluster-ip` type listeners.
+|Configures whether the Kubernetes service DNS domain should be included in the generated addresses.
+
+* If set to `false`, the generated addresses do not contain the service DNS domain suffix. For example, `my-cluster-kafka-0.my-cluster-kafka-brokers.myproject.svc`.
+* If set to `true`, the generated addresses contain the service DNS domain suffix. For example, `my-cluster-kafka-0.my-cluster-kafka-brokers.myproject.svc.cluster.local`.
+
+The default is `.cluster.local`, but this is customizable using the environment variable `KUBERNETES_SERVICE_DNS_DOMAIN`. For `internal` and `cluster-ip` listeners only.
 |maxConnections
 |integer
 |The maximum number of connections we allow for this listener in the broker at any time. New connections are blocked if the limit is reached.
@@ -464,7 +491,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerCo
 |The maximum connection creation rate we allow in this listener at any time. New connections will be throttled if the limit is reached.
 |preferredNodePortAddressType
 |string (one of [ExternalDNS, ExternalIP, Hostname, InternalIP, InternalDNS])
-|Defines which address type should be used as the node address. Available types are: `ExternalDNS`, `ExternalIP`, `InternalDNS`, `InternalIP` and `Hostname`. By default, the addresses will be used in the following order (the first one found will be used):
+|Defines which address type should be used as the node address. Available types are: `ExternalDNS`, `ExternalIP`, `InternalDNS`, `InternalIP` and `Hostname`. By default, the addresses are used in the following order (the first one found is used):
 
 * `ExternalDNS`
 * `ExternalIP`
@@ -472,10 +499,10 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerCo
 * `InternalIP`
 * `Hostname`
 
-This field is used to select the preferred address type, which is checked first. If no address is found for this address type, the other types are checked in the default order. This field can only be used with `nodeport` type listener.
+This property is used to select the preferred address type, which is checked first. If no address is found for this address type, the other types are checked in the default order.For `nodeport` listeners only.
 |publishNotReadyAddresses
 |boolean
-|Configures whether the service endpoints are considered "ready" even if the Pods themselves are not. Defaults to `false`. This field can not be used with `internal` type listeners.
+|Configures whether the service endpoints are considered "ready" even if the Pods themselves are not. Defaults to `false`. This field can not be used with `internal` listeners.
 |====
 
 [id='type-CertAndKeySecretSource-{context}']
@@ -519,22 +546,22 @@ include::../api/io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerCo
 |Additional alternative names for the bootstrap service. The alternative names will be added to the list of subject alternative names of the TLS certificates.
 |host
 |string
-|The bootstrap host. This field will be used in the Ingress resource or in the Route resource to specify the desired hostname. This field can be used only with `route` (optional) or `ingress` (required) type listeners.
+|Specifies the hostname used for the bootstrap resource. For `route` (optional) or `ingress` (required) listeners only. Ensure the hostname resolves to the Ingress endpoints; no validation is performed by Strimzi.
 |nodePort
 |integer
-|Node port for the bootstrap service. This field can be used only with `nodeport` type listener.
+|Node port for the bootstrap service. For `nodeport` listeners only.
 |loadBalancerIP
 |string
-|The loadbalancer is requested with the IP address specified in this field. This feature depends on whether the underlying cloud provider supports specifying the `loadBalancerIP` when a load balancer is created. This field is ignored if the cloud provider does not support the feature.This field can be used only with `loadbalancer` type listener.
+|The loadbalancer is requested with the IP address specified in this property. This feature depends on whether the underlying cloud provider supports specifying the `loadBalancerIP` when a load balancer is created. This property is ignored if the cloud provider does not support the feature. For `loadbalancer` listeners only.
 |annotations
 |map
-|Annotations that will be added to the `Ingress`, `Route`, or `Service` resource. You can use this field to configure DNS providers such as External DNS. This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners.
+|Annotations added to `Ingress`, `Route`, or `Service` resources. You can use this property to configure DNS providers such as External DNS. For `loadbalancer`, `nodeport`, `route`, or `ingress` listeners only.
 |labels
 |map
-|Labels that will be added to the `Ingress`, `Route`, or `Service` resource. This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners.
+|Labels added to `Ingress`, `Route`, or `Service` resources. For `loadbalancer`, `nodeport`, `route`, or `ingress` listeners only.
 |externalIPs
 |string array
-|External IPs associated to the nodeport service. These IPs are used by clients external to the Kubernetes cluster to access the Kafka brokers. This field is helpful when `nodeport` without `externalIP` is not sufficient. For example on bare-metal Kubernetes clusters that do not support Loadbalancer service types. This field can only be used with `nodeport` type listener.
+|External IPs associated to the nodeport service. These IPs are used by clients external to the Kubernetes cluster to access the Kafka brokers. This property is helpful when `nodeport` without `externalIP` is not sufficient. For example on bare-metal Kubernetes clusters that do not support Loadbalancer service types. For `nodeport` listeners only.
 |====
 
 [id='type-GenericKafkaListenerConfigurationBroker-{context}']
@@ -2341,7 +2368,7 @@ include::../api/io.strimzi.api.kafka.model.connect.KafkaConnectSpec.adoc[levelof
 |The configuration of tracing in Kafka Connect.
 |template
 |xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
-|Template for Kafka Connect and Kafka Mirror Maker 2 resources. The template allows users to specify how the `Pods`, `Service`, and other services are generated.
+|Template for Kafka Connect and Kafka MirrorMaker 2 resources. The template allows users to specify how the `Pods`, `Service`, and other services are generated.
 |externalConfiguration
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 |Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
@@ -2575,6 +2602,21 @@ It must have the value `oauth` for the type `KafkaClientAuthenticationOAuth`.
 |includeAcceptHeader
 |boolean
 |Whether the Accept header should be set in requests to the authorization servers. The default value is `true`.
+|accessTokenLocation
+|string
+|Path to the token file containing an access token to be used for authentication.
+|clientAssertion
+|xref:type-GenericSecretSource-{context}[`GenericSecretSource`]
+|Link to Kubernetes Secret containing the client assertion which was manually configured for the client.
+|clientAssertionLocation
+|string
+|Path to the file containing the client assertion to be used for authentication.
+|clientAssertionType
+|string
+|The client assertion type. If not set, and `clientAssertion` or `clientAssertionLocation` is configured, then this value defaults to `urn:ietf:params:oauth:client-assertion-type:jwt-bearer`.
+|saslExtensions
+|map
+|SASL extensions parameters.
 |====
 
 [id='type-JaegerTracing-{context}']
@@ -3285,7 +3327,7 @@ include::../api/io.strimzi.api.kafka.model.user.acl.AclRule.adoc[leveloffset=+1]
 |**The `operation` property has been deprecated, and should now be configured using `spec.authorization.acls[*].operations`.** Operation which will be allowed or denied. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All.
 |operations
 |string (one or more of [Read, Write, Delete, Alter, Describe, All, IdempotentWrite, ClusterAction, Create, AlterConfigs, DescribeConfigs]) array
-|List of operations which will be allowed or denied. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All.
+|List of operations to allow or deny. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All. Only certain operations work with the specified resource.
 |====
 
 [id='type-AclRuleTopicResource-{context}']
@@ -3809,7 +3851,7 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeConsumerSpec.adoc[l
 |Property |Property type |Description
 |enabled
 |boolean
-|Whether the HTTP consumer should be enabled or disabled, default is enabled.
+|Whether the HTTP consumer should be enabled or disabled. The default is enabled (`true`).
 |timeoutSeconds
 |integer
 |The timeout in seconds for deleting inactive consumers, default is -1 (disabled).
@@ -3836,7 +3878,7 @@ include::../api/io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerSpec.adoc[l
 |Property |Property type |Description
 |enabled
 |boolean
-|Whether the HTTP producer should be enabled or disabled, default is enabled.
+|Whether the HTTP producer should be enabled or disabled. The default is enabled (`true`).
 |config
 |map
 |The Kafka producer configuration used for producer instances created by the bridge. Properties with the following prefixes cannot be set: ssl., bootstrap.servers, sasl., security. (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).
@@ -4094,7 +4136,7 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |The configuration of tracing in Kafka Connect.
 |template
 |xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
-|Template for Kafka Connect and Kafka Mirror Maker 2 resources. The template allows users to specify how the `Pods`, `Service`, and other services are generated.
+|Template for Kafka Connect and Kafka MirrorMaker 2 resources. The template allows users to specify how the `Pods`, `Service`, and other services are generated.
 |externalConfiguration
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 |Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.

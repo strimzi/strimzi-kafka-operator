@@ -127,6 +127,26 @@ EOF
     done
 fi
 
+if [ -n "$KAFKA_MIRRORMAKER_2_OAUTH_CLIENT_ASSERTIONS_CLUSTERS" ]; then
+
+    OAUTH_CLIENT_ASSERTIONS_CONFIGURATION="# OAuth client assertions"
+
+    IFS=$'\n' read -rd '' -a CLUSTERS <<< "$KAFKA_MIRRORMAKER_2_OAUTH_CLIENT_ASSERTIONS_CLUSTERS" || true
+    for cluster in "${CLUSTERS[@]}"
+    do
+        IFS='=' read -ra CLIENT_ASSERTION_CLUSTER <<< "${cluster}"
+        export clusterAlias="${CLIENT_ASSERTION_CLUSTER[0]}"
+        export clientAssertionFile="${CLIENT_ASSERTION_CLUSTER[1]}"
+
+        OAUTH_CLIENT_ASSERTION=$(cat "/opt/kafka/mm2-oauth/$clusterAlias/$clientAssertionFile")
+        OAUTH_CLIENT_ASSERTIONS_CONFIGURATION=$(cat <<EOF
+${OAUTH_CLIENT_ASSERTIONS_CONFIGURATION}
+${clusterAlias}.oauth.client.assertion=${OAUTH_CLIENT_ASSERTION}
+EOF
+)
+    done
+fi
+
 # Write the config file
 cat <<EOF
 ${TLS_CONFIGURATION}
@@ -137,4 +157,5 @@ ${OAUTH_CLIENT_SECRETS_CONFIGURATION}
 ${OAUTH_ACCESS_TOKENS_CONFIGURATION}
 ${OAUTH_REFRESH_TOKENS_CONFIGURATION}
 ${OAUTH_PASSWORDS_CONFIGURATION}
+${OAUTH_CLIENT_ASSERTIONS_CONFIGURATION}
 EOF

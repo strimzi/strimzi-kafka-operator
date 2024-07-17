@@ -59,6 +59,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
 import static java.util.Collections.emptyMap;
@@ -1121,6 +1122,35 @@ public class KafkaMirrorMakerClusterTest {
     }
 
     @ParallelTest
+    public void testGenerateDeploymentWithConsumerOAuthWithClientAssertion() {
+        KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
+                .editSpec()
+                    .editConsumer()
+                        .withAuthentication(
+                                new KafkaClientAuthenticationOAuthBuilder()
+                                        .withClientId("my-client-id")
+                                        .withTokenEndpointUri("http://my-oauth-server")
+                                        .withNewClientAssertion()
+                                            .withSecretName("my-secret-secret")
+                                            .withKey("my-secret-key")
+                                        .endClientAssertion()
+                                        .build())
+                    .endConsumer()
+                .endSpec()
+                .build();
+
+        KafkaMirrorMakerCluster kc = KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
+        Deployment dep = kc.generateDeployment(emptyMap(), true, null, null);
+        Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
+
+        assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_SASL_MECHANISM_CONSUMER.equals(var.getName())).findFirst().orElseThrow().getValue(), is("oauth"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OAUTH_CLIENT_ASSERTION_CONSUMER.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OAUTH_CLIENT_ASSERTION_CONSUMER.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OAUTH_CONFIG_CONSUMER.equals(var.getName())).findFirst().orElseThrow().getValue().trim(),
+                is(String.format("%s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server")));
+    }
+
+    @ParallelTest
     public void testGenerateDeploymentWithConsumerOAuthWithUsernameAndPassword() {
         KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
                 .editSpec()
@@ -1288,6 +1318,28 @@ public class KafkaMirrorMakerClusterTest {
     }
 
     @ParallelTest
+    public void testGenerateDeploymentWithProducerOAuthWithAccessTokenLocation() {
+        KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
+                .editSpec()
+                .editProducer()
+                .withAuthentication(
+                        new KafkaClientAuthenticationOAuthBuilder()
+                                .withAccessTokenLocation("/var/run/secrets/kubernetes.io/serviceaccount/token")
+                                .build())
+                .endProducer()
+                .endSpec()
+                .build();
+
+        KafkaMirrorMakerCluster kc = KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
+        Deployment dep = kc.generateDeployment(emptyMap(), true, null, null);
+        Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
+
+        assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_SASL_MECHANISM_PRODUCER.equals(var.getName())).findFirst().orElseThrow().getValue(), is("oauth"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OAUTH_CONFIG_PRODUCER.equals(var.getName())).findFirst().orElseThrow().getValue().trim(),
+                is(String.format("%s=\"%s\"", ClientConfig.OAUTH_ACCESS_TOKEN_LOCATION, "/var/run/secrets/kubernetes.io/serviceaccount/token")));
+    }
+
+    @ParallelTest
     public void testGenerateDeploymentWithProducerOAuthWithRefreshToken() {
         KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
                 .editSpec()
@@ -1341,6 +1393,66 @@ public class KafkaMirrorMakerClusterTest {
         assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_SASL_MECHANISM_PRODUCER.equals(var.getName())).findFirst().orElseThrow().getValue(), is("oauth"));
         assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OAUTH_CLIENT_SECRET_PRODUCER.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
         assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OAUTH_CLIENT_SECRET_PRODUCER.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OAUTH_CONFIG_PRODUCER.equals(var.getName())).findFirst().orElseThrow().getValue().trim(),
+                is(String.format("%s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server")));
+    }
+
+    @ParallelTest
+    public void testGenerateDeploymentWithProducerOAuthWithClientSecretAndSaslExtensions() {
+        KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
+                .editSpec()
+                .editProducer()
+                .withAuthentication(
+                        new KafkaClientAuthenticationOAuthBuilder()
+                                .withClientId("my-client-id")
+                                .withTokenEndpointUri("http://my-oauth-server")
+                                .withNewClientSecret()
+                                    .withSecretName("my-secret-secret")
+                                    .withKey("my-secret-key")
+                                .endClientSecret()
+                                .withSaslExtensions(new TreeMap(Map.of("key1", "value1", "key2", "value2")))
+                                .build())
+                .endProducer()
+                .endSpec()
+                .build();
+
+        KafkaMirrorMakerCluster kc = KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
+        Deployment dep = kc.generateDeployment(emptyMap(), true, null, null);
+        Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
+
+        assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_SASL_MECHANISM_PRODUCER.equals(var.getName())).findFirst().orElseThrow().getValue(), is("oauth"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OAUTH_CLIENT_SECRET_PRODUCER.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OAUTH_CLIENT_SECRET_PRODUCER.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OAUTH_CONFIG_PRODUCER.equals(var.getName())).findFirst().orElseThrow().getValue().trim(),
+                is(String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server",
+                        ClientConfig.OAUTH_SASL_EXTENSION_PREFIX + "key1", "value1", ClientConfig.OAUTH_SASL_EXTENSION_PREFIX + "key2", "value2")));
+    }
+
+    @ParallelTest
+    public void testGenerateDeploymentWithProducerOAuthWithClientAssertion() {
+        KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
+                .editSpec()
+                    .editProducer()
+                        .withAuthentication(
+                                new KafkaClientAuthenticationOAuthBuilder()
+                                        .withClientId("my-client-id")
+                                        .withTokenEndpointUri("http://my-oauth-server")
+                                        .withNewClientAssertion()
+                                            .withSecretName("my-secret-secret")
+                                            .withKey("my-secret-key")
+                                        .endClientAssertion()
+                                        .build())
+                    .endProducer()
+                .endSpec()
+                .build();
+
+        KafkaMirrorMakerCluster kc = KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
+        Deployment dep = kc.generateDeployment(emptyMap(), true, null, null);
+        Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
+
+        assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_SASL_MECHANISM_PRODUCER.equals(var.getName())).findFirst().orElseThrow().getValue(), is("oauth"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OAUTH_CLIENT_ASSERTION_PRODUCER.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
+        assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OAUTH_CLIENT_ASSERTION_PRODUCER.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
         assertThat(cont.getEnv().stream().filter(var -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OAUTH_CONFIG_PRODUCER.equals(var.getName())).findFirst().orElseThrow().getValue().trim(),
                 is(String.format("%s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server")));
     }

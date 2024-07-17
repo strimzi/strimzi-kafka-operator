@@ -9,7 +9,7 @@ Configuration options relate to:
 * HTTP configuration
 
 [id='property-kafka-bridge-logging-{context}']
-= `logging`
+= Logging
 
 Kafka Bridge has its own configurable loggers:
 

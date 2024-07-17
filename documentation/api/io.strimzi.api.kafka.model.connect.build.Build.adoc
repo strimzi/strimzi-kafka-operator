@@ -1,6 +1,6 @@
 Configures additional connectors for Kafka Connect deployments.
 
-= `output`
+= Configuring container registries
 
 To build new container images with additional connector plugins, Strimzi requires a container registry where the images can be pushed to, stored, and pulled from.
 Strimzi does not run its own container registry, so a registry must be provided.
@@ -74,7 +74,7 @@ spec:
 <1> (Required) Type of output used by Strimzi.
 <2> (Required) Name of the ImageStream and tag.
 
-= `plugins`
+= Configuring connector plugins 
 
 Connector plugins are a set of files that define the implementation required to connect to certain types of external system.
 The connector plugins required for a container image must be configured using the `.spec.build.plugins` property of the `KafkaConnect` custom resource.

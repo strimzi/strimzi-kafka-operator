@@ -83,12 +83,16 @@ if [ -n "$KAFKA_CONNECT_SASL_MECHANISM" ]; then
             OAUTH_PASSWORD_GRANT_PASSWORD="oauth.password.grant.password=\"$KAFKA_CONNECT_OAUTH_PASSWORD_GRANT_PASSWORD\""
         fi
 
+        if [ -n "$KAFKA_CONNECT_OAUTH_CLIENT_ASSERTION" ]; then
+            OAUTH_CLIENT_ASSERTION="oauth.client.assertion=\"$KAFKA_CONNECT_OAUTH_CLIENT_ASSERTION\""
+        fi
+
         if [ -f "/tmp/kafka/oauth.truststore.p12" ]; then
             OAUTH_TRUSTSTORE="oauth.ssl.truststore.location=\"/tmp/kafka/oauth.truststore.p12\" oauth.ssl.truststore.password=\"${CERTS_STORE_PASSWORD}\" oauth.ssl.truststore.type=\"PKCS12\""
         fi
 
         SASL_MECHANISM="OAUTHBEARER"
-        JAAS_CONFIG="org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ${KAFKA_CONNECT_OAUTH_CONFIG} ${OAUTH_CLIENT_SECRET} ${OAUTH_REFRESH_TOKEN} ${OAUTH_ACCESS_TOKEN} ${OAUTH_PASSWORD_GRANT_PASSWORD} ${OAUTH_TRUSTSTORE};"
+        JAAS_CONFIG="org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ${KAFKA_CONNECT_OAUTH_CONFIG} ${OAUTH_CLIENT_SECRET} ${OAUTH_REFRESH_TOKEN} ${OAUTH_ACCESS_TOKEN} ${OAUTH_PASSWORD_GRANT_PASSWORD} ${OAUTH_CLIENT_ASSERTION} ${OAUTH_TRUSTSTORE};"
         OAUTH_CALLBACK_CLASS="sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"
         OAUTH_CALLBACK_CLASS_PRODUCER="producer.${OAUTH_CALLBACK_CLASS}"
         OAUTH_CALLBACK_CLASS_CONSUMER="consumer.${OAUTH_CALLBACK_CLASS}"

@@ -105,7 +105,8 @@ public class GenericKafkaListener implements UnknownPropertyPreserving {
     }
 
     @Description("Enables TLS encryption on the listener. " +
-            "This is a required property.")
+            "This is a required property. " + 
+            "For `route` and `ingress` type listeners, TLS encryption must be always enabled.")
     @JsonProperty(required = true)
     public boolean isTls() {
         return tls;

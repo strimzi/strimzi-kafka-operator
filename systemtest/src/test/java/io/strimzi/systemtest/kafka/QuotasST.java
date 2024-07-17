@@ -25,6 +25,7 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
@@ -33,6 +34,7 @@ import java.util.Collections;
 
 import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.QUOTAS_PLUGIN;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
@@ -126,6 +128,82 @@ public class QuotasST extends AbstractST {
 
         resourceManager.createResourceWithWait(clients.producerScramShaPlainStrimzi());
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+    }
+
+    @ParallelNamespaceTest
+    @Tag(INTERNAL_CLIENTS_USED)
+    @Tag(REGRESSION)
+    void testKafkaQuotasPluginWithBandwidthLimitation() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final String excludedPrincipal = "User:" + testStorage.getUsername();
+
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+            )
+        );
+        resourceManager.createResourceWithWait(
+            KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1)
+                .editSpec()
+                    .editKafka()
+                    .addToConfig("client.quota.callback.static.storage.check-interval", "5")
+                    .withNewQuotasPluginStrimziQuotas()
+                        .addToExcludedPrincipals(excludedPrincipal)
+                        .withProducerByteRate(1000L)    // 1 kB/s
+                        .withConsumerByteRate(1000L)    // 1 kB/s
+                    .endQuotasPluginStrimziQuotas()
+                    .withListeners(
+                        new GenericKafkaListenerBuilder()
+                            .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)
+                            .withPort(9092)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(false)
+                            .build(),
+                        new GenericKafkaListenerBuilder()
+                            .withName("scramsha")
+                            .withPort(9095)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(false)
+                            .withNewKafkaListenerAuthenticationScramSha512Auth()
+                            .endKafkaListenerAuthenticationScramSha512Auth()
+                            .build()
+                    )
+                    .endKafka()
+                .endSpec()
+                .build()
+        );
+        resourceManager.createResourceWithWait(
+            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build(),
+            KafkaUserTemplates.scramShaUser(testStorage).build()
+        );
+
+        KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withMessageCount(100)
+            .withMessage(String.join("", Collections.nCopies(2000, "#")))
+            .build();
+
+        LOGGER.info("Sending messages with normal user, quota applies");
+        long startTimeNormal = System.currentTimeMillis();
+        resourceManager.createResourceWithWait(clients.producerStrimzi());
+        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        long endTimeNormal = System.currentTimeMillis();
+        long durationNormal = endTimeNormal - startTimeNormal;
+        LOGGER.info("Time taken for normal user: {} ms", durationNormal);
+
+        // Measure time for excluded user
+        LOGGER.info("Sending messages with excluded user, no quota applies");
+        clients = ClientUtils.getInstantScramShaClientBuilder(testStorage, KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9095").build();
+
+        long startTimeExcluded = System.currentTimeMillis();
+        resourceManager.createResourceWithWait(clients.producerScramShaPlainStrimzi());
+        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+        long endTimeExcluded = System.currentTimeMillis();
+        long durationExcluded = endTimeExcluded - startTimeExcluded;
+        LOGGER.info("Time taken for excluded user: {} ms", durationExcluded);
+
+        // Assert that time taken with normal user is greater than with excluded user
+        assertThat("Time taken for normal user should be greater than time taken for excluded user", durationNormal, Matchers.greaterThan(durationExcluded));
     }
 
     @AfterEach

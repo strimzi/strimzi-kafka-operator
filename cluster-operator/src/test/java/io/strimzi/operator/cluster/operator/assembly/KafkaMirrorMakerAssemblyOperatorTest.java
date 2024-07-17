@@ -172,8 +172,13 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 KafkaMirrorMaker mm = capturedMM.get(0);
                 assertThat(mm.getStatus().getReplicas(), is(mirror.getReplicas()));
                 assertThat(mm.getStatus().getLabelSelector(), is(mirror.getSelectorLabels().toSelectorString()));
+                assertThat(mm.getStatus().getConditions().size(), is(2));
                 assertThat(mm.getStatus().getConditions().get(0).getType(), is("Ready"));
                 assertThat(mm.getStatus().getConditions().get(0).getStatus(), is("True"));
+                assertThat(mm.getStatus().getConditions().get(1).getType(), is("Warning"));
+                assertThat(mm.getStatus().getConditions().get(1).getReason(), is("MirrorMaker1Deprecation"));
+                assertThat(mm.getStatus().getConditions().get(1).getStatus(), is("True"));
+                assertThat(mm.getStatus().getConditions().get(1).getMessage(), is("Mirror Maker 1 is deprecated and will be removed in Apache Kafka 4.0.0. Please migrate to Mirror Maker 2."));
 
                 async.flag();
             })));
@@ -644,9 +649,14 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 List<KafkaMirrorMaker> capturedMM = statusCaptor.getAllValues();
                 assertThat(capturedMM, hasSize(1));
                 KafkaMirrorMaker mm = capturedMM.get(0);
+                assertThat(mm.getStatus().getConditions().size(), is(2));
                 assertThat(mm.getStatus().getConditions().get(0).getType(), is("NotReady"));
                 assertThat(mm.getStatus().getConditions().get(0).getStatus(), is("True"));
                 assertThat(mm.getStatus().getConditions().get(0).getMessage(), is(failureMsg));
+                assertThat(mm.getStatus().getConditions().get(1).getType(), is("Warning"));
+                assertThat(mm.getStatus().getConditions().get(1).getReason(), is("MirrorMaker1Deprecation"));
+                assertThat(mm.getStatus().getConditions().get(1).getStatus(), is("True"));
+                assertThat(mm.getStatus().getConditions().get(1).getMessage(), is("Mirror Maker 1 is deprecated and will be removed in Apache Kafka 4.0.0. Please migrate to Mirror Maker 2."));
 
                 async.flag();
             })));
@@ -696,7 +706,18 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                     // 0 Replicas - readiness should never get called.
                     verify(mockDcOps, never()).readiness(any(), anyString(), anyString(), anyLong(), anyLong());
 
-                    assertThat(mirrorMakerCaptor.getValue().getStatus().getConditions().get(0).getType(), is("Ready"));
+                    List<KafkaMirrorMaker> capturedMM = mirrorMakerCaptor.getAllValues();
+                    assertThat(capturedMM, hasSize(1));
+                    KafkaMirrorMaker mm = capturedMM.get(0);
+
+                    assertThat(mm.getStatus().getConditions().size(), is(2));
+                    assertThat(mm.getStatus().getConditions().get(0).getType(), is("Ready"));
+                    assertThat(mm.getStatus().getConditions().get(0).getStatus(), is("True"));
+                    assertThat(mm.getStatus().getConditions().get(1).getType(), is("Warning"));
+                    assertThat(mm.getStatus().getConditions().get(1).getReason(), is("MirrorMaker1Deprecation"));
+                    assertThat(mm.getStatus().getConditions().get(1).getStatus(), is("True"));
+                    assertThat(mm.getStatus().getConditions().get(1).getMessage(), is("Mirror Maker 1 is deprecated and will be removed in Apache Kafka 4.0.0. Please migrate to Mirror Maker 2."));
+
                     async.flag();
                 })));
     }
