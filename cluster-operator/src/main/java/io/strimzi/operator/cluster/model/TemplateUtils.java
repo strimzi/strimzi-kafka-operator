@@ -64,29 +64,29 @@ public class TemplateUtils {
             return;
         }
 
-            // Extract the names and paths of the existing volumes
-            List<String> existingVolumeNames = existingVolumes.stream().map(Volume::getName).toList();
+        // Extract the names and paths of the existing volumes
+        List<String> existingVolumeNames = existingVolumes.stream().map(Volume::getName).toList();
 
-            // Check if there are any invalid volume names
-            List<String> invalidNames = existingVolumeNames.stream().filter(name -> !VOLUME_NAME_REGEX.matcher(name).matches()).toList();
+        // Check if there are any invalid volume names
+        List<String> invalidNames = existingVolumeNames.stream().filter(name -> !VOLUME_NAME_REGEX.matcher(name).matches()).toList();
 
-            // Find duplicate names in the additional volumes
-            List<String> duplicateNames = templatePod.getVolumes().stream()
-                    .map(AdditionalVolume::getName)
-                    .filter(existingVolumeNames::contains)
-                    .toList();
+        // Find duplicate names in the additional volumes
+        List<String> duplicateNames = templatePod.getVolumes().stream()
+                .map(AdditionalVolume::getName)
+                .filter(existingVolumeNames::contains)
+                .toList();
 
-            // Throw an exception if there are any invalid volume names
-            if (!invalidNames.isEmpty()) {
-                throw new InvalidResourceException("Volume names " + invalidNames + " are invalid and do not match the pattern " + VOLUME_NAME_REGEX);
-            }
+        // Throw an exception if there are any invalid volume names
+        if (!invalidNames.isEmpty()) {
+            throw new InvalidResourceException("Volume names " + invalidNames + " are invalid and do not match the pattern " + VOLUME_NAME_REGEX);
+        }
 
-            // Throw an exception if duplicates are found
-            if (!duplicateNames.isEmpty()) {
-                throw new InvalidResourceException("Duplicate volume names found in additional volumes: " + duplicateNames);
-            }
+        // Throw an exception if duplicates are found
+        if (!duplicateNames.isEmpty()) {
+            throw new InvalidResourceException("Duplicate volume names found in additional volumes: " + duplicateNames);
+        }
 
-            templatePod.getVolumes().forEach(volumeConfig -> existingVolumes.add(createVolumeFromConfig(volumeConfig)));
+        templatePod.getVolumes().forEach(volumeConfig -> existingVolumes.add(createVolumeFromConfig(volumeConfig)));
     }
 
     /**
