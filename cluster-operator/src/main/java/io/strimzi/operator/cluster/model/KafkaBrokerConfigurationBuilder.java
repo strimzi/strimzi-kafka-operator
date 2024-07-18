@@ -279,7 +279,14 @@ public class KafkaBrokerConfigurationBuilder {
 
         // Control Plane listener is set for pure KRaft controller or combined node, and broker in ZooKeeper mode or in migration state but not when full KRaft.
         if (node.controller() || (node.broker() && kafkaMetadataConfigState.isZooKeeperToMigration())) {
-            listeners.add(CONTROL_PLANE_LISTENER_NAME + "://0.0.0.0:9090");
+            if (!node.broker()) {
+                // If it is a pure controller, the listener needs to be set with hostnames that Admin Client can bootstrap
+                listeners.add(String.format("%s://%s:9090", CONTROL_PLANE_LISTENER_NAME,
+                        DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(clusterName), node.podName())
+                ));
+            } else {
+                listeners.add(CONTROL_PLANE_LISTENER_NAME + "://0.0.0.0:9090");
+            }
 
             // Control Plane listener to be advertised only with broker in ZooKeeper-based or migration but NOT when full KRaft only or mixed
             if (node.broker() && kafkaMetadataConfigState.isZooKeeperToMigration()) {
