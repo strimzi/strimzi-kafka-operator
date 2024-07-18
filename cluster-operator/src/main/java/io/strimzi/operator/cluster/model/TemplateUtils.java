@@ -59,8 +59,7 @@ public class TemplateUtils {
      * @param existingVolumes The list of existing volumes to which the additional volumes will be added.
      */
     public static void addAdditionalVolumes(PodTemplate templatePod, List<Volume> existingVolumes) {
-        boolean checkForNotNull = templatePod != null || templatePod.getVolumes() == null;
-        if (checkForNotNull) {
+        if (templatePod == null || templatePod.getVolumes() == null) {
             return;
         }
 
