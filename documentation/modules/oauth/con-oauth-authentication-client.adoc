@@ -183,7 +183,7 @@ sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginMo
   oauth.access.token="<access_token>" ; # <1>
 sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
 ----
-<1> Long-lived access token for Kafka clients. Alternatively, `oauth.access.token.location` option can be used to specify the file that contains the access token.
+<1> Long-lived access token for Kafka clients. Alternatively, `oauth.access.token.location` can be used to specify the file that contains the access token.
 
 [id='con-oauth-authentication-serviceaccount-token-{context}']
 .Example Kubernetes service account token configuration

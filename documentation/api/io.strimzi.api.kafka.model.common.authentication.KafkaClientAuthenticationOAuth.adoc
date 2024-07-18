@@ -60,7 +60,7 @@ authentication:
     key: access-token
 ----
 
-.An example of OAuth client authentication using an access token (service account token in this case) provided in the form of the file on the mounted filesystem
+.Example (service account) access token configuration specifying a mounted file
 [source,yaml,subs=attributes+]
 ----
 authentication:
