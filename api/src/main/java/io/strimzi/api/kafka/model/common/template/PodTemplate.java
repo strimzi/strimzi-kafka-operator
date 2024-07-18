@@ -185,8 +185,10 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
 
     @Pattern(Constants.MEMORY_REGEX)
     @JsonProperty(defaultValue = "5Mi")
-    @Description("Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). " +
-            "Default value is `5Mi`.")
+    @Description("Defines the total amount of pod memory allocated for the temporary `EmptyDir` volume `/tmp`. " +
+        "Specify the allocation in memory units, for example, `100Mi` for 100 mebibytes. " +
+        "Default value is `5Mi`. " +
+        "The `/tmp` volume is backed by pod memory, not disk storage, so avoid setting a high value as it consumes pod memory resources.")
     public String getTmpDirSizeLimit() {
         return tmpDirSizeLimit;
     }
