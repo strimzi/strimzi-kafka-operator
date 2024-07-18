@@ -182,4 +182,21 @@ public class SetupMinio {
             return bucketSize > 0;
         });
     }
+
+    /**
+     * Wait until size of the bucket is 0 B.
+     * @param namespace Minio location
+     * @param bucketName bucket name
+     */
+    public static void waitForNoDataInMinio(String namespace, String bucketName) {
+        TestUtils.waitFor("data deletion in Minio", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT_LONG, () -> {
+            String bucketSizeInfo = SetupMinio.getBucketSizeInfo(namespace, bucketName);
+            Map<String, Object> parsedSize = parseTotalSize(bucketSizeInfo);
+            double bucketSize = (Double) parsedSize.get("size");
+            LOGGER.info("Collected bucket size: {} {}", bucketSize, parsedSize.get("unit"));
+            LOGGER.debug("Collected bucket info:\n{}", bucketSizeInfo);
+
+            return bucketSize == 0;
+        });
+    }
 }

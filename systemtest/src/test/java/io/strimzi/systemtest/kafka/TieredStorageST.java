@@ -4,20 +4,27 @@
  */
 package io.strimzi.systemtest.kafka;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.imageBuild.ImageBuild;
 import io.strimzi.systemtest.resources.minio.SetupMinio;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.specific.AdminClientTemplates;
+import io.strimzi.systemtest.utils.AdminClientUtils;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -30,6 +37,8 @@ import java.util.Collections;
 
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.systemtest.TestConstants.TIERED_STORAGE;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.lessThan;
 
 /**
  * @description This test suite covers scenarios for Tiered Storage integration implemented within Strimzi.
@@ -71,7 +80,7 @@ public class TieredStorageST extends AbstractST {
      *  - tiered-storage-integration
      */
     @ParallelTest
-    void testTieredStorageWithAivenPlugin() {
+    void testTieredStorageWithAivenPlugin() throws JsonProcessingException {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         resourceManager.createResourceWithWait(
@@ -115,7 +124,7 @@ public class TieredStorageST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), suiteStorage.getNamespaceName())
+        KafkaTopicBuilder kt = KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), suiteStorage.getNamespaceName())
             .editSpec()
                 .addToConfig("file.delete.delay.ms", 1000)
                 .addToConfig("local.retention.ms", 1000)
@@ -126,8 +135,9 @@ public class TieredStorageST extends AbstractST {
                 .addToConfig("retention.ms", 86400000)
                 // Segment size is set to 10mb to make it quickier to sync data to Minio
                 .addToConfig("segment.bytes", 1048576)
-            .endSpec()
-            .build());
+            .endSpec();
+
+        resourceManager.createResourceWithWait(kt.build());
 
         final KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage)
             .withMessageCount(10000)
@@ -138,10 +148,49 @@ public class TieredStorageST extends AbstractST {
         resourceManager.createResourceWithWait(clients.producerStrimzi());
 
         SetupMinio.waitForDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
+
+        // Create admin-client to check offsets
+        resourceManager.createResourceWithWait(
+            AdminClientTemplates.plainAdminClient(
+                testStorage.getNamespaceName(),
+                testStorage.getAdminName(),
+                KafkaResources.plainBootstrapAddress(testStorage.getClusterName())
+            )
+            .editSpec()
+                .editOrNewTemplate()
+                    .editSpec()
+                        .editFirstContainer()
+                            // TODO - use latest test-clients after https://github.com/strimzi/test-clients/pull/103
+                            .withImage("quay.io/jstejska/test-clients:admin-kafka-3.7.1")
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec().build()
+        );
+        final AdminClient adminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
+        // Fetch latest offsets - number of sent messages
+        String offsetData = adminClient.fetchOffsets(testStorage.getTopicName(), "latest");
+        long latestOffset = AdminClientUtils.getPartitionsOffset(offsetData, "0");
+
+        // Fetch earliest-local offsets - number of messages stored locally
+        offsetData = adminClient.fetchOffsets(testStorage.getTopicName(), "earliest-local");
+        long earliestLocalOffset = AdminClientUtils.getPartitionsOffset(offsetData, "0");
+        // Check that data are not present locally, earliest-local offset should be lower than latest offset
+        // latest should be 10000
+        // earliest-local should be lower than 10000
+        assertThat(earliestLocalOffset, lessThan(latestOffset));
+
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
         resourceManager.createResourceWithWait(clients.consumerStrimzi());
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+
+        // Delete data
+        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
+            testStorage.getTopicName(),
+            topic -> topic.getSpec().getConfig().put("retention.ms", 10000), testStorage.getNamespaceName());
+
+        SetupMinio.waitForNoDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
     }
 
     @BeforeAll
