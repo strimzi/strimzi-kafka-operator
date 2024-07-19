@@ -21,6 +21,8 @@
 * [Skillsoft](https://www.skillsoft.com/)
     * Utilizes Strimzi to deploy Kafka Connect on Kubernetes for Apache Kafka backup & disaster recovery.
 * [Hetzner](https://www.hetzner.com/)
+* [Ænix](https://aenix.io)
+    * Use Strimzi to provide Kafka as a Service in Open Source platform [Cozystack](https://cozystack.io)
 
 Are you currently using Strimzi in production?
 Please let us know by adding your company name and, if you want, a description of your use case to this document!

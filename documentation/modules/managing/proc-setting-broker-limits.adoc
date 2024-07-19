@@ -104,6 +104,12 @@ spec:
 
 . Apply the changes to the `Kafka` configuration.
 
+NOTE: `minAvailableBytesPerVolume` and `minAvailableRatioPerVolume` are mutually exclusive.
+This means that only one of these parameters should be configured.
+
+NOTE: Additional options can be configured in the `spec.kafka.config` section.
+The full list of supported options can be found in the https://github.com/strimzi/kafka-quotas-plugin?tab=readme-ov-file#properties-and-their-defaults[plugin documentation].
+
 [role="_additional-resources"]
 .Additional resources
 
