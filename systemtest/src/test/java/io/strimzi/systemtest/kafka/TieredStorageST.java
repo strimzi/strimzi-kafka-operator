@@ -9,6 +9,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -37,8 +38,6 @@ import java.util.Collections;
 
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.systemtest.TestConstants.TIERED_STORAGE;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.lessThan;
 
 /**
  * @description This test suite covers scenarios for Tiered Storage integration implemented within Strimzi.
@@ -160,25 +159,30 @@ public class TieredStorageST extends AbstractST {
                 .editOrNewTemplate()
                     .editSpec()
                         .editFirstContainer()
-                            // TODO - use latest test-clients after https://github.com/strimzi/test-clients/pull/103
-                            .withImage("quay.io/jstejska/test-clients:admin-kafka-3.7.1")
+                            // TODO - remove this when new version of clients will be available
+                            .withImage("quay.io/strimzi-test-clients/test-clients:latest-kafka-3.7.1")
                         .endContainer()
                     .endSpec()
                 .endTemplate()
             .endSpec().build()
         );
         final AdminClient adminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
-        // Fetch latest offsets - number of sent messages
-        String offsetData = adminClient.fetchOffsets(testStorage.getTopicName(), "latest");
-        long latestOffset = AdminClientUtils.getPartitionsOffset(offsetData, "0");
 
-        // Fetch earliest-local offsets - number of messages stored locally
-        offsetData = adminClient.fetchOffsets(testStorage.getTopicName(), "earliest-local");
-        long earliestLocalOffset = AdminClientUtils.getPartitionsOffset(offsetData, "0");
-        // Check that data are not present locally, earliest-local offset should be lower than latest offset
-        // latest should be 10000
-        // earliest-local should be lower than 10000
-        assertThat(earliestLocalOffset, lessThan(latestOffset));
+        TestUtils.waitFor("earliest-local offset to be higher than 0",
+            TestConstants.GLOBAL_POLL_INTERVAL_5_SECS, TestConstants.GLOBAL_TIMEOUT_LONG,
+            () -> {
+                // Fetch earliest-local offsets
+                // Check that data are not present locally, earliest-local offset should be higher than 0
+                String offsetData = adminClient.fetchOffsets(testStorage.getTopicName(), "earliest-local");
+                long earliestLocalOffset = 0;
+                try {
+                    earliestLocalOffset = AdminClientUtils.getPartitionsOffset(offsetData, "0");
+                    LOGGER.info("earliest-local offset for topic {} is {}", testStorage.getTopicName(), earliestLocalOffset);
+                } catch (JsonProcessingException e) {
+                    return false;
+                }
+                return earliestLocalOffset > 0;
+            });
 
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
