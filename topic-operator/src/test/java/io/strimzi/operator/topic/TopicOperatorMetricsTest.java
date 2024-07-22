@@ -19,6 +19,7 @@ import io.strimzi.operator.topic.cruisecontrol.CruiseControlHandler;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsProvider;
 import io.strimzi.operator.topic.model.TopicEvent.TopicUpsert;
+import io.strimzi.test.mockkube3.MockKube3;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.TopicConfig;
@@ -77,19 +78,24 @@ public class TopicOperatorMetricsTest {
     private static final int MAX_QUEUE_SIZE = 200;
     private static final int MAX_BATCH_SIZE = 10;
     private static final long MAX_BATCH_LINGER_MS = 10_000;
-    
+
+    private static MockKube3 mockKube;
     private static KubernetesClient kubernetesClient;
     
     @BeforeAll
     public static void beforeAll() {
-        kubernetesClient = TopicOperatorUtil.createKubernetesClient();
-        TopicOperatorTestUtil.setupKubeCluster(kubernetesClient, NAMESPACE);
+        mockKube = new MockKube3.MockKube3Builder()
+            .withKafkaTopicCrd()
+            .withDeletionController()
+            .withNamespaces(NAMESPACE)
+            .build();
+        mockKube.start();
+        kubernetesClient = mockKube.client();
     }
 
     @AfterAll
     public static void afterAll() {
-        TopicOperatorTestUtil.deleteNamespace(kubernetesClient, NAMESPACE);
-        kubernetesClient.close();
+        mockKube.stop();
     }
 
     @AfterEach

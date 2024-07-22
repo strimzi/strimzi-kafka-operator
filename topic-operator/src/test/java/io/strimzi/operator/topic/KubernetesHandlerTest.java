@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.topic.KafkaTopicStatusBuilder;
 import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsProvider;
+import io.strimzi.test.mockkube3.MockKube3;
 import org.apache.kafka.common.config.TopicConfig;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -33,19 +34,24 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class KubernetesHandlerTest {
     private static final String NAMESPACE = TopicOperatorTestUtil.namespaceName(KubernetesHandlerTest.class);
 
+    private static MockKube3 mockKube;
     private static KubernetesClient kubernetesClient;
     private KubernetesHandler kubernetesHandler;
 
     @BeforeAll
     public static void beforeAll() {
-        kubernetesClient = TopicOperatorUtil.createKubernetesClient();
-        TopicOperatorTestUtil.setupKubeCluster(kubernetesClient, NAMESPACE);
+        mockKube = new MockKube3.MockKube3Builder()
+            .withKafkaTopicCrd()
+            .withDeletionController()
+            .withNamespaces(NAMESPACE)
+            .build();
+        mockKube.start();
+        kubernetesClient = mockKube.client();
     }
 
     @AfterAll
     public static void afterAll() {
-        TopicOperatorTestUtil.deleteNamespace(kubernetesClient, NAMESPACE);
-        kubernetesClient.close();
+        mockKube.stop();
     }
 
     @BeforeEach
