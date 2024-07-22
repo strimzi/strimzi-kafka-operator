@@ -28,6 +28,7 @@ import io.strimzi.systemtest.utils.AdminClientUtils;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.specific.MinioUtils;
 import io.strimzi.test.TestUtils;
+import org.apache.kafka.common.requests.ListOffsetsRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -171,7 +172,7 @@ public class TieredStorageST extends AbstractST {
             () -> {
                 // Fetch earliest-local offsets
                 // Check that data are not present locally, earliest-local offset should be higher than 0
-                String offsetData = adminClient.fetchOffsets(testStorage.getTopicName(), "earliest-local");
+                String offsetData = adminClient.fetchOffsets(testStorage.getTopicName(), String.valueOf(ListOffsetsRequest.EARLIEST_LOCAL_TIMESTAMP));
                 long earliestLocalOffset = 0;
                 try {
                     earliestLocalOffset = AdminClientUtils.getPartitionsOffset(offsetData, "0");
