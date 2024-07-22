@@ -97,6 +97,10 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 
+/**
+ * This integration test suite provides coverage of the {@link BatchingTopicController}.
+ * If you need to test individual units of code, use the the {@link BatchingTopicController}.
+ */
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
 @ExtendWith(KafkaClusterExtension.class)
 class TopicControllerIT {

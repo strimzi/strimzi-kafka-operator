@@ -73,8 +73,11 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 /**
- * This test is not intended to provide lots of coverage of the {@link BatchingTopicController}, 
+ * This unit test suite is not intended to provide lots of coverage of the {@link BatchingTopicController}, 
  * rather it aims to cover some parts that a difficult to test via {@link TopicControllerIT}.
+ * 
+ * Some examples are internal operations and behaviors, or when you need to test a system 
+ * behavior without starting a slow external service (e.g. Cruise Control).
  */
 @ExtendWith(KafkaClusterExtension.class)
 class BatchingTopicControllerTest {

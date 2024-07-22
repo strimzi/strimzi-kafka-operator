@@ -18,6 +18,7 @@ import io.strimzi.operator.topic.model.ReconcilableTopic;
 import io.strimzi.operator.topic.model.TopicOperatorException;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -33,13 +34,13 @@ public class TopicOperatorUtil {
     private TopicOperatorUtil() { }
 
     /**
-     * Create e new instance of Kubernetes client.
+     * Create a new Kubernetes client instance.
      *
      * @return Kubernetes client.
      */
     public static KubernetesClient createKubernetesClient() {
         return new OperatorKubernetesClientBuilder(
-            "strimzi-topic-operator-" + System.nanoTime(),
+            "strimzi-topic-operator-" + UUID.randomUUID(),
             TopicOperatorMain.class.getPackage().getImplementationVersion())
             .build();
     }
@@ -176,7 +177,7 @@ public class TopicOperatorUtil {
      * Get KafkaTopic resource version.
      *
      * @param kafkaTopic Kafka topic.
-     * @return Resource version.
+     * @return Resource version, or the string "null" if there isn't a resource version.
      */
     public static String resourceVersion(KafkaTopic kafkaTopic) {
         return kafkaTopic == null || kafkaTopic.getMetadata() == null ? "null" : kafkaTopic.getMetadata().getResourceVersion();
