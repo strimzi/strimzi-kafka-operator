@@ -6,7 +6,6 @@ package io.strimzi.systemtest.kafka;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
@@ -27,6 +26,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.specific.AdminClientTemplates;
 import io.strimzi.systemtest.utils.AdminClientUtils;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.specific.MinioUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -79,7 +79,7 @@ public class TieredStorageST extends AbstractST {
      *  - tiered-storage-integration
      */
     @ParallelTest
-    void testTieredStorageWithAivenPlugin() throws JsonProcessingException {
+    void testTieredStorageWithAivenPlugin() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         resourceManager.createResourceWithWait(
@@ -123,7 +123,7 @@ public class TieredStorageST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaTopicBuilder kt = KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), suiteStorage.getNamespaceName())
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), suiteStorage.getNamespaceName())
             .editSpec()
                 .addToConfig("file.delete.delay.ms", 1000)
                 .addToConfig("local.retention.ms", 1000)
@@ -134,9 +134,7 @@ public class TieredStorageST extends AbstractST {
                 .addToConfig("retention.ms", 86400000)
                 // Segment size is set to 10mb to make it quickier to sync data to Minio
                 .addToConfig("segment.bytes", 1048576)
-            .endSpec();
-
-        resourceManager.createResourceWithWait(kt.build());
+            .endSpec().build());
 
         final KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage)
             .withMessageCount(10000)
@@ -146,7 +144,7 @@ public class TieredStorageST extends AbstractST {
 
         resourceManager.createResourceWithWait(clients.producerStrimzi());
 
-        SetupMinio.waitForDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
+        MinioUtils.waitForDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
 
         // Create admin-client to check offsets
         resourceManager.createResourceWithWait(
@@ -160,7 +158,7 @@ public class TieredStorageST extends AbstractST {
                     .editSpec()
                         .editFirstContainer()
                             // TODO - remove this when new version of clients will be available
-                            .withImage("quay.io/strimzi-test-clients/test-clients:latest-kafka-3.7.1")
+                            .withImage("quay.io/strimzi-test-clients/test-clients:latest-kafka-" + Environment.ST_KAFKA_VERSION)
                         .endContainer()
                     .endSpec()
                 .endTemplate()
@@ -194,7 +192,7 @@ public class TieredStorageST extends AbstractST {
             testStorage.getTopicName(),
             topic -> topic.getSpec().getConfig().put("retention.ms", 10000), testStorage.getNamespaceName());
 
-        SetupMinio.waitForNoDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
+        MinioUtils.waitForNoDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
     }
 
     @BeforeAll
