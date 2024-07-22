@@ -1405,7 +1405,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return  List of volume mounts
      */
-    private List<VolumeMount> getVolumeMounts( Storage storage, ContainerTemplate containerTemplate) {
+    private List<VolumeMount> getVolumeMounts(Storage storage, ContainerTemplate containerTemplate) {
         List<VolumeMount> volumeMountList = new ArrayList<>(VolumeUtils.createVolumeMounts(storage, false));
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
