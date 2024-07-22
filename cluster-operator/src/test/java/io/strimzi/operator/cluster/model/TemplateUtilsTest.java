@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
+import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplateBuilder;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
@@ -123,7 +124,10 @@ public class TemplateUtilsTest {
         additionalVolumeMounts.add(new VolumeMountBuilder().withMountPath(ALLOWED_MOUNT_PATH + "/path1").build());
         additionalVolumeMounts.add(new VolumeMountBuilder().withMountPath(ALLOWED_MOUNT_PATH + "/path2").build());
 
-        TemplateUtils.addAdditionalVolumeMounts(volumeMounts, additionalVolumeMounts);
+        ContainerTemplate containerTemplate = new ContainerTemplate();
+        containerTemplate.setVolumeMounts(additionalVolumeMounts);
+
+        TemplateUtils.addAdditionalVolumeMounts(volumeMounts, containerTemplate);
 
         assertThat(volumeMounts.size(), is(2));
         assertThat(volumeMounts.get(0).getMountPath(), is(ALLOWED_MOUNT_PATH + "/path1"));
@@ -135,9 +139,11 @@ public class TemplateUtilsTest {
         List<VolumeMount> volumeMounts = new ArrayList<>();
         List<VolumeMount> additionalVolumeMounts = new ArrayList<>();
         additionalVolumeMounts.add(new VolumeMountBuilder().withMountPath("/forbidden/path1").build());
+        ContainerTemplate containerTemplate = new ContainerTemplate();
+        containerTemplate.setVolumeMounts(additionalVolumeMounts);
 
         InvalidResourceException exception = assertThrows(InvalidResourceException.class, () -> {
-            TemplateUtils.addAdditionalVolumeMounts(volumeMounts, additionalVolumeMounts);
+            TemplateUtils.addAdditionalVolumeMounts(volumeMounts, containerTemplate);
         });
 
         assertThat(exception.getMessage(), is(String.format("Forbidden path found in additional volumes. Should start with %s", ALLOWED_MOUNT_PATH)));

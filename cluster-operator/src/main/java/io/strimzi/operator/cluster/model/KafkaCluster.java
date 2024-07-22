@@ -41,6 +41,7 @@ import io.fabric8.openshift.api.model.RouteBuilder;
 import io.strimzi.api.kafka.model.common.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.Rack;
+import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.common.template.ExternalTrafficPolicy;
 import io.strimzi.api.kafka.model.common.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.common.template.PodDisruptionBudgetTemplate;
@@ -1400,11 +1401,11 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * Generates the volume mounts for a Kafka container
      *
      * @param storage   Storage configuration for which the volume mounts should be generated
-     * @param additionalVolumeMounts Additional volume mounts to include in the returned list
+     * @param containerTemplate The container template that contains additional volume mounts to include in the returned list
      *
      * @return  List of volume mounts
      */
-    private List<VolumeMount> getVolumeMounts(Storage storage, List<VolumeMount> additionalVolumeMounts) {
+    private List<VolumeMount> getVolumeMounts( Storage storage, ContainerTemplate containerTemplate) {
         List<VolumeMount> volumeMountList = new ArrayList<>(VolumeUtils.createVolumeMounts(storage, false));
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
@@ -1445,7 +1446,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             CertUtils.createTrustedCertificatesVolumeMounts(volumeMountList, keycloakAuthz.getTlsTrustedCertificates(), TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-keycloak-certs/", "authz-keycloak");
         }
         
-        addAdditionalVolumeMounts(volumeMountList, additionalVolumeMounts);       
+        addAdditionalVolumeMounts(volumeMountList, containerTemplate);
 
         return volumeMountList;
     }
@@ -1453,9 +1454,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     private List<VolumeMount> getInitContainerVolumeMounts(KafkaPool pool) {
         List<VolumeMount> volumeMountList = new ArrayList<>();
         volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
-        if (pool.templateInitContainer != null) {
-            addAdditionalVolumeMounts(volumeMountList, pool.templateInitContainer.getVolumeMounts());
-        }
+        addAdditionalVolumeMounts(volumeMountList, pool.templateInitContainer);
         return volumeMountList;
     }
 
@@ -1548,7 +1547,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 pool.resources,
                 getEnvVars(pool),
                 getContainerPortList(pool),
-                getVolumeMounts(pool.storage, pool.templateContainer == null ? Collections.emptyList() : pool.templateContainer.getVolumeMounts()),
+                getVolumeMounts(pool.storage, pool.templateContainer),
                 ProbeUtils.defaultBuilder(livenessProbeOptions).withNewExec().withCommand("/opt/kafka/kafka_liveness.sh").endExec().build(),
                 ProbeUtils.defaultBuilder(readinessProbeOptions).withNewExec().withCommand("/opt/kafka/kafka_readiness.sh").endExec().build(),
                 imagePullPolicy

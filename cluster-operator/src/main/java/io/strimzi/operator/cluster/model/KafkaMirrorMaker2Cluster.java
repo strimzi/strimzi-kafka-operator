@@ -199,7 +199,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
 
         }
 
-        addAdditionalVolumeMounts(volumeMountList, templateContainer.getVolumeMounts());
+        addAdditionalVolumeMounts(volumeMountList, templateContainer);
 
         return volumeMountList;
     }

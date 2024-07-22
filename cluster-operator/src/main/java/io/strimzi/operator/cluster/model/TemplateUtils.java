@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
+import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.common.template.DeploymentStrategy;
 import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.common.template.HasMetadataTemplate;
@@ -93,21 +94,21 @@ public class TemplateUtils {
      * additional volume mount paths are forbidden.
      *
      * @param volumeMounts           The list of volume mounts to be added to
-     * @param additionalVolumeMounts The list of volume mounts to add
+     * @param containerTemplate      The container template that contains the additional volumes.
      * @throws RuntimeException If a forbidden mount path is used.
      */
-    public static void addAdditionalVolumeMounts(List<VolumeMount> volumeMounts, List<VolumeMount> additionalVolumeMounts) {
-        if (additionalVolumeMounts == null || volumeMounts == null) {
+    public static void addAdditionalVolumeMounts(List<VolumeMount> volumeMounts, ContainerTemplate containerTemplate) {
+        if (containerTemplate == null || containerTemplate.getVolumeMounts() == null || volumeMounts == null) {
             return;
         }
 
-        boolean isForbiddenPath = additionalVolumeMounts.stream().anyMatch(additionalVolume -> !additionalVolume.getMountPath().startsWith(ALLOWED_MOUNT_PATH));
+        boolean isForbiddenPath = containerTemplate.getVolumeMounts().stream().anyMatch(additionalVolume -> !additionalVolume.getMountPath().startsWith(ALLOWED_MOUNT_PATH));
 
         if (isForbiddenPath) {
             throw new InvalidResourceException(String.format("Forbidden path found in additional volumes. Should start with %s", ALLOWED_MOUNT_PATH));
         }
 
-        volumeMounts.addAll(additionalVolumeMounts);
+        volumeMounts.addAll(containerTemplate.getVolumeMounts());
     }
 
     /**

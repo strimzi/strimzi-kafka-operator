@@ -329,11 +329,9 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         volumes.add(createSecretVolume(TLS_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
         volumes.add(createSecretVolume(API_AUTH_CONFIG_VOLUME_NAME, CruiseControlResources.apiSecretName(cluster), isOpenShift));
         volumes.add(createConfigMapVolume(CONFIG_VOLUME_NAME, CruiseControlResources.configMapName(cluster)));
-        
-        if (templatePod != null) {
-            addAdditionalVolumes(templatePod, volumes);
-        }
-        
+
+        addAdditionalVolumes(templatePod, volumes);
+
         return volumes;
     }
 
@@ -345,7 +343,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         volumeMounts.add(createVolumeMount(CruiseControl.API_AUTH_CONFIG_VOLUME_NAME, CruiseControl.API_AUTH_CONFIG_VOLUME_MOUNT));
         volumeMounts.add(createVolumeMount(CONFIG_VOLUME_NAME, CONFIG_VOLUME_MOUNT));
 
-        addAdditionalVolumeMounts(volumeMounts, templateContainer.getVolumeMounts());
+        addAdditionalVolumeMounts(volumeMounts, templateContainer);
 
         return volumeMounts;
     }
