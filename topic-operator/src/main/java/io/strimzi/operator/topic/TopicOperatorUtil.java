@@ -23,6 +23,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -40,19 +41,19 @@ public class TopicOperatorUtil {
     private TopicOperatorUtil() { }
 
     /**
-     * Create e new instance of Kubernetes client.
+     * Create a new Kubernetes client instance.
      *
      * @return Kubernetes client.
      */
     public static KubernetesClient createKubernetesClient() {
         return new OperatorKubernetesClientBuilder(
-            "strimzi-topic-operator-" + System.nanoTime(),
+            "strimzi-topic-operator-" + UUID.randomUUID(),
             TopicOperatorMain.class.getPackage().getImplementationVersion())
             .build();
     }
 
     /**
-     * Create e new instance of Kafka admin client.
+     * Create a new Kafka admin client instance.
      *
      * @param config Topic Operator configuration.
      * @return Kafka admin client.
@@ -62,7 +63,7 @@ public class TopicOperatorUtil {
     }
 
     /**
-     * Create e new instance of Cruise Control client.
+     * Create a new Cruise Control client instance.
      *
      * @param config Topic Operator configuration.
      * @return Cruise Control client.
@@ -216,7 +217,7 @@ public class TopicOperatorUtil {
      * Get KafkaTopic resource version.
      *
      * @param kafkaTopic Kafka topic.
-     * @return Resource version.
+     * @return Resource version, or the string "null" if there isn't a resource version.
      */
     public static String resourceVersion(KafkaTopic kafkaTopic) {
         return kafkaTopic == null || kafkaTopic.getMetadata() == null ? "null" : kafkaTopic.getMetadata().getResourceVersion();
