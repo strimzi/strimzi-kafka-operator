@@ -152,7 +152,7 @@ public class ReconciliationST extends AbstractST {
             )
         );
         resourceManager.createResourceWithWait(
-            KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 1).build(),
+            KafkaTemplates.kafkaWithCruiseControlTunedForFastModelGeneration(testStorage.getClusterName(), 3, 1).build(),
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
         );
 
