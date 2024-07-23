@@ -394,7 +394,7 @@ public class KafkaResources {
      *
      * @return  Name of the Cluster Operator certificate secret
      */
-    public static String secretName(String cluster) {
+    public static String clusterOperatorCertsSecretName(String cluster) {
         return cluster + "-cluster-operator-certs";
     }
 }

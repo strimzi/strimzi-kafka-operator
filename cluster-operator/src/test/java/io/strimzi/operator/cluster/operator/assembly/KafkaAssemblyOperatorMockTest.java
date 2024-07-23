@@ -248,7 +248,7 @@ public class KafkaAssemblyOperatorMockTest {
                 KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME),
                 KafkaResources.kafkaSecretName(CLUSTER_NAME),
                 KafkaResources.zookeeperSecretName(CLUSTER_NAME),
-                KafkaResources.secretName(CLUSTER_NAME));
+                KafkaResources.clusterOperatorCertsSecretName(CLUSTER_NAME));
     }
 
     /**
