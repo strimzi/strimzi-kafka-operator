@@ -135,7 +135,8 @@ public class TieredStorageST extends AbstractST {
                 .addToConfig("retention.ms", 86400000)
                 // Segment size is set to 10mb to make it quickier to sync data to Minio
                 .addToConfig("segment.bytes", 1048576)
-            .endSpec().build());
+            .endSpec()
+            .build());
 
         final KafkaClients clients = ClientUtils.getInstantPlainClientBuilder(testStorage)
             .withMessageCount(10000)
@@ -163,7 +164,8 @@ public class TieredStorageST extends AbstractST {
                         .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec().build()
+            .endSpec()
+            .build()
         );
         final AdminClient adminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
 
