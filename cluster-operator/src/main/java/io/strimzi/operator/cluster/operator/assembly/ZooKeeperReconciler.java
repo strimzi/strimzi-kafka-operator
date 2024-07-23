@@ -898,7 +898,7 @@ public class ZooKeeperReconciler {
      */
     protected Future<Void> deleteControllerZnode() {
         // migration rollback process ongoing
-        String zkConnectionString = DnsNameGenerator.serviceDnsNameWithClusterDomain(reconciliation.namespace(), KafkaResources.zookeeperServiceName(reconciliation.name()))  + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
+        String zkConnectionString = DnsNameGenerator.serviceDnsNameWithoutClusterDomain(reconciliation.namespace(), KafkaResources.zookeeperServiceName(reconciliation.name()))  + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
         return KRaftMigrationUtils.deleteZooKeeperControllerZnode(
                 reconciliation,
                 vertx,
