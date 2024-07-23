@@ -5963,6 +5963,8 @@ spec:
                       properties:
                         type:
                           type: string
+                          enum:
+                            - hashLoginService
                           description: "Type of the Cruise Control API users configuration. Supported format is: `hashLoginService`."
                         valueFrom:
                           type: object

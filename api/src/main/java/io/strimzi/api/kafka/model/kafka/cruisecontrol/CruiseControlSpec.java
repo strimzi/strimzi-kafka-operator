@@ -29,8 +29,6 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.strimzi.api.kafka.model.kafka.cruisecontrol.HashLoginServiceApiUsers.TYPE_HASH_LOGIN_SERVICE;
-
 @DescriptionFile
 @Buildable(
         editableEnabled = false,
@@ -117,27 +115,7 @@ public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurabl
     @Description("Configuration of the Cruise Control REST API users.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ApiUsers getApiUsers() {
-        if (this.apiUsers != null) {
-            if (apiUsers.getValueFrom() == null
-                    || apiUsers.getValueFrom().getSecretKeyRef() == null
-                    || apiUsers.getValueFrom().getSecretKeyRef().getName() == null
-                    || apiUsers.getValueFrom().getSecretKeyRef().getKey() == null) {
-                throw new IllegalArgumentException("The configuration of the Cruise Control REST API users " +
-                        "referenced in spec.cruiseControl.apiUsers is invalid.");
-            } else {
-                String type = apiUsers.getType();
-                switch (type) {
-                    case TYPE_HASH_LOGIN_SERVICE:
-                        HashLoginServiceApiUsers users = new HashLoginServiceApiUsers();
-                        users.setType(apiUsers.getType());
-                        users.setValueFrom(apiUsers.getValueFrom());
-                        return users;
-                    default:
-                        throw new IllegalArgumentException("Unknown ApiUsers type: " + type);
-                }
-            }
-        }
-        return null;
+        return apiUsers;
     }
 
     public void setApiUsers(ApiUsers apiUsers) {

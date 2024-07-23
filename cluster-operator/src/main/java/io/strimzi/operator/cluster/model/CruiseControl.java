@@ -33,9 +33,9 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.cluster.model.cruisecontrol.ApiCredentials;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration;
+import io.strimzi.operator.cluster.model.cruisecontrol.HashLoginServiceApiCredentials;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.logging.SupportsLogging;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
@@ -114,7 +114,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     
     private boolean sslEnabled;
     private boolean authEnabled;
-    private ApiCredentials apiCredentials;
+    private HashLoginServiceApiCredentials apiCredentials;
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
     protected Capacity capacity;
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
@@ -208,7 +208,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             result.sslEnabled = ccConfiguration.isApiSslEnabled();
             result.authEnabled = ccConfiguration.isApiAuthEnabled();
 
-            result.apiCredentials = new ApiCredentials(result.namespace, result.cluster, result.labels, result.ownerReference, ccSpec);
+            result.apiCredentials = new HashLoginServiceApiCredentials(result.namespace, result.cluster, result.labels, result.ownerReference, ccSpec);
 
             // To avoid illegal storage configurations provided by the user,
             // we rely on the storage configuration provided by the KafkaAssemblyOperator
@@ -488,7 +488,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     /**
      * @return Api Credentials Model instance for configuring Cruise Control API users
      */
-    public ApiCredentials apiCredentials() {
+    public HashLoginServiceApiCredentials apiCredentials() {
         return apiCredentials;
     }
 
