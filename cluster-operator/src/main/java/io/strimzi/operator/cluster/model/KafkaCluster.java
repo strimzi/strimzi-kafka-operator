@@ -1329,9 +1329,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, podName));
         volumeList.add(VolumeUtils.createEmptyDirVolume("ready-files", "1Ki", "Memory"));
 
-        if (templatePod != null) {
-            addAdditionalVolumes(templatePod, volumeList);
-        }
+        addAdditionalVolumes(templatePod, volumeList);
 
         for (GenericKafkaListener listener : listeners) {
             if (listener.isTls()

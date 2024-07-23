@@ -381,9 +381,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, "oauth-certs", isOpenShift);
         volumeList.addAll(getExternalConfigurationVolumes(isOpenShift));
         
-        if (templatePod != null) {
-            addAdditionalVolumes(templatePod, volumeList);
-        }
+        addAdditionalVolumes(templatePod, volumeList);
 
         return volumeList;
     }

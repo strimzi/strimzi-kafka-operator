@@ -301,9 +301,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
 
         AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, "oauth-certs", isOpenShift);
 
-        if (templatePod != null) {
-            addAdditionalVolumes(templatePod, volumeList);
-        }
+        addAdditionalVolumes(templatePod, volumeList);
 
         return volumeList;
     }

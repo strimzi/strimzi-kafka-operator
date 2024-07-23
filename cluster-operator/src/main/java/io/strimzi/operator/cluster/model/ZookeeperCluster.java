@@ -540,9 +540,7 @@ public class ZookeeperCluster extends AbstractModel implements SupportsMetrics, 
         volumeList.add(VolumeUtils.createSecretVolume(ZOOKEEPER_CLUSTER_CA_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
         volumeList.addAll(VolumeUtils.createPodSetVolumes(podName, storage, false));
         
-        if (templatePod !=  null) {
-            addAdditionalVolumes(templatePod, volumeList);
-        }
+        addAdditionalVolumes(templatePod, volumeList);
 
         return volumeList;
     }

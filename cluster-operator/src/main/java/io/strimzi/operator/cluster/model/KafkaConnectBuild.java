@@ -282,9 +282,8 @@ public class KafkaConnectBuild extends AbstractModel {
         } else {
             throw new RuntimeException("Kubernetes build requires output of type `docker`.");
         }
-        if (templatePod != null) {
-            addAdditionalVolumes(templatePod, volumes);
-        }
+        
+        addAdditionalVolumes(templatePod, volumes);
 
         return volumes;
     }
