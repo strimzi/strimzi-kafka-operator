@@ -147,6 +147,14 @@ public class KafkaExporterTest {
         return expected;
     }
 
+    private static Volume getVolume(PodSpec podSpec, String volumeName) {
+        return podSpec.getVolumes().stream().filter(volume -> volumeName.equals(volume.getName())).iterator().next();
+    }
+
+    private static VolumeMount getVolumeMount(Container container, String volumeName) {
+        return container.getVolumeMounts().stream().filter(volumeMount -> volumeName.equals(volumeMount.getName())).iterator().next();
+    }
+
     @ParallelTest
     public void testFromConfigMapDefaultConfig() {
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, null,
@@ -471,14 +479,6 @@ public class KafkaExporterTest {
         ServiceAccount sa = ke.generateServiceAccount();
         assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
         assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnots.entrySet()), is(true));
-    }
-    
-    private static Volume getVolume(PodSpec podSpec, String volumeName) {
-        return podSpec.getVolumes().stream().filter(volume -> volumeName.equals(volume.getName())).iterator().next();
-    }
-    
-    private static VolumeMount getVolumeMount(Container container, String volumeName) {
-        return container.getVolumeMounts().stream().filter(volumeMount -> volumeName.equals(volumeMount.getName())).iterator().next();
     }
 
     @ParallelTest

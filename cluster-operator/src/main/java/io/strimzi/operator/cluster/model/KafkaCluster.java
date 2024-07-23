@@ -1373,8 +1373,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         return volumeList;
     }
 
-
-
     /**
      * Generates a list of volumes used by PodSets. For StrimziPodSet, it needs to include also all persistent claim
      * volumes which StatefulSet would generate on its own.

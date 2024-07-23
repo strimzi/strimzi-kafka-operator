@@ -171,6 +171,14 @@ public class KafkaBridgeClusterTest {
         return expected;
     }
 
+    private static Volume getVolume(Deployment dep, String volumeName) {
+        return dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(volume -> volumeName.equals(volume.getName())).iterator().next();
+    }
+
+    private static VolumeMount getVolumeMount(Container container, String volumeName) {
+        return container.getVolumeMounts().stream().filter(volumeMount -> volumeName.equals(volumeMount.getName())).iterator().next();
+    }
+
     @ParallelTest
     public void testDefaultValues() {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ResourceUtils.createEmptyKafkaBridge(namespace, cluster), SHARED_ENV_PROVIDER);
@@ -574,14 +582,6 @@ public class KafkaBridgeClusterTest {
         ServiceAccount sa = kbc.generateServiceAccount();
         assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
         assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnots.entrySet()), is(true));
-    }
-    
-    private static Volume getVolume(Deployment dep, String volumeName) {
-        return dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(volume -> volumeName.equals(volume.getName())).iterator().next();
-    }
-    
-    private static VolumeMount getVolumeMount(Container container, String volumeName) {
-        return container.getVolumeMounts().stream().filter(volumeMount -> volumeName.equals(volumeMount.getName())).iterator().next();
     }
 
     @ParallelTest

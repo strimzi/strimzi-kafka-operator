@@ -8,7 +8,6 @@
   On the listener `serverBearerTokenLocation` and `userNamePrefix` have been added. 
   On the client `accessTokenLocation`, `clientAssertion`, `clientAssertionLocation`, `clientAssertionType`, and `saslExtensions` have been added.
 
-
 ## 0.42.0
 
 * Add support for Kafka 3.7.1

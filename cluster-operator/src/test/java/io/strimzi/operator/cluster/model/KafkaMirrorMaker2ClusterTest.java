@@ -201,6 +201,14 @@ public class KafkaMirrorMaker2ClusterTest {
         return expected;
     }
 
+    private static Volume getVolume(Pod pod, String volumeName) {
+        return pod.getSpec().getVolumes().stream().filter(volume -> volumeName.equals(volume.getName())).iterator().next();
+    }
+
+    private static VolumeMount getVolumeMount(Container container, String volumeName) {
+        return container.getVolumeMounts().stream().filter(volumeMount -> volumeName.equals(volumeMount.getName())).iterator().next();
+    }
+
 
     @ParallelTest
     public void testDefaultValues() {
@@ -1053,14 +1061,6 @@ public class KafkaMirrorMaker2ClusterTest {
         ServiceAccount sa = kmm2.generateServiceAccount();
         assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
         assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnots.entrySet()), is(true));
-    }
-
-    private static Volume getVolume(Pod pod, String volumeName) {
-        return pod.getSpec().getVolumes().stream().filter(volume -> volumeName.equals(volume.getName())).iterator().next();
-    }
-
-    private static VolumeMount getVolumeMount(Container container, String volumeName) {
-        return container.getVolumeMounts().stream().filter(volumeMount -> volumeName.equals(volumeMount.getName())).iterator().next();
     }
 
     @ParallelTest
@@ -1939,7 +1939,7 @@ public class KafkaMirrorMaker2ClusterTest {
                     .build();
             KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
                     .editSpec()
-                    .withClusters(targetClusterWithOAuthWithMissingClientSecret)
+                        .withClusters(targetClusterWithOAuthWithMissingClientSecret)
                     .endSpec()
                     .build();
 
