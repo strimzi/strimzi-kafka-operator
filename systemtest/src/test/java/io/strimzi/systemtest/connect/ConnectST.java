@@ -40,7 +40,6 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
-import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
@@ -67,7 +66,6 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonObject;
-import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -87,9 +85,7 @@ import static io.strimzi.systemtest.TestConstants.COMPONENT_SCALING;
 import static io.strimzi.systemtest.TestConstants.CONNECT;
 import static io.strimzi.systemtest.TestConstants.CONNECTOR_OPERATOR;
 import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.TestConstants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.TestConstants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.systemtest.TestConstants.SANITY;
 import static io.strimzi.systemtest.TestConstants.SMOKE;
@@ -830,8 +826,6 @@ class ConnectST extends AbstractST {
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
     }
 
-    @Tag(NODEPORT_SUPPORTED)
-    @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(CONNECTOR_OPERATOR)
     @ParallelNamespaceTest
     void testConnectTlsAuthWithWeirdUserName() {
@@ -850,19 +844,12 @@ class ConnectST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
-                                .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
-                                .withPort(9093)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withTls(true)
-                                .withAuth(new KafkaListenerAuthenticationTls())
-                                .build(),
-                            new GenericKafkaListenerBuilder()
-                                .withName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                                .withPort(9094)
-                                .withType(KafkaListenerType.NODEPORT)
-                                .withTls(true)
-                                .withAuth(new KafkaListenerAuthenticationTls())
-                                .build())
+                            .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                            .withAuth(new KafkaListenerAuthenticationTls())
+                            .build())
                 .endKafka()
             .endSpec()
             .build());
@@ -894,18 +881,33 @@ class ConnectST extends AbstractST {
                 .withBootstrapServers(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
             .endSpec()
             .build());
+        resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getClusterName())
+            .editSpec()
+                .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
+                .addToConfig("topics", testStorage.getTopicName())
+                .addToConfig("file", TestConstants.DEFAULT_SINK_FILE_PATH)
+            .endSpec()
+            .build());
 
-        testConnectAuthorizationWithWeirdUserName(testStorage.getClusterName(), weirdUserName, SecurityProtocol.SSL, testStorage.getTopicName());
+        final KafkaClients clients = ClientUtils.getInstantTlsClientBuilder(testStorage)
+            .withUsername(weirdUserName)
+            .build();
+
+        LOGGER.info("Checking if user is able to produce messages");
+        resourceManager.createResourceWithWait(clients.producerTlsStrimzi(testStorage.getClusterName()));
+        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
+
+        LOGGER.info("Checking if connector is able to consume messages");
+        final String connectorPodName = kubeClient().listPods(testStorage.getNamespaceName(), Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND)).get(0).getMetadata().getName();
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
     }
 
-    @Tag(NODEPORT_SUPPORTED)
-    @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(CONNECTOR_OPERATOR)
     @ParallelNamespaceTest
     void testConnectScramShaAuthWithWeirdUserName() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        // Create weird named user with . and more than 64 chars -> SCRAM-SHA
+        // Create weird named user with . and 92 characters which is more than 64 -> SCRAM-SHA
         final String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasdsadasdasdasdasdgasgadfasdad";
 
         resourceManager.createResourceWithWait(
@@ -918,19 +920,12 @@ class ConnectST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
-                                .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
-                                .withPort(9093)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withTls(true)
-                                .withAuth(new KafkaListenerAuthenticationScramSha512())
-                                .build(),
-                            new GenericKafkaListenerBuilder()
-                                .withName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                                .withPort(9094)
-                                .withType(KafkaListenerType.NODEPORT)
-                                .withTls(true)
-                                .withAuth(new KafkaListenerAuthenticationScramSha512())
-                                .build())
+                            .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                            .withAuth(new KafkaListenerAuthenticationScramSha512())
+                            .build())
                 .endKafka()
             .endSpec()
             .build());
@@ -962,34 +957,24 @@ class ConnectST extends AbstractST {
                     .endTls()
                 .endSpec()
                 .build());
-
-        testConnectAuthorizationWithWeirdUserName(testStorage.getClusterName(), weirdUserName, SecurityProtocol.SASL_SSL, testStorage.getTopicName());
-    }
-
-    void testConnectAuthorizationWithWeirdUserName(String clusterName, String userName, SecurityProtocol securityProtocol, String topicName) {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        final String connectorPodName = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(testStorage.getNamespaceName(), clusterName + "-connect").get(0).getMetadata().getName();
-
-        resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(clusterName)
+        resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getClusterName())
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
-                .addToConfig("topics", topicName)
+                .addToConfig("topics", testStorage.getTopicName())
                 .addToConfig("file", TestConstants.DEFAULT_SINK_FILE_PATH)
             .endSpec()
             .build());
 
-        ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withClusterName(clusterName)
-            .withKafkaUsername(userName)
-            .withMessageCount(testStorage.getMessageCount())
-            .withSecurityProtocol(securityProtocol)
-            .withTopicName(topicName)
-            .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
+        final KafkaClients clients = ClientUtils.getInstantScramShaOverTlsClientBuilder(testStorage)
+            .withUsername(weirdUserName)
             .build();
 
-        assertThat(externalKafkaClient.sendMessagesTls(), is(testStorage.getMessageCount()));
+        LOGGER.info("Checking if user is able to send messages");
+        resourceManager.createResourceWithWait(clients.producerScramShaTlsStrimzi(testStorage.getClusterName()));
+        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
+        LOGGER.info("Checking if connector is able to consume messages");
+        final String connectorPodName = kubeClient().listPods(testStorage.getNamespaceName(), Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND)).get(0).getMetadata().getName();
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
     }
 
