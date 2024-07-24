@@ -59,7 +59,8 @@ Other documentation folders contain the content that's incorporated into the mai
 
 If there's something that you want to add or change in the documentation, do the following:
 
-1. Set up a local Git repository
+1. Fork the repository
+1. Set up a local Git repository by cloning the forked repository
 2. Create a branch for your changes
 3. Add the changes through a pull request
 
