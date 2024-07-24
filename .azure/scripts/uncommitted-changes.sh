@@ -4,8 +4,8 @@ set -e
 echo "Build reason: ${BUILD_REASON}"
 echo "Source branch: ${BRANCH}"
 
-CHANGED_DERIVED=$(git diff --name-status -- packaging/install/ packaging/helm-charts/ documentation/modules/appendix_crds.adoc cluster-operator/src/main/resources/cluster-roles development-docs/systemtest-docs/)
-GENERATED_FILES=$(git ls-files --other --exclude-standard -- packaging/install/ packaging/helm-charts/ cluster-operator/src/main/resources/cluster-roles api/src/test/resources/io/strimzi/api/kafka/model development-docs/systemtest-docs/)
+CHANGED_DERIVED=$(git diff --name-status -- packaging/install/ packaging/helm-charts/ documentation/modules/appendix_crds.adoc cluster-operator/src/main/resources/cluster-roles development-docs/systemtests/)
+GENERATED_FILES=$(git ls-files --other --exclude-standard -- packaging/install/ packaging/helm-charts/ cluster-operator/src/main/resources/cluster-roles api/src/test/resources/io/strimzi/api/kafka/model development-docs/systemtests/)
 if [ -n "$CHANGED_DERIVED" ] || [ -n "$GENERATED_FILES" ] ; then
     if [ -n "$CHANGED_DERIVED" ] ; then
         echo "ERROR: Uncommitted changes in derived resources:"
@@ -22,7 +22,7 @@ if [ -n "$CHANGED_DERIVED" ] || [ -n "$GENERATED_FILES" ] ; then
     echo "    && make crd_install \\"
     echo "    && make dashboard_install \\"
     echo "    && make helm_install \\"
-    echo "    && git add packaging/install/ packaging/helm-charts/ documentation/modules/appendix_crds.adoc cluster-operator/src/main/resources/cluster-roles development-docs/systemtest-docs/ \\"
+    echo "    && git add packaging/install/ packaging/helm-charts/ documentation/modules/appendix_crds.adoc cluster-operator/src/main/resources/cluster-roles development-docs/systemtests/ \\"
     echo "    && git commit -s -m 'Update derived resources'"
     exit 1
 fi
