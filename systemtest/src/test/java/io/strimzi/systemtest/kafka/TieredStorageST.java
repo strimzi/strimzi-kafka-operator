@@ -4,22 +4,31 @@
  */
 package io.strimzi.systemtest.kafka;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.imageBuild.ImageBuild;
 import io.strimzi.systemtest.resources.minio.SetupMinio;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.specific.AdminClientTemplates;
+import io.strimzi.systemtest.utils.AdminClientUtils;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.specific.MinioUtils;
 import io.strimzi.test.TestUtils;
+import org.apache.kafka.common.requests.ListOffsetsRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -137,11 +146,56 @@ public class TieredStorageST extends AbstractST {
 
         resourceManager.createResourceWithWait(clients.producerStrimzi());
 
-        SetupMinio.waitForDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
+        MinioUtils.waitForDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
+
+        // Create admin-client to check offsets
+        resourceManager.createResourceWithWait(
+            AdminClientTemplates.plainAdminClient(
+                testStorage.getNamespaceName(),
+                testStorage.getAdminName(),
+                KafkaResources.plainBootstrapAddress(testStorage.getClusterName())
+            )
+            .editSpec()
+                .editOrNewTemplate()
+                    .editSpec()
+                        .editFirstContainer()
+                            // TODO - remove this when new version of clients will be available
+                            .withImage("quay.io/strimzi-test-clients/test-clients:latest-kafka-" + Environment.ST_KAFKA_VERSION)
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec()
+            .build()
+        );
+        final AdminClient adminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
+
+        TestUtils.waitFor("earliest-local offset to be higher than 0",
+            TestConstants.GLOBAL_POLL_INTERVAL_5_SECS, TestConstants.GLOBAL_TIMEOUT_LONG,
+            () -> {
+                // Fetch earliest-local offsets
+                // Check that data are not present locally, earliest-local offset should be higher than 0
+                String offsetData = adminClient.fetchOffsets(testStorage.getTopicName(), String.valueOf(ListOffsetsRequest.EARLIEST_LOCAL_TIMESTAMP));
+                long earliestLocalOffset = 0;
+                try {
+                    earliestLocalOffset = AdminClientUtils.getPartitionsOffset(offsetData, "0");
+                    LOGGER.info("earliest-local offset for topic {} is {}", testStorage.getTopicName(), earliestLocalOffset);
+                } catch (JsonProcessingException e) {
+                    return false;
+                }
+                return earliestLocalOffset > 0;
+            });
+
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
         resourceManager.createResourceWithWait(clients.consumerStrimzi());
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+
+        // Delete data
+        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
+            testStorage.getTopicName(),
+            topic -> topic.getSpec().getConfig().put("retention.ms", 10000), testStorage.getNamespaceName());
+
+        MinioUtils.waitForNoDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
     }
 
     @BeforeAll
