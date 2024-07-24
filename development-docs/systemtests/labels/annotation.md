@@ -18,6 +18,7 @@ The `annotation` label is used for tests that verify the correct application and
 
 
 
+
 <!-- generated part -->
 **Tests:**
 - [testCustomBridgeLabelsAreProperlySet](../../.././development-docs/systemtests/io.strimzi.systemtest.bridge.HttpBridgeST.md)

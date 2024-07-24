@@ -18,7 +18,6 @@ This label is used for tests that ensure proper handling of TLS (Transport Layer
    1. Verifying TLS communication with different components.
    2. Configuring certificate sources and ensuring components correctly handle TLS communication.
 
-
 <!-- generated part -->
 **Tests:**
 - [testReceiveSimpleMessageTlsScramSha](../../.././development-docs/systemtests/io.strimzi.systemtest.bridge.HttpBridgeScramShaST.md)

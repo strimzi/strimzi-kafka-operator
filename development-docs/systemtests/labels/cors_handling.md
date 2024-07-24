@@ -24,6 +24,7 @@ The tests included under this label check for the following:
    2. Confirming that responses correctly reject the requests with status code 403 and relevant error messages.
 
 
+
 <!-- generated part -->
 **Tests:**
 - [testCorsOriginAllowed](../../.././development-docs/systemtests/io.strimzi.systemtest.bridge.HttpBridgeCorsST.md)
