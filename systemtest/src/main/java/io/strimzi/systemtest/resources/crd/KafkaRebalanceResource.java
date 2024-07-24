@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceList;
-import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
@@ -47,8 +46,8 @@ public class KafkaRebalanceResource implements ResourceType<KafkaRebalance> {
 
     @Override
     public boolean waitForReadiness(KafkaRebalance resource) {
-        return KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), KafkaRebalanceState.PendingProposal);
-    }
+        return KafkaRebalanceUtils.waitForKafkaRebalanceReadiness(resource);
+    };
 
     public static MixedOperation<KafkaRebalance, KafkaRebalanceList, Resource<KafkaRebalance>> kafkaRebalanceClient() {
         return Crds.kafkaRebalanceOperation(ResourceManager.kubeClient().getClient());
