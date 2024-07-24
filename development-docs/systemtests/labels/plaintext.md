@@ -18,6 +18,7 @@ The tests ensure that the system processes data transmission properly and secure
    2. Ensuring secure handling of data, despite the lack of encryption.
 
 
+
 <!-- generated part -->
 **Tests:**
 - [testSendSimpleMessage](../../.././development-docs/systemtests/io.strimzi.systemtest.bridge.HttpBridgeST.md)

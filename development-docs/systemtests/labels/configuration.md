@@ -24,6 +24,7 @@ This label is used for tests that verify the correct handling and management of 
     - Applying configuration changes dynamically without requiring restarts.
     - Verifying that dynamic updates are correctly handled and reflected immediately.
 
+
 <!-- generated part -->
 **Tests:**
 - [testCustomAndUpdatedValues](../../.././development-docs/systemtests/io.strimzi.systemtest.bridge.HttpBridgeST.md)

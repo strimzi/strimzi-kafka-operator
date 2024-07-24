@@ -17,6 +17,7 @@ The `label` label is used for tests that verify the correct application and vali
     - Verifying that filtered labels align with predefined criteria and expectations.
 
 
+
 <!-- generated part -->
 **Tests:**
 - [testCustomBridgeLabelsAreProperlySet](../../.././development-docs/systemtests/io.strimzi.systemtest.bridge.HttpBridgeST.md)
