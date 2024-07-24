@@ -9,6 +9,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.annotations.FIPSNotSupported;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -54,6 +55,7 @@ import static io.strimzi.systemtest.TestConstants.TIERED_STORAGE;
  *  - tiered-storage-integration
  */
 @MicroShiftNotSupported("We are using Kaniko and OpenShift builds to build Kafka image with TS. To make it working on Microshift we will invest much time with not much additional value.")
+@FIPSNotSupported("Aiven TieredStorage plugin doesn't work with FIPS - https://github.com/Aiven-Open/tiered-storage-for-apache-kafka/issues/573")
 @Tag(REGRESSION)
 @Tag(TIERED_STORAGE)
 public class TieredStorageST extends AbstractST {
