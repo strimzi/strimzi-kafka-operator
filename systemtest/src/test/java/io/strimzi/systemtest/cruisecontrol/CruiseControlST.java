@@ -194,7 +194,7 @@ public class CruiseControlST extends AbstractST {
         // CruiseControl spec is now enabled
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
             // Get default CC spec with tune options and set it to existing Kafka
-            CruiseControlSpec cruiseControlSpec = KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3).build().getSpec().getCruiseControl();
+            CruiseControlSpec cruiseControlSpec = KafkaTemplates.kafkaWithCruiseControlTunedForFastModelGeneration(testStorage.getClusterName(), 3, 3).build().getSpec().getCruiseControl();
             kafka.getSpec().setCruiseControl(cruiseControlSpec);
         }, Environment.TEST_SUITE_NAMESPACE);
 
@@ -435,7 +435,7 @@ public class CruiseControlST extends AbstractST {
 
         );
         resourceManager.createResourceWithWait(
-            KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), initialReplicas, initialReplicas).build(),
+            KafkaTemplates.kafkaWithCruiseControlTunedForFastModelGeneration(testStorage.getClusterName(), initialReplicas, initialReplicas).build(),
             KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 10, 3, testStorage.getNamespaceName()).build(),
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
         );
