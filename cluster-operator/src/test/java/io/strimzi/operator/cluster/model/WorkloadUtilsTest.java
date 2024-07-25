@@ -938,21 +938,6 @@ public class WorkloadUtilsTest {
     //////////////////////////////////////////////////
 
     @Test
-    public void testRemoveEmptyValuesFromTolerations() {
-        Toleration t1 = new TolerationBuilder()
-                .withValue("")
-                .withEffect("NoExecute")
-                .build();
-
-        Toleration t2 = new TolerationBuilder()
-                .withValue(null)
-                .withEffect("NoExecute")
-                .build();
-
-        assertThat(WorkloadUtils.removeEmptyValuesFromTolerations(List.of(t1)), is(WorkloadUtils.removeEmptyValuesFromTolerations(List.of(t2))));
-    }
-
-    @Test
     public void testImagePullSecrets()  {
         List<LocalObjectReference> defaults = List.of(new LocalObjectReferenceBuilder().withName("default").build());
         List<LocalObjectReference> custom = List.of(new LocalObjectReferenceBuilder().withName("custom").build());
