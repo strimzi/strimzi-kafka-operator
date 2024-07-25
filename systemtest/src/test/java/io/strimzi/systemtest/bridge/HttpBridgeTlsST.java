@@ -56,7 +56,6 @@ import static io.strimzi.systemtest.TestConstants.REGRESSION;
     },
     labels = {
         @Label("message-sending"),
-        @Label("parallel-message-consumption"),
         @Label("tls")
     }
 )
@@ -115,7 +114,6 @@ class HttpBridgeTlsST extends AbstractST {
             @Step(value = "Verify message consumption", expected = "Messages are successfully consumed by the Kafka Bridge consumer.")
         },
         labels = {
-            @Label("parallel-message-consumption"),
             @Label("tls")
         }
     )
