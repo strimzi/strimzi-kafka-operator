@@ -23,7 +23,6 @@ import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -153,7 +152,6 @@ class HttpBridgeTlsST extends AbstractST {
         testWeirdUsername(weirdUserName, new KafkaListenerAuthenticationTls(), bridgeSpec, testStorage);
     }
 
-    @SuppressWarnings({"checkstyle:MethodLength"})
     private void testWeirdUsername(String weirdUserName, KafkaListenerAuthentication auth,
                                    KafkaBridgeSpec spec, TestStorage testStorage) {
         String bridgeProducerName = testStorage.getProducerName() + "-" + TestConstants.BRIDGE;
@@ -228,14 +226,8 @@ class HttpBridgeTlsST extends AbstractST {
 
         resourceManager.createResourceWithWait(kafkaBridgeClientJob.consumerStrimziBridge());
 
-        final KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+        final KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
             .withUsername(weirdUserName)
-            .withMessageCount(testStorage.getMessageCount())
-            .withTopicName(testStorage.getTopicName())
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
             .build();
 
         if (auth.getType().equals(TestConstants.TLS_LISTENER_DEFAULT_NAME)) {
