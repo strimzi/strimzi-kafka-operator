@@ -10,19 +10,15 @@
 
 **Labels:**
 
+* [plaintext](labels/plaintext.md)
 * `send-simple-message` (description file doesn't exist)
 * `label-verification` (description file doesn't exist)
 * `simple-message-receive` (description file doesn't exist)
 * `kafka-bridge-consumer` (description file doesn't exist)
-* `update-configuration` (description file doesn't exist)
-* `service_discovery_verification` (description file doesn't exist)
-* `annotation-validation` (description file doesn't exist)
-* `automated_test` (description file doesn't exist)
 * `bridge-scaling` (description file doesn't exist)
 * `bridge-stability` (description file doesn't exist)
-* `scaling` (description file doesn't exist)
-* `verify-custom-labels` (description file doesn't exist)
-* `verify-custom-annotations` (description file doesn't exist)
+* [label](labels/label.md)
+* [annotation](labels/annotation.md)
 
 <hr style="border:1px solid">
 

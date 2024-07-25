@@ -72,19 +72,15 @@ import static org.hamcrest.Matchers.containsString;
         @Step(value = "Initialize Test Storage and deploy Kafka and Kafka Bridge", expected = "Kafka and Kafka Bridge are deployed with necessary configuration")
     },
     labels = {
+        @Label("plaintext"),
         @Label("send-simple-message"),
         @Label("label-verification"),
         @Label("simple-message-receive"),
         @Label("kafka-bridge-consumer"),
-        @Label("update-configuration"),
-        @Label("service_discovery_verification"),
-        @Label("annotation-validation"),
-        @Label("automated_test"),
         @Label("bridge-scaling"),
         @Label("bridge-stability"),
-        @Label("scaling"),
-        @Label("verify-custom-labels"),
-        @Label("verify-custom-annotations")
+        @Label("label"),
+        @Label("annotation")
     }
 )
 class HttpBridgeST extends AbstractST {
