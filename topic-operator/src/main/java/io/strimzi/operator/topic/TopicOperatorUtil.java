@@ -18,7 +18,6 @@ import io.strimzi.operator.topic.model.ReconcilableTopic;
 import io.strimzi.operator.topic.model.TopicOperatorException;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -40,7 +39,7 @@ public class TopicOperatorUtil {
      */
     public static KubernetesClient createKubernetesClient() {
         return new OperatorKubernetesClientBuilder(
-            "strimzi-topic-operator-" + UUID.randomUUID(),
+            "strimzi-topic-operator-" + System.nanoTime(),
             TopicOperatorMain.class.getPackage().getImplementationVersion())
             .build();
     }
