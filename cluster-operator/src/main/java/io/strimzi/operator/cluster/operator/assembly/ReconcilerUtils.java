@@ -136,7 +136,7 @@ public class ReconcilerUtils {
      * @return  Future containing the auth identity to use for client authentication.
      */
     private static Future<PemAuthIdentity> coPemAuthIdentity(Reconciliation reconciliation, SecretOperator secretOperator) {
-        return getSecret(secretOperator, reconciliation.namespace(), KafkaResources.secretName(reconciliation.name()))
+        return getSecret(secretOperator, reconciliation.namespace(), KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()))
                 .map(PemAuthIdentity::clusterOperator);
     }
 

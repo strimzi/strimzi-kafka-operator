@@ -251,6 +251,8 @@ public class CaReconciler {
                         } else if (secretName.equals(KafkaResources.kafkaSecretName(reconciliation.name()))) {
                             clusterCaSecrets.add(secret);
                             clientsCaSecrets.add(secret);
+                        } else if (secretName.equals(KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()))) {
+                            // The CO certificate is excluded as it is renewed in a separate cycle
                         } else {
                             clusterCaSecrets.add(secret);
                         }
@@ -345,7 +347,7 @@ public class CaReconciler {
                        That time is used for checking maintenance windows
      */
     Future<Void> reconcileClusterOperatorSecret(Clock clock) {
-        return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.secretName(reconciliation.name()))
+        return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()))
                 .compose(oldSecret -> {
                     coSecret = oldSecret;
                     if (oldSecret != null && this.isClusterCaNeedFullTrust) {
@@ -358,7 +360,7 @@ public class CaReconciler {
                             clusterCa,
                             coSecret,
                             reconciliation.namespace(),
-                            KafkaResources.secretName(reconciliation.name()),
+                            KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()),
                             "cluster-operator",
                             "cluster-operator",
                             clusterOperatorSecretLabels,
@@ -366,7 +368,7 @@ public class CaReconciler {
                             Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())
                     );
 
-                    return secretOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.secretName(reconciliation.name()), coSecret)
+                    return secretOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()), coSecret)
                             .map((Void) null);
                 });
     }
