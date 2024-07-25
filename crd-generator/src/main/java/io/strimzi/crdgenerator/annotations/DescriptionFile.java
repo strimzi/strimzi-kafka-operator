@@ -10,7 +10,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * The DescribeFile annotation indicates that given class has an additional file with Asciidoc description.
+ * The DescriptionFile annotation indicates that given class has an additional file with Asciidoc description.
  * The file has to be placed in the documentation/book/api folder and the filename has to be a fully classified class
  * name (e.g. io.strimzi.api.kafka.MyApiClass). The asciidoc file will be included into the API reference for given
  * class.

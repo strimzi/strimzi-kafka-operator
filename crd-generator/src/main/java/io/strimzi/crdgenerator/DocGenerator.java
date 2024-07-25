@@ -399,7 +399,7 @@ class DocGenerator {
             File includeFile = new File(filename);
 
             if (!includeFile.isFile())   {
-                throw new RuntimeException("Class " + cls.getCanonicalName() + " has @DescribeFile annotation, but file " + filename + " does not exist!");
+                throw new RuntimeException("Class " + cls.getCanonicalName() + " has @DescriptionFile annotation, but file " + filename + " does not exist!");
             }
 
             out.append("xref:type-").append(cls.getSimpleName()).append("-schema-{context}[Full list of `").append(cls.getSimpleName()).append("` schema properties]").append(NL);
