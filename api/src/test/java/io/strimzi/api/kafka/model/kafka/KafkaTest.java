@@ -4,7 +4,6 @@
  */
 package io.strimzi.api.kafka.model.kafka;
 
-import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.strimzi.api.kafka.model.AbstractCrdTest;
 import io.strimzi.api.kafka.model.common.ConditionBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
