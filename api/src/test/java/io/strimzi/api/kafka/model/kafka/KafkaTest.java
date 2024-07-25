@@ -204,14 +204,4 @@ public class KafkaTest extends AbstractCrdTest<Kafka> {
         assertThat(listeners.get(0).getName(), is("plain"));
         assertThat(listeners.get(1).getName(), is("external"));
     }
-
-    public void rt(String resourceName) {
-        Kafka model = TestUtils.fromYaml(resourceName + ".yaml", Kafka.class);
-        assertThat("The classpath resource " + resourceName + " does not exist", model, is(notNullValue()));
-
-        ObjectMeta metadata = model.getMetadata();
-        assertThat(metadata, is(notNullValue()));
-        assertDesiredResource(model, resourceName + ".out.yaml");
-        assertDesiredResource(TestUtils.fromYamlString(TestUtils.toYamlString(model), Kafka.class), resourceName + ".out.yaml");
-    }
 }
