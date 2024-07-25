@@ -178,25 +178,25 @@ To configure the listener for Kubernetes service accounts, the Kubernetes API se
     serverBearerTokenLocation: /var/run/secrets/kubernetes.io/serviceaccount/token # <3>
     checkAccessTokenType: false # <4>
     includeAcceptHeader: false # <5>
-    tlsTrustedCertificates:
+    tlsTrustedCertificates: # <6>
       - secretName: oauth-server-cert
         pattern: "*.crt"
     maxSecondsWithoutReauthentication: 3600
-    customClaimCheck: "@.['kubernetes.io'] && @.['kubernetes.io'].['namespace'] in ['myproject']" # <6>
+    customClaimCheck: "@.['kubernetes.io'] && @.['kubernetes.io'].['namespace'] in ['myproject']" # <7>
 ----
 <1> URI of the token issuer used for authentication. Must use FQDN, including the `.cluster.local` extension, which may vary based on the Kubernetes cluster configuration.
 <2> URI of the JWKS certificate endpoint used for local JWT validation. Must use FQDN, including the `.cluster.local` extension, which may vary based on the Kubernetes cluster configuration.
 <3> Location to the access token used by the Kafka broker to authenticate to the Kubernetes API server in order to access the `jwksEndpointUri`.
 <4> Skip the access token type check, as the claim for this is not present in service account tokens.
 <5> Skip sending `Accept` header in HTTP requests to the JWKS endpoint, as the Kubernetes API server does not support it.
-<6> (Optional) Additional constraints that JWT token has to fulfill in order to be accepted, expressed as JsonPath filter query. In this example the service account has to belong to `myproject` namespace in order to be allowed to authenticate.
+<6> Trusted certificates to connect to authorization server. This should point to a manually created Secret that contains the Kubernetes API server public certificate, which is mounted to the running pods under `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt`. See below how to manually create such a Secret.
+<7> (Optional) Additional constraints that JWT token has to fulfill in order to be accepted, expressed as JsonPath filter query. In this example the service account has to belong to `myproject` namespace in order to be allowed to authenticate.
 
 The above configuration uses the `sub` claim from the service account JWT token as the user ID. For example, the default service account for pods deployed in the `myproject` namespace has the username: `system:serviceaccount:myproject:default`.
 
 When configuring ACLs the general form of how to refer to the ServiceAccount user should be: `User:system:serviceaccount:<Namespace>:<ServiceAccount-name>`
 
-Note that the `tlsTrustedCertificates` is configured to point to a manually created Secret that contains the Kubernetes API server public certificate, which is mounted to the running pods under `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt`.
-The Secret can be created using the following command:
+Note that the `tlsTrustedCertificates` points to a manually created Secret which can be created using the following command:
 [source,shell,subs=attributes+]
 ----
 kubectl get cm kube-root-ca.crt -o jsonpath="{['data']['ca\.crt']}" > /tmp/ca.crt
