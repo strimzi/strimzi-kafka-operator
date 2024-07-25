@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import static io.strimzi.systemtest.TestConstants.ARM64_UNSUPPORTED;
 import static io.strimzi.systemtest.TestConstants.OAUTH;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -39,7 +38,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(OAUTH)
 @Tag(REGRESSION)
-@Tag(ARM64_UNSUPPORTED)
 @IPv6NotSupported("Keycloak does not support IPv6 single-stack - https://github.com/keycloak/keycloak/issues/21277")
 public class OauthAbstractST extends AbstractST {
 

@@ -39,7 +39,6 @@ import org.junit.jupiter.api.Tag;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.TestConstants.ARM64_UNSUPPORTED;
 import static io.strimzi.systemtest.TestConstants.CONNECT;
 import static io.strimzi.systemtest.TestConstants.OAUTH;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
@@ -48,7 +47,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(OAUTH)
 @Tag(REGRESSION)
-@Tag(ARM64_UNSUPPORTED)
 @FIPSNotSupported("Keycloak is not customized to run on FIPS env - https://github.com/strimzi/strimzi-kafka-operator/issues/8331")
 public class OauthScopeST extends OauthAbstractST {
     
