@@ -10,6 +10,8 @@
       "username": "alice",
       "enabled": true,
       "email": "alice@example.com",
+      "firstName": "Alice",
+      "lastName": "Wonderland",
       "credentials": [
         {
           "type": "password",
