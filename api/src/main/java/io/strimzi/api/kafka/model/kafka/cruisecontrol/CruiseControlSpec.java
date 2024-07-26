@@ -19,14 +19,17 @@ import io.strimzi.api.kafka.model.common.Probe;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
 import io.strimzi.api.kafka.model.kafka.entityoperator.TlsSidecar;
+import io.strimzi.api.kafka.model.rebalance.KafkaAutoRebalanceConfiguration;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
+import io.strimzi.crdgenerator.annotations.MinimumItems;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @DescriptionFile
@@ -38,7 +41,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
     "image", "tlsSidecar", "resources", "livenessProbe", "readinessProbe", "jvmOptions", "logging", "template",
-    "brokerCapacity", "config", "metricsConfig", "apiUsers"})
+    "brokerCapacity", "config", "metricsConfig", "apiUsers", "autoRebalance"})
 @EqualsAndHashCode
 @ToString
 public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving {
@@ -62,6 +65,7 @@ public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurabl
     private Map<String, Object> config = new HashMap<>(0);
     private MetricsConfig metricsConfig;
     private CruiseControlApiUsers apiUsers;
+    private List<KafkaAutoRebalanceConfiguration> autoRebalance;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The container image used for Cruise Control pods. "
@@ -195,6 +199,19 @@ public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurabl
 
     public void setTemplate(CruiseControlTemplate template) {
         this.template = template;
+    }
+
+    @Description("Auto-rebalancing on scaling related configuration listing the modes, when brokers are added or removed, " +
+            "with the corresponding rebalance template configurations." +
+            "If this field is set, at least one mode has to be defined.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @MinimumItems(1)
+    public List<KafkaAutoRebalanceConfiguration> getAutoRebalance() {
+        return autoRebalance;
+    }
+
+    public void setAutoRebalance(List<KafkaAutoRebalanceConfiguration> autoRebalance) {
+        this.autoRebalance = autoRebalance;
     }
 
     @Override

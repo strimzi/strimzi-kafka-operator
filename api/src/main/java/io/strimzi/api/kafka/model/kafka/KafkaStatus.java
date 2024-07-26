@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
+import io.strimzi.api.kafka.model.rebalance.KafkaAutoRebalanceStatus;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -23,7 +24,8 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "conditions", "observedGeneration", "listeners", "kafkaNodePools", "registeredNodeIds", "clusterId", "operatorLastSuccessfulVersion", "kafkaVersion", "kafkaMetadataVersion", "kafkaMetadataState" })
+@JsonPropertyOrder({ "conditions", "observedGeneration", "listeners", "kafkaNodePools", "registeredNodeIds", "clusterId",
+    "operatorLastSuccessfulVersion", "kafkaVersion", "kafkaMetadataVersion", "kafkaMetadataState", "autoRebalance" })
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaStatus extends Status {
@@ -36,6 +38,7 @@ public class KafkaStatus extends Status {
     private String kafkaVersion;
     private String kafkaMetadataVersion;
     private KafkaMetadataState kafkaMetadataState;
+    private KafkaAutoRebalanceStatus autoRebalance;
 
     @Description("Addresses of the internal and external listeners")
     public List<ListenerStatus> getListeners() {
@@ -114,5 +117,14 @@ public class KafkaStatus extends Status {
 
     public void setKafkaMetadataState(KafkaMetadataState metadataState) {
         this.kafkaMetadataState = metadataState;
+    }
+
+    @Description("The status of an auto-rebalancing triggered by a cluster scaling request.")
+    public KafkaAutoRebalanceStatus getAutoRebalance() {
+        return autoRebalance;
+    }
+
+    public void setAutoRebalance(KafkaAutoRebalanceStatus autoRebalance) {
+        this.autoRebalance = autoRebalance;
     }
 }

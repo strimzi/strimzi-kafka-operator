@@ -986,7 +986,13 @@ public class KafkaRebalanceAssemblyOperator
             return Future.succeededFuture();
         }
 
-        LOGGER.debugCr(reconciliation, "KafkaRebalance {} with state [{}] and {}={}",
+        KafkaRebalanceAnnotation rebalanceAnnotation = rebalanceAnnotation(kafkaRebalance);
+        if (rebalanceAnnotation == KafkaRebalanceAnnotation.template) {
+            LOGGER.infoCr(reconciliation, "KafkaRebalance {} is a template configuration. Skipping it.", kafkaRebalance.getMetadata().getName());
+            return Future.succeededFuture();
+        }
+
+        LOGGER.debugCr(reconciliation, "KafkaRebalance {} with status [{}] and {}={}",
                 kafkaRebalance.getMetadata().getName(),
                 KafkaRebalanceUtils.rebalanceState(kafkaRebalance.getStatus()),
                 ANNO_STRIMZI_IO_REBALANCE, rawRebalanceAnnotation(kafkaRebalance));

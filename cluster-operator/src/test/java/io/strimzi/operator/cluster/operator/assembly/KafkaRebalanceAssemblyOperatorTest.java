@@ -69,6 +69,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -1655,6 +1656,29 @@ public class KafkaRebalanceAssemblyOperatorTest {
                         "Connection refused");
                 checkpoint.flag();
             }));
+    }
+
+    /**
+     * Test a template KafkaRebalance custom resource that has to be just ignored by
+     * the KafkaRebalanceAssemblyOperator without updating its state
+     */
+    @Test
+    public void testRebalanceTemplate(VertxTestContext context) {
+        KafkaRebalance kr = new KafkaRebalanceBuilder(createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false))
+                .editMetadata()
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.template.toString())
+                .endMetadata()
+                .build();
+
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
+
+        Checkpoint checkpoint = context.checkpoint();
+        krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME))
+                .onComplete(context.succeeding(v -> {
+                    KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(RESOURCE_NAME).get();
+                    assertThat(kafkaRebalance, not(StateMatchers.hasState()));
+                    checkpoint.flag();
+                }));
     }
 
     /**
