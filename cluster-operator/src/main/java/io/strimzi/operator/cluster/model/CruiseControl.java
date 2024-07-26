@@ -59,11 +59,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static io.strimzi.api.kafka.model.common.template.DeploymentStrategy.ROLLING_UPDATE;
-import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumeMounts;
-import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumes;
-import static io.strimzi.operator.cluster.model.VolumeUtils.createConfigMapVolume;
-import static io.strimzi.operator.cluster.model.VolumeUtils.createSecretVolume;
-import static io.strimzi.operator.cluster.model.VolumeUtils.createVolumeMount;
 import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS;
 import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.CRUISE_CONTROL_GOALS;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_ADMIN_NAME;
@@ -325,12 +320,12 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     protected List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumes = new ArrayList<>();
         volumes.add(VolumeUtils.createTempDirVolume(templatePod));
-        volumes.add(createSecretVolume(TLS_CC_CERTS_VOLUME_NAME, CruiseControlResources.secretName(cluster), isOpenShift));
-        volumes.add(createSecretVolume(TLS_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
-        volumes.add(createSecretVolume(API_AUTH_CONFIG_VOLUME_NAME, CruiseControlResources.apiSecretName(cluster), isOpenShift));
-        volumes.add(createConfigMapVolume(CONFIG_VOLUME_NAME, CruiseControlResources.configMapName(cluster)));
+        volumes.add(VolumeUtils.createSecretVolume(TLS_CC_CERTS_VOLUME_NAME, CruiseControlResources.secretName(cluster), isOpenShift));
+        volumes.add(VolumeUtils.createSecretVolume(TLS_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
+        volumes.add(VolumeUtils.createSecretVolume(API_AUTH_CONFIG_VOLUME_NAME, CruiseControlResources.apiSecretName(cluster), isOpenShift));
+        volumes.add(VolumeUtils.createConfigMapVolume(CONFIG_VOLUME_NAME, CruiseControlResources.configMapName(cluster)));
 
-        addAdditionalVolumes(templatePod, volumes);
+        TemplateUtils.addAdditionalVolumes(templatePod, volumes);
 
         return volumes;
     }
@@ -338,12 +333,12 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     protected List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMounts = new ArrayList<>();
         volumeMounts.add(VolumeUtils.createTempDirVolumeMount());
-        volumeMounts.add(createVolumeMount(CruiseControl.TLS_CC_CERTS_VOLUME_NAME, CruiseControl.TLS_CC_CERTS_VOLUME_MOUNT));
-        volumeMounts.add(createVolumeMount(CruiseControl.TLS_CA_CERTS_VOLUME_NAME, CruiseControl.TLS_CA_CERTS_VOLUME_MOUNT));
-        volumeMounts.add(createVolumeMount(CruiseControl.API_AUTH_CONFIG_VOLUME_NAME, CruiseControl.API_AUTH_CONFIG_VOLUME_MOUNT));
-        volumeMounts.add(createVolumeMount(CONFIG_VOLUME_NAME, CONFIG_VOLUME_MOUNT));
+        volumeMounts.add(VolumeUtils.createVolumeMount(CruiseControl.TLS_CC_CERTS_VOLUME_NAME, CruiseControl.TLS_CC_CERTS_VOLUME_MOUNT));
+        volumeMounts.add(VolumeUtils.createVolumeMount(CruiseControl.TLS_CA_CERTS_VOLUME_NAME, CruiseControl.TLS_CA_CERTS_VOLUME_MOUNT));
+        volumeMounts.add(VolumeUtils.createVolumeMount(CruiseControl.API_AUTH_CONFIG_VOLUME_NAME, CruiseControl.API_AUTH_CONFIG_VOLUME_MOUNT));
+        volumeMounts.add(VolumeUtils.createVolumeMount(CONFIG_VOLUME_NAME, CONFIG_VOLUME_MOUNT));
 
-        addAdditionalVolumeMounts(volumeMounts, templateContainer);
+        TemplateUtils.addAdditionalVolumeMounts(volumeMounts, templateContainer);
 
         return volumeMounts;
     }

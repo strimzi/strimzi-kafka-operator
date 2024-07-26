@@ -45,9 +45,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumeMounts;
-import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumes;
-
 /**
  * Model class for Kafka Connect Build - this model handled the build of the new image with custom connectors
  */
@@ -283,7 +280,7 @@ public class KafkaConnectBuild extends AbstractModel {
             throw new RuntimeException("Kubernetes build requires output of type `docker`.");
         }
         
-        addAdditionalVolumes(templatePod, volumes);
+        TemplateUtils.addAdditionalVolumes(templatePod, volumes);
 
         return volumes;
     }
@@ -306,7 +303,7 @@ public class KafkaConnectBuild extends AbstractModel {
         } else {
             throw new RuntimeException("Kubernetes build requires output of type `docker`.");
         }
-        addAdditionalVolumeMounts(volumeMounts, templateContainer);
+        TemplateUtils.addAdditionalVolumeMounts(volumeMounts, templateContainer);
 
         return volumeMounts;
     }

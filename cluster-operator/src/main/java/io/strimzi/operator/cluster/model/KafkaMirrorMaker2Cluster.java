@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Supplier;
 
-import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumeMounts;
 /**
  * Kafka Mirror Maker 2 model
  */
@@ -199,7 +198,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
 
         }
 
-        addAdditionalVolumeMounts(volumeMountList, templateContainer);
+        TemplateUtils.addAdditionalVolumeMounts(volumeMountList, templateContainer);
 
         return volumeMountList;
     }

@@ -61,9 +61,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumeMounts;
-import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumes;
-
 /**
  * Kafka Bridge model class
  */
@@ -301,7 +298,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
 
         AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, "oauth-certs", isOpenShift);
 
-        addAdditionalVolumes(templatePod, volumeList);
+        TemplateUtils.addAdditionalVolumes(templatePod, volumeList);
 
         return volumeList;
     }
@@ -322,7 +319,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
 
         AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, "oauth-certs");
 
-        addAdditionalVolumeMounts(volumeMountList, templateContainer);
+        TemplateUtils.addAdditionalVolumeMounts(volumeMountList, templateContainer);
 
         return volumeMountList;
     }
@@ -331,7 +328,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         List<VolumeMount> volumeMountList = new ArrayList<>();
         volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
 
-        addAdditionalVolumeMounts(volumeMountList, templateInitContainer);
+        TemplateUtils.addAdditionalVolumeMounts(volumeMountList, templateInitContainer);
 
         return volumeMountList;
     }

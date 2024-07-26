@@ -38,8 +38,6 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.api.kafka.model.common.template.DeploymentStrategy.ROLLING_UPDATE;
-import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumeMounts;
-import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumes;
 
 /**
  * Kafka Exporter model
@@ -262,7 +260,7 @@ public class KafkaExporter extends AbstractModel {
         volumeList.add(VolumeUtils.createSecretVolume(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KafkaExporterResources.secretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createSecretVolume(CLUSTER_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
         
-        addAdditionalVolumes(templatePod, volumeList);
+        TemplateUtils.addAdditionalVolumes(templatePod, volumeList);
         
         return volumeList;
     }
@@ -273,7 +271,7 @@ public class KafkaExporter extends AbstractModel {
         volumeList.add(VolumeUtils.createVolumeMount(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KAFKA_EXPORTER_CERTS_VOLUME_MOUNT));
         volumeList.add(VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME_NAME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
 
-        addAdditionalVolumeMounts(volumeList, templateContainer);
+        TemplateUtils.addAdditionalVolumeMounts(volumeList, templateContainer);
 
         return volumeList;
     }

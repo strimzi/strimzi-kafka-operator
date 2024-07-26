@@ -99,10 +99,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithCustomAuth;
-import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithOAuth;
-import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumeMounts;
-import static io.strimzi.operator.cluster.model.TemplateUtils.addAdditionalVolumes;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 
@@ -1329,7 +1325,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, podName));
         volumeList.add(VolumeUtils.createEmptyDirVolume("ready-files", "1Ki", "Memory"));
 
-        addAdditionalVolumes(templatePod, volumeList);
+        TemplateUtils.addAdditionalVolumes(templatePod, volumeList);
 
         for (GenericKafkaListener listener : listeners) {
             if (listener.isTls()
@@ -1351,12 +1347,12 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 );
             }
 
-            if (isListenerWithOAuth(listener))   {
+            if (ListenersUtils.isListenerWithOAuth(listener))   {
                 KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
                 CertUtils.createTrustedCertificatesVolumes(volumeList, oauth.getTlsTrustedCertificates(), isOpenShift, "oauth-" + ListenersUtils.identifier(listener));
             }
 
-            if (isListenerWithCustomAuth(listener)) {
+            if (ListenersUtils.isListenerWithCustomAuth(listener)) {
                 KafkaListenerAuthenticationCustom custom = (KafkaListenerAuthenticationCustom) listener.getAuth();
                 volumeList.addAll(AuthenticationUtils.configureGenericSecretVolumes("custom-listener-" + ListenersUtils.identifier(listener), custom.getSecrets(), isOpenShift));
             }
@@ -1423,12 +1419,12 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 volumeMountList.add(VolumeUtils.createVolumeMount("custom-" + identifier + "-certs", "/opt/kafka/certificates/custom-" + identifier + "-certs"));
             }
 
-            if (isListenerWithOAuth(listener))   {
+            if (ListenersUtils.isListenerWithOAuth(listener))   {
                 KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
                 CertUtils.createTrustedCertificatesVolumeMounts(volumeMountList, oauth.getTlsTrustedCertificates(), TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-" + identifier + "-certs/", "oauth-" + identifier);
             }
 
-            if (isListenerWithCustomAuth(listener)) {
+            if (ListenersUtils.isListenerWithCustomAuth(listener)) {
                 KafkaListenerAuthenticationCustom custom = (KafkaListenerAuthenticationCustom) listener.getAuth();
                 volumeMountList.addAll(AuthenticationUtils.configureGenericSecretVolumeMounts("custom-listener-" + identifier, custom.getSecrets(), CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT + "/custom-listener-" + identifier));
             }
@@ -1442,7 +1438,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             CertUtils.createTrustedCertificatesVolumeMounts(volumeMountList, keycloakAuthz.getTlsTrustedCertificates(), TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-keycloak-certs/", "authz-keycloak");
         }
         
-        addAdditionalVolumeMounts(volumeMountList, containerTemplate);
+        TemplateUtils.addAdditionalVolumeMounts(volumeMountList, containerTemplate);
 
         return volumeMountList;
     }
@@ -1450,7 +1446,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     private List<VolumeMount> getInitContainerVolumeMounts(KafkaPool pool) {
         List<VolumeMount> volumeMountList = new ArrayList<>();
         volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
-        addAdditionalVolumeMounts(volumeMountList, pool.templateInitContainer);
+        TemplateUtils.addAdditionalVolumeMounts(volumeMountList, pool.templateInitContainer);
         return volumeMountList;
     }
 
@@ -1567,7 +1563,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         JvmOptionUtils.jvmSystemProperties(varList, pool.jvmOptions);
 
         for (GenericKafkaListener listener : listeners) {
-            if (isListenerWithOAuth(listener))   {
+            if (ListenersUtils.isListenerWithOAuth(listener))   {
                 KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
 
                 if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
