@@ -225,11 +225,6 @@ public class EntityOperatorTest {
                 .withValue("")
                 .build();
 
-        Toleration assertToleration = new TolerationBuilder()
-                .withEffect("NoSchedule")
-                .withValue(null)
-                .build();
-
         TopologySpreadConstraint tsc1 = new TopologySpreadConstraintBuilder()
                 .withTopologyKey("kubernetes.io/zone")
                 .withMaxSkew(1)
@@ -299,7 +294,7 @@ public class EntityOperatorTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
         assertThat(dep.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
         assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
-        assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(singletonList(assertToleration)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(singletonList(toleration)));
 
         // Generate Role metadata
         Role crb = entityOperator.generateRole(null, namespace);

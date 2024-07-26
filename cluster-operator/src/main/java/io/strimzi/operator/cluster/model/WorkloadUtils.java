@@ -15,7 +15,6 @@ import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.PodSecurityContext;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
-import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
@@ -243,7 +242,7 @@ public class WorkloadUtils {
                     .withInitContainers(initContainers)
                     .withContainers(containers)
                     .withVolumes(volumes)
-                    .withTolerations(template != null && template.getTolerations() != null ? removeEmptyValuesFromTolerations(template.getTolerations()) : null)
+                    .withTolerations(template != null && template.getTolerations() != null ? template.getTolerations() : null)
                     .withTerminationGracePeriodSeconds(template != null ? (long) template.getTerminationGracePeriodSeconds() : 30L)
                     .withImagePullSecrets(imagePullSecrets(template, defaultImagePullSecrets))
                     .withSecurityContext(podSecurityContext)
@@ -303,7 +302,7 @@ public class WorkloadUtils {
                     .withInitContainers(initContainers)
                     .withContainers(containers)
                     .withVolumes(volumes)
-                    .withTolerations(template != null && template.getTolerations() != null ? removeEmptyValuesFromTolerations(template.getTolerations()) : null)
+                    .withTolerations(template != null && template.getTolerations() != null ? template.getTolerations() : null)
                     .withTerminationGracePeriodSeconds(template != null ? (long) template.getTerminationGracePeriodSeconds() : 30L)
                     .withImagePullSecrets(imagePullSecrets(template, defaultImagePullSecrets))
                     .withSecurityContext(podSecurityContext)
@@ -366,7 +365,7 @@ public class WorkloadUtils {
                     .withInitContainers(initContainers)
                     .withContainers(containers)
                     .withVolumes(volumes)
-                    .withTolerations(template != null && template.getTolerations() != null ? removeEmptyValuesFromTolerations(template.getTolerations()) : null)
+                    .withTolerations(template != null && template.getTolerations() != null ? template.getTolerations() : null)
                     .withTerminationGracePeriodSeconds(template != null ? (long) template.getTerminationGracePeriodSeconds() : 30L)
                     .withImagePullSecrets(imagePullSecrets(template, defaultImagePullSecrets))
                     .withSecurityContext(podSecurityContext)
@@ -416,24 +415,6 @@ public class WorkloadUtils {
                         .withMaxUnavailable(new IntOrString(0))
                         .build())
                 .build();
-    }
-
-    /**
-     * If the toleration value is an empty string, set it to null. That solves an issue when built STS contains a filed
-     * with an empty property value. K8s is removing properties like this, and thus we cannot fetch an equal STS which was
-     * created with (some) empty value.
-     *
-     * @param tolerations   Tolerations list to check whether toleration value is an empty string and eventually replace it by null
-     *
-     * @return              List of tolerations with fixed empty strings
-     */
-    public static List<Toleration> removeEmptyValuesFromTolerations(List<Toleration> tolerations) {
-        if (tolerations != null) {
-            tolerations.stream().filter(toleration -> toleration.getValue() != null && toleration.getValue().isEmpty()).forEach(emptyValTol -> emptyValTol.setValue(null));
-            return tolerations;
-        } else {
-            return null;
-        }
     }
 
     /**
