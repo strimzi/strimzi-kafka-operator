@@ -14,7 +14,6 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
-import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
