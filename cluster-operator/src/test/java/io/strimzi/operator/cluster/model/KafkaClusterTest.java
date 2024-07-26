@@ -752,14 +752,6 @@ public class KafkaClusterTest {
     }
 
     @ParallelTest
-    public void testPodNames() {
-
-        for (int i = 0; i < REPLICAS; i++) {
-            assertThat(KC.getPodName(i), is(KafkaResources.kafkaComponentName(CLUSTER) + "-" + i));
-        }
-    }
-
-    @ParallelTest
     public void testPvcNames() {
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
