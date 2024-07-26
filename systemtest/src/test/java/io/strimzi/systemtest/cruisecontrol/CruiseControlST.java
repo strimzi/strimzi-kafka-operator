@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.kafka.JbodStorage;
 import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
@@ -194,8 +195,9 @@ public class CruiseControlST extends AbstractST {
         // CruiseControl spec is now enabled
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
             // Get default CC spec with tune options and set it to existing Kafka
-            CruiseControlSpec cruiseControlSpec = KafkaTemplates.kafkaWithCruiseControlTunedForFastModelGeneration(testStorage.getClusterName(), 3, 3).build().getSpec().getCruiseControl();
-            kafka.getSpec().setCruiseControl(cruiseControlSpec);
+            Kafka kafkaUpdated = KafkaTemplates.kafkaWithCruiseControlTunedForFastModelGeneration(testStorage.getClusterName(), 3, 3).build();
+            kafka.getSpec().setCruiseControl(kafkaUpdated.getSpec().getCruiseControl());
+            kafka.getSpec().setKafka(kafkaUpdated.getSpec().getKafka());
         }, Environment.TEST_SUITE_NAMESPACE);
 
         RollingUpdateUtils.waitTillComponentHasRolled(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector(), 3, brokerPods);
