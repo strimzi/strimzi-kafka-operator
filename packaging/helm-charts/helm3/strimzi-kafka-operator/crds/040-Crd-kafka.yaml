@@ -168,7 +168,7 @@ spec:
                                 description: Enable or disable termination of Kafka broker processes due to potentially recoverable runtime errors during startup. Default value is `true`.
                               fallbackUserNameClaim:
                                 type: string
-                                description: The fallback username claim to be used for the user id if the claim specified by `userNameClaim` is not present. This is useful when `client_credentials` authentication only results in the client id being provided in another claim. It only takes effect if `userNameClaim` is set.
+                                description: The fallback username claim to be used for the user ID if the claim specified by `userNameClaim` is not present. This is useful when `client_credentials` authentication only results in the client ID being provided in another claim. It only takes effect if `userNameClaim` is set.
                               fallbackUserNamePrefix:
                                 type: string
                                 description: "The prefix to use with the value of `fallbackUserNameClaim` to construct the user id. This only takes effect if `fallbackUserNameClaim` is true, and the value is present for the claim. Mapping usernames and client ids into the same user id space is useful in preventing name collisions."
@@ -238,7 +238,7 @@ spec:
                                 description: Secrets to be mounted to `/opt/kafka/custom-authn-secrets/custom-listener-<listener_name>-<port>/<secret_name>`.
                               serverBearerTokenLocation:
                                 type: string
-                                description: Path to the file on the local filesystem that contains a bearer token to be used instead of client_id and secret when authenticating to authorization server.
+                                description: Path to the file on the local filesystem that contains a bearer token to be used instead of client ID and secret when authenticating to authorization server.
                               tlsTrustedCertificates:
                                 type: array
                                 items:
@@ -284,7 +284,7 @@ spec:
                                 description: "Name of the claim from the JWT authentication token, Introspection Endpoint response or User Info Endpoint response which will be used to extract the user id. Defaults to `sub`."
                               userNamePrefix:
                                 type: string
-                                description: "The prefix to use with the value of `userNameClaim` to construct the user id. This only takes effect if `userNameClaim` is specified, and the value is present for the claim. When used in combination with `fallbackUserNameClaims` it ensures consistent mapping of usernames and client ids into the same user id space and prevents name collisions."
+                                description: "The prefix to use with the value of `userNameClaim` to construct the user ID. This only takes effect if `userNameClaim` is specified and the value is present for the claim. When used in combination with `fallbackUserNameClaims`, it ensures consistent mapping of usernames and client IDs into the same user ID space and prevents name collisions."
                               validIssuerUri:
                                 type: string
                                 description: URI of the token issuer used for authentication.
