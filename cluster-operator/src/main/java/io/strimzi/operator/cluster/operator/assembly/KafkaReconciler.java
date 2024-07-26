@@ -483,9 +483,19 @@ public class KafkaReconciler {
         List<PersistentVolumeClaim> pvcs = kafka.generatePersistentVolumeClaims();
 
         return new PvcReconciler(reconciliation, pvcOperator, storageClassOperator)
-                .resizeAndReconcilePvcs(kafkaStatus, podIndex -> KafkaResources.kafkaPodName(reconciliation.name(), podIndex), pvcs)
-                .compose(podsToRestart -> {
-                    fsResizingRestartRequest.addAll(podsToRestart);
+                .resizeAndReconcilePvcs(kafkaStatus, pvcs)
+                .compose(podIdsToRestart -> {
+                    for (Integer podId : podIdsToRestart) {
+                        try {
+                            fsResizingRestartRequest.add(kafka.nodePoolForNodeId(podId).nodeRef(podId).podName());
+                        } catch (KafkaCluster.NodePoolNotFoundException e) {
+                            // We might have triggered some resizing on a PVC not belonging to this cluster anymore.
+                            // This could happen for example with old PVCs from removed nodes. We will ignore it with
+                            // a warning.
+                            LOGGER.warnCr(reconciliation, "Node with ID {} does not seem to belong to this Kafka cluster and cannot be marked for restart due to storage resizing", podId);
+                        }
+                    }
+
                     return Future.succeededFuture();
                 });
     }

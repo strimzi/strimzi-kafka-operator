@@ -687,4 +687,24 @@ public class KafkaClusterWithKRaftTest {
 
         assertThat(kc.getMetadataVersion(), is("3.5-IV1"));
     }
+
+    @Test
+    public void testNodePoolForNodeId()   {
+        KafkaCluster kc = KafkaCluster.fromCrd(
+                Reconciliation.DUMMY_RECONCILIATION,
+                KAFKA,
+                List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
+                VERSIONS,
+                new KafkaVersionChange(VERSIONS.defaultVersion(), VERSIONS.defaultVersion(), null, null, "3.5-IV1"),
+                KafkaMetadataConfigurationState.KRAFT,
+                null,
+                SHARED_ENV_PROVIDER);
+
+        // Existing node
+        assertThat(kc.nodePoolForNodeId(1001), is(KAFKA_POOL_BROKERS));
+
+        // Non-existing node
+        KafkaCluster.NodePoolNotFoundException e = assertThrows(KafkaCluster.NodePoolNotFoundException.class, () -> kc.nodePoolForNodeId(1874));
+        assertThat(e.getMessage(), is("Node ID 1874 does not belong to any known node pool!"));
+    }
 }
