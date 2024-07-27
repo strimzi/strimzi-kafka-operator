@@ -2,6 +2,8 @@
 
 ## 0.43.0
 
+* Add support for Apache Kafka 3.8.0.
+  Remove support for Apache Kafka 3.6.0, 3.6.1, and 3.6.2.
 * Added alerts for Connectors/Tasks in failed state.
 * Additional OAuth configuration options have been added for 'oauth' authentication on the listener and the client. 
   On the listener `serverBearerTokenLocation` and `userNamePrefix` have been added. 

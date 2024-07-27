@@ -84,6 +84,26 @@
             <build>
                 <plugins>
                     <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>${maven.dependency.version}</version>
+                        <executions>
+                            <execution>
+                                <id>analyze</id>
+                                <goals>
+                                    <goal>analyze-only</goal>
+                                </goals>
+                                <configuration>
+                                    <failOnWarning>true</failOnWarning>
+                                    <ignoredUnusedDeclaredDependencies>
+                                        <!-- Mot used directly because of differences between Kafka versions. But needed in the classpath. -->
+                                        <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka-raft</ignoredUnusedDeclaredDependency>
+                                    </ignoredUnusedDeclaredDependencies>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <version>${maven.exec.version}</version>
@@ -119,6 +139,26 @@
             <id>generate-model</id>
             <build>
                 <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>${maven.dependency.version}</version>
+                        <executions>
+                            <execution>
+                                <id>analyze</id>
+                                <goals>
+                                    <goal>analyze-only</goal>
+                                </goals>
+                                <configuration>
+                                    <failOnWarning>true</failOnWarning>
+                                    <ignoredUnusedDeclaredDependencies>
+                                        <!-- Mot used directly because of differences between Kafka versions. But needed in the classpath. -->
+                                        <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka-raft</ignoredUnusedDeclaredDependency>
+                                    </ignoredUnusedDeclaredDependencies>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
