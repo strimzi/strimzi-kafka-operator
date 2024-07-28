@@ -372,13 +372,6 @@ public class ZookeeperClusterTest {
     }
 
     @ParallelTest
-    public void testPodNames() {
-        for (int i = 0; i < REPLICAS; i++) {
-            assertThat(ZC.getPodName(i), is(KafkaResources.zookeeperPodName(CLUSTER, i)));
-        }
-    }
-
-    @ParallelTest
     public void testPvcNames() {
         Kafka ka = new KafkaBuilder(KAFKA)
                 .editSpec()

@@ -107,7 +107,7 @@ public class KafkaClusterPodSetTest {
 
     @ParallelTest
     public void testPodSet()   {
-        StrimziPodSet ps = KC.generatePodSets(true, null, null, brokerId -> Map.of("test-anno", KC.getPodName(brokerId))).get(0);
+        StrimziPodSet ps = KC.generatePodSets(true, null, null, brokerId -> Map.of("test-anno", KafkaResources.kafkaPodName(CLUSTER, brokerId))).get(0);
 
         assertThat(ps.getMetadata().getName(), is(KafkaResources.kafkaComponentName(CLUSTER)));
         assertThat(ps.getMetadata().getLabels().entrySet().containsAll(KC.labels.withAdditionalLabels(null).toMap().entrySet()), is(true));
