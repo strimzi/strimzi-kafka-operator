@@ -162,21 +162,13 @@ public class StrimziPodSetControllerIT {
                     .endMetadata()
                     .withNewSpec()
                         .withNewKafka()
-                            .withReplicas(3)
                             .withListeners(new GenericKafkaListenerBuilder()
                                     .withName("plain")
                                     .withPort(9092)
                                     .withType(KafkaListenerType.INTERNAL)
                                     .withTls(false)
                                     .build())
-                            .withNewEphemeralStorage()
-                            .endEphemeralStorage()
                         .endKafka()
-                        .withNewZookeeper()
-                            .withReplicas(3)
-                            .withNewEphemeralStorage()
-                            .endEphemeralStorage()
-                        .endZookeeper()
                     .endSpec()
                     .build();
     }
@@ -470,7 +462,7 @@ public class StrimziPodSetControllerIT {
                     },
                     () -> context.failNow("Pod stats do not match"));
 
-            // Get resource version to double check the pod was not deleted
+            // Get resource version to double-check the pod was not deleted
             Pod initialPod = client.pods().inNamespace(NAMESPACE).withName(podName).get();
             String resourceVersion = initialPod.getMetadata().getResourceVersion();
 
