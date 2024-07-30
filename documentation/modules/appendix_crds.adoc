@@ -2006,7 +2006,7 @@ It must have the value `hashLoginService` for the type `HashLoginServiceApiUsers
 |Must be `hashLoginService`.
 |valueFrom
 |xref:type-PasswordSource-{context}[`PasswordSource`]
-|Secret from which the custom Cruise Control API authentication credentials are read. 
+|Secret from which the custom Cruise Control API authentication credentials are read.
 |====
 
 [id='type-PasswordSource-{context}']

@@ -201,7 +201,6 @@ spec:
 
 Strimzi then decodes and uses the contents of this secret to populate Cruise Control's API authentication credentials file.
 
->>>>>>> ee9f25276 (Add support for custom CC API users)
 [id='property-cruise-control-broker-capacity-{context}']
 = Configuring capacity limits
 

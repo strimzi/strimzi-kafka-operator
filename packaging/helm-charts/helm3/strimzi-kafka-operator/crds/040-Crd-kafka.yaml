@@ -5979,7 +5979,7 @@ spec:
                                 optional:
                                   type: boolean
                               description: Selects a key of a Secret in the resource's namespace.
-                          description: 'Secret from which the custom Cruise Control API authentication credentials are read. '
+                          description: Secret from which the custom Cruise Control API authentication credentials are read.
                       required:
                         - type
                         - valueFrom

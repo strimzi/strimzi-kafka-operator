@@ -129,7 +129,7 @@ public class HashLoginServiceApiCredentials {
             return entries;
         }
 
-        for (String line : config.split("\n")) {
+        config.lines().forEach(line -> {
             Matcher matcher = HASH_LOGIN_SERVICE_PATTERN.matcher(line);
             if (matcher.matches()) {
                 String[] parts = line.replaceAll("\\s", "").split(":");
@@ -137,16 +137,16 @@ public class HashLoginServiceApiCredentials {
                 String password = parts[1].split(",")[0];
                 Role role = Role.fromString(parts[1].split(",")[1]);
                 if (entries.containsKey(username)) {
-                    throw new InvalidConfigurationException("Duplicate username found: " + "\"" + username + "\". "
+                    throw new InvalidConfigurationException("Duplicate username found: \"" + username + "\". "
                             + "Cruise Control API credentials config must contain unique usernames");
                 }
                 entries.put(username, new UserEntry(username, password, role));
             } else {
-                throw new InvalidConfigurationException("Invalid configuration provided: " +  "\"" + line + "\". " +
+                throw new InvalidConfigurationException("Invalid configuration provided: \"" + line + "\". " +
                         "Cruise Control API credentials config must follow " +
                         "HashLoginService's file format `username: password [,rolename ...]`");
             }
-        }
+        });
         return entries;
     }
 
@@ -173,7 +173,7 @@ public class HashLoginServiceApiCredentials {
      *
      * @return Map of API user entries containing user-managed API user credentials
      */
-    /* test */ static Map<String, UserEntry> generateToManagedApiCredentials(Secret secret) {
+    /* test */ static Map<String, UserEntry> generateTOManagedApiCredentials(Secret secret) {
         Map<String, UserEntry> entries = new HashMap<>();
         if (secret != null) {
             if (secret.getData().containsKey(TOPIC_OPERATOR_USERNAME_KEY) && secret.getData().containsKey(TOPIC_OPERATOR_PASSWORD_KEY)) {
@@ -259,7 +259,7 @@ public class HashLoginServiceApiCredentials {
         Map<String, UserEntry> apiCredentials = new HashMap<>();
         apiCredentials.putAll(generateCoManagedApiCredentials(passwordGenerator, cruiseControlApiSecret));
         apiCredentials.putAll(generateUserManagedApiCredentials(userManagedApiSecret, userManagedApiSecretKey));
-        apiCredentials.putAll(generateToManagedApiCredentials(topicOperatorManagedApiSecret));
+        apiCredentials.putAll(generateTOManagedApiCredentials(topicOperatorManagedApiSecret));
 
         Map<String, String> data = new HashMap<>(3);
         data.put(REBALANCE_OPERATOR_PASSWORD_KEY, Util.encodeToBase64(apiCredentials.get(REBALANCE_OPERATOR_USERNAME).password));
@@ -289,7 +289,7 @@ public class HashLoginServiceApiCredentials {
                                     Secret topicOperatorManagedApiSecret) {
         if (this.ccSpec.getApiUsers() != null && userManagedApiSecret == null) {
             throw new InvalidResourceException("The configuration of the Cruise Control REST API users " +
-                    "references a secret: " +  "\"" +  userManagedApiSecretName + "\" that does not exist.");
+                    "references a secret: \"" +  userManagedApiSecretName + "\" that does not exist.");
         }
         Map<String, String> mapWithApiCredentials = generateMapWithApiCredentials(passwordGenerator,
                 oldCruiseControlApiSecret, userManagedApiSecret, topicOperatorManagedApiSecret);

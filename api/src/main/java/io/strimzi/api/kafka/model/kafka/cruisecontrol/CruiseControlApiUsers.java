@@ -29,11 +29,11 @@ import static io.strimzi.api.kafka.model.kafka.cruisecontrol.HashLoginServiceApi
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
 @ToString
-public abstract class ApiUsers implements UnknownPropertyPreserving {
+public abstract class CruiseControlApiUsers implements UnknownPropertyPreserving {
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Type of the Cruise Control API users configuration. "
-            + "Supported format is: " + "`" + TYPE_HASH_LOGIN_SERVICE + "`")
+            + "Supported format is: `" + TYPE_HASH_LOGIN_SERVICE + "`")
     public abstract String getType();
 
     public Map<String, Object> getAdditionalProperties() {

@@ -23,19 +23,19 @@ import lombok.EqualsAndHashCode;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"type", "valueFrom"})
 @EqualsAndHashCode
-public class HashLoginServiceApiUsers extends ApiUsers {
+public class HashLoginServiceApiUsers extends CruiseControlApiUsers {
     public static final String TYPE_HASH_LOGIN_SERVICE = "hashLoginService";
 
     private PasswordSource valueFrom;
 
-    @Description("Must be " + "`" + TYPE_HASH_LOGIN_SERVICE + "`")
+    @Description("Must be `" + TYPE_HASH_LOGIN_SERVICE + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return TYPE_HASH_LOGIN_SERVICE;
     }
 
-    @Description("Secret from which the custom Cruise Control API authentication credentials are read. ")
+    @Description("Secret from which the custom Cruise Control API authentication credentials are read.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty(required = true)
     public PasswordSource getValueFrom() {

@@ -61,7 +61,7 @@ public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurabl
     private BrokerCapacity brokerCapacity;
     private Map<String, Object> config = new HashMap<>(0);
     private MetricsConfig metricsConfig;
-    private ApiUsers apiUsers;
+    private CruiseControlApiUsers apiUsers;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The container image used for Cruise Control pods. "
@@ -114,11 +114,11 @@ public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurabl
 
     @Description("Configuration of the Cruise Control REST API users.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ApiUsers getApiUsers() {
+    public CruiseControlApiUsers getApiUsers() {
         return apiUsers;
     }
 
-    public void setApiUsers(ApiUsers apiUsers) {
+    public void setApiUsers(CruiseControlApiUsers apiUsers) {
         this.apiUsers = apiUsers;
     }
 
