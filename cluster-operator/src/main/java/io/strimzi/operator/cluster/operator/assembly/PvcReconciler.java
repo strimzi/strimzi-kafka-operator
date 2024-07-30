@@ -21,7 +21,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.function.Function;
 
 /**
  * This class reconciles the PVCs for the Kafka and ZooKeeper clusters. It has two public methods:
@@ -50,18 +49,17 @@ public class PvcReconciler {
 
     /**
      * Resizes and reconciles the PVCs based on the model and list of PVCs passed to it. It will return a future with
-     * collection containing a list of pods which need restart to complete the filesystem resizing. The PVCs are only
-     * created or updated. This method does not delete any PVCs. This is done by a separate method which should be
+     * collection containing a list of IDs of nodes which need restart to complete the filesystem resizing. The PVCs are
+     * only created or updated. This method does not delete any PVCs. This is done by a separate method which should be
      * called separately at the end of the reconciliation.
      *
-     * @param kafkaStatus       Status of the Kafka custom resource where warnings about any issues with resizing will be added
-     * @param podNameProvider   Function to generate a pod name from its index
-     * @param pvcs              List of desired PVC used by this controller
+     * @param kafkaStatus   Status of the Kafka custom resource where warnings about any issues with resizing will be added
+     * @param pvcs          List of desired PVC used by this controller
      *
-     * @return                  Future with list of pod names which should be restarted to complete the filesystem resizing
+     * @return Future with set of node IDs which should be restarted to complete the filesystem resizing
      */
-    public Future<Collection<String>> resizeAndReconcilePvcs(KafkaStatus kafkaStatus, Function<Integer, String> podNameProvider, List<PersistentVolumeClaim> pvcs) {
-        Set<String> podsToRestart = new HashSet<>();
+    public Future<Collection<Integer>> resizeAndReconcilePvcs(KafkaStatus kafkaStatus, List<PersistentVolumeClaim> pvcs) {
+        Set<Integer> podIdsToRestart = new HashSet<>();
         List<Future<Void>> futures = new ArrayList<>(pvcs.size());
 
         for (PersistentVolumeClaim desiredPvc : pvcs)  {
@@ -79,9 +77,8 @@ public class PvcReconciler {
                             return Future.succeededFuture();
                         } else if (currentPvc.getStatus().getConditions().stream().anyMatch(cond -> "FileSystemResizePending".equals(cond.getType()) && "true".equals(cond.getStatus().toLowerCase(Locale.ENGLISH))))  {
                             // The PVC is Bound and resized but waiting for FS resizing => We need to restart the pod which is using it
-                            String podName = podNameProvider.apply(getPodIndexFromPvcName(desiredPvc.getMetadata().getName()));
-                            podsToRestart.add(podName);
-                            LOGGER.infoCr(reconciliation, "The PVC {} is waiting for file system resizing and the pod {} needs to be restarted.", desiredPvc.getMetadata().getName(), podName);
+                            podIdsToRestart.add(getPodIndexFromPvcName(desiredPvc.getMetadata().getName()));
+                            LOGGER.infoCr(reconciliation, "The PVC {} is waiting for file system resizing and the pod using it might need to be restarted.", desiredPvc.getMetadata().getName());
                             return Future.succeededFuture();
                         } else {
                             // The PVC is Bound and resizing is not in progress => We should check if the SC supports resizing and check if size changed
@@ -103,7 +100,7 @@ public class PvcReconciler {
         }
 
         return Future.all(futures)
-                .map(podsToRestart);
+                .map(podIdsToRestart);
     }
 
     /**

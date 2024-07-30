@@ -535,7 +535,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             }
         }
 
-        throw new RuntimeException("Node ID " + nodeId + " does not belong to any known node pool!");
+        throw new NodePoolNotFoundException("Node ID " + nodeId + " does not belong to any known node pool!");
     }
 
     /**
@@ -1998,6 +1998,20 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             return labels.strimziSelectorLabels().withStrimziBrokerRole(true);
         } else {
             return labels.strimziSelectorLabels();
+        }
+    }
+
+    /**
+     * Exception used to indicate that a matching Node Pool was not found
+     */
+    public static final class NodePoolNotFoundException extends RuntimeException {
+        /**
+         * Creates new exception
+         *
+         * @param message   Error message
+         */
+        public NodePoolNotFoundException(String message) {
+            super(message);
         }
     }
 }

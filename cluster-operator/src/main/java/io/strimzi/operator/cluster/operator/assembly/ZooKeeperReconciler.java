@@ -411,9 +411,9 @@ public class ZooKeeperReconciler {
         List<PersistentVolumeClaim> pvcs = zk.generatePersistentVolumeClaims();
 
         return new PvcReconciler(reconciliation, pvcOperator, storageClassOperator)
-                .resizeAndReconcilePvcs(kafkaStatus, podIndex -> KafkaResources.zookeeperPodName(reconciliation.name(), podIndex), pvcs)
-                .compose(podsToRestart -> {
-                    fsResizingRestartRequest.addAll(podsToRestart);
+                .resizeAndReconcilePvcs(kafkaStatus, pvcs)
+                .compose(podIdsToRestart -> {
+                    fsResizingRestartRequest.addAll(podIdsToRestart.stream().map(podId -> KafkaResources.zookeeperPodName(reconciliation.name(), podId)).collect(Collectors.toSet()));
                     return Future.succeededFuture();
                 });
     }
