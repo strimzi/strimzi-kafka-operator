@@ -157,7 +157,7 @@ The following use cases would benefit from accessing the Cruise Control API with
 * Gathering Cruise Control-specific statistical information not available through Strimzi or Cruise Control sensor metrics, such as detailed information surrounding cluster and partition load and user tasks.
 * Debugging Cruise Control in a secured environment.
 
-Cruise Control reads authentication credentials for API users in Jetty's  `HashLoginService` file format.
+Cruise Control reads authentication credentials for API users in Jetty's `HashLoginService` file format.
 
 Standard Cruise Control `USER` and `VIEWER` roles are supported.
 * `USER` has has access to all the `GET` endpoints except bootstrap and train.

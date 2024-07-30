@@ -55,7 +55,6 @@ public class HashLoginServiceApiCredentials {
     private final CruiseControlSpec ccSpec;
     private final OwnerReference ownerReference;
 
-
     /**
      * Constructs the Api Credentials Model for managing API users for Cruise Control API.
      *
@@ -204,10 +203,10 @@ public class HashLoginServiceApiCredentials {
         for (UserEntry entry : entries.values()) {
             if (FORBIDDEN_USERNAMES.contains(entry.username())) {
                 throw new InvalidConfigurationException("The following usernames for Cruise Control API are forbidden: " + FORBIDDEN_USERNAMES
-                        + " User provided Cruise Control API credentials contain illegal username: " + entry.username);
+                        + ". User provided Cruise Control API credentials contain illegal username: " + entry.username + ".");
             } else if (entry.role == Role.ADMIN) {
                 throw new InvalidConfigurationException("The following roles for Cruise Control API are forbidden: " + Role.ADMIN
-                        + " User provided Cruise Control API credentials contain contains illegal role: " +  entry.role());
+                        + ". User provided Cruise Control API credentials contain contains illegal role: " +  entry.role() + ".");
             }
         }
         return entries;
