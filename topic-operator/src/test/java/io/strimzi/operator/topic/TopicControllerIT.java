@@ -118,7 +118,7 @@ class TopicControllerIT {
 
     @BeforeAll
     public static void beforeAll() {
-        kubernetesClient = TopicOperatorUtil.createKubernetesClient();
+        kubernetesClient = TopicOperatorUtil.createKubernetesClient("test");
         TopicOperatorTestUtil.setupKubeCluster(kubernetesClient, NAMESPACE);
     }
 
