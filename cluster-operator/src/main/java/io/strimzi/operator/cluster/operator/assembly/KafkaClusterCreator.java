@@ -32,6 +32,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -58,6 +59,7 @@ public class KafkaClusterCreator {
     private boolean scaleDownCheckFailed = false;
     private boolean usedToBeBrokersCheckFailed = false;
     private final List<Condition> warningConditions = new ArrayList<>();
+    private Set<Integer> toBeRemovedNodes;
 
     /**
      * Constructor
@@ -87,6 +89,14 @@ public class KafkaClusterCreator {
     }
 
     /**
+     * @return the nodes to be removed which have to be considered for an auto-rebalancing on scale down,
+     * before they are actually removed from the cluster
+     */
+    public Set<Integer> toBeRemovedNodes() {
+        return toBeRemovedNodes;
+    }
+
+    /**
      * Prepares the Kafka Cluster model instance. It checks if any scale-down is happening and whether such scale-down
      * can be done. If it discovers any problems, it will try to fix them and create a fixed Kafka Cluster model
      * instance if the {@code tryToFixProblems} fag is set to true. It throws an exception otherwise.
@@ -113,6 +123,8 @@ public class KafkaClusterCreator {
                 .compose(kafka -> brokerRemovalCheck(kafkaCr, kafka))
                 .compose(kafka -> {
                     if (checkFailed() && tryToFixProblems)   {
+                        // saving removed nodes, because of a scaling down, before they are reverted back
+                        this.toBeRemovedNodes = new HashSet<>(kafka.removedNodes());
                         // We have a failure, and should try to fix issues
                         // Once we fix it, we call this method again, but this time with tryToFixProblems set to false
                         return revertScaleDown(kafka, kafkaCr, nodePools)
