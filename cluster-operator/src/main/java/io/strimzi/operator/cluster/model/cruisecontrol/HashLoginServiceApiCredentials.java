@@ -168,12 +168,12 @@ public class HashLoginServiceApiCredentials {
     /**
      * Parses auth data from existing Topic Operator API user secret into map of API user entries.
      *
+     * @param entries Map of API user entries containing API user credentials.
      * @param secret API user secret
      *
      * @return Map of API user entries containing user-managed API user credentials
      */
-    /* test */ static Map<String, UserEntry> generateTOManagedApiCredentials(Secret secret) {
-        Map<String, UserEntry> entries = new HashMap<>();
+    /* test */ static void generateTOManagedApiCredentials(Map<String, UserEntry> entries, Secret secret) {
         if (secret != null) {
             if (secret.getData().containsKey(TOPIC_OPERATOR_USERNAME_KEY) && secret.getData().containsKey(TOPIC_OPERATOR_PASSWORD_KEY)) {
                 String username = Util.decodeFromBase64(secret.getData().get(TOPIC_OPERATOR_USERNAME_KEY));
@@ -181,19 +181,18 @@ public class HashLoginServiceApiCredentials {
                 entries.put(username, new UserEntry(username, password, Role.ADMIN));
             }
         }
-        return entries;
     }
 
     /**
      * Parses auth data from existing user-managed API user secret into List of API user entries.
      *
+     * @param entries Map of API user entries containing API user credentials.
      * @param secret API user secret
      * @param secretKey API user secret key
      *
      * @return Map of API user entries containing user-managed API user credentials
      */
-    /* test */ static Map<String, UserEntry> generateUserManagedApiCredentials(Secret secret, String secretKey) {
-        Map<String, UserEntry> entries = new HashMap<>();
+    /* test */ static void generateUserManagedApiCredentials(Map<String, UserEntry> entries, Secret secret, String secretKey) {
         if (secret != null) {
             if (secretKey != null && secret.getData().containsKey(secretKey)) {
                 String credentialsAsString = Util.decodeFromBase64(secret.getData().get(secretKey));
@@ -209,20 +208,18 @@ public class HashLoginServiceApiCredentials {
                         + ". User provided Cruise Control API credentials contain contains illegal role: " +  entry.role() + ".");
             }
         }
-        return entries;
     }
 
     /**
      * Parses auth data from existing Cluster Operator managed API user secret into map of API user entries.
      *
+     * @param entries Map of API user entries containing API user credentials.
      * @param passwordGenerator The password generator for API users
      * @param secret API user secret
      *
      * @return Map of API user entries containing Strimzi-managed API user credentials
      */
-    /* test */ static Map<String, UserEntry> generateCoManagedApiCredentials(PasswordGenerator passwordGenerator, Secret secret) {
-        Map<String, UserEntry> entries = new HashMap<>();
-
+    /* test */ static void generateCoManagedApiCredentials(Map<String, UserEntry> entries, PasswordGenerator passwordGenerator, Secret secret) {
         if (secret != null) {
             if (secret.getData().containsKey(AUTH_FILE_KEY)) {
                 String credentialsAsString = Util.decodeFromBase64(secret.getData().get(AUTH_FILE_KEY));
@@ -238,7 +235,6 @@ public class HashLoginServiceApiCredentials {
             entries.put(HEALTHCHECK_USERNAME, new UserEntry(HEALTHCHECK_USERNAME, passwordGenerator.generate(), Role.USER));
         }
 
-        return entries;
     }
 
     /**
@@ -255,15 +251,15 @@ public class HashLoginServiceApiCredentials {
                                                               Secret cruiseControlApiSecret,
                                                               Secret userManagedApiSecret,
                                                               Secret topicOperatorManagedApiSecret) {
-        Map<String, UserEntry> apiCredentials = new HashMap<>();
-        apiCredentials.putAll(generateCoManagedApiCredentials(passwordGenerator, cruiseControlApiSecret));
-        apiCredentials.putAll(generateUserManagedApiCredentials(userManagedApiSecret, userManagedApiSecretKey));
-        apiCredentials.putAll(generateTOManagedApiCredentials(topicOperatorManagedApiSecret));
+        Map<String, UserEntry> userEntries = new HashMap<>();
+        generateUserManagedApiCredentials(userEntries, userManagedApiSecret, userManagedApiSecretKey);
+        generateTOManagedApiCredentials(userEntries, topicOperatorManagedApiSecret);
+        generateCoManagedApiCredentials(userEntries, passwordGenerator, cruiseControlApiSecret);
 
         Map<String, String> data = new HashMap<>(3);
-        data.put(REBALANCE_OPERATOR_PASSWORD_KEY, Util.encodeToBase64(apiCredentials.get(REBALANCE_OPERATOR_USERNAME).password));
-        data.put(HEALTHCHECK_PASSWORD_KEY, Util.encodeToBase64(apiCredentials.get(HEALTHCHECK_USERNAME).password));
-        data.put(AUTH_FILE_KEY, Util.encodeToBase64(generateApiAuthFileAsString(apiCredentials)));
+        data.put(REBALANCE_OPERATOR_PASSWORD_KEY, Util.encodeToBase64(userEntries.get(REBALANCE_OPERATOR_USERNAME).password));
+        data.put(HEALTHCHECK_PASSWORD_KEY, Util.encodeToBase64(userEntries.get(HEALTHCHECK_USERNAME).password));
+        data.put(AUTH_FILE_KEY, Util.encodeToBase64(generateApiAuthFileAsString(userEntries)));
         return data;
     }
 

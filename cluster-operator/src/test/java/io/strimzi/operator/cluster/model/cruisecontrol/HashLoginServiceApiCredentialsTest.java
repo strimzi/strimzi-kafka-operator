@@ -30,6 +30,7 @@ import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.test.annotations.ParallelTest;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -189,19 +190,22 @@ public class HashLoginServiceApiCredentialsTest {
     public void testGenerateToManagedApiCredentials() {
         Secret secret = createSecret(Map.of("topic-operator.apiAdminName",  encodeToBase64("topic-operator"),
                 "topic-operator.apiAdminPassword",  encodeToBase64("password")));
-        Map<String, HashLoginServiceApiCredentials.UserEntry> entries =  HashLoginServiceApiCredentials.generateTOManagedApiCredentials(secret);
+        Map<String, HashLoginServiceApiCredentials.UserEntry> entries = new HashMap<>();
+        HashLoginServiceApiCredentials.generateTOManagedApiCredentials(entries, secret);
         assertThat(entries.get("topic-operator").username(), is("topic-operator"));
         assertThat(entries.get("topic-operator").password(), is("password"));
         assertThat(entries.get("topic-operator").role(), is(HashLoginServiceApiCredentials.Role.ADMIN));
 
-        entries =  HashLoginServiceApiCredentials.generateTOManagedApiCredentials(null);
+        entries = new HashMap<>();
+        HashLoginServiceApiCredentials.generateTOManagedApiCredentials(entries, null);
         assertThat(entries.size(), is(0));
     }
 
     private void assertParseThrowsForUserManagedCreds(String illegalConfig, CruiseControlApiUsers apiUsers) {
         illegalConfig = encodeToBase64(illegalConfig);
         Secret secret = createSecret(Map.of(SECRET_KEY, illegalConfig));
-        assertThrows(Exception.class, () -> HashLoginServiceApiCredentials.generateUserManagedApiCredentials(secret, SECRET_KEY));
+        Map<String, HashLoginServiceApiCredentials.UserEntry> entries = new HashMap<>();
+        assertThrows(Exception.class, () -> HashLoginServiceApiCredentials.generateUserManagedApiCredentials(entries, secret, SECRET_KEY));
     }
 
     @ParallelTest
@@ -213,7 +217,8 @@ public class HashLoginServiceApiCredentialsTest {
                         """);
         CruiseControlApiUsers apiUsers = new HashLoginServiceApiUsers();
         Secret secret = createSecret(Map.of(SECRET_KEY, config));
-        Map<String, HashLoginServiceApiCredentials.UserEntry> entries =  HashLoginServiceApiCredentials.generateUserManagedApiCredentials(secret, SECRET_KEY);
+        Map<String, HashLoginServiceApiCredentials.UserEntry> entries = new HashMap<>();
+        HashLoginServiceApiCredentials.generateUserManagedApiCredentials(entries, secret, SECRET_KEY);
 
         assertThat(entries.get("username0").username(), is("username0"));
         assertThat(entries.get("username0").password(), is("password0"));
@@ -227,9 +232,13 @@ public class HashLoginServiceApiCredentialsTest {
         assertThat(entries.get("username2").password(), is("password2"));
         assertThat(entries.get("username2").role(), is(HashLoginServiceApiCredentials.Role.USER));
 
-        assertThat(HashLoginServiceApiCredentials.generateUserManagedApiCredentials(secret, null), is(Collections.emptyMap()));
-        assertThat(HashLoginServiceApiCredentials.generateUserManagedApiCredentials(secret, "key"), is(Collections.emptyMap()));
-        assertThat(HashLoginServiceApiCredentials.generateUserManagedApiCredentials(null, SECRET_KEY), is(Collections.emptyMap()));
+        entries = new HashMap<>();
+        HashLoginServiceApiCredentials.generateUserManagedApiCredentials(entries, secret, null);
+        assertThat(entries, is(Collections.emptyMap()));
+        HashLoginServiceApiCredentials.generateUserManagedApiCredentials(entries, secret, "key");
+        assertThat(entries, is(Collections.emptyMap()));
+        HashLoginServiceApiCredentials.generateUserManagedApiCredentials(entries, null, SECRET_KEY);
+        assertThat(entries, is(Collections.emptyMap()));
 
         assertParseThrowsForUserManagedCreds("""
                             username1: password1,USER
@@ -266,7 +275,8 @@ public class HashLoginServiceApiCredentialsTest {
                 encodeToBase64("rebalance-operator: password,ADMIN\n" +
                                      "healthcheck: password,USER"));
         CruiseControlApiUsers apiUsers = new HashLoginServiceApiUsers();
-        Map<String, HashLoginServiceApiCredentials.UserEntry> entries =  HashLoginServiceApiCredentials.generateCoManagedApiCredentials(mockPasswordGenerator, createSecret(map1));
+        Map<String, HashLoginServiceApiCredentials.UserEntry> entries = new HashMap<>();
+        HashLoginServiceApiCredentials.generateCoManagedApiCredentials(entries, mockPasswordGenerator, createSecret(map1));
         assertThat(entries.get("rebalance-operator").username(), is("rebalance-operator"));
         assertThat(entries.get("rebalance-operator").password(), is("password"));
         assertThat(entries.get("rebalance-operator").role(), is(HashLoginServiceApiCredentials.Role.ADMIN));
@@ -279,10 +289,12 @@ public class HashLoginServiceApiCredentialsTest {
         final Map<String, String> map2 = Map.of("cruise-control.authFile",
                 encodeToBase64("rebalance-operator: ,ADMIN\n" +
                                      "healthcheck: password,USER"));
-        assertThrows(InvalidConfigurationException.class, () -> HashLoginServiceApiCredentials.generateCoManagedApiCredentials(mockPasswordGenerator, createSecret(map2)));
+        final Map<String, HashLoginServiceApiCredentials.UserEntry> entries2 = new HashMap<>();
+        assertThrows(InvalidConfigurationException.class, () -> HashLoginServiceApiCredentials.generateCoManagedApiCredentials(entries2, mockPasswordGenerator, createSecret(map2)));
 
         // Test that new credentials are generated if they do not exist already
-        entries = HashLoginServiceApiCredentials.generateCoManagedApiCredentials(mockPasswordGenerator, null);
+        entries = new HashMap<>();
+        HashLoginServiceApiCredentials.generateCoManagedApiCredentials(entries, mockPasswordGenerator, null);
         assertThat(entries.get("rebalance-operator").username(), is(REBALANCE_OPERATOR_USERNAME));
         assertThat(entries.get("rebalance-operator").password(), is(not(emptyString())));
         assertThat(entries.get("rebalance-operator").role(), is(HashLoginServiceApiCredentials.Role.ADMIN));
