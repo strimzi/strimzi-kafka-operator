@@ -240,9 +240,9 @@ public class Environment {
     public static final NodePoolsRoleMode STRIMZI_NODE_POOLS_ROLE_MODE = getOrDefault(STRIMZI_NODE_POOLS_ROLE_MODE_ENV, value -> NodePoolsRoleMode.valueOf(value.toUpperCase(Locale.ENGLISH)), NodePoolsRoleMode.SEPARATE);
 
     // variables for kafka client app images
-    private static final String TEST_CLIENTS_VERSION = getOrDefault(TEST_CLIENTS_VERSION_ENV, "quay.io/jstejska/test-clients:latest-kafka-3.7.0");
+    private static final String TEST_CLIENTS_VERSION = getOrDefault(TEST_CLIENTS_VERSION_ENV, TEST_CLIENTS_VERSION_DEFAULT);
     private static final String TEST_CLIENTS_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + TEST_CLIENTS_ORG_DEFAULT + "/test-clients:" + TEST_CLIENTS_VERSION + "-kafka-" + CLIENTS_KAFKA_VERSION;
-    public static final String TEST_CLIENTS_IMAGE = getOrDefault(TEST_CLIENTS_IMAGE_ENV, TEST_CLIENTS_IMAGE_DEFAULT);
+    public static final String TEST_CLIENTS_IMAGE = getOrDefault(TEST_CLIENTS_IMAGE_ENV, "quay.io/jstejska/test-clients:latest-kafka-3.7.0");
     private static final String SCRAPER_IMAGE_DEFAULT = STRIMZI_REGISTRY + "/" + STRIMZI_ORG + "/kafka:" + STRIMZI_TAG + "-kafka-" + ST_KAFKA_VERSION;
     public static final String SCRAPER_IMAGE = getOrDefault(SCRAPER_IMAGE_ENV, SCRAPER_IMAGE_DEFAULT);
 
