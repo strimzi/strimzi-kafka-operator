@@ -42,11 +42,12 @@ public class TopicOperatorUtil {
     /**
      * Create a new Kubernetes client instance.
      *
+     * @param id Caller id.
      * @return Kubernetes client.
      */
-    public static KubernetesClient createKubernetesClient() {
+    public static KubernetesClient createKubernetesClient(String id) {
         return new OperatorKubernetesClientBuilder(
-            "strimzi-topic-operator-" + System.nanoTime(),
+            "strimzi-topic-operator-" + id,
             TopicOperatorMain.class.getPackage().getImplementationVersion())
             .build();
     }
