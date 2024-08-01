@@ -85,6 +85,7 @@ public class PersistentVolumeClaimUtils {
      *
      * @return  Storage class which should be used for this PVC
      */
+    @SuppressWarnings("deprecation") // Storage overrides are deprecated
     private static String storageClassNameForBrokerId(int brokerId, PersistentClaimStorage storage)    {
         String storageClass = storage.getStorageClass();
 

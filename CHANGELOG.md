@@ -9,6 +9,11 @@
   On the listener `serverBearerTokenLocation` and `userNamePrefix` have been added. 
   On the client `accessTokenLocation`, `clientAssertion`, `clientAssertionLocation`, `clientAssertionType`, and `saslExtensions` have been added.
 
+### Changes, deprecations and removals
+
+* The storage overrides for configuring per-broker storage class are deprecated and will be removed in the future.
+  If you are using the storage overrides, you should migrate to KafkaNodePool resources and use multiple node pools with a different storage class each. 
+
 ## 0.42.0
 
 * Add support for Kafka 3.7.1

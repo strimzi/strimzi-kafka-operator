@@ -668,7 +668,7 @@ It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
 |Specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
 |overrides
 |xref:type-PersistentClaimStorageOverride-{context}[`PersistentClaimStorageOverride`] array
-|Overrides for individual brokers. The `overrides` field allows to specify a different configuration for different brokers.
+|**The `overrides` property has been deprecated.** The storage overrides for individual brokers are deprecated and will be removed in the future. Please use multiple KafkaNodePool custom resources with different storage classes instead. Overrides for individual brokers. The `overrides` field allows to specify a different configuration for different brokers.
 |====
 
 [id='type-PersistentClaimStorageOverride-{context}']
