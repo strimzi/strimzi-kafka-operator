@@ -76,74 +76,91 @@ For more information, see xref:con-high-volume-config-properties-{context}[Handl
 .Example `KafkaMirrorMaker2` custom resource configuration
 [source,yaml,subs="+attributes"]
 ----
+# Basic configuration (essential)
 apiVersion: {KafkaMirrorMaker2ApiVersion}
-kind: KafkaMirrorMaker2
+kind: KafkaMirrorMaker2 # <1>
 metadata:
   name: my-mirror-maker2
+# Deployment specifications
 spec:
+  # Kafka version (essential)
   version: {DefaultKafkaVersion} # <1>
+  # Replicas (essential)
   replicas: 3 # <2>
+  # Connect cluster name (essential)
   connectCluster: "my-cluster-target" # <3>
+  # Cluster configurations (essential)
   clusters: # <4>
-  - alias: "my-cluster-source" # <5>
-    authentication: # <6>
-      certificateAndKey:
-        certificate: source.crt
-        key: source.key
-        secretName: my-user-source
-      type: tls
-    bootstrapServers: my-cluster-source-kafka-bootstrap:9092 # <7>
-    tls: # <8>
-      trustedCertificates:
-        - pattern: "*.crt"
-          secretName: my-cluster-source-cluster-ca-cert
-  - alias: "my-cluster-target" # <9>
-    authentication: # <10>
-      certificateAndKey:
-        certificate: target.crt
-        key: target.key
-        secretName: my-user-target
-      type: tls
-    bootstrapServers: my-cluster-target-kafka-bootstrap:9092 # <11>
-    config: # <12>
-      config.storage.replication.factor: 1
-      offset.storage.replication.factor: 1
-      status.storage.replication.factor: 1
-    tls: # <13>
-      trustedCertificates:
-        - pattern: "*.crt"
-          secretName: my-cluster-target-cluster-ca-cert
+    - alias: "my-cluster-source" # <5>
+      # Authentication (recommended)
+      authentication: # <6>
+        certificateAndKey:
+          certificate: source.crt
+          key: source.key
+          secretName: my-user-source
+        type: tls
+      bootstrapServers: my-cluster-source-kafka-bootstrap:9092 # <7>
+      # TLS configuration (optional)
+      tls: # <8>
+        trustedCertificates:
+          - pattern: "*.crt"
+            secretName: my-cluster-source-cluster-ca-cert
+    - alias: "my-cluster-target" # <9>
+      # Authentication (recommended)
+      authentication: # <10>
+        certificateAndKey:
+          certificate: target.crt
+          key: target.key
+          secretName: my-user-target
+        type: tls
+      bootstrapServers: my-cluster-target-kafka-bootstrap:9092 # <11>
+      # Kafka Connect configuration (optional)
+      config: # <12>
+        config.storage.replication.factor: 1
+        offset.storage.replication.factor: 1
+        status.storage.replication.factor: 1
+      # TLS configuration (optional)
+      tls: # <13>
+        trustedCertificates:
+          - pattern: "*.crt"
+            secretName: my-cluster-target-cluster-ca-cert
+  # Mirroring configurations (essential)
   mirrors: # <14>
-  - sourceCluster: "my-cluster-source" # <15>
-    targetCluster: "my-cluster-target" # <16>
-    sourceConnector: # <17>
-      tasksMax: 10 # <18>
-      autoRestart: # <19>
-        enabled: true
-      config
-        replication.factor: 1 # <20>
-        offset-syncs.topic.replication.factor: 1 # <21>
-        sync.topic.acls.enabled: "false" # <22>
-        refresh.topics.interval.seconds: 60 # <23>
-        replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy" # <24>
-    heartbeatConnector: # <25>
-      autoRestart:
-        enabled: true
-      config:
-        heartbeats.topic.replication.factor: 1 # <26>
-        replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy"
-    checkpointConnector: # <27>
-      autoRestart:
-        enabled: true
-      config:
-        checkpoints.topic.replication.factor: 1 # <28>
-        refresh.groups.interval.seconds: 600 # <29>
-        sync.group.offsets.enabled: true # <30>
-        sync.group.offsets.interval.seconds: 60 # <31>
-        emit.checkpoints.interval.seconds: 60 # <32>
-        replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy"
-    topicsPattern: "topic1|topic2|topic3" # <33>
-    groupsPattern: "group1|group2|group3" # <34>
+    - sourceCluster: "my-cluster-source" # <15>
+      targetCluster: "my-cluster-target" # <16>
+      # Source connector configuration (optional)
+      sourceConnector: # <17>
+        tasksMax: 10 # <18>
+        autoRestart: # <19>
+          enabled: true
+        config:
+          replication.factor: 1 # <20>
+          offset-syncs.topic.replication.factor: 1 # <21>
+          sync.topic.acls.enabled: "false" # <22>
+          refresh.topics.interval.seconds: 60 # <23>
+          replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy" # <24>
+      # Heartbeat connector configuration (optional)
+      heartbeatConnector: # <25>
+        autoRestart:
+          enabled: true
+        config:
+          heartbeats.topic.replication.factor: 1 # <26>
+          replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy"
+      # Checkpoint connector configuration (optional)
+      checkpointConnector: # <27>
+        autoRestart:
+          enabled: true
+        config:
+          checkpoints.topic.replication.factor: 1 # <28>
+          refresh.groups.interval.seconds: 600 # <29>
+          sync.group.offsets.enabled: true # <30>
+          sync.group.offsets.interval.seconds: 60 # <31>
+          emit.checkpoints.interval.seconds: 60 # <32>
+          replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy"
+      # Topic and group patterns (essential)
+      topicsPattern: "topic1|topic2|topic3" # <33>
+      groupsPattern: "group1|group2|group3" # <34>
+  # Resources requests and limits (recommended)
   resources: # <35>
     requests:
       cpu: "1"
@@ -151,22 +168,29 @@ spec:
     limits:
       cpu: "2"
       memory: 2Gi
+  # Logging configuration (optional)
   logging: # <36>
     type: inline
     loggers:
       connect.root.logger.level: INFO
+  # Readiness probe (recommended)
   readinessProbe: # <37>
     initialDelaySeconds: 15
     timeoutSeconds: 5
+  # Liveness probe (recommended)
   livenessProbe:
     initialDelaySeconds: 15
     timeoutSeconds: 5
+  # JVM options (recommended)
   jvmOptions: # <38>
     "-Xmx": "1g"
     "-Xms": "1g"
+  # Custom image (optional)
   image: my-org/my-image:latest # <39>
+  # Rack awareness (optional)
   rack:
     topologyKey: topology.kubernetes.io/zone # <40>
+  # Pod template (optional)
   template: # <41>
     pod:
       affinity:
@@ -186,8 +210,10 @@ spec:
           value: my-otel-service
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
           value: "http://otlp-host:4317"
+  # Tracing configuration (optional)
   tracing:
     type: opentelemetry # <43>
+  # External configuration (optional)
   externalConfiguration: # <44>
     env:
       - name: AWS_ACCESS_KEY_ID
