@@ -62,7 +62,7 @@ public class DrainCleanerST extends AbstractST {
             .endMetadata()
             .build());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), TestConstants.DRAIN_CLEANER_NAMESPACE).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getClusterName(), testStorage.getTopicName()).build());
 
         drainCleaner.createDrainCleaner();
         // allow NetworkPolicies for the webhook in case that we have "default to deny all" mode enabled
@@ -96,7 +96,7 @@ public class DrainCleanerST extends AbstractST {
         evictPodWithName(kafkaPodName);
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getBrokerSelector(), replicas, kafkaPod);
 
-        ClientUtils.waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.DRAIN_CLEANER_NAMESPACE, 200);
+        ClientUtils.waitForClientsSuccess(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), 200);
     }
 
     private void evictPodWithName(String podName) {

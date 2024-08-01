@@ -42,9 +42,9 @@ class HelmChartST extends AbstractST {
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
 
         resourceManager.createResourceWithWait(
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build(),
+            KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), testStorage.getTopicName()).build(),
             // Deploy KafkaConnect and wait for readiness
-            KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), Environment.TEST_SUITE_NAMESPACE, 1)
+            KafkaConnectTemplates.kafkaConnectWithFilePlugin(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), 1)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()

@@ -592,7 +592,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTopicName()).build());
         resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getKafkaUsername()).build());
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
@@ -733,7 +733,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        final String clusterIPBoostrapAddress = KafkaUtils.bootstrapAddressFromStatus(testStorage.getClusterName(), testStorage.getNamespaceName(), TestConstants.CLUSTER_IP_LISTENER_DEFAULT_NAME);
+        final String clusterIPBoostrapAddress = KafkaUtils.bootstrapAddressFromStatus(testStorage.getNamespaceName(), testStorage.getClusterName(), TestConstants.CLUSTER_IP_LISTENER_DEFAULT_NAME);
         final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage, clusterIPBoostrapAddress);
         resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
@@ -767,7 +767,7 @@ public class ListenersST extends AbstractST {
 
         resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
 
-        final String clusterIPBoostrapAddress = KafkaUtils.bootstrapAddressFromStatus(testStorage.getClusterName(), testStorage.getNamespaceName(), TestConstants.CLUSTER_IP_LISTENER_DEFAULT_NAME);
+        final String clusterIPBoostrapAddress = KafkaUtils.bootstrapAddressFromStatus(testStorage.getNamespaceName(), testStorage.getClusterName(), TestConstants.CLUSTER_IP_LISTENER_DEFAULT_NAME);
         final KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage, clusterIPBoostrapAddress);
         resourceManager.createResourceWithWait(
             kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
@@ -794,7 +794,7 @@ public class ListenersST extends AbstractST {
 
         final CertAndKeyFiles strimziCertAndKey1 = exportToPemFiles(strimzi1);
 
-        SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey1);
+        SecretUtils.createCustomSecret(testStorage.getNamespaceName(), clusterCustomCertServer1, testStorage.getClusterName(), strimziCertAndKey1);
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -885,8 +885,8 @@ public class ListenersST extends AbstractST {
         final CertAndKeyFiles rootCertAndKey1 = exportToPemFiles(root1);
         final CertAndKeyFiles chainCertAndKey1 = exportToPemFiles(strimzi1, intermediate1, root1);
 
-        SecretUtils.createCustomSecret(clusterCustomCertChain1, testStorage.getClusterName(), testStorage.getNamespaceName(), chainCertAndKey1);
-        SecretUtils.createCustomSecret(clusterCustomRootCA1, testStorage.getClusterName(), testStorage.getNamespaceName(), rootCertAndKey1);
+        SecretUtils.createCustomSecret(testStorage.getNamespaceName(), clusterCustomCertChain1, testStorage.getClusterName(), chainCertAndKey1);
+        SecretUtils.createCustomSecret(testStorage.getNamespaceName(), clusterCustomRootCA1, testStorage.getClusterName(), rootCertAndKey1);
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -970,7 +970,7 @@ public class ListenersST extends AbstractST {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
 
-        SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), STRIMZI_CERT_AND_KEY_1);
+        SecretUtils.createCustomSecret(testStorage.getNamespaceName(), clusterCustomCertServer1, testStorage.getClusterName(), STRIMZI_CERT_AND_KEY_1);
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -1056,8 +1056,8 @@ public class ListenersST extends AbstractST {
         final String clusterCustomCertChain1 = testStorage.getClusterName() + "-" + customCertChain1;
         final String clusterCustomRootCA1 = testStorage.getClusterName() + "-" + customRootCA1;
 
-        SecretUtils.createCustomSecret(clusterCustomCertChain1, testStorage.getClusterName(), testStorage.getNamespaceName(), CHAIN_CERT_AND_KEY_1);
-        SecretUtils.createCustomSecret(clusterCustomRootCA1, testStorage.getClusterName(), testStorage.getNamespaceName(), ROOT_CA_CERT_AND_KEY_1);
+        SecretUtils.createCustomSecret(testStorage.getNamespaceName(), clusterCustomCertChain1, testStorage.getClusterName(), CHAIN_CERT_AND_KEY_1);
+        SecretUtils.createCustomSecret(testStorage.getNamespaceName(), clusterCustomRootCA1, testStorage.getClusterName(), ROOT_CA_CERT_AND_KEY_1);
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -1153,7 +1153,7 @@ public class ListenersST extends AbstractST {
 
         final CertAndKeyFiles strimziCertAndKey1 = exportToPemFiles(strimzi1);
 
-        SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey1);
+        SecretUtils.createCustomSecret(testStorage.getNamespaceName(), clusterCustomCertServer1, testStorage.getClusterName(), strimziCertAndKey1);
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -1246,8 +1246,8 @@ public class ListenersST extends AbstractST {
         final CertAndKeyFiles rootCertAndKey1 = exportToPemFiles(root1);
         final CertAndKeyFiles chainCertAndKey1 = exportToPemFiles(strimzi1, intermediate1, root1);
 
-        SecretUtils.createCustomSecret(clusterCustomCertChain1, testStorage.getClusterName(), testStorage.getNamespaceName(), chainCertAndKey1);
-        SecretUtils.createCustomSecret(clusterCustomRootCA1, testStorage.getClusterName(), testStorage.getNamespaceName(), rootCertAndKey1);
+        SecretUtils.createCustomSecret(testStorage.getNamespaceName(), clusterCustomCertChain1, testStorage.getClusterName(), chainCertAndKey1);
+        SecretUtils.createCustomSecret(testStorage.getNamespaceName(), clusterCustomRootCA1, testStorage.getClusterName(), rootCertAndKey1);
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -1333,8 +1333,8 @@ public class ListenersST extends AbstractST {
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
         final String clusterCustomCertServer2 = testStorage.getClusterName() + "-" + customCertServer2;
 
-        SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), STRIMZI_CERT_AND_KEY_1);
-        SecretUtils.createCustomSecret(clusterCustomCertServer2, testStorage.getClusterName(), testStorage.getNamespaceName(), STRIMZI_CERT_AND_KEY_2);
+        SecretUtils.createCustomSecret(testStorage.getNamespaceName(), clusterCustomCertServer1, testStorage.getClusterName(), STRIMZI_CERT_AND_KEY_1);
+        SecretUtils.createCustomSecret(testStorage.getNamespaceName(), clusterCustomCertServer2, testStorage.getClusterName(), STRIMZI_CERT_AND_KEY_2);
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -1366,10 +1366,10 @@ public class ListenersST extends AbstractST {
 
         resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
 
-        String externalCerts = getKafkaStatusCertificates(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
+        String externalCerts = getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getClusterName());
         String externalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), testStorage.getClusterName() + "-cluster-ca-cert", "ca.crt");
 
-        String internalCerts = getKafkaStatusCertificates(TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
+        String internalCerts = getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getClusterName());
 
         LOGGER.info("Check if KafkaStatus certificates from external listeners are the same as Secret certificates");
         assertThat(externalSecretCerts, is(externalCerts));
@@ -1431,10 +1431,10 @@ public class ListenersST extends AbstractST {
 
         KafkaUtils.waitForKafkaStatusUpdate(testStorage.getNamespaceName(), testStorage.getClusterName());
 
-        externalCerts = getKafkaStatusCertificates(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
+        externalCerts = getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getClusterName());
         externalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer1, "ca.crt");
 
-        internalCerts = getKafkaStatusCertificates(TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
+        internalCerts = getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getClusterName());
         String internalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt");
 
         LOGGER.info("Check if KafkaStatus certificates are the same as Secret certificates");
@@ -1464,17 +1464,17 @@ public class ListenersST extends AbstractST {
             .build();
 
         resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount() * 3);
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount() * 3);
 
-        SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), STRIMZI_CERT_AND_KEY_2);
-        SecretUtils.createCustomSecret(clusterCustomCertServer2, testStorage.getClusterName(), testStorage.getNamespaceName(), STRIMZI_CERT_AND_KEY_1);
+        SecretUtils.createCustomSecret(testStorage.getNamespaceName(), clusterCustomCertServer1, testStorage.getClusterName(), STRIMZI_CERT_AND_KEY_2);
+        SecretUtils.createCustomSecret(testStorage.getNamespaceName(), clusterCustomCertServer2, testStorage.getClusterName(), STRIMZI_CERT_AND_KEY_1);
 
         kafkaSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, kafkaSnapshot);
 
-        externalCerts = getKafkaStatusCertificates(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
+        externalCerts = getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getClusterName());
         externalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer1, "ca.crt");
 
-        internalCerts = getKafkaStatusCertificates(TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
+        internalCerts = getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getClusterName());
         internalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt");
 
         LOGGER.info("Check if KafkaStatus certificates are the same as Secret certificates");
@@ -1504,7 +1504,7 @@ public class ListenersST extends AbstractST {
             .build();
 
         resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount() * 5);
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount() * 5);
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setListeners(asList(
@@ -1537,10 +1537,10 @@ public class ListenersST extends AbstractST {
 
         KafkaUtils.waitForKafkaStatusUpdate(testStorage.getNamespaceName(), testStorage.getClusterName());
 
-        externalCerts = getKafkaStatusCertificates(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
+        externalCerts = getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getClusterName());
         externalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), testStorage.getClusterName() + "-cluster-ca-cert", "ca.crt");
 
-        internalCerts = getKafkaStatusCertificates(TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
+        internalCerts = getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getClusterName());
         internalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt");
 
         LOGGER.info("Check if KafkaStatus certificates are the same as Secret certificates");
@@ -1568,7 +1568,7 @@ public class ListenersST extends AbstractST {
             .build();
 
         resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount() * 6);
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount() * 6);
     }
 
     @ParallelNamespaceTest
@@ -1593,8 +1593,8 @@ public class ListenersST extends AbstractST {
 
         final CertAndKeyFiles strimziCertAndKey2 = exportToPemFiles(strimzi2);
 
-        SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey1);
-        SecretUtils.createCustomSecret(clusterCustomCertServer2, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey2);
+        SecretUtils.createCustomSecret(testStorage.getNamespaceName(), clusterCustomCertServer1, testStorage.getClusterName(), strimziCertAndKey1);
+        SecretUtils.createCustomSecret(testStorage.getNamespaceName(), clusterCustomCertServer2, testStorage.getClusterName(), strimziCertAndKey2);
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -1627,14 +1627,14 @@ public class ListenersST extends AbstractST {
 
         StUtils.waitUntilSuppliersAreMatching(
             // external certs
-            () -> getKafkaStatusCertificates(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+            () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getClusterName()),
             // external secret certs
             () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), testStorage.getClusterName() + "-cluster-ca-cert", "ca.crt"));
         StUtils.waitUntilSuppliersAreMatching(
             // external secret certs
             () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), testStorage.getClusterName() + "-cluster-ca-cert", "ca.crt"),
             // internal certs
-            () -> getKafkaStatusCertificates(TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()));
+            () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getClusterName()));
 
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
@@ -1691,12 +1691,12 @@ public class ListenersST extends AbstractST {
 
         StUtils.waitUntilSuppliersAreMatching(
             // external certs
-            () -> getKafkaStatusCertificates(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+            () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getClusterName()),
             // external secret certs
             () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer1, "ca.crt"));
         StUtils.waitUntilSuppliersAreMatching(
             // internal certs
-            () -> getKafkaStatusCertificates(TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+            () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getClusterName()),
             // internal secret certs
             () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt"));
 
@@ -1726,21 +1726,21 @@ public class ListenersST extends AbstractST {
             .build();
 
         resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount() * 3);
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount() * 3);
 
-        SecretUtils.updateCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey2);
-        SecretUtils.updateCustomSecret(clusterCustomCertServer2, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey1);
+        SecretUtils.updateCustomSecret(testStorage.getNamespaceName(), clusterCustomCertServer1, testStorage.getClusterName(), strimziCertAndKey2);
+        SecretUtils.updateCustomSecret(testStorage.getNamespaceName(), clusterCustomCertServer2, testStorage.getClusterName(), strimziCertAndKey1);
 
         kafkaSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, kafkaSnapshot);
 
         StUtils.waitUntilSuppliersAreMatching(
                 // external certs
-                () -> getKafkaStatusCertificates(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+                () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getClusterName()),
                 // external secret certs
                 () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer1, "ca.crt"));
         StUtils.waitUntilSuppliersAreMatching(
                 // internal certs
-                () -> getKafkaStatusCertificates(TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+                () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getClusterName()),
                 // internal secret certs
                 () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt"));
 
@@ -1797,12 +1797,12 @@ public class ListenersST extends AbstractST {
 
         StUtils.waitUntilSuppliersAreMatching(
                 // external certs
-                () -> getKafkaStatusCertificates(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+                () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getClusterName()),
                 // external secret certs
                 () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), testStorage.getClusterName() + "-cluster-ca-cert", "ca.crt"));
         StUtils.waitUntilSuppliersAreMatching(
                 // internal certs
-                () -> getKafkaStatusCertificates(TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+                () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getClusterName()),
                 // internal secret certs
                 () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt"));
 
@@ -1847,8 +1847,8 @@ public class ListenersST extends AbstractST {
 
         final CertAndKeyFiles strimziCertAndKey2 = exportToPemFiles(strimzi2);
 
-        SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey1);
-        SecretUtils.createCustomSecret(clusterCustomCertServer2, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey2);
+        SecretUtils.createCustomSecret(testStorage.getNamespaceName(), clusterCustomCertServer1, testStorage.getClusterName(), strimziCertAndKey1);
+        SecretUtils.createCustomSecret(testStorage.getNamespaceName(), clusterCustomCertServer2, testStorage.getClusterName(), strimziCertAndKey2);
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -1880,15 +1880,15 @@ public class ListenersST extends AbstractST {
         LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
 
         KafkaUtils.waitForKafkaSecretAndStatusCertsMatches(
-            () -> getKafkaStatusCertificates(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+            () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getClusterName()),
             () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), testStorage.getClusterName() + "-cluster-ca-cert", "ca.crt")
         );
 
         LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
 
         KafkaUtils.waitForKafkaSecretAndStatusCertsMatches(
-            () -> getKafkaStatusCertificates(TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
-            () -> getKafkaStatusCertificates(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName())
+            () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getClusterName()),
+            () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getClusterName())
         );
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
@@ -1947,14 +1947,14 @@ public class ListenersST extends AbstractST {
         LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
 
         KafkaUtils.waitForKafkaSecretAndStatusCertsMatches(
-            () -> getKafkaStatusCertificates(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+            () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getClusterName()),
             () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer1, "ca.crt")
         );
 
         LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
 
         KafkaUtils.waitForKafkaSecretAndStatusCertsMatches(
-            () -> getKafkaStatusCertificates(TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+            () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getClusterName()),
             () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt")
         );
 
@@ -1984,11 +1984,11 @@ public class ListenersST extends AbstractST {
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
         // Delete already existing secrets
-        SecretUtils.deleteSecretWithWait(clusterCustomCertServer1, testStorage.getNamespaceName());
-        SecretUtils.deleteSecretWithWait(clusterCustomCertServer2, testStorage.getNamespaceName());
+        SecretUtils.deleteSecretWithWait(testStorage.getNamespaceName(), clusterCustomCertServer1);
+        SecretUtils.deleteSecretWithWait(testStorage.getNamespaceName(), clusterCustomCertServer2);
         // Create Secrets with new values (update)
-        SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey2);
-        SecretUtils.createCustomSecret(clusterCustomCertServer2, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey1);
+        SecretUtils.createCustomSecret(testStorage.getNamespaceName(), clusterCustomCertServer1, testStorage.getClusterName(), strimziCertAndKey2);
+        SecretUtils.createCustomSecret(testStorage.getNamespaceName(), clusterCustomCertServer2, testStorage.getClusterName(), strimziCertAndKey1);
 
         kafkaSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, kafkaSnapshot);
 
@@ -1997,14 +1997,14 @@ public class ListenersST extends AbstractST {
         LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
 
         KafkaUtils.waitForKafkaSecretAndStatusCertsMatches(
-            () -> getKafkaStatusCertificates(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+            () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getClusterName()),
             () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer1, "ca.crt")
         );
 
         LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
 
         KafkaUtils.waitForKafkaSecretAndStatusCertsMatches(
-            () -> getKafkaStatusCertificates(TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+            () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getClusterName()),
             () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt")
         );
 
@@ -2059,14 +2059,14 @@ public class ListenersST extends AbstractST {
         LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
 
         KafkaUtils.waitForKafkaSecretAndStatusCertsMatches(
-            () -> getKafkaStatusCertificates(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+            () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getClusterName()),
             () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), testStorage.getClusterName() + "-cluster-ca-cert", "ca.crt")
         );
 
         LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
 
         KafkaUtils.waitForKafkaSecretAndStatusCertsMatches(
-            () -> getKafkaStatusCertificates(TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+            () -> getKafkaStatusCertificates(testStorage.getNamespaceName(), TestConstants.TLS_LISTENER_DEFAULT_NAME, testStorage.getClusterName()),
             () -> getKafkaSecretCertificates(testStorage.getNamespaceName(),  clusterCustomCertServer2, "ca.crt")
         );
 
@@ -2141,7 +2141,7 @@ public class ListenersST extends AbstractST {
         final String nonExistingCertName = "non-existing-crt";
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
 
-        SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), STRIMZI_CERT_AND_KEY_1);
+        SecretUtils.createCustomSecret(testStorage.getNamespaceName(), clusterCustomCertServer1, testStorage.getClusterName(), STRIMZI_CERT_AND_KEY_1);
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -2183,7 +2183,7 @@ public class ListenersST extends AbstractST {
         final String nonExistingCertKey = "non-existing-key";
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
 
-        SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), STRIMZI_CERT_AND_KEY_1);
+        SecretUtils.createCustomSecret(testStorage.getNamespaceName(), clusterCustomCertServer1, testStorage.getClusterName(), STRIMZI_CERT_AND_KEY_1);
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -2276,7 +2276,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build(),
             kafkaUser,
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getUsername(), testStorage.getNamespaceName()).build()
+            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getUsername()).build()
         );
 
         final String boostrapAddress = KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9096";

@@ -244,8 +244,8 @@ public class TopicOperatorPerformance extends AbstractST {
             if (withClientsEnabled) {
                 // delete clients here
                 for (int i = 0; i < numberOfClientInstances; i++) {
-                    ClientUtils.waitForClientSuccess(testStorage.getProducerName() + "-" + i, testStorage.getNamespaceName(), NUMBER_OF_MESSAGES);
-                    ClientUtils.waitForClientSuccess(testStorage.getConsumerName() + "-" + i, testStorage.getNamespaceName(), NUMBER_OF_MESSAGES);
+                    ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName() + "-" + i, NUMBER_OF_MESSAGES);
+                    ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName() + "-" + i, NUMBER_OF_MESSAGES);
                 }
                 endSendRecvTimeMs = System.currentTimeMillis();
                 totalSendAndRecvTimeMs = endSendRecvTimeMs - startSendRecvTimeMs;
@@ -438,8 +438,8 @@ public class TopicOperatorPerformance extends AbstractST {
             if (withClientsEnabled) {
                 // delete clients here
                 for (int i = 0; i < numberOfClientInstances; i++) {
-                    ClientUtils.waitForClientSuccess(testStorage.getProducerName() + "-" + i, testStorage.getNamespaceName(), NUMBER_OF_MESSAGES);
-                    ClientUtils.waitForClientSuccess(testStorage.getConsumerName() + "-" + i, testStorage.getNamespaceName(), NUMBER_OF_MESSAGES);
+                    ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName() + "-" + i, NUMBER_OF_MESSAGES);
+                    ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName() + "-" + i, NUMBER_OF_MESSAGES);
                 }
                 endSendRecvTimeMs = System.currentTimeMillis();
                 totalSendAndRecvTimeMs = endSendRecvTimeMs - startSendRecvTimeMs;

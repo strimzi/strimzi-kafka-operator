@@ -64,10 +64,7 @@ public class OauthScopeST extends OauthAbstractST {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // SCOPE TESTING
-        resourceManager.createResourceWithoutWait(KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getClusterName(), 1)
-            .editMetadata()
-                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
-            .endMetadata()
+        resourceManager.createResourceWithoutWait(KafkaConnectTemplates.kafkaConnect(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), 1)
             .withNewSpec()
                 .withReplicas(1)
                 .withBootstrapServers(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + scopeListenerPort)
@@ -102,10 +99,7 @@ public class OauthScopeST extends OauthAbstractST {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // SCOPE TESTING
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getClusterName(), 1)
-            .editMetadata()
-                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
-            .endMetadata()
+        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnect(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), 1)
             .withNewSpec()
                 .withReplicas(1)
                 .withBootstrapServers(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + scopeListenerPort)
@@ -160,11 +154,11 @@ public class OauthScopeST extends OauthAbstractST {
         // clientScope is set to 'test' by default
 
         // verification phase the KafkaClient to authenticate.
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(oauthClusterName, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, testStorage.getTopicName()).build());
 
         resourceManager.createResourceWithWait(oauthInternalClientChecksJob.producerStrimzi());
         // client should succeed because we set to `clientScope=test` and also Kafka has `scope=test`
-        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, producerName, testStorage.getMessageCount());
     }
 
     @IsolatedTest("Modification of shared Kafka cluster")
@@ -201,13 +195,13 @@ public class OauthScopeST extends OauthAbstractST {
         brokerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Environment.TEST_SUITE_NAMESPACE, brokerSelector, 3, brokerPods);
 
         // verification phase client should fail here because clientScope is set to 'null'
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(oauthClusterName, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, testStorage.getTopicName()).build());
 
         resourceManager.createResourceWithWait(oauthInternalClientChecksJob.producerStrimzi());
         // client should fail because the listener requires scope: 'test' in JWT token but was (the listener) temporarily
         // configured without clientScope resulting in a JWT token without the scope claim when using the clientId and
         // secret passed via SASL/PLAIN to obtain an access token in client's name.
-        ClientUtils.waitForClientTimeout(producerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientTimeout(Environment.TEST_SUITE_NAMESPACE, producerName, testStorage.getMessageCount());
         JobUtils.deleteJobWithWait(Environment.TEST_SUITE_NAMESPACE, producerName);
 
         // rollback previous configuration

@@ -133,7 +133,7 @@ class ConnectST extends AbstractST {
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), connectReplicasCount).build());
+        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), connectReplicasCount).build());
 
         // Test ManualRolling Update
         LOGGER.info("KafkaConnect manual rolling update");
@@ -188,7 +188,7 @@ class ConnectST extends AbstractST {
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -263,7 +263,7 @@ class ConnectST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaUser);
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
-        KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+        KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editSpec()
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
                 .withNewKafkaClientAuthenticationScramSha512()
@@ -320,7 +320,7 @@ class ConnectST extends AbstractST {
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
 
-        KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+        KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -373,7 +373,7 @@ class ConnectST extends AbstractST {
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
 
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editSpec()
                 .withResources(new ResourceRequirementsBuilder()
                     .addToLimits("memory", new Quantity("400M"))
@@ -409,7 +409,7 @@ class ConnectST extends AbstractST {
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
 
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 1).build());
+        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1).build());
 
         // kafka cluster Connect already deployed
         List<Pod> connectPods = kubeClient(testStorage.getNamespaceName()).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.componentName(testStorage.getClusterName()));
@@ -462,7 +462,7 @@ class ConnectST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaUser);
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
-        KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+        KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editSpec()
                 .addToConfig("key.converter.schemas.enable", false)
                 .addToConfig("value.converter.schemas.enable", false)
@@ -536,7 +536,7 @@ class ConnectST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaUser);
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
-        KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+        KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editSpec()
                 .addToConfig("key.converter.schemas.enable", false)
                 .addToConfig("value.converter.schemas.enable", false)
@@ -593,7 +593,7 @@ class ConnectST extends AbstractST {
 
         final String imageFullPath = Environment.getImageOutputRegistry(testStorage.getNamespaceName(), TestConstants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 3, 3, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTopicName(), 3, 3).build());
 
         final Plugin echoSinkPlugin = new PluginBuilder()
             .withName(TestConstants.ECHO_SINK_CONNECTOR_NAME)
@@ -604,7 +604,7 @@ class ConnectST extends AbstractST {
                     .build())
             .build();
 
-        KafkaConnect connect = KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
+        KafkaConnect connect = KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getClusterName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -707,7 +707,7 @@ class ConnectST extends AbstractST {
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1).build());
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editSpec()
                 .withNewTemplate()
                     .withNewConnectContainer()
@@ -787,7 +787,7 @@ class ConnectST extends AbstractST {
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
         // Crate connect cluster with default connect image
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 3)
+        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -854,9 +854,9 @@ class ConnectST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTopicName()).build());
         resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), weirdUserName).build());
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -930,9 +930,9 @@ class ConnectST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTopicName()).build());
         resourceManager.createResourceWithWait(KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), testStorage.getClusterName(), weirdUserName).build());
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
@@ -990,7 +990,7 @@ class ConnectST extends AbstractST {
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 2).build());
+        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 2).build());
 
         List<Pod> connectPods = kubeClient(testStorage.getNamespaceName()).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.componentName(testStorage.getClusterName()));
 
@@ -1022,7 +1022,7 @@ class ConnectST extends AbstractST {
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 2)
+        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 2)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -1072,7 +1072,7 @@ class ConnectST extends AbstractST {
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -1202,7 +1202,7 @@ class ConnectST extends AbstractST {
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -1349,8 +1349,8 @@ class ConnectST extends AbstractST {
 
         resourceManager.createResourceWithWait(kafkaUser);
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTopicName()).build());
+        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
                 .withNewSpec()
                     .withBootstrapServers(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
                     .withNewKafkaClientAuthenticationScramSha512()

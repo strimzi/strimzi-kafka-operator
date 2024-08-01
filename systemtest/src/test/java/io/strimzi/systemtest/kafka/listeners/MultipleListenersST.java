@@ -189,7 +189,7 @@ public class MultipleListenersST extends AbstractST {
                 final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
                 String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-                resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(clusterName, topicName, Environment.TEST_SUITE_NAMESPACE).build());
+                resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, clusterName, topicName).build());
 
                 boolean isTlsEnabled = listener.isTls();
 
@@ -255,7 +255,7 @@ public class MultipleListenersST extends AbstractST {
                             kafkaClients.consumerStrimzi()
                         );
                     }
-                    ClientUtils.waitForClientsSuccess(producerName, consumerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+                    ClientUtils.waitForClientsSuccess(Environment.TEST_SUITE_NAMESPACE, producerName, consumerName, testStorage.getMessageCount());
                 }
             }
         }

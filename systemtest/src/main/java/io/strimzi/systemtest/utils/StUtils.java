@@ -323,12 +323,12 @@ public class StUtils {
     /**
      * Change Deployment configuration before applying it. We set different namespace, log level and image pull policy.
      * It's mostly used for use cases where we use direct kubectl command instead of fabric8 calls to api.
-     * @param deploymentFile loaded Strimzi deployment file
      * @param namespace Namespace where Strimzi should be installed
+     * @param deploymentFile loaded Strimzi deployment file
      * @param strimziFeatureGatesValue feature gates value
      * @return deployment file content as String
      */
-    public static String changeDeploymentConfiguration(File deploymentFile, String namespace, final String strimziFeatureGatesValue) {
+    public static String changeDeploymentConfiguration(String namespace, File deploymentFile, final String strimziFeatureGatesValue) {
         YAMLMapper mapper = new YAMLMapper();
         try {
             JsonNode node = mapper.readTree(deploymentFile);

@@ -204,7 +204,7 @@ public class KafkaNodePoolST extends AbstractST {
         );
 
         LOGGER.info("Create KafkaTopic {}/{} with 6 replicas, spawning across all brokers", testStorage.getNamespaceName(), testStorage.getTopicName());
-        final KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 1, 6, testStorage.getNamespaceName()).build();
+        final KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTopicName(), 1, 6).build();
         resourceManager.createResourceWithWait(kafkaTopic);
 
         LOGGER.info("wait for Kafka pods stability");
@@ -314,7 +314,7 @@ public class KafkaNodePoolST extends AbstractST {
 
     private void transmitMessagesWithNewTopicAndClean(TestStorage testStorage, int topicReplicas) {
         final String topicName = testStorage.getTopicName() + "-replicas-" + topicReplicas + "-" + hashStub(String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
-        final KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(testStorage.getClusterName(), topicName, 1, topicReplicas, testStorage.getNamespaceName()).build();
+        final KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), topicName, 1, topicReplicas).build();
         resourceManager.createResourceWithWait(kafkaTopic);
 
         LOGGER.info("Transmit messages with Kafka {}/{} using topic {}", testStorage.getNamespaceName(), testStorage.getClusterName(), topicName);

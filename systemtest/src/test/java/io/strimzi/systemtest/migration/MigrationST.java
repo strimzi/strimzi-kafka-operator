@@ -389,7 +389,7 @@ public class MigrationST extends AbstractST {
         LOGGER.info("Creating two topics for immediate and continuous message transmission and KafkaUser for the TLS");
         resourceManager.createResourceWithWait(
                 KafkaTopicTemplates.topic(testStorage).build(),
-                KafkaTopicTemplates.topic(testStorage.getClusterName(), continuousTopicName, 3, 3, 2, testStorage.getNamespaceName()).build(),
+                KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), continuousTopicName, 3, 3, 2).build(),
                 KafkaUserTemplates.tlsUser(testStorage)
                     .editOrNewSpec()
                         .withNewKafkaUserAuthorizationSimple()
@@ -441,7 +441,7 @@ public class MigrationST extends AbstractST {
             immediateClients.consumerTlsStrimzi(testStorage.getClusterName())
         );
 
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getMessageCount());
     }
 
     private void doFirstPartOfMigration(TestStorage testStorage, boolean deleteCoDuringProcess, boolean withJbodStorage) {
@@ -547,7 +547,7 @@ public class MigrationST extends AbstractST {
         createKafkaTopicAndCheckMetadataWithMessageTransmission(testStorage, kraftTopicName, false);
 
         LOGGER.info("Migration is completed, waiting for continuous clients to finish");
-        ClientUtils.waitForClientsSuccess(continuousClients.getProducerName(), continuousClients.getConsumerName(), testStorage.getNamespaceName(), continuousClients.getMessageCount());
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), continuousClients.getProducerName(), continuousClients.getConsumerName(), continuousClients.getMessageCount());
     }
 
     private void doRollback(TestStorage testStorage, boolean deleteCoDuringProcess) {
@@ -605,12 +605,12 @@ public class MigrationST extends AbstractST {
         assertThatClusterMetadataTopicPresentInBrokerPod(testStorage.getNamespaceName(), brokerSelector, false);
 
         LOGGER.info("Rollback completed, waiting until continuous messages transmission is finished");
-        ClientUtils.waitForClientsSuccess(continuousClients.getProducerName(), continuousClients.getConsumerName(), testStorage.getNamespaceName(), continuousClients.getMessageCount());
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), continuousClients.getProducerName(), continuousClients.getConsumerName(), continuousClients.getMessageCount());
     }
 
     private void createKafkaTopicAndCheckMetadataWithMessageTransmission(TestStorage testStorage, String newTopicName, boolean checkZk) {
         LOGGER.info("Creating KafkaTopic: {} and checking if the metadata are in both ZK and KRaft", newTopicName);
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), newTopicName, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), newTopicName).build());
 
         LOGGER.info("Checking if metadata about KafkaTopic: {} are in KRaft controller", newTopicName);
 
@@ -633,7 +633,7 @@ public class MigrationST extends AbstractST {
                 immediateClients.consumerTlsStrimzi(testStorage.getClusterName())
         );
 
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getMessageCount());
     }
 
     private void waitForZooKeeperResourcesDeletion(TestStorage testStorage, boolean deleteClaim) {

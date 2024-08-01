@@ -720,7 +720,7 @@ class LoggingChangeST extends AbstractST {
         final Pattern log4jPatternInfoLevel = Pattern.compile("^(?<date>[\\d-]+) (?<time>[\\d:,]+) INFO (?<message>.+)");
 
         final int connectReplicas = 3;
-        final KafkaConnect connect = KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), connectReplicas)
+        final KafkaConnect connect = KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), connectReplicas)
             .editSpec()
                 .withLogging(new InlineLoggingBuilder()
                     .withLoggers(Map.of("connect.root.logger.level", "OFF")).build())
@@ -1505,7 +1505,7 @@ class LoggingChangeST extends AbstractST {
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
 
-        KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+        KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()

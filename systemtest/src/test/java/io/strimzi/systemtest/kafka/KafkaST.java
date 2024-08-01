@@ -907,7 +907,7 @@ class KafkaST extends AbstractST {
 
         Map<String, String> brokerPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 1, 1, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTopicName(), 1, 1).build());
 
         String brokerPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
 
@@ -1156,7 +1156,7 @@ class KafkaST extends AbstractST {
         // ##############################
         // Setup topic, which has 3 replicas and 2 min.isr
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getContinuousTopicName(), 3, 3, 2, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getContinuousTopicName(), 3, 3, 2).build());
 
         String producerAdditionConfiguration = "delivery.timeout.ms=40000\nrequest.timeout.ms=5000";
         // Add transactional id to make producer transactional

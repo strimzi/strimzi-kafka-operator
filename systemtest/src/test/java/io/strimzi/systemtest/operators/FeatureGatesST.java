@@ -94,7 +94,7 @@ public class FeatureGatesST extends AbstractST {
         assertThat("No ZooKeeper Pods should exist", zkPods.size(), is(0));
 
         // create KafkaTopic with replication factor on all brokers and min.insync replicas configuration to not loss data during Rolling Update.
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getContinuousTopicName(), 1, kafkaReplicas, kafkaReplicas - 1, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getContinuousTopicName(), 1, kafkaReplicas, kafkaReplicas - 1).build());
 
         KafkaClients clients = ClientUtils.getContinuousPlainClientBuilder(testStorage).build();
         LOGGER.info("Producing and Consuming messages with continuous clients: {}, {} in Namespace {}", testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), testStorage.getNamespaceName());

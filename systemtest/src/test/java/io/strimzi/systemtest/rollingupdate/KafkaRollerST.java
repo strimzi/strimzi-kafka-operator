@@ -106,7 +106,7 @@ public class KafkaRollerST extends AbstractST {
         assertEquals(initialBrokerReplicaCount, observedReplicas);
 
         LOGGER.info("Create kafkaTopic: {}/{} with replica on each (of 3) broker", testStorage.getNamespaceName(), topicNameWith3Replicas);
-        KafkaTopic kafkaTopicWith3Replicas = KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 1, 3, 3, testStorage.getNamespaceName()).build();
+        KafkaTopic kafkaTopicWith3Replicas = KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTopicName(), 1, 3, 3).build();
         resourceManager.createResourceWithWait(kafkaTopicWith3Replicas);
 
         // setup clients
@@ -131,7 +131,7 @@ public class KafkaRollerST extends AbstractST {
         RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), scaledUpBrokerReplicaCount);
 
         LOGGER.info("Create kafkaTopic: {}/{} with replica on each broker", testStorage.getNamespaceName(), topicNameWith4Replicas);
-        KafkaTopic kafkaTopicWith4Replicas = KafkaTopicTemplates.topic(testStorage.getClusterName(), topicNameWith4Replicas, 1, 4, 4, testStorage.getNamespaceName()).build();
+        KafkaTopic kafkaTopicWith4Replicas = KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), topicNameWith4Replicas, 1, 4, 4).build();
         resourceManager.createResourceWithWait(kafkaTopicWith4Replicas);
 
         //Test that the new pod does not have errors or failures in events
@@ -210,7 +210,7 @@ public class KafkaRollerST extends AbstractST {
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3).build());
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 1, 1, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTopicName(), 1, 1).build());
 
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 

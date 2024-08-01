@@ -67,7 +67,7 @@ public class CustomAuthorizerST extends AbstractST {
         final String kafkaUserRead = "kafka-user-read";
         final String consumerGroupName = "consumer-group-name-1";
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), testStorage.getTopicName()).build());
 
         KafkaUser writeUser = KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), kafkaUserWrite)
             .editSpec()
@@ -151,7 +151,7 @@ public class CustomAuthorizerST extends AbstractST {
     void testAclWithSuperUser() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), testStorage.getTopicName()).build());
         resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), ADMIN).build());
 
         final KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(sharedTestStorage.getClusterName()))

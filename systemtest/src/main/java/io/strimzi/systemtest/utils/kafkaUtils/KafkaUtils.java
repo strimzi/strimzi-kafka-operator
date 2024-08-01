@@ -102,7 +102,7 @@ public class KafkaUtils {
         });
     }
 
-    public static void waitUntilKafkaStatusConditionContainsMessage(String clusterName, String namespace, String pattern, long timeout) {
+    public static void waitUntilKafkaStatusConditionContainsMessage(String namespace, String clusterName, String pattern, long timeout) {
         TestUtils.waitFor("Kafka status to contain message [" + pattern + "]",
             TestConstants.GLOBAL_POLL_INTERVAL, timeout, () -> {
                 List<Condition> conditions = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions();
@@ -116,7 +116,7 @@ public class KafkaUtils {
             });
     }
 
-    public static void waitUntilStatusKafkaVersionMatchesExpectedVersion(String clusterName, String namespace, String expectedKafkaVersion) {
+    public static void waitUntilStatusKafkaVersionMatchesExpectedVersion(String namespace, String clusterName, String expectedKafkaVersion) {
         TestUtils.waitFor("Kafka version '" + expectedKafkaVersion + "' in Kafka cluster '" + clusterName + "' to match",
             TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT, () -> {
                 String kafkaVersionInStatus = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getKafkaVersion();
@@ -124,7 +124,7 @@ public class KafkaUtils {
             });
     }
 
-    public static void waitUntilKafkaStatusConditionContainsMessage(String clusterName, String namespace, String pattern) {
+    public static void waitUntilKafkaStatusConditionContainsMessage(String namespace, String clusterName, String pattern) {
         waitUntilKafkaStatusConditionContainsMessage(clusterName, namespace, pattern, TestConstants.GLOBAL_STATUS_TIMEOUT);
     }
 
@@ -156,7 +156,7 @@ public class KafkaUtils {
         }
     }
 
-    public static String getKafkaStatusCertificates(String listenerType, String namespace, String clusterName) {
+    public static String getKafkaStatusCertificates(String namespace, String listenerType, String clusterName) {
         String certs = "";
         List<ListenerStatus> kafkaListeners = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getListeners();
 
@@ -544,20 +544,20 @@ public class KafkaUtils {
         }
     }
 
-    public static String namespacedPlainBootstrapAddress(String clusterName, String namespace) {
-        return namespacedBootstrapAddress(clusterName, namespace, 9092);
+    public static String namespacedPlainBootstrapAddress(String namespace, String clusterName) {
+        return namespacedBootstrapAddress(namespace, clusterName, 9092);
     }
 
     public static String namespacedTlsBootstrapAddress(String clusterName, String namespace) {
-        return namespacedBootstrapAddress(clusterName, namespace, 9093);
+        return namespacedBootstrapAddress(namespace, clusterName, 9093);
     }
 
-    private static String namespacedBootstrapAddress(String clusterName, String namespace, int port) {
+    private static String namespacedBootstrapAddress(String namespace, String clusterName, int port) {
         return KafkaResources.bootstrapServiceName(clusterName) + "." + namespace + ".svc:" + port;
     }
 
 
-    public static String bootstrapAddressFromStatus(String clusterName, String namespaceName, String listenerName) {
+    public static String bootstrapAddressFromStatus(String namespaceName, String clusterName, String listenerName) {
 
         List<ListenerStatus> listenerStatusList = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getListeners();
 
@@ -575,11 +575,11 @@ public class KafkaUtils {
                 .getBootstrapServers();
     }
 
-    public static void annotateKafka(String clusterName, String namespaceName, Map<String, String> annotations) {
+    public static void annotateKafka(String namespaceName, String clusterName, Map<String, String> annotations) {
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> kafka.getMetadata().getAnnotations().putAll(annotations), namespaceName);
     }
 
-    public static void removeAnnotation(String clusterName, String namespaceName, String annotationKey) {
+    public static void removeAnnotation(String namespaceName, String clusterName, String annotationKey) {
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> kafka.getMetadata().getAnnotations().remove(annotationKey), namespaceName);
     }
 

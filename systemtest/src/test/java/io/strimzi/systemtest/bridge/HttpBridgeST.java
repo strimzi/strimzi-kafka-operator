@@ -85,14 +85,14 @@ class HttpBridgeST extends AbstractST {
             .build();
 
         // Create topic
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(suiteTestStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), suiteTestStorage.getClusterName(), testStorage.getTopicName()).build());
 
         resourceManager.createResourceWithWait(kafkaBridgeClientJob.producerStrimziBridge());
-        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()));
         resourceManager.createResourceWithWait(kafkaClients.consumerStrimzi());
-        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
 
         // Checking labels for KafkaBridge
         VerificationUtils.verifyPodsLabels(testStorage.getNamespaceName(), KafkaBridgeResources.componentName(suiteTestStorage.getClusterName()), KafkaBridgeResource.getLabelSelector(suiteTestStorage.getClusterName(), KafkaBridgeResources.componentName(suiteTestStorage.getClusterName())));
@@ -103,7 +103,7 @@ class HttpBridgeST extends AbstractST {
     void testReceiveSimpleMessage() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(suiteTestStorage.getClusterName(), testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, suiteTestStorage.getClusterName(), testStorage.getTopicName()).build());
 
         final BridgeClients kafkaBridgeClientJob = new BridgeClientsBuilder()
             .withConsumerName(testStorage.getConsumerName())
@@ -124,7 +124,7 @@ class HttpBridgeST extends AbstractST {
         final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()));
         resourceManager.createResourceWithWait(kafkaClients.producerStrimzi());
 
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getMessageCount());
     }
 
     @ParallelTest

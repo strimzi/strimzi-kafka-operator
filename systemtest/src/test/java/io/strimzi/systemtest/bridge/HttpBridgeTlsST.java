@@ -61,17 +61,17 @@ class HttpBridgeTlsST extends AbstractST {
             .withProducerName(testStorage.getProducerName())
             .build();
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(suiteTestStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), suiteTestStorage.getClusterName(), testStorage.getTopicName()).build());
 
         resourceManager.createResourceWithWait(kafkaBridgeClientJobProduce.producerStrimziBridge());
-        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         final KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(suiteTestStorage.getClusterName()))
             .withUsername(suiteTestStorage.getUsername())
             .build();
 
         resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(suiteTestStorage.getClusterName()));
-        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
     }
 
     @ParallelTest
@@ -83,7 +83,7 @@ class HttpBridgeTlsST extends AbstractST {
             .withConsumerName(testStorage.getConsumerName())
             .build();
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(suiteTestStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), suiteTestStorage.getClusterName(), testStorage.getTopicName()).build());
 
         resourceManager.createResourceWithWait(kafkaBridgeClientJobConsume.consumerStrimziBridge());
 
@@ -93,7 +93,7 @@ class HttpBridgeTlsST extends AbstractST {
             .build();
 
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(suiteTestStorage.getClusterName()));
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getMessageCount());
     }
 
     @ParallelTest
@@ -238,9 +238,9 @@ class HttpBridgeTlsST extends AbstractST {
             resourceManager.createResourceWithWait(kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()));
         }
 
-        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
-        ClientUtils.waitForClientSuccess(bridgeConsumerName, testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), bridgeConsumerName, testStorage.getMessageCount());
     }
 
     @BeforeAll

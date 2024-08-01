@@ -135,7 +135,7 @@ public class PodSecurityProfilesST extends AbstractST {
 
         LOGGER.info("Deploy all additional operands: MM1, MM2, Bridge, KafkaConnect");
         resourceManager.createResourceWithWait(
-            KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+            KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()

@@ -70,7 +70,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(acrossUpgradeData, testStorage, upgradeKafkaVersion, TestConstants.CO_NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(TestConstants.CO_NAMESPACE, acrossUpgradeData, testStorage, upgradeKafkaVersion);
 
         Map<String, String> controllerSnapshot = PodUtils.podSnapshot(TestConstants.CO_NAMESPACE, controllerSelector);
         Map<String, String> brokerSnapshot = PodUtils.podSnapshot(TestConstants.CO_NAMESPACE, brokerSelector);
@@ -92,12 +92,12 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         DeploymentUtils.waitTillDepHasRolled(TestConstants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoSnapshot);
 
         logPodImages(TestConstants.CO_NAMESPACE);
-        checkAllImages(acrossUpgradeData, TestConstants.CO_NAMESPACE);
+        checkAllImages(acrossUpgradeData);
 
         // Verify that Pods are stable
         PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, clusterName);
         // Verify upgrade
-        verifyProcedure(acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.CO_NAMESPACE, wasUTOUsedBefore);
+        verifyProcedure(TestConstants.CO_NAMESPACE, acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), wasUTOUsedBefore);
 
         String controllerPodName = kubeClient().listPodsByPrefixInName(TestConstants.CO_NAMESPACE, KafkaResource.getStrimziPodSetName(clusterName, CONTROLLER_NODE_NAME)).get(0).getMetadata().getName();
         String brokerPodName = kubeClient().listPodsByPrefixInName(TestConstants.CO_NAMESPACE, KafkaResource.getStrimziPodSetName(clusterName, BROKER_NODE_NAME)).get(0).getMetadata().getName();
@@ -112,7 +112,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         UpgradeKafkaVersion upgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(acrossUpgradeData.getFromKafkaVersionsUrl(), acrossUpgradeData.getStartingKafkaVersion());
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(acrossUpgradeData, testStorage, upgradeKafkaVersion, TestConstants.CO_NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(TestConstants.CO_NAMESPACE, acrossUpgradeData, testStorage, upgradeKafkaVersion);
 
         // Make snapshots of all Pods
         makeSnapshots();
@@ -132,13 +132,13 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
 
         logPodImages(TestConstants.CO_NAMESPACE);
 
-        checkAllImages(acrossUpgradeData, TestConstants.CO_NAMESPACE);
+        checkAllImages(acrossUpgradeData);
 
         // Verify that Pods are stable
         PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, clusterName);
 
         // Verify upgrade
-        verifyProcedure(acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.CO_NAMESPACE, wasUTOUsedBefore);
+        verifyProcedure(TestConstants.CO_NAMESPACE, acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), wasUTOUsedBefore);
     }
 
     @IsolatedTest
@@ -146,7 +146,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(acrossUpgradeData, testStorage, null, TestConstants.CO_NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(TestConstants.CO_NAMESPACE, acrossUpgradeData, testStorage, null);
 
         // Check if UTO is used before changing the CO -> used for check for KafkaTopics
         boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(TestConstants.CO_NAMESPACE, eoSelector);
@@ -167,13 +167,13 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
 
         logPodImages(TestConstants.CO_NAMESPACE);
 
-        checkAllImages(acrossUpgradeData, TestConstants.CO_NAMESPACE);
+        checkAllImages(acrossUpgradeData);
 
         // Verify that Pods are stable
         PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, clusterName);
 
         // Verify upgrade
-        verifyProcedure(acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.CO_NAMESPACE, wasUTOUsedBefore);
+        verifyProcedure(TestConstants.CO_NAMESPACE, acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), wasUTOUsedBefore);
     }
 
     @MicroShiftNotSupported("Due to lack of Kafka Connect build feature")
@@ -193,7 +193,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion();
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(upgradeData, testStorage, upgradeKafkaVersion, TestConstants.CO_NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(TestConstants.CO_NAMESPACE, upgradeData, testStorage, upgradeKafkaVersion);
 
         // Upgrade CO to HEAD
         logPodImages(TestConstants.CO_NAMESPACE);
@@ -214,13 +214,13 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
 
         logPodImages(TestConstants.CO_NAMESPACE);
 
-        checkAllImages(upgradeData, TestConstants.CO_NAMESPACE);
+        checkAllImages(upgradeData);
 
         // Verify that Pods are stable
         PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, clusterName);
 
         // Verify upgrade
-        verifyProcedure(upgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.CO_NAMESPACE, wasUTOUsedBefore);
+        verifyProcedure(TestConstants.CO_NAMESPACE, upgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), wasUTOUsedBefore);
     }
 
     @BeforeEach

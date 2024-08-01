@@ -29,10 +29,10 @@ public class BuildUtils {
 
     /**
      * Waits for build status to be complete which indicates successful build.
-     * @param buildConfigName name of the corresponding BuildConfig resource
      * @param namespace namespace where the resources are deployed
+     * @param buildConfigName name of the corresponding BuildConfig resource
      */
-    public static void waitForBuildComplete(String buildConfigName, String namespace) {
+    public static void waitForBuildComplete(String namespace, String buildConfigName) {
         LOGGER.info("Waiting for build of {} to be completed", buildConfigName);
 
         TestUtils.waitFor("build " + buildConfigName + " complete", TestConstants.GLOBAL_POLL_INTERVAL_5_SECS, TestConstants.GLOBAL_TIMEOUT_SHORT, () -> {

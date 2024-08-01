@@ -78,11 +78,11 @@ public class SecretUtils {
             .build());
     }
 
-    public static Secret createSecretFromFile(String pathToOrigin, String key, String name, String namespace, Map<String, String> labels) {
-        return createSecretFromFile(Collections.singletonMap(key, pathToOrigin), name, namespace, labels);
+    public static Secret createSecretFromFile(String namespace, String pathToOrigin, String key, String name, Map<String, String> labels) {
+        return createSecretFromFile(namespace, Collections.singletonMap(key, pathToOrigin), name, labels);
     }
 
-    public static Secret createSecretFromFile(Map<String, String> certFilesPath, String name, String namespace, Map<String, String> labels) {
+    public static Secret createSecretFromFile(String namespace, Map<String, String> certFilesPath, String name, Map<String, String> labels) {
         byte[] encoded;
         try {
             Map<String, String> data = new HashMap<>();
@@ -107,8 +107,8 @@ public class SecretUtils {
         }
     }
 
-    public static SecretBuilder retrieveSecretBuilderFromFile(final Map<String, String> certFilesPath, final String name,
-                                                              final String namespace, final Map<String, String> labels,
+    public static SecretBuilder retrieveSecretBuilderFromFile(final String namespace, final Map<String, String> certFilesPath,
+                                                              final String name, final Map<String, String> labels,
                                                               final String secretType) {
         byte[] encoded;
         final Map<String, String> data = new HashMap<>();
@@ -134,7 +134,7 @@ public class SecretUtils {
             .endMetadata();
     }
 
-    public static void createCustomSecret(String name, String clusterName, String namespace, CertAndKeyFiles certAndKeyFiles) {
+    public static void createCustomSecret(String namespace, String name, String clusterName, CertAndKeyFiles certAndKeyFiles) {
         Map<String, String> secretLabels = new HashMap<>();
         secretLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
         secretLabels.put(Labels.STRIMZI_KIND_LABEL, "Kafka");
@@ -143,12 +143,12 @@ public class SecretUtils {
         certsPaths.put("ca.crt", certAndKeyFiles.getCertPath());
         certsPaths.put("ca.key", certAndKeyFiles.getKeyPath());
 
-        Secret secret = createSecretFromFile(certsPaths, name, namespace, secretLabels);
+        Secret secret = createSecretFromFile(namespace, certsPaths, name, secretLabels);
         kubeClient().namespace(namespace).createSecret(secret);
         waitForSecretReady(namespace, name, () -> { });
     }
 
-    public static void updateCustomSecret(String name, String clusterName, String namespace, CertAndKeyFiles certAndKeyFiles) {
+    public static void updateCustomSecret(String namespace, String name, String clusterName, CertAndKeyFiles certAndKeyFiles) {
         Map<String, String> secretLabels = new HashMap<>();
         secretLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
         secretLabels.put(Labels.STRIMZI_KIND_LABEL, "Kafka");
@@ -157,7 +157,7 @@ public class SecretUtils {
         certsPaths.put("ca.crt", certAndKeyFiles.getCertPath());
         certsPaths.put("ca.key", certAndKeyFiles.getKeyPath());
 
-        Secret secret = createSecretFromFile(certsPaths, name, namespace, secretLabels);
+        Secret secret = createSecretFromFile(namespace, certsPaths, name, secretLabels);
         kubeClient().namespace(namespace).updateSecret(secret);
         waitForSecretReady(namespace, name, () -> { });
     }
@@ -179,7 +179,7 @@ public class SecretUtils {
         });
     }
 
-    public static void deleteSecretWithWait(String secretName, String namespace) {
+    public static void deleteSecretWithWait(String namespace, String secretName) {
         kubeClient().getClient().secrets().inNamespace(namespace).withName(secretName).delete();
 
         LOGGER.info("Waiting for Secret: {}/{} to be deleted", namespace, secretName);
@@ -236,7 +236,7 @@ public class SecretUtils {
      * @param labelKey label key
      * @param labelValue label value
      */
-    public static void waitForSpecificLabelKeyValue(String secretName, String namespace, String labelKey, String labelValue) {
+    public static void waitForSpecificLabelKeyValue(String namespace, String secretName, String labelKey, String labelValue) {
         LOGGER.info("Waiting for Secret: {}/{} (corresponding to KafkaUser) to have expected label: {}={}", namespace, secretName, labelKey, labelValue);
         TestUtils.waitFor("Secret: " + namespace + "/" + secretName + " to exist with the corresponding label: " + labelKey + "=" + labelValue + " for the Kafka cluster", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> kubeClient().listSecrets(namespace)

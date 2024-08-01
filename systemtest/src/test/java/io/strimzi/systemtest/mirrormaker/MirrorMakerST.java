@@ -95,7 +95,7 @@ public class MirrorMakerST extends AbstractST {
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getTargetClusterName(), 1).build());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getSourceClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), testStorage.getTopicName()).build());
 
         final KafkaClients sourceClients = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()));
         resourceManager.createResourceWithWait(sourceClients.producerStrimzi(), sourceClients.consumerStrimzi());
@@ -196,7 +196,7 @@ public class MirrorMakerST extends AbstractST {
             .build());
 
         resourceManager.createResourceWithWait(
-            KafkaTopicTemplates.topic(testStorage.getSourceClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build(),
+            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), testStorage.getTopicName()).build(),
             KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), testStorage.getSourceUsername()).build(),
             KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getTargetClusterName(), testStorage.getTargetUsername()).build()
         );
@@ -308,7 +308,7 @@ public class MirrorMakerST extends AbstractST {
 
         // Deploy topic
         resourceManager.createResourceWithWait(
-            KafkaTopicTemplates.topic(testStorage.getSourceClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build(),
+            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), testStorage.getTopicName()).build(),
             KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), testStorage.getSourceUsername()).build(),
             KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), testStorage.getTargetClusterName(), testStorage.getTargetUsername()).build()
         );
@@ -396,8 +396,8 @@ public class MirrorMakerST extends AbstractST {
 
 
         resourceManager.createResourceWithWait(
-            KafkaTopicTemplates.topic(testStorage.getSourceClusterName(), topicName, testStorage.getNamespaceName()).build(),
-            KafkaTopicTemplates.topic(testStorage.getSourceClusterName(), topicNotIncluded, testStorage.getNamespaceName()).build()
+            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), topicName).build(),
+            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), topicNotIncluded).build()
         );
 
         KafkaClients sourceClients = ClientUtils.getInstantPlainClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()))

@@ -73,7 +73,7 @@ public class ConfigProviderST extends AbstractST {
 
         kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).resource(connectorConfig).create();
 
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editOrNewMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()

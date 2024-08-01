@@ -63,7 +63,7 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(TestConstants.CO_NAMESPACE, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), continuousClientsMessageCount);
         // ##############################
     }
 
@@ -84,7 +84,7 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(TestConstants.CO_NAMESPACE, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), continuousClientsMessageCount);
         // ##############################
     }
 
@@ -103,7 +103,7 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(TestConstants.CO_NAMESPACE, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), continuousClientsMessageCount);
         // ##############################
     }
 
@@ -158,7 +158,7 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
             // Attach clients which will continuously produce/consume messages to/from Kafka brokers during rolling update
             // ##############################
             // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
-            resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(clusterName, testStorage.getContinuousTopicName(), 3, 3, 2, TestConstants.CO_NAMESPACE).build());
+            resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(TestConstants.CO_NAMESPACE, clusterName, testStorage.getContinuousTopicName(), 3, 3, 2).build());
             // 40s is used within TF environment to make upgrade/downgrade more stable on slow env
             String producerAdditionConfiguration = "delivery.timeout.ms=300000\nrequest.timeout.ms=20000";
 
@@ -251,6 +251,6 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
         }
 
         LOGGER.info("Waiting till Kafka Cluster {}/{} with specified version {} has the same version in status and specification", TestConstants.CO_NAMESPACE, clusterName, newVersion.version());
-        KafkaUtils.waitUntilStatusKafkaVersionMatchesExpectedVersion(clusterName, TestConstants.CO_NAMESPACE, newVersion.version());
+        KafkaUtils.waitUntilStatusKafkaVersionMatchesExpectedVersion(TestConstants.CO_NAMESPACE, clusterName, newVersion.version());
     }
 }

@@ -168,14 +168,14 @@ class RackAwarenessST extends AbstractST {
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1).build());
 
         LOGGER.info("Deploying unschedulable KafkaConnect: {}/{} with an invalid topology key: {}", testStorage.getNamespaceName(), invalidConnectClusterName, invalidTopologyKey);
-        resourceManager.createResourceWithoutWait(KafkaConnectTemplates.kafkaConnect(invalidConnectClusterName, testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
+        resourceManager.createResourceWithoutWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), invalidConnectClusterName, testStorage.getClusterName(), 1)
                 .editSpec()
                     .withNewRack(invalidTopologyKey)
                 .endSpec()
                 .build());
 
         LOGGER.info("Deploying KafkaConnect: {}/{} with a valid topology key: {}", testStorage.getNamespaceName(), testStorage.getClusterName(), TOPOLOGY_KEY);
-        resourceManager.createResourceWithoutWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+        resourceManager.createResourceWithoutWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
@@ -185,7 +185,7 @@ class RackAwarenessST extends AbstractST {
                 .build());
 
         LOGGER.info("Check that KafkaConnect Pod is unschedulable");
-        KafkaConnectUtils.waitForConnectPodCondition("Unschedulable", testStorage.getNamespaceName(), invalidConnectClusterName, 30_000);
+        KafkaConnectUtils.waitForConnectPodCondition(testStorage.getNamespaceName(), "Unschedulable", invalidConnectClusterName, 30_000);
 
         KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
@@ -215,7 +215,7 @@ class RackAwarenessST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        consumeDataWithNewSinkConnector(testStorage.getClusterName(), testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+        consumeDataWithNewSinkConnector(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getMessageCount());
     }
 
     /**
@@ -291,7 +291,7 @@ class RackAwarenessST extends AbstractST {
 
         // Mirroring messages by: Producing to the Source Kafka Cluster and consuming them from mirrored KafkaTopic in target Kafka Cluster.
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getSourceClusterName(), testStorage.getTopicName(), 3, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), testStorage.getTopicName(), 3).build());
 
         LOGGER.info("Producing messages into the source Kafka: {}/{}, Topic: {}", testStorage.getNamespaceName(), testStorage.getSourceClusterName(), testStorage.getTopicName());
         final KafkaClients sourceClients = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()));
@@ -306,7 +306,7 @@ class RackAwarenessST extends AbstractST {
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
     }
 
-    private void consumeDataWithNewSinkConnector(String newConnectorName, String connectClusterName, String topicName, String namespace, int msgCount) {
+    private void consumeDataWithNewSinkConnector(String namespace, String newConnectorName, String connectClusterName, String topicName, int msgCount) {
 
         LOGGER.info("Deploying Sink KafkaConnector in KafkaConnect Cluster: {}/{}", namespace, newConnectorName);
         Map<String, Object> connectorConfig = new HashMap<>();

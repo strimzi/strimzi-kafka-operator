@@ -44,7 +44,7 @@ public class RoleResource implements ResourceType<Role> {
         return resource != null && get(resource.getMetadata().getNamespace(), resource.getMetadata().getName()) != null;
     }
 
-    public static void role(String yamlPath, String namespace) {
+    public static void role(String namespace, String yamlPath) {
         LOGGER.info("Creating Role: {}/{}", namespace, yamlPath);
         Role role = getRoleFromYaml(yamlPath);
 

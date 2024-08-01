@@ -97,7 +97,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // ##############################
         // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getContinuousTopicName(), 3, 3, 2, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getContinuousTopicName(), 3, 3, 2).build());
 
         String producerAdditionConfiguration = "delivery.timeout.ms=40000\nrequest.timeout.ms=5000";
 
@@ -163,7 +163,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // Create new topic to ensure, that ZK is working properly
         String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), newTopicName, 1, 1, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), newTopicName, 1, 1).build());
 
         instantClients = new KafkaClientsBuilder(instantClients)
             .withTopicName(newTopicName)
@@ -372,7 +372,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // ##############################
         // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getContinuousTopicName(), 3, 3, 2, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getContinuousTopicName(), 3, 3, 2).build());
 
         String producerAdditionConfiguration = "delivery.timeout.ms=40000\nrequest.timeout.ms=5000";
         // Add transactional id to make producer transactional
@@ -528,7 +528,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // ##############################
         // Setup topic, which has 3 replicas and 2 min.isr
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getContinuousTopicName(), 3, 3, 2, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getContinuousTopicName(), 3, 3, 2).build());
 
         String producerAdditionConfiguration = "delivery.timeout.ms=40000\nrequest.timeout.ms=5000";
         // Add transactional id to make producer transactional

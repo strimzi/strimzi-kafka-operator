@@ -22,14 +22,14 @@ import static io.strimzi.systemtest.resources.crd.KafkaBridgeResource.kafkaBridg
 public class KafkaBridgeUtils {
     private KafkaBridgeUtils() {}
 
-    public static Service createBridgeNodePortService(String clusterName, String namespace, String serviceName) {
+    public static Service createBridgeNodePortService(String namespace, String clusterName, String serviceName) {
         Map<String, String> map = new HashMap<>();
         map.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
         map.put(Labels.STRIMZI_KIND_LABEL, "KafkaBridge");
         map.put(Labels.STRIMZI_NAME_LABEL, clusterName + "-bridge");
 
         // Create node port service for expose bridge outside Kubernetes
-        return ServiceTemplates.getSystemtestsServiceResource(serviceName, TestConstants.HTTP_BRIDGE_DEFAULT_PORT, namespace, "TCP")
+        return ServiceTemplates.getSystemtestsServiceResource(namespace, serviceName, TestConstants.HTTP_BRIDGE_DEFAULT_PORT, "TCP")
                     .editSpec()
                         .withType("NodePort")
                         .withSelector(map)

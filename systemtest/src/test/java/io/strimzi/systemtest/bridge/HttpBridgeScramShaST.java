@@ -55,10 +55,10 @@ class HttpBridgeScramShaST extends AbstractST {
             .build();
 
         // Create topic
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(suiteTestStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), suiteTestStorage.getClusterName(), testStorage.getTopicName()).build());
 
         resourceManager.createResourceWithWait(kafkaBridgeClientJb.producerStrimziBridge());
-        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         final KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(suiteTestStorage.getClusterName()))
             .withUsername(suiteTestStorage.getUsername())
@@ -77,7 +77,7 @@ class HttpBridgeScramShaST extends AbstractST {
             .withConsumerName(testStorage.getConsumerName())
             .build();
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(suiteTestStorage.getClusterName(), testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, suiteTestStorage.getClusterName(), testStorage.getTopicName()).build());
         resourceManager.createResourceWithWait(kafkaBridgeClientJb.consumerStrimziBridge());
 
         // Send messages to Kafka
@@ -86,7 +86,7 @@ class HttpBridgeScramShaST extends AbstractST {
             .build();
 
         resourceManager.createResourceWithWait(kafkaClients.producerScramShaTlsStrimzi(suiteTestStorage.getClusterName()));
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getMessageCount());
     }
 
     @BeforeAll

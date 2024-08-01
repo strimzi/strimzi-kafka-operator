@@ -126,7 +126,7 @@ public class TieredStorageST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), suiteStorage.getNamespaceName())
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(suiteStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTopicName())
             .editSpec()
                 .addToConfig("file.delete.delay.ms", 1000)
                 .addToConfig("local.retention.ms", 1000)
@@ -207,7 +207,7 @@ public class TieredStorageST extends AbstractST {
         NamespaceManager.getInstance().createNamespaceAndPrepare(suiteStorage.getNamespaceName());
         cluster.setNamespace(suiteStorage.getNamespaceName());
 
-        ImageBuild.buildImage(IMAGE_NAME, suiteStorage.getNamespaceName(), TIERED_STORAGE_DOCKERFILE, BUILT_IMAGE_TAG, Environment.KAFKA_TIERED_STORAGE_BASE_IMAGE);
+        ImageBuild.buildImage(suiteStorage.getNamespaceName(), IMAGE_NAME, TIERED_STORAGE_DOCKERFILE, BUILT_IMAGE_TAG, Environment.KAFKA_TIERED_STORAGE_BASE_IMAGE);
 
         SetupMinio.deployMinio(suiteStorage.getNamespaceName());
         SetupMinio.createBucket(suiteStorage.getNamespaceName(), BUCKET_NAME);

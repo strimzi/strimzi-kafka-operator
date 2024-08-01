@@ -123,7 +123,7 @@ class RollingUpdateST extends AbstractST {
         );
         resourceManager.createResourceWithWait(
             KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3).build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 2, 2, testStorage.getNamespaceName()).build()
+            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTopicName(), 2, 2).build()
         );
 
         // produce messages
@@ -219,7 +219,7 @@ class RollingUpdateST extends AbstractST {
         // Create new topic to ensure, that ZK is working properly
         String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), newTopicName, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), newTopicName).build());
 
         clients = new KafkaClientsBuilder(clients)
             .withTopicName(newTopicName)
@@ -265,7 +265,7 @@ class RollingUpdateST extends AbstractST {
             KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build(),
 
             KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1).build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 2, 2, testStorage.getNamespaceName()).build()
+            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTopicName(), 2, 2).build()
         );
 
         final KafkaClients clients = ClientUtils.getInstantPlainClients(testStorage);
@@ -336,7 +336,7 @@ class RollingUpdateST extends AbstractST {
             KafkaUserTemplates.tlsUser(testStorage).build()
         );
 
-        VerificationUtils.verifyClusterOperatorKafkaDockerImages(testStorage.getClusterName(), TestConstants.CO_NAMESPACE, testStorage.getNamespaceName(), 3, false);
+        VerificationUtils.verifyClusterOperatorKafkaDockerImages(TestConstants.CO_NAMESPACE, testStorage.getNamespaceName(), testStorage.getClusterName(), 3, false);
 
         LOGGER.info("Running kafkaScaleUpScaleDown {}", testStorage.getClusterName());
 
@@ -345,7 +345,7 @@ class RollingUpdateST extends AbstractST {
 
         // communicate with topic before scaling up/down
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 3, initialReplicas, initialReplicas, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTopicName(), 3, initialReplicas, initialReplicas).build());
         final KafkaClients clientsBeforeScale = ClientUtils.getInstantTlsClients(testStorage);
         resourceManager.createResourceWithWait(
             clientsBeforeScale.producerTlsStrimzi(testStorage.getClusterName()),
@@ -380,7 +380,7 @@ class RollingUpdateST extends AbstractST {
         // new topic has more replicas than there was available Kafka brokers before scaling up
 
         LOGGER.info("Create new KafkaTopic with replica count requiring existence of brokers added by scaling up");
-        KafkaTopic scaledUpKafkaTopicResource = KafkaTopicTemplates.topic(testStorage.getClusterName(), topicNameScaledUp, testStorage.getNamespaceName())
+        KafkaTopic scaledUpKafkaTopicResource = KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), topicNameScaledUp)
             .editSpec()
                 .withReplicas(initialReplicas + 1)
             .endSpec()
@@ -427,7 +427,7 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Creating new KafkaTopic: {}/{} and producing consuming data", testStorage.getNamespaceName(), topicNameScaledBackDown);
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), topicNameScaledBackDown, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), topicNameScaledBackDown).build());
         final KafkaClients clientsTopicAfterScaleDown = ClientUtils.getInstantTlsClientBuilder(testStorage)
             .withTopicName(topicNameScaledBackDown)
             .build();
@@ -512,7 +512,7 @@ class RollingUpdateST extends AbstractST {
         String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         LOGGER.info("Creating new KafkaTopic {}, and producing/consuming data in to to verify Zookeeper handles it after scaling up", newTopicName);
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), newTopicName, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), newTopicName).build());
 
         clients = new KafkaClientsBuilder(clients)
             .withTopicName(newTopicName)
@@ -524,7 +524,7 @@ class RollingUpdateST extends AbstractST {
         // Create new topic to ensure, that ZK is working properly
         String scaleUpTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), scaleUpTopicName, 1, 1, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), scaleUpTopicName, 1, 1).build());
 
         clients = new KafkaClientsBuilder(clients)
             .withTopicName(scaleUpTopicName)
@@ -551,7 +551,7 @@ class RollingUpdateST extends AbstractST {
 
         // Create new topic to ensure, that ZK is working properly
         String scaleDownTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), scaleDownTopicName, 1, 1, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), scaleDownTopicName, 1, 1).build());
 
         clients = new KafkaClientsBuilder(clients)
             .withTopicName(scaleDownTopicName)

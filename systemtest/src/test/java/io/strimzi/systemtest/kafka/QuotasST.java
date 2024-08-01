@@ -99,7 +99,7 @@ public class QuotasST extends AbstractST {
                 .build()
         );
         resourceManager.createResourceWithWait(
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build(),
+            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTopicName()).build(),
             KafkaUserTemplates.scramShaUser(testStorage).build()
         );
 
@@ -174,7 +174,7 @@ public class QuotasST extends AbstractST {
                 .build()
         );
         resourceManager.createResourceWithWait(
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build(),
+            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTopicName()).build(),
             KafkaUserTemplates.scramShaUser(testStorage).build()
         );
 

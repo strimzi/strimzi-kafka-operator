@@ -137,7 +137,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
      *  - topic-operator-watcher
      */
     @ParallelTest
-    final void testTopicOperatorWatchingOtherNamespace(ExtensionContext extensionContext) {
+    final void testTopicOperatorWatchingOtherNamespace() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         LOGGER.info("Topic Operator in Kafka: {}/{} watches KafkaTopics in (different) Namespace: {}", MAIN_TEST_NAMESPACE, PRIMARY_KAFKA_NAME, PRIMARY_KAFKA_WATCHED_NAMESPACE);
@@ -147,7 +147,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
         assertThat(topics, not(hasItems(testStorage.getTopicName())));
 
         LOGGER.info("Verifying that KafkaTopic: {}/{} is watched by TO by asserting its existence", PRIMARY_KAFKA_WATCHED_NAMESPACE, testStorage.getTopicName());
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(PRIMARY_KAFKA_NAME, testStorage.getTopicName(), PRIMARY_KAFKA_WATCHED_NAMESPACE).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(PRIMARY_KAFKA_WATCHED_NAMESPACE, PRIMARY_KAFKA_NAME, testStorage.getTopicName()).build());
         topics = KafkaCmdClient.listTopicsUsingPodCli(MAIN_TEST_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(PRIMARY_KAFKA_NAME));
         assertThat(topics, hasItems(testStorage.getTopicName()));
     }
@@ -188,7 +188,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
         for (Secret s : secretsOfSecondNamespace) {
             if (s.getMetadata().getName().equals(testStorage.getUsername())) {
                 LOGGER.info("Copying Secret: {} from Namespace: {} to Namespace: {}", s, PRIMARY_KAFKA_WATCHED_NAMESPACE, testStorage.getNamespaceName());
-                copySecret(s, testStorage.getNamespaceName(), testStorage.getUsername());
+                copySecret(testStorage.getNamespaceName(), s, testStorage.getUsername());
             }
         }
 
@@ -198,7 +198,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
             kafkaClients.producerTlsStrimzi(PRIMARY_KAFKA_NAME),
             kafkaClients.consumerTlsStrimzi(PRIMARY_KAFKA_NAME)
         );
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getMessageCount());
     }
 
     /**
@@ -219,7 +219,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
      */
     @ParallelTest
     @Tag(MIRROR_MAKER2)
-    final void testDeployMirrorMaker2InNamespaceDifferentFromCO(ExtensionContext extensionContext) {
+    final void testDeployMirrorMaker2InNamespaceDifferentFromCO() {
         LOGGER.info("Deploying KafkaMirrorMaker in different Namespace than CO");
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String mirrorMakerName = testStorage.getClusterName() + "-mirror-maker-2";
@@ -267,7 +267,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
         String kafkaConnectName = testStorage.getClusterName() + "kafka-connect";
 
         // Deploy Kafka Connect in other namespace than CO
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(kafkaConnectName, MAIN_TEST_NAMESPACE, PRIMARY_KAFKA_NAME, 1)
+        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(MAIN_TEST_NAMESPACE, kafkaConnectName, PRIMARY_KAFKA_NAME, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -277,7 +277,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
         deployKafkaConnectorWithSink(extensionContext, kafkaConnectName);
     }
 
-    private void copySecret(Secret sourceSecret, String targetNamespace, String targetName) {
+    private void copySecret(String targetNamespace, Secret sourceSecret, String targetName) {
         Secret s = new SecretBuilder(sourceSecret)
             .withNewMetadata()
                 .withName(targetName)

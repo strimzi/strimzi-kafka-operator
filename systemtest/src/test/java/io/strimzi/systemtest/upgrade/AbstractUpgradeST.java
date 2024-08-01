@@ -265,27 +265,27 @@ public class AbstractUpgradeST extends AbstractST {
             coDir = new File(dir, versionModificationData.getToExamples() + "/install/cluster-operator/");
         }
 
-        copyModifyApply(coDir, namespace, versionModificationData.getFeatureGatesAfter());
+        copyModifyApply(namespace, coDir, versionModificationData.getFeatureGatesAfter());
 
         LOGGER.info("Waiting for CO upgrade");
         DeploymentUtils.waitTillDepHasRolled(namespace, ResourceManager.getCoDeploymentName(), 1, coPods);
     }
 
-    protected void copyModifyApply(File root, String namespace, final String strimziFeatureGatesValue) {
+    protected void copyModifyApply(String namespace, File root, final String strimziFeatureGatesValue) {
         KubeClusterResource.getInstance().setNamespace(namespace);
 
         Arrays.stream(Objects.requireNonNull(root.listFiles())).sorted().forEach(f -> {
             if (f.getName().matches(".*RoleBinding.*")) {
                 cmdKubeClient().replaceContent(TestUtils.changeRoleBindingSubject(f, namespace));
             } else if (f.getName().matches(".*Deployment.*")) {
-                cmdKubeClient().replaceContent(StUtils.changeDeploymentConfiguration(f, namespace, strimziFeatureGatesValue));
+                cmdKubeClient().replaceContent(StUtils.changeDeploymentConfiguration(namespace, f, strimziFeatureGatesValue));
             } else {
                 cmdKubeClient().replaceContent(TestUtils.getContent(f, TestUtils::toYamlString));
             }
         });
     }
 
-    protected void deleteInstalledYamls(File root, String namespace) {
+    protected void deleteInstalledYamls(String namespace, File root) {
         if (kafkaUserYaml != null) {
             LOGGER.info("Deleting KafkaUser configuration files");
             cmdKubeClient().delete(kafkaUserYaml);
@@ -314,7 +314,7 @@ public class AbstractUpgradeST extends AbstractST {
         }
     }
 
-    protected void checkAllImages(BundleVersionModificationData versionModificationData, String namespaceName) {
+    protected void checkAllImages(BundleVersionModificationData versionModificationData) {
         if (versionModificationData.getImagesAfterOperations().isEmpty()) {
             fail("There are no expected images");
         }
@@ -339,13 +339,13 @@ public class AbstractUpgradeST extends AbstractST {
         }
     }
 
-    protected void setupEnvAndUpgradeClusterOperator(BundleVersionModificationData upgradeData, TestStorage testStorage, UpgradeKafkaVersion upgradeKafkaVersion, String namespace) throws IOException {
+    protected void setupEnvAndUpgradeClusterOperator(String namespace, BundleVersionModificationData upgradeData, TestStorage testStorage, UpgradeKafkaVersion upgradeKafkaVersion) throws IOException {
         LOGGER.info("Test upgrade of Cluster Operator from version: {} to version: {}", upgradeData.getFromVersion(), upgradeData.getToVersion());
         cluster.setNamespace(namespace);
 
-        this.deployCoWithWaitForReadiness(upgradeData, namespace);
+        this.deployCoWithWaitForReadiness(namespace, upgradeData);
         this.deployKafkaClusterWithWaitForReadiness(upgradeData, upgradeKafkaVersion);
-        this.deployKafkaUserWithWaitForReadiness(upgradeData, namespace);
+        this.deployKafkaUserWithWaitForReadiness(namespace, upgradeData);
         this.deployKafkaTopicWithWaitForReadiness(upgradeData);
 
         // Create bunch of topics for upgrade if it's specified in configuration
@@ -398,7 +398,7 @@ public class AbstractUpgradeST extends AbstractST {
         makeSnapshots();
     }
 
-    protected void verifyProcedure(BundleVersionModificationData upgradeData, String producerName, String consumerName, String namespace, boolean wasUTOUsedBefore) {
+    protected void verifyProcedure(String namespace, BundleVersionModificationData upgradeData, String producerName, String consumerName, boolean wasUTOUsedBefore) {
 
         if (upgradeData.getAdditionalTopics() != null) {
             boolean isUTOUsed = StUtils.isUnidirectionalTopicOperatorUsed(namespace, eoSelector);
@@ -418,7 +418,7 @@ public class AbstractUpgradeST extends AbstractST {
             // ##############################
             // Validate that continuous clients finished successfully
             // ##############################
-            ClientUtils.waitForClientsSuccess(producerName, consumerName, namespace, upgradeData.getContinuousClientsMessages());
+            ClientUtils.waitForClientsSuccess(namespace, producerName, consumerName, upgradeData.getContinuousClientsMessages());
             // ##############################
         }
     }
@@ -427,8 +427,7 @@ public class AbstractUpgradeST extends AbstractST {
         return resourcePlural + "." + Constants.V1BETA2 + "." + Constants.RESOURCE_GROUP_NAME;
     }
 
-    protected void deployCoWithWaitForReadiness(final BundleVersionModificationData upgradeData,
-                                                final String namespaceName) throws IOException {
+    protected void deployCoWithWaitForReadiness(final String namespaceName, final BundleVersionModificationData upgradeData) throws IOException {
         LOGGER.info("Deploying CO: {} in Namespace: {}", ResourceManager.getCoDeploymentName(), namespaceName);
 
         if (upgradeData.getFromVersion().equals("HEAD")) {
@@ -440,7 +439,7 @@ public class AbstractUpgradeST extends AbstractST {
         }
 
         // Modify + apply installation files
-        copyModifyApply(coDir, namespaceName, upgradeData.getFeatureGatesBefore());
+        copyModifyApply(namespaceName, coDir, upgradeData.getFeatureGatesBefore());
 
         LOGGER.info("Waiting for Deployment: {}", ResourceManager.getCoDeploymentName());
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, ResourceManager.getCoDeploymentName(), 1);
@@ -480,8 +479,7 @@ public class AbstractUpgradeST extends AbstractST {
         }
     }
 
-    protected void deployKafkaUserWithWaitForReadiness(final BundleVersionModificationData upgradeData,
-                                                       final String namespaceName) {
+    protected void deployKafkaUserWithWaitForReadiness(final String namespaceName, final BundleVersionModificationData upgradeData) {
         LOGGER.info("Deploying KafkaUser: {}/{}", kubeClient().getNamespace(), userName);
 
         if (!cmdKubeClient().getResources(getResourceApiVersion(KafkaUser.RESOURCE_PLURAL)).contains(userName)) {
@@ -517,7 +515,7 @@ public class AbstractUpgradeST extends AbstractST {
         // setup KafkaConnect + KafkaConnector
         if (!cmdKubeClient().getResources(getResourceApiVersion(KafkaConnect.RESOURCE_PLURAL)).contains(clusterName)) {
             if (acrossUpgradeData.getFromVersion().equals("HEAD")) {
-                resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(clusterName, testStorage.getNamespaceName(), 1)
+                resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), clusterName, 1)
                     .editMetadata()
                         .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                     .endMetadata()
@@ -595,10 +593,10 @@ public class AbstractUpgradeST extends AbstractST {
     protected void doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(final BundleVersionModificationData bundleDowngradeDataWithFeatureGates,
                                                                               final TestStorage testStorage,
                                                                               final UpgradeKafkaVersion upgradeKafkaVersion) throws IOException {
-        this.deployCoWithWaitForReadiness(bundleDowngradeDataWithFeatureGates, testStorage.getNamespaceName());
+        this.deployCoWithWaitForReadiness(testStorage.getNamespaceName(), bundleDowngradeDataWithFeatureGates);
         this.deployKafkaClusterWithWaitForReadiness(bundleDowngradeDataWithFeatureGates, upgradeKafkaVersion);
         this.deployKafkaConnectAndKafkaConnectorWithWaitForReadiness(bundleDowngradeDataWithFeatureGates, upgradeKafkaVersion, testStorage);
-        this.deployKafkaUserWithWaitForReadiness(bundleDowngradeDataWithFeatureGates, testStorage.getNamespaceName());
+        this.deployKafkaUserWithWaitForReadiness(testStorage.getNamespaceName(), bundleDowngradeDataWithFeatureGates);
 
         final KafkaClients clients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(clusterName))
             .withUsername(userName)

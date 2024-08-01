@@ -16,30 +16,30 @@ public class KafkaTopicTemplates {
     private KafkaTopicTemplates() {}
 
     public static KafkaTopicBuilder topic(TestStorage testStorage) {
-        return defaultTopic(testStorage.getClusterName(), testStorage.getTopicName(), 1, 1, 1, testStorage.getNamespaceName());
+        return defaultTopic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTopicName(), 1, 1, 1);
     }
 
     public static KafkaTopicBuilder continuousTopic(TestStorage testStorage) {
-        return defaultTopic(testStorage.getClusterName(), testStorage.getContinuousTopicName(), 1, 1, 1, testStorage.getNamespaceName());
+        return defaultTopic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getContinuousTopicName(), 1, 1, 1);
     }
 
-    public static KafkaTopicBuilder topic(String clusterName, String topicName, String topicNamespace) {
-        return defaultTopic(clusterName, topicName, 1, 1, 1, topicNamespace);
+    public static KafkaTopicBuilder topic(String topicNamespace, String clusterName, String topicName) {
+        return defaultTopic(topicNamespace, clusterName, topicName, 1, 1, 1);
     }
 
-    public static KafkaTopicBuilder topic(String clusterName, String topicName, int partitions, String topicNamespace) {
-        return defaultTopic(clusterName, topicName, partitions, 1, 1, topicNamespace);
+    public static KafkaTopicBuilder topic(String topicNamespace, String clusterName, String topicName, int partitions) {
+        return defaultTopic(topicNamespace, clusterName, topicName, partitions, 1, 1);
     }
 
-    public static KafkaTopicBuilder topic(String clusterName, String topicName, int partitions, int replicas, String topicNamespace) {
-        return defaultTopic(clusterName, topicName, partitions, replicas, replicas, topicNamespace);
+    public static KafkaTopicBuilder topic(String topicNamespace, String clusterName, String topicName, int partitions, int replicas) {
+        return defaultTopic(topicNamespace, clusterName, topicName, partitions, replicas, replicas);
     }
 
-    public static KafkaTopicBuilder topic(String clusterName, String topicName, int partitions, int replicas, int minIsr, String topicNamespace) {
-        return defaultTopic(clusterName, topicName, partitions, replicas, minIsr, topicNamespace);
+    public static KafkaTopicBuilder topic(String topicNamespace, String clusterName, String topicName, int partitions, int replicas, int minIsr) {
+        return defaultTopic(topicNamespace, clusterName, topicName, partitions, replicas, minIsr);
     }
 
-    public static KafkaTopicBuilder defaultTopic(String clusterName, String topicName, int partitions, int replicas, int minIsr, String topicNamespace) {
+    public static KafkaTopicBuilder defaultTopic(String topicNamespace, String clusterName, String topicName, int partitions, int replicas, int minIsr) {
         KafkaTopic kafkaTopic = getKafkaTopicFromYaml(TestConstants.PATH_TO_KAFKA_TOPIC_CONFIG);
         return new KafkaTopicBuilder(kafkaTopic)
             .withNewMetadata()

@@ -246,7 +246,7 @@ class CustomResourceStatusST extends AbstractST {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         String connectUrl = KafkaConnectResources.url(sharedTestStorage.getClusterName(), testStorage.getNamespaceName(), 8083);
 
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(sharedTestStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), sharedTestStorage.getClusterName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .withNamespace(testStorage.getNamespaceName())
@@ -324,7 +324,7 @@ class CustomResourceStatusST extends AbstractST {
 
     @ParallelTest
     void testKafkaStatusCertificate() {
-        String certs = getKafkaStatusCertificates(TestConstants.TLS_LISTENER_DEFAULT_NAME, Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName());
+        String certs = getKafkaStatusCertificates(Environment.TEST_SUITE_NAMESPACE, TestConstants.TLS_LISTENER_DEFAULT_NAME, sharedTestStorage.getClusterName());
         String secretCerts = getKafkaSecretCertificates(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName() + "-cluster-ca-cert", "ca.crt");
 
         LOGGER.info("Check if KafkaStatus certificates are the same as Secret certificates");
@@ -460,7 +460,7 @@ class CustomResourceStatusST extends AbstractST {
             .endSpec();
 
         resourceManager.createResourceWithWait(kafkaBuilder.build());
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), sharedTestStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), sharedTestStorage.getTopicName()).build());
     }
 
     void assertKafkaStatus(long expectedObservedGeneration, String internalAddress) {

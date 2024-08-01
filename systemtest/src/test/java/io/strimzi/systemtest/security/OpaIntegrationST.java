@@ -82,7 +82,7 @@ public class OpaIntegrationST extends AbstractST {
 
         KafkaUser superuser = KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), CLUSTER_NAME, OPA_SUPERUSER).build();
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(CLUSTER_NAME, testStorage.getTopicName(), testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), CLUSTER_NAME, testStorage.getTopicName()).build());
         resourceManager.createResourceWithWait(superuser);
 
         LOGGER.info("Checking KafkaUser: {}/{} that is able to send and receive messages to/from Topic: {}/{}", testStorage.getNamespaceName(), OPA_GOOD_USER, testStorage.getNamespaceName(), testStorage.getTopicName());
@@ -103,7 +103,7 @@ public class OpaIntegrationST extends AbstractST {
             .runInstallation();
 
         // Install OPA
-        cmdKubeClient(Environment.TEST_SUITE_NAMESPACE).apply(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml", Environment.TEST_SUITE_NAMESPACE));
+        cmdKubeClient(Environment.TEST_SUITE_NAMESPACE).apply(FileUtils.updateNamespaceOfYamlFile(Environment.TEST_SUITE_NAMESPACE, TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml"));
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -136,6 +136,6 @@ public class OpaIntegrationST extends AbstractST {
     @AfterAll
     void teardown() throws IOException {
         // Delete OPA
-        cmdKubeClient().delete(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml", Environment.TEST_SUITE_NAMESPACE));
+        cmdKubeClient().delete(FileUtils.updateNamespaceOfYamlFile(Environment.TEST_SUITE_NAMESPACE, TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml"));
     }
 }

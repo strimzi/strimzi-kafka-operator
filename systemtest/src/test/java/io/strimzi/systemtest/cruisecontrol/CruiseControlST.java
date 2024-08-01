@@ -256,7 +256,7 @@ public class CruiseControlST extends AbstractST {
         );
         resourceManager.createResourceWithoutWait(KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 1, 1).build());
 
-        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getClusterName(), testStorage.getNamespaceName(), errMessage, Duration.ofMinutes(6).toMillis());
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getNamespaceName(), testStorage.getClusterName(), errMessage, Duration.ofMinutes(6).toMillis());
 
         KafkaStatus kafkaStatus = KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
 
@@ -293,9 +293,9 @@ public class CruiseControlST extends AbstractST {
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 1).build());
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), excludedTopic1, testStorage.getNamespaceName()).build());
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), excludedTopic2, testStorage.getNamespaceName()).build());
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), includedTopic, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), excludedTopic1).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), excludedTopic2).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), includedTopic).build());
 
         resourceManager.createResourceWithWait(KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
             .editOrNewSpec()
@@ -430,7 +430,7 @@ public class CruiseControlST extends AbstractST {
         );
         resourceManager.createResourceWithWait(
             KafkaTemplates.kafkaWithCruiseControlTunedForFastModelGeneration(testStorage.getClusterName(), initialReplicas, initialReplicas).build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 10, 3, testStorage.getNamespaceName()).build(),
+            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTopicName(), 10, 3).build(),
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
         );
 

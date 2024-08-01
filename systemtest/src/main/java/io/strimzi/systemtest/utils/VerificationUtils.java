@@ -351,7 +351,7 @@ public class VerificationUtils {
      * @param controllerPods The number of Kafka pods in the cluster
      * @param rackAwareEnabled Indicates whether rack-aware configuration is enabled
      */
-    public static void verifyClusterOperatorKafkaDockerImages(String clusterName, String clusterOperatorNamespaceName, String kafkaNamespaceName, int controllerPods, boolean rackAwareEnabled) {
+    public static void verifyClusterOperatorKafkaDockerImages(String clusterOperatorNamespaceName, String kafkaNamespaceName, String clusterName,  int controllerPods, boolean rackAwareEnabled) {
         LOGGER.info("Verifying docker image names");
         //Verifying docker image for cluster-operator
 
@@ -426,7 +426,7 @@ public class VerificationUtils {
      * @param clusterOperatorNamespace The namespace where the Cluster Operator is deployed
      * @param mirrorMakerNamespace The namespace where the Kafka MirrorMaker 2 instance is deployed
      */
-    public static void verifyClusterOperatorMM2DockerImage(String clusterName, String clusterOperatorNamespace, String mirrorMakerNamespace) {
+    public static void verifyClusterOperatorMM2DockerImage(String clusterOperatorNamespace, String mirrorMakerNamespace, String clusterName) {
         LOGGER.info("Verifying docker image of MM2 in CO");
         // we must use INFRA_NAMESPACE because there is CO deployed
         Map<String, String> imgFromDeplConf = VerificationUtils.getClusterOperatorDeploymentImages(clusterOperatorNamespace);

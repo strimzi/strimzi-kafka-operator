@@ -313,7 +313,7 @@ public class DynamicConfST extends AbstractST {
 
         Map<String, String> brokerPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), testStorage.getTopicName()).build());
         resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), testStorage.getKafkaUsername()).build());
 
         ExternalKafkaClient externalKafkaClientTls = new ExternalKafkaClient.Builder()

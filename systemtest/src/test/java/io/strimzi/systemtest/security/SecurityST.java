@@ -815,7 +815,7 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("KafkaConnect without config {} will not connect to {}:9093", "ssl.endpoint.identification.algorithm", ipOfBootstrapService);
 
-        resourceManager.createResourceWithoutWait(KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+        resourceManager.createResourceWithoutWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editSpec()
                 .withNewTls()
                     .addNewTrustedCertificate()
@@ -952,7 +952,7 @@ class SecurityST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTopicName()).build());
         resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaUserWrite)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
@@ -1041,7 +1041,7 @@ class SecurityST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTopicName()).build());
         resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getKafkaUsername())
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
@@ -1220,7 +1220,7 @@ class SecurityST extends AbstractST {
         // Try to send and receive messages with new certificates
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), topicName, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), topicName).build());
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
             .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
@@ -1278,7 +1278,7 @@ class SecurityST extends AbstractST {
         configWithLowestVersionOfTls.put(SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG, tlsVersion1);
         configWithLowestVersionOfTls.put(SslConfigs.SSL_PROTOCOL_CONFIG, tlsVersion1);
 
-        resourceManager.createResourceWithoutWait(KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+        resourceManager.createResourceWithoutWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editSpec()
                 .withConfig(configWithLowestVersionOfTls)
             .endSpec()
@@ -1298,8 +1298,8 @@ class SecurityST extends AbstractST {
                 SslConfigs.SSL_PROTOCOL_CONFIG,
                 SslConfigs.DEFAULT_SSL_PROTOCOL);
 
-        KafkaConnectUtils.waitForKafkaConnectConfigChange(SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG, tlsVersion12, testStorage.getNamespaceName(), testStorage.getClusterName());
-        KafkaConnectUtils.waitForKafkaConnectConfigChange(SslConfigs.SSL_PROTOCOL_CONFIG, SslConfigs.DEFAULT_SSL_PROTOCOL, testStorage.getNamespaceName(), testStorage.getClusterName());
+        KafkaConnectUtils.waitForKafkaConnectConfigChange(testStorage.getNamespaceName(), SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG, tlsVersion12, testStorage.getClusterName());
+        KafkaConnectUtils.waitForKafkaConnectConfigChange(testStorage.getNamespaceName(), SslConfigs.SSL_PROTOCOL_CONFIG, SslConfigs.DEFAULT_SSL_PROTOCOL, testStorage.getClusterName());
 
         LOGGER.info("Verifying that KafkaConnect is stable");
 
@@ -1349,7 +1349,7 @@ class SecurityST extends AbstractST {
 
         configWithCipherSuitesSha256.put(SslConfigs.SSL_CIPHER_SUITES_CONFIG, cipherSuitesSha256);
 
-        resourceManager.createResourceWithoutWait(KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+        resourceManager.createResourceWithoutWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editSpec()
                 .withConfig(configWithCipherSuitesSha256)
             .endSpec()
@@ -1366,7 +1366,7 @@ class SecurityST extends AbstractST {
         LOGGER.info("Verifying that KafkaConnect has the accepted configuration:\n {} -> {}",
                 SslConfigs.SSL_CIPHER_SUITES_CONFIG, configsFromKafkaCustomResource.get(SslConfigs.SSL_CIPHER_SUITES_CONFIG));
 
-        KafkaConnectUtils.waitForKafkaConnectConfigChange(SslConfigs.SSL_CIPHER_SUITES_CONFIG, cipherSuitesSha384, testStorage.getNamespaceName(), testStorage.getClusterName());
+        KafkaConnectUtils.waitForKafkaConnectConfigChange(testStorage.getNamespaceName(), SslConfigs.SSL_CIPHER_SUITES_CONFIG, cipherSuitesSha384, testStorage.getClusterName());
 
         LOGGER.info("Verifying that KafkaConnect is stable");
 

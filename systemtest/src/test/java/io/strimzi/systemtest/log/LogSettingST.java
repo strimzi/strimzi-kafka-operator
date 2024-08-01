@@ -205,7 +205,7 @@ class LogSettingST extends AbstractST {
         Map<String, String> brokerPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, brokerSelector);
         Map<String, String> controllerPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, controllerSelector);
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(LOG_SETTING_CLUSTER_NAME, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME, testStorage.getTopicName()).build());
         resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME, testStorage.getKafkaUsername()).build());
 
         LOGGER.info("Checking if Kafka, ZooKeeper, TO and UO of cluster: {} has log level set properly", LOG_SETTING_CLUSTER_NAME);
@@ -276,7 +276,7 @@ class LogSettingST extends AbstractST {
     void testConnectLogSetting() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME, 1)
+        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnect(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), LOG_SETTING_CLUSTER_NAME, 1)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()

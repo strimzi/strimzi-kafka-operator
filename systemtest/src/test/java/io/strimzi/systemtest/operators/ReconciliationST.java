@@ -98,7 +98,7 @@ public class ReconciliationST extends AbstractST {
         RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), SCALE_TO);
 
         LOGGER.info("Deploying KafkaConnect with pause annotation from the start, no Pods should appear");
-        resourceManager.createResourceWithoutWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+        resourceManager.createResourceWithoutWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editOrNewMetadata()
                 .addToAnnotations(PAUSE_ANNO)
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
@@ -156,7 +156,7 @@ public class ReconciliationST extends AbstractST {
 
         final String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTopicName()).build());
 
         // to prevent race condition when reconciliation is paused before KafkaTopic is actually created in Kafka
         KafkaTopicUtils.waitForTopicWillBePresentInKafka(testStorage.getNamespaceName(), testStorage.getTopicName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), scraperPodName);

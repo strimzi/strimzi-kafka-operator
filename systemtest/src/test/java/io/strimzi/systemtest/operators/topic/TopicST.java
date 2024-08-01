@@ -83,7 +83,7 @@ public class TopicST extends AbstractST {
         int topicReplicationFactor = 5;
         int topicPartitions = 5;
 
-        KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), testStorage.getTopicName(), topicPartitions, topicReplicationFactor, 1, Environment.TEST_SUITE_NAMESPACE).build();
+        KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), testStorage.getTopicName(), topicPartitions, topicReplicationFactor, 1).build();
         resourceManager.createResourceWithoutWait(kafkaTopic);
 
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, testStorage.getTopicName()));
@@ -106,7 +106,7 @@ public class TopicST extends AbstractST {
         topicReplicationFactor = 3;
         final String newTopicName = "topic-example-new";
 
-        kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), newTopicName, topicPartitions, topicReplicationFactor, Environment.TEST_SUITE_NAMESPACE).build();
+        kafkaTopic = KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), newTopicName, topicPartitions, topicReplicationFactor).build();
         resourceManager.createResourceWithWait(kafkaTopic);
 
         assertThat("Topic exists in Kafka itself", hasTopicInKafka(newTopicName, sharedTestStorage.getClusterName(), scraperPodName));
@@ -118,7 +118,7 @@ public class TopicST extends AbstractST {
     void testCreateDeleteCreate() throws InterruptedException {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE)
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), testStorage.getTopicName())
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
@@ -142,7 +142,7 @@ public class TopicST extends AbstractST {
             long t0 = System.currentTimeMillis();
 
             LOGGER.info("Iteration {}: Recreating {}", i, testStorage.getTopicName());
-            resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE)
+            resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), testStorage.getTopicName())
                 .editSpec()
                     .withReplicas(3)
                 .endSpec()
@@ -235,7 +235,7 @@ public class TopicST extends AbstractST {
         String topicName = "topic-with-replication-to-change";
         String newTopicName = "another-topic";
 
-        KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), topicName, Environment.TEST_SUITE_NAMESPACE)
+        KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), topicName)
             .editSpec()
                 .withReplicas(3)
                 .withPartitions(3)
@@ -258,7 +258,7 @@ public class TopicST extends AbstractST {
 
         assertThat(topicCRDMessage, containsString(exceptedMessage));
 
-        KafkaTopic newKafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), newTopicName, 1, 1, Environment.TEST_SUITE_NAMESPACE).build();
+        KafkaTopic newKafkaTopic = KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), newTopicName, 1, 1).build();
 
         resourceManager.createResourceWithWait(newKafkaTopic);
 
@@ -316,7 +316,7 @@ public class TopicST extends AbstractST {
         int expectedNumOfTopics = 1;
         int expectedObservedGeneration = 1;
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), testStorage.getTopicName(), initialPartitions, initialReplicas, Environment.TEST_SUITE_NAMESPACE).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), testStorage.getTopicName(), initialPartitions, initialReplicas).build());
         KafkaTopicUtils.waitForKafkaTopicReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
 
         LOGGER.info("Found the following Topics:");
@@ -398,7 +398,7 @@ public class TopicST extends AbstractST {
     void testKafkaTopicChangingMinInSyncReplicas() throws InterruptedException {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), testStorage.getTopicName(), 5, Environment.TEST_SUITE_NAMESPACE).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), testStorage.getTopicName(), 5).build());
         KafkaTopicUtils.waitForKafkaTopicReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
         String invalidValue = "x";
         String reason = "KafkaError";
@@ -467,7 +467,7 @@ public class TopicST extends AbstractST {
         final String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
         LOGGER.info("Creating KafkaTopic: {}/{} in without any label", testStorage.getNamespaceName(), testStorage.getTargetTopicName());
-        resourceManager.createResourceWithoutWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTargetTopicName(), 1, 1, 1, testStorage.getNamespaceName())
+        resourceManager.createResourceWithoutWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTargetTopicName(), 1, 1, 1)
             .editMetadata()
                 .withLabels(null)
             .endMetadata().build()
