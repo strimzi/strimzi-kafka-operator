@@ -137,13 +137,13 @@ public class HashLoginServiceApiCredentials {
                 Role role = Role.fromString(parts[1].split(",")[1]);
                 if (entries.containsKey(username)) {
                     throw new InvalidConfigurationException("Duplicate username found: \"" + username + "\". "
-                            + "Cruise Control API credentials config must contain unique usernames");
+                            + "Cruise Control API credentials config must contain unique usernames.");
                 }
                 entries.put(username, new UserEntry(username, password, role));
             } else {
                 throw new InvalidConfigurationException("Invalid configuration provided: \"" + line + "\". " +
                         "Cruise Control API credentials config must follow " +
-                        "HashLoginService's file format `username: password [,rolename ...]`");
+                        "HashLoginService's file format `username: password [,rolename ...]`.");
             }
         });
         return entries;
