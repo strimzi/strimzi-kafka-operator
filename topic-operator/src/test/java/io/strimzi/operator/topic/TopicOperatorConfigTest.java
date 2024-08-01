@@ -25,16 +25,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(KafkaClusterExtension.class)
 class TopicOperatorConfigTest {
+    private static final String NAMESPACE = TopicOperatorTestUtil.namespaceName(TopicOperatorConfigTest.class);
 
     @Test
     void shouldConnectWithPlaintextAndNotAuthn(KafkaCluster kc) throws ExecutionException, InterruptedException {
         // given
         var config = TopicOperatorConfig.buildFromMap(Map.of(
                 TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), kc.getBootstrapServers(),
-                TopicOperatorConfig.NAMESPACE.key(), "some-namespace"));
+                TopicOperatorConfig.NAMESPACE.key(), NAMESPACE));
 
         // then
-        assertEquals("some-namespace", config.namespace());
+        assertEquals(NAMESPACE, config.namespace());
 
         var adminConfig = config.adminClientConfig();
         // client.id is random, so check it's there then remove for an easier assertion on the rest of the map
@@ -54,13 +55,13 @@ class TopicOperatorConfigTest {
         Map<String, Object> kafkaClientConfiguration = kc.getKafkaClientConfiguration();
         var config = TopicOperatorConfig.buildFromMap(Map.of(
                 TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), kc.getBootstrapServers(),
-                TopicOperatorConfig.NAMESPACE.key(), "some-namespace",
+                TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
                 TopicOperatorConfig.TLS_ENABLED.key(), "true",
                 TopicOperatorConfig.TRUSTSTORE_LOCATION.key(), kafkaClientConfiguration.get(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG).toString(),
                 TopicOperatorConfig.TRUSTSTORE_PASSWORD.key(), kafkaClientConfiguration.get(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG).toString()));
 
         // then
-        assertEquals("some-namespace", config.namespace());
+        assertEquals(NAMESPACE, config.namespace());
 
         var adminConfig = config.adminClientConfig();
         // client.id is random, so check it's there then remove for an easier assertion on the rest of the map
@@ -82,7 +83,7 @@ class TopicOperatorConfigTest {
         // given
         var config = TopicOperatorConfig.buildFromMap(Map.of(
                 TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), kc.getBootstrapServers(),
-                TopicOperatorConfig.NAMESPACE.key(), "some-namespace",
+                TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
                 TopicOperatorConfig.SECURITY_PROTOCOL.key(), "SASL_PLAINTEXT",
                 TopicOperatorConfig.SASL_ENABLED.key(), "true",
                 TopicOperatorConfig.SASL_MECHANISM.key(), "plain",
@@ -91,7 +92,7 @@ class TopicOperatorConfigTest {
         ));
 
         // then
-        assertEquals("some-namespace", config.namespace());
+        assertEquals(NAMESPACE, config.namespace());
 
         var adminConfig = config.adminClientConfig();
         // client.id is random, so check it's there then remove for an easier assertion on the rest of the map
@@ -115,7 +116,7 @@ class TopicOperatorConfigTest {
         Map<String, Object> kafkaClientConfiguration = kc.getKafkaClientConfiguration("foo", "foo");
         var config = TopicOperatorConfig.buildFromMap(Map.of(
                 TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), kc.getBootstrapServers(),
-                TopicOperatorConfig.NAMESPACE.key(), "some-namespace",
+                TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
                 TopicOperatorConfig.SECURITY_PROTOCOL.key(), "SASL_SSL",
                 TopicOperatorConfig.TLS_ENABLED.key(), "true",
                 TopicOperatorConfig.TRUSTSTORE_LOCATION.key(), kafkaClientConfiguration.get(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG).toString(),
@@ -127,7 +128,7 @@ class TopicOperatorConfigTest {
         ));
 
         // then
-        assertEquals("some-namespace", config.namespace());
+        assertEquals(NAMESPACE, config.namespace());
 
         var adminConfig = config.adminClientConfig();
         // client.id is random, so check it's there then remove for an easier assertion on the rest of the map
@@ -165,7 +166,7 @@ class TopicOperatorConfigTest {
         // given
         var config = TopicOperatorConfig.buildFromMap(Map.of(
                 TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-                TopicOperatorConfig.NAMESPACE.key(), "some-namespace",
+                TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
                 TopicOperatorConfig.SASL_ENABLED.key(), "true",
                 TopicOperatorConfig.SASL_MECHANISM.key(), "scram-sha-"  + bits,
                 TopicOperatorConfig.SASL_USERNAME.key(), "foo",
@@ -173,7 +174,7 @@ class TopicOperatorConfigTest {
                 ));
 
         // then
-        assertEquals("some-namespace", config.namespace());
+        assertEquals(NAMESPACE, config.namespace());
 
         var adminConfig = config.adminClientConfig();
         // client.id is random, so check it's there then remove for an easier assertion on the rest of the map
@@ -191,7 +192,7 @@ class TopicOperatorConfigTest {
         // given
         var config = TopicOperatorConfig.buildFromMap(Map.of(
                 TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-                TopicOperatorConfig.NAMESPACE.key(), "some-namespace",
+                TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
                 TopicOperatorConfig.TLS_ENABLED.key(), "true",
                 TopicOperatorConfig.SECURITY_PROTOCOL.key(), "PLAINTEXT"));
 
@@ -205,7 +206,7 @@ class TopicOperatorConfigTest {
         // given
         var config = TopicOperatorConfig.buildFromMap(Map.of(
                 TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-                TopicOperatorConfig.NAMESPACE.key(), "some-namespace",
+                TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
                 TopicOperatorConfig.SECURITY_PROTOCOL.key(), "SASL_PLAINTEXT",
                 TopicOperatorConfig.SASL_ENABLED.key(), "true",
                 TopicOperatorConfig.SASL_MECHANISM.key(), "plain"
@@ -221,12 +222,12 @@ class TopicOperatorConfigTest {
         // given
         var config = TopicOperatorConfig.buildFromMap(Map.of(
                 TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-                TopicOperatorConfig.NAMESPACE.key(), "some-namespace",
+                TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
                 TopicOperatorConfig.TLS_ENABLED.key(), "true",
                 TopicOperatorConfig.TRUSTSTORE_PASSWORD.key(), "some_password"));
 
         // then
-        assertEquals("some-namespace", config.namespace());
+        assertEquals(NAMESPACE, config.namespace());
 
         var e = assertThrows(InvalidConfigurationException.class, () -> config.adminClientConfig());
         assertEquals("TLS_TRUSTSTORE_PASSWORD was supplied but TLS_TRUSTSTORE_LOCATION was not supplied", e.getMessage());
@@ -237,7 +238,7 @@ class TopicOperatorConfigTest {
         // given
         var config = TopicOperatorConfig.buildFromMap(Map.of(
                 TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-                TopicOperatorConfig.NAMESPACE.key(), "some-namespace",
+                TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
                 TopicOperatorConfig.TLS_ENABLED.key(), "true",
                 TopicOperatorConfig.TRUSTSTORE_LOCATION.key(), "/path/to/truststore",
                 TopicOperatorConfig.TRUSTSTORE_PASSWORD.key(), "password_from_truststore",
@@ -245,7 +246,7 @@ class TopicOperatorConfigTest {
                 TopicOperatorConfig.KEYSTORE_PASSWORD.key(), "password_for_keystore"));
 
         // then
-        assertEquals("some-namespace", config.namespace());
+        assertEquals(NAMESPACE, config.namespace());
 
         var adminConfig = config.adminClientConfig();
         assertEquals("/path/to/keystore", adminConfig.get(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG));
@@ -256,7 +257,7 @@ class TopicOperatorConfigTest {
     void shouldMaskSecuritySensitiveConfigsInToString() {
         var config = TopicOperatorConfig.buildFromMap(Map.ofEntries(
                 Map.entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234"),
-                Map.entry(TopicOperatorConfig.NAMESPACE.key(), "some-namespace"),
+                Map.entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
                 Map.entry(TopicOperatorConfig.SECURITY_PROTOCOL.key(), "SASL_SSL"),
                 Map.entry(TopicOperatorConfig.TLS_ENABLED.key(), "true"),
                 Map.entry(TopicOperatorConfig.TRUSTSTORE_LOCATION.key(), "/some/path"),
@@ -277,7 +278,7 @@ class TopicOperatorConfigTest {
         // given
         var config = TopicOperatorConfig.buildFromMap(Map.of(
               TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-              TopicOperatorConfig.NAMESPACE.key(), "some-namespace",
+              TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
               TopicOperatorConfig.SASL_ENABLED.key(), "true",
               TopicOperatorConfig.SASL_CUSTOM_CONFIG_JSON.key(), """
                     {
@@ -289,7 +290,7 @@ class TopicOperatorConfigTest {
         ));
 
         // then
-        assertEquals("some-namespace", config.namespace());
+        assertEquals(NAMESPACE, config.namespace());
 
         var adminConfig = config.adminClientConfig();
         adminConfig.put("client.id", "foo");
@@ -306,7 +307,7 @@ class TopicOperatorConfigTest {
     void shouldThrowIfCustomConfigPropertyEmpty() {
         var config = TopicOperatorConfig.buildFromMap(Map.of(
               TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-              TopicOperatorConfig.NAMESPACE.key(), "some-namespace",
+              TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
               TopicOperatorConfig.SASL_ENABLED.key(), "true",
               TopicOperatorConfig.SASL_CUSTOM_CONFIG_JSON.key(), "{}"
         ));
@@ -319,7 +320,7 @@ class TopicOperatorConfigTest {
     void shouldThrowIfCustomConfigInvalid() {
         var config = TopicOperatorConfig.buildFromMap(Map.of(
               TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-              TopicOperatorConfig.NAMESPACE.key(), "some-namespace",
+              TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
               TopicOperatorConfig.SASL_ENABLED.key(), "true",
               TopicOperatorConfig.SASL_CUSTOM_CONFIG_JSON.key(), "{"
         ));
@@ -332,7 +333,7 @@ class TopicOperatorConfigTest {
     void shouldThrowIfCustomConfigHasNonSaslProperties() {
         var config = TopicOperatorConfig.buildFromMap(Map.of(
               TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-              TopicOperatorConfig.NAMESPACE.key(), "some-namespace",
+              TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
               TopicOperatorConfig.SASL_ENABLED.key(), "true",
               TopicOperatorConfig.SASL_CUSTOM_CONFIG_JSON.key(), "{ \"a\": \"b\" }"
         ));
@@ -345,7 +346,7 @@ class TopicOperatorConfigTest {
     void shouldThrowIfCustomConfigHasEmptyProperties() {
         var config = TopicOperatorConfig.buildFromMap(Map.of(
               TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-              TopicOperatorConfig.NAMESPACE.key(), "some-namespace",
+              TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
               TopicOperatorConfig.SASL_ENABLED.key(), "true",
               TopicOperatorConfig.SASL_CUSTOM_CONFIG_JSON.key(), "{ \"\": \"b\" }"
         ));
@@ -358,7 +359,7 @@ class TopicOperatorConfigTest {
     void shouldDefaultToFalseForSkipClusterConfigCheck() {
         var config = TopicOperatorConfig.buildFromMap(Map.of(
               TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-              TopicOperatorConfig.NAMESPACE.key(), "some-namespace"
+              TopicOperatorConfig.NAMESPACE.key(), NAMESPACE
         ));
 
         assertFalse(config.skipClusterConfigReview());
@@ -368,7 +369,7 @@ class TopicOperatorConfigTest {
     void shouldDefaultToAllForAlterableTopicConfig() {
         var config = TopicOperatorConfig.buildFromMap(Map.of(
               TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-              TopicOperatorConfig.NAMESPACE.key(), "some-namespace"
+              TopicOperatorConfig.NAMESPACE.key(), NAMESPACE
         ));
 
         assertEquals("ALL", config.alterableTopicConfig());
@@ -376,7 +377,7 @@ class TopicOperatorConfigTest {
 
     @Test
     public void testDefaultFeatureGates()    {
-        TopicOperatorConfig config = TopicOperatorConfig.buildFromMap(Map.of(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234", TopicOperatorConfig.NAMESPACE.key(), "some-namespace"));
+        TopicOperatorConfig config = TopicOperatorConfig.buildFromMap(Map.of(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234", TopicOperatorConfig.NAMESPACE.key(), NAMESPACE));
         assertEquals(config.featureGates(), new FeatureGates(""));
     }
 

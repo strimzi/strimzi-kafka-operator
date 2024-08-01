@@ -4,10 +4,12 @@
  */
 package io.strimzi.operator.topic;
 
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicStatus;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.model.Either;
 import io.strimzi.operator.topic.model.Pair;
@@ -29,6 +31,19 @@ public class TopicOperatorUtil {
     static final int BROKER_DEFAULT = -1;
 
     private TopicOperatorUtil() { }
+
+    /**
+     * Create a new Kubernetes client instance.
+     *
+     * @param id Caller id.
+     * @return Kubernetes client.
+     */
+    public static KubernetesClient createKubernetesClient(String id) {
+        return new OperatorKubernetesClientBuilder(
+            "strimzi-topic-operator-" + id,
+            TopicOperatorMain.class.getPackage().getImplementationVersion())
+            .build();
+    }
 
     /**
      * Get the topic name from a {@link KafkaTopic} resource.
@@ -156,6 +171,16 @@ public class TopicOperatorUtil {
     public static <K, V> PartitionedByError<K, V> partitionedByError(Stream<Pair<K, Either<TopicOperatorException, V>>> stream) {
         var collect = stream.collect(Collectors.partitioningBy(x -> x.getValue().isRight()));
         return new PartitionedByError<>(collect.get(true), collect.get(false));
+    }
+
+    /**
+     * Get KafkaTopic resource version.
+     *
+     * @param kafkaTopic Kafka topic.
+     * @return Resource version, or the string "null" if there isn't a resource version.
+     */
+    public static String resourceVersion(KafkaTopic kafkaTopic) {
+        return kafkaTopic == null || kafkaTopic.getMetadata() == null ? "null" : kafkaTopic.getMetadata().getResourceVersion();
     }
 
     /**

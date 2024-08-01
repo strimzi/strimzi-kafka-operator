@@ -17,8 +17,7 @@
     </licenses>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.release>11</maven.compiler.release>
 
         <!-- No Javadocs warnings as errors here => we do not want to fail because of warnings -->
         <javadoc.fail.on.warnings>false</javadoc.fail.on.warnings>

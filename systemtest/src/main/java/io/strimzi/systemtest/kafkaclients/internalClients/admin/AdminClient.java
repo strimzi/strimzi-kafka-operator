@@ -121,6 +121,17 @@ public class AdminClient {
         cmdKubeClient(namespaceName).execInPod(podName, CMD, "configure", "common", "--from-env");
     }
 
+    public String fetchOffsets(String topicName, String time) {
+        AdminTopicCommand adminTopicCommand = new AdminTopicCommand()
+            .withFetchOffsetsSubCommand()
+            .withTopicName(topicName)
+            .withTime(time)
+            .withOutputJson();
+
+        ExecResult result = cmdKubeClient(namespaceName).execInPod(podName, false, adminTopicCommand.getCommand());
+        return result.returnCode() == 0 ? result.out() : result.err();
+    }
+
     static class AdminTopicCommand {
         private final static String TOPIC_SUBCOMMAND = "topic";
         private List<String> command = new ArrayList<>(List.of(CMD, TOPIC_SUBCOMMAND));
@@ -152,6 +163,11 @@ public class AdminClient {
 
         public AdminTopicCommand withListSubCommand() {
             this.command.add("list");
+            return this;
+        }
+
+        public AdminTopicCommand withFetchOffsetsSubCommand() {
+            this.command.add("fetch-offsets");
             return this;
         }
 
@@ -187,6 +203,11 @@ public class AdminClient {
 
         public AdminTopicCommand withAll() {
             this.command.add("--all");
+            return this;
+        }
+
+        public AdminTopicCommand withTime(String time) {
+            this.command.addAll(List.of("--time", time));
             return this;
         }
 

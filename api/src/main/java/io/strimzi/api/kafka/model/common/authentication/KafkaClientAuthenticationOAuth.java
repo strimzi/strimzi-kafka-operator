@@ -274,7 +274,7 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
         this.includeAcceptHeader = includeAcceptHeader;
     }
 
-    @Description("Link to Kubernetes Secret containing the client assertion which was manually configured for the client.")
+    @Description("Link to Kubernetes secret containing the client assertion which was manually configured for the client.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public GenericSecretSource getClientAssertion() {
         return clientAssertion;
@@ -294,8 +294,8 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
         this.clientAssertionLocation = path;
     }
 
-    @Description("The client assertion type. If not set, and `clientAssertion` or `clientAssertionLocation` is configured, " +
-            "then this value defaults to `urn:ietf:params:oauth:client-assertion-type:jwt-bearer`")
+    @Description("The client assertion type. If not set, and either `clientAssertion` or `clientAssertionLocation` is configured, " +
+            "this value defaults to `urn:ietf:params:oauth:client-assertion-type:jwt-bearer`.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getClientAssertionType() {
         return clientAssertionType;

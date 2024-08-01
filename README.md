@@ -22,7 +22,7 @@ Documentation for the current _main_ branch as well as all releases can be found
 
 ## Roadmap
 
-The roadmap of the Strimzi Operator project is maintained as [GitHub Project](https://github.com/orgs/strimzi/projects/1).
+The roadmap of the Strimzi Operator project is maintained as [GitHub Project](https://github.com/orgs/strimzi/projects/4).
 
 ## Getting help
 

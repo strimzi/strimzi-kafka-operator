@@ -185,14 +185,6 @@ public class KafkaRoller {
         this.allowReconfiguration = allowReconfiguration;
     }
 
-    /**
-     * Returns a Future which completed with the actual pod corresponding to the abstract representation
-     * of the given {@code pod}.
-     */
-    protected Future<Pod> pod(Integer podId) {
-        return podOperations.getAsync(namespace, KafkaResources.kafkaPodName(cluster, podId));
-    }
-
     private final ScheduledExecutorService singleExecutor = Executors.newSingleThreadScheduledExecutor(
         runnable -> new Thread(runnable, "kafka-roller"));
 

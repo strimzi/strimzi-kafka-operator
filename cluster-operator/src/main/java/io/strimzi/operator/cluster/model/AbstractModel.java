@@ -151,16 +151,6 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Gets the name of a given pod in a StrimziPodSet.
-     *
-     * @param podId The ID (ordinal) of the pod.
-     * @return The name of the pod with the given name.
-     */
-    public String getPodName(Integer podId) {
-        return componentName + "-" + podId;
-    }
-
-    /**
      * @param cluster The cluster name
      * @return The name of the Cluster CA certificate secret.
      */

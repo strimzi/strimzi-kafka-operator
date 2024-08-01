@@ -172,7 +172,7 @@ public class KafkaReconcilerKRaftMigrationTest {
         SecretOperator mockSecretOps = supplier.secretOperations;
         Secret secret = new Secret();
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterOperatorCertsSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
 
         KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(RECONCILIATION, kafka);
 
@@ -219,7 +219,7 @@ public class KafkaReconcilerKRaftMigrationTest {
         SecretOperator mockSecretOps = supplier.secretOperations;
         Secret secret = new Secret();
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterOperatorCertsSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
 
         KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(RECONCILIATION, kafka);
 
@@ -261,7 +261,7 @@ public class KafkaReconcilerKRaftMigrationTest {
         SecretOperator mockSecretOps = supplier.secretOperations;
         Secret secret = new Secret();
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterOperatorCertsSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
 
         KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(RECONCILIATION, kafka);
 
@@ -300,7 +300,7 @@ public class KafkaReconcilerKRaftMigrationTest {
         SecretOperator mockSecretOps = supplier.secretOperations;
         Secret secret = new Secret();
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterOperatorCertsSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
 
         KafkaMetadataStateManager kafkaMetadataStateManager = new KafkaMetadataStateManager(RECONCILIATION, kafka);
 

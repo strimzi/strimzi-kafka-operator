@@ -61,13 +61,28 @@ public class KafkaResources {
     }
 
     /**
-     * Returns the name of the Kafka {@code Pod} for a {@code Kafka} cluster of the given name.
-     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @param podNum The number of the Kafka pod
+     * Returns the name of the Kafka {@code Pod} for a {@code Kafka} cluster not using {@code KafkaNodePool} resources.
+     *
+     * @param clusterName   The {@code metadata.name} of the {@code Kafka} resource.
+     * @param podNum        The ordinal number of the Kafka pod
+     *
      * @return The name of the corresponding Kafka {@code Pod}.
      */
     public static String kafkaPodName(String clusterName, int podNum) {
         return kafkaComponentName(clusterName) + "-" + podNum;
+    }
+
+    /**
+     * Returns the name of the Kafka {@code Pod} for a {@code Kafka} cluster using {@code KafkaNodePool} resources.
+     *
+     * @param clusterName   The {@code metadata.name} of the {@code Kafka} resource
+     * @param nodePoolName  The {@code metadata.name} of the {@code KafkaNodePool} resource
+     * @param podNum        The ordinal number of the Kafka pod
+     *
+     * @return The name of the corresponding Kafka {@code Pod}.
+     */
+    public static String kafkaPodName(String clusterName, String nodePoolName, int podNum) {
+        return clusterName + "-" + nodePoolName + "-" + podNum;
     }
 
     /**
@@ -394,7 +409,7 @@ public class KafkaResources {
      *
      * @return  Name of the Cluster Operator certificate secret
      */
-    public static String secretName(String cluster) {
+    public static String clusterOperatorCertsSecretName(String cluster) {
         return cluster + "-cluster-operator-certs";
     }
 }

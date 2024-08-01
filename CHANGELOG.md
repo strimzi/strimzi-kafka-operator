@@ -2,6 +2,8 @@
 
 ## 0.43.0
 
+* Add support for Apache Kafka 3.8.0.
+  Remove support for Apache Kafka 3.6.0, 3.6.1, and 3.6.2.
 * Added alerts for Connectors/Tasks in failed state.
 * Support for specifying additional volumes and volume mounts in Strimzi custom resources
 * Additional OAuth configuration options have been added for 'oauth' authentication on the listener and the client. 

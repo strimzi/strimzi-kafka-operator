@@ -24,7 +24,7 @@ public class PemTrustSetTest {
     public void testSecretCorrupted() {
         Secret secretWithBadCertificate = new SecretBuilder()
                 .withNewMetadata()
-                    .withName(KafkaResources.secretName(CLUSTER))
+                    .withName(KafkaResources.clusterOperatorCertsSecretName(CLUSTER))
                     .withNamespace(NAMESPACE)
                 .endMetadata()
                 .withData(map("ca.crt", "notacert"))
@@ -44,7 +44,7 @@ public class PemTrustSetTest {
     public void testEmptySecretData() {
         Secret secretWithEmptyData = new SecretBuilder()
                 .withNewMetadata()
-                    .withName(KafkaResources.secretName(CLUSTER))
+                    .withName(KafkaResources.clusterOperatorCertsSecretName(CLUSTER))
                     .withNamespace(NAMESPACE)
                 .endMetadata()
                 .withData(Map.of())
@@ -57,7 +57,7 @@ public class PemTrustSetTest {
     public void testNoCertsInSecretData() {
         Secret secretWithNoCerts = new SecretBuilder()
                 .withNewMetadata()
-                    .withName(KafkaResources.secretName(CLUSTER))
+                    .withName(KafkaResources.clusterOperatorCertsSecretName(CLUSTER))
                     .withNamespace(NAMESPACE)
                 .endMetadata()
                 .withData(Map.of("ca.txt", "not-a-cert"))

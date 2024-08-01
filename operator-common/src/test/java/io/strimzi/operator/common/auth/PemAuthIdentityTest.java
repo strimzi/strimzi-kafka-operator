@@ -24,7 +24,7 @@ public class PemAuthIdentityTest {
     public void testSecretWithMissingKeyThrowsException() {
         Secret secretWithMissingClusterOperatorKey = new SecretBuilder()
                 .withNewMetadata()
-                    .withName(KafkaResources.secretName(CLUSTER))
+                    .withName(KafkaResources.clusterOperatorCertsSecretName(CLUSTER))
                     .withNamespace(NAMESPACE)
                 .endMetadata()
                 .withData(emptyMap())
@@ -37,7 +37,7 @@ public class PemAuthIdentityTest {
     public void testSecretWithMissingCertChainThrowsException() {
         Secret secretWithMissingClusterOperatorKey = new SecretBuilder()
                 .withNewMetadata()
-                    .withName(KafkaResources.secretName(CLUSTER))
+                    .withName(KafkaResources.clusterOperatorCertsSecretName(CLUSTER))
                     .withNamespace(NAMESPACE)
                 .endMetadata()
                 .withData(map("cluster-operator.key", "key"))
@@ -50,7 +50,7 @@ public class PemAuthIdentityTest {
     public void testSecretCorrupted() {
         Secret secretWithBadCertificate = new SecretBuilder()
                 .withNewMetadata()
-                    .withName(KafkaResources.secretName(CLUSTER))
+                    .withName(KafkaResources.clusterOperatorCertsSecretName(CLUSTER))
                     .withNamespace(NAMESPACE)
                 .endMetadata()
                 .withData(map("cluster-operator.key", MockCertManager.clusterCaKey(),

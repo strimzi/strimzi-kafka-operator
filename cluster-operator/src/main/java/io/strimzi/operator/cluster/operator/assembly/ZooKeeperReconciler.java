@@ -411,9 +411,9 @@ public class ZooKeeperReconciler {
         List<PersistentVolumeClaim> pvcs = zk.generatePersistentVolumeClaims();
 
         return new PvcReconciler(reconciliation, pvcOperator, storageClassOperator)
-                .resizeAndReconcilePvcs(kafkaStatus, podIndex -> KafkaResources.zookeeperPodName(reconciliation.name(), podIndex), pvcs)
-                .compose(podsToRestart -> {
-                    fsResizingRestartRequest.addAll(podsToRestart);
+                .resizeAndReconcilePvcs(kafkaStatus, pvcs)
+                .compose(podIdsToRestart -> {
+                    fsResizingRestartRequest.addAll(podIdsToRestart.stream().map(podId -> KafkaResources.zookeeperPodName(reconciliation.name(), podId)).collect(Collectors.toSet()));
                     return Future.succeededFuture();
                 });
     }
@@ -898,7 +898,7 @@ public class ZooKeeperReconciler {
      */
     protected Future<Void> deleteControllerZnode() {
         // migration rollback process ongoing
-        String zkConnectionString = KafkaResources.zookeeperServiceName(reconciliation.name()) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
+        String zkConnectionString = DnsNameGenerator.serviceDnsNameWithoutClusterDomain(reconciliation.namespace(), KafkaResources.zookeeperServiceName(reconciliation.name()))  + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
         return KRaftMigrationUtils.deleteZooKeeperControllerZnode(
                 reconciliation,
                 vertx,

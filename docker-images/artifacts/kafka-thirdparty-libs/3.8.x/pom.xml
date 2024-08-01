@@ -18,7 +18,7 @@
     <properties>
         <strimzi-oauth.version>0.15.0</strimzi-oauth.version>
         <jayway-json-path.version>2.9.0</jayway-json-path.version>
-        <cruise-control.version>2.5.137</cruise-control.version>
+        <cruise-control.version>2.5.138</cruise-control.version>
         <opa-authorizer.version>1.5.1</opa-authorizer.version>
         <kafka-quotas-plugin.version>0.3.1</kafka-quotas-plugin.version>
         <kafka-mirror-maker-2-extensions.version>1.2.0</kafka-mirror-maker-2-extensions.version>
@@ -116,7 +116,7 @@
             <version>${opentelemetry.version}</version>
             <scope>runtime</scope>
             <exclusions>
-                <!-- excluded as we end up with conflicting copies in the image detected by find-classpath-collision.sh -->
+                <!-- excluded as we end up with conflicting copies in the image -->
                 <exclusion>
                     <groupId>com.google.errorprone</groupId>
                     <artifactId>error_prone_annotations</artifactId>
@@ -129,12 +129,12 @@
             <version>${grpc-netty-shaded.version}</version>
             <scope>runtime</scope>
             <exclusions>
-                <!-- excluded as we end up with conflicting copies in the image detected by find-classpath-collision.sh -->
+                <!-- excluded as we end up with conflicting copies in the image -->
                 <exclusion>
                     <groupId>org.checkerframework</groupId>
                     <artifactId>checker-qual</artifactId>
                 </exclusion>
-                <!-- excluded as we end up with conflicting copies in the image detected by find-classpath-collision.sh -->
+                <!-- excluded as we end up with conflicting copies in the image -->
                 <exclusion>
                     <groupId>com.google.errorprone</groupId>
                     <artifactId>error_prone_annotations</artifactId>
@@ -175,6 +175,23 @@
                     <groupId>com.github.stephenc.jcip</groupId>
                     <artifactId>jcip-annotations</artifactId>
                 </exclusion>
+                <exclusion>
+                    <!-- Excluded because of CVE-2023-51074 and replaced with newer version-->
+                    <groupId>com.jayway.jsonpath</groupId>
+                    <artifactId>json-path</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <!-- Override of OAuth dependency because of CVE-2023-51074 -->
+            <groupId>com.jayway.jsonpath</groupId>
+            <artifactId>json-path</artifactId>
+            <version>${jayway-json-path.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -201,23 +218,6 @@
                 <exclusion>
                     <groupId>com.sun.activation</groupId>
                     <artifactId>jakarta.activation</artifactId>
-                </exclusion>
-                <exclusion>
-                    <!-- Excluded because of CVE-2023-51074 and replaced with newer version-->
-                    <groupId>com.jayway.jsonpath</groupId>
-                    <artifactId>json-path</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <!-- Override of OAuth dependency because of CVE-2023-51074 -->
-            <groupId>com.jayway.jsonpath</groupId>
-            <artifactId>json-path</artifactId>
-            <version>${jayway-json-path.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -388,7 +388,27 @@
                     <groupId>com.fasterxml.jackson.core</groupId>
                     <artifactId>jackson-databind</artifactId>
                 </exclusion>
+                <exclusion>
+                    <!-- Excluded and imported separately to keep the Jackson version in sync with Kafka -->
+                    <groupId>com.fasterxml.jackson.dataformat</groupId>
+                    <artifactId>jackson-dataformat-yaml</artifactId>
+                </exclusion>
+                <exclusion>
+                    <!-- Excluded and imported separately to keep the Jackson version in sync with Kafka -->
+                    <groupId>com.fasterxml.jackson.datatype</groupId>
+                    <artifactId>jackson-datatype-jsr310</artifactId>
+                </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+            <version>2.16.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>2.16.2</version>
         </dependency>
         <!-- EnvVar Configuration Provider for Apache Kafka -->
         <dependency>

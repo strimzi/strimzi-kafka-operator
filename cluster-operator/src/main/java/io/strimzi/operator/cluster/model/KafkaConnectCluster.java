@@ -528,7 +528,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                 labels.strimziSelectorLabels().withStrimziPodSetController(componentName),
                 podId -> WorkloadUtils.createStatefulPod(
                         reconciliation,
-                        getPodName(podId),
+                        componentName + "-" + podId,
                         namespace,
                         labels,
                         componentName,

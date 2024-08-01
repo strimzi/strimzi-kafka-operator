@@ -16,7 +16,6 @@ import kafka.Kafka;
 import kafka.server.DynamicBrokerConfig$;
 import kafka.server.KafkaConfig$;
 import org.apache.kafka.common.config.ConfigDef;
-import org.apache.kafka.raft.RaftConfig;
 import org.apache.kafka.server.common.MetadataVersion;
 import org.apache.kafka.server.common.MetadataVersionValidator;
 
@@ -28,12 +27,14 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -76,6 +77,7 @@ public class KafkaConfigModelGenerator {
         return p.getProperty("version");
     }
 
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
     private static Map<String, ConfigModel> configs(String version) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         ConfigDef def = brokerConfigs();
         Map<String, String> dynamicUpdates = brokerDynamicUpdates();
@@ -101,9 +103,10 @@ public class KafkaConfigModelGenerator {
                 descriptor.setValues(enumer(key.validator));
             } else if (key.validator instanceof ConfigDef.ValidList) {
                 descriptor.setItems(validList(key));
+            } else if (key.validator instanceof ConfigDef.CaseInsensitiveValidString) {
+                descriptor.setCaseInsensitive(true);
+                descriptor.setValues(caseInsensitiveEnumer(key.validator));
             } else if (key.validator instanceof MetadataVersionValidator) {
-                // Versions for Kafka 3.3.0 and newer are in MetadataVersion
-                // We extract it from there
                 Iterator<MetadataVersion> iterator = Arrays.stream(MetadataVersion.VERSIONS).iterator();
                 LinkedHashSet<String> versions = new LinkedHashSet<>();
                 while (iterator.hasNext()) {
@@ -113,10 +116,6 @@ public class KafkaConfigModelGenerator {
                 }
                 descriptor.setPattern(String.join("|", versions));
             } else if (key.validator != null && "class kafka.api.ApiVersionValidator$".equals(key.validator.getClass().toString())) {
-                // Versions for Kafka 3.2.x and older are in ApiVersions. We cannot use this class because it does not
-                // exist anymore in Kafka 3.3.0. So we extract the versions from Kafka 3.3.0, but we filter them to have
-                // the short version equal or less the version for which we generate the config. This should filter out
-                // the older versions and keep only the valid versions for given release.
                 Iterator<MetadataVersion> iterator = Arrays.stream(MetadataVersion.VERSIONS).iterator();
                 LinkedHashSet<String> versions = new LinkedHashSet<>();
                 while (iterator.hasNext()) {
@@ -131,8 +130,14 @@ public class KafkaConfigModelGenerator {
                 descriptor.setPattern(".+");
             } else if (key.validator instanceof ConfigDef.NonEmptyString) {
                 descriptor.setPattern(".+");
-            } else if (key.validator instanceof RaftConfig.ControllerQuorumVotersValidator)   {
+            } else if (key.validator != null && "class org.apache.kafka.raft.RaftConfig$ControllerQuorumVotersValidator".equals(key.validator.getClass().toString()))   { // we compare the class names because of changes done between Kafka version 3.7 and 3.8 => this is for Kafka 3.7 and older
                 continue;
+            } else if (key.validator != null && "class org.apache.kafka.raft.QuorumConfig$ControllerQuorumVotersValidator".equals(key.validator.getClass().toString()))   { // we compare the class names because of changes done between Kafka version 3.7 and 3.8 => this is for Kafka 3.8 and newer
+                continue;
+            } else if (key.validator != null && "class org.apache.kafka.raft.QuorumConfig$ControllerQuorumBootstrapServersValidator".equals(key.validator.getClass().toString()))   { // we compare the class names because of changes done between Kafka version 3.7 and 3.8 => this is for Kafka 3.8 and newer
+                continue;
+            } else if (key.validator != null && "class org.apache.kafka.common.compress.GzipCompression$LevelValidator".equals(key.validator.getClass().toString()))   { // we compare the class names because of changes done between Kafka version 3.7 and 3.8 => this is for Kafka 3.8 and newer
+                descriptor.setPattern("[1-9]{1}|-1");
             } else if (key.validator != null) {
                 throw new IllegalStateException("Invalid validator class " + key.validator.getClass() + " for option " + configName);
             }
@@ -198,6 +203,15 @@ public class KafkaConfigModelGenerator {
         try {
             Field f = getField(ConfigDef.ValidString.class, "validStrings");
             return (List) f.get(validator);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static List<String> caseInsensitiveEnumer(ConfigDef.Validator validator) {
+        try {
+            Field f = getField(ConfigDef.CaseInsensitiveValidString.class, "validStrings");
+            return new ArrayList((Set) f.get(validator));
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }

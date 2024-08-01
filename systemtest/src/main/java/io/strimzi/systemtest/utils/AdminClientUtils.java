@@ -4,6 +4,9 @@
  */
 package io.strimzi.systemtest.utils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.strimzi.systemtest.TestConstants;
@@ -114,5 +117,19 @@ public class AdminClientUtils {
         return new LabelSelectorBuilder()
             .withMatchLabels(matchLabels)
             .build();
+    }
+
+    public static long getPartitionsOffset(String data, String partition) throws JsonProcessingException {
+        // Create ObjectMapper instance
+        ObjectMapper mapper = new ObjectMapper();
+
+        // Read JSON string as JsonNode
+        JsonNode rootNode = mapper.readTree(data);
+
+        // Get the node for the partition number
+        JsonNode partitionNode = rootNode.get(partition);
+
+        // Get the offset value
+        return partitionNode.get("offset").asLong();
     }
 }

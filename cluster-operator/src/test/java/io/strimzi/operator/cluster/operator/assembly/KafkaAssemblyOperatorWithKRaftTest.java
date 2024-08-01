@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimConditionBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
@@ -49,6 +51,7 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.PvcOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
@@ -249,6 +252,10 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         ArgumentCaptor<String> cmDeletionCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.deleteAsync(any(), any(), cmDeletionCaptor.capture(), anyBoolean())).thenReturn(Future.succeededFuture());
 
+        PvcOperator mockPvcOps = supplier.pvcOperations;
+        when(mockPvcOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPvcOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
+
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         // Kafka
         when(mockPodSetOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(kafkaPodSets));
@@ -356,6 +363,10 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         ArgumentCaptor<String> cmDeletionCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.deleteAsync(any(), any(), cmDeletionCaptor.capture(), anyBoolean())).thenReturn(Future.succeededFuture());
 
+        PvcOperator mockPvcOps = supplier.pvcOperations;
+        when(mockPvcOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPvcOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
+
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         // Kafka
         when(mockPodSetOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(List.of()));
@@ -458,6 +469,10 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         when(mockCmOps.reconcile(any(), any(), startsWith("my-cluster-"), any())).thenReturn(Future.succeededFuture());
         when(mockCmOps.deleteAsync(any(), any(), eq("my-cluster-kafka-config"), anyBoolean())).thenReturn(Future.succeededFuture());
 
+        PvcOperator mockPvcOps = supplier.pvcOperations;
+        when(mockPvcOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPvcOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
+
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(oldKafkaPodSets));
         when(mockPodSetOps.batchReconcile(any(), any(), any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenAnswer(i -> {
@@ -552,6 +567,10 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         when(mockCmOps.reconcile(any(), any(), cmReconciliationCaptor.capture(), any())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<String> cmDeletionCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.deleteAsync(any(), any(), cmDeletionCaptor.capture(), anyBoolean())).thenReturn(Future.succeededFuture());
+
+        PvcOperator mockPvcOps = supplier.pvcOperations;
+        when(mockPvcOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPvcOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
 
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         // Kafka
@@ -673,6 +692,10 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         when(mockCmOps.reconcile(any(), any(), cmReconciliationCaptor.capture(), any())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<String> cmDeletionCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.deleteAsync(any(), any(), cmDeletionCaptor.capture(), anyBoolean())).thenReturn(Future.succeededFuture());
+
+        PvcOperator mockPvcOps = supplier.pvcOperations;
+        when(mockPvcOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPvcOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
 
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         // Kafka
@@ -808,6 +831,10 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         when(mockCmOps.reconcile(any(), any(), cmReconciliationCaptor.capture(), any())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<String> cmDeletionCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.deleteAsync(any(), any(), cmDeletionCaptor.capture(), anyBoolean())).thenReturn(Future.succeededFuture());
+
+        PvcOperator mockPvcOps = supplier.pvcOperations;
+        when(mockPvcOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPvcOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
 
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         // Kafka
@@ -951,6 +978,10 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         when(mockCmOps.reconcile(any(), any(), cmReconciliationCaptor.capture(), any())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<String> cmDeletionCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.deleteAsync(any(), any(), cmDeletionCaptor.capture(), anyBoolean())).thenReturn(Future.succeededFuture());
+
+        PvcOperator mockPvcOps = supplier.pvcOperations;
+        when(mockPvcOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPvcOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
 
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         // Kafka
@@ -1134,6 +1165,113 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 })));
     }
 
+    /**
+     * Tests that the Pod that needs a restart to finish PVC resizing is rolled
+     *
+     * @param context   Test context
+     */
+    @Test
+    public void testRollDueToPersistentVolumeResizing(VertxTestContext context)  {
+        List<StrimziPodSet> kafkaPodSets = KAFKA_CLUSTER.generatePodSets(false, null, null, brokerId -> null);
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        SecretOperator secretOps = supplier.secretOperations;
+        when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
+        when(secretOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        when(mockCmOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(List.of()));
+        ArgumentCaptor<String> cmReconciliationCaptor = ArgumentCaptor.forClass(String.class);
+        when(mockCmOps.reconcile(any(), any(), cmReconciliationCaptor.capture(), any())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<String> cmDeletionCaptor = ArgumentCaptor.forClass(String.class);
+        when(mockCmOps.deleteAsync(any(), any(), cmDeletionCaptor.capture(), anyBoolean())).thenReturn(Future.succeededFuture());
+
+        PvcOperator mockPvcOps = supplier.pvcOperations;
+        when(mockPvcOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPvcOps.getAsync(any(), eq("data-0-my-cluster-brokers-4"))).thenReturn(Future.succeededFuture(
+                new PersistentVolumeClaimBuilder()
+                        .withNewMetadata()
+                            .withNamespace(NAMESPACE)
+                            .withName("data-0-my-cluster-brokers-4")
+                        .endMetadata()
+                        .withNewSpec()
+                        .endSpec()
+                        .withNewStatus()
+                            .withPhase("Bound")
+                            .withConditions(new PersistentVolumeClaimConditionBuilder().withType("FileSystemResizePending").withStatus("True").build())
+                        .endStatus()
+                        .build()
+        ));
+        when(mockPvcOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
+
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
+        // Kafka
+        when(mockPodSetOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(kafkaPodSets));
+        when(mockPodSetOps.batchReconcile(any(), any(), any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenAnswer(i -> {
+            List<StrimziPodSet> podSets = i.getArgument(2);
+            HashMap<String, ReconcileResult<StrimziPodSet>> result = new HashMap<>();
+
+            for (StrimziPodSet podSet : podSets)    {
+                StrimziPodSet patched = kafkaPodSets.stream().filter(sps -> podSet.getMetadata().getName().equals(sps.getMetadata().getName())).findFirst().orElse(null);
+                result.put(podSet.getMetadata().getName(), patched == null ? ReconcileResult.created(podSet) : ReconcileResult.noop(patched));
+            }
+
+            return Future.succeededFuture(result);
+        });
+
+        StatefulSetOperator mockStsOps = supplier.stsOperations;
+        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
+
+        PodOperator mockPodOps = supplier.podOperations;
+        when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
+        when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
+
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
+        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(KAFKA));
+        when(mockKafkaOps.get(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(KAFKA);
+        when(mockKafkaOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
+
+        CrdOperator<KubernetesClient, KafkaNodePool, KafkaNodePoolList> mockKafkaNodePoolOps = supplier.kafkaNodePoolOperator;
+        ArgumentCaptor<KafkaNodePool> kafkaNodePoolStatusCaptor = ArgumentCaptor.forClass(KafkaNodePool.class);
+        when(mockKafkaNodePoolOps.updateStatusAsync(any(), kafkaNodePoolStatusCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        MockKafkaReconciler kr = new MockKafkaReconciler(
+                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
+                vertx,
+                CONFIG,
+                supplier,
+                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                KAFKA,
+                List.of(CONTROLLERS, BROKERS),
+                KAFKA_CLUSTER,
+                CLUSTER_CA,
+                CLIENTS_CA);
+
+        MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(
+                vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                CERT_MANAGER,
+                PASSWORD_GENERATOR,
+                supplier,
+                CONFIG,
+                kr);
+
+        Checkpoint async = context.checkpoint();
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    assertThat(kr.maybeRollKafkaInvocations, is(1));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(0), "my-cluster-controllers-0")), is(RestartReasons.empty()));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(0), "my-cluster-controllers-1")), is(RestartReasons.empty()));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(0), "my-cluster-controllers-2")), is(RestartReasons.empty()));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(1), "my-cluster-brokers-3")), is(RestartReasons.empty()));
+                    // Only the pod that needs volume resizing is rolled
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(1), "my-cluster-brokers-4")), is(RestartReasons.of(RestartReason.FILE_SYSTEM_RESIZE_NEEDED)));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSets.get(1), "my-cluster-brokers-5")), is(RestartReasons.empty()));
+
+                    async.flag();
+                })));
+    }
+
     // Internal utility methods
     private Pod podFromPodSet(StrimziPodSet podSet, String name) {
         return PodSetUtils.podSetToPods(podSet).stream().filter(p -> name.equals(p.getMetadata().getName())).findFirst().orElse(null);
@@ -1192,6 +1330,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
             return manualPodCleaning()
                     .compose(i -> manualRollingUpdate())
+                    .compose(i -> pvcs(kafkaStatus))
                     .compose(i -> scaleDown())
                     .compose(i -> updateNodePoolStatuses(kafkaStatus))
                     .compose(i -> listeners())

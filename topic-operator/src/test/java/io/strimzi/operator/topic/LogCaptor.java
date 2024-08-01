@@ -39,7 +39,6 @@ import java.util.regex.Pattern;
  * </pre>
  */
 public class LogCaptor implements AutoCloseable {
-
     private static final Logger LOGGER = LogManager.getLogger(LogCaptor.class);
 
     private final CaptorAppender appender;

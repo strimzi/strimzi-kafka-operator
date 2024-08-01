@@ -1031,7 +1031,7 @@ public class KafkaRebalanceAssemblyOperator
      * Reconcile loop for the KafkaRebalance
      */
     @SuppressWarnings({"checkstyle:NPathComplexity"})
-    /* test */ Future<KafkaRebalanceStatus> reconcileRebalance(Reconciliation reconciliation, KafkaRebalance kafkaRebalance) {
+    private Future<KafkaRebalanceStatus> reconcileRebalance(Reconciliation reconciliation, KafkaRebalance kafkaRebalance) {
         if (kafkaRebalance == null) {
             LOGGER.infoCr(reconciliation, "KafkaRebalance resource deleted");
             return Future.succeededFuture();

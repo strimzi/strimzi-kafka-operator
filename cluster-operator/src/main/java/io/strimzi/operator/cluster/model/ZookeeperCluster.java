@@ -413,7 +413,7 @@ public class ZookeeperCluster extends AbstractModel implements SupportsMetrics, 
                 labels.strimziSelectorLabels(),
                 podNum -> WorkloadUtils.createStatefulPod(
                         reconciliation,
-                        getPodName(podNum),
+                        KafkaResources.zookeeperPodName(cluster, podNum),
                         namespace,
                         labels,
                         componentName,
@@ -425,7 +425,7 @@ public class ZookeeperCluster extends AbstractModel implements SupportsMetrics, 
                         templatePod != null ? templatePod.getAffinity() : null,
                         null,
                         List.of(createContainer(imagePullPolicy)),
-                        getPodSetVolumes(getPodName(podNum), isOpenShift),
+                        getPodSetVolumes(KafkaResources.zookeeperPodName(cluster, podNum), isOpenShift),
                         imagePullSecrets,
                         securityProvider.zooKeeperPodSecurityContext(new PodSecurityProviderContextImpl(storage, templatePod))
                 )
@@ -640,7 +640,7 @@ public class ZookeeperCluster extends AbstractModel implements SupportsMetrics, 
         Set<NodeRef> nodes = new LinkedHashSet<>();
 
         for (int i = 0; i < replicas; i++)  {
-            nodes.add(new NodeRef(getPodName(i), i, null, false, false));
+            nodes.add(new NodeRef(KafkaResources.zookeeperPodName(cluster, i), i, null, false, false));
         }
 
         return nodes;

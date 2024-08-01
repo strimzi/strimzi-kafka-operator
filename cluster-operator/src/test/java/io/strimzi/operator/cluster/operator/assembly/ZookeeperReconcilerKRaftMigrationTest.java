@@ -121,7 +121,7 @@ public class ZookeeperReconcilerKRaftMigrationTest {
         SecretOperator mockSecretOps = supplier.secretOperations;
         Secret secret = new Secret();
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterOperatorCertsSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
         KafkaVersionChange versionChange = new KafkaVersionChange(VERSIONS.defaultVersion(), VERSIONS.defaultVersion(), VERSIONS.defaultVersion().protocolVersion(), VERSIONS.defaultVersion().messageVersion(), VERSIONS.defaultVersion().metadataVersion());
 
         KafkaMetadataStateManager stateManager = new KafkaMetadataStateManager(RECONCILIATION, patchedKafka);
@@ -167,7 +167,7 @@ public class ZookeeperReconcilerKRaftMigrationTest {
         SecretOperator mockSecretOps = supplier.secretOperations;
         Secret secret = new Secret();
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterOperatorCertsSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
         KafkaVersionChange versionChange = new KafkaVersionChange(VERSIONS.defaultVersion(), VERSIONS.defaultVersion(), VERSIONS.defaultVersion().protocolVersion(), VERSIONS.defaultVersion().messageVersion(), VERSIONS.defaultVersion().metadataVersion());
 
         KafkaMetadataStateManager stateManager = new KafkaMetadataStateManager(RECONCILIATION, patchedKafka);

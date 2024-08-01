@@ -230,11 +230,6 @@ public class EntityOperatorTest {
                 .withValue("")
                 .build();
 
-        Toleration assertToleration = new TolerationBuilder()
-                .withEffect("NoSchedule")
-                .withValue(null)
-                .build();
-
         TopologySpreadConstraint tsc1 = new TopologySpreadConstraintBuilder()
                 .withTopologyKey("kubernetes.io/zone")
                 .withMaxSkew(1)
@@ -326,6 +321,7 @@ public class EntityOperatorTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
         assertThat(dep.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
         assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
+        assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(singletonList(toleration)));
         assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(singletonList(assertToleration)));
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(volume -> "secret-volume-name".equals(volume.getName())).iterator().next().getSecret(), is(secret));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts().stream().filter(volumeMount -> "secret-volume-name".equals(volumeMount.getName())).iterator().next(), is(additionalVolumeMounts.get(0)));

@@ -42,8 +42,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ReplicasChangeHandlerTest {
-    private static final String TEST_NAMESPACE = "replicas-change";
-    private static final String TEST_NAME = "my-topic";
+    private static final String NAMESPACE = TopicOperatorTestUtil.namespaceName(ReplicasChangeHandlerTest.class);
 
     private static TopicOperatorMetricsHolder metricsHolder;
     private static int serverPort;
@@ -107,7 +106,7 @@ public class ReplicasChangeHandlerTest {
     public void shouldFailWithSslEnabledAndMissingCrtFile() {
         var config = TopicOperatorConfig.buildFromMap(Map.ofEntries(
             entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-            entry(TopicOperatorConfig.NAMESPACE.key(), TEST_NAMESPACE),
+            entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
             entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
             entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
@@ -122,7 +121,7 @@ public class ReplicasChangeHandlerTest {
     public void shouldFailWithAuthEnabledAndUsernameFileNotFound() {
         var config = TopicOperatorConfig.buildFromMap(Map.ofEntries(
             entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-            entry(TopicOperatorConfig.NAMESPACE.key(), TEST_NAMESPACE),
+            entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
             entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
             entry(TopicOperatorConfig.CRUISE_CONTROL_AUTH_ENABLED.key(), "true"),
@@ -138,7 +137,7 @@ public class ReplicasChangeHandlerTest {
     public void shouldFailWithAuthEnabledAndPasswordFileNotFound() {
         var config = TopicOperatorConfig.buildFromMap(Map.ofEntries(
             entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-            entry(TopicOperatorConfig.NAMESPACE.key(), TEST_NAMESPACE),
+            entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
             entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
             entry(TopicOperatorConfig.CRUISE_CONTROL_AUTH_ENABLED.key(), "true"),
@@ -154,7 +153,7 @@ public class ReplicasChangeHandlerTest {
     public void shouldFailWhenCruiseControlEndpointNotReachable() {
         var config = TopicOperatorConfig.buildFromMap(Map.ofEntries(
             entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-            entry(TopicOperatorConfig.NAMESPACE.key(), TEST_NAMESPACE),
+            entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
             entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "invalid"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort))
         ));
@@ -174,7 +173,7 @@ public class ReplicasChangeHandlerTest {
     public void shouldFailWhenCruiseControlReturnsErrorResponse() {
         var config = TopicOperatorConfig.buildFromMap(Map.ofEntries(
             entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-            entry(TopicOperatorConfig.NAMESPACE.key(), TEST_NAMESPACE),
+            entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
             entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
             entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
@@ -202,7 +201,7 @@ public class ReplicasChangeHandlerTest {
     public void shouldFailWhenTheRequestTimesOut() {
         var config = TopicOperatorConfig.buildFromMap(Map.ofEntries(
             entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-            entry(TopicOperatorConfig.NAMESPACE.key(), TEST_NAMESPACE),
+            entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
             entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
             entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
@@ -229,7 +228,7 @@ public class ReplicasChangeHandlerTest {
     public void shouldFailWhenTheRequestIsUnauthorized() {
         var config = TopicOperatorConfig.buildFromMap(Map.ofEntries(
             entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-            entry(TopicOperatorConfig.NAMESPACE.key(), TEST_NAMESPACE),
+            entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
             entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
             entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
             entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
@@ -277,6 +276,7 @@ public class ReplicasChangeHandlerTest {
     }
 
     private List<ReconcilableTopic> buildPendingReconcilableTopics() {
+        var topicName = "my-topic";
         int replicationFactor = 2;
         var status = new KafkaTopicStatusBuilder()
             .withConditions(List.of(new ConditionBuilder()
@@ -287,8 +287,8 @@ public class ReplicasChangeHandlerTest {
             .build();
         var kafkaTopic = new KafkaTopicBuilder()
             .withNewMetadata()
-                .withName(TEST_NAME)
-                .withNamespace(TEST_NAMESPACE)
+                .withName(topicName)
+                .withNamespace(NAMESPACE)
                 .addToLabels("key", "VALUE")
             .endMetadata()
             .withNewSpec()
@@ -298,11 +298,12 @@ public class ReplicasChangeHandlerTest {
             .withStatus(status)
             .build();
         return List.of(new ReconcilableTopic(
-            new Reconciliation("test", RESOURCE_KIND, TEST_NAMESPACE, TEST_NAME), 
+            new Reconciliation("test", RESOURCE_KIND, NAMESPACE, topicName), 
             kafkaTopic, TopicOperatorUtil.topicName(kafkaTopic)));
     }
 
     private List<ReconcilableTopic> buildOngoingReconcilableTopics() {
+        var topicName = "my-topic";
         int replicationFactor = 3;
         var status = new KafkaTopicStatusBuilder()
             .withConditions(List.of(new ConditionBuilder()
@@ -318,8 +319,8 @@ public class ReplicasChangeHandlerTest {
             .build();
         var kafkaTopic = new KafkaTopicBuilder()
             .withNewMetadata()
-                .withName(TEST_NAME)
-                .withNamespace(TEST_NAMESPACE)
+                .withName(topicName)
+                .withNamespace(NAMESPACE)
                 .addToLabels("key", "VALUE")
             .endMetadata()
             .withNewSpec()
@@ -329,7 +330,7 @@ public class ReplicasChangeHandlerTest {
             .withStatus(status)
             .build();
         return List.of(new ReconcilableTopic(
-            new Reconciliation("test", RESOURCE_KIND, TEST_NAMESPACE, TEST_NAME), 
+            new Reconciliation("test", RESOURCE_KIND, NAMESPACE, topicName), 
             kafkaTopic, TopicOperatorUtil.topicName(kafkaTopic)));
     }
 
@@ -338,7 +339,7 @@ public class ReplicasChangeHandlerTest {
             // encryption and authentication disabled
             TopicOperatorConfig.buildFromMap(Map.ofEntries(
                 entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-                entry(TopicOperatorConfig.NAMESPACE.key(), TEST_NAMESPACE),
+                entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "false"),
@@ -348,7 +349,7 @@ public class ReplicasChangeHandlerTest {
             // encryption and authentication enabled
             TopicOperatorConfig.buildFromMap(Map.ofEntries(
                 entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-                entry(TopicOperatorConfig.NAMESPACE.key(), TEST_NAMESPACE),
+                entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
@@ -361,7 +362,7 @@ public class ReplicasChangeHandlerTest {
             // rack enabled
             TopicOperatorConfig.buildFromMap(Map.ofEntries(
                 entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-                entry(TopicOperatorConfig.NAMESPACE.key(), TEST_NAMESPACE),
+                entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_RACK_ENABLED.key(), "true"),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort))
@@ -370,7 +371,7 @@ public class ReplicasChangeHandlerTest {
             // encryption only
             TopicOperatorConfig.buildFromMap(Map.ofEntries(
                 entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-                entry(TopicOperatorConfig.NAMESPACE.key(), TEST_NAMESPACE),
+                entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
@@ -381,7 +382,7 @@ public class ReplicasChangeHandlerTest {
             // authentication only
             TopicOperatorConfig.buildFromMap(Map.ofEntries(
                 entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-                entry(TopicOperatorConfig.NAMESPACE.key(), TEST_NAMESPACE),
+                entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
                 entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "false"),

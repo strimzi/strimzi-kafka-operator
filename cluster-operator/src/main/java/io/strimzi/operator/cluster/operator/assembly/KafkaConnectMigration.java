@@ -199,6 +199,6 @@ public class KafkaConnectMigration {
     private Future<Void> scaleUpStrimziPodSet(int replicas)    {
         LOGGER.infoCr(reconciliation, "Scaling up StrimziPodSet {}", connect.getComponentName());
         return podSetOperator.reconcile(reconciliation, reconciliation.namespace(), connect.getComponentName(), connect.generatePodSet(replicas, controllerAnnotations, podAnnotations, isOpenshift, imagePullPolicy, imagePullSecrets, customContainerImage))
-                .compose(i -> podOperator.readiness(reconciliation, reconciliation.namespace(), connect.getPodName(replicas - 1), 1_000, operationTimeoutMs));
+                .compose(i -> podOperator.readiness(reconciliation, reconciliation.namespace(), connect.getComponentName() + "-" + (replicas - 1), 1_000, operationTimeoutMs));
     }
 }

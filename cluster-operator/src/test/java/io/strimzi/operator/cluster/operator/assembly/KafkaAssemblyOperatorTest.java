@@ -583,7 +583,7 @@ public class KafkaAssemblyOperatorTest {
                 KafkaResources.clusterCaKeySecretName(kafkaName),
                 KafkaResources.kafkaSecretName(kafkaName),
                 KafkaResources.zookeeperSecretName(kafkaName),
-                KafkaResources.secretName(kafkaName));
+                KafkaResources.clusterOperatorCertsSecretName(kafkaName));
 
         if (metrics)    {
             expectedSecrets.add(KafkaExporterResources.secretName(kafkaName));
@@ -628,7 +628,7 @@ public class KafkaAssemblyOperatorTest {
         when(mockSecretOps.getAsync(kafkaNamespace, KafkaResources.clusterCaCertificateSecretName(kafkaName))).thenAnswer(i ->
                 Future.succeededFuture(secretsMap.get(i.<String>getArgument(1)))
         );
-        when(mockSecretOps.getAsync(kafkaNamespace, KafkaResources.secretName(kafkaName))).thenAnswer(i ->
+        when(mockSecretOps.getAsync(kafkaNamespace, KafkaResources.clusterOperatorCertsSecretName(kafkaName))).thenAnswer(i ->
                 Future.succeededFuture(secretsMap.get(i.<String>getArgument(1)))
         );
 
@@ -1125,9 +1125,9 @@ public class KafkaAssemblyOperatorTest {
                         .addToData("ca-cert.crt", "cert")
                         .build())
         );
-        when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.secretName(clusterName))).thenReturn(
+        when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.clusterOperatorCertsSecretName(clusterName))).thenReturn(
                 Future.succeededFuture(new SecretBuilder()
-                        .withNewMetadata().withName(KafkaResources.secretName(clusterName)).endMetadata()
+                        .withNewMetadata().withName(KafkaResources.clusterOperatorCertsSecretName(clusterName)).endMetadata()
                         .addToData("cluster-operator.key", "key")
                         .addToData("cluster-operator.crt", "cert")
                         .addToData("cluster-operator.p12", "p12")
