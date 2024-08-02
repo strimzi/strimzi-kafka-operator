@@ -575,7 +575,7 @@ spec:
                               broker:
                                 type: integer
                                 description: Id of the kafka broker (broker identifier).
-                          description: Overrides for individual brokers. The `overrides` field allows to specify a different configuration for different brokers.
+                          description: Overrides for individual brokers. The `overrides` field allows you to specify a different configuration for different brokers.
                         selector:
                           additionalProperties:
                             type: string
@@ -626,7 +626,7 @@ spec:
                                     broker:
                                       type: integer
                                       description: Id of the kafka broker (broker identifier).
-                                description: Overrides for individual brokers. The `overrides` field allows to specify a different configuration for different brokers.
+                                description: Overrides for individual brokers. The `overrides` field allows you to specify a different configuration for different brokers.
                               selector:
                                 additionalProperties:
                                   type: string
@@ -2068,7 +2068,7 @@ spec:
                               broker:
                                 type: integer
                                 description: Id of the kafka broker (broker identifier).
-                          description: Overrides for individual brokers. The `overrides` field allows to specify a different configuration for different brokers.
+                          description: Overrides for individual brokers. The `overrides` field allows you to specify a different configuration for different brokers.
                         selector:
                           additionalProperties:
                             type: string
