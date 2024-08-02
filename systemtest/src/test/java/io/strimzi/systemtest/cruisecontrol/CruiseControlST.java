@@ -92,7 +92,7 @@ public class CruiseControlST extends AbstractST {
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), defaultBrokerReplicaCount, defaultBrokerReplicaCount)
             .editMetadata()
-                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
+                .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .editOrNewSpec()
                 .editKafka()
@@ -113,11 +113,11 @@ public class CruiseControlST extends AbstractST {
             .endSpec()
             .build());
 
-        String ccPodName = kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, CruiseControlResources.componentName(testStorage.getClusterName())).get(0).getMetadata().getName();
-        Container container = (Container) KubeClusterResource.kubeClient(Environment.TEST_SUITE_NAMESPACE).getPod(Environment.TEST_SUITE_NAMESPACE, ccPodName).getSpec().getContainers().stream().filter(c -> c.getName().equals("cruise-control")).findFirst().get();
+        String ccPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName())).get(0).getMetadata().getName();
+        Container container = (Container) KubeClusterResource.kubeClient(testStorage.getNamespaceName()).getPod(testStorage.getNamespaceName(), ccPodName).getSpec().getContainers().stream().filter(c -> c.getName().equals("cruise-control")).findFirst().get();
         assertThat(container.getResources().getLimits().get("memory"), is(new Quantity("300Mi")));
         assertThat(container.getResources().getRequests().get("memory"), is(new Quantity("300Mi")));
-        VerificationUtils.assertJvmOptions(Environment.TEST_SUITE_NAMESPACE, ccPodName, "cruise-control",
+        VerificationUtils.assertJvmOptions(testStorage.getNamespaceName(), ccPodName, "cruise-control",
                 "-Xmx200M", "-Xms128M", "-XX:+UseG1GC");
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
@@ -143,9 +143,6 @@ public class CruiseControlST extends AbstractST {
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3)
-                .editMetadata()
-                  .withNamespace(Environment.TEST_SUITE_NAMESPACE)
-                .endMetadata()
                 .editOrNewSpec()
                     .editCruiseControl()
                         .addToConfig("webserver.security.enable", "false")
@@ -175,38 +172,38 @@ public class CruiseControlST extends AbstractST {
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 3)
-                .editMetadata()
-                    .withNamespace(Environment.TEST_SUITE_NAMESPACE)
-                .endMetadata()
-                .build());
+            .editOrNewMetadata()
+                .withNamespace(testStorage.getNamespaceName())
+            .endMetadata()
+            .build());
         resourceManager.createResourceWithoutWait(KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
-                .editMetadata()
-                    .withNamespace(Environment.TEST_SUITE_NAMESPACE)
-                .endMetadata()
-                .build());
+            .editOrNewMetadata()
+                .withNamespace(testStorage.getNamespaceName())
+            .endMetadata()
+            .build());
 
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), KafkaRebalanceState.NotReady);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceState.NotReady);
 
-        Map<String, String> brokerPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector());
+        Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
         // CruiseControl spec is now enabled
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             // Get default CC spec with tune options and set it to existing Kafka
             Kafka kafkaUpdated = KafkaTemplates.kafkaWithCruiseControlTunedForFastModelGeneration(testStorage.getClusterName(), 3, 3).build();
             kafka.getSpec().setCruiseControl(kafkaUpdated.getSpec().getCruiseControl());
             kafka.getSpec().setKafka(kafkaUpdated.getSpec().getKafka());
-        }, Environment.TEST_SUITE_NAMESPACE);
+        });
 
-        RollingUpdateUtils.waitTillComponentHasRolled(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector(), 3, brokerPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
 
-        KafkaRebalanceUtils.doRebalancingProcess(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName());
+        KafkaRebalanceUtils.doRebalancingProcess(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         LOGGER.info("Annotating KafkaRebalance: {} with 'refresh' anno", testStorage.getClusterName());
-        KafkaRebalanceUtils.annotateKafkaRebalanceResource(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), KafkaRebalanceAnnotation.refresh);
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), KafkaRebalanceState.ProposalReady);
+        KafkaRebalanceUtils.annotateKafkaRebalanceResource(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceAnnotation.refresh);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceState.ProposalReady);
 
         LOGGER.info("Trying rebalancing process again");
-        KafkaRebalanceUtils.doRebalancingProcess(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName());
+        KafkaRebalanceUtils.doRebalancingProcess(testStorage.getNamespaceName(), testStorage.getClusterName());
     }
 
     @IsolatedTest
@@ -215,28 +212,32 @@ public class CruiseControlST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPool(clusterOperator.getDeploymentNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-                KafkaNodePoolTemplates.controllerPool(clusterOperator.getDeploymentNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
             )
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 1).build());
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 1)
+            .editOrNewMetadata()
+                .withNamespace(testStorage.getNamespaceName())
+            .endMetadata()
+            .build());
 
         resourceManager.createResourceWithWait(KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
-                .editMetadata()
-                    .withNamespace(clusterOperator.getDeploymentNamespace())
-                .endMetadata()
-                .build());
+            .editOrNewMetadata()
+                .withNamespace(testStorage.getNamespaceName())
+            .endMetadata()
+            .build());
 
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterOperator.getDeploymentNamespace(), testStorage.getClusterName(), KafkaRebalanceState.ProposalReady);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceState.ProposalReady);
 
         LOGGER.info("Annotating KafkaRebalance: {} with 'approve' anno", testStorage.getClusterName());
-        KafkaRebalanceUtils.annotateKafkaRebalanceResource(clusterOperator.getDeploymentNamespace(), testStorage.getClusterName(), KafkaRebalanceAnnotation.approve);
+        KafkaRebalanceUtils.annotateKafkaRebalanceResource(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceAnnotation.approve);
 
         // updating the KafkaRebalance resource by configuring replication throttle
-        KafkaRebalanceResource.replaceKafkaRebalanceResourceInSpecificNamespace(testStorage.getClusterName(), kafkaRebalance -> kafkaRebalance.getSpec().setReplicationThrottle(100000), clusterOperator.getDeploymentNamespace());
+        KafkaRebalanceResource.replaceKafkaRebalanceResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaRebalance -> kafkaRebalance.getSpec().setReplicationThrottle(100000));
 
         // the resource moved to `ProposalReady` state
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterOperator.getDeploymentNamespace(), testStorage.getClusterName(), KafkaRebalanceState.ProposalReady);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceState.ProposalReady);
     }
 
     @ParallelNamespaceTest
@@ -267,10 +268,10 @@ public class CruiseControlST extends AbstractST {
         int scaleTo = 3;
 
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getBrokerPoolName(), knp ->
-                knp.getSpec().setReplicas(scaleTo), testStorage.getNamespaceName());
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp ->
+                knp.getSpec().setReplicas(scaleTo));
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setReplicas(3), testStorage.getNamespaceName());
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setReplicas(3));
         }
         KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
@@ -348,10 +349,10 @@ public class CruiseControlST extends AbstractST {
         Map<String, Object> ccConfigMap = new HashMap<>();
         ccConfigMap.put(replicaMovementStrategies, newReplicaMovementStrategies);
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             LOGGER.info("Set non-default CruiseControl replicaMovementStrategies to KafkaRebalance resource");
             kafka.getSpec().getCruiseControl().setConfig(ccConfigMap);
-        }, testStorage.getNamespaceName());
+        });
 
         LOGGER.info("Verifying that CC Pod is rolling, because of change size of disk");
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName()), 1, kafkaRebalanceSnapshot);
@@ -412,7 +413,7 @@ public class CruiseControlST extends AbstractST {
     @IsolatedTest
     @MixedRoleNotSupported("Scaling a Kafka Node Pool with mixed roles is not supported yet")
     void testCruiseControlDuringBrokerScaleUpAndDown() {
-        TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
+        TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int initialReplicas = 3;
         final int scaleTo = 5;
 
@@ -429,7 +430,11 @@ public class CruiseControlST extends AbstractST {
 
         );
         resourceManager.createResourceWithWait(
-            KafkaTemplates.kafkaWithCruiseControlTunedForFastModelGeneration(testStorage.getClusterName(), initialReplicas, initialReplicas).build(),
+            KafkaTemplates.kafkaWithCruiseControlTunedForFastModelGeneration(testStorage.getClusterName(), initialReplicas, initialReplicas)
+                .editOrNewMetadata()
+                    .withNamespace(testStorage.getNamespaceName())
+                .endMetadata()
+            .build(),
             KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTopicName(), 10, 3).build(),
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
         );
@@ -438,10 +443,10 @@ public class CruiseControlST extends AbstractST {
 
         LOGGER.info("Scaling Kafka up to {}", scaleTo);
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getBrokerPoolName(), knp ->
-                knp.getSpec().setReplicas(scaleTo), testStorage.getNamespaceName());
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp ->
+                knp.getSpec().setReplicas(scaleTo));
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setReplicas(scaleTo), testStorage.getNamespaceName());
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setReplicas(scaleTo));
         }
 
         RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), scaleTo);
@@ -451,6 +456,9 @@ public class CruiseControlST extends AbstractST {
         // when using add_brokers mode, we can hit `ProposalReady` right after KR creation - that's why `waitReady` is set to `false` here
         resourceManager.createResourceWithoutWait(
             KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
+                .editOrNewMetadata()
+                    .withNamespace(testStorage.getNamespaceName())
+                .endMetadata()
                 .editOrNewSpec()
                     .withMode(KafkaRebalanceMode.ADD_BROKERS)
                     .withBrokers(3, 4)
@@ -471,6 +479,9 @@ public class CruiseControlST extends AbstractST {
         // when using remove_brokers mode, we can hit `ProposalReady` right after KR creation - that's why `waitReady` is set to `false` here
         resourceManager.createResourceWithoutWait(
             KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
+                .editOrNewMetadata()
+                    .withNamespace(testStorage.getNamespaceName())
+                .endMetadata()
                 .editOrNewSpec()
                     .withMode(KafkaRebalanceMode.REMOVE_BROKERS)
                     .withBrokers(3, 4)
@@ -488,10 +499,10 @@ public class CruiseControlST extends AbstractST {
         LOGGER.info("Scaling Kafka down to {}", initialReplicas);
 
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getBrokerPoolName(), knp ->
-                knp.getSpec().setReplicas(initialReplicas), testStorage.getNamespaceName());
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp ->
+                knp.getSpec().setReplicas(initialReplicas));
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setReplicas(initialReplicas), testStorage.getNamespaceName());
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setReplicas(initialReplicas));
         }
 
         RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), initialReplicas);

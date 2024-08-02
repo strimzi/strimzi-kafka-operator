@@ -216,9 +216,9 @@ public class KafkaNodePoolST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasStartedRolling(testStorage.getNamespaceName(), volatilePoolLabelSelector, volatilePoolPodsSnapshot);
 
         LOGGER.info("Change role in {}/{}, from mixed to broker only resulting in revert", testStorage.getNamespaceName(), volatileRolePoolName);
-        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(volatileRolePoolName, knp -> {
+        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), volatileRolePoolName, knp -> {
             knp.getSpec().setRoles(List.of(ProcessRoles.CONTROLLER));
-        }, testStorage.getNamespaceName());
+        });
 
         LOGGER.info("Wait for warning message in Kafka {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getClusterName(), testStorage.getNamespaceName(), ".*Reverting role change.*");
@@ -236,9 +236,9 @@ public class KafkaNodePoolST extends AbstractST {
         volatilePoolPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), volatilePoolLabelSelector, 3, volatilePoolPodsSnapshot);
 
         LOGGER.info("Change role in {}/{}, from broker only to mixed", testStorage.getNamespaceName(), volatileRolePoolName);
-        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(volatileRolePoolName, knp -> {
+        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), volatileRolePoolName, knp -> {
             knp.getSpec().setRoles(List.of(ProcessRoles.CONTROLLER, ProcessRoles.BROKER));
-        }, testStorage.getNamespaceName());
+        });
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), volatilePoolLabelSelector, 3, volatilePoolPodsSnapshot);
 
         transmitMessagesWithNewTopicAndClean(testStorage, 5);

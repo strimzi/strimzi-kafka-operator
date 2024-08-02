@@ -124,7 +124,7 @@ public class ClientUtils {
     }
 
     public static void waitForClientSuccess(String namespace, String jobName, int messageCount) {
-        waitForClientSuccess(jobName, namespace, messageCount, true);
+        waitForClientSuccess(namespace, jobName, messageCount, true);
     }
 
     public static void waitForClientSuccess(String namespace, String jobName, int messageCount, boolean deleteAfterSuccess) {

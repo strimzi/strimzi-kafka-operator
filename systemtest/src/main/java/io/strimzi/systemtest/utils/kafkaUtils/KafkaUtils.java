@@ -74,16 +74,16 @@ public class KafkaUtils {
 
     private KafkaUtils() {}
 
-    public static boolean waitForKafkaReady(String namespaceName, String clusterName) {
-        return waitForKafkaStatus(namespaceName, clusterName, Ready);
+    public static boolean waitForKafkaReady(String namespace, String clusterName) {
+        return waitForKafkaStatus(namespace, clusterName, Ready);
     }
 
-    public static boolean waitForKafkaNotReady(String namespaceName, String clusterName) {
-        return waitForKafkaStatus(namespaceName, clusterName, NotReady);
+    public static boolean waitForKafkaNotReady(String namespace, String clusterName) {
+        return waitForKafkaStatus(namespace, clusterName, NotReady);
     }
 
-    public static boolean waitForKafkaStatus(String namespaceName, String clusterName, Enum<?>  state) {
-        Kafka kafka = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get();
+    public static boolean waitForKafkaStatus(String namespace, String clusterName, Enum<?>  state) {
+        Kafka kafka = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get();
         return ResourceManager.waitForResourceStatus(KafkaResource.kafkaClient(), kafka, state);
     }
 
@@ -91,13 +91,13 @@ public class KafkaUtils {
      * Waits for the Kafka Status to be updated after changed. It checks the generation and observed generation to
      * ensure the status is up to date.
      *
-     * @param namespaceName Namespace name
+     * @param namespace Namespace name
      * @param clusterName   Name of the Kafka cluster which should be checked
      */
-    public static void waitForKafkaStatusUpdate(String namespaceName, String clusterName) {
+    public static void waitForKafkaStatusUpdate(String namespace, String clusterName) {
         LOGGER.info("Waiting for Kafka status to be updated");
         TestUtils.waitFor("Kafka status to be updated", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT, () -> {
-            Kafka k = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get();
+            Kafka k = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get();
             return k.getMetadata().getGeneration() == k.getStatus().getObservedGeneration();
         });
     }
@@ -128,7 +128,7 @@ public class KafkaUtils {
         waitUntilKafkaStatusConditionContainsMessage(clusterName, namespace, pattern, TestConstants.GLOBAL_STATUS_TIMEOUT);
     }
 
-    public static void waitForZkMntr(String namespaceName, String clusterName, Pattern pattern, int... podIndexes) {
+    public static void waitForZkMntr(String namespace, String clusterName, Pattern pattern, int... podIndexes) {
         long timeoutMs = 120_000L;
         long pollMs = 1_000L;
 
@@ -137,7 +137,7 @@ public class KafkaUtils {
             String zookeeperPort = String.valueOf(12181);
             waitFor("mntr", pollMs, timeoutMs, () -> {
                     try {
-                        String output = cmdKubeClient(namespaceName).execInPod(zookeeperPod,
+                        String output = cmdKubeClient(namespace).execInPod(zookeeperPod,
                             "/bin/bash", "-c", "echo mntr | nc localhost " + zookeeperPort).out();
 
                         if (pattern.matcher(output).find()) {
@@ -151,7 +151,7 @@ public class KafkaUtils {
                 () -> LOGGER.info("ZooKeeper `mntr` output at the point of timeout does not match {}:{}{}",
                     pattern.pattern(),
                     System.lineSeparator(),
-                    indent(cmdKubeClient(namespaceName).execInPod(zookeeperPod, "/bin/bash", "-c", "echo mntr | nc localhost " + zookeeperPort).out()))
+                    indent(cmdKubeClient(namespace).execInPod(zookeeperPod, "/bin/bash", "-c", "echo mntr | nc localhost " + zookeeperPort).out()))
             );
         }
     }
@@ -168,9 +168,9 @@ public class KafkaUtils {
         return certs;
     }
 
-    public static String getKafkaSecretCertificates(String namespaceName, String secretName, String certType) {
+    public static String getKafkaSecretCertificates(String namespace, String secretName, String certType) {
         String secretCerts = "";
-        secretCerts = kubeClient(namespaceName).getSecret(namespaceName, secretName).getData().get(certType);
+        secretCerts = kubeClient(namespace).getSecret(namespace, secretName).getData().get(certType);
         return Util.decodeFromBase64(secretCerts, Charset.defaultCharset());
     }
 
@@ -180,7 +180,7 @@ public class KafkaUtils {
     }
 
     @SuppressWarnings("unchecked")
-    public static void waitForClusterStability(String namespaceName, String clusterName) {
+    public static void waitForClusterStability(String namespace, String clusterName) {
         LabelSelector brokerSelector = KafkaResource.getLabelSelector(clusterName, kafkaComponentName(clusterName));
         LabelSelector controllerSelector = KafkaResource.getLabelSelector(clusterName, zookeeperComponentName(clusterName));
 
@@ -192,13 +192,13 @@ public class KafkaUtils {
 
         int[] count = {0};
 
-        brokerPods[0] = PodUtils.podSnapshot(namespaceName, brokerSelector);
-        controllerPods[0] = PodUtils.podSnapshot(namespaceName, controllerSelector);
-        eoPods[0] = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
+        brokerPods[0] = PodUtils.podSnapshot(namespace, brokerSelector);
+        controllerPods[0] = PodUtils.podSnapshot(namespace, controllerSelector);
+        eoPods[0] = DeploymentUtils.depSnapshot(namespace, KafkaResources.entityOperatorDeploymentName(clusterName));
 
         TestUtils.waitFor("Cluster to be stable and ready", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
-            Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(namespaceName, brokerSelector);
-            Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
+            Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(namespace, brokerSelector);
+            Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(namespace, KafkaResources.entityOperatorDeploymentName(clusterName));
             boolean kafkaSameAsLast = kafkaSnapshot.equals(brokerPods[0]);
             boolean eoSameAsLast = eoSnapshot.equals(eoPods[0]);
 
@@ -210,7 +210,7 @@ public class KafkaUtils {
             }
 
             if (!Environment.isKRaftModeEnabled()) {
-                Map<String, String> zkSnapshot = PodUtils.podSnapshot(namespaceName, controllerSelector);
+                Map<String, String> zkSnapshot = PodUtils.podSnapshot(namespace, controllerSelector);
 
                 boolean zkSameAsLast = zkSnapshot.equals(controllerPods[0]);
 
@@ -248,53 +248,53 @@ public class KafkaUtils {
 
     /**
      * Method which, update/replace Kafka configuration
-     * @param namespaceName name of the namespace
+     * @param namespace name of the namespace
      * @param clusterName name of the cluster where Kafka resource can be found
      * @param brokerConfigName key of specific property
      * @param value value of specific property
      */
-    public static void updateSpecificConfiguration(final String namespaceName, String clusterName, String brokerConfigName, Object value) {
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
+    public static void updateSpecificConfiguration(final String namespace, String clusterName, String brokerConfigName, Object value) {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(namespace, clusterName, kafka -> {
             LOGGER.info("Kafka config before updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
             Map<String, Object> config = kafka.getSpec().getKafka().getConfig();
             config.put(brokerConfigName, value);
             kafka.getSpec().getKafka().setConfig(config);
             LOGGER.info("Kafka config after updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
-        }, namespaceName);
+        });
     }
 
     /**
      * Method which, extends the @link updateConfiguration(String clusterName, KafkaConfiguration kafkaConfiguration, Object value) method
      * with stability and ensures after update of Kafka resource there will be not rolling update
-     * @param namespaceName Namespace name
+     * @param namespace Namespace name
      * @param clusterName name of the cluster where Kafka resource can be found
      * @param brokerConfigName key of specific property
      * @param value value of specific property
      */
-    public static void  updateConfigurationWithStabilityWait(final String namespaceName, String clusterName, String brokerConfigName, Object value) {
-        updateSpecificConfiguration(namespaceName, clusterName, brokerConfigName, value);
-        waitForClusterStability(namespaceName, clusterName);
+    public static void  updateConfigurationWithStabilityWait(final String namespace, String clusterName, String brokerConfigName, Object value) {
+        updateSpecificConfiguration(namespace, clusterName, brokerConfigName, value);
+        waitForClusterStability(namespace, clusterName);
     }
 
     /**
      * Verifies that updated configuration was successfully changed inside Kafka CR
-     * @param namespaceName name of the namespace
+     * @param namespace name of the namespace
      * @param brokerConfigName key of specific property
      * @param value value of specific property
      */
-    public synchronized static boolean verifyCrDynamicConfiguration(final String namespaceName, String clusterName, String brokerConfigName, Object value) {
+    public synchronized static boolean verifyCrDynamicConfiguration(final String namespace, String clusterName, String brokerConfigName, Object value) {
         LOGGER.info("Dynamic Configuration in Kafka CR is {}={} and expected is {}={}",
             brokerConfigName,
-            KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getKafka().getConfig().get(brokerConfigName),
+            KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getConfig().get(brokerConfigName),
             brokerConfigName,
             value);
 
-        return KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getKafka().getConfig().get(brokerConfigName).equals(value);
+        return KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getConfig().get(brokerConfigName).equals(value);
     }
 
     /**
      * Verifies that updated configuration was successfully changed inside Kafka pods
-     * @param namespaceName name of the namespace
+     * @param namespace name of the namespace
      * @param kafkaPodNamePrefix prefix of Kafka pods
      * @param brokerConfigName key of specific property
      * @param value value of specific property
@@ -302,21 +302,21 @@ public class KafkaUtils {
      * true = if specific property match the excepted property
      * false = if specific property doesn't match the excepted property
      */
-    public synchronized static boolean verifyPodDynamicConfiguration(final String namespaceName, String scraperPodName, String bootstrapServer, String kafkaPodNamePrefix, String brokerConfigName, Object value) {
+    public synchronized static boolean verifyPodDynamicConfiguration(final String namespace, String scraperPodName, String bootstrapServer, String kafkaPodNamePrefix, String brokerConfigName, Object value) {
 
-        List<Pod> brokerPods = kubeClient().listPodsByPrefixInName(namespaceName, kafkaPodNamePrefix);
+        List<Pod> brokerPods = kubeClient().listPodsByPrefixInName(namespace, kafkaPodNamePrefix);
         int[] brokerId = {0};
 
         for (Pod pod : brokerPods) {
 
             TestUtils.waitFor("dyn.configuration to change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.RECONCILIATION_INTERVAL + Duration.ofSeconds(10).toMillis(),
                 () -> {
-                    String result = KafkaCmdClient.describeKafkaBrokerUsingPodCli(namespaceName, scraperPodName, bootstrapServer, brokerId[0]++);
+                    String result = KafkaCmdClient.describeKafkaBrokerUsingPodCli(namespace, scraperPodName, bootstrapServer, brokerId[0]++);
 
-                    LOGGER.debug("This dyn.configuration {} inside the Kafka Pod: {}/{}", result, namespaceName, pod.getMetadata().getName());
+                    LOGGER.debug("This dyn.configuration {} inside the Kafka Pod: {}/{}", result, namespace, pod.getMetadata().getName());
 
                     if (!result.contains(brokerConfigName + "=" + value)) {
-                        LOGGER.error("Kafka Pod: {}/{} doesn't contain {} with value {}", namespaceName, pod.getMetadata().getName(), brokerConfigName, value);
+                        LOGGER.error("Kafka Pod: {}/{} doesn't contain {} with value {}", namespace, pod.getMetadata().getName(), brokerConfigName, value);
                         LOGGER.error("Kafka configuration {}", result);
                         return false;
                     }
@@ -420,21 +420,21 @@ public class KafkaUtils {
         ).out().trim();
     }
 
-    public static void waitForKafkaDeletion(String namespaceName, String kafkaClusterName) {
-        LOGGER.info("Waiting for deletion of Kafka: {}/{}", namespaceName, kafkaClusterName);
-        TestUtils.waitFor("deletion of Kafka: " + namespaceName + "/" + kafkaClusterName, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
+    public static void waitForKafkaDeletion(String namespace, String kafkaClusterName) {
+        LOGGER.info("Waiting for deletion of Kafka: {}/{}", namespace, kafkaClusterName);
+        TestUtils.waitFor("deletion of Kafka: " + namespace + "/" + kafkaClusterName, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
             () -> {
-                if (KafkaResource.kafkaClient().inNamespace(namespaceName).withName(kafkaClusterName).get() == null &&
-                    StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(KafkaResources.kafkaComponentName(kafkaClusterName)).get() == null  &&
-                    StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(KafkaResources.zookeeperComponentName(kafkaClusterName)).get() == null  &&
-                    kubeClient(namespaceName).getDeployment(namespaceName, KafkaResources.entityOperatorDeploymentName(kafkaClusterName)) == null) {
+                if (KafkaResource.kafkaClient().inNamespace(namespace).withName(kafkaClusterName).get() == null &&
+                    StrimziPodSetResource.strimziPodSetClient().inNamespace(namespace).withName(KafkaResources.kafkaComponentName(kafkaClusterName)).get() == null  &&
+                    StrimziPodSetResource.strimziPodSetClient().inNamespace(namespace).withName(KafkaResources.zookeeperComponentName(kafkaClusterName)).get() == null  &&
+                    kubeClient(namespace).getDeployment(namespace, KafkaResources.entityOperatorDeploymentName(kafkaClusterName)) == null) {
                     return true;
                 } else {
-                    cmdKubeClient(namespaceName).deleteByName(Kafka.RESOURCE_KIND, kafkaClusterName);
+                    cmdKubeClient(namespace).deleteByName(Kafka.RESOURCE_KIND, kafkaClusterName);
                     return false;
                 }
             },
-            () -> LOGGER.info(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(kafkaClusterName).get()));
+            () -> LOGGER.info(KafkaResource.kafkaClient().inNamespace(namespace).withName(kafkaClusterName).get()));
     }
 
     public static String getKafkaTlsListenerCaCertName(String namespace, String clusterName, String listenerName) {
@@ -548,7 +548,7 @@ public class KafkaUtils {
         return namespacedBootstrapAddress(namespace, clusterName, 9092);
     }
 
-    public static String namespacedTlsBootstrapAddress(String clusterName, String namespace) {
+    public static String namespacedTlsBootstrapAddress(String namespace, String clusterName) {
         return namespacedBootstrapAddress(namespace, clusterName, 9093);
     }
 
@@ -557,9 +557,9 @@ public class KafkaUtils {
     }
 
 
-    public static String bootstrapAddressFromStatus(String namespaceName, String clusterName, String listenerName) {
+    public static String bootstrapAddressFromStatus(String namespace, String clusterName, String listenerName) {
 
-        List<ListenerStatus> listenerStatusList = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getListeners();
+        List<ListenerStatus> listenerStatusList = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getListeners();
 
         if (listenerStatusList == null || listenerStatusList.size() < 1) {
             LOGGER.error("There is no Kafka external listener specified in the Kafka CR Status");
@@ -575,23 +575,23 @@ public class KafkaUtils {
                 .getBootstrapServers();
     }
 
-    public static void annotateKafka(String namespaceName, String clusterName, Map<String, String> annotations) {
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> kafka.getMetadata().getAnnotations().putAll(annotations), namespaceName);
+    public static void annotateKafka(String namespace, String clusterName, Map<String, String> annotations) {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(namespace, clusterName, kafka -> kafka.getMetadata().getAnnotations().putAll(annotations));
     }
 
-    public static void removeAnnotation(String namespaceName, String clusterName, String annotationKey) {
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> kafka.getMetadata().getAnnotations().remove(annotationKey), namespaceName);
+    public static void removeAnnotation(String namespace, String clusterName, String annotationKey) {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(namespace, clusterName, kafka -> kafka.getMetadata().getAnnotations().remove(annotationKey));
     }
 
-    public static void waitUntilKafkaStatusContainsKafkaMetadataState(String namespaceName, String clusterName, KafkaMetadataState desiredKafkaMetadataState) {
+    public static void waitUntilKafkaStatusContainsKafkaMetadataState(String namespace, String clusterName, KafkaMetadataState desiredKafkaMetadataState) {
         TestUtils.waitFor(String.join("Kafka status to be contain kafkaMetadataState: %s", desiredKafkaMetadataState.name()), TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT, () -> {
-            Kafka k = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get();
+            Kafka k = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get();
             return k.getStatus().getKafkaMetadataState().equals(desiredKafkaMetadataState);
         });
     }
 
-    public static String getKafkaLogFolderNameInPod(String namespaceName, String kafkaPodName, String dataFolderName) {
-        return ResourceManager.cmdKubeClient().namespace(namespaceName)
+    public static String getKafkaLogFolderNameInPod(String namespace, String kafkaPodName, String dataFolderName) {
+        return ResourceManager.cmdKubeClient().namespace(namespace)
             .execInPod(kafkaPodName, "/bin/bash", "-c", "ls /var/lib/kafka/" + dataFolderName + " | grep \"kafka-log[0-9]\\+\" -o").out().trim();
     }
 

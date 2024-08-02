@@ -129,9 +129,9 @@ class UserST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(sharedTestStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(sharedTestStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        KafkaUserResource.replaceUserResourceInSpecificNamespace(testStorage.getKafkaUsername(), ku -> {
+        KafkaUserResource.replaceUserResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername(), ku -> {
             ku.getSpec().setAuthentication(new KafkaUserScramSha512ClientAuthentication());
-        }, Environment.TEST_SUITE_NAMESPACE);
+        });
 
         KafkaUserUtils.waitForKafkaUserIncreaseObserverGeneration(Environment.TEST_SUITE_NAMESPACE, observedGeneration, testStorage.getKafkaUsername());
         KafkaUserUtils.waitForKafkaUserCreation(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername());
@@ -397,7 +397,7 @@ class UserST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        KafkaUserResource.replaceUserResourceInSpecificNamespace(testStorage.getKafkaUsername(),
+        KafkaUserResource.replaceUserResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getKafkaUsername(),
             user -> {
                 user.getSpec().setAuthorization(new KafkaUserAuthorizationSimpleBuilder()
                         .addNewAcl()
@@ -408,7 +408,7 @@ class UserST extends AbstractST {
                             .withOperations(AclOperation.READ, AclOperation.DESCRIBE)
                         .endAcl()
                         .build());
-            }, testStorage.getNamespaceName());
+            });
 
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
 

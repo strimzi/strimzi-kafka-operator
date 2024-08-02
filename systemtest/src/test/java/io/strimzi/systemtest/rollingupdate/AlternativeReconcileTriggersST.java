@@ -198,7 +198,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         final Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             LOGGER.info("Adding new bootstrap dns: {} to external listeners", bootstrapDns);
             kafka.getSpec().getKafka()
                 .setListeners(asList(
@@ -220,7 +220,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
                         .endConfiguration()
                         .build()
                 ));
-        }, testStorage.getNamespaceName());
+        });
 
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
         KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName());
@@ -395,15 +395,16 @@ class AlternativeReconcileTriggersST extends AbstractST {
         LOGGER.info("Add JBOD volume to the Kafka cluster {}", testStorage.getBrokerComponentName());
 
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getBrokerPoolName(), kafkaNodePool -> {
-                JbodStorage storage = (JbodStorage) kafkaNodePool.getSpec().getStorage();
-                storage.getVolumes().add(vol1);
-            }, testStorage.getNamespaceName());
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(),
+                kafkaNodePool -> {
+                    JbodStorage storage = (JbodStorage) kafkaNodePool.getSpec().getStorage();
+                    storage.getVolumes().add(vol1);
+                });
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
                 JbodStorage storage = (JbodStorage) kafka.getSpec().getKafka().getStorage();
                 storage.getVolumes().add(vol1);
-            }, testStorage.getNamespaceName());
+            });
         }
 
         // Wait util it rolls
@@ -421,15 +422,15 @@ class AlternativeReconcileTriggersST extends AbstractST {
         LOGGER.info("Remove JBOD volume to the Kafka cluster {}", testStorage.getBrokerComponentName());
 
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getBrokerPoolName(), kafkaNodePool -> {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), kafkaNodePool -> {
                 JbodStorage storage = (JbodStorage) kafkaNodePool.getSpec().getStorage();
                 storage.getVolumes().remove(vol1);
-            }, testStorage.getNamespaceName());
+            });
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
                 JbodStorage storage = (JbodStorage) kafka.getSpec().getKafka().getStorage();
                 storage.getVolumes().remove(vol1);
-            }, testStorage.getNamespaceName());
+            });
         }
 
         // Wait util it rolls
@@ -555,15 +556,15 @@ class AlternativeReconcileTriggersST extends AbstractST {
         LOGGER.info("Remove JBOD volume (i.e., simulating disk failure for KRaft metadata volume) to the Kafka cluster {}", testStorage.getBrokerComponentName());
 
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getBrokerPoolName(), kafkaNodePool -> {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), kafkaNodePool -> {
                 JbodStorage storage = (JbodStorage) kafkaNodePool.getSpec().getStorage();
                 storage.getVolumes().remove(metadataVol);
-            }, testStorage.getNamespaceName());
+            });
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
                 JbodStorage storage = (JbodStorage) kafka.getSpec().getKafka().getStorage();
                 storage.getVolumes().remove(metadataVol);
-            }, testStorage.getNamespaceName());
+            });
         }
 
         // Wait util it rolls

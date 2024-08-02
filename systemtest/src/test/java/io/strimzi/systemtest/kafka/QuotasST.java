@@ -46,6 +46,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
  * To properly run this suite, you should use cluster with proper storage.
  */
 @Tag(QUOTAS_PLUGIN)
+@Tag(REGRESSION)
 public class QuotasST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(QuotasST.class);
 
@@ -132,7 +133,6 @@ public class QuotasST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
-    @Tag(REGRESSION)
     void testKafkaQuotasPluginWithBandwidthLimitation() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String excludedPrincipal = "User:" + testStorage.getUsername();

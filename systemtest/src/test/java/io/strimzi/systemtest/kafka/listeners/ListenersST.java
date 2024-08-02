@@ -453,7 +453,7 @@ public class ListenersST extends AbstractST {
 
         StUtils.waitUntilSupplierIsSatisfied("Kafka status contains proper data about listeners (check test log for more info)", () -> {
             // Check that Kafka status has correct addresses in NodePort external listener part
-            for (ListenerStatus listenerStatus : KafkaResource.getKafkaStatus(testStorage.getClusterName(), testStorage.getNamespaceName()).getListeners()) {
+            for (ListenerStatus listenerStatus : KafkaResource.getKafkaStatus(testStorage.getNamespaceName(), testStorage.getClusterName()).getListeners()) {
                 if (listenerStatus.getName().equals(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)) {
                     List<String> listStatusAddresses = listenerStatus.getAddresses().stream().map(ListenerAddress::getHost).sorted(Comparator.comparing(String::toString)).toList();
                     List<Integer> listStatusPorts = listenerStatus.getAddresses().stream().map(ListenerAddress::getPort).toList();
@@ -1395,7 +1395,7 @@ public class ListenersST extends AbstractST {
 
         Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setListeners(asList(
                     new GenericKafkaListenerBuilder()
                             .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
@@ -1425,7 +1425,7 @@ public class ListenersST extends AbstractST {
                             .endConfiguration()
                             .build()
             ));
-        }, testStorage.getNamespaceName());
+        });
 
         kafkaSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, kafkaSnapshot);
 
@@ -1506,7 +1506,7 @@ public class ListenersST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount() * 5);
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setListeners(asList(
                     new GenericKafkaListenerBuilder()
                             .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
@@ -1531,7 +1531,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .build()
             ));
-        }, testStorage.getNamespaceName());
+        });
 
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, kafkaSnapshot);
 
@@ -1654,7 +1654,7 @@ public class ListenersST extends AbstractST {
 
         Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setListeners(asList(
                     new GenericKafkaListenerBuilder()
                             .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
@@ -1683,7 +1683,7 @@ public class ListenersST extends AbstractST {
                             .endConfiguration()
                             .build()
             ));
-        }, testStorage.getNamespaceName());
+        });
 
         kafkaSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, kafkaSnapshot);
 
@@ -1767,7 +1767,7 @@ public class ListenersST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setListeners(asList(
                     new GenericKafkaListenerBuilder()
                             .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
@@ -1789,7 +1789,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .build()
             ));
-        }, testStorage.getNamespaceName());
+        });
 
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, kafkaSnapshot);
 
@@ -1909,7 +1909,7 @@ public class ListenersST extends AbstractST {
 
         Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setListeners(asList(
                     new GenericKafkaListenerBuilder()
                             .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
@@ -1938,7 +1938,7 @@ public class ListenersST extends AbstractST {
                             .endConfiguration()
                             .build()
             ));
-        }, testStorage.getNamespaceName());
+        });
 
         kafkaSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, kafkaSnapshot);
 
@@ -2028,7 +2028,7 @@ public class ListenersST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setListeners(asList(
                     new GenericKafkaListenerBuilder()
                             .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
@@ -2050,7 +2050,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .build()
             ));
-        }, testStorage.getNamespaceName());
+        });
 
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, kafkaSnapshot);
 

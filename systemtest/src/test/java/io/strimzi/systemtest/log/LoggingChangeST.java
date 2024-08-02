@@ -302,10 +302,10 @@ class LoggingChangeST extends AbstractST {
         LOGGER.info("Changing rootLogger level to DEBUG with inline logging");
         InlineLogging ilDebug = new InlineLogging();
         ilDebug.setLoggers(Collections.singletonMap("rootLogger.level", "DEBUG"));
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
             k.getSpec().getEntityOperator().getTopicOperator().setLogging(ilDebug);
             k.getSpec().getEntityOperator().getUserOperator().setLogging(ilDebug);
-        }, testStorage.getNamespaceName());
+        });
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
@@ -384,10 +384,10 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Setting log level of TO and UO to OFF - records should not appear in log");
         // change to external logging
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
             k.getSpec().getEntityOperator().getTopicOperator().setLogging(elTo);
             k.getSpec().getEntityOperator().getUserOperator().setLogging(elUo);
-        }, testStorage.getNamespaceName());
+        });
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
@@ -511,9 +511,9 @@ class LoggingChangeST extends AbstractST {
         loggers.put("logger.ready.level", "OFF");
         ilDebug.setLoggers(loggers);
 
-        KafkaBridgeResource.replaceBridgeResourceInSpecificNamespace(testStorage.getClusterName(), bridz -> {
-            bridz.getSpec().setLogging(ilDebug);
-        }, testStorage.getNamespaceName());
+        KafkaBridgeResource.replaceBridgeResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            bridz -> bridz.getSpec().setLogging(ilDebug)
+        );
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
@@ -574,9 +574,9 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Setting log level of Bridge to OFF - records should not appear in the log");
         // change to the external logging
-        KafkaBridgeResource.replaceBridgeResourceInSpecificNamespace(testStorage.getClusterName(), bridz -> {
-            bridz.getSpec().setLogging(bridgeXternalLogging);
-        }, testStorage.getNamespaceName());
+        KafkaBridgeResource.replaceBridgeResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            bridz -> bridz.getSpec().setLogging(bridgeXternalLogging)
+        );
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
@@ -756,9 +756,9 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Changing rootLogger level to DEBUG with inline logging");
         final InlineLogging inlineLoggingDebugLevel = new InlineLoggingBuilder().addToLoggers("connect.root.logger.level", "DEBUG").build();
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(), conn -> {
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), conn -> {
             conn.getSpec().setLogging(inlineLoggingDebugLevel);
-        }, testStorage.getNamespaceName());
+        });
 
         // check if lines from Logs contain messages with log level DEBUG
         Predicate<String> hasLogLevelDebug = connectLogs -> connectLogs != null && !connectLogs.isEmpty() && log4jPatternDebugLevel.matcher(connectLogs).find();
@@ -768,9 +768,9 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Changing rootLogger level from DEBUG to INFO with inline logging");
         final InlineLogging inlineLoggingInfoLevel = new InlineLoggingBuilder().addToLoggers("connect.root.logger.level", "INFO").build();
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(), conn -> {
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), conn -> {
             conn.getSpec().setLogging(inlineLoggingInfoLevel);
-        }, testStorage.getNamespaceName());
+        });
 
         // check if lines from Logs contain log Level INFO but no longer DEBUG
         final Predicate<String> hasLogLevelInfo = connectLogs -> connectLogs != null && !connectLogs.isEmpty() &&
@@ -817,9 +817,9 @@ class LoggingChangeST extends AbstractST {
         LOGGER.info("Setting log level of Connect to OFF");
 
         // change to the external logging
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(), conn -> {
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), conn -> {
             conn.getSpec().setLogging(connectXternalLogging);
-        }, testStorage.getNamespaceName());
+        });
 
         // check if there are no more new lines in Logs
         final Predicate<String> hasLogLevelOff = connectLogs -> connectLogs != null && connectLogs.isEmpty();
@@ -832,13 +832,12 @@ class LoggingChangeST extends AbstractST {
         final String connectDepName = KafkaConnectResources.componentName(testStorage.getClusterName());
 
         // set use connector resource to false
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(), kC -> {
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kC -> {
             final Map<String, String> annotations = kC.getMetadata().getAnnotations();
-
             annotations.put(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "false");
 
             kC.getMetadata().setAnnotations(annotations);
-        }, testStorage.getNamespaceName());
+        });
 
         // KafkaConnect should roll because of change in annotation
         StUtils.waitTillStrimziPodSetOrDeploymentRolled(testStorage.getNamespaceName(), connectDepName, connectReplicas, connectPods, testStorage.getKafkaConnectSelector());
@@ -848,8 +847,8 @@ class LoggingChangeST extends AbstractST {
         LOGGER.info("Changing rootLogger level from INFO to DEBUG with inline logging");
         StUtils.waitUntilSupplierIsSatisfied("Changing rootLogger level from INFO to DEBUG with inline logging",
             () -> {
-                KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(),
-                    kC -> kC.getSpec().setLogging(inlineLoggingDebugLevel), testStorage.getNamespaceName());
+                KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+                    kC -> kC.getSpec().setLogging(inlineLoggingDebugLevel));
                 return true;
             });
         // KafkaConnect should roll because of rootLogger level change with STRIMZI_IO_USE_CONNECTOR_RESOURCES set to `false`
@@ -918,9 +917,9 @@ class LoggingChangeST extends AbstractST {
         LOGGER.info("Changing rootLogger level to DEBUG with inline logging");
         InlineLogging ilDebug = new InlineLogging();
         ilDebug.setLoggers(Collections.singletonMap("kafka.root.logger.level", "DEBUG"));
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
             k.getSpec().getKafka().setLogging(ilDebug);
-        }, testStorage.getNamespaceName());
+        });
 
         LOGGER.info("Waiting for dynamic change in the Kafka Pod");
         TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
@@ -975,9 +974,9 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Setting log level of Kafka INFO");
         // change to external logging
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
             k.getSpec().getKafka().setLogging(elKafka);
-        }, testStorage.getNamespaceName());
+        });
 
         LOGGER.info("Waiting for dynamic change in the Kafka Pod");
         TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
@@ -1022,9 +1021,9 @@ class LoggingChangeST extends AbstractST {
         InlineLogging il = new InlineLogging();
         il.setLoggers(Collections.singletonMap("log4j.logger.paprika", "INFO"));
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
             k.getSpec().getKafka().setLogging(il);
-        }, testStorage.getNamespaceName());
+        });
 
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), brokerPods);
         TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
@@ -1048,9 +1047,9 @@ class LoggingChangeST extends AbstractST {
         InlineLogging il = new InlineLogging();
         il.setLoggers(Collections.singletonMap("kafka.root.logger.level", "PAPRIKA"));
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
             k.getSpec().getKafka().setLogging(il);
-        }, testStorage.getNamespaceName());
+        });
 
         RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), brokerPods);
         assertThat("Kafka Pod should not roll", RollingUpdateUtils.componentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), brokerPods), is(false));
@@ -1236,9 +1235,7 @@ class LoggingChangeST extends AbstractST {
         loggers.put("connect.root.logger.level", "DEBUG");
         ilDebug.setLoggers(loggers);
 
-        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getClusterName(), mm2 -> {
-            mm2.getSpec().setLogging(ilDebug);
-        }, testStorage.getNamespaceName());
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), mm2 -> mm2.getSpec().setLogging(ilDebug));
 
         LOGGER.info("Waiting for log4j.properties will contain desired settings");
         TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
@@ -1285,9 +1282,7 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Setting log level of MirrorMaker2 to OFF");
         // change to the external logging
-        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getClusterName(), mm2 -> {
-            mm2.getSpec().setLogging(mm2XternalLogging);
-        }, testStorage.getNamespaceName());
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), mm2 -> mm2.getSpec().setLogging(mm2XternalLogging));
 
         TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPod(kafkaMM2PodName, "curl", mm2LogCheckCmd).out().contains("OFF")
@@ -1465,7 +1460,7 @@ class LoggingChangeST extends AbstractST {
         assertTrue(log4jFile.contains(cmData));
 
         LOGGER.info("Changing external logging's CM to not existing one");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setLogging(
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setLogging(
             new ExternalLoggingBuilder()
                 .withNewValueFrom()
                     .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder()
@@ -1474,7 +1469,7 @@ class LoggingChangeST extends AbstractST {
                             .withOptional(false)
                             .build())
                 .endValueFrom()
-                .build()), testStorage.getNamespaceName());
+                .build()));
 
         RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), brokerPods);
 
@@ -1534,7 +1529,7 @@ class LoggingChangeST extends AbstractST {
         InlineLogging inlineError = new InlineLogging();
         inlineError.setLoggers(Collections.singletonMap("log4j.logger." + connectorClassName, "ERROR"));
 
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(), kc -> kc.getSpec().setLogging(inlineError), testStorage.getNamespaceName());
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kc -> kc.getSpec().setLogging(inlineError));
 
         LOGGER.info("Waiting for Connect API loggers will contain desired settings");
         TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
@@ -1562,7 +1557,7 @@ class LoggingChangeST extends AbstractST {
 
         inlineWarn.setLoggers(Map.of("connect.root.logger.level", "WARN", "log4j.logger." + connectorClassName, "ERROR"));
 
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(), kc -> kc.getSpec().setLogging(inlineWarn), testStorage.getNamespaceName());
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kc -> kc.getSpec().setLogging(inlineWarn));
 
         TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPod(scraperPodName, "curl",
@@ -1642,7 +1637,7 @@ class LoggingChangeST extends AbstractST {
 
         kubeClient().createConfigMapInNamespace(testStorage.getNamespaceName(), configMapLoggers);
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setLogging(new ExternalLoggingBuilder()
                 .withNewValueFrom()
                 .withConfigMapKeyRef(log4jLoggimgCMselector)
@@ -1655,7 +1650,7 @@ class LoggingChangeST extends AbstractST {
                     .endValueFrom()
                     .build());
             }
-        }, testStorage.getNamespaceName());
+        });
 
         if (!Environment.isKRaftModeEnabled()) {
             LOGGER.info("Waiting for Zookeeper pods to roll after change in logging");

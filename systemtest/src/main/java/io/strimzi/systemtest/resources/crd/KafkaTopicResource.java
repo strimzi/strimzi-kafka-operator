@@ -46,7 +46,7 @@ public class KafkaTopicResource implements ResourceType<KafkaTopic> {
 
     @Override
     public boolean waitForReadiness(KafkaTopic resource) {
-        return ResourceManager.waitForResourceStatus(kafkaTopicClient(), resource.getKind(), resource.getMetadata().getNamespace(),
+        return ResourceManager.waitForResourceStatus(resource.getMetadata().getNamespace(), kafkaTopicClient(), resource.getKind(),
             resource.getMetadata().getName(), CustomResourceStatus.Ready, ResourceOperation.getTimeoutForResourceReadiness(resource.getKind()));
     }
 
@@ -54,18 +54,18 @@ public class KafkaTopicResource implements ResourceType<KafkaTopic> {
         return Crds.topicOperation(ResourceManager.kubeClient().getClient());
     }
 
-    public static void replaceTopicResourceInSpecificNamespace(String resourceName, Consumer<KafkaTopic> editor, String namespaceName) {
-        ResourceManager.replaceCrdResource(KafkaTopic.class, KafkaTopicList.class, resourceName, editor, namespaceName);
+    public static void replaceTopicResourceInSpecificNamespace(String namespace, String resourceName, Consumer<KafkaTopic> editor) {
+        ResourceManager.replaceCrdResource(namespace, KafkaTopic.class, KafkaTopicList.class, resourceName, editor);
     }
 
     /**
      * Retrieves a KafkaTopic object from the Kubernetes API.
      *
-     * @param namespaceName     The Kubernetes namespace in which the KafkaTopic resides.
+     * @param namespace     The Kubernetes namespace in which the KafkaTopic resides.
      * @param topicName         The name of the KafkaTopic to retrieve.
      * @return                  KafkaTopic The KafkaTopic object if found, otherwise null.
      */
-    public static KafkaTopic getKafkaTopic(String namespaceName, String topicName) {
-        return KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get();
+    public static KafkaTopic getKafkaTopic(String namespace, String topicName) {
+        return KafkaTopicResource.kafkaTopicClient().inNamespace(namespace).withName(topicName).get();
     }
 }

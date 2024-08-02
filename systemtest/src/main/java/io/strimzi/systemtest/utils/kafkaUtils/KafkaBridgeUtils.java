@@ -40,21 +40,21 @@ public class KafkaBridgeUtils {
 
     /**
      * Wait until KafkaBridge is in desired state
-     * @param namespaceName Namespace name
+     * @param namespace Namespace name
      * @param clusterName name of KafkaBridge cluster
      * @param state desired state
      */
-    public static boolean waitForKafkaBridgeStatus(String namespaceName, String clusterName, Enum<?> state) {
-        KafkaBridge kafkaBridge = kafkaBridgeClient().inNamespace(namespaceName).withName(clusterName).get();
-        return ResourceManager.waitForResourceStatus(kafkaBridgeClient(), kafkaBridge.getKind(), namespaceName,
+    public static boolean waitForKafkaBridgeStatus(String namespace, String clusterName, Enum<?> state) {
+        KafkaBridge kafkaBridge = kafkaBridgeClient().inNamespace(namespace).withName(clusterName).get();
+        return ResourceManager.waitForResourceStatus(namespace, kafkaBridgeClient(), kafkaBridge.getKind(),
             kafkaBridge.getMetadata().getName(), state, ResourceOperation.getTimeoutForResourceReadiness(kafkaBridge.getKind()));
     }
 
-    public static boolean waitForKafkaBridgeReady(String namespaceName, String clusterName) {
-        return waitForKafkaBridgeStatus(namespaceName, clusterName, Ready);
+    public static boolean waitForKafkaBridgeReady(String namespace, String clusterName) {
+        return waitForKafkaBridgeStatus(namespace, clusterName, Ready);
     }
 
-    public static boolean waitForKafkaBridgeNotReady(final String namespaceName, String clusterName) {
-        return waitForKafkaBridgeStatus(namespaceName, clusterName, NotReady);
+    public static boolean waitForKafkaBridgeNotReady(final String namespace, String clusterName) {
+        return waitForKafkaBridgeStatus(namespace, clusterName, NotReady);
     }
 }

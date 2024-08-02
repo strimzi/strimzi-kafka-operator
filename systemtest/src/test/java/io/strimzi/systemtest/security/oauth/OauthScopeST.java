@@ -182,7 +182,7 @@ public class OauthScopeST extends OauthAbstractST {
         Map<String, String> brokerPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, brokerSelector);
 
         // re-configuring Kafka listener to have client scope assigned to null
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(oauthClusterName, kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafka -> {
             List<GenericKafkaListener> scopeListeners = kafka.getSpec().getKafka().getListeners()
                 .stream()
                 .filter(listener -> listener.getName().equals(scopeListener))
@@ -190,7 +190,7 @@ public class OauthScopeST extends OauthAbstractST {
 
             ((KafkaListenerAuthenticationOAuth) scopeListeners.get(0).getAuth()).setClientScope(null);
             kafka.getSpec().getKafka().getListeners().set(0, scopeListeners.get(0));
-        }, Environment.TEST_SUITE_NAMESPACE);
+        });
 
         brokerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Environment.TEST_SUITE_NAMESPACE, brokerSelector, 3, brokerPods);
 
@@ -206,7 +206,7 @@ public class OauthScopeST extends OauthAbstractST {
 
         // rollback previous configuration
         // re-configuring Kafka listener to have client scope assigned to 'test'
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(oauthClusterName, kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafka -> {
             List<GenericKafkaListener> scopeListeners = kafka.getSpec().getKafka().getListeners()
                 .stream()
                 .filter(listener -> listener.getName().equals(scopeListener))
@@ -214,7 +214,7 @@ public class OauthScopeST extends OauthAbstractST {
 
             ((KafkaListenerAuthenticationOAuth) scopeListeners.get(0).getAuth()).setClientScope("test");
             kafka.getSpec().getKafka().getListeners().set(0, scopeListeners.get(0));
-        }, Environment.TEST_SUITE_NAMESPACE);
+        });
 
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Environment.TEST_SUITE_NAMESPACE, brokerSelector, 3, brokerPods);
     }

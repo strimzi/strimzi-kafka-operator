@@ -275,8 +275,8 @@ public class MigrationST extends AbstractST {
         doFirstPartOfRollback(testStorage, deleteCoDuringProcess);
 
         LOGGER.info("Applying the {} annotation with value: {}", Annotations.ANNO_STRIMZI_IO_KRAFT, "migration");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
-            kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "migration"), testStorage.getNamespaceName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "migration"));
 
         moveToKRaftPostMigrationState(testStorage, postMigrationTopicName + "-2");
         doSecondPartOfMigration(testStorage, deleteCoDuringProcess, zkDeleteClaim);
@@ -469,8 +469,8 @@ public class MigrationST extends AbstractST {
             .build());
 
         LOGGER.info("Applying the {} annotation with value: {}", Annotations.ANNO_STRIMZI_IO_KRAFT, "migration");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
-            kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "migration"), testStorage.getNamespaceName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "migration"));
 
         LOGGER.info("Waiting for controller Pods to be up and running");
         PodUtils.waitForPodsReady(testStorage.getNamespaceName(), controllerSelector, 3, true);
@@ -514,8 +514,8 @@ public class MigrationST extends AbstractST {
 
     private void doSecondPartOfMigration(TestStorage testStorage, boolean deleteCoDuringProcess, boolean zkDeleteClaim) {
         LOGGER.info("Finishing migration - applying the {} annotation with value: {}, controllers should be rolled", Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
-            kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"), testStorage.getNamespaceName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"));
 
         if (deleteCoDuringProcess) {
             LOGGER.info("Waiting for first controller Pod starts with rolling update, so CO can be deleted");
@@ -536,10 +536,10 @@ public class MigrationST extends AbstractST {
 
         // the configuration of LMFV and IBPV is done (encapsulated) inside the KafkaTemplates.kafkaPersistent() method
         LOGGER.info("Removing LMFV and IBPV from Kafka config -> Brokers and Controllers should be rolled");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().getConfig().remove("log.message.format.version");
             kafka.getSpec().getKafka().getConfig().remove("inter.broker.protocol.version");
-        }, testStorage.getNamespaceName());
+        });
 
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), brokerSelector, 3, brokerPodsSnapshot);
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), controllerSelector, 3, controllerPodsSnapshot);
@@ -562,8 +562,8 @@ public class MigrationST extends AbstractST {
         LOGGER.info("From {} state we are going to roll back to ZK", KafkaMetadataState.KRaftPostMigration.name());
 
         LOGGER.info("Rolling migration back - applying the {} annotation with value: {}", Annotations.ANNO_STRIMZI_IO_KRAFT, "rollback");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
-            kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "rollback"), testStorage.getNamespaceName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "rollback"));
 
         if (deleteCoDuringProcess) {
             LOGGER.info("Waiting for first broker Pod starts with rolling update, so CO can be deleted");
@@ -585,8 +585,8 @@ public class MigrationST extends AbstractST {
         resourceManager.deleteResource(controllerPool);
 
         LOGGER.info("Finishing the rollback - applying the {} annotation with value: {}", Annotations.ANNO_STRIMZI_IO_KRAFT, "disabled");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
-            kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "disabled"), testStorage.getNamespaceName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "disabled"));
 
         if (deleteCoDuringProcess) {
             LOGGER.info("Waiting for first broker Pod starts with rolling update, so CO can be deleted");

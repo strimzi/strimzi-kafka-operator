@@ -106,7 +106,7 @@ public class FeatureGatesST extends AbstractST {
         // Roll Kafka
         LOGGER.info("Forcing rolling update of Kafka via read-only configuration change");
         final Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerPoolSelector());
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().getKafka().getConfig().put("log.retention.hours", 72), testStorage.getNamespaceName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().getKafka().getConfig().put("log.retention.hours", 72));
 
         LOGGER.info("Waiting for the next reconciliation to happen");
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerPoolSelector(), kafkaReplicas, brokerPods);
@@ -178,9 +178,9 @@ public class FeatureGatesST extends AbstractST {
 
         // increase number of kafka replicas in KafkaNodePool
         LOGGER.info("Modifying KafkaNodePool: {}/{} by increasing number of Kafka replicas from '3' to '5'", testStorage.getNamespaceName(), kafkaNodePoolName);
-        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(kafkaNodePoolName, kafkaNodePool -> {
-            kafkaNodePool.getSpec().setReplicas(nodePoolIncreasedKafkaReplicaCount);
-        }, testStorage.getNamespaceName());
+        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), kafkaNodePoolName,
+            knp -> knp.getSpec().setReplicas(nodePoolIncreasedKafkaReplicaCount)
+        );
 
         StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(
             testStorage.getNamespaceName(),
@@ -197,7 +197,7 @@ public class FeatureGatesST extends AbstractST {
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
         LOGGER.info("Disable KafkaNodePool in Kafka Cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
             kafka -> {
                 kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "disabled");
                 // because Kafka CR with NodePools is missing .spec.kafka.replicas and .spec.kafka.storage, we need to
@@ -208,7 +208,7 @@ public class FeatureGatesST extends AbstractST {
                     .withDeleteClaim(true)
                     .build()
                 );
-            }, testStorage.getNamespaceName());
+            });
 
         StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(
             testStorage.getNamespaceName(),
@@ -226,12 +226,12 @@ public class FeatureGatesST extends AbstractST {
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
         LOGGER.info("Enable KafkaNodePool in Kafka Cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
             kafka -> {
                 kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled");
                 kafka.getSpec().getKafka().setReplicas(null);
                 kafka.getSpec().getKafka().setStorage(null);
-            }, testStorage.getNamespaceName());
+            });
 
         StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(
             testStorage.getNamespaceName(),

@@ -185,7 +185,7 @@ class ConnectBuilderST extends AbstractST {
         assertThat(connectCondition.getType(), is(NotReady.toString()));
 
         LOGGER.info("Replacing plugin's checksum with right one");
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(), kC -> {
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kC -> {
             Plugin pluginWithRightChecksum = new PluginBuilder()
                 .withName("connector-with-right-checksum")
                 .withArtifacts(new JarArtifactBuilder()
@@ -196,7 +196,7 @@ class ConnectBuilderST extends AbstractST {
 
             kC.getSpec().getBuild().getPlugins().remove(0);
             kC.getSpec().getBuild().getPlugins().add(pluginWithRightChecksum);
-        }, testStorage.getNamespaceName());
+        });
 
         KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
@@ -374,9 +374,9 @@ class ConnectBuilderST extends AbstractST {
         assertTrue(plugins.contains(TestConstants.ECHO_SINK_CLASS_NAME));
 
         LOGGER.info("Adding one more connector to the KafkaConnect");
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(), kafkaConnect -> {
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaConnect -> {
             kafkaConnect.getSpec().getBuild().getPlugins().add(secondPlugin);
-        }, testStorage.getNamespaceName());
+        });
 
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector(), 1, connectSnapshot);
 
@@ -449,9 +449,9 @@ class ConnectBuilderST extends AbstractST {
             .build();
 
         LOGGER.info("Removing file name from the plugin, hash should be used");
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(), connect -> {
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), connect -> {
             connect.getSpec().getBuild().setPlugins(Collections.singletonList(pluginWithoutFileName));
-        }, testStorage.getNamespaceName());
+        });
 
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector(), 1, connectSnapshot);
 

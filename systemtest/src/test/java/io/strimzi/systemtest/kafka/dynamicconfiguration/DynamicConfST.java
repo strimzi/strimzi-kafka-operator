@@ -193,7 +193,7 @@ public class DynamicConfST extends AbstractST {
         Map<String, String> brokerPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector());
         LOGGER.info("Updating listeners of Kafka cluster");
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), k -> {
             k.getSpec().getKafka().setListeners(Arrays.asList(
                 new GenericKafkaListenerBuilder()
                     .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)
@@ -214,7 +214,7 @@ public class DynamicConfST extends AbstractST {
                     .withTls(true)
                     .build()
             ));
-        }, Environment.TEST_SUITE_NAMESPACE);
+        });
 
         RollingUpdateUtils.waitTillComponentHasRolled(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector(), KAFKA_REPLICAS, brokerPods);
         assertThat(RollingUpdateUtils.componentHasRolled(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector(), brokerPods), is(true));
@@ -246,7 +246,7 @@ public class DynamicConfST extends AbstractST {
         brokerPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector());
         LOGGER.info("Updating listeners of Kafka cluster");
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), k -> {
             k.getSpec().getKafka().setListeners(Arrays.asList(
                 new GenericKafkaListenerBuilder()
                     .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)
@@ -261,7 +261,7 @@ public class DynamicConfST extends AbstractST {
                     .withTls(true)
                     .build()
             ));
-        }, Environment.TEST_SUITE_NAMESPACE);
+        });
 
         RollingUpdateUtils.waitTillComponentHasRolled(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector(), KAFKA_REPLICAS, brokerPods);
         assertThat(RollingUpdateUtils.componentHasRolled(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector(), brokerPods), is(true));
@@ -347,7 +347,7 @@ public class DynamicConfST extends AbstractST {
         });
 
         LOGGER.info("Updating listeners of Kafka cluster");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), k -> {
             k.getSpec().getKafka().setListeners(Arrays.asList(
                 new GenericKafkaListenerBuilder()
                     .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
@@ -364,7 +364,7 @@ public class DynamicConfST extends AbstractST {
                     .endKafkaListenerAuthenticationTlsAuth()
                     .build()
             ));
-        }, Environment.TEST_SUITE_NAMESPACE);
+        });
 
         // TODO: remove it ?
         brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector(), KAFKA_REPLICAS, brokerPods);
@@ -381,7 +381,7 @@ public class DynamicConfST extends AbstractST {
         });
 
         LOGGER.info("Updating listeners of Kafka cluster");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), k -> {
             k.getSpec().getKafka().setListeners(Collections.singletonList(
                 new GenericKafkaListenerBuilder()
                     .withName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
@@ -390,7 +390,7 @@ public class DynamicConfST extends AbstractST {
                     .withTls(false)
                     .build()
             ));
-        }, Environment.TEST_SUITE_NAMESPACE);
+        });
 
         RollingUpdateUtils.waitTillComponentHasRolled(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector(), KAFKA_REPLICAS, brokerPods);
 
@@ -408,21 +408,21 @@ public class DynamicConfST extends AbstractST {
 
     /**
      * UpdateAndVerifyDynConf, change the kafka configuration and verify that no rolling update were triggered
-     * @param namespaceName name of the namespace
+     * @param namespace name of the namespace
      * @param kafkaConfig specific kafka configuration, which will be changed
      */
-    private void updateAndVerifyDynConf(final String namespaceName, String clusterName, Map<String, Object> kafkaConfig) {
+    private void updateAndVerifyDynConf(final String namespace, String clusterName, Map<String, Object> kafkaConfig) {
         LabelSelector brokerSelector = KafkaResource.getLabelSelector(clusterName, StrimziPodSetResource.getBrokerComponentName(clusterName));
-        Map<String, String> brokerPods = PodUtils.podSnapshot(namespaceName, brokerSelector);
+        Map<String, String> brokerPods = PodUtils.podSnapshot(namespace, brokerSelector);
 
         LOGGER.info("Updating configuration of Kafka cluster");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(namespace, clusterName, k -> {
             KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
             kafkaClusterSpec.setConfig(kafkaConfig);
-        }, namespaceName);
+        });
 
-        PodUtils.verifyThatRunningPodsAreStable(namespaceName, StrimziPodSetResource.getBrokerComponentName(clusterName));
-        assertThat(RollingUpdateUtils.componentHasRolled(namespaceName, brokerSelector, brokerPods), is(false));
+        PodUtils.verifyThatRunningPodsAreStable(namespace, StrimziPodSetResource.getBrokerComponentName(clusterName));
+        assertThat(RollingUpdateUtils.componentHasRolled(namespace, brokerSelector, brokerPods), is(false));
     }
 
     @BeforeEach

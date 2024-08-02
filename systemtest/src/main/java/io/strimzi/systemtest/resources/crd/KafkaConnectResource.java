@@ -57,8 +57,8 @@ public class KafkaConnectResource implements ResourceType<KafkaConnect> {
         return Crds.kafkaConnectOperation(ResourceManager.kubeClient().getClient());
     }
 
-    public static void replaceKafkaConnectResourceInSpecificNamespace(String resourceName, Consumer<KafkaConnect> editor, String namespaceName) {
-        ResourceManager.replaceCrdResource(KafkaConnect.class, KafkaConnectList.class, resourceName, editor, namespaceName);
+    public static void replaceKafkaConnectResourceInSpecificNamespace(String namespace, String resourceName, Consumer<KafkaConnect> editor) {
+        ResourceManager.replaceCrdResource(namespace, KafkaConnect.class, KafkaConnectList.class, resourceName, editor);
     }
 
     public static LabelSelector getLabelSelector(String clusterName, String componentName) {

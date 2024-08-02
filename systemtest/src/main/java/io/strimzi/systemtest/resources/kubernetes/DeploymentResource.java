@@ -44,7 +44,7 @@ public class DeploymentResource implements ResourceType<Deployment> {
         return DeploymentUtils.waitForDeploymentAndPodsReady(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), resource.getSpec().getReplicas());
     }
 
-    public static void replaceDeployment(String deploymentName, Consumer<Deployment> editor, String namespaceName) {
+    public static void replaceDeployment(String namespaceName, String deploymentName, Consumer<Deployment> editor) {
         Deployment toBeReplaced = ResourceManager.kubeClient().getClient().resources(Deployment.class, DeploymentList.class).inNamespace(namespaceName).withName(deploymentName).get();
         editor.accept(toBeReplaced);
         ResourceManager.kubeClient().getClient().resources(Deployment.class, DeploymentList.class).inNamespace(namespaceName).resource(toBeReplaced).update();

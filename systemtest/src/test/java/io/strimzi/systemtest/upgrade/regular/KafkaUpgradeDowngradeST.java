@@ -225,14 +225,14 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
                     && !ResourceManager.getTestContext().getDisplayName().contains("DowngradeToOlderMessageFormat")) {
 
                 // In case that init config was set, which means that CR was updated and CO won't do any changes
-                KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
+                KafkaResource.replaceKafkaResourceInSpecificNamespace(TestConstants.CO_NAMESPACE, clusterName, kafka -> {
                     LOGGER.info("Kafka config before updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
                     Map<String, Object> config = kafka.getSpec().getKafka().getConfig();
                     config.put("log.message.format.version", newVersion.messageVersion());
                     config.put("inter.broker.protocol.version", newVersion.protocolVersion());
                     kafka.getSpec().getKafka().setConfig(config);
                     LOGGER.info("Kafka config after updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
-                }, TestConstants.CO_NAMESPACE);
+                });
 
                 RollingUpdateUtils.waitTillComponentHasRolled(TestConstants.CO_NAMESPACE, brokerSelector, kafkaReplicas, brokerPods);
             }
@@ -253,9 +253,9 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
         LOGGER.info("Updating Kafka CR version field to " + newVersion.version());
 
         // Change the version in Kafka CR
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(TestConstants.CO_NAMESPACE, clusterName, kafka -> {
             kafka.getSpec().getKafka().setVersion(newVersion.version());
-        }, TestConstants.CO_NAMESPACE);
+        });
 
         LOGGER.info("Waiting for readiness of new Kafka version (" + newVersion.version() + ") to complete");
 
@@ -309,14 +309,14 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
             LOGGER.info("Updating Kafka config attribute 'log.message.format.version' from '{}' to '{}' version", initialVersion.messageVersion(), newVersion.messageVersion());
             LOGGER.info("Updating Kafka config attribute 'inter.broker.protocol.version' from '{}' to '{}' version", initialVersion.protocolVersion(), newVersion.protocolVersion());
 
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(TestConstants.CO_NAMESPACE, clusterName, kafka -> {
                 LOGGER.info("Kafka config before updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
                 Map<String, Object> config = kafka.getSpec().getKafka().getConfig();
                 config.put("log.message.format.version", newVersion.messageVersion());
                 config.put("inter.broker.protocol.version", newVersion.protocolVersion());
                 kafka.getSpec().getKafka().setConfig(config);
                 LOGGER.info("Kafka config after updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
-            }, TestConstants.CO_NAMESPACE);
+            });
 
             if (currentLogMessageFormat != null || currentInterBrokerProtocol != null) {
                 LOGGER.info("Change of configuration is done manually - rolling update");

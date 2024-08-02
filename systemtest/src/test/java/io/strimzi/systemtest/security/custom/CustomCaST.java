@@ -346,7 +346,7 @@ public class CustomCaST extends AbstractST {
         newClusterCA.setValidityDays(newValidityDays);
         newClusterCA.setGenerateCertificateAuthority(false);
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().setClusterCa(newClusterCA), testStorage.getNamespaceName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().setClusterCa(newClusterCA));
 
         // Resume Kafka reconciliation
         LOGGER.info("Resume the reconciliation of the Kafka custom resource ({})", StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName()));
@@ -449,7 +449,7 @@ public class CustomCaST extends AbstractST {
         newClientsCA.setValidityDays(newValidityDays);
         newClientsCA.setGenerateCertificateAuthority(false);
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().setClientsCa(newClientsCA), testStorage.getNamespaceName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().setClientsCa(newClientsCA));
 
         // Resume Kafka reconciliation
         LOGGER.info("Resume the reconciliation of the Kafka custom resource ({})", StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName()));

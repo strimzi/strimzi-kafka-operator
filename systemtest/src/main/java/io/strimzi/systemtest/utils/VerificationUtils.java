@@ -346,8 +346,8 @@ public class VerificationUtils {
      * Verifies that the Docker images used by the Kafka cluster in the specified namespaces are correct
      * based on the configured versions and deployment configurations.
      *
-     * @param clusterName The name of the Kafka cluster
      * @param kafkaNamespaceName The namespace where Kafka is deployed
+     * @param clusterName The name of the Kafka cluster
      * @param controllerPods The number of Kafka pods in the cluster
      * @param rackAwareEnabled Indicates whether rack-aware configuration is enabled
      */

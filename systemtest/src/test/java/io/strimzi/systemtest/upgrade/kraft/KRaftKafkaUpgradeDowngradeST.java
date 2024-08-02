@@ -184,9 +184,9 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
         LOGGER.info("Updating Kafka CR version field to " + newVersion.version());
 
         // Change the version in Kafka CR
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(TestConstants.CO_NAMESPACE, clusterName, kafka -> {
             kafka.getSpec().getKafka().setVersion(newVersion.version());
-        }, TestConstants.CO_NAMESPACE);
+        });
 
         LOGGER.info("Waiting for readiness of new Kafka version (" + newVersion.version() + ") to complete");
 
@@ -224,13 +224,13 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
         if (isUpgrade && !sameMinorVersion) {
             LOGGER.info("Updating Kafka config attribute 'metadataVersion' from '{}' to '{}' version", initialVersion.metadataVersion(), newVersion.metadataVersion());
 
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(TestConstants.CO_NAMESPACE, clusterName, kafka -> {
                 LOGGER.info("Kafka config before updating '{}'", kafka.getSpec().getKafka().toString());
 
                 kafka.getSpec().getKafka().setMetadataVersion(newVersion.metadataVersion());
 
                 LOGGER.info("Kafka config after updating '{}'", kafka.getSpec().getKafka().toString());
-            }, TestConstants.CO_NAMESPACE);
+            });
 
             LOGGER.info("Metadata version changed, it doesn't require rolling update, so the Pods should be stable");
             PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, clusterName);

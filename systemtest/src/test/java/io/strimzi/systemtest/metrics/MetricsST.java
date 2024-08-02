@@ -356,10 +356,10 @@ public class MetricsST extends AbstractST {
 
         Map<String, String> kafkaExporterSnapshot = DeploymentUtils.depSnapshot(namespaceFirst, KafkaExporterResources.componentName(kafkaClusterFirstName));
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(kafkaClusterFirstName, k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(namespaceFirst, kafkaClusterFirstName, k -> {
             k.getSpec().getKafkaExporter().setGroupRegex("my-group.*");
             k.getSpec().getKafkaExporter().setTopicRegex(topicName);
-        }, namespaceFirst);
+        });
 
         kafkaExporterSnapshot = DeploymentUtils.waitTillDepHasRolled(namespaceFirst, KafkaExporterResources.componentName(kafkaClusterFirstName), 1, kafkaExporterSnapshot);
 
@@ -371,10 +371,10 @@ public class MetricsST extends AbstractST {
         assertMetricValueNullOrZero(kafkaExporterCollector, "kafka_topic_partitions\\{topic=\"" + consumerOffsetsTopicName + "\"}");
 
         LOGGER.info("Changing Topic and group regexes back to default");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(kafkaClusterFirstName, k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(namespaceFirst, kafkaClusterFirstName, k -> {
             k.getSpec().getKafkaExporter().setGroupRegex(".*");
             k.getSpec().getKafkaExporter().setTopicRegex(".*");
-        }, namespaceFirst);
+        });
 
         DeploymentUtils.waitTillDepHasRolled(namespaceFirst, KafkaExporterResources.componentName(kafkaClusterFirstName), 1, kafkaExporterSnapshot);
     }
@@ -665,9 +665,9 @@ public class MetricsST extends AbstractST {
                 .endValueFrom()
                 .build();
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(kafkaClusterSecondName, k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(namespaceSecond, kafkaClusterSecondName, k -> {
             k.getSpec().getKafka().setMetricsConfig(jmxPrometheusExporterMetrics);
-        }, namespaceSecond);
+        });
 
         PodUtils.verifyThatRunningPodsAreStable(namespaceSecond, kafkaClusterSecondName);
 

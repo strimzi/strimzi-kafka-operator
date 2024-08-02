@@ -534,7 +534,7 @@ public class MirrorMakerST extends AbstractST {
             KafkaMirrorMaker.RESOURCE_KIND).get(0).getMetadata().getName(), usedVariable), CoreMatchers.is(not("test.value")));
 
         LOGGER.info("Updating values in MirrorMaker container");
-        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getClusterName(), kmm -> {
+        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kmm -> {
             kmm.getSpec().getTemplate().getMirrorMakerContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
             kmm.getSpec().getProducer().setConfig(updatedProducerConfig);
             kmm.getSpec().getConsumer().setConfig(updatedConsumerConfig);
@@ -546,7 +546,7 @@ public class MirrorMakerST extends AbstractST {
             kmm.getSpec().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
             kmm.getSpec().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
             kmm.getSpec().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
-        }, testStorage.getNamespaceName());
+        });
 
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaMirrorMakerResources.componentName(testStorage.getClusterName()), 1, mirrorMakerSnapshot);
 
@@ -621,7 +621,7 @@ public class MirrorMakerST extends AbstractST {
         LOGGER.info("-------> Scaling KafkaMirrorMaker down <-------");
 
         LOGGER.info("Scaling MirrorMaker to zero");
-        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getClusterName(), mm -> mm.getSpec().setReplicas(0), testStorage.getNamespaceName());
+        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), mm -> mm.getSpec().setReplicas(0));
 
         PodUtils.waitForPodsReady(testStorage.getNamespaceName(), kubeClient().getDeploymentSelectors(testStorage.getNamespaceName(), mmDepName), 0, true);
 
@@ -677,8 +677,8 @@ public class MirrorMakerST extends AbstractST {
         String mmDepName = KafkaMirrorMakerResources.componentName(testStorage.getClusterName());
 
         LOGGER.info("Adding label to MirrorMaker resource, the CR should be recreateAndWaitForReadinessd");
-        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getClusterName(),
-            mm -> mm.getMetadata().setLabels(Collections.singletonMap("some", "label")), testStorage.getNamespaceName());
+        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            mm -> mm.getMetadata().setLabels(Collections.singletonMap("some", "label")));
         DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespaceName(), mmDepName, 1);
 
         KafkaMirrorMaker kmm = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
@@ -689,12 +689,12 @@ public class MirrorMakerST extends AbstractST {
         assertThat(kmm.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.RECREATE));
 
         LOGGER.info("Changing Deployment strategy to {}", DeploymentStrategy.ROLLING_UPDATE);
-        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getClusterName(),
-            mm -> mm.getSpec().getTemplate().getDeployment().setDeploymentStrategy(DeploymentStrategy.ROLLING_UPDATE), testStorage.getNamespaceName());
+        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            mm -> mm.getSpec().getTemplate().getDeployment().setDeploymentStrategy(DeploymentStrategy.ROLLING_UPDATE));
         KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         LOGGER.info("Adding another label to MirrorMaker resource, Pods should be rolled");
-        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getClusterName(), mm -> mm.getMetadata().getLabels().put("another", "label"), testStorage.getNamespaceName());
+        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), mm -> mm.getMetadata().getLabels().put("another", "label"));
         DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespaceName(), mmDepName, 1);
 
         LOGGER.info("Checking that observed gen. higher (rolling update) and label is changed");

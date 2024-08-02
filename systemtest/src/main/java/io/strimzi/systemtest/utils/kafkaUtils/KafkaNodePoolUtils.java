@@ -29,39 +29,39 @@ public class KafkaNodePoolUtils {
 
     private KafkaNodePoolUtils() {}
 
-    public static KafkaNodePool getKafkaNodePool(String namespaceName, String resourceName) {
-        return KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(namespaceName).withName(resourceName).get();
+    public static KafkaNodePool getKafkaNodePool(String namespace, String resourceName) {
+        return KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(namespace).withName(resourceName).get();
     }
 
-    public static List<Integer> getCurrentKafkaNodePoolIds(String namespaceName, String resourceName) {
-        return getKafkaNodePool(namespaceName, resourceName).getStatus().getNodeIds();
+    public static List<Integer> getCurrentKafkaNodePoolIds(String namespace, String resourceName) {
+        return getKafkaNodePool(namespace, resourceName).getStatus().getNodeIds();
     }
 
-    public static void setKafkaNodePoolAnnotation(String namespaceName, String resourceName,  Map<String, String> annotations) {
-        LOGGER.info("Annotating KafkaNodePool: {}/{} with annotation: {}", namespaceName, resourceName, annotations);
-        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(resourceName,
-            kafkaNodePool -> kafkaNodePool.getMetadata().setAnnotations(annotations),  namespaceName);
+    public static void setKafkaNodePoolAnnotation(String namespace, String resourceName,  Map<String, String> annotations) {
+        LOGGER.info("Annotating KafkaNodePool: {}/{} with annotation: {}", namespace, resourceName, annotations);
+        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(namespace, resourceName,
+            kafkaNodePool -> kafkaNodePool.getMetadata().setAnnotations(annotations));
     }
 
-    public static void scaleKafkaNodePool(String namespaceName, String kafkaNodePoolName, int scaleToReplicas) {
-        LOGGER.info("Scaling KafkaNodePool: {}/{} to {} replicas", namespaceName, kafkaNodePoolName, scaleToReplicas);
-        KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(namespaceName).withName(kafkaNodePoolName).scale(scaleToReplicas);
+    public static void scaleKafkaNodePool(String namespace, String kafkaNodePoolName, int scaleToReplicas) {
+        LOGGER.info("Scaling KafkaNodePool: {}/{} to {} replicas", namespace, kafkaNodePoolName, scaleToReplicas);
+        KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(namespace).withName(kafkaNodePoolName).scale(scaleToReplicas);
     }
 
-    public static void deleteKafkaNodePoolWithPodSetAndWait(String namespaceName, String kafkaClusterName, String kafkaNodePoolName) {
-        LOGGER.info("Waiting for deletion of KafkaNodePool: {}/{}", namespaceName, kafkaNodePoolName);
-        TestUtils.waitFor("deletion of KafkaNodePool: " + namespaceName + "/" + kafkaNodePoolName, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
+    public static void deleteKafkaNodePoolWithPodSetAndWait(String namespace, String kafkaClusterName, String kafkaNodePoolName) {
+        LOGGER.info("Waiting for deletion of KafkaNodePool: {}/{}", namespace, kafkaNodePoolName);
+        TestUtils.waitFor("deletion of KafkaNodePool: " + namespace + "/" + kafkaNodePoolName, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
             () -> {
-                if (KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(namespaceName).withName(kafkaNodePoolName).get() == null &&
-                    StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(kafkaClusterName + "-" + kafkaNodePoolName).get() == null
+                if (KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(namespace).withName(kafkaNodePoolName).get() == null &&
+                    StrimziPodSetResource.strimziPodSetClient().inNamespace(namespace).withName(kafkaClusterName + "-" + kafkaNodePoolName).get() == null
                 ) {
                     return true;
                 } else {
-                    cmdKubeClient(namespaceName).deleteByName(KafkaNodePool.RESOURCE_KIND, kafkaNodePoolName);
+                    cmdKubeClient(namespace).deleteByName(KafkaNodePool.RESOURCE_KIND, kafkaNodePoolName);
                     return false;
                 }
             },
-            () -> LOGGER.info(KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(namespaceName).withName(kafkaNodePoolName).get()));
+            () -> LOGGER.info(KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(namespace).withName(kafkaNodePoolName).get()));
     }
 
     public static void waitForKafkaNodePoolPodsReady(TestStorage testStorage, String kafkaNodePoolName, ProcessRoles nodePoolRole, int replicaCount) {
@@ -74,9 +74,9 @@ public class KafkaNodePoolUtils {
         );
     }
 
-    public static void waitForKafkaNodePoolPodsReady(String namespaceName, String kafkaClusterName, ProcessRoles nodePoolRole, String kafkaNodePoolName, int replicaCount) {
+    public static void waitForKafkaNodePoolPodsReady(String namespace, String kafkaClusterName, ProcessRoles nodePoolRole, String kafkaNodePoolName, int replicaCount) {
         waitForKafkaNodePoolPodsReady(
-            namespaceName,
+            namespace,
             kafkaClusterName,
             kafkaNodePoolName,
             replicaCount,
@@ -84,23 +84,23 @@ public class KafkaNodePoolUtils {
         );
     }
 
-    public static void waitForKafkaNodePoolPodsReady(String namespaceName, String kafkaClusterName, String kafkaNodePoolName, int podReplicaCount, ProcessRoles processRoles) {
-        LOGGER.info("Waiting for pods and SPS of KafkaNodePool: {}/{} to be ready", namespaceName, kafkaNodePoolName);
+    public static void waitForKafkaNodePoolPodsReady(String namespace, String kafkaClusterName, String kafkaNodePoolName, int podReplicaCount, ProcessRoles processRoles) {
+        LOGGER.info("Waiting for pods and SPS of KafkaNodePool: {}/{} to be ready", namespace, kafkaNodePoolName);
         final LabelSelector kNPPodslabelSelector = KafkaNodePoolResource.getLabelSelector(kafkaClusterName, kafkaNodePoolName, processRoles);
-        PodUtils.waitForPodsReady(namespaceName, kNPPodslabelSelector, podReplicaCount, false);
+        PodUtils.waitForPodsReady(namespace, kNPPodslabelSelector, podReplicaCount, false);
     }
 
     /**
      * Waits for the KafkaNodePool Status to be updated after changed. It checks the generation and observed generation to
      * ensure the status is up to date.
      *
-     * @param namespaceName     Namespace name
+     * @param namespace     Namespace name
      * @param nodePoolName      Name of the KafkaNodePool cluster which should be checked
      */
-    public static void waitForKafkaNodePoolStatusUpdate(String namespaceName, String nodePoolName) {
+    public static void waitForKafkaNodePoolStatusUpdate(String namespace, String nodePoolName) {
         LOGGER.info("Waiting for KafkaNodePool status to be updated");
         TestUtils.waitFor("Kafka status to be updated", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT, () -> {
-            KafkaNodePool k = KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(namespaceName).withName(nodePoolName).get();
+            KafkaNodePool k = KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(namespace).withName(nodePoolName).get();
             return k.getMetadata().getGeneration() == k.getStatus().getObservedGeneration();
         });
     }
