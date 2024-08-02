@@ -228,3 +228,87 @@ jobs:
       test:
         tmt:
           name: performance-topic-operator-capacity
+
+  ##############################################################################################
+  ####################################     Releases    #########################################
+  ##############################################################################################
+  - job: tests
+    trigger: release
+    identifier: "upgrade"
+    targets:
+      - centos-stream-9-x86_64
+      - centos-stream-9-aarch64
+    skip_build: true
+    manual_trigger: false
+    env:
+      IP_FAMILY: ipv4
+      RELEASE: true
+    labels:
+      - upgrade
+    tf_extra_params:
+      test:
+        tmt:
+          name: upgrade
+  ###############################################################################################
+
+  - job: tests
+    trigger: release
+    identifier: "regression-operators"
+    targets:
+      - centos-stream-9-x86_64
+      - centos-stream-9-aarch64
+    skip_build: true
+    manual_trigger: false
+    env:
+      IP_FAMILY: ipv4
+      RELEASE: true
+    labels:
+      - regression
+      - operators
+      - regression-operators
+    tf_extra_params:
+      test:
+        tmt:
+          name: regression-operators
+  ###############################################################################################
+
+  - job: tests
+    trigger: release
+    identifier: "regression-brokers-and-security"
+    targets:
+      - centos-stream-9-x86_64
+      - centos-stream-9-aarch64
+    skip_build: true
+    manual_trigger: false
+    env:
+      IP_FAMILY: ipv4
+      RELEASE: true
+    labels:
+      - regression
+      - brokers-and-security
+      - regression-brokers-and-security
+      - bas
+    tf_extra_params:
+      test:
+        tmt:
+          name: regression-brokers-and-security
+
+  - job: tests
+    trigger: release
+    identifier: "regression-operands"
+    targets:
+      - centos-stream-9-x86_64
+      - centos-stream-9-aarch64
+    skip_build: true
+    manual_trigger: false
+    env:
+      IP_FAMILY: ipv4
+      RELEASE: true
+    labels:
+      - regression
+      - operands
+      - regression-operands
+    tf_extra_params:
+      test:
+        tmt:
+          name: regression-operands
