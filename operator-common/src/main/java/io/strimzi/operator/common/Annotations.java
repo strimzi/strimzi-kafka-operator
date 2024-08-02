@@ -41,11 +41,6 @@ public class Annotations extends ResourceAnnotations {
     public static final String ANNO_STRIMZI_AUTH_HASH = STRIMZI_DOMAIN + "auth-hash";
 
     /**
-     * Annotation which enabled the use of the connector operator
-     */
-    public static final String STRIMZI_IO_USE_CONNECTOR_RESOURCES = STRIMZI_DOMAIN + "use-connector-resources";
-
-    /**
      * Annotation used to store the revision of the Kafka Connect build (hash of the Dockerfile)
      */
     public static final String STRIMZI_IO_CONNECT_BUILD_REVISION = STRIMZI_DOMAIN + "connect-build-revision";

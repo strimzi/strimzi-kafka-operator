@@ -45,6 +45,11 @@ public class ResourceAnnotations {
     public static final String ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL = STRIMZI_DOMAIN + "rebalance-auto-approval";
 
     /**
+     * Annotation which enabled the use of the connector operator
+     */
+    public static final String STRIMZI_IO_USE_CONNECTOR_RESOURCES = STRIMZI_DOMAIN + "use-connector-resources";
+
+    /**
      * Annotation for restarting Mirror Maker 2 connector
      */
     public static final String ANNO_STRIMZI_IO_RESTART_CONNECTOR = STRIMZI_DOMAIN + "restart-connector";
