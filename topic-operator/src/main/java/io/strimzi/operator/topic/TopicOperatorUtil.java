@@ -7,20 +7,29 @@ package io.strimzi.operator.topic;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
-import io.strimzi.api.kafka.model.topic.KafkaTopicStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
+import io.strimzi.operator.common.model.InvalidResourceException;
+import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.model.Either;
 import io.strimzi.operator.topic.model.Pair;
 import io.strimzi.operator.topic.model.PartitionedByError;
 import io.strimzi.operator.topic.model.ReconcilableTopic;
 import io.strimzi.operator.topic.model.TopicOperatorException;
+import org.apache.kafka.clients.admin.Admin;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Provides utility methods for managing and interacting 
@@ -43,6 +52,43 @@ public class TopicOperatorUtil {
             "strimzi-topic-operator-" + id,
             TopicOperatorMain.class.getPackage().getImplementationVersion())
             .build();
+    }
+
+    /**
+     * Create a new Kafka admin client instance.
+     *
+     * @param config Topic Operator configuration.
+     * @return Kafka admin client.
+     */
+    public static Admin createKafkaAdminClient(TopicOperatorConfig config) {
+        return Admin.create(config.adminClientConfig());
+    }
+
+    /**
+     * Create a new Cruise Control client instance.
+     *
+     * @param config Topic Operator configuration.
+     * @return Cruise Control client.
+     */
+    public static CruiseControlClient createCruiseControlClient(TopicOperatorConfig config) {
+        return CruiseControlClient.create(
+            config.cruiseControlHostname(),
+            config.cruiseControlPort(),
+            config.cruiseControlRackEnabled(),
+            config.cruiseControlSslEnabled(),
+            config.cruiseControlSslEnabled() ? getFileContent(config.cruiseControlCrtFilePath()) : null,
+            config.cruiseControlAuthEnabled(),
+            config.cruiseControlAuthEnabled() ? new String(getFileContent(config.cruiseControlApiUserPath()), UTF_8) : null,
+            config.cruiseControlAuthEnabled() ? new String(getFileContent(config.cruiseControlApiPassPath()), UTF_8) : null
+        );
+    }
+
+    private static byte[] getFileContent(String filePath) {
+        try {
+            return Files.readAllBytes(Path.of(filePath));
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(format("File not found: %s", filePath), ioe);
+        }
     }
 
     /**
@@ -151,13 +197,23 @@ public class TopicOperatorUtil {
     }
 
     /**
-     * Whether the {@link KafkaTopic} status has replicas change.
-     * 
-     * @param status Topic status.
+     * Whether the {@link KafkaTopic} status has config.
+     *
+     * @param kafkaTopic Kafka topic.
+     * @return True if there is config.
+     */
+    public static boolean hasConfig(KafkaTopic kafkaTopic) {
+        return kafkaTopic.getSpec() != null && kafkaTopic.getSpec().getConfig() != null;
+    }
+
+    /**
+     * Whether the {@link KafkaTopic} status has replicas change status.
+     *
+     * @param kafkaTopic Kafka topic.
      * @return True if there is replicas change status.
      */
-    public static boolean hasReplicasChange(KafkaTopicStatus status) {
-        return status != null && status.getReplicasChange() != null;
+    public static boolean hasReplicasChangeStatus(KafkaTopic kafkaTopic) {
+        return kafkaTopic.getStatus() != null && kafkaTopic.getStatus().getReplicasChange() != null;
     }
 
     /**
@@ -201,5 +257,30 @@ public class TopicOperatorUtil {
      */
     public static short replicas(KafkaTopic kt) {
         return kt.getSpec().getReplicas() != null ? kt.getSpec().getReplicas().shortValue() : BROKER_DEFAULT;
+    }
+
+    /**
+     * Get Kafka configuration value as string.
+     *
+     * @param value Configuration name.
+     * @return Value as string.
+     */
+    public static String configValueAsString(String key, Object value) {
+        String valueStr;
+        if (value == null) {
+            valueStr = null;
+        } else if (value instanceof String
+            || value instanceof Boolean) {
+            valueStr = value.toString();
+        } else if (value instanceof Number) {
+            valueStr = value.toString();
+        } else if (value instanceof List) {
+            valueStr = ((List<?>) value).stream()
+                .map(v -> configValueAsString(key, v))
+                .collect(Collectors.joining(","));
+        } else {
+            throw new InvalidResourceException("Invalid value for topic config '" + key + "': " + value);
+        }
+        return valueStr;
     }
 }

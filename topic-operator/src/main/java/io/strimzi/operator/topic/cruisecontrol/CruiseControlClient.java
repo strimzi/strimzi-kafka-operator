@@ -19,7 +19,7 @@ import java.util.Set;
  * The server runs one task execution at a time, additional 
  * requests are queued up to {@code max.active.user.tasks}.
  */
-public interface CruiseControlClient extends AutoCloseable {
+public interface CruiseControlClient {
     /**
      * HTTP request timeout in seconds.
      */
@@ -57,6 +57,11 @@ public interface CruiseControlClient extends AutoCloseable {
             authPassword
         );
     }
+
+    /**
+     * Close the client.
+     */
+    void close();
 
     /**
      * Send a POST request to {@code topic_configuration} endpoint.

@@ -288,7 +288,7 @@ class TopicControllerIT {
         }
         if (operator == null) {
             this.operatorConfig = config;
-            operator = TopicOperatorMain.operator(config, kubernetesClient, kafkaAdminClientOp[0]);
+            operator = TopicOperatorMain.operator(config, kafkaAdminClientOp[0]);
             assertFalse(operator.queue.isAlive());
             assertFalse(operator.queue.isReady());
             operator.start();
@@ -484,7 +484,7 @@ class TopicControllerIT {
 
         // Check updates to the KafkaTopic
         assertNotNull(reconciled.getMetadata().getFinalizers());
-        assertEquals(operatorConfig.useFinalizer(), reconciled.getMetadata().getFinalizers().contains(BatchingTopicController.FINALIZER));
+        assertEquals(operatorConfig.useFinalizer(), reconciled.getMetadata().getFinalizers().contains(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
         assertEquals(expectedTopicName, reconciled.getStatus().getTopicName());
         assertNotNull(reconciled.getStatus().getTopicId());
 
@@ -778,7 +778,7 @@ class TopicControllerIT {
             LOGGER.debug("##Checking");
         }
         assertNotNull(unmanaged.getMetadata().getFinalizers());
-        assertTrue(unmanaged.getMetadata().getFinalizers().contains(BatchingTopicController.FINALIZER));
+        assertTrue(unmanaged.getMetadata().getFinalizers().contains(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
         assertNotNull(unmanaged.getStatus().getTopicName(), "Expect status.topicName to be unchanged from post-creation state");
 
         var topicDescription = awaitTopicDescription(expectedTopicName);
@@ -838,7 +838,7 @@ class TopicControllerIT {
             "Expect selected resource to be present in topics map");
 
         assertNotNull(managed.getMetadata().getFinalizers());
-        assertTrue(managed.getMetadata().getFinalizers().contains(BatchingTopicController.FINALIZER));
+        assertTrue(managed.getMetadata().getFinalizers().contains(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
         assertNotNull(managed.getStatus().getTopicName(), "Expect status.topicName to be unchanged from post-creation state");
         var topicDescription = awaitTopicDescription(expectedTopicName);
         assertEquals(3, numPartitions(topicDescription));
@@ -1188,7 +1188,7 @@ class TopicControllerIT {
         // when: The finalizer is removed
         LOGGER.debug("Removing finalizer");
         var postUpdate = TopicOperatorTestUtil.changeTopic(kubernetesClient, created, theKt1 -> {
-            theKt1.getMetadata().getFinalizers().remove(BatchingTopicController.FINALIZER);
+            theKt1.getMetadata().getFinalizers().remove(KubernetesHandler.FINALIZER_STRIMZI_IO_TO);
             return theKt1;
         });
         var postUpdateGeneration = postUpdate.getMetadata().getGeneration();
@@ -1197,7 +1197,7 @@ class TopicControllerIT {
         // then: We expect the operator to revert the finalizer
         waitUntil(postUpdate, theKt ->
             theKt.getStatus().getObservedGeneration() >= postUpdateGeneration
-                && theKt.getMetadata().getFinalizers().contains(BatchingTopicController.FINALIZER));
+                && theKt.getMetadata().getFinalizers().contains(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
     }
 
     @ParameterizedTest
@@ -2037,12 +2037,12 @@ class TopicControllerIT {
 
     @Test
     public void shouldLogWarningIfAutoCreateTopicsIsEnabled(
-        @BrokerConfig(name = BatchingTopicController.AUTO_CREATE_TOPICS_ENABLE, value = "true")
+        @BrokerConfig(name = KafkaHandler.AUTO_CREATE_TOPICS_ENABLE, value = "true")
         KafkaCluster kafkaCluster)
         throws Exception {
         try (var logCaptor = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
             Level.WARN,
-            "It is recommended that " + BatchingTopicController.AUTO_CREATE_TOPICS_ENABLE + " is set to 'false' " +
+            "It is recommended that " + KafkaHandler.AUTO_CREATE_TOPICS_ENABLE + " is set to 'false' " +
                 "to avoid races between the operator and Kafka applications auto-creating topics",
             5L,
             TimeUnit.SECONDS)) {

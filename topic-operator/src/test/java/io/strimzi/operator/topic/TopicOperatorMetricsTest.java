@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
 import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient;
+import io.strimzi.operator.topic.cruisecontrol.CruiseControlHandler;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsProvider;
 import io.strimzi.operator.topic.model.TopicEvent.TopicUpsert;
@@ -109,7 +110,7 @@ public class TopicOperatorMetricsTest {
             TopicOperatorConfig.NAMESPACE.key(), NAMESPACE)
         );
         var metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
-        var eventHandler = new TopicOperatorEventHandler(config, mock(BatchingLoop.class), metricsHolder);
+        var eventHandler = new TopicEventHandler(config, mock(BatchingLoop.class), metricsHolder);
 
         var numOfTestResources = 100;
         for (int i = 0; i < numOfTestResources; i++) {
@@ -136,25 +137,17 @@ public class TopicOperatorMetricsTest {
         assertMetricMatches(metricsHolder, METRICS_RESOURCES_PAUSED, "gauge", is(0.0));
     }
 
-    private KafkaTopic buildTopicWithVersion(String name) {
-        return new KafkaTopicBuilder()
-            .editOrNewMetadata()
-                .withNamespace(NAMESPACE)
-                .withName(name)
-                .withResourceVersion("100100")
-            .endMetadata()
-            .build();
-    }
-
     @Test
     public void batchingLoopMetrics() throws InterruptedException {
-        var controller = mock(BatchingTopicController.class);
-        var itemStore = mock(ItemStore.class);
-        var stop = mock(Runnable.class);
-        var metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null,
-            new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
-        var batchingLoop = new BatchingLoop(MAX_QUEUE_SIZE, controller, 1, 
-            MAX_BATCH_SIZE, MAX_BATCH_LINGER_MS, itemStore, stop, metricsHolder, NAMESPACE);
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+            TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092",
+            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.MAX_QUEUE_SIZE.key(), String.valueOf(MAX_QUEUE_SIZE),
+            TopicOperatorConfig.MAX_BATCH_SIZE.key(), String.valueOf(MAX_BATCH_SIZE),
+            TopicOperatorConfig.MAX_BATCH_LINGER_MS.key(), String.valueOf(MAX_BATCH_LINGER_MS)
+        ));
+        var metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
+        var batchingLoop = new BatchingLoop(config, mock(BatchingTopicController.class), 1, mock(ItemStore.class), mock(Runnable.class), metricsHolder);
         batchingLoop.start();
         
         int numOfTestResources = 100;
@@ -193,9 +186,13 @@ public class TopicOperatorMetricsTest {
             new CruiseControlClient.UserTask("Active", null, null, userTaskId, System.currentTimeMillis())), 1);
         Mockito.doReturn(userTaskResponse).when(cruiseControlClient).userTasks(Set.of(userTaskId));
 
-        var metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
-        var replicasChangeHandler = new ReplicasChangeHandler(config, metricsHolder, cruiseControlClient);
-        var controller = new BatchingTopicController(config, Map.of("key", "VALUE"), kafkaAdminClient, kubernetesClient, metricsHolder, replicasChangeHandler);
+        var metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null,
+            new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
+        var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
+            new KubernetesHandler(config, metricsHolder, kubernetesClient),
+            new KafkaHandler(config, metricsHolder, kafkaAdminClient),
+            metricsHolder,
+            new CruiseControlHandler(config, metricsHolder, cruiseControlClient));
 
         // create topics
         var t1 = createTopic("my-topic-a");
@@ -338,6 +335,16 @@ public class TopicOperatorMetricsTest {
         assertMetricMatches(metricsHolder, METRICS_DESCRIBE_TOPICS_DURATION, "timer", greaterThan(0.0));
         assertMetricMatches(metricsHolder, METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
         assertMetricMatches(metricsHolder, METRICS_REMOVE_FINALIZER_DURATION, "timer", greaterThan(0.0));
+    }
+
+    private KafkaTopic buildTopicWithVersion(String name) {
+        return new KafkaTopicBuilder()
+            .editOrNewMetadata()
+                .withNamespace(NAMESPACE)
+                .withName(name)
+                .withResourceVersion("100100")
+            .endMetadata()
+            .build();
     }
 
     private KafkaTopic createTopic(String name) {
