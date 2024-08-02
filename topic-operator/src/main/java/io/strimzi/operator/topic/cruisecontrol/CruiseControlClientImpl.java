@@ -85,7 +85,7 @@ public class CruiseControlClientImpl implements CruiseControlClient {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         stopExecutor(httpClientExecutor, 10_000);
         httpClient = null;
     }
