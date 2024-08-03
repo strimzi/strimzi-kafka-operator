@@ -6,6 +6,8 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
+import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
@@ -14,6 +16,7 @@ import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.Toleration;
@@ -22,11 +25,14 @@ import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.strimzi.api.kafka.model.common.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.InlineLogging;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
+import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
+import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.DeploymentStrategy;
 import io.strimzi.api.kafka.model.kafka.EphemeralStorage;
 import io.strimzi.api.kafka.model.kafka.Kafka;
@@ -139,6 +145,14 @@ public class KafkaExporterTest {
         expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_ENABLE_SARAMA).withValue("true").build());
         expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_OFFSET_SHOW_ALL).withValue(String.valueOf(showAllOffsets)).build());
         return expected;
+    }
+
+    private static Volume getVolume(PodSpec podSpec, String volumeName) {
+        return podSpec.getVolumes().stream().filter(volume -> volumeName.equals(volume.getName())).iterator().next();
+    }
+
+    private static VolumeMount getVolumeMount(Container container, String volumeName) {
+        return container.getVolumeMounts().stream().filter(volumeMount -> volumeName.equals(volumeMount.getName())).iterator().next();
     }
 
     @ParallelTest
@@ -388,6 +402,21 @@ public class KafkaExporterTest {
                 .withWhenUnsatisfiable("ScheduleAnyway")
                 .withLabelSelector(new LabelSelectorBuilder().withMatchLabels(singletonMap("label", "value")).build())
                 .build();
+        
+        ConfigMapVolumeSource configMap = new ConfigMapVolumeSourceBuilder()
+                .withName("configMap1")
+                .build();
+        
+        AdditionalVolume additionalVolumeConfigMap = new AdditionalVolumeBuilder()
+                .withName("config-map-volume-name")
+                .withConfigMap(configMap)
+                .build();
+        
+        VolumeMount additionalVolumeMountConfigMap = new VolumeMountBuilder()
+                .withName("config-map-volume-name-2")
+                .withMountPath("/mnt/config-map-path")
+                .withSubPath("def")
+                .build();
 
         Kafka resource =
                 new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
@@ -411,7 +440,11 @@ public class KafkaExporterTest {
                                 .withTolerations(tolerations)
                                 .withTopologySpreadConstraints(tsc1, tsc2)
                                 .withEnableServiceLinks(false)
+                                .withVolumes(additionalVolumeConfigMap)
                             .endPod()
+                            .withNewContainer()
+                                .withVolumeMounts(additionalVolumeMountConfigMap)
+                            .endContainer()
                             .withNewServiceAccount()
                                 .withNewMetadata()
                                     .withLabels(saLabels)
@@ -439,6 +472,8 @@ public class KafkaExporterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(tolerations));
         assertThat(dep.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
         assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
+        assertThat(getVolume(dep.getSpec().getTemplate().getSpec(), additionalVolumeConfigMap.getName()).getConfigMap(), is(configMap));
+        assertThat(getVolumeMount(dep.getSpec().getTemplate().getSpec().getContainers().get(0), additionalVolumeMountConfigMap.getName()), is(additionalVolumeMountConfigMap));
 
         // Check Service Account
         ServiceAccount sa = ke.generateServiceAccount();

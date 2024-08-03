@@ -42,6 +42,28 @@ spec:
           runAsGroup: 1000001
           fsGroup: 0
         terminationGracePeriodSeconds: 30
+        volumes:
+          - name: example-secret
+            secret: 
+              secretName: secret-name
+          - name: example-configmap
+            configMap:
+              name: config-map-name
+          - name: temp
+            emptyDir: {}
+          - name: example-pvc-volume
+            persistentVolumeClaim:
+              claimName: myclaim
+      kafkaContainer:
+        volumeMounts:
+          - name: example-secret
+            mountPath: /mnt/secret-volume
+          - name: example-configmap
+            mountPath: /mnt/cm-volume
+          - name: temp
+            mountPath: /tmp/logs
+          - name: example-pvc-volume
+            mountPath: "/mnt/data"
       bootstrapService:
         metadata:
           labels:
@@ -120,6 +142,27 @@ spec:
           annotations:
             key1: label1
             key2: label2
+        volumes:
+          - name: example-secret
+            secret: 
+              secretName: secret-name
+          - name: example-configmap
+            configMap:
+              name: config-map-name
+          - name: temp
+            emptyDir: {}
+          - name: example-pvc-volume
+            persistentVolumeClaim:
+              claimName: example-pvc-volume
+      zookeeperContainer:
+        volumeMounts:
+          - name: example-secret
+            mountPath: /mnt/secret-volume
+            subPath: subPath1
+          - name: example-configmap
+            mountPath: /mnt/cm-volume
+          - name: example-pvc-volume
+            mountPath: "/mnt/data"
       clientService:
         metadata:
           labels:
@@ -156,4 +199,16 @@ spec:
           annotations:
             key1: label1
             key2: label2
+        volumes:
+          - name: example-secret
+            secret: 
+              secretName: secret-name
+          - name: example-configmap
+            configMap:
+              name: config-map-name
+          - name: temp
+            emptyDir: {}
+          - name: example-pvc-volume
+            persistentVolumeClaim:
+              claimName: example-pvc-volume
 

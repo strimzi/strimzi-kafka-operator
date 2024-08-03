@@ -298,6 +298,8 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
 
         AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, "oauth-certs", isOpenShift);
 
+        TemplateUtils.addAdditionalVolumes(templatePod, volumeList);
+
         return volumeList;
     }
 
@@ -316,6 +318,17 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         }
 
         AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, "oauth-certs");
+
+        TemplateUtils.addAdditionalVolumeMounts(volumeMountList, templateContainer);
+
+        return volumeMountList;
+    }
+    
+    private List<VolumeMount> getInitContainerVolumeMounts() {
+        List<VolumeMount> volumeMountList = new ArrayList<>();
+        volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
+
+        TemplateUtils.addAdditionalVolumeMounts(volumeMountList, templateInitContainer);
 
         return volumeMountList;
     }
@@ -366,7 +379,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
                     resources,
                     getInitContainerEnvVars(),
                     null,
-                    List.of(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT)),
+                    getInitContainerVolumeMounts(),
                     null,
                     null,
                     imagePullPolicy

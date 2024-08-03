@@ -12,16 +12,20 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelectorRequirementBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
+import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretVolumeSource;
+import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
@@ -41,6 +45,8 @@ import io.strimzi.api.kafka.model.common.jmx.KafkaJmxAuthenticationPasswordBuild
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
+import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
+import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.common.template.ExternalTrafficPolicy;
 import io.strimzi.api.kafka.model.common.template.IpFamily;
@@ -66,6 +72,7 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationCust
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.kafka.listener.NodeAddressType;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.jmx.JmxModel;
@@ -519,6 +526,21 @@ public class KafkaClusterTest {
 
         Map<String, String> saLabels = TestUtils.map("l21", "v21", "l22", "v22");
         Map<String, String> saAnnotations = TestUtils.map("a21", "v21", "a22", "v22");
+        
+        SecretVolumeSource secret = new SecretVolumeSourceBuilder()
+                .withSecretName("secret1")
+                .build();
+        
+        AdditionalVolume additionalVolume  = new AdditionalVolumeBuilder()
+                .withName("secret-volume-name")
+                .withSecret(secret)
+                .build();
+        
+        VolumeMount additionalVolumeMount = new VolumeMountBuilder()
+                .withName("secret-volume-name")
+                .withMountPath("/mnt/secret-volume")
+                .withSubPath("def")
+                .build();
 
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -536,6 +558,12 @@ public class KafkaClusterTest {
                                     .withTls(true)
                                     .build())
                         .withNewTemplate()
+                            .withNewPod()
+                                .withVolumes(additionalVolume)
+                            .endPod()
+                            .withNewKafkaContainer()
+                                .withVolumeMounts(additionalVolumeMount)
+                            .endKafkaContainer()
                             .withNewBootstrapService()
                                 .withNewMetadata()
                                     .withLabels(svcLabels)
@@ -650,6 +678,11 @@ public class KafkaClusterTest {
         ServiceAccount sa = kc.generateServiceAccount();
         assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
         assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnnotations.entrySet()), is(true));
+        
+        List<StrimziPodSet> podSets = kc.generatePodSets(false, null, null, i -> Map.of());
+        PodSpec podSpec = podSets.get(0).getSpec().getPods().stream().map(PodSetUtils::mapToPod).toList().get(0).getSpec();
+        assertThat(podSpec.getVolumes().stream().filter(volume -> "secret-volume-name".equals(volume.getName())).iterator().next().getSecret(), is(secret));
+        assertThat(podSpec.getContainers().get(0).getVolumeMounts().stream().filter(volumeMount -> "secret-volume-name".equals(volumeMount.getName())).iterator().next(), is(additionalVolumeMount));
     }
 
     @ParallelTest

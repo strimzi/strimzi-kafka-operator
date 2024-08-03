@@ -11,6 +11,8 @@ import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.SecretVolumeSource;
+import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
@@ -20,6 +22,7 @@ import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
@@ -29,6 +32,8 @@ import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.ContainerEnvVar;
+import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
+import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
@@ -238,6 +243,21 @@ public class EntityOperatorTest {
                 .withWhenUnsatisfiable("ScheduleAnyway")
                 .withLabelSelector(new LabelSelectorBuilder().withMatchLabels(singletonMap("label", "value")).build())
                 .build();
+        
+        SecretVolumeSource secret = new SecretVolumeSourceBuilder()
+                .withSecretName("secret1")
+                .build();
+        
+        List<AdditionalVolume> additionalVolumes  = singletonList(new AdditionalVolumeBuilder()
+                .withName("secret-volume-name")
+                .withSecret(secret)
+                .build());
+        
+        List<VolumeMount> additionalVolumeMounts = singletonList(new VolumeMountBuilder()
+                .withName("secret-volume-name")
+                .withMountPath("/mnt/secret")
+                .withSubPath("def")
+                .build());
 
         Kafka resource =
                 new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
@@ -262,7 +282,14 @@ public class EntityOperatorTest {
                                         .withTolerations(singletonList(toleration))
                                         .withTopologySpreadConstraints(tsc1, tsc2)
                                         .withEnableServiceLinks(false)
+                                        .withVolumes(additionalVolumes)
                                     .endPod()
+                                    .withNewTopicOperatorContainer()
+                                        .withVolumeMounts(additionalVolumeMounts)
+                                    .endTopicOperatorContainer()
+                                    .withNewUserOperatorContainer()
+                                        .withVolumeMounts(additionalVolumeMounts)
+                                    .endUserOperatorContainer()
                                     .withNewEntityOperatorRole()
                                         .withNewMetadata()
                                             .withLabels(rLabels)
@@ -295,6 +322,9 @@ public class EntityOperatorTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
         assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
         assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(singletonList(toleration)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(volume -> "secret-volume-name".equals(volume.getName())).iterator().next().getSecret(), is(secret));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts().stream().filter(volumeMount -> "secret-volume-name".equals(volumeMount.getName())).iterator().next(), is(additionalVolumeMounts.get(0)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(1).getVolumeMounts().stream().filter(volumeMount -> "secret-volume-name".equals(volumeMount.getName())).iterator().next(), is(additionalVolumeMounts.get(0)));
 
         // Generate Role metadata
         Role crb = entityOperator.generateRole(null, namespace);

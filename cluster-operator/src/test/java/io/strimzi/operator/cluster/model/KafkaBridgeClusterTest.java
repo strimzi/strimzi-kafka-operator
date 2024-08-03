@@ -6,6 +6,8 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
+import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
@@ -17,13 +19,17 @@ import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.SecretVolumeSource;
+import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
+import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -42,6 +48,8 @@ import io.strimzi.api.kafka.model.common.JvmOptionsBuilder;
 import io.strimzi.api.kafka.model.common.SystemPropertyBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTlsBuilder;
+import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
+import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.common.template.DeploymentStrategy;
 import io.strimzi.api.kafka.model.common.template.IpFamily;
@@ -84,7 +92,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ParallelSuite
-@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public class KafkaBridgeClusterTest {
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
 
@@ -161,6 +169,14 @@ public class KafkaBridgeClusterTest {
         expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_HTTP_PORT).withValue(String.valueOf(KafkaBridgeHttpConfig.HTTP_DEFAULT_PORT)).build());
         expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_CORS_ENABLED).withValue(String.valueOf(false)).build());
         return expected;
+    }
+
+    private static Volume getVolume(Deployment dep, String volumeName) {
+        return dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(volume -> volumeName.equals(volume.getName())).iterator().next();
+    }
+
+    private static VolumeMount getVolumeMount(Container container, String volumeName) {
+        return container.getVolumeMounts().stream().filter(volumeMount -> volumeName.equals(volumeMount.getName())).iterator().next();
     }
 
     @ParallelTest
@@ -407,6 +423,7 @@ public class KafkaBridgeClusterTest {
     }
 
     @ParallelTest
+    @SuppressWarnings({"checkstyle:methodlength"})
     public void testTemplate() {
         Map<String, String> depLabels = TestUtils.map("l1", "v1", "l2", "v2",
                 Labels.KUBERNETES_PART_OF_LABEL, "custom-part",
@@ -461,6 +478,21 @@ public class KafkaBridgeClusterTest {
                 .withWhenUnsatisfiable("ScheduleAnyway")
                 .withLabelSelector(new LabelSelectorBuilder().withMatchLabels(singletonMap("label", "value")).build())
                 .build();
+        
+        SecretVolumeSource secret = new SecretVolumeSourceBuilder()
+                .withSecretName("secret1")
+                .build();
+        
+        List<AdditionalVolume> additionalVolumes  = singletonList(new AdditionalVolumeBuilder()
+                .withName("secret-volume-name")
+                .withSecret(secret)
+                .build());
+        
+        List<VolumeMount> additionalVolumeMounts = singletonList(new VolumeMountBuilder()
+                .withName("secret-volume-name")
+                .withMountPath("/mnt/secret")
+                .withSubPath("def")
+                .build());
 
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
@@ -484,7 +516,11 @@ public class KafkaBridgeClusterTest {
                             .withTopologySpreadConstraints(tsc1, tsc2)
                             .withEnableServiceLinks(false)
                             .withTmpDirSizeLimit("10Mi")
+                            .withVolumes(additionalVolumes)
                         .endPod()
+                        .withNewBridgeContainer()
+                            .withVolumeMounts(additionalVolumeMounts)
+                        .endBridgeContainer()
                         .withNewApiService()
                             .withNewMetadata()
                                 .withLabels(svcLabels)
@@ -526,7 +562,9 @@ public class KafkaBridgeClusterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(tolerations));
         assertThat(dep.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
         assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
-        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
+        assertThat(getVolume(dep, VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME).getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
+        assertThat(getVolume(dep, "secret-volume-name").getSecret(), is(secret));
+        assertThat(getVolumeMount(dep.getSpec().getTemplate().getSpec().getContainers().get(0), "secret-volume-name"), is(additionalVolumeMounts.get(0)));
 
         // Check Service
         Service svc = kbc.generateService();
@@ -811,15 +849,54 @@ public class KafkaBridgeClusterTest {
 
         assertRackAwareDeploymentConfigured(resource, customImage);
     }
+    
+    @ParallelTest
+    public void testGenerateDeploymentWithRackAndInitVolumeMounts() {
+        
+        ConfigMapVolumeSource configMap = new ConfigMapVolumeSourceBuilder()
+                .withName("config-map-name")
+                .build();
+        
+        AdditionalVolume additionalVolume = new AdditionalVolumeBuilder()
+                .withName("config-map-volume-name")
+                .withConfigMap(configMap)
+                .build();
+        
+        VolumeMount additionalVolumeMount = new VolumeMountBuilder()
+                .withName("config-map-volume-name-2")
+                .withMountPath("/mnt/config-map")
+                .withSubPath("def")
+                .build();
+        
+        KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
+                .editOrNewSpec()
+                .withNewRack()
+                .withTopologyKey("topology-key")
+                .endRack()
+                .withNewTemplate()
+                .withNewPod()
+                    .withVolumes(singletonList(additionalVolume))
+                .endPod()
+                    .withNewInitContainer()
+                        .withVolumeMounts(singletonList(additionalVolumeMount))
+                    .endInitContainer()
+                .endTemplate()
+                .endSpec()
+                .build();
 
+        Deployment deployment = assertRackAwareDeploymentConfigured(resource, "quay.io/strimzi/operator:latest");
+        assertThat(getVolume(deployment, "config-map-volume-name").getConfigMap(), is(configMap));
+        assertThat(getVolumeMount(deployment.getSpec().getTemplate().getSpec().getInitContainers().get(0), "config-map-volume-name-2"), is(additionalVolumeMount));
 
-    private static void assertRackAwareDeploymentConfigured(final KafkaBridge resource, final String expectedInitImage) {
+    }
+    
+    private static Deployment assertRackAwareDeploymentConfigured(final KafkaBridge resource, final String expectedInitImage) {
         KafkaBridgeCluster bridgeCluster = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
         Deployment deployment = bridgeCluster.generateDeployment(new HashMap<>(), false, null, null);
 
         assertThat(resource.getSpec().getRack(), is(notNullValue()));
         PodSpec podSpec = deployment.getSpec().getTemplate().getSpec();
-
+        
         List<Container> containers = podSpec.getContainers();
         assertThat(containers, is(notNullValue()));
         assertThat(containers, hasSize(1));
@@ -849,12 +926,10 @@ public class KafkaBridgeClusterTest {
         assertThat(initEnv.stream().filter(var -> ENV_VAR_KAFKA_INIT_INIT_FOLDER_KEY.equals(var.getName())).findFirst().orElseThrow().getValue(), is(KafkaBridgeCluster.INIT_VOLUME_MOUNT));
         assertThat(initEnv.stream().filter(var -> AbstractModel.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getFieldRef().getFieldPath(), is("spec.nodeName"));
 
-        assertThat(container.getVolumeMounts(), hasSize(1));
-        final VolumeMount volumeMount = container.getVolumeMounts().get(0);
-        assertThat(volumeMount.getName(), is(KafkaBridgeCluster.INIT_VOLUME_NAME));
-        assertThat(volumeMount.getMountPath(), is(KafkaBridgeCluster.INIT_VOLUME_MOUNT));
+        assertThat(getVolumeMount(container, KafkaBridgeCluster.INIT_VOLUME_NAME).getMountPath(), is(KafkaBridgeCluster.INIT_VOLUME_MOUNT));
+        
+        return deployment;
     }
-
 
     @ParallelTest
     public void testClusterRoleBindingRack() {

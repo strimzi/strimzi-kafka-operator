@@ -378,6 +378,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         }
         AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, "oauth-certs", isOpenShift);
         volumeList.addAll(getExternalConfigurationVolumes(isOpenShift));
+        
+        TemplateUtils.addAdditionalVolumes(templatePod, volumeList);
 
         return volumeList;
     }
@@ -440,6 +442,15 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, "oauth-certs");
         volumeMountList.addAll(getExternalConfigurationVolumeMounts());
 
+        TemplateUtils.addAdditionalVolumeMounts(volumeMountList, templateContainer);
+
+        return volumeMountList;
+    }
+    
+    private List<VolumeMount> getInitContainerVolumeMounts() {
+        List<VolumeMount> volumeMountList = new ArrayList<>();
+        volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
+        TemplateUtils.addAdditionalVolumeMounts(volumeMountList, templateInitContainer);
         return volumeMountList;
     }
 
@@ -546,7 +557,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                     resources,
                     getInitContainerEnvVars(),
                     null,
-                    List.of(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT)),
+                    getInitContainerVolumeMounts(),
                     null,
                     null,
                     imagePullPolicy

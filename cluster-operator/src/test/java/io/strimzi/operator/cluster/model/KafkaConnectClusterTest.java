@@ -6,8 +6,11 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.EmptyDirVolumeSource;
+import io.fabric8.kubernetes.api.model.EmptyDirVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HostAlias;
@@ -22,6 +25,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
+import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
@@ -31,6 +35,7 @@ import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -46,6 +51,8 @@ import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
+import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
+import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.common.template.IpFamily;
 import io.strimzi.api.kafka.model.common.template.IpFamilyPolicy;
@@ -707,6 +714,7 @@ public class KafkaConnectClusterTest {
     }
 
     @ParallelTest
+    @SuppressWarnings({"checkstyle:methodlength"})
     public void testTemplate() {
         Map<String, String> spsLabels = TestUtils.map("l1", "v1", "l2", "v2",
                 Labels.KUBERNETES_PART_OF_LABEL, "custom-part",
@@ -752,6 +760,51 @@ public class KafkaConnectClusterTest {
                 .withWhenUnsatisfiable("ScheduleAnyway")
                 .withLabelSelector(new LabelSelectorBuilder().withMatchLabels(singletonMap("label", "value")).build())
                 .build();
+        
+        ConfigMapVolumeSource configMap = new ConfigMapVolumeSourceBuilder()
+                .withName("configMap1")
+                .build();
+        
+        SecretVolumeSource secret = new SecretVolumeSourceBuilder()
+                .withSecretName("secret1")
+                .build();
+        
+        EmptyDirVolumeSource emptyDir = new EmptyDirVolumeSourceBuilder()
+                .withMedium("Memory")
+                .build();
+        
+        AdditionalVolume additionalVolumeConfigMap = new AdditionalVolumeBuilder()
+                .withName("config-map-volume-name")
+                .withConfigMap(configMap)
+                .build();
+        
+        AdditionalVolume additionalVolumeSecret = new AdditionalVolumeBuilder()
+                .withName("secret-volume-name")
+                .withSecret(secret)
+                .build();
+        
+        AdditionalVolume additionalVolumeEmptyDir = new AdditionalVolumeBuilder()
+                .withName("empty-dir-volume-name")
+                .withEmptyDir(emptyDir)
+                .build();
+        
+        VolumeMount additionalVolumeMountConfigMap = new VolumeMountBuilder()
+                .withName("config-map-volume-name")
+                .withMountPath("/mnt/config")
+                .withSubPath("def")
+                .build();
+        
+        VolumeMount additionalVolumeMountSecret = new VolumeMountBuilder()
+                .withName("secret-volume-name")
+                .withMountPath("/mnt/secret")
+                .withSubPath("abc")
+                .build();
+        
+        VolumeMount additionalVolumeMountEmptyDir = new VolumeMountBuilder()
+                .withName("empty-dir-volume-name")
+                .withMountPath("/mnt/empty-dir")
+                .withSubPath("def")
+                .build();
 
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
@@ -774,7 +827,14 @@ public class KafkaConnectClusterTest {
                             .withTopologySpreadConstraints(tsc1, tsc2)
                             .withEnableServiceLinks(false)
                             .withTmpDirSizeLimit("10Mi")
+                            .withVolumes(additionalVolumeSecret, additionalVolumeEmptyDir, additionalVolumeConfigMap)
                         .endPod()
+                        .withNewConnectContainer()
+                            .withVolumeMounts(additionalVolumeMountSecret, additionalVolumeMountEmptyDir)
+                        .endConnectContainer()
+                        .withNewInitContainer()
+                            .withVolumeMounts(additionalVolumeMountConfigMap)
+                        .endInitContainer()
                         .withNewApiService()
                             .withNewMetadata()
                                 .withLabels(svcLabels)
@@ -819,7 +879,13 @@ public class KafkaConnectClusterTest {
             assertThat(pod.getSpec().getHostAliases(), containsInAnyOrder(hostAlias1, hostAlias2));
             assertThat(pod.getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
             assertThat(pod.getSpec().getEnableServiceLinks(), is(false));
-            assertThat(pod.getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
+            assertThat(getVolume(pod, VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME).getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
+            assertThat(getVolume(pod, additionalVolumeMountEmptyDir.getName()).getEmptyDir(), is(emptyDir));
+            assertThat(getVolume(pod, additionalVolumeMountSecret.getName()).getSecret(), is(secret));
+            assertThat(getVolume(pod, additionalVolumeMountConfigMap.getName()).getConfigMap(), is(configMap));
+            assertThat(getVolumeMount(pod.getSpec().getContainers().get(0), additionalVolumeMountEmptyDir.getName()), is(additionalVolumeMountEmptyDir));
+            assertThat(getVolumeMount(pod.getSpec().getContainers().get(0), additionalVolumeMountSecret.getName()), is(additionalVolumeMountSecret));
+            assertThat(getVolumeMount(pod.getSpec().getInitContainers().get(0), additionalVolumeMountConfigMap.getName()), is(additionalVolumeMountConfigMap));
         });
 
         // Check Service
@@ -843,6 +909,14 @@ public class KafkaConnectClusterTest {
         ServiceAccount sa = kc.generateServiceAccount();
         assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
         assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnots.entrySet()), is(true));
+    }
+    
+    private static Volume getVolume(Pod pod, String volumeName) {
+        return pod.getSpec().getVolumes().stream().filter(volume -> volumeName.equals(volume.getName())).iterator().next();
+    }
+    
+    private static VolumeMount getVolumeMount(Container container, String volumeName) {
+        return container.getVolumeMounts().stream().filter(volumeMount -> volumeName.equals(volumeMount.getName())).iterator().next();
     }
 
     @ParallelTest

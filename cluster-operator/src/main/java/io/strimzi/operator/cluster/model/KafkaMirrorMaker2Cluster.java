@@ -197,6 +197,9 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
             AuthenticationUtils.configureClientAuthenticationVolumeMounts(mirrorMaker2Cluster.getAuthentication(), volumeMountList, tlsVolumeMountPath, passwordVolumeMountPath, oauthTlsVolumeMountPath, mirrorMaker2Cluster.getAlias() + "-oauth-certs", mirrorMaker2Cluster.getAlias() + '-', true, oauthVolumeMountPath);
 
         }
+
+        TemplateUtils.addAdditionalVolumeMounts(volumeMountList, templateContainer);
+
         return volumeMountList;
     }
 

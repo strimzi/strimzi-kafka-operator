@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Volume;
+import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
@@ -208,9 +209,7 @@ public class KafkaExporter extends AbstractModel {
                 resources,
                 getEnvVars(),
                 getContainerPortList(),
-                List.of(VolumeUtils.createTempDirVolumeMount(),
-                        VolumeUtils.createVolumeMount(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KAFKA_EXPORTER_CERTS_VOLUME_MOUNT),
-                        VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME_NAME, CLUSTER_CA_CERTS_VOLUME_MOUNT)),
+                getVolumeMounts(),
                 ProbeUtils.httpProbe(livenessProbeOptions, "/healthz", MetricsModel.METRICS_PORT_NAME),
                 ProbeUtils.httpProbe(readinessProbeOptions, "/healthz", MetricsModel.METRICS_PORT_NAME),
                 imagePullPolicy
@@ -260,6 +259,19 @@ public class KafkaExporter extends AbstractModel {
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
         volumeList.add(VolumeUtils.createSecretVolume(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KafkaExporterResources.secretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createSecretVolume(CLUSTER_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
+        
+        TemplateUtils.addAdditionalVolumes(templatePod, volumeList);
+        
+        return volumeList;
+    }
+    
+    private List<VolumeMount> getVolumeMounts() {
+        List<VolumeMount> volumeList = new ArrayList<>(3);
+        volumeList.add(VolumeUtils.createTempDirVolumeMount());
+        volumeList.add(VolumeUtils.createVolumeMount(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KAFKA_EXPORTER_CERTS_VOLUME_MOUNT));
+        volumeList.add(VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME_NAME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
+
+        TemplateUtils.addAdditionalVolumeMounts(volumeList, templateContainer);
 
         return volumeList;
     }

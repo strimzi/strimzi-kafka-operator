@@ -1490,6 +1490,85 @@ spec:
                               type: string
                               pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
                               description: "Defines the total amount of pod memory allocated for the temporary `EmptyDir` volume `/tmp`. Specify the allocation in memory units, for example, `100Mi` for 100 mebibytes. Default value is `5Mi`. The `/tmp` volume is backed by pod memory, not disk storage, so avoid setting a high value as it consumes pod memory resources."
+                            volumes:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                    description: Name to use for the volume. Required.
+                                  secret:
+                                    type: object
+                                    properties:
+                                      defaultMode:
+                                        type: integer
+                                      items:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            key:
+                                              type: string
+                                            mode:
+                                              type: integer
+                                            path:
+                                              type: string
+                                      optional:
+                                        type: boolean
+                                      secretName:
+                                        type: string
+                                    description: Secret to use populate the volume.
+                                  configMap:
+                                    type: object
+                                    properties:
+                                      defaultMode:
+                                        type: integer
+                                      items:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            key:
+                                              type: string
+                                            mode:
+                                              type: integer
+                                            path:
+                                              type: string
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                                    description: ConfigMap to use to populate the volume.
+                                  emptyDir:
+                                    type: object
+                                    properties:
+                                      medium:
+                                        type: string
+                                      sizeLimit:
+                                        type: object
+                                        properties:
+                                          amount:
+                                            type: string
+                                          format:
+                                            type: string
+                                    description: EmptyDir to use to populate the volume.
+                                  persistentVolumeClaim:
+                                    type: object
+                                    properties:
+                                      claimName:
+                                        type: string
+                                      readOnly:
+                                        type: boolean
+                                    description: PersistentVolumeClaim object to use to populate the volume.
+                                oneOf:
+                                  - properties:
+                                      secret: {}
+                                      configMap: {}
+                                      emptyDir: {}
+                                      persistentVolumeClaim: {}
+                                    required: []
+                              description: Additional volumes that can be mounted to the pod.
                           description: Template for Kafka `Pods`.
                         bootstrapService:
                           type: object
@@ -1785,6 +1864,26 @@ spec:
                                     runAsUserName:
                                       type: string
                               description: Security context for the container.
+                            volumeMounts:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  mountPath:
+                                    type: string
+                                  mountPropagation:
+                                    type: string
+                                  name:
+                                    type: string
+                                  readOnly:
+                                    type: boolean
+                                  recursiveReadOnly:
+                                    type: string
+                                  subPath:
+                                    type: string
+                                  subPathExpr:
+                                    type: string
+                              description: Additional volume mounts which should be applied to the container.
                           description: Template for the Kafka broker container.
                         initContainer:
                           type: object
@@ -1866,6 +1965,26 @@ spec:
                                     runAsUserName:
                                       type: string
                               description: Security context for the container.
+                            volumeMounts:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  mountPath:
+                                    type: string
+                                  mountPropagation:
+                                    type: string
+                                  name:
+                                    type: string
+                                  readOnly:
+                                    type: boolean
+                                  recursiveReadOnly:
+                                    type: string
+                                  subPath:
+                                    type: string
+                                  subPathExpr:
+                                    type: string
+                              description: Additional volume mounts which should be applied to the container.
                           description: Template for the Kafka init container.
                         clusterCaCert:
                           type: object
@@ -2822,6 +2941,85 @@ spec:
                               type: string
                               pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
                               description: "Defines the total amount of pod memory allocated for the temporary `EmptyDir` volume `/tmp`. Specify the allocation in memory units, for example, `100Mi` for 100 mebibytes. Default value is `5Mi`. The `/tmp` volume is backed by pod memory, not disk storage, so avoid setting a high value as it consumes pod memory resources."
+                            volumes:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                    description: Name to use for the volume. Required.
+                                  secret:
+                                    type: object
+                                    properties:
+                                      defaultMode:
+                                        type: integer
+                                      items:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            key:
+                                              type: string
+                                            mode:
+                                              type: integer
+                                            path:
+                                              type: string
+                                      optional:
+                                        type: boolean
+                                      secretName:
+                                        type: string
+                                    description: Secret to use populate the volume.
+                                  configMap:
+                                    type: object
+                                    properties:
+                                      defaultMode:
+                                        type: integer
+                                      items:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            key:
+                                              type: string
+                                            mode:
+                                              type: integer
+                                            path:
+                                              type: string
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                                    description: ConfigMap to use to populate the volume.
+                                  emptyDir:
+                                    type: object
+                                    properties:
+                                      medium:
+                                        type: string
+                                      sizeLimit:
+                                        type: object
+                                        properties:
+                                          amount:
+                                            type: string
+                                          format:
+                                            type: string
+                                    description: EmptyDir to use to populate the volume.
+                                  persistentVolumeClaim:
+                                    type: object
+                                    properties:
+                                      claimName:
+                                        type: string
+                                      readOnly:
+                                        type: boolean
+                                    description: PersistentVolumeClaim object to use to populate the volume.
+                                oneOf:
+                                  - properties:
+                                      secret: {}
+                                      configMap: {}
+                                      emptyDir: {}
+                                      persistentVolumeClaim: {}
+                                    required: []
+                              description: Additional volumes that can be mounted to the pod.
                           description: Template for ZooKeeper `Pods`.
                         clientService:
                           type: object
@@ -3009,6 +3207,26 @@ spec:
                                     runAsUserName:
                                       type: string
                               description: Security context for the container.
+                            volumeMounts:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  mountPath:
+                                    type: string
+                                  mountPropagation:
+                                    type: string
+                                  name:
+                                    type: string
+                                  readOnly:
+                                    type: boolean
+                                  recursiveReadOnly:
+                                    type: string
+                                  subPath:
+                                    type: string
+                                  subPathExpr:
+                                    type: string
+                              description: Additional volume mounts which should be applied to the container.
                           description: Template for the ZooKeeper container.
                         serviceAccount:
                           type: object
@@ -4030,6 +4248,85 @@ spec:
                               type: string
                               pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
                               description: "Defines the total amount of pod memory allocated for the temporary `EmptyDir` volume `/tmp`. Specify the allocation in memory units, for example, `100Mi` for 100 mebibytes. Default value is `5Mi`. The `/tmp` volume is backed by pod memory, not disk storage, so avoid setting a high value as it consumes pod memory resources."
+                            volumes:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                    description: Name to use for the volume. Required.
+                                  secret:
+                                    type: object
+                                    properties:
+                                      defaultMode:
+                                        type: integer
+                                      items:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            key:
+                                              type: string
+                                            mode:
+                                              type: integer
+                                            path:
+                                              type: string
+                                      optional:
+                                        type: boolean
+                                      secretName:
+                                        type: string
+                                    description: Secret to use populate the volume.
+                                  configMap:
+                                    type: object
+                                    properties:
+                                      defaultMode:
+                                        type: integer
+                                      items:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            key:
+                                              type: string
+                                            mode:
+                                              type: integer
+                                            path:
+                                              type: string
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                                    description: ConfigMap to use to populate the volume.
+                                  emptyDir:
+                                    type: object
+                                    properties:
+                                      medium:
+                                        type: string
+                                      sizeLimit:
+                                        type: object
+                                        properties:
+                                          amount:
+                                            type: string
+                                          format:
+                                            type: string
+                                    description: EmptyDir to use to populate the volume.
+                                  persistentVolumeClaim:
+                                    type: object
+                                    properties:
+                                      claimName:
+                                        type: string
+                                      readOnly:
+                                        type: boolean
+                                    description: PersistentVolumeClaim object to use to populate the volume.
+                                oneOf:
+                                  - properties:
+                                      secret: {}
+                                      configMap: {}
+                                      emptyDir: {}
+                                      persistentVolumeClaim: {}
+                                    required: []
+                              description: Additional volumes that can be mounted to the pod.
                           description: Template for Entity Operator `Pods`.
                         topicOperatorContainer:
                           type: object
@@ -4111,6 +4408,26 @@ spec:
                                     runAsUserName:
                                       type: string
                               description: Security context for the container.
+                            volumeMounts:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  mountPath:
+                                    type: string
+                                  mountPropagation:
+                                    type: string
+                                  name:
+                                    type: string
+                                  readOnly:
+                                    type: boolean
+                                  recursiveReadOnly:
+                                    type: string
+                                  subPath:
+                                    type: string
+                                  subPathExpr:
+                                    type: string
+                              description: Additional volume mounts which should be applied to the container.
                           description: Template for the Entity Topic Operator container.
                         userOperatorContainer:
                           type: object
@@ -4192,6 +4509,26 @@ spec:
                                     runAsUserName:
                                       type: string
                               description: Security context for the container.
+                            volumeMounts:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  mountPath:
+                                    type: string
+                                  mountPropagation:
+                                    type: string
+                                  name:
+                                    type: string
+                                  readOnly:
+                                    type: boolean
+                                  recursiveReadOnly:
+                                    type: string
+                                  subPath:
+                                    type: string
+                                  subPathExpr:
+                                    type: string
+                              description: Additional volume mounts which should be applied to the container.
                           description: Template for the Entity User Operator container.
                         tlsSidecarContainer:
                           type: object
@@ -4273,6 +4610,26 @@ spec:
                                     runAsUserName:
                                       type: string
                               description: Security context for the container.
+                            volumeMounts:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  mountPath:
+                                    type: string
+                                  mountPropagation:
+                                    type: string
+                                  name:
+                                    type: string
+                                  readOnly:
+                                    type: boolean
+                                  recursiveReadOnly:
+                                    type: string
+                                  subPath:
+                                    type: string
+                                  subPathExpr:
+                                    type: string
+                              description: Additional volume mounts which should be applied to the container.
                           description: Template for the Entity Operator TLS sidecar container.
                         serviceAccount:
                           type: object
@@ -5165,6 +5522,85 @@ spec:
                               type: string
                               pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
                               description: "Defines the total amount of pod memory allocated for the temporary `EmptyDir` volume `/tmp`. Specify the allocation in memory units, for example, `100Mi` for 100 mebibytes. Default value is `5Mi`. The `/tmp` volume is backed by pod memory, not disk storage, so avoid setting a high value as it consumes pod memory resources."
+                            volumes:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                    description: Name to use for the volume. Required.
+                                  secret:
+                                    type: object
+                                    properties:
+                                      defaultMode:
+                                        type: integer
+                                      items:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            key:
+                                              type: string
+                                            mode:
+                                              type: integer
+                                            path:
+                                              type: string
+                                      optional:
+                                        type: boolean
+                                      secretName:
+                                        type: string
+                                    description: Secret to use populate the volume.
+                                  configMap:
+                                    type: object
+                                    properties:
+                                      defaultMode:
+                                        type: integer
+                                      items:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            key:
+                                              type: string
+                                            mode:
+                                              type: integer
+                                            path:
+                                              type: string
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                                    description: ConfigMap to use to populate the volume.
+                                  emptyDir:
+                                    type: object
+                                    properties:
+                                      medium:
+                                        type: string
+                                      sizeLimit:
+                                        type: object
+                                        properties:
+                                          amount:
+                                            type: string
+                                          format:
+                                            type: string
+                                    description: EmptyDir to use to populate the volume.
+                                  persistentVolumeClaim:
+                                    type: object
+                                    properties:
+                                      claimName:
+                                        type: string
+                                      readOnly:
+                                        type: boolean
+                                    description: PersistentVolumeClaim object to use to populate the volume.
+                                oneOf:
+                                  - properties:
+                                      secret: {}
+                                      configMap: {}
+                                      emptyDir: {}
+                                      persistentVolumeClaim: {}
+                                    required: []
+                              description: Additional volumes that can be mounted to the pod.
                           description: Template for Cruise Control `Pods`.
                         apiService:
                           type: object
@@ -5301,6 +5737,26 @@ spec:
                                     runAsUserName:
                                       type: string
                               description: Security context for the container.
+                            volumeMounts:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  mountPath:
+                                    type: string
+                                  mountPropagation:
+                                    type: string
+                                  name:
+                                    type: string
+                                  readOnly:
+                                    type: boolean
+                                  recursiveReadOnly:
+                                    type: string
+                                  subPath:
+                                    type: string
+                                  subPathExpr:
+                                    type: string
+                              description: Additional volume mounts which should be applied to the container.
                           description: Template for the Cruise Control container.
                         tlsSidecarContainer:
                           type: object
@@ -5382,6 +5838,26 @@ spec:
                                     runAsUserName:
                                       type: string
                               description: Security context for the container.
+                            volumeMounts:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  mountPath:
+                                    type: string
+                                  mountPropagation:
+                                    type: string
+                                  name:
+                                    type: string
+                                  readOnly:
+                                    type: boolean
+                                  recursiveReadOnly:
+                                    type: string
+                                  subPath:
+                                    type: string
+                                  subPathExpr:
+                                    type: string
+                              description: Additional volume mounts which should be applied to the container.
                           description: Template for the Cruise Control TLS sidecar container.
                         serviceAccount:
                           type: object
@@ -6102,6 +6578,85 @@ spec:
                               type: string
                               pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
                               description: "Defines the total amount of pod memory allocated for the temporary `EmptyDir` volume `/tmp`. Specify the allocation in memory units, for example, `100Mi` for 100 mebibytes. Default value is `5Mi`. The `/tmp` volume is backed by pod memory, not disk storage, so avoid setting a high value as it consumes pod memory resources."
+                            volumes:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                    description: Name to use for the volume. Required.
+                                  secret:
+                                    type: object
+                                    properties:
+                                      defaultMode:
+                                        type: integer
+                                      items:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            key:
+                                              type: string
+                                            mode:
+                                              type: integer
+                                            path:
+                                              type: string
+                                      optional:
+                                        type: boolean
+                                      secretName:
+                                        type: string
+                                    description: Secret to use populate the volume.
+                                  configMap:
+                                    type: object
+                                    properties:
+                                      defaultMode:
+                                        type: integer
+                                      items:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            key:
+                                              type: string
+                                            mode:
+                                              type: integer
+                                            path:
+                                              type: string
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                                    description: ConfigMap to use to populate the volume.
+                                  emptyDir:
+                                    type: object
+                                    properties:
+                                      medium:
+                                        type: string
+                                      sizeLimit:
+                                        type: object
+                                        properties:
+                                          amount:
+                                            type: string
+                                          format:
+                                            type: string
+                                    description: EmptyDir to use to populate the volume.
+                                  persistentVolumeClaim:
+                                    type: object
+                                    properties:
+                                      claimName:
+                                        type: string
+                                      readOnly:
+                                        type: boolean
+                                    description: PersistentVolumeClaim object to use to populate the volume.
+                                oneOf:
+                                  - properties:
+                                      secret: {}
+                                      configMap: {}
+                                      emptyDir: {}
+                                      persistentVolumeClaim: {}
+                                    required: []
+                              description: Additional volumes that can be mounted to the pod.
                           description: Template for JmxTrans `Pods`.
                         container:
                           type: object
@@ -6183,6 +6738,26 @@ spec:
                                     runAsUserName:
                                       type: string
                               description: Security context for the container.
+                            volumeMounts:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  mountPath:
+                                    type: string
+                                  mountPropagation:
+                                    type: string
+                                  name:
+                                    type: string
+                                  readOnly:
+                                    type: boolean
+                                  recursiveReadOnly:
+                                    type: string
+                                  subPath:
+                                    type: string
+                                  subPathExpr:
+                                    type: string
+                              description: Additional volume mounts which should be applied to the container.
                           description: Template for JmxTrans container.
                         serviceAccount:
                           type: object
@@ -6840,6 +7415,85 @@ spec:
                               type: string
                               pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
                               description: "Defines the total amount of pod memory allocated for the temporary `EmptyDir` volume `/tmp`. Specify the allocation in memory units, for example, `100Mi` for 100 mebibytes. Default value is `5Mi`. The `/tmp` volume is backed by pod memory, not disk storage, so avoid setting a high value as it consumes pod memory resources."
+                            volumes:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                    description: Name to use for the volume. Required.
+                                  secret:
+                                    type: object
+                                    properties:
+                                      defaultMode:
+                                        type: integer
+                                      items:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            key:
+                                              type: string
+                                            mode:
+                                              type: integer
+                                            path:
+                                              type: string
+                                      optional:
+                                        type: boolean
+                                      secretName:
+                                        type: string
+                                    description: Secret to use populate the volume.
+                                  configMap:
+                                    type: object
+                                    properties:
+                                      defaultMode:
+                                        type: integer
+                                      items:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            key:
+                                              type: string
+                                            mode:
+                                              type: integer
+                                            path:
+                                              type: string
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                                    description: ConfigMap to use to populate the volume.
+                                  emptyDir:
+                                    type: object
+                                    properties:
+                                      medium:
+                                        type: string
+                                      sizeLimit:
+                                        type: object
+                                        properties:
+                                          amount:
+                                            type: string
+                                          format:
+                                            type: string
+                                    description: EmptyDir to use to populate the volume.
+                                  persistentVolumeClaim:
+                                    type: object
+                                    properties:
+                                      claimName:
+                                        type: string
+                                      readOnly:
+                                        type: boolean
+                                    description: PersistentVolumeClaim object to use to populate the volume.
+                                oneOf:
+                                  - properties:
+                                      secret: {}
+                                      configMap: {}
+                                      emptyDir: {}
+                                      persistentVolumeClaim: {}
+                                    required: []
+                              description: Additional volumes that can be mounted to the pod.
                           description: Template for Kafka Exporter `Pods`.
                         service:
                           type: object
@@ -6939,6 +7593,26 @@ spec:
                                     runAsUserName:
                                       type: string
                               description: Security context for the container.
+                            volumeMounts:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  mountPath:
+                                    type: string
+                                  mountPropagation:
+                                    type: string
+                                  name:
+                                    type: string
+                                  readOnly:
+                                    type: boolean
+                                  recursiveReadOnly:
+                                    type: string
+                                  subPath:
+                                    type: string
+                                  subPathExpr:
+                                    type: string
+                              description: Additional volume mounts which should be applied to the container.
                           description: Template for the Kafka Exporter container.
                         serviceAccount:
                           type: object

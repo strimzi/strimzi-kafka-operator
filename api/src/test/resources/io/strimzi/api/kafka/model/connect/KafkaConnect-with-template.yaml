@@ -31,6 +31,22 @@ spec:
         runAsGroup: 1000001
         fsGroup: 0
       terminationGracePeriodSeconds: 30
+      volumes:
+        - name: example-secret
+          secret: 
+            secretName: secret-name
+        - name: example-configmap
+          configMap:
+            name: config-map-name
+    connectContainer:
+      volumeMounts:
+        - name: example-secret
+          mountPath: /path/to/mount/secret-volume
+          subPath: subPath1
+    initContainer:
+      volumeMounts:
+        - name: example-configmap
+          mountPath: /path/to/mount/cm-volume
     podDisruptionBudget:
       metadata:
         labels:
