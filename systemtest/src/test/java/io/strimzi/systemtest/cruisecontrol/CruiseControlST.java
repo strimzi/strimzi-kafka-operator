@@ -143,7 +143,10 @@ public class CruiseControlST extends AbstractST {
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3)
-                .editOrNewSpec()
+            .editOrNewMetadata()
+                .withNamespace(testStorage.getNamespaceName())
+            .endMetadata()
+            .editOrNewSpec()
                     .editCruiseControl()
                         .addToConfig("webserver.security.enable", "false")
                         .addToConfig("webserver.ssl.enable", "false")
@@ -152,11 +155,11 @@ public class CruiseControlST extends AbstractST {
                 .build());
         resourceManager.createResourceWithWait(KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
             .editMetadata()
-                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
+                .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .build());
 
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), KafkaRebalanceState.ProposalReady);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceState.ProposalReady);
     }
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
