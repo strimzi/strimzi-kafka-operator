@@ -72,7 +72,6 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
 import static io.strimzi.systemtest.TestConstants.EXTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.TestConstants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
@@ -124,7 +123,6 @@ public class ListenersST extends AbstractST {
      * Test sending messages over plain transport, without auth
      */
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesPlainAnonymous() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -152,7 +150,6 @@ public class ListenersST extends AbstractST {
      * Test sending messages over tls transport using mutual tls auth
      */
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesTlsAuthenticated() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -217,7 +214,6 @@ public class ListenersST extends AbstractST {
      * Test sending messages over plain transport using scram sha auth
      */
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesPlainScramSha() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -281,7 +277,6 @@ public class ListenersST extends AbstractST {
      */
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
-    @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesTlsScramSha() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int passwordLength = 50;
@@ -350,7 +345,6 @@ public class ListenersST extends AbstractST {
      */
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
-    @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesCustomListenerTlsScramSha() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -709,7 +703,6 @@ public class ListenersST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     void testClusterIp() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -740,7 +733,6 @@ public class ListenersST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     void testClusterIpTls() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -783,7 +775,6 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    @Tag(INTERNAL_CLIENTS_USED)
     void testCustomSoloCertificatesForNodePort() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
@@ -872,7 +863,6 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    @Tag(INTERNAL_CLIENTS_USED)
     void testCustomChainCertificatesForNodePort() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String clusterCustomCertChain1 = testStorage.getClusterName() + "-" + customCertChain1;
@@ -965,7 +955,6 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    @Tag(INTERNAL_CLIENTS_USED)
     void testCustomSoloCertificatesForLoadBalancer() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
@@ -1050,7 +1039,6 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    @Tag(INTERNAL_CLIENTS_USED)
     void testCustomChainCertificatesForLoadBalancer() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String clusterCustomCertChain1 = testStorage.getClusterName() + "-" + customCertChain1;
@@ -1140,7 +1128,6 @@ public class ListenersST extends AbstractST {
     @Tag(SANITY)
     @Tag(ACCEPTANCE)
     @Tag(EXTERNAL_CLIENTS_USED)
-    @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROUTE)
     @OpenShiftOnly
     void testCustomSoloCertificatesForRoute() {
@@ -1230,7 +1217,6 @@ public class ListenersST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(EXTERNAL_CLIENTS_USED)
-    @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROUTE)
     @OpenShiftOnly
     void testCustomChainCertificatesForRoute() {
@@ -1326,7 +1312,6 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    @Tag(INTERNAL_CLIENTS_USED)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testCustomCertLoadBalancerAndTlsRollingUpdate() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -1574,7 +1559,6 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    @Tag(INTERNAL_CLIENTS_USED)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testCustomCertNodePortAndTlsRollingUpdate() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -1826,7 +1810,6 @@ public class ListenersST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(EXTERNAL_CLIENTS_USED)
-    @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROUTE)
     @OpenShiftOnly
     @SuppressWarnings({"checkstyle:MethodLength"})

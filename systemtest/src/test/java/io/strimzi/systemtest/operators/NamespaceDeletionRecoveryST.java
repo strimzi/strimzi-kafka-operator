@@ -38,7 +38,6 @@ import org.junit.jupiter.api.Tag;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.RECOVERY;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -60,7 +59,6 @@ class NamespaceDeletionRecoveryST extends AbstractST {
      * At the end we verify that we can receive messages from topic (so data are present).
      */
     @IsolatedTest("We need for each test case its own Cluster Operator")
-    @Tag(INTERNAL_CLIENTS_USED)
     void testTopicAvailable() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -130,7 +128,6 @@ class NamespaceDeletionRecoveryST extends AbstractST {
      *
      **/
     @IsolatedTest("We need for each test case its own Cluster Operator")
-    @Tag(INTERNAL_CLIENTS_USED)
     void testTopicNotAvailable() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         prepareEnvironmentForRecovery(testStorage);

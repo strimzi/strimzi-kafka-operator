@@ -29,7 +29,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
 import static io.strimzi.systemtest.TestConstants.ARM64_UNSUPPORTED;
-import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
@@ -40,7 +39,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * on creation & deletion of topics and create partition operations.
  */
 @Tag(REGRESSION)
-@Tag(INTERNAL_CLIENTS_USED)
 @Tag(ARM64_UNSUPPORTED) // Due to https://github.com/strimzi/test-clients/issues/75
 public class ThrottlingQuotaST extends AbstractST {
 

@@ -48,7 +48,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.TestConstants.CRUISE_CONTROL;
-import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.NETWORKPOLICIES_SUPPORTED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -84,7 +83,6 @@ public class NetworkPoliciesST extends AbstractST {
      *  - metrics
      */
     @IsolatedTest("Specific Cluster Operator for test case")
-    @Tag(INTERNAL_CLIENTS_USED)
     @SuppressWarnings("checkstyle:MethodLength")
     void testNetworkPoliciesOnListenersWhenOperatorIsInSameNamespaceAsOperands() {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());

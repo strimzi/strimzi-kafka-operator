@@ -34,7 +34,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -65,7 +64,6 @@ public class FeatureGatesST extends AbstractST {
      *  - kraft
      */
     @IsolatedTest("Feature Gates test for enabled UseKRaft gate")
-    @Tag(INTERNAL_CLIENTS_USED)
     public void testKRaftMode() {
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 

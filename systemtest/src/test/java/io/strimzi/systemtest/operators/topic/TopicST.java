@@ -48,7 +48,6 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.systemtest.TestConstants.ARM64_UNSUPPORTED;
-import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.systemtest.enums.ConditionStatus.False;
 import static io.strimzi.systemtest.enums.ConditionStatus.True;
@@ -153,7 +152,6 @@ public class TopicST extends AbstractST {
     }
 
     @ParallelTest
-    @Tag(INTERNAL_CLIENTS_USED)
     void testSendingMessagesToNonExistingTopic() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -171,7 +169,6 @@ public class TopicST extends AbstractST {
     }
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
-    @Tag(INTERNAL_CLIENTS_USED)
     void testDeleteTopicEnableFalse() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 

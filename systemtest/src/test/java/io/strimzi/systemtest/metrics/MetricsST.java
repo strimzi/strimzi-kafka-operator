@@ -81,7 +81,6 @@ import static io.strimzi.systemtest.TestConstants.BRIDGE;
 import static io.strimzi.systemtest.TestConstants.CONNECT;
 import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.TestConstants.CRUISE_CONTROL;
-import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.METRICS;
 import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
@@ -288,7 +287,6 @@ public class MetricsST extends AbstractST {
      *  - kafka-exporter-metrics
      */
     @IsolatedTest
-    @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaExporterMetrics() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String kafkaStrimziPodSetName = StrimziPodSetResource.getBrokerComponentName(kafkaClusterFirstName);

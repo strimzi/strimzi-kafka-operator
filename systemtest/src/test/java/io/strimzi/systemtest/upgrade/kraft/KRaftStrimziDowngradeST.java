@@ -27,7 +27,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.io.IOException;
 
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
-import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.KRAFT_UPGRADE;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -43,7 +42,6 @@ public class KRaftStrimziDowngradeST extends AbstractKRaftUpgradeST {
 
     @ParameterizedTest(name = "testDowngradeStrimziVersion-{0}-{1}")
     @MethodSource("io.strimzi.systemtest.upgrade.VersionModificationDataLoader#loadYamlDowngradeDataForKRaft")
-    @Tag(INTERNAL_CLIENTS_USED)
     void testDowngradeStrimziVersion(String from, String to, BundleVersionModificationData parameters) throws Exception {
         assumeTrue(StUtils.isAllowOnCurrentEnvironment(parameters.getEnvFlakyVariable()));
         assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getEnvMaxK8sVersion()));

@@ -76,7 +76,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.TestConstants.CRUISE_CONTROL;
-import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -553,7 +552,6 @@ class KafkaST extends AbstractST {
      */
     @ParallelNamespaceTest
     @SuppressWarnings({"checkstyle:JavaNCSS", "checkstyle:NPathComplexity", "checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
-    @Tag(INTERNAL_CLIENTS_USED)
     void testLabelsExistenceAndManipulation() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -883,7 +881,6 @@ class KafkaST extends AbstractST {
      *  - kafka-configuration
      */
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     void testMessagesAndConsumerOffsetFilesOnDisk() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -978,7 +975,6 @@ class KafkaST extends AbstractST {
      *  - root-file-system
      */
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     @Tag(CRUISE_CONTROL)
     void testReadOnlyRootFileSystem() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());

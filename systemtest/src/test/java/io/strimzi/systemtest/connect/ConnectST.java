@@ -85,7 +85,6 @@ import static io.strimzi.systemtest.TestConstants.COMPONENT_SCALING;
 import static io.strimzi.systemtest.TestConstants.CONNECT;
 import static io.strimzi.systemtest.TestConstants.CONNECTOR_OPERATOR;
 import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.systemtest.TestConstants.SANITY;
 import static io.strimzi.systemtest.TestConstants.SMOKE;
@@ -176,7 +175,6 @@ class ConnectST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(SANITY)
     @Tag(SMOKE)
-    @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaConnectAndConnectorStateWithFileSinkPlugin() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -233,7 +231,6 @@ class ConnectST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaConnectWithPlainAndScramShaAuthentication() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -308,7 +305,6 @@ class ConnectST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(CONNECTOR_OPERATOR)
-    @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaConnectAndConnectorFileSinkPlugin() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -433,7 +429,6 @@ class ConnectST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     void testSecretsWithKafkaConnectWithTlsAndTlsClientAuthentication() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -507,7 +502,6 @@ class ConnectST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     void testSecretsWithKafkaConnectWithTlsAndScramShaAuthentication() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -772,7 +766,6 @@ class ConnectST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(CONNECTOR_OPERATOR)
-    @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ACCEPTANCE)
     void testMultiNodeKafkaConnectWithConnectorCreation() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -1300,7 +1293,6 @@ class ConnectST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     // changing the password in Secret should cause the RU of connect pod
     void testKafkaConnectWithScramShaAuthenticationRolledAfterPasswordChanged() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());

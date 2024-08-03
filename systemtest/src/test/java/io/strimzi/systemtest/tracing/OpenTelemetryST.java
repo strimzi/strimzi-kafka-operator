@@ -48,7 +48,6 @@ import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
 import static io.strimzi.systemtest.TestConstants.BRIDGE;
 import static io.strimzi.systemtest.TestConstants.CONNECT;
 import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.KAFKA_TRACING_CLIENT_KEY;
 import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER;
 import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER2;
@@ -68,7 +67,6 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
 @Tag(TRACING)
-@Tag(INTERNAL_CLIENTS_USED)
 public class OpenTelemetryST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(OpenTelemetryST.class);
