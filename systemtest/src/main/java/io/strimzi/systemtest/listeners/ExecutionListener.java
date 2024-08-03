@@ -68,7 +68,9 @@ public class ExecutionListener implements TestExecutionListener {
                         // Tracing, because we deploy Jaeger operator inside additional namespace
                         testTag.getName().equals(TestConstants.TRACING) ||
                         // KafkaVersionsST, because here we use @ParameterizedTest
-                        testTag.getName().equals(TestConstants.KAFKA_SMOKE)) {
+                        testTag.getName().equals(TestConstants.KAFKA_SMOKE) ||
+                        // MigrationST, likewise KafkaVersionST uses @ParameterizedTest
+                        testTag.getName().equals(TestConstants.MIGRATION)) {
                     return true;
                 }
             }
