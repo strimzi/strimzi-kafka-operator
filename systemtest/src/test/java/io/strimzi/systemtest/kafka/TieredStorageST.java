@@ -156,18 +156,7 @@ public class TieredStorageST extends AbstractST {
                 testStorage.getNamespaceName(),
                 testStorage.getAdminName(),
                 KafkaResources.plainBootstrapAddress(testStorage.getClusterName())
-            )
-            .editSpec()
-                .editOrNewTemplate()
-                    .editSpec()
-                        .editFirstContainer()
-                            // TODO - remove this when new version of clients will be available
-                            .withImage("quay.io/strimzi-test-clients/test-clients:latest-kafka-" + Environment.ST_KAFKA_VERSION)
-                        .endContainer()
-                    .endSpec()
-                .endTemplate()
-            .endSpec()
-            .build()
+            ).build()
         );
         final AdminClient adminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
 
