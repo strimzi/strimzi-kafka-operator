@@ -53,7 +53,7 @@ public class ClientUtils {
      * @param deleteAfterSuccess Indicates whether jobs should be deleted after successful completion.
      */
     public static void waitForInstantClientSuccess(TestStorage testStorage, boolean deleteAfterSuccess) {
-        waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getMessageCount(), deleteAfterSuccess);
+        waitForClientsSuccess(testStorage.getNamespace(), testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getMessageCount(), deleteAfterSuccess);
     }
 
     /**
@@ -66,7 +66,7 @@ public class ClientUtils {
      * @param messageCount The expected number of messages to be transmitted.
      */
     public static void waitForContinuousClientSuccess(TestStorage testStorage, int messageCount) {
-        waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), messageCount, true);
+        waitForClientsSuccess(testStorage.getNamespace(), testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), messageCount, true);
     }
 
     /**
@@ -77,7 +77,7 @@ public class ClientUtils {
      * @param testStorage The {@link TestStorage} instance containing details about the clients' names.
      */
     public static void waitForContinuousClientSuccess(TestStorage testStorage) {
-        waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), testStorage.getContinuousMessageCount(), true);
+        waitForClientsSuccess(testStorage.getNamespace(), testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), testStorage.getContinuousMessageCount(), true);
     }
 
     public static void waitForClientsSuccess(String namespace, String producerName, String consumerName, int messageCount) {
@@ -109,7 +109,7 @@ public class ClientUtils {
      * @param testStorage The {@link TestStorage} instance containing details about the client's name.
      */
     public static void waitForInstantConsumerClientSuccess(TestStorage testStorage) {
-        waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
+        waitForClientSuccess(testStorage.getNamespace(), testStorage.getConsumerName(), testStorage.getMessageCount());
     }
 
     /**
@@ -120,7 +120,7 @@ public class ClientUtils {
      * @param testStorage The {@link TestStorage} instance containing details about the client's name.
      */
     public static void waitForInstantProducerClientSuccess(TestStorage testStorage) {
-        waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
+        waitForClientSuccess(testStorage.getNamespace(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     public static void waitForClientSuccess(String namespace, String jobName, int messageCount) {
@@ -161,7 +161,7 @@ public class ClientUtils {
      * @param deleteAfterSuccess Indicates whether producer job should be deleted after timeout.
      */
     public static void waitForInstantProducerClientTimeout(TestStorage testStorage, boolean deleteAfterSuccess) {
-        waitForClientTimeout(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount(), deleteAfterSuccess);
+        waitForClientTimeout(testStorage.getNamespace(), testStorage.getProducerName(), testStorage.getMessageCount(), deleteAfterSuccess);
     }
 
     /**
@@ -182,7 +182,7 @@ public class ClientUtils {
      * @param deleteAfterSuccess Indicates whether consumer job should be deleted after timeout.
      */
     public static void waitForInstantConsumerClientTimeout(TestStorage testStorage, boolean deleteAfterSuccess) {
-        waitForClientTimeout(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount(), deleteAfterSuccess);
+        waitForClientTimeout(testStorage.getNamespace(), testStorage.getConsumerName(), testStorage.getMessageCount(), deleteAfterSuccess);
     }
 
     public static void waitForClientTimeout(String namespace, String jobName, int messageCount) {
@@ -222,7 +222,7 @@ public class ClientUtils {
      * @param testStorage The {@link TestStorage} instance contains details about client's name.
      */
     public static void waitForInstantClientsTimeout(TestStorage testStorage) {
-        waitForClientsTimeout(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getMessageCount());
+        waitForClientsTimeout(testStorage.getNamespace(), testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getMessageCount());
     }
 
     public static void waitForClientsTimeout(String namespace, String producerName, String consumerName, int messageCount) {
@@ -290,7 +290,7 @@ public class ClientUtils {
      */
     private static KafkaClientsBuilder instantClientBuilderBase(TestStorage testStorage) {
         return new KafkaClientsBuilder()
-            .withNamespaceName(testStorage.getNamespaceName())
+            .withNamespaceName(testStorage.getNamespace())
             .withMessageCount(testStorage.getMessageCount()) // default 100
             .withDelayMs(0)
             .withTopicName(testStorage.getTopicName())
@@ -498,7 +498,7 @@ public class ClientUtils {
     public static KafkaClientsBuilder getContinuousPlainClientBuilder(TestStorage testStorage) {
         return new KafkaClientsBuilder()
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withNamespaceName(testStorage.getNamespaceName())
+            .withNamespaceName(testStorage.getNamespace())
             .withMessageCount(testStorage.getContinuousMessageCount()) // default 200
             .withDelayMs(1000)
             .withTopicName(testStorage.getContinuousTopicName())

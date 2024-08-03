@@ -411,8 +411,8 @@ public class OauthPlainST extends OauthAbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetBrokerPoolName(), testStorage.getTargetClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetControllerPoolName(), testStorage.getTargetClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getTargetBrokerPoolName(), testStorage.getTargetClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getTargetControllerPoolName(), testStorage.getTargetClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getTargetClusterName(), 1, 1)
@@ -560,8 +560,8 @@ public class OauthPlainST extends OauthAbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetBrokerPoolName(), testStorage.getTargetClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetControllerPoolName(), testStorage.getTargetClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getTargetBrokerPoolName(), testStorage.getTargetClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getTargetControllerPoolName(), testStorage.getTargetClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getTargetClusterName(), 1, 1)
@@ -779,7 +779,7 @@ public class OauthPlainST extends OauthAbstractST {
     void testSaslPlainAuthenticationKafkaConnectIsAbleToConnectToKafkaOAuth() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        resourceManager.createResourceWithoutWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), oauthClusterName, 1)
+        resourceManager.createResourceWithoutWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespace(), testStorage.getClusterName(), oauthClusterName, 1)
             .withNewSpec()
                 .withReplicas(1)
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(oauthClusterName))
@@ -800,7 +800,7 @@ public class OauthPlainST extends OauthAbstractST {
             .build());
 
         // verify that KafkaConnect is able to connect to Oauth Kafka configured as plain
-        KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
+        KafkaConnectUtils.waitForConnectReady(testStorage.getNamespace(), testStorage.getClusterName());
     }
 
     private void assertOauthMetricsForComponent(MetricsCollector collector) {

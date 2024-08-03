@@ -79,21 +79,21 @@ public class MirrorMakerST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getSourceBrokerPoolName(), testStorage.getSourceClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getSourceControllerPoolName(), testStorage.getSourceClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getSourceBrokerPoolName(), testStorage.getSourceClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getSourceControllerPoolName(), testStorage.getSourceClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getSourceClusterName(), 1).build());
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetBrokerPoolName(), testStorage.getTargetClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetControllerPoolName(), testStorage.getTargetClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getTargetBrokerPoolName(), testStorage.getTargetClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getTargetControllerPoolName(), testStorage.getTargetClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getTargetClusterName(), 1).build());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), testStorage.getTopicName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespace(), testStorage.getSourceClusterName(), testStorage.getTopicName()).build());
 
         final KafkaClients sourceClients = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()));
         resourceManager.createResourceWithWait(sourceClients.producerStrimzi(), sourceClients.consumerStrimzi());
@@ -116,23 +116,23 @@ public class MirrorMakerST extends AbstractST {
             .endSpec()
             .build());
 
-        VerificationUtils.verifyPodsLabels(testStorage.getNamespaceName(), KafkaMirrorMakerResources.componentName(testStorage.getClusterName()),
+        VerificationUtils.verifyPodsLabels(testStorage.getNamespace(), KafkaMirrorMakerResources.componentName(testStorage.getClusterName()),
             KafkaMirrorMakerResource.getLabelSelector(testStorage.getClusterName(), KafkaMirrorMakerResources.componentName(testStorage.getClusterName())));
 
-        VerificationUtils.verifyConfigMapsLabels(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), testStorage.getTargetClusterName());
-        VerificationUtils.verifyServiceAccountsLabels(testStorage.getNamespaceName(), testStorage.getSourceClusterName());
+        VerificationUtils.verifyConfigMapsLabels(testStorage.getNamespace(), testStorage.getSourceClusterName(), testStorage.getTargetClusterName());
+        VerificationUtils.verifyServiceAccountsLabels(testStorage.getNamespace(), testStorage.getSourceClusterName());
 
         String mmDepName = KafkaMirrorMakerResources.componentName(testStorage.getClusterName());
-        String mirrorMakerPodName = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(mmDepName).get(0).getMetadata().getName();
-        String kafkaMirrorMakerLogs = kubeClient(testStorage.getNamespaceName()).logs(mirrorMakerPodName);
+        String mirrorMakerPodName = kubeClient(testStorage.getNamespace()).listPodsByPrefixInName(mmDepName).get(0).getMetadata().getName();
+        String kafkaMirrorMakerLogs = kubeClient(testStorage.getNamespace()).logs(mirrorMakerPodName);
 
         assertThat(kafkaMirrorMakerLogs,
             not(containsString("keytool error: java.io.FileNotFoundException: /opt/kafka/consumer-oauth-certs/**/* (No such file or directory)")));
 
-        String podName = kubeClient(testStorage.getNamespaceName()).listPodsByNamespace(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(n -> n.getMetadata().getName().startsWith(KafkaMirrorMakerResources.componentName(testStorage.getClusterName()))).findFirst().orElseThrow().getMetadata().getName();
-        VerificationUtils.assertPodResourceRequests(testStorage.getNamespaceName(), podName, mmDepName,
+        String podName = kubeClient(testStorage.getNamespace()).listPodsByNamespace(testStorage.getNamespace(), testStorage.getClusterName()).stream().filter(n -> n.getMetadata().getName().startsWith(KafkaMirrorMakerResources.componentName(testStorage.getClusterName()))).findFirst().orElseThrow().getMetadata().getName();
+        VerificationUtils.assertPodResourceRequests(testStorage.getNamespace(), podName, mmDepName,
                 "400M", "2", "300M", "1");
-        VerificationUtils.assertJvmOptions(testStorage.getNamespaceName(), podName, KafkaMirrorMakerResources.componentName(testStorage.getClusterName()),
+        VerificationUtils.assertJvmOptions(testStorage.getNamespace(), podName, KafkaMirrorMakerResources.componentName(testStorage.getClusterName()),
                 "-Xmx200m", "-Xms200m", "-XX:+UseG1GC");
 
         final KafkaClients targetClients = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()));
@@ -151,8 +151,8 @@ public class MirrorMakerST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getSourceBrokerPoolName(), testStorage.getSourceClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getSourceControllerPoolName(), testStorage.getSourceClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getSourceBrokerPoolName(), testStorage.getSourceClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getSourceControllerPoolName(), testStorage.getSourceClusterName(), 1).build()
             )
         );
 
@@ -173,8 +173,8 @@ public class MirrorMakerST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetBrokerPoolName(), testStorage.getTargetClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetControllerPoolName(), testStorage.getTargetClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getTargetBrokerPoolName(), testStorage.getTargetClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getTargetControllerPoolName(), testStorage.getTargetClusterName(), 1).build()
             )
         );
 
@@ -194,9 +194,9 @@ public class MirrorMakerST extends AbstractST {
             .build());
 
         resourceManager.createResourceWithWait(
-            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), testStorage.getTopicName()).build(),
-            KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), testStorage.getSourceUsername()).build(),
-            KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getTargetClusterName(), testStorage.getTargetUsername()).build()
+            KafkaTopicTemplates.topic(testStorage.getNamespace(), testStorage.getSourceClusterName(), testStorage.getTopicName()).build(),
+            KafkaUserTemplates.tlsUser(testStorage.getNamespace(), testStorage.getSourceClusterName(), testStorage.getSourceUsername()).build(),
+            KafkaUserTemplates.tlsUser(testStorage.getNamespace(), testStorage.getTargetClusterName(), testStorage.getTargetUsername()).build()
         );
 
         // Initialize CertSecretSource with certificate and secret names for consumer
@@ -262,8 +262,8 @@ public class MirrorMakerST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getSourceBrokerPoolName(), testStorage.getSourceClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getSourceControllerPoolName(), testStorage.getSourceClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getSourceBrokerPoolName(), testStorage.getSourceClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getSourceControllerPoolName(), testStorage.getSourceClusterName(), 1).build()
             )
         );
 
@@ -284,8 +284,8 @@ public class MirrorMakerST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetBrokerPoolName(), testStorage.getTargetClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetControllerPoolName(), testStorage.getTargetClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getTargetBrokerPoolName(), testStorage.getTargetClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getTargetControllerPoolName(), testStorage.getTargetClusterName(), 1).build()
             )
         );
 
@@ -306,9 +306,9 @@ public class MirrorMakerST extends AbstractST {
 
         // Deploy topic
         resourceManager.createResourceWithWait(
-            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), testStorage.getTopicName()).build(),
-            KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), testStorage.getSourceUsername()).build(),
-            KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), testStorage.getTargetClusterName(), testStorage.getTargetUsername()).build()
+            KafkaTopicTemplates.topic(testStorage.getNamespace(), testStorage.getSourceClusterName(), testStorage.getTopicName()).build(),
+            KafkaUserTemplates.scramShaUser(testStorage.getNamespace(), testStorage.getSourceClusterName(), testStorage.getSourceUsername()).build(),
+            KafkaUserTemplates.scramShaUser(testStorage.getNamespace(), testStorage.getTargetClusterName(), testStorage.getTargetUsername()).build()
         );
 
         // Initialize PasswordSecretSource to set this as PasswordSecret in MirrorMaker spec
@@ -378,24 +378,24 @@ public class MirrorMakerST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getSourceBrokerPoolName(), testStorage.getSourceClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getSourceControllerPoolName(), testStorage.getSourceClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespace(), testStorage.getSourceBrokerPoolName(), testStorage.getSourceClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespace(), testStorage.getSourceControllerPoolName(), testStorage.getSourceClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getSourceClusterName(), 1).build());
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetBrokerPoolName(), testStorage.getTargetClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetControllerPoolName(), testStorage.getTargetClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getTargetBrokerPoolName(), testStorage.getTargetClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getTargetControllerPoolName(), testStorage.getTargetClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getTargetClusterName(), 1).build());
 
 
         resourceManager.createResourceWithWait(
-            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), topicName).build(),
-            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), topicNotIncluded).build()
+            KafkaTopicTemplates.topic(testStorage.getNamespace(), testStorage.getSourceClusterName(), topicName).build(),
+            KafkaTopicTemplates.topic(testStorage.getNamespace(), testStorage.getSourceClusterName(), topicNotIncluded).build()
         );
 
         KafkaClients sourceClients = ClientUtils.getInstantPlainClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()))
@@ -414,7 +414,7 @@ public class MirrorMakerST extends AbstractST {
 
         resourceManager.createResourceWithWait(KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), testStorage.getSourceClusterName(), testStorage.getTargetClusterName(), ClientUtils.generateRandomConsumerGroup(), 1, false)
             .editMetadata()
-                .withNamespace(testStorage.getNamespaceName())
+                .withNamespace(testStorage.getNamespace())
             .endMetadata()
             .editSpec()
                 .withInclude(topicName)
@@ -443,8 +443,8 @@ public class MirrorMakerST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1).build());
@@ -512,27 +512,27 @@ public class MirrorMakerST extends AbstractST {
             .endSpec()
             .build());
 
-        Map<String, String> mirrorMakerSnapshot = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaMirrorMakerResources.componentName(testStorage.getClusterName()));
+        Map<String, String> mirrorMakerSnapshot = DeploymentUtils.depSnapshot(testStorage.getNamespace(), KafkaMirrorMakerResources.componentName(testStorage.getClusterName()));
 
         // Remove variable which is already in use
         envVarGeneral.remove(usedVariable);
         LOGGER.info("Verifying values before update");
-        VerificationUtils.verifyReadinessAndLivenessProbes(testStorage.getNamespaceName(), KafkaMirrorMakerResources.componentName(testStorage.getClusterName()),
+        VerificationUtils.verifyReadinessAndLivenessProbes(testStorage.getNamespace(), KafkaMirrorMakerResources.componentName(testStorage.getClusterName()),
             KafkaMirrorMakerResources.componentName(testStorage.getClusterName()), initialDelaySeconds, timeoutSeconds, periodSeconds,
             successThreshold, failureThreshold);
-        VerificationUtils.verifyContainerEnvVariables(testStorage.getNamespaceName(), KafkaMirrorMakerResources.componentName(testStorage.getClusterName()),
+        VerificationUtils.verifyContainerEnvVariables(testStorage.getNamespace(), KafkaMirrorMakerResources.componentName(testStorage.getClusterName()),
             KafkaMirrorMakerResources.componentName(testStorage.getClusterName()), envVarGeneral);
-        VerificationUtils.verifyComponentConfiguration(testStorage.getNamespaceName(), KafkaMirrorMakerResources.componentName(testStorage.getClusterName()),
+        VerificationUtils.verifyComponentConfiguration(testStorage.getNamespace(), KafkaMirrorMakerResources.componentName(testStorage.getClusterName()),
             KafkaMirrorMakerResources.componentName(testStorage.getClusterName()), "KAFKA_MIRRORMAKER_CONFIGURATION_PRODUCER", producerConfig);
-        VerificationUtils.verifyComponentConfiguration(testStorage.getNamespaceName(), KafkaMirrorMakerResources.componentName(testStorage.getClusterName()),
+        VerificationUtils.verifyComponentConfiguration(testStorage.getNamespace(), KafkaMirrorMakerResources.componentName(testStorage.getClusterName()),
             KafkaMirrorMakerResources.componentName(testStorage.getClusterName()), "KAFKA_MIRRORMAKER_CONFIGURATION_CONSUMER", consumerConfig);
 
         LOGGER.info("Check if actual env variable {} has different value than {}", usedVariable, "test.value");
-        assertThat(StUtils.checkEnvVarInPod(testStorage.getNamespaceName(), kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL,
+        assertThat(StUtils.checkEnvVarInPod(testStorage.getNamespace(), kubeClient().listPods(testStorage.getNamespace(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL,
             KafkaMirrorMaker.RESOURCE_KIND).get(0).getMetadata().getName(), usedVariable), CoreMatchers.is(not("test.value")));
 
         LOGGER.info("Updating values in MirrorMaker container");
-        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kmm -> {
+        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getNamespace(), testStorage.getClusterName(), kmm -> {
             kmm.getSpec().getTemplate().getMirrorMakerContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
             kmm.getSpec().getProducer().setConfig(updatedProducerConfig);
             kmm.getSpec().getConsumer().setConfig(updatedConsumerConfig);
@@ -546,17 +546,17 @@ public class MirrorMakerST extends AbstractST {
             kmm.getSpec().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
         });
 
-        DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaMirrorMakerResources.componentName(testStorage.getClusterName()), 1, mirrorMakerSnapshot);
+        DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespace(), KafkaMirrorMakerResources.componentName(testStorage.getClusterName()), 1, mirrorMakerSnapshot);
 
         LOGGER.info("Verifying values after update");
-        VerificationUtils.verifyReadinessAndLivenessProbes(testStorage.getNamespaceName(), KafkaMirrorMakerResources.componentName(testStorage.getClusterName()),
+        VerificationUtils.verifyReadinessAndLivenessProbes(testStorage.getNamespace(), KafkaMirrorMakerResources.componentName(testStorage.getClusterName()),
             KafkaMirrorMakerResources.componentName(testStorage.getClusterName()), updatedInitialDelaySeconds, updatedTimeoutSeconds,
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
-        VerificationUtils.verifyContainerEnvVariables(testStorage.getNamespaceName(), KafkaMirrorMakerResources.componentName(testStorage.getClusterName()),
+        VerificationUtils.verifyContainerEnvVariables(testStorage.getNamespace(), KafkaMirrorMakerResources.componentName(testStorage.getClusterName()),
             KafkaMirrorMakerResources.componentName(testStorage.getClusterName()), envVarUpdated);
-        VerificationUtils.verifyComponentConfiguration(testStorage.getNamespaceName(), KafkaMirrorMakerResources.componentName(testStorage.getClusterName()),
+        VerificationUtils.verifyComponentConfiguration(testStorage.getNamespace(), KafkaMirrorMakerResources.componentName(testStorage.getClusterName()),
             KafkaMirrorMakerResources.componentName(testStorage.getClusterName()), "KAFKA_MIRRORMAKER_CONFIGURATION_PRODUCER", updatedProducerConfig);
-        VerificationUtils.verifyComponentConfiguration(testStorage.getNamespaceName(), KafkaMirrorMakerResources.componentName(testStorage.getClusterName()),
+        VerificationUtils.verifyComponentConfiguration(testStorage.getNamespace(), KafkaMirrorMakerResources.componentName(testStorage.getClusterName()),
             KafkaMirrorMakerResources.componentName(testStorage.getClusterName()), "KAFKA_MIRRORMAKER_CONFIGURATION_CONSUMER", updatedConsumerConfig);
     }
 
@@ -567,16 +567,16 @@ public class MirrorMakerST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getSourceBrokerPoolName(), testStorage.getSourceClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getSourceControllerPoolName(), testStorage.getSourceClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getSourceBrokerPoolName(), testStorage.getSourceClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getSourceControllerPoolName(), testStorage.getSourceClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getSourceClusterName(), 1).build());
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getTargetBrokerPoolName(), testStorage.getTargetClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getTargetControllerPoolName(), testStorage.getTargetClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespace(), testStorage.getTargetBrokerPoolName(), testStorage.getTargetClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespace(), testStorage.getTargetControllerPoolName(), testStorage.getTargetClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getTargetClusterName(), 1).build());
@@ -584,31 +584,31 @@ public class MirrorMakerST extends AbstractST {
         resourceManager.createResourceWithWait(KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), testStorage.getTargetClusterName(), testStorage.getSourceClusterName(), ClientUtils.generateRandomConsumerGroup(), 1, false).build());
 
         int scaleTo = 2;
-        long mmObsGen = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getObservedGeneration();
+        long mmObsGen = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespace()).withName(testStorage.getClusterName()).get().getStatus().getObservedGeneration();
         String mmDepName = KafkaMirrorMakerResources.componentName(testStorage.getClusterName());
-        String mmGenName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND).get(0).getMetadata().getGenerateName();
+        String mmGenName = kubeClient().listPods(testStorage.getNamespace(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND).get(0).getMetadata().getGenerateName();
 
         LOGGER.info("-------> Scaling KafkaMirrorMaker up <-------");
 
         LOGGER.info("Scaling subresource replicas to {}", scaleTo);
-        cmdKubeClient().namespace(testStorage.getNamespaceName()).scaleByName(KafkaMirrorMaker.RESOURCE_KIND, testStorage.getClusterName(), scaleTo);
-        DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespaceName(), KafkaMirrorMakerResources.componentName(testStorage.getClusterName()), scaleTo);
+        cmdKubeClient().namespace(testStorage.getNamespace()).scaleByName(KafkaMirrorMaker.RESOURCE_KIND, testStorage.getClusterName(), scaleTo);
+        DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespace(), KafkaMirrorMakerResources.componentName(testStorage.getClusterName()), scaleTo);
 
         LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);
 
         StUtils.waitUntilSupplierIsSatisfied("KafkaMirrorMaker expected size (status, replicas, pod count)",
-            () -> kubeClient().listPodNames(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND).size() == scaleTo &&
-            KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getReplicas() == scaleTo &&
-            KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getReplicas() == scaleTo);
+            () -> kubeClient().listPodNames(testStorage.getNamespace(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND).size() == scaleTo &&
+            KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespace()).withName(testStorage.getClusterName()).get().getSpec().getReplicas() == scaleTo &&
+            KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespace()).withName(testStorage.getClusterName()).get().getStatus().getReplicas() == scaleTo);
 
         /*
         observed generation should be higher than before scaling -> after change of spec and successful reconciliation,
         the observed generation is increased
         */
-        long actualObsGen = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getObservedGeneration();
+        long actualObsGen = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespace()).withName(testStorage.getClusterName()).get().getStatus().getObservedGeneration();
         assertTrue(mmObsGen < actualObsGen);
 
-        List<String> mmPods = kubeClient().listPodNames(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND);
+        List<String> mmPods = kubeClient().listPodNames(testStorage.getNamespace(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND);
 
         for (String pod : mmPods) {
             assertTrue(pod.contains(mmGenName));
@@ -619,9 +619,9 @@ public class MirrorMakerST extends AbstractST {
         LOGGER.info("-------> Scaling KafkaMirrorMaker down <-------");
 
         LOGGER.info("Scaling MirrorMaker to zero");
-        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), mm -> mm.getSpec().setReplicas(0));
+        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getNamespace(), testStorage.getClusterName(), mm -> mm.getSpec().setReplicas(0));
 
-        PodUtils.waitForPodsReady(testStorage.getNamespaceName(), kubeClient().getDeploymentSelectors(testStorage.getNamespaceName(), mmDepName), 0, true);
+        PodUtils.waitForPodsReady(testStorage.getNamespace(), kubeClient().getDeploymentSelectors(testStorage.getNamespace(), mmDepName), 0, true);
 
         mmPods = kubeClient().listPodNames(testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND);
         assertThat(mmPods.size(), is(0));
@@ -630,7 +630,7 @@ public class MirrorMakerST extends AbstractST {
         long finalMmObsGen = mmObsGen;
         StUtils.waitUntilSupplierIsSatisfied("ObservedGeneration of MM is higher than (check test log for more info)" + finalMmObsGen,
             () -> {
-                long observedGeneration = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getObservedGeneration();
+                long observedGeneration = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespace()).withName(testStorage.getClusterName()).get().getStatus().getObservedGeneration();
                 boolean isHigherThan = observedGeneration > finalMmObsGen;
                 if (!isHigherThan) {
                     LOGGER.info("Expected ObservedGeneration: {}, actual ObservedGeneration: {}. Waiting for next round of validation", finalMmObsGen, observedGeneration);
@@ -638,7 +638,7 @@ public class MirrorMakerST extends AbstractST {
                 return isHigherThan;
             });
 
-        KafkaMirrorMakerStatus mmStatus = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
+        KafkaMirrorMakerStatus mmStatus = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespace()).withName(testStorage.getClusterName()).get().getStatus();
         assertThat(mmStatus.getConditions().get(0).getType(), is(Ready.toString()));
     }
 
@@ -648,16 +648,16 @@ public class MirrorMakerST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getSourceBrokerPoolName(), testStorage.getSourceClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getSourceControllerPoolName(), testStorage.getSourceClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getSourceBrokerPoolName(), testStorage.getSourceClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getSourceControllerPoolName(), testStorage.getSourceClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getSourceClusterName(), 1).build());
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetBrokerPoolName(), testStorage.getTargetClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetControllerPoolName(), testStorage.getTargetClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getTargetBrokerPoolName(), testStorage.getTargetClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getTargetControllerPoolName(), testStorage.getTargetClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getTargetClusterName(), 1).build());
@@ -675,11 +675,11 @@ public class MirrorMakerST extends AbstractST {
         String mmDepName = KafkaMirrorMakerResources.componentName(testStorage.getClusterName());
 
         LOGGER.info("Adding label to MirrorMaker resource, the CR should be recreateAndWaitForReadinessd");
-        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getNamespace(), testStorage.getClusterName(),
             mm -> mm.getMetadata().setLabels(Collections.singletonMap("some", "label")));
-        DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespaceName(), mmDepName, 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespace(), mmDepName, 1);
 
-        KafkaMirrorMaker kmm = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
+        KafkaMirrorMaker kmm = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespace()).withName(testStorage.getClusterName()).get();
 
         LOGGER.info("Checking that observed gen. is still on 1 (recreation) and new label is present");
         assertThat(kmm.getStatus().getObservedGeneration(), is(1L));
@@ -687,18 +687,18 @@ public class MirrorMakerST extends AbstractST {
         assertThat(kmm.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.RECREATE));
 
         LOGGER.info("Changing Deployment strategy to {}", DeploymentStrategy.ROLLING_UPDATE);
-        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getNamespace(), testStorage.getClusterName(),
             mm -> mm.getSpec().getTemplate().getDeployment().setDeploymentStrategy(DeploymentStrategy.ROLLING_UPDATE));
-        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(testStorage.getNamespaceName(), testStorage.getClusterName());
+        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(testStorage.getNamespace(), testStorage.getClusterName());
 
         LOGGER.info("Adding another label to MirrorMaker resource, Pods should be rolled");
-        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), mm -> mm.getMetadata().getLabels().put("another", "label"));
-        DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespaceName(), mmDepName, 1);
+        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getNamespace(), testStorage.getClusterName(), mm -> mm.getMetadata().getLabels().put("another", "label"));
+        DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespace(), mmDepName, 1);
 
         LOGGER.info("Checking that observed gen. higher (rolling update) and label is changed");
         StUtils.waitUntilSupplierIsSatisfied("KafkaMirrorMaker observed generation and labels",
             () -> {
-                final KafkaMirrorMaker kMM = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
+                final KafkaMirrorMaker kMM = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespace()).withName(testStorage.getClusterName()).get();
 
                 return kMM.getStatus().getObservedGeneration() == 2L &&
                         kMM.getMetadata().getLabels().toString().contains("another=label") &&

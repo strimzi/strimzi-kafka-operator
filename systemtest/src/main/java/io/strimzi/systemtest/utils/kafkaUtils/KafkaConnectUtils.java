@@ -151,13 +151,13 @@ public class KafkaConnectUtils {
     public static void waitForConnectLogLevelChangePropagation(TestStorage testStorage, Map<String, String> connectPods, String scraperPodName, Predicate<String> connectLogMatch, String logLevel) {
         LOGGER.info("Waiting for log4j.properties will contain desired settings");
         TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPod(scraperPodName, "curl", "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName())
+            () -> cmdKubeClient().namespace(testStorage.getNamespace()).execInPod(scraperPodName, "curl", "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName())
                 + ":8083/admin/loggers/root").out().contains(logLevel)
         );
 
         TestUtils.waitFor(String.format("wait till change in Log level %s takes place in actual Pods", logLevel), TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.SAFETY_RECONCILIATION_INTERVAL,
             () -> connectPods.keySet().stream()
-                .map(cPod -> StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), cPod, "", "60s"))
+                .map(cPod -> StUtils.getLogFromPodByTime(testStorage.getNamespace(), cPod, "", "60s"))
                 .allMatch(connectLogMatch)
         );
     }

@@ -79,14 +79,14 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3).build());
 
-        Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
-        Map<String, String> controllerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getControllerSelector());
+        Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespace(), testStorage.getBrokerSelector());
+        Map<String, String> controllerPods = PodUtils.podSnapshot(testStorage.getNamespace(), testStorage.getControllerSelector());
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
@@ -95,7 +95,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // ##############################
         // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getContinuousTopicName(), 3, 3, 2).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespace(), testStorage.getClusterName(), testStorage.getContinuousTopicName(), 3, 3, 2).build());
 
         String producerAdditionConfiguration = "delivery.timeout.ms=40000\nrequest.timeout.ms=5000";
 
@@ -119,18 +119,18 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // set annotation to trigger Kafka rolling update
         LOGGER.info("Annotate Kafka {} {} with manual rolling update annotation", StrimziPodSet.RESOURCE_KIND, testStorage.getBrokerComponentName());
 
-        StrimziPodSetUtils.annotateStrimziPodSet(testStorage.getNamespaceName(), testStorage.getBrokerComponentName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
+        StrimziPodSetUtils.annotateStrimziPodSet(testStorage.getNamespace(), testStorage.getBrokerComponentName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
 
         // check annotation to trigger rolling update
-        assertThat(Boolean.parseBoolean(StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getBrokerComponentName())
+        assertThat(Boolean.parseBoolean(StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespace(), testStorage.getBrokerComponentName())
             .get(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE)), is(true));
 
-        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespace(), testStorage.getBrokerSelector(), 3, brokerPods);
 
         // wait when annotation will be removed from kafka
         TestUtils.waitFor("CO removes rolling update annotation", TestConstants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
-                () -> StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getBrokerComponentName()) == null
-                        || !StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getBrokerComponentName()).containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
+                () -> StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespace(), testStorage.getBrokerComponentName()) == null
+                        || !StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespace(), testStorage.getBrokerComponentName()).containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
 
         resourceManager.createResourceWithWait(instantClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
@@ -138,20 +138,20 @@ class AlternativeReconcileTriggersST extends AbstractST {
         if (!Environment.isKRaftModeEnabled()) {
             // rolling update for zookeeper
             // set annotation to trigger Zookeeper rolling update
-            LOGGER.info("Annotate ZooKeeper: {} - {}/{} with manual rolling update annotation", StrimziPodSet.RESOURCE_KIND, testStorage.getNamespaceName(), testStorage.getControllerComponentName());
+            LOGGER.info("Annotate ZooKeeper: {} - {}/{} with manual rolling update annotation", StrimziPodSet.RESOURCE_KIND, testStorage.getNamespace(), testStorage.getControllerComponentName());
 
-            StrimziPodSetUtils.annotateStrimziPodSet(testStorage.getNamespaceName(), testStorage.getControllerComponentName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
+            StrimziPodSetUtils.annotateStrimziPodSet(testStorage.getNamespace(), testStorage.getControllerComponentName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
 
             // check annotation to trigger rolling update
-            assertThat(Boolean.parseBoolean(StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getControllerComponentName())
+            assertThat(Boolean.parseBoolean(StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespace(), testStorage.getControllerComponentName())
                     .get(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE)), is(true));
 
-            RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerPods);
+            RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespace(), testStorage.getControllerSelector(), 3, controllerPods);
 
             // wait when annotation will be removed
             TestUtils.waitFor("CO removes rolling update annotation", TestConstants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
-                    () -> StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getControllerComponentName()) == null
-                            || !StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getControllerComponentName()).containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
+                    () -> StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespace(), testStorage.getControllerComponentName()) == null
+                            || !StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespace(), testStorage.getControllerComponentName()).containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
         }
 
         instantClients.generateNewConsumerGroup();
@@ -161,7 +161,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // Create new topic to ensure, that ZK is working properly
         String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), newTopicName, 1, 1).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespace(), testStorage.getClusterName(), newTopicName, 1, 1).build());
 
         instantClients = new KafkaClientsBuilder(instantClients)
             .withTopicName(newTopicName)
@@ -188,15 +188,15 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3).build());
 
-        final Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
+        final Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespace(), testStorage.getBrokerSelector());
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespace(), testStorage.getClusterName(), kafka -> {
             LOGGER.info("Adding new bootstrap dns: {} to external listeners", bootstrapDns);
             kafka.getSpec().getKafka()
                 .setListeners(asList(
@@ -220,10 +220,10 @@ class AlternativeReconcileTriggersST extends AbstractST {
                 ));
         });
 
-        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
-        KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName());
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespace(), testStorage.getBrokerSelector(), 3, brokerPods);
+        KafkaUtils.waitForKafkaReady(testStorage.getNamespace(), testStorage.getClusterName());
 
-        Map<String, String> secretData = kubeClient().getSecret(testStorage.getNamespaceName(), KafkaResources.brokersServiceName(testStorage.getClusterName())).getData();
+        Map<String, String> secretData = kubeClient().getSecret(testStorage.getNamespace(), KafkaResources.brokersServiceName(testStorage.getClusterName())).getData();
 
         for (Map.Entry<String, String> item : secretData.entrySet()) {
             if (item.getKey().endsWith(".crt") && !item.getKey().contains(testStorage.getControllerComponentName())) {
@@ -244,26 +244,26 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3).build());
 
-        Pod kafkaPod = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0);
+        Pod kafkaPod = kubeClient().listPods(testStorage.getNamespace(), testStorage.getBrokerSelector()).get(0);
         String kafkaPodName = kafkaPod.getMetadata().getName();
 
         // snapshot of one single Kafka pod
         Map<String, String> kafkaSnapshot = Collections.singletonMap(kafkaPod.getMetadata().getName(), kafkaPod.getMetadata().getUid());
         Map<String, String> zkSnapshot = null;
         if (!Environment.isKRaftModeEnabled()) {
-            Pod zkPod = kubeClient(testStorage.getNamespaceName()).getPod(KafkaResources.zookeeperPodName(testStorage.getClusterName(), 0));
+            Pod zkPod = kubeClient(testStorage.getNamespace()).getPod(KafkaResources.zookeeperPodName(testStorage.getClusterName(), 0));
             // snapshot of one single ZK pod
             zkSnapshot = Collections.singletonMap(zkPod.getMetadata().getName(), zkPod.getMetadata().getUid());
         }
 
         LOGGER.info("Trying to roll just single Kafka and single ZK Pod");
-        kubeClient(testStorage.getNamespaceName()).editPod(kafkaPodName).edit(pod -> new PodBuilder(pod)
+        kubeClient(testStorage.getNamespace()).editPod(kafkaPodName).edit(pod -> new PodBuilder(pod)
             .editMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
             .endMetadata()
@@ -271,22 +271,22 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         // here we are waiting just to one pod's snapshot will be changed and all 3 pods ready -> if we set expectedPods to 1,
         // the check will pass immediately without waiting for all pods to be ready -> the method picks first ready pod and return true
-        kafkaSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, kafkaSnapshot);
+        kafkaSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespace(), testStorage.getBrokerSelector(), 3, kafkaSnapshot);
 
         if (!Environment.isKRaftModeEnabled()) {
-            kubeClient(testStorage.getNamespaceName()).editPod(KafkaResources.zookeeperPodName(testStorage.getClusterName(), 0)).edit(pod -> new PodBuilder(pod)
+            kubeClient(testStorage.getNamespace()).editPod(KafkaResources.zookeeperPodName(testStorage.getClusterName(), 0)).edit(pod -> new PodBuilder(pod)
                 .editMetadata()
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
                 .endMetadata()
                 .build());
 
             // same as above
-            zkSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, zkSnapshot);
+            zkSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespace(), testStorage.getControllerSelector(), 3, zkSnapshot);
         }
 
         LOGGER.info("Adding anno to all ZK and Kafka Pods");
         kafkaSnapshot.keySet().forEach(podName -> {
-            kubeClient(testStorage.getNamespaceName()).editPod(podName).edit(pod -> new PodBuilder(pod)
+            kubeClient(testStorage.getNamespace()).editPod(podName).edit(pod -> new PodBuilder(pod)
                 .editMetadata()
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
                 .endMetadata()
@@ -294,11 +294,11 @@ class AlternativeReconcileTriggersST extends AbstractST {
         });
 
         LOGGER.info("Checking if the rolling update will be successful for Kafka");
-        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, kafkaSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespace(), testStorage.getBrokerSelector(), 3, kafkaSnapshot);
 
         if (!Environment.isKRaftModeEnabled()) {
             zkSnapshot.keySet().forEach(podName -> {
-                kubeClient(testStorage.getNamespaceName()).editPod(podName).edit(pod -> new PodBuilder(pod)
+                kubeClient(testStorage.getNamespace()).editPod(podName).edit(pod -> new PodBuilder(pod)
                     .editMetadata()
                         .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
                     .endMetadata()
@@ -306,7 +306,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
             });
 
             LOGGER.info("Checking if the rolling update will be successful for ZK");
-            RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, zkSnapshot);
+            RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespace(), testStorage.getControllerSelector(), 3, zkSnapshot);
         }
     }
 
@@ -345,12 +345,12 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3)
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3)
                     .editSpec()
                         .withStorage(new JbodStorageBuilder().addToVolumes(vol0).build())
                     .endSpec()
                     .build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
@@ -361,7 +361,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
             .endSpec()
             .build());
 
-        Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
+        Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespace(), testStorage.getBrokerSelector());
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
@@ -370,7 +370,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // ##############################
         // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getContinuousTopicName(), 3, 3, 2).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespace(), testStorage.getClusterName(), testStorage.getContinuousTopicName(), 3, 3, 2).build());
 
         String producerAdditionConfiguration = "delivery.timeout.ms=40000\nrequest.timeout.ms=5000";
         // Add transactional id to make producer transactional
@@ -393,24 +393,24 @@ class AlternativeReconcileTriggersST extends AbstractST {
         LOGGER.info("Add JBOD volume to the Kafka cluster {}", testStorage.getBrokerComponentName());
 
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(),
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespace(), testStorage.getBrokerPoolName(),
                 kafkaNodePool -> {
                     JbodStorage storage = (JbodStorage) kafkaNodePool.getSpec().getStorage();
                     storage.getVolumes().add(vol1);
                 });
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespace(), testStorage.getClusterName(), kafka -> {
                 JbodStorage storage = (JbodStorage) kafka.getSpec().getKafka().getStorage();
                 storage.getVolumes().add(vol1);
             });
         }
 
         // Wait util it rolls
-        brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
+        brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespace(), testStorage.getBrokerSelector(), 3, brokerPods);
 
         StUtils.waitUntilSupplierIsSatisfied("there are 6 Kafka volumes", () -> {
             // ensure there are 6 Kafka Volumes (2 per each of 3 broker)
-            List<PersistentVolume> kafkaPvcs = kubeClient().listClaimedPersistentVolumes(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
+            List<PersistentVolume> kafkaPvcs = kubeClient().listClaimedPersistentVolumes(testStorage.getNamespace(), testStorage.getClusterName()).stream()
                     .filter(pv -> pv.getSpec().getClaimRef().getName().contains(testStorage.getBrokerComponentName())).toList();
             LOGGER.debug("Obtained Volumes total '{}' claimed by claims Belonging to Kafka {}", kafkaPvcs.size(), testStorage.getClusterName());
             return kafkaPvcs.size() == 6;
@@ -420,24 +420,24 @@ class AlternativeReconcileTriggersST extends AbstractST {
         LOGGER.info("Remove JBOD volume to the Kafka cluster {}", testStorage.getBrokerComponentName());
 
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), kafkaNodePool -> {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespace(), testStorage.getBrokerPoolName(), kafkaNodePool -> {
                 JbodStorage storage = (JbodStorage) kafkaNodePool.getSpec().getStorage();
                 storage.getVolumes().remove(vol1);
             });
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespace(), testStorage.getClusterName(), kafka -> {
                 JbodStorage storage = (JbodStorage) kafka.getSpec().getKafka().getStorage();
                 storage.getVolumes().remove(vol1);
             });
         }
 
         // Wait util it rolls
-        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespace(), testStorage.getBrokerSelector(), 3, brokerPods);
 
         // ensure there are 3 Kafka Volumes (1 per each of 3 broker)
         PersistentVolumeClaimUtils.waitForPvcCount(testStorage, 3);
         StUtils.waitUntilSupplierIsSatisfied("there are 3 Kafka volumes", () -> {
-            List<PersistentVolume> kafkaPvcs = kubeClient().listClaimedPersistentVolumes(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
+            List<PersistentVolume> kafkaPvcs = kubeClient().listClaimedPersistentVolumes(testStorage.getNamespace(), testStorage.getClusterName()).stream()
                     .filter(pv -> pv.getSpec().getClaimRef().getName().contains(testStorage.getBrokerComponentName()) && pv.getStatus().getPhase().equals("Bound")).toList();
             LOGGER.debug("Obtained Volumes total '{}' claimed by claims Belonging to Kafka {}", kafkaPvcs.size(), testStorage.getClusterName());
             return kafkaPvcs.size() == 3;
@@ -498,7 +498,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), numberOfKafkaReplicas)
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), numberOfKafkaReplicas)
                     .editSpec()
                     .withStorage(
                         new JbodStorageBuilder()
@@ -506,7 +506,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
                             .build())
                     .endSpec()
                     .build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), numberOfKafkaReplicas, 3)
@@ -527,7 +527,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // ##############################
         // Setup topic, which has 3 replicas and 2 min.isr
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getContinuousTopicName(), 3, 3, 2).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespace(), testStorage.getClusterName(), testStorage.getContinuousTopicName(), 3, 3, 2).build());
 
         String producerAdditionConfiguration = "delivery.timeout.ms=40000\nrequest.timeout.ms=5000";
         // Add transactional id to make producer transactional
@@ -546,7 +546,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         resourceManager.createResourceWithWait(clients.producerStrimzi());
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
-        Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
+        Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespace(), testStorage.getBrokerSelector());
 
         KafkaUtils.verifyKafkaKraftMetadataLog(testStorage, 2, 3);
 
@@ -554,19 +554,19 @@ class AlternativeReconcileTriggersST extends AbstractST {
         LOGGER.info("Remove JBOD volume (i.e., simulating disk failure for KRaft metadata volume) to the Kafka cluster {}", testStorage.getBrokerComponentName());
 
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), kafkaNodePool -> {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespace(), testStorage.getBrokerPoolName(), kafkaNodePool -> {
                 JbodStorage storage = (JbodStorage) kafkaNodePool.getSpec().getStorage();
                 storage.getVolumes().remove(metadataVol);
             });
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespace(), testStorage.getClusterName(), kafka -> {
                 JbodStorage storage = (JbodStorage) kafka.getSpec().getKafka().getStorage();
                 storage.getVolumes().remove(metadataVol);
             });
         }
 
         // Wait util it rolls
-        brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
+        brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespace(), testStorage.getBrokerSelector(), 3, brokerPods);
 
         // verify that Kraft metadata log will be re-assigned to another volume (the minimum id, which is 0 now that's why data-0)
         KafkaUtils.verifyKafkaKraftMetadataLog(testStorage, 0, 2);

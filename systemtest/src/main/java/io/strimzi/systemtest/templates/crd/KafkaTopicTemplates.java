@@ -16,11 +16,11 @@ public class KafkaTopicTemplates {
     private KafkaTopicTemplates() {}
 
     public static KafkaTopicBuilder topic(TestStorage testStorage) {
-        return defaultTopic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTopicName(), 1, 1, 1);
+        return defaultTopic(testStorage.getNamespace(), testStorage.getClusterName(), testStorage.getTopicName(), 1, 1, 1);
     }
 
     public static KafkaTopicBuilder continuousTopic(TestStorage testStorage) {
-        return defaultTopic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getContinuousTopicName(), 1, 1, 1);
+        return defaultTopic(testStorage.getNamespace(), testStorage.getClusterName(), testStorage.getContinuousTopicName(), 1, 1, 1);
     }
 
     public static KafkaTopicBuilder topic(String topicNamespace, String clusterName, String topicName) {

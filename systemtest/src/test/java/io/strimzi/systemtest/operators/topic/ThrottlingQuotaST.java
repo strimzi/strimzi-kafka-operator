@@ -132,15 +132,15 @@ public class ThrottlingQuotaST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(sharedTestStorage.getNamespaceName(), sharedTestStorage.getBrokerPoolName(), sharedTestStorage.getClusterName(), 3).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(sharedTestStorage.getNamespaceName(), sharedTestStorage.getControllerPoolName(), sharedTestStorage.getClusterName(), 3).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(sharedTestStorage.getNamespace(), sharedTestStorage.getBrokerPoolName(), sharedTestStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(sharedTestStorage.getNamespace(), sharedTestStorage.getControllerPoolName(), sharedTestStorage.getClusterName(), 3).build()
             )
         );
         // Deploy kafka with ScramSHA512
-        LOGGER.info("Deploying shared Kafka across all test cases in {} Namespace", sharedTestStorage.getNamespaceName());
+        LOGGER.info("Deploying shared Kafka across all test cases in {} Namespace", sharedTestStorage.getNamespace());
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(sharedTestStorage.getClusterName(), 3)
             .editMetadata()
-                .withNamespace(sharedTestStorage.getNamespaceName())
+                .withNamespace(sharedTestStorage.getNamespace())
             .endMetadata()
             .editSpec()
                 .editKafka()
@@ -168,7 +168,7 @@ public class ThrottlingQuotaST extends AbstractST {
 
         // deploy quota limited admin client and respective Kafka User
 
-        resourceManager.createResourceWithWait(KafkaUserTemplates.defaultUser(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), sharedTestStorage.getUsername())
+        resourceManager.createResourceWithWait(KafkaUserTemplates.defaultUser(sharedTestStorage.getNamespace(), sharedTestStorage.getClusterName(), sharedTestStorage.getUsername())
             .editOrNewSpec()
                 .withNewQuotas()
                     .withControllerMutationRate(1.0)
@@ -180,17 +180,17 @@ public class ThrottlingQuotaST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             AdminClientTemplates.scramShaOverPlainAdminClient(
-                sharedTestStorage.getNamespaceName(),
+                sharedTestStorage.getNamespace(),
                 sharedTestStorage.getUsername(),
                 sharedTestStorage.getAdminName(),
                 KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()),
                 CommonClientConfigs.REQUEST_TIMEOUT_MS_CONFIG + "=" + TIMEOUT_REQUEST_MS
             ));
-        limitedAdminClient = AdminClientUtils.getConfiguredAdminClient(sharedTestStorage.getNamespaceName(), sharedTestStorage.getAdminName());
+        limitedAdminClient = AdminClientUtils.getConfiguredAdminClient(sharedTestStorage.getNamespace(), sharedTestStorage.getAdminName());
 
         // deploy unlimited admin client and respective user for purpose of cleaning up resources
 
-        resourceManager.createResourceWithWait(KafkaUserTemplates.defaultUser(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), sharedTestStorage.getUsername() + "-unlimited")
+        resourceManager.createResourceWithWait(KafkaUserTemplates.defaultUser(sharedTestStorage.getNamespace(), sharedTestStorage.getClusterName(), sharedTestStorage.getUsername() + "-unlimited")
             .editOrNewSpec()
                 .withAuthentication(new KafkaUserScramSha512ClientAuthentication())
             .endSpec()
@@ -198,12 +198,12 @@ public class ThrottlingQuotaST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             AdminClientTemplates.scramShaOverPlainAdminClient(
-                sharedTestStorage.getNamespaceName(),
+                sharedTestStorage.getNamespace(),
                 sharedTestStorage.getUsername() + "-unlimited",
                 sharedTestStorage.getAdminName() + "-unlimited",
                 KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()),
                 CommonClientConfigs.REQUEST_TIMEOUT_MS_CONFIG + "=" + TIMEOUT_REQUEST_MS
             ));
-        unlimitedAdminClient = AdminClientUtils.getConfiguredAdminClient(sharedTestStorage.getNamespaceName(), sharedTestStorage.getAdminName() + "-unlimited");
+        unlimitedAdminClient = AdminClientUtils.getConfiguredAdminClient(sharedTestStorage.getNamespace(), sharedTestStorage.getAdminName() + "-unlimited");
     }
 }

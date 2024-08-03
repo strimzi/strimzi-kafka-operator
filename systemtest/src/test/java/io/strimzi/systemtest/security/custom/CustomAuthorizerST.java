@@ -122,7 +122,7 @@ public class CustomAuthorizerST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(sharedTestStorage.getClusterName()));
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
-        LOGGER.info("Checking KafkaUser: {}/{} that is not able to send messages to Topic: {}", testStorage.getNamespaceName(), kafkaUserRead, testStorage.getTopicName());
+        LOGGER.info("Checking KafkaUser: {}/{} that is not able to send messages to Topic: {}", testStorage.getNamespace(), kafkaUserRead, testStorage.getTopicName());
 
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(sharedTestStorage.getClusterName()));
         ClientUtils.waitForInstantProducerClientTimeout(testStorage);
@@ -171,8 +171,8 @@ public class CustomAuthorizerST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(sharedTestStorage.getNamespaceName(), sharedTestStorage.getBrokerPoolName(), sharedTestStorage.getClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(sharedTestStorage.getNamespaceName(), sharedTestStorage.getControllerPoolName(), sharedTestStorage.getClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(sharedTestStorage.getNamespace(), sharedTestStorage.getBrokerPoolName(), sharedTestStorage.getClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(sharedTestStorage.getNamespace(), sharedTestStorage.getControllerPoolName(), sharedTestStorage.getClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(sharedTestStorage.getClusterName(), 1, 1)

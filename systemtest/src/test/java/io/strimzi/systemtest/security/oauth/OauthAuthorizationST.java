@@ -593,20 +593,20 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
         if (!Environment.isNamespaceRbacScope()) {
             // we have to create keycloak, team-a-client and team-b-client secret from `co-namespace` to the new namespace
-            resourceManager.createResourceWithWait(SecretUtils.createCopyOfSecret(Environment.TEST_SUITE_NAMESPACE, testStorage.getNamespaceName(), KeycloakInstance.KEYCLOAK_SECRET_NAME).build());
-            resourceManager.createResourceWithWait(SecretUtils.createCopyOfSecret(Environment.TEST_SUITE_NAMESPACE, testStorage.getNamespaceName(), TEAM_A_CLIENT_SECRET).build());
-            resourceManager.createResourceWithWait(SecretUtils.createCopyOfSecret(Environment.TEST_SUITE_NAMESPACE, testStorage.getNamespaceName(), TEAM_B_CLIENT_SECRET).build());
+            resourceManager.createResourceWithWait(SecretUtils.createCopyOfSecret(Environment.TEST_SUITE_NAMESPACE, testStorage.getNamespace(), KeycloakInstance.KEYCLOAK_SECRET_NAME).build());
+            resourceManager.createResourceWithWait(SecretUtils.createCopyOfSecret(Environment.TEST_SUITE_NAMESPACE, testStorage.getNamespace(), TEAM_A_CLIENT_SECRET).build());
+            resourceManager.createResourceWithWait(SecretUtils.createCopyOfSecret(Environment.TEST_SUITE_NAMESPACE, testStorage.getNamespace(), TEAM_B_CLIENT_SECRET).build());
         }
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1)
             .editMetadata()
-                .withNamespace(testStorage.getNamespaceName())
+                .withNamespace(testStorage.getNamespace())
             .endMetadata()
             .editSpec()
                 .editKafka()
@@ -630,8 +630,8 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
         // we do not need to create a KafkaUsers when RBAC=NAMESPACE (they are already created)
         if (!Environment.isNamespaceRbacScope()) {
-            resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), TEAM_A_CLIENT).build());
-            resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), TEAM_B_CLIENT).build());
+            resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage.getNamespace(), testStorage.getClusterName(), TEAM_A_CLIENT).build());
+            resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage.getNamespace(), testStorage.getClusterName(), TEAM_B_CLIENT).build());
         }
 
         final String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + testStorage.getClusterName();
@@ -639,10 +639,10 @@ public class OauthAuthorizationST extends OauthAbstractST {
         final String topicName = TOPIC_A + "-" + testStorage.getTopicName();
         final String consumerGroup = "a-consumer_group-" + testStorage.getConsumerName();
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), topicName).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespace(), testStorage.getClusterName(), topicName).build());
 
         KafkaOauthClients teamAOauthClientJob = new KafkaOauthClientsBuilder()
-            .withNamespaceName(testStorage.getNamespaceName())
+            .withNamespaceName(testStorage.getNamespace())
             .withProducerName(teamAProducerName)
             .withConsumerName(teamAConsumerName)
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
@@ -655,9 +655,9 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .build();
 
         resourceManager.createResourceWithWait(teamAOauthClientJob.producerStrimziOauthTls(testStorage.getClusterName()));
-        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), teamAProducerName, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespace(), teamAProducerName, testStorage.getMessageCount());
         resourceManager.createResourceWithWait(teamAOauthClientJob.consumerStrimziOauthTls(testStorage.getClusterName()));
-        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), teamAConsumerName, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespace(), teamAConsumerName, testStorage.getMessageCount());
     }
 
     @BeforeAll

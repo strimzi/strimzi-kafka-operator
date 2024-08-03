@@ -174,8 +174,8 @@ public class TopicST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 3)
@@ -198,12 +198,12 @@ public class TopicST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             AdminClientTemplates.plainAdminClient(
-                testStorage.getNamespaceName(),
+                testStorage.getNamespace(),
                 testStorage.getAdminName(),
                 KafkaResources.plainBootstrapAddress(testStorage.getClusterName())
             ).build()
         );
-        final AdminClient localKafkaAdminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
+        final AdminClient localKafkaAdminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespace(), testStorage.getAdminName());
 
         AdminClientUtils.waitForTopicPresence(localKafkaAdminClient, testStorage.getTopicName());
 
@@ -219,9 +219,9 @@ public class TopicST extends AbstractST {
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
         LOGGER.info("Enable automatic topic deletion");
-        Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().getKafka().setConfig(Map.of("delete.topic.enable", true)));
-        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, kafkaPods);
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespace(), testStorage.getBrokerSelector());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespace(), testStorage.getClusterName(), k -> k.getSpec().getKafka().setConfig(Map.of("delete.topic.enable", true)));
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespace(), testStorage.getBrokerSelector(), 3, kafkaPods);
 
         LOGGER.info("Deleting KafkaTopic: {}/{}", Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
         KafkaTopicResource.kafkaTopicClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getTopicName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
@@ -443,13 +443,13 @@ public class TopicST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
             )
         );
         // Negative scenario: creating topic without any labels and make sure that TO can't handle this topic
         resourceManager.createResourceWithWait(
-            ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build(),
+            ScraperTemplates.scraperPod(testStorage.getNamespace(), testStorage.getScraperName()).build(),
             KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
                 .editSpec()
                     .editEntityOperator()
@@ -460,33 +460,33 @@ public class TopicST extends AbstractST {
                 .endSpec().build()
         );
 
-        final String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
+        final String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespace(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
-        LOGGER.info("Creating KafkaTopic: {}/{} in without any label", testStorage.getNamespaceName(), testStorage.getTargetTopicName());
-        resourceManager.createResourceWithoutWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTargetTopicName(), 1, 1, 1)
+        LOGGER.info("Creating KafkaTopic: {}/{} in without any label", testStorage.getNamespace(), testStorage.getTargetTopicName());
+        resourceManager.createResourceWithoutWait(KafkaTopicTemplates.topic(testStorage.getNamespace(), testStorage.getClusterName(), testStorage.getTargetTopicName(), 1, 1, 1)
             .editMetadata()
                 .withLabels(null)
             .endMetadata().build()
         );
 
         // Checking that resource was created
-        LOGGER.info("Verifying presence of KafkaTopic: {}/{}", testStorage.getNamespaceName(), testStorage.getTargetTopicName());
-        assertThat(cmdKubeClient(testStorage.getNamespaceName()).list("kafkatopic"), hasItems(testStorage.getTargetTopicName()));
+        LOGGER.info("Verifying presence of KafkaTopic: {}/{}", testStorage.getNamespace(), testStorage.getTargetTopicName());
+        assertThat(cmdKubeClient(testStorage.getNamespace()).list("kafkatopic"), hasItems(testStorage.getTargetTopicName()));
 
         // Checking that TO didn't handle new topic and zk pods don't contain new topic
-        KafkaTopicUtils.verifyUnchangedTopicAbsence(testStorage.getNamespaceName(), scraperPodName, testStorage.getClusterName(), testStorage.getTargetTopicName(), topicOperatorReconciliationMs);
+        KafkaTopicUtils.verifyUnchangedTopicAbsence(testStorage.getNamespace(), scraperPodName, testStorage.getClusterName(), testStorage.getTargetTopicName(), topicOperatorReconciliationMs);
 
         // Checking TO logs
-        String tOPodName = cmdKubeClient(testStorage.getNamespaceName()).listResourcesByLabel("pod", Labels.STRIMZI_NAME_LABEL + "=" + testStorage.getClusterName() + "-entity-operator").get(0);
-        String tOlogs = kubeClient(testStorage.getNamespaceName()).logsInSpecificNamespace(testStorage.getNamespaceName(), tOPodName, "topic-operator");
+        String tOPodName = cmdKubeClient(testStorage.getNamespace()).listResourcesByLabel("pod", Labels.STRIMZI_NAME_LABEL + "=" + testStorage.getClusterName() + "-entity-operator").get(0);
+        String tOlogs = kubeClient(testStorage.getNamespace()).logsInSpecificNamespace(testStorage.getNamespace(), tOPodName, "topic-operator");
         assertThat(tOlogs, not(containsString(String.format("Created topic '%s'", testStorage.getTargetTopicName()))));
 
         //Deleting topic
-        cmdKubeClient(testStorage.getNamespaceName()).deleteByName("kafkatopic", testStorage.getTargetTopicName());
-        KafkaTopicUtils.waitForKafkaTopicDeletion(testStorage.getNamespaceName(),  testStorage.getTargetTopicName());
+        cmdKubeClient(testStorage.getNamespace()).deleteByName("kafkatopic", testStorage.getTargetTopicName());
+        KafkaTopicUtils.waitForKafkaTopicDeletion(testStorage.getNamespace(),  testStorage.getTargetTopicName());
 
         //Checking KafkaTopic is not present inside Kafka cluster
-        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
+        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(testStorage.getNamespace(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
         assertThat(topics, not(hasItems(testStorage.getTargetTopicName())));
     }
 
@@ -545,12 +545,12 @@ public class TopicST extends AbstractST {
         LOGGER.info("Deploying admin client across all test cases for namespace: {}", sharedTestStorage.getClusterName());
         resourceManager.createResourceWithWait(
             AdminClientTemplates.plainAdminClient(
-                sharedTestStorage.getNamespaceName(),
+                sharedTestStorage.getNamespace(),
                 sharedTestStorage.getAdminName(),
                 KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName())
             ).build()
         );
-        adminClient = AdminClientUtils.getConfiguredAdminClient(sharedTestStorage.getNamespaceName(), sharedTestStorage.getAdminName());
+        adminClient = AdminClientUtils.getConfiguredAdminClient(sharedTestStorage.getNamespace(), sharedTestStorage.getAdminName());
 
         scraperPodName = ScraperUtils.getScraperPod(Environment.TEST_SUITE_NAMESPACE).getMetadata().getName();
         topicOperatorReconciliationIntervalMs = KafkaResource.kafkaClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(sharedTestStorage.getClusterName()).get()

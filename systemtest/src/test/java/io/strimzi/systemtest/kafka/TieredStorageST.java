@@ -87,7 +87,7 @@ public class TieredStorageST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(suiteStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3)
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(suiteStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3)
                     .editSpec()
                         .withNewPersistentClaimStorage()
                             .withSize("10Gi")
@@ -95,17 +95,17 @@ public class TieredStorageST extends AbstractST {
                         .endPersistentClaimStorage()
                     .endSpec()
                     .build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(suiteStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(suiteStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
             )
         );
 
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3)
             .editMetadata()
-                .withNamespace(suiteStorage.getNamespaceName())
+                .withNamespace(suiteStorage.getNamespace())
             .endMetadata()
             .editSpec()
                 .editKafka()
-                    .withImage(Environment.getImageOutputRegistry(suiteStorage.getNamespaceName(), IMAGE_NAME, BUILT_IMAGE_TAG))
+                    .withImage(Environment.getImageOutputRegistry(suiteStorage.getNamespace(), IMAGE_NAME, BUILT_IMAGE_TAG))
                     .withNewTieredStorageCustomTiered()
                         .withNewRemoteStorageManager()
                             .withClassName("io.aiven.kafka.tieredstorage.RemoteStorageManager")
@@ -114,7 +114,7 @@ public class TieredStorageST extends AbstractST {
                             .addToConfig("chunk.size", "4194304")
                             // s3 config
                             .addToConfig("storage.s3.endpoint.url",
-                                    "http://" + SetupMinio.MINIO + "." + suiteStorage.getNamespaceName() + ".svc.cluster.local:" + SetupMinio.MINIO_PORT)
+                                    "http://" + SetupMinio.MINIO + "." + suiteStorage.getNamespace() + ".svc.cluster.local:" + SetupMinio.MINIO_PORT)
                             .addToConfig("storage.s3.bucket.name", BUCKET_NAME)
                             .addToConfig("storage.s3.region", "us-east-1")
                             .addToConfig("storage.s3.path.style.access.enabled", "true")
@@ -126,7 +126,7 @@ public class TieredStorageST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(suiteStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTopicName())
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(suiteStorage.getNamespace(), testStorage.getClusterName(), testStorage.getTopicName())
             .editSpec()
                 .addToConfig("file.delete.delay.ms", 1000)
                 .addToConfig("local.retention.ms", 1000)
@@ -148,12 +148,12 @@ public class TieredStorageST extends AbstractST {
 
         resourceManager.createResourceWithWait(clients.producerStrimzi());
 
-        MinioUtils.waitForDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
+        MinioUtils.waitForDataInMinio(suiteStorage.getNamespace(), BUCKET_NAME);
 
         // Create admin-client to check offsets
         resourceManager.createResourceWithWait(
             AdminClientTemplates.plainAdminClient(
-                testStorage.getNamespaceName(),
+                testStorage.getNamespace(),
                 testStorage.getAdminName(),
                 KafkaResources.plainBootstrapAddress(testStorage.getClusterName())
             )
@@ -169,7 +169,7 @@ public class TieredStorageST extends AbstractST {
             .endSpec()
             .build()
         );
-        final AdminClient adminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName());
+        final AdminClient adminClient = AdminClientUtils.getConfiguredAdminClient(testStorage.getNamespace(), testStorage.getAdminName());
 
         TestUtils.waitFor("earliest-local offset to be higher than 0",
             TestConstants.GLOBAL_POLL_INTERVAL_5_SECS, TestConstants.GLOBAL_TIMEOUT_LONG,
@@ -193,23 +193,23 @@ public class TieredStorageST extends AbstractST {
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
         // Delete data
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getTopicName(),
+        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getNamespace(), testStorage.getTopicName(),
             topic -> topic.getSpec().getConfig().put("retention.ms", 10000));
 
-        MinioUtils.waitForNoDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
+        MinioUtils.waitForNoDataInMinio(suiteStorage.getNamespace(), BUCKET_NAME);
     }
 
     @BeforeAll
     void setup() throws IOException {
         suiteStorage = new TestStorage(ResourceManager.getTestContext());
         
-        NamespaceManager.getInstance().createNamespaceAndPrepare(suiteStorage.getNamespaceName());
-        cluster.setNamespace(suiteStorage.getNamespaceName());
+        NamespaceManager.getInstance().createNamespaceAndPrepare(suiteStorage.getNamespace());
+        cluster.setNamespace(suiteStorage.getNamespace());
 
-        ImageBuild.buildImage(suiteStorage.getNamespaceName(), IMAGE_NAME, TIERED_STORAGE_DOCKERFILE, BUILT_IMAGE_TAG, Environment.KAFKA_TIERED_STORAGE_BASE_IMAGE);
+        ImageBuild.buildImage(suiteStorage.getNamespace(), IMAGE_NAME, TIERED_STORAGE_DOCKERFILE, BUILT_IMAGE_TAG, Environment.KAFKA_TIERED_STORAGE_BASE_IMAGE);
 
-        SetupMinio.deployMinio(suiteStorage.getNamespaceName());
-        SetupMinio.createBucket(suiteStorage.getNamespaceName(), BUCKET_NAME);
+        SetupMinio.deployMinio(suiteStorage.getNamespace());
+        SetupMinio.createBucket(suiteStorage.getNamespace(), BUCKET_NAME);
 
         this.clusterOperator = this.clusterOperator
             .defaultInstallation()

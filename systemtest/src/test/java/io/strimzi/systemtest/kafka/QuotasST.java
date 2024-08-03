@@ -62,8 +62,8 @@ public class QuotasST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(
@@ -98,7 +98,7 @@ public class QuotasST extends AbstractST {
                 .build()
         );
         resourceManager.createResourceWithWait(
-            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTopicName()).build(),
+            KafkaTopicTemplates.topic(testStorage.getNamespace(), testStorage.getClusterName(), testStorage.getTopicName()).build(),
             KafkaUserTemplates.scramShaUser(testStorage).build()
         );
 
@@ -111,11 +111,11 @@ public class QuotasST extends AbstractST {
         LOGGER.info("Sending messages without any user, we should hit the quota");
         resourceManager.createResourceWithWait(clients.producerStrimzi());
         // Kafka Quotas Plugin should stop producer after it reaches the minimum available bytes
-        JobUtils.waitForJobContainingLogMessage(testStorage.getNamespaceName(), testStorage.getProducerName(), "Failed to send messages");
-        JobUtils.deleteJobWithWait(testStorage.getNamespaceName(), testStorage.getProducerName());
+        JobUtils.waitForJobContainingLogMessage(testStorage.getNamespace(), testStorage.getProducerName(), "Failed to send messages");
+        JobUtils.deleteJobWithWait(testStorage.getNamespace(), testStorage.getProducerName());
 
-        String brokerPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
-        String kafkaLog = kubeClient().logsInSpecificNamespace(testStorage.getNamespaceName(), brokerPodName);
+        String brokerPodName = kubeClient().listPods(testStorage.getNamespace(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
+        String kafkaLog = kubeClient().logsInSpecificNamespace(testStorage.getNamespace(), brokerPodName);
 
         String belowLimitLog = String.format("below the limit of %s", minAvailableBytes);
 
@@ -136,8 +136,8 @@ public class QuotasST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(
@@ -171,7 +171,7 @@ public class QuotasST extends AbstractST {
                 .build()
         );
         resourceManager.createResourceWithWait(
-            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTopicName()).build(),
+            KafkaTopicTemplates.topic(testStorage.getNamespace(), testStorage.getClusterName(), testStorage.getTopicName()).build(),
             KafkaUserTemplates.scramShaUser(testStorage).build()
         );
 

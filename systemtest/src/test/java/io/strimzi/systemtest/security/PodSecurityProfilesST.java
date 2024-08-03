@@ -105,7 +105,7 @@ public class PodSecurityProfilesST extends AbstractST {
         final String mm2SourceMirroredTopicName = testStorage.getClusterName() + "." + testStorage.getTopicName();
 
         // Label particular Namespace with pod-security.kubernetes.io/enforce: restricted
-        NamespaceManager.labelNamespace(testStorage.getNamespaceName(),
+        NamespaceManager.labelNamespace(testStorage.getNamespace(),
             Collections.singletonMap("pod-security.kubernetes.io/enforce", "restricted"));
 
         // 1 source Kafka Cluster, 2 target Kafka Cluster, 1 for MM1 and MM2 each having different target Kafka Cluster,
@@ -113,14 +113,14 @@ public class PodSecurityProfilesST extends AbstractST {
         LOGGER.info("Deploy Kafka Clusters resources");
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build(),
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build(),
 
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaNodePoolResource.getBrokerPoolName(mm1TargetClusterName), mm1TargetClusterName, 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaNodePoolResource.getControllerPoolName(mm1TargetClusterName), mm1TargetClusterName, 1).build(),
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), KafkaNodePoolResource.getBrokerPoolName(mm1TargetClusterName), mm1TargetClusterName, 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), KafkaNodePoolResource.getControllerPoolName(mm1TargetClusterName), mm1TargetClusterName, 1).build(),
 
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaNodePoolResource.getBrokerPoolName(mm2TargetClusterName), mm2TargetClusterName, 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaNodePoolResource.getControllerPoolName(mm2TargetClusterName), mm2TargetClusterName, 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), KafkaNodePoolResource.getBrokerPoolName(mm2TargetClusterName), mm2TargetClusterName, 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), KafkaNodePoolResource.getControllerPoolName(mm2TargetClusterName), mm2TargetClusterName, 1).build()
             )
         );
         resourceManager.createResourceWithWait(
@@ -135,7 +135,7 @@ public class PodSecurityProfilesST extends AbstractST {
 
         LOGGER.info("Deploy all additional operands: MM1, MM2, Bridge, KafkaConnect");
         resourceManager.createResourceWithWait(
-            KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
+            KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespace(), testStorage.getClusterName(), 1)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
@@ -159,7 +159,7 @@ public class PodSecurityProfilesST extends AbstractST {
                 .endSpec()
                 .build());
 
-        LOGGER.info("Deploy File Sink Kafka Connector: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
+        LOGGER.info("Deploy File Sink Kafka Connector: {}/{}", testStorage.getNamespace(), testStorage.getClusterName());
         resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getClusterName())
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
@@ -171,7 +171,7 @@ public class PodSecurityProfilesST extends AbstractST {
             .build());
 
         // Messages produced to Main Kafka Cluster (source) will be sinked to file, and mirrored into targeted Kafkas to later verify Operands work correctly.
-        LOGGER.info("Transmit messages in Cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
+        LOGGER.info("Transmit messages in Cluster: {}/{}", testStorage.getNamespace(), testStorage.getClusterName());
         final KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage)
             .withPodSecurityPolicy(PodSecurityProfile.RESTRICTED)
             .build();
@@ -183,15 +183,15 @@ public class PodSecurityProfilesST extends AbstractST {
 
         // verifies that Pods and Containers have proper generated SC
         final List<Pod> podsWithProperlyGeneratedSecurityCOntexts = PodUtils.getKafkaClusterPods(testStorage);
-        podsWithProperlyGeneratedSecurityCOntexts.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND));
-        podsWithProperlyGeneratedSecurityCOntexts.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND));
-        podsWithProperlyGeneratedSecurityCOntexts.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND));
-        podsWithProperlyGeneratedSecurityCOntexts.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND));
+        podsWithProperlyGeneratedSecurityCOntexts.addAll(kubeClient().listPods(testStorage.getNamespace(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND));
+        podsWithProperlyGeneratedSecurityCOntexts.addAll(kubeClient().listPods(testStorage.getNamespace(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND));
+        podsWithProperlyGeneratedSecurityCOntexts.addAll(kubeClient().listPods(testStorage.getNamespace(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND));
+        podsWithProperlyGeneratedSecurityCOntexts.addAll(kubeClient().listPods(testStorage.getNamespace(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND));
         verifyPodAndContainerSecurityContext(podsWithProperlyGeneratedSecurityCOntexts);
 
         // verify KafkaConnect
-        final String kafkaConnectPodName = kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
+        final String kafkaConnectPodName = kubeClient(testStorage.getNamespace()).listPods(testStorage.getNamespace(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespace(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
 
         // verify MM1, as topic name does not change, only bootstrap server is changed.
         final KafkaClients mm1Client =  ClientUtils.getInstantPlainClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(mm1TargetClusterName))

@@ -244,18 +244,18 @@ class CustomResourceStatusST extends AbstractST {
     @Tag(CONNECT_COMPONENTS)
     void testKafkaConnectAndConnectorStatus() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        String connectUrl = KafkaConnectResources.url(sharedTestStorage.getClusterName(), testStorage.getNamespaceName(), 8083);
+        String connectUrl = KafkaConnectResources.url(sharedTestStorage.getClusterName(), testStorage.getNamespace(), 8083);
 
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), sharedTestStorage.getClusterName(), 1)
+        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespace(), sharedTestStorage.getClusterName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
-                .withNamespace(testStorage.getNamespaceName())
+                .withNamespace(testStorage.getNamespace())
             .endMetadata()
             .build());
 
         resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(sharedTestStorage.getClusterName())
             .editMetadata()
-                .withNamespace(testStorage.getNamespaceName())
+                .withNamespace(testStorage.getNamespace())
             .endMetadata()
             .editSpec()
                 .addToConfig("topic", testStorage.getTopicName())
@@ -264,42 +264,42 @@ class CustomResourceStatusST extends AbstractST {
 
         assertKafkaConnectStatus(1, connectUrl);
 
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), sharedTestStorage.getClusterName(),
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespace(), sharedTestStorage.getClusterName(),
             kb -> kb.getSpec().setBootstrapServers("non-existing-bootstrap"));
 
-        KafkaConnectUtils.waitForConnectNotReady(testStorage.getNamespaceName(), sharedTestStorage.getClusterName());
+        KafkaConnectUtils.waitForConnectNotReady(testStorage.getNamespace(), sharedTestStorage.getClusterName());
 
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), sharedTestStorage.getClusterName(),
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespace(), sharedTestStorage.getClusterName(),
             kb -> kb.getSpec().setBootstrapServers(KafkaResources.tlsBootstrapAddress(sharedTestStorage.getClusterName())));
 
-        KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), sharedTestStorage.getClusterName());
+        KafkaConnectUtils.waitForConnectReady(testStorage.getNamespace(), sharedTestStorage.getClusterName());
         assertKafkaConnectStatus(3, connectUrl);
 
-        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getNamespaceName(), sharedTestStorage.getClusterName(),
+        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getNamespace(), sharedTestStorage.getClusterName(),
             kc -> kc.getMetadata().setLabels(Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, "non-existing-connect-cluster")));
-        KafkaConnectorUtils.waitForConnectorNotReady(testStorage.getNamespaceName(), sharedTestStorage.getClusterName());
-        assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(sharedTestStorage.getClusterName()).get().getStatus().getConnectorStatus(), is(nullValue()));
+        KafkaConnectorUtils.waitForConnectorNotReady(testStorage.getNamespace(), sharedTestStorage.getClusterName());
+        assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(testStorage.getNamespace()).withName(sharedTestStorage.getClusterName()).get().getStatus().getConnectorStatus(), is(nullValue()));
 
-        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getNamespaceName(), sharedTestStorage.getClusterName(),
+        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getNamespace(), sharedTestStorage.getClusterName(),
             kc -> kc.getMetadata().setLabels(Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, sharedTestStorage.getClusterName())));
 
-        KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), sharedTestStorage.getClusterName());
-        KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), sharedTestStorage.getClusterName());
+        KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespace(), sharedTestStorage.getClusterName());
+        KafkaConnectUtils.waitForConnectReady(testStorage.getNamespace(), sharedTestStorage.getClusterName());
 
-        String defaultClass = KafkaConnectorResource.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(sharedTestStorage.getClusterName()).get().getSpec().getClassName();
+        String defaultClass = KafkaConnectorResource.kafkaConnectorClient().inNamespace(testStorage.getNamespace()).withName(sharedTestStorage.getClusterName()).get().getSpec().getClassName();
 
-        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getNamespaceName(), sharedTestStorage.getClusterName(),
+        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getNamespace(), sharedTestStorage.getClusterName(),
             kc -> kc.getSpec().setClassName("non-existing-class"));
-        KafkaConnectorUtils.waitForConnectorNotReady(testStorage.getNamespaceName(), sharedTestStorage.getClusterName());
-        assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(sharedTestStorage.getClusterName()).get().getStatus().getConnectorStatus(), is(nullValue()));
+        KafkaConnectorUtils.waitForConnectorNotReady(testStorage.getNamespace(), sharedTestStorage.getClusterName());
+        assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(testStorage.getNamespace()).withName(sharedTestStorage.getClusterName()).get().getStatus().getConnectorStatus(), is(nullValue()));
 
-        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getNamespaceName(), sharedTestStorage.getClusterName(),
+        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getNamespace(), sharedTestStorage.getClusterName(),
             kc -> {
                 kc.getMetadata().setLabels(Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, sharedTestStorage.getClusterName()));
                 kc.getSpec().setClassName(defaultClass);
             });
 
-        KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), sharedTestStorage.getClusterName());
+        KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespace(), sharedTestStorage.getClusterName());
     }
 
     @ParallelTest
@@ -340,8 +340,8 @@ class CustomResourceStatusST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1)
@@ -443,8 +443,8 @@ class CustomResourceStatusST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(sharedTestStorage.getNamespaceName(), sharedTestStorage.getBrokerPoolName(), sharedTestStorage.getClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(sharedTestStorage.getNamespaceName(), sharedTestStorage.getControllerPoolName(), sharedTestStorage.getClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(sharedTestStorage.getNamespace(), sharedTestStorage.getBrokerPoolName(), sharedTestStorage.getClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(sharedTestStorage.getNamespace(), sharedTestStorage.getControllerPoolName(), sharedTestStorage.getClusterName(), 1).build()
             )
         );
         KafkaBuilder kafkaBuilder = KafkaTemplates.kafkaPersistent(sharedTestStorage.getClusterName(), 1, 1)

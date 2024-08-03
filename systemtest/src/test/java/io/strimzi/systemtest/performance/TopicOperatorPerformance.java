@@ -143,7 +143,7 @@ public class TopicOperatorPerformance extends AbstractST {
         try {
             resourceManager.createResourceWithWait(
                     NodePoolsConverter.convertNodePoolsIfNeeded(
-                        KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerReplicas)
+                        KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerReplicas)
                             .editSpec()
                                 .withNewPersistentClaimStorage()
                                     .withSize("10Gi")
@@ -151,12 +151,12 @@ public class TopicOperatorPerformance extends AbstractST {
                                 .endPersistentClaimStorage()
                             .endSpec()
                             .build(),
-                            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerReplicas).build()
+                            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerReplicas).build()
                     )
             );
             resourceManager.createResourceWithWait(
-                KafkaTemplates.kafkaMetricsConfigMap(testStorage.getNamespaceName(), testStorage.getClusterName()),
-                KafkaTemplates.kafkaWithMetrics(testStorage.getNamespaceName(), testStorage.getClusterName(), brokerReplicas, controllerReplicas)
+                KafkaTemplates.kafkaMetricsConfigMap(testStorage.getNamespace(), testStorage.getClusterName()),
+                KafkaTemplates.kafkaWithMetrics(testStorage.getNamespace(), testStorage.getClusterName(), brokerReplicas, controllerReplicas)
                     .editSpec()
                         .editEntityOperator()
                             .editTopicOperator()
@@ -191,17 +191,17 @@ public class TopicOperatorPerformance extends AbstractST {
                         .endEntityOperator()
                     .endSpec()
                     .build(),
-                    ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
+                    ScraperTemplates.scraperPod(testStorage.getNamespace(), testStorage.getScraperName()).build());
 
             this.testStorage.addToTestStorage(TestConstants.SCRAPER_POD_KEY,
-                    kubeClient().listPodsByPrefixInName(this.testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName());
+                    kubeClient().listPodsByPrefixInName(this.testStorage.getNamespace(), testStorage.getScraperName()).get(0).getMetadata().getName());
 
             // Create topics related to clients a
             if (numberOfClientInstances != 0) {
-                KafkaTopicScalabilityUtils.createTopicsViaK8s(testStorage.getNamespaceName(), testStorage.getClusterName(), clientExchangeMessagesTopicPrefix,
+                KafkaTopicScalabilityUtils.createTopicsViaK8s(testStorage.getNamespace(), testStorage.getClusterName(), clientExchangeMessagesTopicPrefix,
                     numberOfClientInstances, 12, 3, 1);
 
-                KafkaTopicScalabilityUtils.waitForTopicsReady(testStorage.getNamespaceName(), clientExchangeMessagesTopicPrefix, numberOfClientInstances);
+                KafkaTopicScalabilityUtils.waitForTopicsReady(testStorage.getNamespace(), clientExchangeMessagesTopicPrefix, numberOfClientInstances);
             } // create KafkaUser for TLS communication via clients
             resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
 
@@ -215,8 +215,8 @@ public class TopicOperatorPerformance extends AbstractST {
             // Assuming 'testStorage' contains necessary details like namespace and scraperPodName
             this.topicOperatorCollector = new TopicOperatorMetricsCollector.Builder()
                     .withScraperPodName(this.testStorage.getScraperPodName())
-                    .withNamespaceName(this.testStorage.getNamespaceName())
-                    .withComponent(TopicOperatorMetricsComponent.create(this.testStorage.getNamespaceName(), this.testStorage.getClusterName()))
+                    .withNamespaceName(this.testStorage.getNamespace())
+                    .withComponent(TopicOperatorMetricsComponent.create(this.testStorage.getNamespace(), this.testStorage.getClusterName()))
                     .build();
 
             this.topicOperatorMetricsGatherer = new TopicOperatorMetricsCollectionScheduler(this.topicOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
@@ -227,10 +227,10 @@ public class TopicOperatorPerformance extends AbstractST {
             startTimeMs = System.currentTimeMillis();
 
             // Create topics
-            KafkaTopicScalabilityUtils.createTopicsViaK8s(testStorage.getNamespaceName(), testStorage.getClusterName(), topicNamePrefix,
+            KafkaTopicScalabilityUtils.createTopicsViaK8s(testStorage.getNamespace(), testStorage.getClusterName(), topicNamePrefix,
                     numberOfTopics, 12, 3, 1);
 
-            KafkaTopicScalabilityUtils.waitForTopicsReady(testStorage.getNamespaceName(), topicNamePrefix, numberOfTopics);
+            KafkaTopicScalabilityUtils.waitForTopicsReady(testStorage.getNamespace(), topicNamePrefix, numberOfTopics);
 
             endTimeMs = System.currentTimeMillis();
             createTopicsTimeMs = endTimeMs - startTimeMs;
@@ -244,8 +244,8 @@ public class TopicOperatorPerformance extends AbstractST {
             if (withClientsEnabled) {
                 // delete clients here
                 for (int i = 0; i < numberOfClientInstances; i++) {
-                    ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName() + "-" + i, NUMBER_OF_MESSAGES);
-                    ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName() + "-" + i, NUMBER_OF_MESSAGES);
+                    ClientUtils.waitForClientSuccess(testStorage.getNamespace(), testStorage.getProducerName() + "-" + i, NUMBER_OF_MESSAGES);
+                    ClientUtils.waitForClientSuccess(testStorage.getNamespace(), testStorage.getConsumerName() + "-" + i, NUMBER_OF_MESSAGES);
                 }
                 endSendRecvTimeMs = System.currentTimeMillis();
                 totalSendAndRecvTimeMs = endSendRecvTimeMs - startSendRecvTimeMs;
@@ -256,9 +256,9 @@ public class TopicOperatorPerformance extends AbstractST {
             // Start measuring time for deletion of all topics
             long deletionStartTimeMs = System.currentTimeMillis();
 
-            LOGGER.info("Start deletion of {} KafkaTopics in namespace:{}", numberOfTopics, testStorage.getNamespaceName());
+            LOGGER.info("Start deletion of {} KafkaTopics in namespace:{}", numberOfTopics, testStorage.getNamespace());
             resourceManager.deleteResourcesOfTypeWithoutWait(KafkaTopic.RESOURCE_KIND);
-            KafkaTopicUtils.waitForTopicWithPrefixDeletion(testStorage.getNamespaceName(), topicNamePrefix);
+            KafkaTopicUtils.waitForTopicWithPrefixDeletion(testStorage.getNamespace(), topicNamePrefix);
 
             long deletionEndTime = System.currentTimeMillis();
             totalDeletionTimeMs = deletionEndTime - deletionStartTimeMs;
@@ -336,19 +336,19 @@ public class TopicOperatorPerformance extends AbstractST {
         try {
             resourceManager.createResourceWithWait(
                 NodePoolsConverter.convertNodePoolsIfNeeded(
-                    KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerReplicas)
+                    KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerReplicas)
                         .editSpec()
                             .withNewPersistentClaimStorage()
                                 .withSize("20Gi")
                             .endPersistentClaimStorage()
                         .endSpec()
                         .build(),
-                    KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerReplicas).build()
+                    KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerReplicas).build()
                 )
             );
             resourceManager.createResourceWithWait(
-                KafkaTemplates.kafkaMetricsConfigMap(testStorage.getNamespaceName(), testStorage.getClusterName()),
-                KafkaTemplates.kafkaWithMetrics(testStorage.getNamespaceName(), testStorage.getClusterName(), brokerReplicas, controllerReplicas)
+                KafkaTemplates.kafkaMetricsConfigMap(testStorage.getNamespace(), testStorage.getClusterName()),
+                KafkaTemplates.kafkaWithMetrics(testStorage.getNamespace(), testStorage.getClusterName(), brokerReplicas, controllerReplicas)
                     .editSpec()
                         .editEntityOperator()
                             .editTopicOperator()
@@ -383,18 +383,18 @@ public class TopicOperatorPerformance extends AbstractST {
                         .endEntityOperator()
                     .endSpec()
                     .build(),
-                ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
+                ScraperTemplates.scraperPod(testStorage.getNamespace(), testStorage.getScraperName()).build()
             );
 
             this.testStorage.addToTestStorage(TestConstants.SCRAPER_POD_KEY,
-                kubeClient().listPodsByPrefixInName(this.testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName());
+                kubeClient().listPodsByPrefixInName(this.testStorage.getNamespace(), testStorage.getScraperName()).get(0).getMetadata().getName());
 
             // Create topics related to clients a
             if (numberOfClientInstances != 0) {
-                KafkaTopicScalabilityUtils.createTopicsViaK8s(testStorage.getNamespaceName(), testStorage.getClusterName(), clientExchangeMessagesTopicPrefix,
+                KafkaTopicScalabilityUtils.createTopicsViaK8s(testStorage.getNamespace(), testStorage.getClusterName(), clientExchangeMessagesTopicPrefix,
                     numberOfClientInstances, 12, 3, 1);
 
-                KafkaTopicScalabilityUtils.waitForTopicsReady(testStorage.getNamespaceName(), clientExchangeMessagesTopicPrefix, numberOfClientInstances);
+                KafkaTopicScalabilityUtils.waitForTopicsReady(testStorage.getNamespace(), clientExchangeMessagesTopicPrefix, numberOfClientInstances);
             }
             // create KafkaUser for TLS communication via clients
             resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
@@ -409,8 +409,8 @@ public class TopicOperatorPerformance extends AbstractST {
             // Assuming 'testStorage' contains necessary details like namespace and scraperPodName
             this.topicOperatorCollector = new TopicOperatorMetricsCollector.Builder()
                 .withScraperPodName(this.testStorage.getScraperPodName())
-                .withNamespaceName(this.testStorage.getNamespaceName())
-                .withComponent(TopicOperatorMetricsComponent.create(this.testStorage.getNamespaceName(), this.testStorage.getClusterName()))
+                .withNamespaceName(this.testStorage.getNamespace())
+                .withComponent(TopicOperatorMetricsComponent.create(this.testStorage.getNamespace(), this.testStorage.getClusterName()))
                 .build();
 
             this.topicOperatorMetricsGatherer = new TopicOperatorMetricsCollectionScheduler(this.topicOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
@@ -421,10 +421,10 @@ public class TopicOperatorPerformance extends AbstractST {
             startTimeMs = System.currentTimeMillis();
 
             // Create topics
-            KafkaTopicScalabilityUtils.createTopicsViaK8s(testStorage.getNamespaceName(), testStorage.getClusterName(), topicNamePrefix,
+            KafkaTopicScalabilityUtils.createTopicsViaK8s(testStorage.getNamespace(), testStorage.getClusterName(), topicNamePrefix,
                 numberOfTopics, 12, 5, 3);
 
-            KafkaTopicScalabilityUtils.waitForTopicsReady(testStorage.getNamespaceName(), topicNamePrefix, numberOfTopics);
+            KafkaTopicScalabilityUtils.waitForTopicsReady(testStorage.getNamespace(), topicNamePrefix, numberOfTopics);
 
             endTimeMs = System.currentTimeMillis();
             createTopicsTimeMs = endTimeMs - startTimeMs;
@@ -438,8 +438,8 @@ public class TopicOperatorPerformance extends AbstractST {
             if (withClientsEnabled) {
                 // delete clients here
                 for (int i = 0; i < numberOfClientInstances; i++) {
-                    ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName() + "-" + i, NUMBER_OF_MESSAGES);
-                    ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName() + "-" + i, NUMBER_OF_MESSAGES);
+                    ClientUtils.waitForClientSuccess(testStorage.getNamespace(), testStorage.getProducerName() + "-" + i, NUMBER_OF_MESSAGES);
+                    ClientUtils.waitForClientSuccess(testStorage.getNamespace(), testStorage.getConsumerName() + "-" + i, NUMBER_OF_MESSAGES);
                 }
                 endSendRecvTimeMs = System.currentTimeMillis();
                 totalSendAndRecvTimeMs = endSendRecvTimeMs - startSendRecvTimeMs;
@@ -482,14 +482,14 @@ public class TopicOperatorPerformance extends AbstractST {
 
                 long timeTakenForRound = OperationTimer.measureTimeInMillis(() -> {
                     KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(
-                        testStorage.getNamespaceName(),
+                        testStorage.getNamespace(),
                         topicNamePrefix, // Ensure this is defined or passed appropriately
                         bobAmountOfKafkaTopics, // Number of topics to update, adjust as needed
                         new KafkaTopicSpecBuilder().withConfig(currentConfig).build()
                     );
                     // Wait for topics to reflect the updated configurations, or for readiness
                     KafkaTopicScalabilityUtils.waitForTopicsContainConfig(
-                        testStorage.getNamespaceName(),
+                        testStorage.getNamespace(),
                         topicNamePrefix, // Ensure this is defined or passed appropriately
                         bobAmountOfKafkaTopics, // Number of topics, adjust as needed
                         currentConfig
@@ -507,9 +507,9 @@ public class TopicOperatorPerformance extends AbstractST {
             long deletionStartTimeMs = System.currentTimeMillis();
 
             // Delete all KafkaTopics in the scope of the current test's extension context
-            LOGGER.info("Start deletion of {} KafkaTopics in namespace:{}", numberOfTopics, testStorage.getNamespaceName());
+            LOGGER.info("Start deletion of {} KafkaTopics in namespace:{}", numberOfTopics, testStorage.getNamespace());
             resourceManager.deleteResourcesOfTypeWithoutWait(KafkaTopic.RESOURCE_KIND);
-            KafkaTopicUtils.waitForTopicWithPrefixDeletion(testStorage.getNamespaceName(), topicNamePrefix);
+            KafkaTopicUtils.waitForTopicWithPrefixDeletion(testStorage.getNamespace(), topicNamePrefix);
 
             long deletionEndTime = System.currentTimeMillis();
             totalDeletionTimeMs = deletionEndTime - deletionStartTimeMs;
@@ -550,7 +550,7 @@ public class TopicOperatorPerformance extends AbstractST {
             .withConsumerName(testStorage.getConsumerName())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
             .withUsername(testStorage.getUsername())
-            .withNamespaceName(testStorage.getNamespaceName())
+            .withNamespaceName(testStorage.getNamespace())
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(NUMBER_OF_MESSAGES)
             // 100 mgs/s if possible
@@ -615,14 +615,14 @@ public class TopicOperatorPerformance extends AbstractST {
         try {
             resourceManager.createResourceWithWait(
                 NodePoolsConverter.convertNodePoolsIfNeeded(
-                    KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerReplicas)
+                    KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerReplicas)
                         .editSpec()
                             .withNewPersistentClaimStorage()
                                 .withSize("50Gi")
                             .endPersistentClaimStorage()
                         .endSpec()
                         .build(),
-                    KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerReplicas)
+                    KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerReplicas)
                         .editSpec()
                             .withNewPersistentClaimStorage()
                                 .withSize("5Gi")
@@ -632,8 +632,8 @@ public class TopicOperatorPerformance extends AbstractST {
                 )
             );
             resourceManager.createResourceWithWait(
-                KafkaTemplates.kafkaMetricsConfigMap(testStorage.getNamespaceName(), testStorage.getClusterName()),
-                KafkaTemplates.kafkaWithMetrics(testStorage.getNamespaceName(), testStorage.getClusterName(), brokerReplicas, controllerReplicas)
+                KafkaTemplates.kafkaMetricsConfigMap(testStorage.getNamespace(), testStorage.getClusterName()),
+                KafkaTemplates.kafkaWithMetrics(testStorage.getNamespace(), testStorage.getClusterName(), brokerReplicas, controllerReplicas)
                     .editSpec()
                         .editEntityOperator()
                             .editTopicOperator()
@@ -668,18 +668,18 @@ public class TopicOperatorPerformance extends AbstractST {
                         .endEntityOperator()
                     .endSpec()
                     .build(),
-                ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
+                ScraperTemplates.scraperPod(testStorage.getNamespace(), testStorage.getScraperName()).build()
             );
 
             this.testStorage.addToTestStorage(TestConstants.SCRAPER_POD_KEY,
-                kubeClient().listPodsByPrefixInName(this.testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName());
+                kubeClient().listPodsByPrefixInName(this.testStorage.getNamespace(), testStorage.getScraperName()).get(0).getMetadata().getName());
 
             // -- Metrics POLL --
             // Assuming 'testStorage' contains necessary details like namespace and scraperPodName
             this.topicOperatorCollector = new TopicOperatorMetricsCollector.Builder()
                 .withScraperPodName(this.testStorage.getScraperPodName())
-                .withNamespaceName(this.testStorage.getNamespaceName())
-                .withComponent(TopicOperatorMetricsComponent.create(this.testStorage.getNamespaceName(), this.testStorage.getClusterName()))
+                .withNamespaceName(this.testStorage.getNamespace())
+                .withComponent(TopicOperatorMetricsComponent.create(this.testStorage.getNamespace(), this.testStorage.getClusterName()))
                 .build();
 
             this.topicOperatorMetricsGatherer = new TopicOperatorMetricsCollectionScheduler(this.topicOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
@@ -694,9 +694,9 @@ public class TopicOperatorPerformance extends AbstractST {
 
                 try {
                     // Create topics
-                    KafkaTopicScalabilityUtils.createTopicsViaK8s(testStorage.getNamespaceName(), testStorage.getClusterName(),
+                    KafkaTopicScalabilityUtils.createTopicsViaK8s(testStorage.getNamespace(), testStorage.getClusterName(),
                         testStorage.getTopicName(), start, end, 12, 3, 2);
-                    KafkaTopicScalabilityUtils.waitForTopicStatus(testStorage.getNamespaceName(), testStorage.getTopicName(),
+                    KafkaTopicScalabilityUtils.waitForTopicStatus(testStorage.getNamespace(), testStorage.getTopicName(),
                         start, end, CustomResourceStatus.Ready, ConditionStatus.True);
 
                     successfulCreations += batchSize;
@@ -715,9 +715,9 @@ public class TopicOperatorPerformance extends AbstractST {
         } finally {
             // to enchantment a process of deleting we should delete all resources at once
             // I saw a behaviour where deleting one by one might lead to 10s delay for deleting each KafkaTopic
-            LOGGER.info("Start deletion KafkaTopics in namespace:{}", testStorage.getNamespaceName());
+            LOGGER.info("Start deletion KafkaTopics in namespace:{}", testStorage.getNamespace());
             resourceManager.deleteResourcesOfTypeWithoutWait(KafkaTopic.RESOURCE_KIND);
-            KafkaTopicUtils.waitForTopicWithPrefixDeletion(testStorage.getNamespaceName(), testStorage.getTopicName());
+            KafkaTopicUtils.waitForTopicWithPrefixDeletion(testStorage.getNamespace(), testStorage.getTopicName());
 
             if (this.topicOperatorMetricsGatherer != null) {
                 this.topicOperatorMetricsGatherer.stopCollecting();

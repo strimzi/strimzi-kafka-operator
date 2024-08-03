@@ -610,14 +610,14 @@ public class KafkaUtils {
      *                                  This dictates how many volume directories the method will check within each Kafka pod.
      */
     public static void verifyKafkaKraftMetadataLog(final TestStorage testStorage, final int kraftMetadataVolumeId, final int numberOfVolumes) {
-        final List<Pod> kafkaPods = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
+        final List<Pod> kafkaPods = kubeClient().listPods(testStorage.getNamespace(), testStorage.getBrokerSelector());
         int kafkaIndex = 0; // Ensure this index is managed appropriately if used outside this method context.
 
         for (final Pod kafkaPod : kafkaPods) {
             // Directly iterate over volumes instead of creating a list
             for (int volumeId = 0; volumeId < numberOfVolumes; volumeId++) {
                 final String dir = buildDirectoryPath(volumeId, kafkaIndex);
-                final int result = cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(false,
+                final int result = cmdKubeClient().namespace(testStorage.getNamespace()).execInPodContainer(false,
                     kafkaPod.getMetadata().getName(),
                     "kafka",
                     "/bin/bash", "-c", "test -d " + dir).returnCode();

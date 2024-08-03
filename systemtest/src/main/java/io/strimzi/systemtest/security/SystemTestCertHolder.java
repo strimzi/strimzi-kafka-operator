@@ -113,7 +113,7 @@ public class SystemTestCertHolder {
             int generationNumber = Integer.parseInt(clusterCaSecretAnnotations.get(annotationKey));
             clusterCaSecretAnnotations.put(annotationKey, String.valueOf(++generationNumber));
         }
-        kubeClient(testStorage.getNamespaceName()).patchSecret(testStorage.getNamespaceName(), secret.getMetadata().getName(), secret);
+        kubeClient(testStorage.getNamespace()).patchSecret(testStorage.getNamespace(), secret.getMetadata().getName(), secret);
     }
 
     public SystemTestCertAndKey getStrimziRootCa() {

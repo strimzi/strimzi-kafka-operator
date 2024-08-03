@@ -421,29 +421,29 @@ class LogSettingST extends AbstractST {
     void testCruiseControlLogChange() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String debugText = " DEBUG ";
-        String cruiseControlPodName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), LOG_SETTING_CLUSTER_NAME + "-" + TestConstants.CRUISE_CONTROL_CONTAINER_NAME);
+        String cruiseControlPodName = PodUtils.getPodNameByPrefix(testStorage.getNamespace(), LOG_SETTING_CLUSTER_NAME + "-" + TestConstants.CRUISE_CONTROL_CONTAINER_NAME);
         LOGGER.info("Check that default/actual root logging level is info");
-        String containerLogLevel = cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPod(cruiseControlPodName, "grep", "-i", "rootlogger.level",
+        String containerLogLevel = cmdKubeClient().namespace(testStorage.getNamespace()).execInPod(cruiseControlPodName, "grep", "-i", "rootlogger.level",
                 TestConstants.CRUISE_CONTROL_LOG_FILE_PATH).out().trim().split("=")[1];
         assertThat(containerLogLevel.toUpperCase(Locale.ENGLISH), is(not(debugText.strip())));
 
         LOGGER.info("Checking logs in CruiseControl - make sure no DEBUG is found there");
-        String logOut = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), cruiseControlPodName, TestConstants.CRUISE_CONTROL_CONTAINER_NAME, "20s");
+        String logOut = StUtils.getLogFromPodByTime(testStorage.getNamespace(), cruiseControlPodName, TestConstants.CRUISE_CONTROL_CONTAINER_NAME, "20s");
         assertThat(logOut.toUpperCase(Locale.ENGLISH), not(containsString(debugText)));
 
         InlineLogging logging = new InlineLogging();
         logging.setLoggers(Collections.singletonMap("rootLogger.level", debugText.strip()));
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), LOG_SETTING_CLUSTER_NAME, kafka -> kafka.getSpec().getCruiseControl().setLogging(logging));
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespace(), LOG_SETTING_CLUSTER_NAME, kafka -> kafka.getSpec().getCruiseControl().setLogging(logging));
 
         LOGGER.info("Waiting for change of root logger in {}", cruiseControlPodName);
         TestUtils.waitFor(" for log to be changed", CC_LOG_CONFIG_RELOAD, CO_OPERATION_TIMEOUT_MEDIUM, () -> {
-            String line = StUtils.getLineFromPodContainer(testStorage.getNamespaceName(), cruiseControlPodName, null, TestConstants.CRUISE_CONTROL_LOG_FILE_PATH, "rootlogger.level");
+            String line = StUtils.getLineFromPodContainer(testStorage.getNamespace(), cruiseControlPodName, null, TestConstants.CRUISE_CONTROL_LOG_FILE_PATH, "rootlogger.level");
             return line.toUpperCase(Locale.ENGLISH).contains(debugText.strip());
         });
 
-        LOGGER.info("Check CruiseControl logs in Pod: {}/{} and it's container {}", testStorage.getNamespaceName(), cruiseControlPodName, TestConstants.CRUISE_CONTROL_CONTAINER_NAME);
+        LOGGER.info("Check CruiseControl logs in Pod: {}/{} and it's container {}", testStorage.getNamespace(), cruiseControlPodName, TestConstants.CRUISE_CONTROL_CONTAINER_NAME);
         TestUtils.waitFor("debug log line to be present in logs", CC_LOG_CONFIG_RELOAD, TIMEOUT_FOR_LOG, () -> {
-            String log = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), cruiseControlPodName, TestConstants.CRUISE_CONTROL_CONTAINER_NAME, "20s");
+            String log = StUtils.getLogFromPodByTime(testStorage.getNamespace(), cruiseControlPodName, TestConstants.CRUISE_CONTROL_CONTAINER_NAME, "20s");
             return log.toUpperCase(Locale.ENGLISH).contains(debugText);
         });
     }

@@ -116,7 +116,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
         resourceManager.createResourceWithWait(KafkaBridgeTemplates.kafkaBridge(bridgeName,
                 KafkaResources.plainBootstrapAddress(PRIMARY_KAFKA_NAME), 1)
             .editMetadata()
-                .withNamespace(testStorage.getNamespaceName())
+                .withNamespace(testStorage.getNamespace())
             .endMetadata()
             .build()
         );
@@ -182,13 +182,13 @@ public abstract class AbstractNamespaceST extends AbstractST {
 
         assertThat(kafkaCondition.getType(), is(Ready.toString()));
 
-        LOGGER.info("Finding and Copying Secrets related to created KafkaUser into Namespace: {} which holds Kafka", testStorage.getNamespaceName());
+        LOGGER.info("Finding and Copying Secrets related to created KafkaUser into Namespace: {} which holds Kafka", testStorage.getNamespace());
         List<Secret> secretsOfSecondNamespace = kubeClient(PRIMARY_KAFKA_WATCHED_NAMESPACE).listSecrets();
 
         for (Secret s : secretsOfSecondNamespace) {
             if (s.getMetadata().getName().equals(testStorage.getUsername())) {
-                LOGGER.info("Copying Secret: {} from Namespace: {} to Namespace: {}", s, PRIMARY_KAFKA_WATCHED_NAMESPACE, testStorage.getNamespaceName());
-                copySecret(testStorage.getNamespaceName(), s, testStorage.getUsername());
+                LOGGER.info("Copying Secret: {} from Namespace: {} to Namespace: {}", s, PRIMARY_KAFKA_WATCHED_NAMESPACE, testStorage.getNamespace());
+                copySecret(testStorage.getNamespace(), s, testStorage.getUsername());
             }
         }
 
@@ -198,7 +198,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
             kafkaClients.producerTlsStrimzi(PRIMARY_KAFKA_NAME),
             kafkaClients.consumerTlsStrimzi(PRIMARY_KAFKA_NAME)
         );
-        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespace(), testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getMessageCount());
     }
 
     /**
@@ -298,27 +298,27 @@ public abstract class AbstractNamespaceST extends AbstractST {
         connectorConfig.put("key.converter", "org.apache.kafka.connect.storage.StringConverter");
         connectorConfig.put("value.converter", "org.apache.kafka.connect.storage.StringConverter");
 
-        LOGGER.info("Creating KafkaConnector: {}/{}", testStorage.getNamespaceName(), clusterName);
+        LOGGER.info("Creating KafkaConnector: {}/{}", testStorage.getNamespace(), clusterName);
         resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(clusterName)
             .editMetadata()
-                .withNamespace(testStorage.getNamespaceName())
+                .withNamespace(testStorage.getNamespace())
             .endMetadata()
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .withConfig(connectorConfig)
             .endSpec()
             .build());
-        KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), clusterName);
+        KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespace(), clusterName);
 
-        String kafkaConnectPodName = kubeClient(testStorage.getNamespaceName()).listPods(clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
-        LOGGER.info("KafkaConnect Pod: {}/{}", testStorage.getNamespaceName(), kafkaConnectPodName);
-        KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(testStorage.getNamespaceName(), kafkaConnectPodName);
+        String kafkaConnectPodName = kubeClient(testStorage.getNamespace()).listPods(clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        LOGGER.info("KafkaConnect Pod: {}/{}", testStorage.getNamespace(), kafkaConnectPodName);
+        KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(testStorage.getNamespace(), kafkaConnectPodName);
 
         final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(PRIMARY_KAFKA_NAME));
         resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespace(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
     }
 
     /**

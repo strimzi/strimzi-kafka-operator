@@ -49,8 +49,8 @@ public class ConfigProviderST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
@@ -71,9 +71,9 @@ public class ConfigProviderST extends AbstractST {
             .withData(configData)
             .build();
 
-        kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).resource(connectorConfig).create();
+        kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespace()).resource(connectorConfig).create();
 
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
+        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespace(), testStorage.getClusterName(), 1)
             .editOrNewMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -102,13 +102,13 @@ public class ConfigProviderST extends AbstractST {
             new RoleBindingBuilder()
                 .editOrNewMetadata()
                     .withName("connector-config-rb")
-                    .withNamespace(testStorage.getNamespaceName())
+                    .withNamespace(testStorage.getNamespace())
                 .endMetadata()
                 .withSubjects(
                     new SubjectBuilder()
                         .withKind("ServiceAccount")
                         .withName(testStorage.getClusterName() + "-connect")
-                        .withNamespace(testStorage.getNamespaceName())
+                        .withNamespace(testStorage.getNamespace())
                         .build()
                 )
                 .withRoleRef(
@@ -123,7 +123,7 @@ public class ConfigProviderST extends AbstractST {
         Role configRole = new RoleBuilder()
             .editOrNewMetadata()
                 .withName(configRoleName)
-                .withNamespace(testStorage.getNamespaceName())
+                .withNamespace(testStorage.getNamespace())
             .endMetadata()
             .addNewRule()
                 .withApiGroups("")
@@ -133,9 +133,9 @@ public class ConfigProviderST extends AbstractST {
             .endRule()
             .build();
 
-        kubeClient().namespace(testStorage.getNamespaceName()).createOrUpdateRole(configRole);
+        kubeClient().namespace(testStorage.getNamespace()).createOrUpdateRole(configRole);
 
-        String configPrefix = "configmaps:" + testStorage.getNamespaceName() + "/connector-config:";
+        String configPrefix = "configmaps:" + testStorage.getNamespace() + "/connector-config:";
 
         resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getClusterName())
             .editSpec()
@@ -150,8 +150,8 @@ public class ConfigProviderST extends AbstractST {
         final KafkaClients kafkaBasicClientJob = ClientUtils.getInstantPlainClients(testStorage);
         resourceManager.createResourceWithWait(kafkaBasicClientJob.producerStrimzi());
 
-        String kafkaConnectPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, customFileSinkPath, testStorage.getMessageCount());
+        String kafkaConnectPodName = kubeClient().listPods(testStorage.getNamespace(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespace(), kafkaConnectPodName, customFileSinkPath, testStorage.getMessageCount());
     }
 
     @BeforeAll

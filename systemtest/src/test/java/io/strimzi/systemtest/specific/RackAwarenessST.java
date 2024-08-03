@@ -82,8 +82,8 @@ class RackAwarenessST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1)
@@ -96,11 +96,11 @@ class RackAwarenessST extends AbstractST {
                 .build());
 
         LOGGER.info("Kafka cluster deployed successfully");
-        String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), testStorage.getBrokerComponentName());
-        Pod pod = kubeClient().getPod(testStorage.getNamespaceName(), podName);
+        String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespace(), testStorage.getBrokerComponentName());
+        Pod pod = kubeClient().getPod(testStorage.getNamespace(), podName);
 
         // check that spec matches the actual pod configuration
-        Affinity specAffinity = StrimziPodSetUtils.getStrimziPodSetAffinity(testStorage.getNamespaceName(), testStorage.getBrokerComponentName());
+        Affinity specAffinity = StrimziPodSetUtils.getStrimziPodSetAffinity(testStorage.getNamespace(), testStorage.getBrokerComponentName());
         NodeSelectorRequirement specNodeRequirement = specAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms().get(0).getMatchExpressions().get(0);
         NodeAffinity podAffinity = pod.getSpec().getAffinity().getNodeAffinity();
         NodeSelectorRequirement podNodeRequirement = podAffinity.getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms().get(0).getMatchExpressions().get(0);
@@ -119,12 +119,12 @@ class RackAwarenessST extends AbstractST {
         String podNodeName = pod.getSpec().getNodeName();
         String hostname = podNodeName.contains(".") ? podNodeName.substring(0, podNodeName.indexOf(".")) : podNodeName;
 
-        String rackIdOut = cmdKubeClient(testStorage.getNamespaceName()).execInPod(podName, "/bin/bash", "-c", "cat /opt/kafka/init/rack.id").out().trim();
-        String brokerRackOut = cmdKubeClient(testStorage.getNamespaceName()).execInPod(podName, "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack").out().trim();
+        String rackIdOut = cmdKubeClient(testStorage.getNamespace()).execInPod(podName, "/bin/bash", "-c", "cat /opt/kafka/init/rack.id").out().trim();
+        String brokerRackOut = cmdKubeClient(testStorage.getNamespace()).execInPod(podName, "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack").out().trim();
         assertThat(rackIdOut.trim().contains(hostname), is(true));
         assertThat(brokerRackOut.contains("broker.rack=" + hostname), is(true));
 
-        LOGGER.info("Producing and Consuming data in the Kafka cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
+        LOGGER.info("Producing and Consuming data in the Kafka cluster: {}/{}", testStorage.getNamespace(), testStorage.getClusterName());
         KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
         resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
@@ -161,21 +161,21 @@ class RackAwarenessST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1).build());
 
-        LOGGER.info("Deploying unschedulable KafkaConnect: {}/{} with an invalid topology key: {}", testStorage.getNamespaceName(), invalidConnectClusterName, invalidTopologyKey);
-        resourceManager.createResourceWithoutWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), invalidConnectClusterName, testStorage.getClusterName(), 1)
+        LOGGER.info("Deploying unschedulable KafkaConnect: {}/{} with an invalid topology key: {}", testStorage.getNamespace(), invalidConnectClusterName, invalidTopologyKey);
+        resourceManager.createResourceWithoutWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespace(), invalidConnectClusterName, testStorage.getClusterName(), 1)
                 .editSpec()
                     .withNewRack(invalidTopologyKey)
                 .endSpec()
                 .build());
 
-        LOGGER.info("Deploying KafkaConnect: {}/{} with a valid topology key: {}", testStorage.getNamespaceName(), testStorage.getClusterName(), TOPOLOGY_KEY);
-        resourceManager.createResourceWithoutWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
+        LOGGER.info("Deploying KafkaConnect: {}/{} with a valid topology key: {}", testStorage.getNamespace(), testStorage.getClusterName(), TOPOLOGY_KEY);
+        resourceManager.createResourceWithoutWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespace(), testStorage.getClusterName(), 1)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
@@ -185,17 +185,17 @@ class RackAwarenessST extends AbstractST {
                 .build());
 
         LOGGER.info("Check that KafkaConnect Pod is unschedulable");
-        KafkaConnectUtils.waitForConnectPodCondition(testStorage.getNamespaceName(), "Unschedulable", invalidConnectClusterName, 30_000);
+        KafkaConnectUtils.waitForConnectPodCondition(testStorage.getNamespace(), "Unschedulable", invalidConnectClusterName, 30_000);
 
-        KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
+        KafkaConnectUtils.waitForConnectReady(testStorage.getNamespace(), testStorage.getClusterName());
 
         LOGGER.info("KafkaConnect cluster deployed successfully");
         String deployName = KafkaConnectResources.componentName(testStorage.getClusterName());
-        String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), deployName);
-        Pod pod = kubeClient().getPod(testStorage.getNamespaceName(), podName);
+        String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespace(), deployName);
+        Pod pod = kubeClient().getPod(testStorage.getNamespace(), podName);
 
         // check that spec matches the actual pod configuration
-        Affinity specAffinity = StUtils.getDeploymentOrStrimziPodSetAffinity(testStorage.getNamespaceName(), deployName);
+        Affinity specAffinity = StUtils.getDeploymentOrStrimziPodSetAffinity(testStorage.getNamespace(), deployName);
         NodeSelectorRequirement specNodeRequirement = specAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms().get(0).getMatchExpressions().get(0);
         NodeAffinity podAffinity = pod.getSpec().getAffinity().getNodeAffinity();
         NodeSelectorRequirement podNodeRequirement = podAffinity.getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms().get(0).getMatchExpressions().get(0);
@@ -206,7 +206,7 @@ class RackAwarenessST extends AbstractST {
         // check Kafka client rack awareness configuration
         String podNodeName = pod.getSpec().getNodeName();
         String hostname = podNodeName.contains(".") ? podNodeName.substring(0, podNodeName.indexOf(".")) : podNodeName;
-        String commandOut = cmdKubeClient(testStorage.getNamespaceName()).execInPod(podName,
+        String commandOut = cmdKubeClient(testStorage.getNamespace()).execInPod(podName,
                 "/bin/bash", "-c", "cat /tmp/strimzi-connect.properties | grep consumer.client.rack").out().trim();
         assertThat(commandOut.contains("consumer.client.rack=" + hostname), is(true));
 
@@ -215,7 +215,7 @@ class RackAwarenessST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        consumeDataWithNewSinkConnector(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getMessageCount());
+        consumeDataWithNewSinkConnector(testStorage.getNamespace(), testStorage.getClusterName(), testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getMessageCount());
     }
 
     /**
@@ -243,16 +243,16 @@ class RackAwarenessST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getSourceBrokerPoolName(), testStorage.getSourceClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getSourceControllerPoolName(), testStorage.getSourceClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getSourceBrokerPoolName(), testStorage.getSourceClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getSourceControllerPoolName(), testStorage.getSourceClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getSourceClusterName(), 1).build());
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetBrokerPoolName(), testStorage.getTargetClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetControllerPoolName(), testStorage.getTargetClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getTargetBrokerPoolName(), testStorage.getTargetClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getTargetControllerPoolName(), testStorage.getTargetClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getTargetClusterName(), 1).build());
@@ -269,13 +269,13 @@ class RackAwarenessST extends AbstractST {
                         .endSpec()
                         .build());
 
-        LOGGER.info("MirrorMaker2: {}/{} cluster deployed successfully", testStorage.getNamespaceName(), testStorage.getClusterName());
+        LOGGER.info("MirrorMaker2: {}/{} cluster deployed successfully", testStorage.getNamespace(), testStorage.getClusterName());
         String deployName = KafkaMirrorMaker2Resources.componentName(testStorage.getClusterName());
-        String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), deployName);
-        Pod pod = kubeClient().getPod(testStorage.getNamespaceName(), podName);
+        String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespace(), deployName);
+        Pod pod = kubeClient().getPod(testStorage.getNamespace(), podName);
 
         // check that spec matches the actual pod configuration
-        Affinity specAffinity = StUtils.getDeploymentOrStrimziPodSetAffinity(testStorage.getNamespaceName(), deployName);
+        Affinity specAffinity = StUtils.getDeploymentOrStrimziPodSetAffinity(testStorage.getNamespace(), deployName);
         NodeSelectorRequirement specNodeRequirement = specAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms().get(0).getMatchExpressions().get(0);
         NodeAffinity podAffinity = pod.getSpec().getAffinity().getNodeAffinity();
         NodeSelectorRequirement podNodeRequirement = podAffinity.getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms().get(0).getMatchExpressions().get(0);
@@ -286,19 +286,19 @@ class RackAwarenessST extends AbstractST {
         // check Kafka client rack awareness configuration
         String podNodeName = pod.getSpec().getNodeName();
         String hostname = podNodeName.contains(".") ? podNodeName.substring(0, podNodeName.indexOf(".")) : podNodeName;
-        String commandOut = cmdKubeClient(testStorage.getNamespaceName()).execInPod(podName, "/bin/bash", "-c", "cat /tmp/strimzi-connect.properties | grep consumer.client.rack").out().trim();
+        String commandOut = cmdKubeClient(testStorage.getNamespace()).execInPod(podName, "/bin/bash", "-c", "cat /tmp/strimzi-connect.properties | grep consumer.client.rack").out().trim();
         assertThat(commandOut.contains("consumer.client.rack=" + hostname), is(true));
 
         // Mirroring messages by: Producing to the Source Kafka Cluster and consuming them from mirrored KafkaTopic in target Kafka Cluster.
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), testStorage.getTopicName(), 3).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespace(), testStorage.getSourceClusterName(), testStorage.getTopicName(), 3).build());
 
-        LOGGER.info("Producing messages into the source Kafka: {}/{}, Topic: {}", testStorage.getNamespaceName(), testStorage.getSourceClusterName(), testStorage.getTopicName());
+        LOGGER.info("Producing messages into the source Kafka: {}/{}, Topic: {}", testStorage.getNamespace(), testStorage.getSourceClusterName(), testStorage.getTopicName());
         final KafkaClients sourceClients = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()));
         resourceManager.createResourceWithWait(sourceClients.producerStrimzi());
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
-        LOGGER.info("Consuming messages in the target Kafka: {}/{} mirrored Topic: {}", testStorage.getNamespaceName(), testStorage.getTargetClusterName(), testStorage.getMirroredSourceTopicName());
+        LOGGER.info("Consuming messages in the target Kafka: {}/{} mirrored Topic: {}", testStorage.getNamespace(), testStorage.getTargetClusterName(), testStorage.getMirroredSourceTopicName());
         final KafkaClients targetClients = ClientUtils.getInstantPlainClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()))
             .withTopicName(testStorage.getMirroredSourceTopicName())
             .build();

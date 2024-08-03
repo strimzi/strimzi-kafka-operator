@@ -14,7 +14,7 @@ public class KafkaUserTemplates {
     private KafkaUserTemplates() {}
 
     public static KafkaUserBuilder tlsUser(TestStorage testStorage) {
-        return tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getUsername());
+        return tlsUser(testStorage.getNamespace(), testStorage.getClusterName(), testStorage.getUsername());
     }
 
     public static KafkaUserBuilder tlsUser(String namespaceName, String clusterName, String name) {
@@ -26,7 +26,7 @@ public class KafkaUserTemplates {
     }
 
     public static KafkaUserBuilder scramShaUser(TestStorage testStorage) {
-        return scramShaUser(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getUsername());
+        return scramShaUser(testStorage.getNamespace(), testStorage.getClusterName(), testStorage.getUsername());
     }
 
     public static KafkaUserBuilder scramShaUser(String namespaceName, String clusterName, String name) {

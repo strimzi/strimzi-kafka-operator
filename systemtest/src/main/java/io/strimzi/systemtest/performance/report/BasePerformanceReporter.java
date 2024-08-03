@@ -89,7 +89,7 @@ public abstract class BasePerformanceReporter {
         });
 
         // Serialize Kafka configuration and add to performance data
-        final String kafkaConfig = serializeKafkaConfiguration(testStorage.getNamespaceName(), testStorage.getClusterName());
+        final String kafkaConfig = serializeKafkaConfiguration(testStorage.getNamespace(), testStorage.getClusterName());
         testPerformanceDataBuilder.append(String.format(PerformanceConstants.KAFKA_IN_CONFIGURATION + "=%n%s", kafkaConfig));
 
         final String testPerformanceData = testPerformanceDataBuilder.toString();

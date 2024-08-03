@@ -66,7 +66,7 @@ public class KafkaNodePoolUtils {
 
     public static void waitForKafkaNodePoolPodsReady(TestStorage testStorage, String kafkaNodePoolName, ProcessRoles nodePoolRole, int replicaCount) {
         waitForKafkaNodePoolPodsReady(
-            testStorage.getNamespaceName(),
+            testStorage.getNamespace(),
             testStorage.getClusterName(),
             kafkaNodePoolName,
             replicaCount,

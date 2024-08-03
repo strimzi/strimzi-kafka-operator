@@ -65,22 +65,22 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         prepareEnvironmentForRecovery(testStorage);
 
         // Get list of topics and list of PVC needed for recovery
-        List<KafkaTopic> kafkaTopicList = KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).list().getItems();
+        List<KafkaTopic> kafkaTopicList = KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespace()).list().getItems();
         List<PersistentVolumeClaim> persistentVolumeClaimList = kubeClient().getClient().persistentVolumeClaims().list().getItems();
-        deleteAndRecreateNamespace(testStorage.getNamespaceName());
+        deleteAndRecreateNamespace(testStorage.getNamespace());
 
-        recreatePvcAndUpdatePv(persistentVolumeClaimList, testStorage.getNamespaceName());
-        recreateClusterOperator(testStorage.getNamespaceName());
+        recreatePvcAndUpdatePv(persistentVolumeClaimList, testStorage.getNamespace());
+        recreateClusterOperator(testStorage.getNamespace());
 
         // Recreate all KafkaTopic resources
         for (KafkaTopic kafkaTopic : kafkaTopicList) {
             kafkaTopic.getMetadata().setResourceVersion(null);
-            KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).resource(kafkaTopic).create();
+            KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespace()).resource(kafkaTopic).create();
         }
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3)
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3)
                     .editSpec()
                         .withNewPersistentClaimStorage()
                             .withSize("1Gi")
@@ -88,7 +88,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
                         .endPersistentClaimStorage()
                     .endSpec()
                     .build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3)
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3)
                     .editSpec()
                         .withNewPersistentClaimStorage()
                             .withSize("1Gi")
@@ -100,7 +100,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
             .editMetadata()
-                .withNamespace(testStorage.getNamespaceName())
+                .withNamespace(testStorage.getNamespace())
             .endMetadata()
             .editSpec()
                 .editKafka()
@@ -133,38 +133,38 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         prepareEnvironmentForRecovery(testStorage);
 
         // Get list of topics and list of PVC needed for recovery
-        List<PersistentVolumeClaim> persistentVolumeClaimList = kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName());
+        List<PersistentVolumeClaim> persistentVolumeClaimList = kubeClient().listPersistentVolumeClaims(testStorage.getNamespace(), testStorage.getClusterName());
 
-        LOGGER.info("List of PVCs inside Namespace: {}", testStorage.getNamespaceName());
+        LOGGER.info("List of PVCs inside Namespace: {}", testStorage.getNamespace());
         for (PersistentVolumeClaim pvc : persistentVolumeClaimList) {
             PersistentVolume pv = kubeClient().getPersistentVolumeWithName(pvc.getSpec().getVolumeName());
             LOGGER.info("Claim: {} has bounded Volume: {}", pvc.getMetadata().getName(), pv.getMetadata().getName());
         }
 
-        String kafkaPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getBrokerComponentName()).get(0).getMetadata().getName();
+        String kafkaPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespace(), testStorage.getBrokerComponentName()).get(0).getMetadata().getName();
 
-        LOGGER.info("Currently present Topics inside Kafka: {}/{} are: {}", testStorage.getNamespaceName(), kafkaPodName,
-            KafkaCmdClient.listTopicsUsingPodCli(testStorage.getNamespaceName(), kafkaPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName())));
+        LOGGER.info("Currently present Topics inside Kafka: {}/{} are: {}", testStorage.getNamespace(), kafkaPodName,
+            KafkaCmdClient.listTopicsUsingPodCli(testStorage.getNamespace(), kafkaPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName())));
 
         LOGGER.info("Deleting namespace and recreating for recovery");
-        deleteAndRecreateNamespace(testStorage.getNamespaceName());
+        deleteAndRecreateNamespace(testStorage.getNamespace());
 
         LOGGER.info("Recreating PVCs and updating PVs for recovery");
-        recreatePvcAndUpdatePv(persistentVolumeClaimList, testStorage.getNamespaceName());
+        recreatePvcAndUpdatePv(persistentVolumeClaimList, testStorage.getNamespace());
 
         LOGGER.info("Recreating Cluster Operator");
-        recreateClusterOperator(testStorage.getNamespaceName());
+        recreateClusterOperator(testStorage.getNamespace());
 
         LOGGER.info("Recreating Kafka cluster without Topic Operator");
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
             .editMetadata()
-                .withNamespace(testStorage.getNamespaceName())
+                .withNamespace(testStorage.getNamespace())
             .endMetadata()
             .editSpec()
                 .withNewEntityOperator()
@@ -173,11 +173,11 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             .build()
         );
 
-        LOGGER.info("Currently present Topics inside Kafka: {}/{} are: {}", testStorage.getNamespaceName(), kafkaPodName,
-            KafkaCmdClient.listTopicsUsingPodCli(testStorage.getNamespaceName(), kafkaPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName())));
+        LOGGER.info("Currently present Topics inside Kafka: {}/{} are: {}", testStorage.getNamespace(), kafkaPodName,
+            KafkaCmdClient.listTopicsUsingPodCli(testStorage.getNamespace(), kafkaPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName())));
 
         LOGGER.info("Adding Topic Operator to existing Kafka");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespace(), testStorage.getClusterName(), k -> {
             k.getSpec().setEntityOperator(new EntityOperatorSpecBuilder()
                 .withNewTopicOperator()
                 .endTopicOperator()
@@ -185,7 +185,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
                 .endUserOperator().build());
         });
 
-        DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespace(), testStorage.getEoDeploymentName(), 1);
 
         final KafkaClients clients = ClientUtils.getInstantPlainClients(testStorage);
         resourceManager.createResourceWithWait(clients.producerStrimzi(), clients.consumerStrimzi());
@@ -198,13 +198,13 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         LOGGER.info("####################################");
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(ResourceManager.getTestContext())
-            .withNamespace(testStorage.getNamespaceName())
+            .withNamespace(testStorage.getNamespace())
             .createInstallation()
             .runInstallation();
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3)
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3)
                     .editSpec()
                         .withNewPersistentClaimStorage()
                             .withSize("1Gi")
@@ -212,7 +212,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
                         .endPersistentClaimStorage()
                     .endSpec()
                     .build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3)
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3)
                     .editSpec()
                         .withNewPersistentClaimStorage()
                             .withSize("1Gi")
@@ -224,7 +224,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
             .editMetadata()
-                .withNamespace(testStorage.getNamespaceName())
+                .withNamespace(testStorage.getNamespace())
             .endMetadata()
             .editSpec()
                 .editKafka()

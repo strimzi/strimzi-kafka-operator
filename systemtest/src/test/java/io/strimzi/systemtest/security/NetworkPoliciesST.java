@@ -106,14 +106,14 @@ public class NetworkPoliciesST extends AbstractST {
 
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(ResourceManager.getTestContext())
-            .withNamespace(testStorage.getNamespaceName())
+            .withNamespace(testStorage.getNamespace())
             .createInstallation()
             .runInstallation();
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1)
@@ -166,12 +166,12 @@ public class NetworkPoliciesST extends AbstractST {
                 .endKafkaExporter()
             .endSpec()
             .build(),
-            ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build(),
+            ScraperTemplates.scraperPod(testStorage.getNamespace(), testStorage.getScraperName()).build(),
             KafkaUserTemplates.scramShaUser(testStorage).build(),
-            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), topicNameAccessedPlain).build(),
-            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), topicNameAccessedTls).build(),
-            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), topicNameDeniedPlain).build(),
-            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), topicNameDeniedTls).build()
+            KafkaTopicTemplates.topic(testStorage.getNamespace(), testStorage.getClusterName(), topicNameAccessedPlain).build(),
+            KafkaTopicTemplates.topic(testStorage.getNamespace(), testStorage.getClusterName(), topicNameAccessedTls).build(),
+            KafkaTopicTemplates.topic(testStorage.getNamespace(), testStorage.getClusterName(), topicNameDeniedPlain).build(),
+            KafkaTopicTemplates.topic(testStorage.getNamespace(), testStorage.getClusterName(), topicNameDeniedTls).build()
         );
 
         LOGGER.info("Initialize producers and consumers with access to the Kafka using plain and tls listeners");
@@ -211,20 +211,20 @@ public class NetworkPoliciesST extends AbstractST {
         );
 
         LOGGER.info("Verifying that clients: {}, {}, {}, {} are all allowed to communicate", producerNameAccessedPlain, consumerNameAccessedPlain, producerNameAccessedTls, consumerNameAccessedTls);
-        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), producerNameAccessedPlain, consumerNameAccessedPlain, testStorage.getMessageCount());
-        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), producerNameAccessedTls, consumerNameAccessedTls, testStorage.getMessageCount());
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespace(), producerNameAccessedPlain, consumerNameAccessedPlain, testStorage.getMessageCount());
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespace(), producerNameAccessedTls, consumerNameAccessedTls, testStorage.getMessageCount());
 
         LOGGER.info("Verifying that clients: {}, {}, {}, {} are denied to communicate", producerNameDeniedPlain, consumerNameDeniedPlain, producerNameDeniedTls, consumerNameDeniedTls);
-        ClientUtils.waitForClientsTimeout(testStorage.getNamespaceName(), producerNameDeniedPlain, consumerNameDeniedPlain, testStorage.getMessageCount());
-        ClientUtils.waitForClientsTimeout(testStorage.getNamespaceName(), producerNameDeniedTls, consumerNameDeniedTls, testStorage.getMessageCount());
+        ClientUtils.waitForClientsTimeout(testStorage.getNamespace(), producerNameDeniedPlain, consumerNameDeniedPlain, testStorage.getMessageCount());
+        ClientUtils.waitForClientsTimeout(testStorage.getNamespace(), producerNameDeniedTls, consumerNameDeniedTls, testStorage.getMessageCount());
 
         LOGGER.info("Check metrics exported by KafkaExporter");
 
-        final String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
+        final String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespace(), testStorage.getScraperName()).get(0).getMetadata().getName();
         MetricsCollector metricsCollector = new MetricsCollector.Builder()
-            .withNamespaceName(testStorage.getNamespaceName())
+            .withNamespaceName(testStorage.getNamespace())
             .withScraperPodName(scraperPodName)
-            .withComponent(KafkaExporterMetricsComponent.create(testStorage.getNamespaceName(), testStorage.getClusterName()))
+            .withComponent(KafkaExporterMetricsComponent.create(testStorage.getNamespace(), testStorage.getClusterName()))
             .build();
 
         metricsCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
@@ -315,8 +315,8 @@ public class NetworkPoliciesST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3)

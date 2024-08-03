@@ -515,7 +515,7 @@ public class AbstractUpgradeST extends AbstractST {
         // setup KafkaConnect + KafkaConnector
         if (!cmdKubeClient().getResources(getResourceApiVersion(KafkaConnect.RESOURCE_PLURAL)).contains(clusterName)) {
             if (acrossUpgradeData.getFromVersion().equals("HEAD")) {
-                resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), clusterName, 1)
+                resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespace(), clusterName, 1)
                     .editMetadata()
                         .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                     .endMetadata()
@@ -529,7 +529,7 @@ public class AbstractUpgradeST extends AbstractST {
                     .build());
                 resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(clusterName)
                     .editMetadata()
-                        .withNamespace(testStorage.getNamespaceName())
+                        .withNamespace(testStorage.getNamespace())
                     .endMetadata()
                     .editSpec()
                         .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
@@ -549,7 +549,7 @@ public class AbstractUpgradeST extends AbstractST {
                     )
                     .build();
 
-                final String imageFullPath = Environment.getImageOutputRegistry(testStorage.getNamespaceName(), TestConstants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
+                final String imageFullPath = Environment.getImageOutputRegistry(testStorage.getNamespace(), TestConstants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
                 KafkaConnect kafkaConnect = new KafkaConnectBuilder(TestUtils.configFromYaml(kafkaConnectYaml, KafkaConnect.class))
                     .editMetadata()
@@ -577,7 +577,7 @@ public class AbstractUpgradeST extends AbstractST {
                 // in our examples is no sink connector and thus we are using the same as in HEAD verification
                 resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(clusterName)
                     .editMetadata()
-                        .withNamespace(testStorage.getNamespaceName())
+                        .withNamespace(testStorage.getNamespace())
                         .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, kafkaConnect.getMetadata().getName())
                     .endMetadata()
                     .editSpec()
@@ -593,10 +593,10 @@ public class AbstractUpgradeST extends AbstractST {
     protected void doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(final BundleVersionModificationData bundleDowngradeDataWithFeatureGates,
                                                                               final TestStorage testStorage,
                                                                               final UpgradeKafkaVersion upgradeKafkaVersion) throws IOException {
-        this.deployCoWithWaitForReadiness(testStorage.getNamespaceName(), bundleDowngradeDataWithFeatureGates);
+        this.deployCoWithWaitForReadiness(testStorage.getNamespace(), bundleDowngradeDataWithFeatureGates);
         this.deployKafkaClusterWithWaitForReadiness(bundleDowngradeDataWithFeatureGates, upgradeKafkaVersion);
         this.deployKafkaConnectAndKafkaConnectorWithWaitForReadiness(bundleDowngradeDataWithFeatureGates, upgradeKafkaVersion, testStorage);
-        this.deployKafkaUserWithWaitForReadiness(testStorage.getNamespaceName(), bundleDowngradeDataWithFeatureGates);
+        this.deployKafkaUserWithWaitForReadiness(testStorage.getNamespace(), bundleDowngradeDataWithFeatureGates);
 
         final KafkaClients clients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(clusterName))
             .withUsername(userName)
@@ -610,29 +610,29 @@ public class AbstractUpgradeST extends AbstractST {
         logPodImagesWithConnect(TestConstants.CO_NAMESPACE);
 
         // Verify FileSink KafkaConnector before upgrade
-        String connectorPodName = kubeClient().listPods(testStorage.getNamespaceName(), Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND)).get(0).getMetadata().getName();
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
+        String connectorPodName = kubeClient().listPods(testStorage.getNamespace(), Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND)).get(0).getMetadata().getName();
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespace(), connectorPodName, DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
 
         // Upgrade CO to HEAD and wait for readiness of ClusterOperator
-        changeClusterOperator(bundleDowngradeDataWithFeatureGates, testStorage.getNamespaceName());
+        changeClusterOperator(bundleDowngradeDataWithFeatureGates, testStorage.getNamespace());
 
         // Verify that Kafka cluster RU
         waitForKafkaClusterRollingUpdate();
 
         // Verify that KafkaConnect pods are rolling and KafkaConnector is ready
-        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), connectLabelSelector, 1, connectPods);
-        KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), clusterName);
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespace(), connectLabelSelector, 1, connectPods);
+        KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespace(), clusterName);
 
         // send again new messages
         resourceManager.createResourceWithWait(clients.producerTlsStrimzi(clusterName));
         // Verify that Producer finish successfully
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
         // Verify FileSink KafkaConnector
-        connectorPodName = kubeClient().listPods(testStorage.getNamespaceName(), Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND)).get(0).getMetadata().getName();
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
+        connectorPodName = kubeClient().listPods(testStorage.getNamespace(), Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND)).get(0).getMetadata().getName();
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespace(), connectorPodName, DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
 
         // Verify that pods are stable
-        PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), clusterName);
+        PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespace(), clusterName);
     }
 
     protected String downloadExamplesAndGetPath(CommonVersionModificationData versionModificationData) throws IOException {

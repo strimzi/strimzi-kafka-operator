@@ -90,7 +90,7 @@ public class TopicReplicasChangeST extends AbstractST {
         final int topicReplicationFactor = 5; // Intentionally set higher than available brokers to induce failure
 
         // Create and attempt to deploy a KafkaTopic with an invalid replication factor
-        KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), testStorage.getTopicName(), topicPartitions, topicReplicationFactor, 1).build();
+        KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getNamespace(), sharedTestStorage.getClusterName(), testStorage.getTopicName(), topicPartitions, topicReplicationFactor, 1).build();
         resourceManager.createResourceWithoutWait(kafkaTopic);
 
         // Validate topic creation in Kubernetes and its absence in Kafka due to invalid configuration
@@ -98,8 +98,8 @@ public class TopicReplicasChangeST extends AbstractST {
         assertThat("Topic doesn't exists in Kafka itself", !KafkaTopicUtils.hasTopicInKafka(testStorage.getTopicName(), sharedTestStorage.getClusterName(), scraperPodName));
 
         // Wait for the KafkaTopic to reflect the invalid configuration
-        KafkaTopicUtils.waitForKafkaTopicNotReady(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
-        KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(sharedTestStorage.getNamespaceName()).withName(testStorage.getTopicName()).get().getStatus();
+        KafkaTopicUtils.waitForKafkaTopicNotReady(sharedTestStorage.getNamespace(), testStorage.getTopicName());
+        KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(sharedTestStorage.getNamespace()).withName(testStorage.getTopicName()).get().getStatus();
 
         String errorMessage = Environment.isKRaftModeEnabled() ?
                 "org.apache.kafka.common.errors.InvalidReplicationFactorException: Unable to replicate the partition 5 time(s): The target replication factor of 5 cannot be reached because only 3 broker(s) are registered." :
@@ -110,16 +110,16 @@ public class TopicReplicasChangeST extends AbstractST {
 
         // also we will not see any replicationChange status here because UTO failed on reconciliation
         // to catch such issue, and it does not create a POST request to CC
-        KafkaTopicUtils.waitForReplicaChangeStatusNotPresent(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
+        KafkaTopicUtils.waitForReplicaChangeStatusNotPresent(sharedTestStorage.getNamespace(), testStorage.getTopicName());
 
         final int newTopicReplicationFactor = 3;
-        long topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
+        long topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespace(), testStorage.getTopicName());
 
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(sharedTestStorage.getNamespaceName(), testStorage.getTopicName(),
+        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(sharedTestStorage.getNamespace(), testStorage.getTopicName(),
                 topic -> topic.getSpec().setReplicas(newTopicReplicationFactor));
 
         // then KafkaTopic replicaChange status should disappear after task is completed by CC
-        KafkaTopicUtils.waitForReplicaChangeStatusNotPresent(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
+        KafkaTopicUtils.waitForReplicaChangeStatusNotPresent(sharedTestStorage.getNamespace(), testStorage.getTopicName());
 
         verifyKafkaTopicAfterReplicationChange(testStorage, topicObservationGeneration, newTopicReplicationFactor);
 
@@ -147,7 +147,7 @@ public class TopicReplicasChangeST extends AbstractST {
         final int topicPartitions = 3;
         final int startingTopicReplicationFactor = 2;
 
-        KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), testStorage.getTopicName(), topicPartitions, startingTopicReplicationFactor, 1).build();
+        KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getNamespace(), sharedTestStorage.getClusterName(), testStorage.getTopicName(), topicPartitions, startingTopicReplicationFactor, 1).build();
 
         // --- 1st stage (creating a new with 2 replicas)
         resourceManager.createResourceWithWait(kafkaTopic);
@@ -156,29 +156,29 @@ public class TopicReplicasChangeST extends AbstractST {
 
         // --- 2nd stage (increasing to 3 replicas)
 
-        KafkaTopicUtils.waitUntilTopicObservationGenerationIsPresent(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
-        long topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
+        KafkaTopicUtils.waitUntilTopicObservationGenerationIsPresent(sharedTestStorage.getNamespace(), testStorage.getTopicName());
+        long topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespace(), testStorage.getTopicName());
 
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getTopicName(),
+        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getNamespace(), testStorage.getTopicName(),
                 topic -> topic.getSpec().setReplicas(increasedTopicReplicationFactor));
 
-        KafkaTopicUtils.waitUntilReplicaChangeResolved(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
+        KafkaTopicUtils.waitUntilReplicaChangeResolved(sharedTestStorage.getNamespace(), testStorage.getTopicName());
 
         // then KafkaTopic replicaChange status should disappear after task is completed by CC
-        KafkaTopicUtils.waitForReplicaChangeStatusNotPresent(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
+        KafkaTopicUtils.waitForReplicaChangeStatusNotPresent(sharedTestStorage.getNamespace(), testStorage.getTopicName());
 
         verifyKafkaTopicAfterReplicationChange(testStorage, topicObservationGeneration, increasedTopicReplicationFactor);
 
         // --- 3rd stage (go back to 2 replicas)
-        topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
+        topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespace(), testStorage.getTopicName());
 
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getTopicName(),
+        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getNamespace(), testStorage.getTopicName(),
                 topic -> topic.getSpec().setReplicas(startingTopicReplicationFactor));
 
         //  replicaChange state should be in ongoing, because UTO does a POST request to CC
-        KafkaTopicUtils.waitUntilReplicaChangeOngoing(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
+        KafkaTopicUtils.waitUntilReplicaChangeOngoing(sharedTestStorage.getNamespace(), testStorage.getTopicName());
         // then KafkaTopic replicaChange status should disappear after task is completed by CC
-        KafkaTopicUtils.waitForReplicaChangeStatusNotPresent(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
+        KafkaTopicUtils.waitForReplicaChangeStatusNotPresent(sharedTestStorage.getNamespace(), testStorage.getTopicName());
 
         verifyKafkaTopicAfterReplicationChange(testStorage, topicObservationGeneration, startingTopicReplicationFactor);
 
@@ -206,7 +206,7 @@ public class TopicReplicasChangeST extends AbstractST {
         final int topicPartitions = 3;
         final int startingTopicReplicationFactor = 3;
 
-        KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), testStorage.getTopicName(), topicPartitions, startingTopicReplicationFactor, 1).build();
+        KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getNamespace(), sharedTestStorage.getClusterName(), testStorage.getTopicName(), topicPartitions, startingTopicReplicationFactor, 1).build();
 
         // --- 1st stage (creating a new with 3 replicas)
         resourceManager.createResourceWithWait(kafkaTopic);
@@ -215,30 +215,30 @@ public class TopicReplicasChangeST extends AbstractST {
 
         // --- 2nd stage (increasing to 5 replicas)
 
-        KafkaTopicUtils.waitUntilTopicObservationGenerationIsPresent(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
-        long topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
+        KafkaTopicUtils.waitUntilTopicObservationGenerationIsPresent(sharedTestStorage.getNamespace(), testStorage.getTopicName());
+        long topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespace(), testStorage.getTopicName());
 
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getTopicName(),
+        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getNamespace(), testStorage.getTopicName(),
                 topic -> topic.getSpec().setReplicas(wrongTopicReplicationFactor));
 
-        KafkaTopicUtils.waitTopicHasRolled(sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), topicObservationGeneration);
+        KafkaTopicUtils.waitTopicHasRolled(sharedTestStorage.getNamespace(), testStorage.getTopicName(), topicObservationGeneration);
 
         //  message: 'Replicas change failed (500), Error processing POST request ''/topic_configuration''
         //        due to: ''com.linkedin.kafka.cruisecontrol.exception.KafkaCruiseControlException:
         //        java.lang.RuntimeException: Unable to change replication factor (RF) of topics
         //        [my-topic-551958661-64449813] to 5 since there are only 3 alive brokers in
         //        the cluster. Requested RF cannot be more than number of alive brokers.''.'
-        KafkaTopicUtils.waitForReplicaChangeFailureDueToInsufficientBrokers(sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), wrongTopicReplicationFactor);
+        KafkaTopicUtils.waitForReplicaChangeFailureDueToInsufficientBrokers(sharedTestStorage.getNamespace(), testStorage.getTopicName(), wrongTopicReplicationFactor);
 
         // ----- 3rd stage (back to correct 3 replicas)
-        topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
+        topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespace(), testStorage.getTopicName());
 
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getTopicName(),
+        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getNamespace(), testStorage.getTopicName(),
                 topic -> topic.getSpec().setReplicas(startingTopicReplicationFactor));
 
         // then KafkaTopic replicaChange status should disappear after task is completed by CC
         // replicationChange not present because there is no need to call POST request via UTO to CC because we already have KT 3 replicas
-        KafkaTopicUtils.waitForReplicaChangeStatusNotPresent(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
+        KafkaTopicUtils.waitForReplicaChangeStatusNotPresent(sharedTestStorage.getNamespace(), testStorage.getTopicName());
 
         verifyKafkaTopicAfterReplicationChange(testStorage, topicObservationGeneration, startingTopicReplicationFactor);
 
@@ -268,39 +268,39 @@ public class TopicReplicasChangeST extends AbstractST {
         final int topicPartitions = 3;
         final int startingTopicReplicationFactor = 2;
         final int increasedTopicReplicationFactor = 3;
-        final String ccPodName = kubeClient().listPodsByPrefixInName(sharedTestStorage.getNamespaceName(), CruiseControlResources.componentName(sharedTestStorage.getClusterName())).get(0).getMetadata().getName();
-        final KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), testStorage.getTopicName(), topicPartitions, startingTopicReplicationFactor, 1).build();
+        final String ccPodName = kubeClient().listPodsByPrefixInName(sharedTestStorage.getNamespace(), CruiseControlResources.componentName(sharedTestStorage.getClusterName())).get(0).getMetadata().getName();
+        final KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getNamespace(), sharedTestStorage.getClusterName(), testStorage.getTopicName(), topicPartitions, startingTopicReplicationFactor, 1).build();
 
         // -- 1st stage (start with 2 replicas)
         resourceManager.createResourceWithWait(kafkaTopic);
 
         // --- 2nd stage (increasing to 3 replicas)
-        KafkaTopicUtils.waitUntilTopicObservationGenerationIsPresent(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
-        long topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
+        KafkaTopicUtils.waitUntilTopicObservationGenerationIsPresent(sharedTestStorage.getNamespace(), testStorage.getTopicName());
+        long topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespace(), testStorage.getTopicName());
 
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getTopicName(),
+        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getNamespace(), testStorage.getTopicName(),
                 topic -> topic.getSpec().setReplicas(increasedTopicReplicationFactor));
 
-        KafkaTopicUtils.waitUntilReplicaChangeResolved(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
+        KafkaTopicUtils.waitUntilReplicaChangeResolved(sharedTestStorage.getNamespace(), testStorage.getTopicName());
 
-        LOGGER.info("ReplicaChange appeared for KafkaTopic: {}/{}. Proceeding to the next stage.", sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
+        LOGGER.info("ReplicaChange appeared for KafkaTopic: {}/{}. Proceeding to the next stage.", sharedTestStorage.getNamespace(), testStorage.getTopicName());
 
         // we should see that KafkaTopic is ongoing
-        KafkaTopicUtils.waitUntilReplicaChangeOngoing(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
+        KafkaTopicUtils.waitUntilReplicaChangeOngoing(sharedTestStorage.getNamespace(), testStorage.getTopicName());
 
-        final Map<String, String> ccPod = DeploymentUtils.depSnapshot(sharedTestStorage.getNamespaceName(), CruiseControlResources.componentName(sharedTestStorage.getClusterName()));
+        final Map<String, String> ccPod = DeploymentUtils.depSnapshot(sharedTestStorage.getNamespace(), CruiseControlResources.componentName(sharedTestStorage.getClusterName()));
 
         // --- 3rd stage (during ongoing replicaChange task we induce chaos and delete CruiseControl Pod)
-        kubeClient().deletePodWithName(sharedTestStorage.getNamespaceName(), ccPodName);
+        kubeClient().deletePodWithName(sharedTestStorage.getNamespace(), ccPodName);
 
         // we should see that KafkaTopic is ongoing
-        KafkaTopicUtils.waitUntilReplicaChangeOngoing(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
+        KafkaTopicUtils.waitUntilReplicaChangeOngoing(sharedTestStorage.getNamespace(), testStorage.getTopicName());
 
         // then KafkaTopic replicaChange status should disappear after task is completed by CC
-        KafkaTopicUtils.waitForReplicaChangeStatusNotPresent(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
+        KafkaTopicUtils.waitForReplicaChangeStatusNotPresent(sharedTestStorage.getNamespace(), testStorage.getTopicName());
 
         // cc should roll
-        DeploymentUtils.waitTillDepHasRolled(sharedTestStorage.getNamespaceName(), CruiseControlResources.componentName(sharedTestStorage.getClusterName()), 1, ccPod);
+        DeploymentUtils.waitTillDepHasRolled(sharedTestStorage.getNamespace(), CruiseControlResources.componentName(sharedTestStorage.getClusterName()), 1, ccPod);
 
         verifyKafkaTopicAfterReplicationChange(testStorage, topicObservationGeneration, increasedTopicReplicationFactor);
 
@@ -329,45 +329,45 @@ public class TopicReplicasChangeST extends AbstractST {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int topicPartitions = 3;
         final int startingTopicReplicationFactor = 3;
-        final String eoPodName = kubeClient().listPods(sharedTestStorage.getNamespaceName(),
+        final String eoPodName = kubeClient().listPods(sharedTestStorage.getNamespace(),
                         KafkaResource.getEntityOperatorLabelSelector(sharedTestStorage.getClusterName())).stream()
                 .findFirst()
                 .orElseThrow()
                 .getMetadata().getName();
 
-        final KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), testStorage.getTopicName(), topicPartitions, startingTopicReplicationFactor, 1).build();
+        final KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getNamespace(), sharedTestStorage.getClusterName(), testStorage.getTopicName(), topicPartitions, startingTopicReplicationFactor, 1).build();
 
         resourceManager.createResourceWithWait(kafkaTopic);
 
         final int decreasedTopicReplicationFactor = 2;
 
-        KafkaTopicUtils.waitUntilTopicObservationGenerationIsPresent(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
-        long topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
+        KafkaTopicUtils.waitUntilTopicObservationGenerationIsPresent(sharedTestStorage.getNamespace(), testStorage.getTopicName());
+        long topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespace(), testStorage.getTopicName());
 
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getTopicName(),
+        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getNamespace(), testStorage.getTopicName(),
                 topic -> topic.getSpec().setReplicas(decreasedTopicReplicationFactor));
 
-        KafkaTopicUtils.waitUntilReplicaChangeResolved(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
+        KafkaTopicUtils.waitUntilReplicaChangeResolved(sharedTestStorage.getNamespace(), testStorage.getTopicName());
 
-        LOGGER.info("ReplicaChange appeared for KafkaTopic: {}/{}. Proceeding to the next stage.", sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
+        LOGGER.info("ReplicaChange appeared for KafkaTopic: {}/{}. Proceeding to the next stage.", sharedTestStorage.getNamespace(), testStorage.getTopicName());
 
         // we should see that KafkaTopic is ongoing
-        KafkaTopicUtils.waitUntilReplicaChangeOngoing(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
+        KafkaTopicUtils.waitUntilReplicaChangeOngoing(sharedTestStorage.getNamespace(), testStorage.getTopicName());
 
         // make a snapshot before deleting a Pod, inducing Chaos
-        Map<String, String> eoPods = DeploymentUtils.depSnapshot(sharedTestStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(sharedTestStorage.getClusterName()));
+        Map<String, String> eoPods = DeploymentUtils.depSnapshot(sharedTestStorage.getNamespace(), KafkaResources.entityOperatorDeploymentName(sharedTestStorage.getClusterName()));
 
         // delete EntityOperator Pod during replicaChange process
-        kubeClient().deletePodWithName(sharedTestStorage.getNamespaceName(), eoPodName);
+        kubeClient().deletePodWithName(sharedTestStorage.getNamespace(), eoPodName);
 
         // we should see that KafkaTopic is ongoing
-        KafkaTopicUtils.waitUntilReplicaChangeOngoing(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
+        KafkaTopicUtils.waitUntilReplicaChangeOngoing(sharedTestStorage.getNamespace(), testStorage.getTopicName());
 
         // then KafkaTopic replicaChange status should disappear after task is completed by CC
-        KafkaTopicUtils.waitForReplicaChangeStatusNotPresent(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
+        KafkaTopicUtils.waitForReplicaChangeStatusNotPresent(sharedTestStorage.getNamespace(), testStorage.getTopicName());
 
         // eo should roll
-        DeploymentUtils.waitTillDepHasRolled(sharedTestStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(sharedTestStorage.getClusterName()), 1, eoPods);
+        DeploymentUtils.waitTillDepHasRolled(sharedTestStorage.getNamespace(), KafkaResources.entityOperatorDeploymentName(sharedTestStorage.getClusterName()), 1, eoPods);
 
         verifyKafkaTopicAfterReplicationChange(testStorage, topicObservationGeneration, decreasedTopicReplicationFactor);
 
@@ -387,9 +387,9 @@ public class TopicReplicasChangeST extends AbstractST {
     private void verifyKafkaTopicAfterReplicationChange(final TestStorage testStorage,
                                                         final long topicObservationGeneration,
                                                         final int expectedTopicReplicationFactor) {
-        KafkaTopicUtils.waitTopicHasRolled(sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), topicObservationGeneration);
-        KafkaTopicUtils.waitForKafkaTopicReady(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
-        KafkaTopicUtils.waitForKafkaTopicReplicasChange(sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), expectedTopicReplicationFactor);
+        KafkaTopicUtils.waitTopicHasRolled(sharedTestStorage.getNamespace(), testStorage.getTopicName(), topicObservationGeneration);
+        KafkaTopicUtils.waitForKafkaTopicReady(sharedTestStorage.getNamespace(), testStorage.getTopicName());
+        KafkaTopicUtils.waitForKafkaTopicReplicasChange(sharedTestStorage.getNamespace(), testStorage.getTopicName(), expectedTopicReplicationFactor);
     }
 
     /**
@@ -404,7 +404,7 @@ public class TopicReplicasChangeST extends AbstractST {
         KafkaClients kafkaClients = new KafkaClientsBuilder()
                 .withTopicName(testStorage.getTopicName())
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()))
-                .withNamespaceName(sharedTestStorage.getNamespaceName())
+                .withNamespaceName(sharedTestStorage.getNamespace())
                 .withProducerName(testStorage.getProducerName())
                 .withConsumerName(testStorage.getConsumerName())
                 .withMessageCount(testStorage.getMessageCount())
@@ -426,19 +426,19 @@ public class TopicReplicasChangeST extends AbstractST {
                 .createInstallation()
                 .runInstallation();
 
-        LOGGER.info("Deploying shared Kafka: {}/{} across all test cases", sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName());
+        LOGGER.info("Deploying shared Kafka: {}/{} across all test cases", sharedTestStorage.getNamespace(), sharedTestStorage.getClusterName());
 
         resourceManager.createResourceWithWait(
                 NodePoolsConverter.convertNodePoolsIfNeeded(
-                        KafkaNodePoolTemplates.brokerPool(sharedTestStorage.getNamespaceName(), sharedTestStorage.getBrokerPoolName(), sharedTestStorage.getClusterName(), 3).build(),
-                        KafkaNodePoolTemplates.controllerPool(sharedTestStorage.getNamespaceName(), sharedTestStorage.getControllerPoolName(), sharedTestStorage.getClusterName(), 1).build()
+                        KafkaNodePoolTemplates.brokerPool(sharedTestStorage.getNamespace(), sharedTestStorage.getBrokerPoolName(), sharedTestStorage.getClusterName(), 3).build(),
+                        KafkaNodePoolTemplates.controllerPool(sharedTestStorage.getNamespace(), sharedTestStorage.getControllerPoolName(), sharedTestStorage.getClusterName(), 1).build()
                 )
         );
         
         // we need to deploy Kafka with CC enabled (to have RF feature)
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithCruiseControlTunedForFastModelGeneration(sharedTestStorage.getClusterName(), 3, 3)
                     .editMetadata()
-                        .withNamespace(sharedTestStorage.getNamespaceName())
+                        .withNamespace(sharedTestStorage.getNamespace())
                     .endMetadata()
                     .editSpec()
                         .editEntityOperator()
@@ -455,9 +455,9 @@ public class TopicReplicasChangeST extends AbstractST {
                         .endCruiseControl()
                         .endSpec()
                     .build(),
-            ScraperTemplates.scraperPod(sharedTestStorage.getNamespaceName(), sharedTestStorage.getScraperName()).build()
+            ScraperTemplates.scraperPod(sharedTestStorage.getNamespace(), sharedTestStorage.getScraperName()).build()
         );
 
-        scraperPodName = ScraperUtils.getScraperPod(sharedTestStorage.getNamespaceName()).getMetadata().getName();
+        scraperPodName = ScraperUtils.getScraperPod(sharedTestStorage.getNamespace()).getMetadata().getName();
     }
 }

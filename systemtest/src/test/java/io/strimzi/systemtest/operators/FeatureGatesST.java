@@ -76,26 +76,26 @@ public class FeatureGatesST extends AbstractST {
             .editOrNewMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
-                .withNamespace(testStorage.getNamespaceName())
+                .withNamespace(testStorage.getNamespace())
             .endMetadata()
             .build();
 
         resourceManager.createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), kafkaReplicas).build(),
-            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), kafkaReplicas).build(),
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), kafkaReplicas).build(),
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), kafkaReplicas).build(),
             kafkaCr
         );
 
         // Check that there is no ZooKeeper
-        Map<String, String> zkPods = PodUtils.podSnapshot(testStorage.getNamespaceName(),
+        Map<String, String> zkPods = PodUtils.podSnapshot(testStorage.getNamespace(),
             KafkaResource.getLabelSelector(testStorage.getClusterName(), KafkaResources.zookeeperComponentName(testStorage.getClusterName())));
         assertThat("No ZooKeeper Pods should exist", zkPods.size(), is(0));
 
         // create KafkaTopic with replication factor on all brokers and min.insync replicas configuration to not loss data during Rolling Update.
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getContinuousTopicName(), 1, kafkaReplicas, kafkaReplicas - 1).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespace(), testStorage.getClusterName(), testStorage.getContinuousTopicName(), 1, kafkaReplicas, kafkaReplicas - 1).build());
 
         KafkaClients clients = ClientUtils.getContinuousPlainClientBuilder(testStorage).build();
-        LOGGER.info("Producing and Consuming messages with continuous clients: {}, {} in Namespace {}", testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), testStorage.getNamespaceName());
+        LOGGER.info("Producing and Consuming messages with continuous clients: {}, {} in Namespace {}", testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), testStorage.getNamespace());
         resourceManager.createResourceWithWait(
             clients.producerStrimzi(),
             clients.consumerStrimzi()
@@ -103,11 +103,11 @@ public class FeatureGatesST extends AbstractST {
 
         // Roll Kafka
         LOGGER.info("Forcing rolling update of Kafka via read-only configuration change");
-        final Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerPoolSelector());
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().getKafka().getConfig().put("log.retention.hours", 72));
+        final Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespace(), testStorage.getBrokerPoolSelector());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespace(), testStorage.getClusterName(), k -> k.getSpec().getKafka().getConfig().put("log.retention.hours", 72));
 
         LOGGER.info("Waiting for the next reconciliation to happen");
-        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerPoolSelector(), kafkaReplicas, brokerPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespace(), testStorage.getBrokerPoolSelector(), kafkaReplicas, brokerPods);
 
         LOGGER.info("Waiting for clients to finish sending/receiving messages");
         ClientUtils.waitForContinuousClientSuccess(testStorage);
@@ -149,24 +149,24 @@ public class FeatureGatesST extends AbstractST {
         // as the only FG set in the CO is 'KafkaNodePools' (kraft not included) Broker role is the only one that kafka broker can take
         setupClusterOperatorWithFeatureGate("");
 
-        LOGGER.info("Deploying Kafka Cluster: {}/{} controlled by KafkaNodePool: {}", testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaNodePoolName);
+        LOGGER.info("Deploying Kafka Cluster: {}/{} controlled by KafkaNodePool: {}", testStorage.getNamespace(), testStorage.getClusterName(), kafkaNodePoolName);
 
         final Kafka kafkaCr = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), originalKafkaReplicaCount, 3)
             .editOrNewMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
-                .withNamespace(testStorage.getNamespaceName())
+                .withNamespace(testStorage.getNamespace())
             .endMetadata()
             .build();
 
         // as the only FG set in the CO is 'KafkaNodePools' (kraft is never included) Broker role is the only one that can be taken
         resourceManager.createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), kafkaNodePoolName, testStorage.getClusterName(), 3).build(),
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), kafkaNodePoolName, testStorage.getClusterName(), 3).build(),
             kafkaCr);
 
-        LOGGER.info("Creating KafkaTopic: {}/{}", testStorage.getNamespaceName(), testStorage.getTopicName());
+        LOGGER.info("Creating KafkaTopic: {}/{}", testStorage.getNamespace(), testStorage.getTopicName());
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
-        LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
+        LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespace());
         final KafkaClients clients = ClientUtils.getInstantPlainClients(testStorage);
         resourceManager.createResourceWithWait(
             clients.producerStrimzi(),
@@ -175,27 +175,27 @@ public class FeatureGatesST extends AbstractST {
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
         // increase number of kafka replicas in KafkaNodePool
-        LOGGER.info("Modifying KafkaNodePool: {}/{} by increasing number of Kafka replicas from '3' to '5'", testStorage.getNamespaceName(), kafkaNodePoolName);
-        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), kafkaNodePoolName,
+        LOGGER.info("Modifying KafkaNodePool: {}/{} by increasing number of Kafka replicas from '3' to '5'", testStorage.getNamespace(), kafkaNodePoolName);
+        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespace(), kafkaNodePoolName,
             knp -> knp.getSpec().setReplicas(nodePoolIncreasedKafkaReplicaCount)
         );
 
         StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(
-            testStorage.getNamespaceName(),
+            testStorage.getNamespace(),
             testStorage.getClusterName(),
             KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), kafkaNodePoolName),
             nodePoolIncreasedKafkaReplicaCount
         );
 
-        LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
+        LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespace());
         resourceManager.createResourceWithWait(
             clients.producerStrimzi(),
             clients.consumerStrimzi()
         );
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        LOGGER.info("Disable KafkaNodePool in Kafka Cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+        LOGGER.info("Disable KafkaNodePool in Kafka Cluster: {}/{}", testStorage.getNamespace(), testStorage.getClusterName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespace(), testStorage.getClusterName(),
             kafka -> {
                 kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "disabled");
                 // because Kafka CR with NodePools is missing .spec.kafka.replicas and .spec.kafka.storage, we need to
@@ -209,22 +209,22 @@ public class FeatureGatesST extends AbstractST {
             });
 
         StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(
-            testStorage.getNamespaceName(),
+            testStorage.getNamespace(),
             testStorage.getClusterName(),
             KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), kafkaNodePoolName),
             originalKafkaReplicaCount
         );
-        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResources.kafkaComponentName(testStorage.getClusterName()), originalKafkaReplicaCount);
+        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespace(), KafkaResources.kafkaComponentName(testStorage.getClusterName()), originalKafkaReplicaCount);
 
-        LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
+        LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespace());
         resourceManager.createResourceWithWait(
             clients.producerStrimzi(),
             clients.consumerStrimzi()
         );
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        LOGGER.info("Enable KafkaNodePool in Kafka Cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+        LOGGER.info("Enable KafkaNodePool in Kafka Cluster: {}/{}", testStorage.getNamespace(), testStorage.getClusterName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespace(), testStorage.getClusterName(),
             kafka -> {
                 kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled");
                 kafka.getSpec().getKafka().setReplicas(null);
@@ -232,14 +232,14 @@ public class FeatureGatesST extends AbstractST {
             });
 
         StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(
-            testStorage.getNamespaceName(),
+            testStorage.getNamespace(),
             testStorage.getClusterName(),
             KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), kafkaNodePoolName),
             nodePoolIncreasedKafkaReplicaCount
         );
-        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResources.kafkaComponentName(testStorage.getClusterName()), nodePoolIncreasedKafkaReplicaCount);
+        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespace(), KafkaResources.kafkaComponentName(testStorage.getClusterName()), nodePoolIncreasedKafkaReplicaCount);
 
-        LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
+        LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespace());
         resourceManager.createResourceWithWait(
             clients.producerStrimzi(),
             clients.consumerStrimzi()

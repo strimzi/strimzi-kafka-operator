@@ -53,10 +53,10 @@ class HttpBridgeScramShaST extends AbstractST {
             .build();
 
         // Create topic
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), suiteTestStorage.getClusterName(), testStorage.getTopicName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespace(), suiteTestStorage.getClusterName(), testStorage.getTopicName()).build());
 
         resourceManager.createResourceWithWait(kafkaBridgeClientJb.producerStrimziBridge());
-        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespace(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         final KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(suiteTestStorage.getClusterName()))
             .withUsername(suiteTestStorage.getUsername())
@@ -84,7 +84,7 @@ class HttpBridgeScramShaST extends AbstractST {
             .build();
 
         resourceManager.createResourceWithWait(kafkaClients.producerScramShaTlsStrimzi(suiteTestStorage.getClusterName()));
-        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespace(), testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getMessageCount());
     }
 
     @BeforeAll
@@ -99,8 +99,8 @@ class HttpBridgeScramShaST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getBrokerPoolName(), suiteTestStorage.getClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getControllerPoolName(), suiteTestStorage.getClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(suiteTestStorage.getNamespace(), suiteTestStorage.getBrokerPoolName(), suiteTestStorage.getClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(suiteTestStorage.getNamespace(), suiteTestStorage.getControllerPoolName(), suiteTestStorage.getClusterName(), 1).build()
             )
         );
         // Deploy kafka

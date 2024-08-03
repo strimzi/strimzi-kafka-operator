@@ -217,7 +217,7 @@ class UserST extends AbstractST {
                                                                      kafkaClients.consumerTlsStrimzi(sharedTestStorage.getClusterName()));
 
         } else if (user.getSpec().getAuthentication() instanceof KafkaUserTlsExternalClientAuthentication) {
-            SecretUtils.createExternalTlsUserSecret(testStorage.getNamespaceName(), userName, sharedTestStorage.getClusterName());
+            SecretUtils.createExternalTlsUserSecret(testStorage.getNamespace(), userName, sharedTestStorage.getClusterName());
 
             resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(sharedTestStorage.getClusterName()),
                                                                      kafkaClients.consumerTlsStrimzi(sharedTestStorage.getClusterName()));
@@ -252,8 +252,8 @@ class UserST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
@@ -286,12 +286,12 @@ class UserST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             KafkaTopicTemplates.topic(testStorage).build(),
-            KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), tlsUserName).build(),
-            KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), testStorage.getClusterName(), scramShaUserName).build()
+            KafkaUserTemplates.tlsUser(testStorage.getNamespace(), testStorage.getClusterName(), tlsUserName).build(),
+            KafkaUserTemplates.scramShaUser(testStorage.getNamespace(), testStorage.getClusterName(), scramShaUserName).build()
         );
 
-        Secret tlsSecret = kubeClient().getSecret(testStorage.getNamespaceName(), secretPrefix + tlsUserName);
-        Secret scramShaSecret = kubeClient().getSecret(testStorage.getNamespaceName(), secretPrefix + scramShaUserName);
+        Secret tlsSecret = kubeClient().getSecret(testStorage.getNamespace(), secretPrefix + tlsUserName);
+        Secret scramShaSecret = kubeClient().getSecret(testStorage.getNamespace(), secretPrefix + scramShaUserName);
 
         LOGGER.info("Checking for existing user Secrets with prefix: {}", secretPrefix);
         assertNotNull(tlsSecret);
@@ -316,19 +316,19 @@ class UserST extends AbstractST {
 
         LOGGER.info("Checking owner reference - if the Secret will be deleted when we delete KafkaUser");
 
-        LOGGER.info("Deleting KafkaUser: {}/{}", testStorage.getNamespaceName(), tlsUserName);
-        KafkaUserResource.kafkaUserClient().inNamespace(testStorage.getNamespaceName()).withName(tlsUserName).delete();
-        KafkaUserUtils.waitForKafkaUserDeletion(testStorage.getNamespaceName(), tlsUserName);
+        LOGGER.info("Deleting KafkaUser: {}/{}", testStorage.getNamespace(), tlsUserName);
+        KafkaUserResource.kafkaUserClient().inNamespace(testStorage.getNamespace()).withName(tlsUserName).delete();
+        KafkaUserUtils.waitForKafkaUserDeletion(testStorage.getNamespace(), tlsUserName);
 
-        LOGGER.info("Deleting KafkaUser: {}/{}", testStorage.getNamespaceName(), scramShaUserName);
-        KafkaUserResource.kafkaUserClient().inNamespace(testStorage.getNamespaceName()).withName(scramShaUserName).delete();
-        KafkaUserUtils.waitForKafkaUserDeletion(testStorage.getNamespaceName(), scramShaUserName);
+        LOGGER.info("Deleting KafkaUser: {}/{}", testStorage.getNamespace(), scramShaUserName);
+        KafkaUserResource.kafkaUserClient().inNamespace(testStorage.getNamespace()).withName(scramShaUserName).delete();
+        KafkaUserUtils.waitForKafkaUserDeletion(testStorage.getNamespace(), scramShaUserName);
 
         LOGGER.info("Checking if Secrets are deleted");
-        SecretUtils.waitForSecretDeletion(testStorage.getNamespaceName(), tlsSecret.getMetadata().getName());
-        SecretUtils.waitForSecretDeletion(testStorage.getNamespaceName(), scramShaSecret.getMetadata().getName());
-        assertNull(kubeClient().getSecret(testStorage.getNamespaceName(), tlsSecret.getMetadata().getName()));
-        assertNull(kubeClient().getSecret(testStorage.getNamespaceName(), scramShaSecret.getMetadata().getName()));
+        SecretUtils.waitForSecretDeletion(testStorage.getNamespace(), tlsSecret.getMetadata().getName());
+        SecretUtils.waitForSecretDeletion(testStorage.getNamespace(), scramShaSecret.getMetadata().getName());
+        assertNull(kubeClient().getSecret(testStorage.getNamespace(), tlsSecret.getMetadata().getName()));
+        assertNull(kubeClient().getSecret(testStorage.getNamespace(), scramShaSecret.getMetadata().getName()));
     }
 
     @ParallelNamespaceTest
@@ -338,8 +338,8 @@ class UserST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1)
@@ -358,9 +358,9 @@ class UserST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getTopicName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespace(), testStorage.getClusterName(), testStorage.getTopicName()).build());
 
-        final KafkaUser tlsExternalUserWithQuotasAndAcls = KafkaUserTemplates.tlsExternalUser(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getKafkaUsername())
+        final KafkaUser tlsExternalUserWithQuotasAndAcls = KafkaUserTemplates.tlsExternalUser(testStorage.getNamespace(), testStorage.getClusterName(), testStorage.getKafkaUsername())
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -383,11 +383,11 @@ class UserST extends AbstractST {
         resourceManager.createResourceWithWait(tlsExternalUserWithQuotasAndAcls);
 
         // For clients of authentication type tls-external, operator should not create a secret
-        KafkaUserUtils.waitForKafkaUserReady(testStorage.getNamespaceName(), testStorage.getKafkaUsername());
-        assertThat(kubeClient().getSecret(testStorage.getNamespaceName(), testStorage.getKafkaUsername()), nullValue());
-        assertThat(KafkaUserResource.kafkaUserClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getKafkaUsername()).get().getStatus().getUsername(), is("CN=" + testStorage.getKafkaUsername()));
+        KafkaUserUtils.waitForKafkaUserReady(testStorage.getNamespace(), testStorage.getKafkaUsername());
+        assertThat(kubeClient().getSecret(testStorage.getNamespace(), testStorage.getKafkaUsername()), nullValue());
+        assertThat(KafkaUserResource.kafkaUserClient().inNamespace(testStorage.getNamespace()).withName(testStorage.getKafkaUsername()).get().getStatus().getUsername(), is("CN=" + testStorage.getKafkaUsername()));
 
-        SecretUtils.createExternalTlsUserSecret(testStorage.getNamespaceName(), testStorage.getKafkaUsername(), testStorage.getClusterName());
+        SecretUtils.createExternalTlsUserSecret(testStorage.getNamespace(), testStorage.getKafkaUsername(), testStorage.getClusterName());
 
         KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage)
             .withUsername(testStorage.getKafkaUsername())
@@ -397,7 +397,7 @@ class UserST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        KafkaUserResource.replaceUserResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getKafkaUsername(),
+        KafkaUserResource.replaceUserResourceInSpecificNamespace(testStorage.getNamespace(), testStorage.getKafkaUsername(),
             user -> {
                 user.getSpec().setAuthorization(new KafkaUserAuthorizationSimpleBuilder()
                         .addNewAcl()
@@ -412,8 +412,8 @@ class UserST extends AbstractST {
 
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
 
-        PodUtils.waitUntilMessageIsInPodLogs(testStorage.getNamespaceName(),
-            PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), testStorage.getProducerName()), "authorization failed");
+        PodUtils.waitUntilMessageIsInPodLogs(testStorage.getNamespace(),
+            PodUtils.getPodNameByPrefix(testStorage.getNamespace(), testStorage.getProducerName()), "authorization failed");
 
         ClientUtils.waitForInstantProducerClientTimeout(testStorage);
     }
@@ -430,8 +430,8 @@ class UserST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(sharedTestStorage.getNamespaceName(), sharedTestStorage.getBrokerPoolName(), sharedTestStorage.getClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(sharedTestStorage.getNamespaceName(), sharedTestStorage.getControllerPoolName(), sharedTestStorage.getClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(sharedTestStorage.getNamespace(), sharedTestStorage.getBrokerPoolName(), sharedTestStorage.getClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(sharedTestStorage.getNamespace(), sharedTestStorage.getControllerPoolName(), sharedTestStorage.getClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(sharedTestStorage.getClusterName(), 1, 1)
