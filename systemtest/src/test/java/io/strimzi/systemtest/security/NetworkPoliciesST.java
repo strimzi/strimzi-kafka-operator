@@ -48,7 +48,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.TestConstants.CRUISE_CONTROL;
-import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.NETWORKPOLICIES_SUPPORTED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -84,7 +83,6 @@ public class NetworkPoliciesST extends AbstractST {
      *  - metrics
      */
     @IsolatedTest("Specific Cluster Operator for test case")
-    @Tag(INTERNAL_CLIENTS_USED)
     @SuppressWarnings("checkstyle:MethodLength")
     void testNetworkPoliciesOnListenersWhenOperatorIsInSameNamespaceAsOperands() {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
@@ -108,14 +106,14 @@ public class NetworkPoliciesST extends AbstractST {
 
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(ResourceManager.getTestContext())
-            .withNamespace(testStorage.getNamespaceName())
+            .withNamespace(testStorage.getNamespace())
             .createInstallation()
             .runInstallation();
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1)
@@ -168,12 +166,12 @@ public class NetworkPoliciesST extends AbstractST {
                 .endKafkaExporter()
             .endSpec()
             .build(),
-            ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build(),
+            ScraperTemplates.scraperPod(testStorage.getNamespace(), testStorage.getScraperName()).build(),
             KafkaUserTemplates.scramShaUser(testStorage).build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), topicNameAccessedPlain, testStorage.getNamespaceName()).build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), topicNameAccessedTls, testStorage.getNamespaceName()).build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), topicNameDeniedPlain, testStorage.getNamespaceName()).build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), topicNameDeniedTls, testStorage.getNamespaceName()).build()
+            KafkaTopicTemplates.topic(testStorage.getNamespace(), testStorage.getClusterName(), topicNameAccessedPlain).build(),
+            KafkaTopicTemplates.topic(testStorage.getNamespace(), testStorage.getClusterName(), topicNameAccessedTls).build(),
+            KafkaTopicTemplates.topic(testStorage.getNamespace(), testStorage.getClusterName(), topicNameDeniedPlain).build(),
+            KafkaTopicTemplates.topic(testStorage.getNamespace(), testStorage.getClusterName(), topicNameDeniedTls).build()
         );
 
         LOGGER.info("Initialize producers and consumers with access to the Kafka using plain and tls listeners");
@@ -213,20 +211,20 @@ public class NetworkPoliciesST extends AbstractST {
         );
 
         LOGGER.info("Verifying that clients: {}, {}, {}, {} are all allowed to communicate", producerNameAccessedPlain, consumerNameAccessedPlain, producerNameAccessedTls, consumerNameAccessedTls);
-        ClientUtils.waitForClientsSuccess(producerNameAccessedPlain, consumerNameAccessedPlain, testStorage.getNamespaceName(), testStorage.getMessageCount());
-        ClientUtils.waitForClientsSuccess(producerNameAccessedTls, consumerNameAccessedTls, testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespace(), producerNameAccessedPlain, consumerNameAccessedPlain, testStorage.getMessageCount());
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespace(), producerNameAccessedTls, consumerNameAccessedTls, testStorage.getMessageCount());
 
         LOGGER.info("Verifying that clients: {}, {}, {}, {} are denied to communicate", producerNameDeniedPlain, consumerNameDeniedPlain, producerNameDeniedTls, consumerNameDeniedTls);
-        ClientUtils.waitForClientsTimeout(producerNameDeniedPlain, consumerNameDeniedPlain, testStorage.getNamespaceName(), testStorage.getMessageCount());
-        ClientUtils.waitForClientsTimeout(producerNameDeniedTls, consumerNameDeniedTls, testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientsTimeout(testStorage.getNamespace(), producerNameDeniedPlain, consumerNameDeniedPlain, testStorage.getMessageCount());
+        ClientUtils.waitForClientsTimeout(testStorage.getNamespace(), producerNameDeniedTls, consumerNameDeniedTls, testStorage.getMessageCount());
 
         LOGGER.info("Check metrics exported by KafkaExporter");
 
-        final String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
+        final String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespace(), testStorage.getScraperName()).get(0).getMetadata().getName();
         MetricsCollector metricsCollector = new MetricsCollector.Builder()
-            .withNamespaceName(testStorage.getNamespaceName())
+            .withNamespaceName(testStorage.getNamespace())
             .withScraperPodName(scraperPodName)
-            .withComponent(KafkaExporterMetricsComponent.create(testStorage.getNamespaceName(), testStorage.getClusterName()))
+            .withComponent(KafkaExporterMetricsComponent.create(testStorage.getNamespace(), testStorage.getClusterName()))
             .build();
 
         metricsCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
@@ -238,8 +236,8 @@ public class NetworkPoliciesST extends AbstractST {
             assertThat("Metrics doesn't contain specific values", entry.getValue().contains("kafka_topic_partitions{topic=\"" + topicNameAccessedPlain + "\"} 1"));
         }
 
-        checkNetworkPoliciesInNamespace(testStorage.getClusterName(), Environment.TEST_SUITE_NAMESPACE);
-        changeKafkaConfigurationAndCheckObservedGeneration(testStorage.getClusterName(), Environment.TEST_SUITE_NAMESPACE);
+        checkNetworkPoliciesInNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName());
+        changeKafkaConfigurationAndCheckObservedGeneration(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName());
     }
 
     @IsolatedTest("Specific Cluster Operator for test case")
@@ -290,9 +288,8 @@ public class NetworkPoliciesST extends AbstractST {
             .build()
         );
 
-        checkNetworkPoliciesInNamespace(testStorage.getClusterName(), secondNamespace);
-
-        changeKafkaConfigurationAndCheckObservedGeneration(testStorage.getClusterName(), secondNamespace);
+        checkNetworkPoliciesInNamespace(secondNamespace, testStorage.getClusterName());
+        changeKafkaConfigurationAndCheckObservedGeneration(secondNamespace, testStorage.getClusterName());
     }
 
     @IsolatedTest("Specific Cluster Operator for test case")
@@ -318,14 +315,14 @@ public class NetworkPoliciesST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3)
             .build());
 
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), Environment.TEST_SUITE_NAMESPACE, 1)
+        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnect(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), 1)
                 .build());
 
         List<NetworkPolicy> networkPolicyList = kubeClient().getClient().network().networkPolicies().list().getItems().stream()
@@ -335,7 +332,7 @@ public class NetworkPoliciesST extends AbstractST {
         assertThat("List of NetworkPolicies generated by Strimzi is not empty.", networkPolicyList, is(Collections.EMPTY_LIST));
     }
 
-    void checkNetworkPoliciesInNamespace(String clusterName, String namespace) {
+    void checkNetworkPoliciesInNamespace(String namespace, String clusterName) {
         List<NetworkPolicy> networkPolicyList = new ArrayList<>(kubeClient().getClient().network().networkPolicies().inNamespace(namespace).list().getItems());
 
         assertNotNull(networkPolicyList.stream().filter(networkPolicy ->  networkPolicy.getMetadata().getName().contains(KafkaResources.kafkaNetworkPolicyName(clusterName))).findFirst());
@@ -348,7 +345,7 @@ public class NetworkPoliciesST extends AbstractST {
         }
     }
 
-    void changeKafkaConfigurationAndCheckObservedGeneration(String clusterName, String namespace) {
+    void changeKafkaConfigurationAndCheckObservedGeneration(String namespace, String clusterName) {
         long observedGen = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getObservedGeneration();
         KafkaUtils.updateConfigurationWithStabilityWait(namespace, clusterName, "log.message.timestamp.type", "LogAppendTime");
 

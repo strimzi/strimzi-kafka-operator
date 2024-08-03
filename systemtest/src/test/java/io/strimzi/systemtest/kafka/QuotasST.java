@@ -32,7 +32,6 @@ import org.junit.jupiter.api.Tag;
 
 import java.util.Collections;
 
-import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.QUOTAS_PLUGIN;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -46,6 +45,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
  * To properly run this suite, you should use cluster with proper storage.
  */
 @Tag(QUOTAS_PLUGIN)
+@Tag(REGRESSION)
 public class QuotasST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(QuotasST.class);
 
@@ -53,7 +53,6 @@ public class QuotasST extends AbstractST {
      * Test to check Kafka Quotas Plugin for disk space
      */
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaQuotasPluginIntegration() {
         assumeFalse(cluster.isMinikube() || cluster.isMicroShift());
 
@@ -63,8 +62,8 @@ public class QuotasST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(
@@ -99,7 +98,7 @@ public class QuotasST extends AbstractST {
                 .build()
         );
         resourceManager.createResourceWithWait(
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build(),
+            KafkaTopicTemplates.topic(testStorage.getNamespace(), testStorage.getClusterName(), testStorage.getTopicName()).build(),
             KafkaUserTemplates.scramShaUser(testStorage).build()
         );
 
@@ -112,11 +111,11 @@ public class QuotasST extends AbstractST {
         LOGGER.info("Sending messages without any user, we should hit the quota");
         resourceManager.createResourceWithWait(clients.producerStrimzi());
         // Kafka Quotas Plugin should stop producer after it reaches the minimum available bytes
-        JobUtils.waitForJobContainingLogMessage(testStorage.getNamespaceName(), testStorage.getProducerName(), "Failed to send messages");
-        JobUtils.deleteJobWithWait(testStorage.getNamespaceName(), testStorage.getProducerName());
+        JobUtils.waitForJobContainingLogMessage(testStorage.getNamespace(), testStorage.getProducerName(), "Failed to send messages");
+        JobUtils.deleteJobWithWait(testStorage.getNamespace(), testStorage.getProducerName());
 
-        String brokerPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
-        String kafkaLog = kubeClient().logsInSpecificNamespace(testStorage.getNamespaceName(), brokerPodName);
+        String brokerPodName = kubeClient().listPods(testStorage.getNamespace(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
+        String kafkaLog = kubeClient().logsInSpecificNamespace(testStorage.getNamespace(), brokerPodName);
 
         String belowLimitLog = String.format("below the limit of %s", minAvailableBytes);
 
@@ -131,16 +130,14 @@ public class QuotasST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
-    @Tag(REGRESSION)
     void testKafkaQuotasPluginWithBandwidthLimitation() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String excludedPrincipal = "User:" + testStorage.getUsername();
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
             )
         );
         resourceManager.createResourceWithWait(
@@ -174,7 +171,7 @@ public class QuotasST extends AbstractST {
                 .build()
         );
         resourceManager.createResourceWithWait(
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build(),
+            KafkaTopicTemplates.topic(testStorage.getNamespace(), testStorage.getClusterName(), testStorage.getTopicName()).build(),
             KafkaUserTemplates.scramShaUser(testStorage).build()
         );
 

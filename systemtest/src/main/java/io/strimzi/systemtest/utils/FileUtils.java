@@ -99,7 +99,7 @@ public class FileUtils {
         return null;
     }
 
-    public static File updateNamespaceOfYamlFile(String pathToOrigin, String namespace) throws IOException {
+    public static File updateNamespaceOfYamlFile(String namespace, String pathToOrigin) throws IOException {
         byte[] encoded;
         File yamlFile = Files.createTempFile("temp-file", ".yaml").toFile();
 

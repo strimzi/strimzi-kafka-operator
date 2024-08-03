@@ -61,8 +61,8 @@ public class UserOperatorPerformanceUtils {
         KafkaUserSpec kafkaUserSpec = listOfUsers.stream().findFirst().get().getSpec();
 
         ResourceManager.getInstance().updateResource(listOfUsers.toArray(new KafkaUser[listOfUsers.size()]));
-        KafkaUserUtils.waitForConfigToBeChangedInAllUsersWithPrefix(testStorage.getNamespaceName(), usersPrefix, kafkaUserSpec);
-        KafkaUserUtils.waitForAllUsersWithPrefixReady(testStorage.getNamespaceName(), usersPrefix);
+        KafkaUserUtils.waitForConfigToBeChangedInAllUsersWithPrefix(testStorage.getNamespace(), usersPrefix, kafkaUserSpec);
+        KafkaUserUtils.waitForAllUsersWithPrefixReady(testStorage.getNamespace(), usersPrefix);
     }
 
     public static List<KafkaUser> getListOfKafkaUsers(final TestStorage testStorage, final String userName,
@@ -87,7 +87,7 @@ public class UserOperatorPerformanceUtils {
         for (int i = startPointer; i < endPointer; i++) {
             if (userAuthType.equals(UserAuthType.Tls)) {
                 usersList.add(
-                    KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), userName + "-" + i)
+                    KafkaUserTemplates.tlsUser(testStorage.getNamespace(), testStorage.getClusterName(), userName + "-" + i)
                         .editOrNewSpec()
                             .withAuthorization(usersAcl)
                         .endSpec()
@@ -95,7 +95,7 @@ public class UserOperatorPerformanceUtils {
                 );
             } else {
                 usersList.add(
-                    KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), testStorage.getClusterName(), userName + "-" + i)
+                    KafkaUserTemplates.scramShaUser(testStorage.getNamespace(), testStorage.getClusterName(), userName + "-" + i)
                         .editOrNewSpec()
                             .withAuthorization(usersAcl)
                         .endSpec()
@@ -111,7 +111,7 @@ public class UserOperatorPerformanceUtils {
         LOGGER.info("Creating {} KafkaUsers", listOfUsers.size());
 
         ResourceManager.getInstance().createResourceWithoutWait(listOfUsers.toArray(new KafkaUser[listOfUsers.size()]));
-        KafkaUserUtils.waitForAllUsersWithPrefixReady(testStorage.getNamespaceName(), usersPrefix);
+        KafkaUserUtils.waitForAllUsersWithPrefixReady(testStorage.getNamespace(), usersPrefix);
     }
 
 }

@@ -325,13 +325,13 @@ public class PodUtils {
      * @return              Returns a list of Kafka cluster Pods (i.e.., Kafka, ZooKeeper, EO).
      */
     public static List<Pod> getKafkaClusterPods(final TestStorage testStorage) {
-        List<Pod> kafkaClusterPods = kubeClient(testStorage.getNamespaceName())
+        List<Pod> kafkaClusterPods = kubeClient(testStorage.getNamespace())
             .listPodsByPrefixInName(testStorage.getBrokerComponentName());
         // zk pods
-        kafkaClusterPods.addAll(kubeClient(testStorage.getNamespaceName())
+        kafkaClusterPods.addAll(kubeClient(testStorage.getNamespace())
             .listPodsByPrefixInName(testStorage.getControllerComponentName()));
         // eo pod
-        kafkaClusterPods.addAll(kubeClient(testStorage.getNamespaceName())
+        kafkaClusterPods.addAll(kubeClient(testStorage.getNamespace())
             .listPodsByPrefixInName(testStorage.getEoDeploymentName()));
 
         return kafkaClusterPods;

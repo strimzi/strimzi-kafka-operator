@@ -49,7 +49,7 @@ public class ClusterRoleBindingResource implements ResourceType<ClusterRoleBindi
         return resource != null;
     }
 
-    public static ClusterRoleBinding clusterRoleBinding(String yamlPath, String namespace) {
+    public static ClusterRoleBinding clusterRoleBinding(String namespace, String yamlPath) {
         LOGGER.info("Creating ClusterRoleBinding in test case {} from {} in Namespace: {}",
             ResourceManager.getTestContext().getDisplayName(), yamlPath, namespace);
         ClusterRoleBinding clusterRoleBinding = getClusterRoleBindingFromYaml(yamlPath);

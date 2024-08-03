@@ -32,7 +32,7 @@ public class KeycloakInstance {
     private Pattern keystorePattern = Pattern.compile("<tls>\\s*<key-stores>\\s*<key-store name=\"kcKeyStore\">\\s*<credential-reference clear-text=\".*\"\\/>");
     private Pattern keystorePasswordPattern = Pattern.compile("\\\".*\\\"");
 
-    public KeycloakInstance(String username, String password, String namespace) {
+    public KeycloakInstance(String namespace, String username, String password) {
 
         this.username = username;
         this.password = password;

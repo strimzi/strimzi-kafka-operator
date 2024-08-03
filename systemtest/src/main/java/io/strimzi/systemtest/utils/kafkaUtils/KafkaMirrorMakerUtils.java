@@ -17,22 +17,22 @@ public class KafkaMirrorMakerUtils {
 
     /**
      * Wait until KafkaMirrorMaker status is in desired state
-     * @param namespaceName Namespace where MirrorMaker resource is located
+     * @param namespace Namespace where MirrorMaker resource is located
      * @param clusterName name of KafkaMirrorMaker cluster
      * @param state desired state - like Ready
      */
     // Deprecation is suppressed because of KafkaMirrorMaker
     @SuppressWarnings("deprecation")
-    public static boolean waitForKafkaMirrorMakerStatus(String namespaceName, String clusterName, Enum<?>  state) {
-        KafkaMirrorMaker kafkaMirrorMaker = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(namespaceName).withName(clusterName).get();
+    public static boolean waitForKafkaMirrorMakerStatus(String namespace, String clusterName, Enum<?>  state) {
+        KafkaMirrorMaker kafkaMirrorMaker = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(namespace).withName(clusterName).get();
         return ResourceManager.waitForResourceStatus(KafkaMirrorMakerResource.kafkaMirrorMakerClient(), kafkaMirrorMaker, state);
     }
 
-    public static boolean waitForKafkaMirrorMakerReady(String namespaceName, String clusterName) {
-        return waitForKafkaMirrorMakerStatus(namespaceName, clusterName, Ready);
+    public static boolean waitForKafkaMirrorMakerReady(String namespace, String clusterName) {
+        return waitForKafkaMirrorMakerStatus(namespace, clusterName, Ready);
     }
 
-    public static boolean waitForKafkaMirrorMakerNotReady(final String namespaceName, String clusterName) {
-        return waitForKafkaMirrorMakerStatus(namespaceName, clusterName, NotReady);
+    public static boolean waitForKafkaMirrorMakerNotReady(final String namespace, String clusterName) {
+        return waitForKafkaMirrorMakerStatus(namespace, clusterName, NotReady);
     }
 }

@@ -169,7 +169,7 @@ public class AbstractKRaftUpgradeST extends AbstractUpgradeST {
     }
 
     @Override
-    protected void checkAllImages(BundleVersionModificationData versionModificationData, String namespaceName) {
+    protected void checkAllImages(BundleVersionModificationData versionModificationData) {
         if (versionModificationData.getImagesAfterOperations().isEmpty()) {
             fail("There are no expected images");
         }

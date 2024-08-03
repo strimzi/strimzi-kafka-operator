@@ -372,7 +372,7 @@ public class ResourceManager {
         }
     }
 
-    public static <T extends CustomResource, L extends DefaultKubernetesResourceList<T>> void replaceCrdResource(Class<T> crdClass, Class<L> listClass, String resourceName, Consumer<T> editor, String namespace) {
+    public static <T extends CustomResource, L extends DefaultKubernetesResourceList<T>> void replaceCrdResource(String namespace, Class<T> crdClass, Class<L> listClass, String resourceName, Consumer<T> editor) {
         T toBeReplaced = Crds.operation(kubeClient().getClient(), crdClass, listClass).inNamespace(namespace).withName(resourceName).get();
         editor.accept(toBeReplaced);
         Crds.operation(kubeClient().getClient(), crdClass, listClass).inNamespace(namespace).resource(toBeReplaced).update();
@@ -477,18 +477,18 @@ public class ResourceManager {
      * @return returns CR
      */
     public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatus(MixedOperation<T, ?, ?> operation, T resource, Enum<?> statusType, long resourceTimeout) {
-        return waitForResourceStatus(operation, resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName(), statusType, ConditionStatus.True, resourceTimeout);
+        return waitForResourceStatus(resource.getMetadata().getNamespace(), operation, resource.getKind(), resource.getMetadata().getName(), statusType, ConditionStatus.True, resourceTimeout);
     }
 
     public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatus(MixedOperation<T, ?, ?> operation, T resource, Enum<?> statusType, ConditionStatus conditionStatus, long resourceTimeout) {
-        return waitForResourceStatus(operation, resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName(), statusType, conditionStatus, resourceTimeout);
+        return waitForResourceStatus(resource.getMetadata().getNamespace(), operation, resource.getKind(), resource.getMetadata().getName(), statusType, conditionStatus, resourceTimeout);
     }
 
-    public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatus(MixedOperation<T, ?, ?> operation, String kind, String namespace, String name, Enum<?> statusType, long resourceTimeoutMs) {
-        return waitForResourceStatus(operation, kind, namespace, name, statusType, ConditionStatus.True, resourceTimeoutMs);
+    public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatus(String namespace, MixedOperation<T, ?, ?> operation, String kind, String name, Enum<?> statusType, long resourceTimeoutMs) {
+        return waitForResourceStatus(namespace, operation, kind, name, statusType, ConditionStatus.True, resourceTimeoutMs);
     }
 
-    public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatus(MixedOperation<T, ?, ?> operation, String kind, String namespace, String name, Enum<?> statusType, ConditionStatus conditionStatus, long resourceTimeoutMs) {
+    public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatus(String namespace, MixedOperation<T, ?, ?> operation, String kind, String name, Enum<?> statusType, ConditionStatus conditionStatus, long resourceTimeoutMs) {
         LOGGER.log(ResourceManager.getInstance().determineLogLevel(), "Waiting for {}: {}/{} will have desired state: {}", kind, namespace, name, statusType);
 
         TestUtils.waitFor(String.format("%s: %s#%s will have desired state: %s", kind, namespace, name, statusType),
@@ -532,11 +532,11 @@ public class ResourceManager {
     }
 
     public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatusMessage(MixedOperation<T, ?, ?> operation, T resource, String message, long resourceTimeout) {
-        waitForResourceStatusMessage(operation, resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName(), message, resourceTimeout);
+        waitForResourceStatusMessage(resource.getMetadata().getNamespace(), operation, resource.getKind(), resource.getMetadata().getName(), message, resourceTimeout);
         return true;
     }
 
-    public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatusMessage(MixedOperation<T, ?, ?> operation, String kind, String namespace, String name, String message, long resourceTimeoutMs) {
+    public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatusMessage(String namespace, MixedOperation<T, ?, ?> operation, String kind, String name, String message, long resourceTimeoutMs) {
         LOGGER.info("Waiting for {}: {}/{} will contain desired status message: {}", kind, namespace, name, message);
 
         TestUtils.waitFor(String.format("%s: %s#%s will contain desired status message: %s", kind, namespace, name, message),

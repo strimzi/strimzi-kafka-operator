@@ -58,13 +58,13 @@ public class KafkaVersionsST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
             .editMetadata()
-                .withNamespace(testStorage.getNamespaceName())
+                .withNamespace(testStorage.getNamespace())
             .endMetadata()
             .editOrNewSpec()
                 .editOrNewKafka()
@@ -97,7 +97,7 @@ public class KafkaVersionsST extends AbstractST {
             .build()
         );
 
-        KafkaUser writeUser = KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaUserWrite)
+        KafkaUser writeUser = KafkaUserTemplates.scramShaUser(testStorage.getNamespace(), testStorage.getClusterName(), kafkaUserWrite)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -111,7 +111,7 @@ public class KafkaVersionsST extends AbstractST {
             .endSpec()
             .build();
 
-        KafkaUser readUser = KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaUserRead)
+        KafkaUser readUser = KafkaUserTemplates.scramShaUser(testStorage.getNamespace(), testStorage.getClusterName(), kafkaUserRead)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -130,7 +130,7 @@ public class KafkaVersionsST extends AbstractST {
             .endSpec()
             .build();
 
-        KafkaUser tlsReadWriteUser = KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaUserReadWriteTls)
+        KafkaUser tlsReadWriteUser = KafkaUserTemplates.tlsUser(testStorage.getNamespace(), testStorage.getClusterName(), kafkaUserReadWriteTls)
                 .editSpec()
                     .withNewKafkaUserAuthorizationSimple()
                         .addNewAcl()

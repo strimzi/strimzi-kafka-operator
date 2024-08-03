@@ -41,7 +41,6 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
 import static io.strimzi.systemtest.TestConstants.EXTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.TestConstants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
@@ -65,7 +64,6 @@ public class MultipleListenersST extends AbstractST {
         runListenersTest(testCases.get(KafkaListenerType.NODEPORT), testStorage.getClusterName());
     }
 
-    @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMultipleInternal() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -75,7 +73,6 @@ public class MultipleListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(ACCEPTANCE)
     @Tag(EXTERNAL_CLIENTS_USED)
-    @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCombinationOfInternalAndExternalListeners() {
         // Nodeport needs cluster wide rights to work properly which is not possible with STRIMZI_RBAC_SCOPE=NAMESPACE
@@ -114,7 +111,6 @@ public class MultipleListenersST extends AbstractST {
     @OpenShiftOnly
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMixtureOfExternalListeners() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -134,7 +130,6 @@ public class MultipleListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCombinationOfEveryKindOfListener() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -161,8 +156,8 @@ public class MultipleListenersST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), clusterName, 3).build(),
-                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), clusterName, 3).build()
+                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespace(), testStorage.getBrokerPoolName(), clusterName, 3).build(),
+                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespace(), testStorage.getControllerPoolName(), clusterName, 3).build()
             )
         );
         // exercise phase
@@ -189,7 +184,7 @@ public class MultipleListenersST extends AbstractST {
                 final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
                 String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-                resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(clusterName, topicName, Environment.TEST_SUITE_NAMESPACE).build());
+                resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, clusterName, topicName).build());
 
                 boolean isTlsEnabled = listener.isTls();
 
@@ -255,7 +250,7 @@ public class MultipleListenersST extends AbstractST {
                             kafkaClients.consumerStrimzi()
                         );
                     }
-                    ClientUtils.waitForClientsSuccess(producerName, consumerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+                    ClientUtils.waitForClientsSuccess(Environment.TEST_SUITE_NAMESPACE, producerName, consumerName, testStorage.getMessageCount());
                 }
             }
         }

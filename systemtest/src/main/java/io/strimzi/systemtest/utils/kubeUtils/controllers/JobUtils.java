@@ -87,7 +87,7 @@ public class JobUtils {
      * @param jobName job name
      * @param timeout timeout in ms after which we assume that job failed
      */
-    public static void waitForJobSuccess(String jobName, String namespace, long timeout) {
+    public static void waitForJobSuccess(String namespace, String jobName, long timeout) {
         LOGGER.info("Waiting for Job: {}/{} to success", namespace, jobName);
         TestUtils.waitFor("success of Job: " + namespace + "/" + jobName, TestConstants.GLOBAL_POLL_INTERVAL, timeout,
                 () -> kubeClient().checkSucceededJobStatus(namespace, jobName, 1));
@@ -98,7 +98,7 @@ public class JobUtils {
      * @param jobName job name
      * @param timeout timeout in ms after which we assume that job failed
      */
-    public static void waitForJobFailure(String jobName, String namespace, long timeout) {
+    public static void waitForJobFailure(String namespace, String jobName, long timeout) {
         LOGGER.info("Waiting for Job: {}/{} to fail", namespace, jobName);
         TestUtils.waitFor("failure of Job: " + namespace + "/" + jobName, TestConstants.GLOBAL_POLL_INTERVAL, timeout,
             () -> kubeClient().checkFailedJobStatus(namespace, jobName, 1));
@@ -106,10 +106,10 @@ public class JobUtils {
 
     /**
      * Wait for specific Job Running active status
-     * @param jobName Job name
      * @param namespace Namespace
+     * @param jobName Job name
      */
-    public static boolean waitForJobRunning(String jobName, String namespace) {
+    public static boolean waitForJobRunning(String namespace, String jobName) {
         LOGGER.info("Waiting for Job: {}/{} to be in active state", namespace, jobName);
         TestUtils.waitFor("Job: " + namespace + "/" + jobName + " to be in active state", TestConstants.GLOBAL_POLL_INTERVAL, ResourceOperation.getTimeoutForResourceReadiness(TestConstants.JOB),
             () -> {
@@ -122,10 +122,11 @@ public class JobUtils {
 
     /**
      * Log actual status of Job with pods.
-     * @param jobName - name of the job, for which we should scrape status
      * @param namespace - namespace/project where is job running
+     * @param jobName - name of the job, for which we should scrape status
+
      */
-    public static void logCurrentJobStatus(String jobName, String namespace) {
+    public static void logCurrentJobStatus(String namespace, String jobName) {
         Job currentJob = kubeClient().getJob(namespace, jobName);
 
         if (currentJob != null && currentJob.getStatus() != null) {

@@ -22,14 +22,14 @@ import static io.strimzi.systemtest.resources.crd.KafkaBridgeResource.kafkaBridg
 public class KafkaBridgeUtils {
     private KafkaBridgeUtils() {}
 
-    public static Service createBridgeNodePortService(String clusterName, String namespace, String serviceName) {
+    public static Service createBridgeNodePortService(String namespace, String clusterName, String serviceName) {
         Map<String, String> map = new HashMap<>();
         map.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
         map.put(Labels.STRIMZI_KIND_LABEL, "KafkaBridge");
         map.put(Labels.STRIMZI_NAME_LABEL, clusterName + "-bridge");
 
         // Create node port service for expose bridge outside Kubernetes
-        return ServiceTemplates.getSystemtestsServiceResource(serviceName, TestConstants.HTTP_BRIDGE_DEFAULT_PORT, namespace, "TCP")
+        return ServiceTemplates.getSystemtestsServiceResource(namespace, serviceName, TestConstants.HTTP_BRIDGE_DEFAULT_PORT, "TCP")
                     .editSpec()
                         .withType("NodePort")
                         .withSelector(map)
@@ -40,21 +40,21 @@ public class KafkaBridgeUtils {
 
     /**
      * Wait until KafkaBridge is in desired state
-     * @param namespaceName Namespace name
+     * @param namespace Namespace name
      * @param clusterName name of KafkaBridge cluster
      * @param state desired state
      */
-    public static boolean waitForKafkaBridgeStatus(String namespaceName, String clusterName, Enum<?> state) {
-        KafkaBridge kafkaBridge = kafkaBridgeClient().inNamespace(namespaceName).withName(clusterName).get();
-        return ResourceManager.waitForResourceStatus(kafkaBridgeClient(), kafkaBridge.getKind(), namespaceName,
+    public static boolean waitForKafkaBridgeStatus(String namespace, String clusterName, Enum<?> state) {
+        KafkaBridge kafkaBridge = kafkaBridgeClient().inNamespace(namespace).withName(clusterName).get();
+        return ResourceManager.waitForResourceStatus(namespace, kafkaBridgeClient(), kafkaBridge.getKind(),
             kafkaBridge.getMetadata().getName(), state, ResourceOperation.getTimeoutForResourceReadiness(kafkaBridge.getKind()));
     }
 
-    public static boolean waitForKafkaBridgeReady(String namespaceName, String clusterName) {
-        return waitForKafkaBridgeStatus(namespaceName, clusterName, Ready);
+    public static boolean waitForKafkaBridgeReady(String namespace, String clusterName) {
+        return waitForKafkaBridgeStatus(namespace, clusterName, Ready);
     }
 
-    public static boolean waitForKafkaBridgeNotReady(final String namespaceName, String clusterName) {
-        return waitForKafkaBridgeStatus(namespaceName, clusterName, NotReady);
+    public static boolean waitForKafkaBridgeNotReady(final String namespace, String clusterName) {
+        return waitForKafkaBridgeStatus(namespace, clusterName, NotReady);
     }
 }

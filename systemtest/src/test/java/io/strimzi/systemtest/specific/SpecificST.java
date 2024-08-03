@@ -91,8 +91,8 @@ public class SpecificST extends AbstractST {
 
         // ---- c) defining ClusterRoleBindings
         final List<ClusterRoleBinding> clusterRoleBindings = Arrays.asList(
-            ClusterRoleBindingTemplates.getClusterOperatorWatchedCrb(clusterOperator.getClusterOperatorName(), clusterOperator.getDeploymentNamespace()),
-            ClusterRoleBindingTemplates.getClusterOperatorEntityOperatorCrb(clusterOperator.getClusterOperatorName(), clusterOperator.getDeploymentNamespace())
+            ClusterRoleBindingTemplates.getClusterOperatorWatchedCrb(clusterOperator.getDeploymentNamespace(), clusterOperator.getClusterOperatorName()),
+            ClusterRoleBindingTemplates.getClusterOperatorEntityOperatorCrb(clusterOperator.getDeploymentNamespace(), clusterOperator.getClusterOperatorName())
         );
 
         clusterOperator.unInstall();

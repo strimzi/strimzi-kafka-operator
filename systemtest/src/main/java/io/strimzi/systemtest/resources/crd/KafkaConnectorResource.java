@@ -53,7 +53,7 @@ public class KafkaConnectorResource implements ResourceType<KafkaConnector> {
         return Crds.kafkaConnectorOperation(ResourceManager.kubeClient().getClient());
     }
 
-    public static void replaceKafkaConnectorResourceInSpecificNamespace(String resourceName, Consumer<KafkaConnector> editor, String namespaceName) {
-        ResourceManager.replaceCrdResource(KafkaConnector.class, KafkaConnectorList.class, resourceName, editor, namespaceName);
+    public static void replaceKafkaConnectorResourceInSpecificNamespace(String namespace, String resourceName, Consumer<KafkaConnector> editor) {
+        ResourceManager.replaceCrdResource(namespace, KafkaConnector.class, KafkaConnectorList.class, resourceName, editor);
     }
 }

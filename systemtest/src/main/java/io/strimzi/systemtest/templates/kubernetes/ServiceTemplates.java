@@ -10,7 +10,7 @@ import java.util.Collections;
 
 public class ServiceTemplates {
 
-    public static ServiceBuilder getSystemtestsServiceResource(String appName, int port, String namespace, String transportProtocol) {
+    public static ServiceBuilder getSystemtestsServiceResource(String namespace, String appName, int port, String transportProtocol) {
         return new ServiceBuilder()
             .withNewMetadata()
                 .withName(appName)

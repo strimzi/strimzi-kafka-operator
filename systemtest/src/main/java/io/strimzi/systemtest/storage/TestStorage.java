@@ -45,7 +45,7 @@ final public class TestStorage {
 
     private ExtensionContext extensionContext;
     private String testName;
-    private String namespaceName;
+    private String namespace;
     private String clusterName;
     private String brokerPoolName;
     private String controllerPoolName;
@@ -92,15 +92,15 @@ final public class TestStorage {
         this(extensionContext, Environment.TEST_SUITE_NAMESPACE);
     }
 
-    public TestStorage(ExtensionContext extensionContext, String namespaceName) {
-        this(extensionContext, namespaceName, MESSAGE_COUNT);
+    public TestStorage(ExtensionContext extensionContext, String namespace) {
+        this(extensionContext, namespace, MESSAGE_COUNT);
     }
 
-    public TestStorage(ExtensionContext extensionContext, String namespaceName, int messageCount) {
+    public TestStorage(ExtensionContext extensionContext, String namespace, int messageCount) {
 
         this.extensionContext = extensionContext;
         this.testName = extensionContext.getTestMethod().isPresent() ? extensionContext.getTestMethod().get().getName() : "null-testname";
-        this.namespaceName = StUtils.isParallelNamespaceTest(extensionContext) ? StUtils.getNamespaceBasedOnRbac(namespaceName, extensionContext) : namespaceName;
+        this.namespace = StUtils.isParallelNamespaceTest(extensionContext) ? StUtils.getNamespaceBasedOnRbac(namespace, extensionContext) : namespace;
         this.clusterName = CLUSTER_NAME_PREFIX + hashStub(String.valueOf(RANDOM.nextInt(Integer.MAX_VALUE)));
         this.brokerPoolName = TestConstants.BROKER_ROLE_PREFIX + hashStub(clusterName);
         this.controllerPoolName = TestConstants.CONTROLLER_ROLE_PREFIX + hashStub(clusterName);
@@ -143,7 +143,7 @@ final public class TestStorage {
         this.testExecutionStartTime = System.currentTimeMillis();
 
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.TEST_NAME_KEY, this.testName);
-        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.NAMESPACE_KEY, this.namespaceName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.NAMESPACE_KEY, this.namespace);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.CLUSTER_KEY, this.clusterName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.BROKER_POOL_KEY, this.brokerPoolName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.CONTROLLER_POOL_KEY, this.controllerPoolName);
@@ -202,7 +202,7 @@ final public class TestStorage {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.TEST_NAME_KEY).toString();
     }
 
-    public String getNamespaceName() {
+    public String getNamespace() {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.NAMESPACE_KEY).toString();
     }
 

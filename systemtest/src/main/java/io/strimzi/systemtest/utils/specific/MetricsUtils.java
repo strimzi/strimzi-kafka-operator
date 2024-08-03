@@ -38,7 +38,7 @@ public class MetricsUtils {
 
     private MetricsUtils() { }
 
-    public static String getExporterRunScript(String podName, String namespace) throws InterruptedException, ExecutionException, IOException {
+    public static String getExporterRunScript(String namespace, String podName) throws InterruptedException, ExecutionException, IOException {
         ArrayList<String> command = new ArrayList<>();
         command.add("cat");
         command.add("/tmp/run.sh");
@@ -58,7 +58,7 @@ public class MetricsUtils {
         return exec.out();
     }
 
-    public static MetricsCollector setupCOMetricsCollectorInNamespace(String coName, String coNamespace, String coScraperName) {
+    public static MetricsCollector setupCOMetricsCollectorInNamespace(String coNamespace, String coName, String coScraperName) {
         LabelSelector scraperDeploymentPodLabel = new LabelSelector(null, Map.of(TestConstants.APP_POD_LABEL, coScraperName));
         String coScraperPodName = ResourceManager.kubeClient().listPods(coNamespace, scraperDeploymentPodLabel).get(0).getMetadata().getName();
 
@@ -78,37 +78,37 @@ public class MetricsUtils {
         assertMetricValueNotNull(collector, metrics);
     }
 
-    public static void assertCoMetricResourceStateNotExists(MetricsCollector collector, String kind, String name, String namespace) {
+    public static void assertCoMetricResourceStateNotExists(String namespace, MetricsCollector collector, String kind, String name) {
         String metric = "strimzi_resource_state\\{kind=\"" + kind + "\",name=\"" + name + "\",resource_namespace=\"" + namespace + "\",}";
         ArrayList<Double> values = createPatternAndCollectWithoutWait(collector, metric);
         assertThat(values.isEmpty(), is(true));
     }
 
-    public static void assertCoMetricResourceState(MetricsCollector collector, String kind, String name, String namespace, int value, String reason) {
-        assertMetricResourceState(collector, kind, name, namespace, value, reason);
+    public static void assertCoMetricResourceState(String namespace, MetricsCollector collector, String kind, String name, int value, String reason) {
+        assertMetricResourceState(namespace, collector, kind, name, value, reason);
     }
 
-    public static void assertMetricResourceState(MetricsCollector collector, String kind, String name, String namespace, int value, String reason) {
+    public static void assertMetricResourceState(String namespace, MetricsCollector collector, String kind, String name, int value, String reason) {
         String metric = "strimzi_resource_state\\{kind=\"" + kind + "\",name=\"" + name + "\",reason=\"" + reason + ".*\",resource_namespace=\"" + namespace + "\",}";
         assertMetricValue(collector, metric, value);
     }
 
-    public static void assertCoMetricResources(MetricsCollector collector, String kind, String namespace, int value) {
-        assertMetricResources(collector, kind, namespace, value);
+    public static void assertCoMetricResources(String namespace, MetricsCollector collector, String kind, int value) {
+        assertMetricResources(namespace, collector, kind, value);
     }
 
-    public static void assertMetricResources(MetricsCollector collector, String kind, String namespace, int value) {
-        assertMetricValue(collector, getResourceMetricPattern(kind, namespace), value);
+    public static void assertMetricResources(String namespace, MetricsCollector collector, String kind, int value) {
+        assertMetricValue(collector, getResourceMetricPattern(namespace, kind), value);
     }
 
-    public static void assertCoMetricResourcesNullOrZero(MetricsCollector collector, String kind, String namespace) {
-        Pattern pattern = Pattern.compile(getResourceMetricPattern(kind, namespace));
+    public static void assertCoMetricResourcesNullOrZero(String namespace, MetricsCollector collector, String kind) {
+        Pattern pattern = Pattern.compile(getResourceMetricPattern(namespace, kind));
         if (!collector.collectSpecificMetric(pattern).isEmpty()) {
             assertThat(String.format("metric %s doesn't contain 0 value!", pattern), createPatternAndCollectWithoutWait(collector, pattern.toString()).stream().mapToDouble(i -> i).sum(), is(0.0));
         }
     }
 
-    public static String getResourceMetricPattern(String kind, String namespace) {
+    public static String getResourceMetricPattern(String namespace, String kind) {
         String metric = "strimzi_resources\\{kind=\"" + kind + "\",";
         metric += namespace == null ? ".*}" : "namespace=\"" + namespace + "\",.*}";
         return metric;

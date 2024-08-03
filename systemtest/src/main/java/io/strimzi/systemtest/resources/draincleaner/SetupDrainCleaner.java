@@ -72,8 +72,7 @@ public class SetupDrainCleaner {
             certsPaths.put("tls.crt", drainCleanerKeyPairPemFormat.getCertPath());
             certsPaths.put("tls.key", drainCleanerKeyPairPemFormat.getKeyPath());
 
-            customDrainCleanerSecretBuilder = SecretUtils.retrieveSecretBuilderFromFile(certsPaths,
-                TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME, TestConstants.DRAIN_CLEANER_NAMESPACE,
+            customDrainCleanerSecretBuilder = SecretUtils.retrieveSecretBuilderFromFile(TestConstants.DRAIN_CLEANER_NAMESPACE, certsPaths, TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME,
                 Collections.singletonMap(TestConstants.APP_POD_LABEL, TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME), "kubernetes.io/tls");
         }
 

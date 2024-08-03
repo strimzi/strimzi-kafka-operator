@@ -123,19 +123,19 @@ public class UserOperatorPerformance extends AbstractST {
         try {
             resourceManager.createResourceWithWait(
                 NodePoolsConverter.convertNodePoolsIfNeeded(
-                    KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerReplicas)
+                    KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerReplicas)
                         .editSpec()
                             .withNewPersistentClaimStorage()
                                 .withSize("10Gi")
                             .endPersistentClaimStorage()
                         .endSpec()
                         .build(),
-                    KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerReplicas).build()
+                    KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerReplicas).build()
                 )
             );
             resourceManager.createResourceWithWait(
-                KafkaTemplates.kafkaMetricsConfigMap(testStorage.getNamespaceName(), testStorage.getClusterName()),
-                KafkaTemplates.kafkaWithMetrics(testStorage.getNamespaceName(), testStorage.getClusterName(), brokerReplicas, controllerReplicas)
+                KafkaTemplates.kafkaMetricsConfigMap(testStorage.getNamespace(), testStorage.getClusterName()),
+                KafkaTemplates.kafkaWithMetrics(testStorage.getNamespace(), testStorage.getClusterName(), brokerReplicas, controllerReplicas)
                     .editSpec()
                         .editEntityOperator()
                             .editUserOperator()
@@ -184,18 +184,18 @@ public class UserOperatorPerformance extends AbstractST {
                         .endKafka()
                     .endSpec()
                     .build(),
-                ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
+                ScraperTemplates.scraperPod(testStorage.getNamespace(), testStorage.getScraperName()).build()
             );
 
             this.testStorage.addToTestStorage(TestConstants.SCRAPER_POD_KEY,
-                kubeClient().listPodsByPrefixInName(this.testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName());
+                kubeClient().listPodsByPrefixInName(this.testStorage.getNamespace(), testStorage.getScraperName()).get(0).getMetadata().getName());
 
             // -- Metrics POLL --
             // Assuming 'testStorage' contains necessary details like namespace and scraperPodName
             this.userOperatorCollector = new UserOperatorMetricsCollector.Builder()
                 .withScraperPodName(this.testStorage.getScraperPodName())
-                .withNamespaceName(this.testStorage.getNamespaceName())
-                .withComponent(UserOperatorMetricsComponent.create(this.testStorage.getNamespaceName(), this.testStorage.getClusterName()))
+                .withNamespaceName(this.testStorage.getNamespace())
+                .withComponent(UserOperatorMetricsComponent.create(this.testStorage.getNamespace(), this.testStorage.getClusterName()))
                 .build();
 
             this.userOperatorMetricsGatherer = new UserOperatorMetricsCollectionScheduler(this.userOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
@@ -211,11 +211,11 @@ public class UserOperatorPerformance extends AbstractST {
 
 
             // Start measuring time for deletion of all users
-            LOGGER.info("Start deletion of {} KafkaUsers in namespace:{}", numberOfKafkaUsersToCreate, testStorage.getNamespaceName());
+            LOGGER.info("Start deletion of {} KafkaUsers in namespace:{}", numberOfKafkaUsersToCreate, testStorage.getNamespace());
 
             deletionUsersMs = OperationTimer.measureTimeInMillis(() -> {
                 resourceManager.deleteResourcesOfTypeWithoutWait(KafkaUser.RESOURCE_KIND);
-                KafkaUserUtils.waitForUserWithPrefixDeletion(testStorage.getNamespaceName(), testStorage.getUsername());
+                KafkaUserUtils.waitForUserWithPrefixDeletion(testStorage.getNamespace(), testStorage.getUsername());
             });
 
             LOGGER.info("Time taken to delete {} topics: {} ms", numberOfKafkaUsersToCreate, deletionUsersMs);
@@ -296,19 +296,19 @@ public class UserOperatorPerformance extends AbstractST {
         try {
             resourceManager.createResourceWithWait(
                 NodePoolsConverter.convertNodePoolsIfNeeded(
-                    KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerReplicas)
+                    KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerReplicas)
                         .editSpec()
                             .withNewPersistentClaimStorage()
                                 .withSize("10Gi")
                             .endPersistentClaimStorage()
                         .endSpec()
                         .build(),
-                    KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerReplicas).build()
+                    KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespace(), testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerReplicas).build()
                 )
             );
             resourceManager.createResourceWithWait(
-                KafkaTemplates.kafkaMetricsConfigMap(testStorage.getNamespaceName(), testStorage.getClusterName()),
-                KafkaTemplates.kafkaWithMetrics(testStorage.getNamespaceName(), testStorage.getClusterName(), brokerReplicas, controllerReplicas)
+                KafkaTemplates.kafkaMetricsConfigMap(testStorage.getNamespace(), testStorage.getClusterName()),
+                KafkaTemplates.kafkaWithMetrics(testStorage.getNamespace(), testStorage.getClusterName(), brokerReplicas, controllerReplicas)
                     .editSpec()
                         .editEntityOperator()
                             .editUserOperator()
@@ -353,18 +353,18 @@ public class UserOperatorPerformance extends AbstractST {
                         .endKafka()
                     .endSpec()
                     .build(),
-                ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
+                ScraperTemplates.scraperPod(testStorage.getNamespace(), testStorage.getScraperName()).build()
             );
 
             this.testStorage.addToTestStorage(TestConstants.SCRAPER_POD_KEY,
-                kubeClient().listPodsByPrefixInName(this.testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName());
+                kubeClient().listPodsByPrefixInName(this.testStorage.getNamespace(), testStorage.getScraperName()).get(0).getMetadata().getName());
 
             // -- Metrics POLL --
             // Assuming 'testStorage' contains necessary details like namespace and scraperPodName
             this.userOperatorCollector = new UserOperatorMetricsCollector.Builder()
                 .withScraperPodName(this.testStorage.getScraperPodName())
-                .withNamespaceName(this.testStorage.getNamespaceName())
-                .withComponent(UserOperatorMetricsComponent.create(this.testStorage.getNamespaceName(), this.testStorage.getClusterName()))
+                .withNamespaceName(this.testStorage.getNamespace())
+                .withComponent(UserOperatorMetricsComponent.create(this.testStorage.getNamespace(), this.testStorage.getClusterName()))
                 .build();
 
             this.userOperatorMetricsGatherer = new UserOperatorMetricsCollectionScheduler(this.userOperatorCollector, "strimzi.io/cluster=" + this.testStorage.getClusterName());
@@ -396,7 +396,7 @@ public class UserOperatorPerformance extends AbstractST {
             // to enchantment a process of deleting we should delete all resources at once
             // I saw a behaviour where deleting one by one might lead to 10s delay for deleting each KafkaUser
             resourceManager.deleteResourcesOfTypeWithoutWait(KafkaUser.RESOURCE_KIND);
-            KafkaUserUtils.waitForUserWithPrefixDeletion(testStorage.getNamespaceName(), testStorage.getUsername());
+            KafkaUserUtils.waitForUserWithPrefixDeletion(testStorage.getNamespace(), testStorage.getUsername());
 
             if (this.userOperatorMetricsGatherer != null) {
                 this.userOperatorMetricsGatherer.stopCollecting();

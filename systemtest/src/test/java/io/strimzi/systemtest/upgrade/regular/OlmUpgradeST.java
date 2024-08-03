@@ -147,7 +147,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         // ======== Kafka upgrade ends ========
 
         // Wait for messages of previously created clients
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientsSuccess(TestConstants.CO_NAMESPACE, testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getMessageCount());
     }
 
     @BeforeAll
