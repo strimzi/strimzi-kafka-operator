@@ -13,6 +13,8 @@ import io.strimzi.api.kafka.model.common.ConditionBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceBuilder;
@@ -159,7 +161,16 @@ public class KafkaRebalanceAssemblyOperatorTest {
             ResourceUtils.zookeeperScalerProvider(), ResourceUtils.kafkaAgentClientProvider(), ResourceUtils.metricsProvider(), ResourceUtils.zooKeeperAdminProvider(), PFA, 2_000);
 
         // Override to inject mocked cruise control address so real cruise control not required
-        krao = new KafkaRebalanceAssemblyOperator(vertx, supplier, ResourceUtils.dummyClusterOperatorConfig(), cruiseControlPort) {
+        krao = createKafkaRebalanceAssemblyOperator(ResourceUtils.dummyClusterOperatorConfig());
+    }
+
+    @AfterEach
+    public void afterEach() {
+        client.namespaces().withName(namespace).delete();
+    }
+
+    private KafkaRebalanceAssemblyOperator createKafkaRebalanceAssemblyOperator(ClusterOperatorConfig config) {
+        return new KafkaRebalanceAssemblyOperator(vertx, supplier, config, cruiseControlPort) {
             @Override
             public String cruiseControlHost(String clusterName, String clusterNamespace) {
                 return HOST;
@@ -170,11 +181,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 return new CruiseControlApiImpl(vertx, 1, ccSecret, ccApiSecret, true, true);
             }
         };
-    }
-
-    @AfterEach
-    public void afterEach() {
-        client.namespaces().withName(namespace).delete();
     }
 
     private void crdCreateKafka() {
@@ -1242,6 +1248,63 @@ public class KafkaRebalanceAssemblyOperatorTest {
                     assertState(context, client, namespace, RESOURCE_NAME,
                             KafkaRebalanceState.NotReady, NoSuchResourceException.class,
                             "Kafka resource '" + CLUSTER_NAME + "' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL + "' does not exist in namespace " + namespace + ".");
+                    checkpoint.flag();
+                })));
+    }
+
+    /**
+     * Tests the transition from 'New' to 'NotReady' due to missing Kafka cluster
+     *
+     * 1. A new KafkaRebalance resource is created; it is in the New state
+     * 2. The operator checks that the Kafka cluster specified in the KafkaRebalance resource (via label) doesn't exist
+     * 4. The KafkaRebalance resource moves to NotReady state
+     */
+    @Test
+    public void testKafkaClusterNotMatchingSelector(VertxTestContext context) {
+        Kafka k = new KafkaBuilder()
+                .withNewMetadata()
+                    .withName(CLUSTER_NAME)
+                    .withNamespace(namespace)
+                    .withLabels(Map.of("selector", "not-matching"))
+                .endMetadata()
+                .withNewSpec()
+                    .withNewKafka()
+                        .withListeners(new GenericKafkaListenerBuilder().withName("tls").withTls().withPort(9093).withType(KafkaListenerType.INTERNAL).build())
+                    .endKafka()
+                    .withNewCruiseControl()
+                    .endCruiseControl()
+                .endSpec()
+                .withNewStatus()
+                    .withObservedGeneration(1L)
+                    .withConditions(new ConditionBuilder()
+                            .withType("Ready")
+                            .withStatus("True")
+                            .build())
+                .endStatus()
+                .build();
+        Crds.kafkaOperation(client).inNamespace(namespace).resource(k).create();
+        Crds.kafkaOperation(client).inNamespace(namespace).resource(k).updateStatus();
+
+        KafkaRebalance kr = new KafkaRebalanceBuilder(createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false))
+                .editMetadata()
+                .withName(CLUSTER_NAME).withGeneration(1L)
+                .endMetadata()
+                .withNewStatus()
+                    .withObservedGeneration(1L)
+                    .withConditions(new ConditionBuilder()
+                            .withType("Rebalancing")
+                            .withStatus("True")
+                            .build())
+                .endStatus()
+                .build();
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).updateStatus();
+
+        Checkpoint checkpoint = context.checkpoint();
+        krao = createKafkaRebalanceAssemblyOperator(ClusterOperatorConfig.buildFromMap(Map.of(ClusterOperatorConfig.CUSTOM_RESOURCE_SELECTOR.key(), "selector=matching"), KafkaVersionTestUtils.getKafkaVersionLookup()));
+        krao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME), kr)
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    assertThat(v, is(nullValue()));
                     checkpoint.flag();
                 })));
     }

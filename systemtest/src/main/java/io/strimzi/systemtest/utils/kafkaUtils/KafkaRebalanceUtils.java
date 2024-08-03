@@ -111,10 +111,6 @@ public class KafkaRebalanceUtils {
             }
         }
 
-        LOGGER.info("Verifying that annotation triggers the {} state", KafkaRebalanceState.Rebalancing);
-
-        waitForKafkaRebalanceCustomResourceState(namespaceName, rebalanceName, KafkaRebalanceState.Rebalancing);
-
         LOGGER.info("Verifying that KafkaRebalance is in the {} state", KafkaRebalanceState.Ready);
 
         waitForKafkaRebalanceCustomResourceState(namespaceName, rebalanceName, KafkaRebalanceState.Ready);

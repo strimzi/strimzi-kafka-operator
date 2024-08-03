@@ -1031,7 +1031,7 @@ public class KafkaRebalanceAssemblyOperator
      * Reconcile loop for the KafkaRebalance
      */
     @SuppressWarnings({"checkstyle:NPathComplexity"})
-    private Future<KafkaRebalanceStatus> reconcileRebalance(Reconciliation reconciliation, KafkaRebalance kafkaRebalance) {
+    /* test */ Future<KafkaRebalanceStatus> reconcileRebalance(Reconciliation reconciliation, KafkaRebalance kafkaRebalance) {
         if (kafkaRebalance == null) {
             LOGGER.infoCr(reconciliation, "KafkaRebalance resource deleted");
             return Future.succeededFuture();
@@ -1050,10 +1050,7 @@ public class KafkaRebalanceAssemblyOperator
             patchedKafkaRebalance
                     .editMetadata()
                          .addToAnnotations(Map.of(ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.refresh.toString()))
-                    .endMetadata()
-                    .editStatus()
-                         .withObservedGeneration(kafkaRebalance.getMetadata().getGeneration())
-                    .endStatus();
+                    .endMetadata();
 
             kafkaRebalanceOperator.patchAsync(reconciliation, patchedKafkaRebalance.build()).onComplete(
                     r -> LOGGER.debugCr(reconciliation, "The KafkaRebalance resource is updated with refresh annotation"));
@@ -1079,14 +1076,14 @@ public class KafkaRebalanceAssemblyOperator
                                 new NoSuchResourceException("Kafka resource '" + clusterName
                                         + "' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL
                                         + "' does not exist in namespace " + clusterNamespace + ".")));
+                    } else if (!Util.matchesSelector(kafkaSelector, kafka)) {
+                        LOGGER.debugCr(reconciliation, "{} {} in namespace {} belongs to a Kafka cluster {} which does not match label selector {} and will be ignored", kind(), kafkaRebalance.getMetadata().getName(), clusterNamespace, clusterName, kafkaSelector.getMatchLabels());
+                        return Future.succeededFuture(null);
                     } else if (!isKafkaClusterReady(kafka) && state(kafkaRebalance) != (KafkaRebalanceState.Ready)) {
                         LOGGER.warnCr(reconciliation, "Kafka cluster is not Ready");
                         KafkaRebalanceStatus status = new KafkaRebalanceStatus();
                         return Future.succeededFuture(updateStatus(kafkaRebalance, status,
                                 new RuntimeException(CruiseControlIssues.kafkaClusterNotReady.getMessage())));
-                    } else if (!Util.matchesSelector(kafkaSelector, kafka)) {
-                        LOGGER.debugCr(reconciliation, "{} {} in namespace {} belongs to a Kafka cluster {} which does not match label selector {} and will be ignored", kind(), kafkaRebalance.getMetadata().getName(), clusterNamespace, clusterName, kafkaSelector.getMatchLabels());
-                        return Future.succeededFuture(kafkaRebalance.getStatus());
                     } else if (kafka.getSpec().getCruiseControl() == null) {
                         LOGGER.warnCr(reconciliation, "Kafka resource lacks 'cruiseControl' declaration" + ": No deployed Cruise Control for doing a rebalance.");
                         KafkaRebalanceStatus status = new KafkaRebalanceStatus();
