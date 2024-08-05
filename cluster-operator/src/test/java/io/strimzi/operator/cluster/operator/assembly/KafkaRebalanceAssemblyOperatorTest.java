@@ -122,12 +122,12 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
         vertx = Vertx.vertx();
         sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
-        
+
         // Configure Cruise Control mock
         cruiseControlPort = TestUtils.getFreePort();
         tlsKeyFile = TestUtils.tempFile(KafkaRebalanceAssemblyOperatorTest.class.getSimpleName(), ".key");
         tlsCrtFile = TestUtils.tempFile(KafkaRebalanceAssemblyOperatorTest.class.getSimpleName(), ".crt");
-        
+
         new MockCertManager().generateSelfSignedCert(tlsKeyFile, tlsCrtFile,
             new Subject.Builder().withCommonName("Trusted Test CA").build(), 365);
 
@@ -1253,11 +1253,10 @@ public class KafkaRebalanceAssemblyOperatorTest {
     }
 
     /**
-     * Tests the transition from 'New' to 'NotReady' due to missing Kafka cluster
-     *
-     * 1. A new KafkaRebalance resource is created; it is in the New state
-     * 2. The operator checks that the Kafka cluster specified in the KafkaRebalance resource (via label) doesn't exist
-     * 4. The KafkaRebalance resource moves to NotReady state
+     * Tests the scenario when the Kafka cluster to which the KafkaRebalance resource belongs does not match the custom
+     * resource selector of this operator. In this case, the operator should not do anything and return null status (as
+     * null status means that the status will nto be updated). This is important to avoid conflict between the operator
+     * actively managing this rebalance and other operators.
      */
     @Test
     public void testKafkaClusterNotMatchingSelector(VertxTestContext context) {
