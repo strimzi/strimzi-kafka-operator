@@ -275,6 +275,7 @@ public class StorageDiff extends AbstractJsonDiff {
      *
      * @return                  True if only allowed override changes were done, false otherwise
      */
+    @SuppressWarnings("deprecation") // Storage overrides are deprecated
     private boolean isOverrideChangeAllowed(Storage current, Storage desired, Set<Integer> currentNodeIds, Set<Integer> desiredNodeIds)   {
         List<PersistentClaimStorageOverride> currentOverrides = ((PersistentClaimStorage) current).getOverrides();
         if (currentOverrides == null)   {

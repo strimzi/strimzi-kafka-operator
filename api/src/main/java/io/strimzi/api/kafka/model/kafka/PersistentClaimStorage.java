@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model.kafka;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
@@ -112,8 +113,11 @@ public class PersistentClaimStorage extends SingleVolumeStorage {
     }
 
     @Description("Overrides for individual brokers. " +
-            "The `overrides` field allows to specify a different configuration for different brokers.")
+            "The `overrides` field allows you to specify a different configuration for different brokers.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Deprecated
+    @DeprecatedProperty(description = "The storage overrides for individual brokers are deprecated and will be removed in the future. " +
+            "Please use multiple `KafkaNodePool` custom resources with different storage classes instead.")
     public List<PersistentClaimStorageOverride> getOverrides() {
         return overrides;
     }

@@ -124,6 +124,8 @@ storage:
 
 == Storage class overrides
 
+WARNING: Storage class overrides are deprecated and will be removed in the future. As a replacement, use `KafkaNodePool` resources instead.
+
 Instead of using the default storage class, you can specify a different storage class for one or more Kafka or ZooKeeper nodes.
 This is useful, for example, when storage classes are restricted to different availability zones or data centers.
 You can use the `overrides` field for this purpose.
@@ -189,6 +191,19 @@ As a result of the configured `overrides` property, the volumes use the followin
 
 The `overrides` property is currently used only to override the storage `class`. 
 Overrides for other storage configuration properties is not currently supported.
+
+=== Migrating from storage class overrides to node pools
+
+Storage class overrides are deprecated and will be removed in the future.
+If you are using storage class overrides, we encourage you to transition to using node pools instead.
+To migrate the existing configuration, follow these steps:
+
+1. Make sure you already use node pools resources.
+   If not, you should xref:proc-migrating-clusters-node-pools-str[migrate the cluster to use node pools] first.
+2. Create new xref:config-node-pools-str[node pools] with storage configuration using the desired storage class without using the overrides.
+3. Move all partition replicas from the old broker using the storage class overrides.
+   You can do this using xref:cruise-control-concepts-str[Cruise Control] or xref:assembly-reassign-tool-str[using the partition reassignment tool].
+4. Delete the old node pool with the old brokers using the storage class overrides.
 
 [id='ref-persistent-storage-pvc-{context}']
 == PVC resources for persistent storage
