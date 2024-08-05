@@ -166,10 +166,7 @@ public class MultipleListenersST extends AbstractST {
             )
         );
         // exercise phase
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(clusterName, 3)
-            .editMetadata()
-                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
-            .endMetadata()
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(Environment.TEST_SUITE_NAMESPACE, clusterName, 3)
             .editSpec()
                 .editKafka()
                     .withListeners(listeners)
@@ -180,7 +177,7 @@ public class MultipleListenersST extends AbstractST {
         // only on thread can access to verification phase (here is a lot of variables which can be modified in run-time (data-race))
         synchronized (lock) {
             String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
-            KafkaUser kafkaUserInstance = KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, clusterName, kafkaUsername).build();
+            KafkaUser kafkaUserInstance = KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, kafkaUsername, clusterName).build();
 
             resourceManager.createResourceWithWait(kafkaUserInstance);
 
@@ -189,7 +186,7 @@ public class MultipleListenersST extends AbstractST {
                 final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
                 String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-                resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(clusterName, topicName, Environment.TEST_SUITE_NAMESPACE).build());
+                resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, topicName, clusterName).build());
 
                 boolean isTlsEnabled = listener.isTls();
 

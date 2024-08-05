@@ -205,8 +205,8 @@ class LogSettingST extends AbstractST {
         Map<String, String> brokerPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, brokerSelector);
         Map<String, String> controllerPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, controllerSelector);
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(LOG_SETTING_CLUSTER_NAME, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
-        resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME, testStorage.getKafkaUsername()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), LOG_SETTING_CLUSTER_NAME).build());
+        resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername(), LOG_SETTING_CLUSTER_NAME).build());
 
         LOGGER.info("Checking if Kafka, ZooKeeper, TO and UO of cluster: {} has log level set properly", LOG_SETTING_CLUSTER_NAME);
         StUtils.getKafkaConfigurationConfigMaps(Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME)
@@ -276,10 +276,7 @@ class LogSettingST extends AbstractST {
     void testConnectLogSetting() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME, 1)
-            .editMetadata()
-                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
-            .endMetadata()
+        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnect(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), LOG_SETTING_CLUSTER_NAME, 1)
             .editSpec()
                 .withNewInlineLogging()
                     .withLoggers(CONNECT_LOGGERS)
@@ -311,10 +308,7 @@ class LogSettingST extends AbstractST {
     void testMirrorMakerLogSetting() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        resourceManager.createResourceWithWait(KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), LOG_SETTING_CLUSTER_NAME, GC_LOGGING_SET_NAME, "my-group", 1, false)
-            .editMetadata()
-                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
-            .endMetadata()
+        resourceManager.createResourceWithWait(KafkaMirrorMakerTemplates.kafkaMirrorMaker(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), LOG_SETTING_CLUSTER_NAME, GC_LOGGING_SET_NAME, "my-group", 1, false)
             .editSpec()
                 .withNewInlineLogging()
                     .withLoggers(MIRROR_MAKER_LOGGERS)
@@ -346,10 +340,7 @@ class LogSettingST extends AbstractST {
     void testMirrorMaker2LogSetting() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        resourceManager.createResourceWithWait(KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getClusterName(), LOG_SETTING_CLUSTER_NAME, GC_LOGGING_SET_NAME, 1, false)
-            .editMetadata()
-                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
-            .endMetadata()
+        resourceManager.createResourceWithWait(KafkaMirrorMaker2Templates.kafkaMirrorMaker2(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), GC_LOGGING_SET_NAME, LOG_SETTING_CLUSTER_NAME, 1, false)
             .editSpec()
                 .withNewInlineLogging()
                     .withLoggers(MIRROR_MAKER_LOGGERS)
@@ -383,10 +374,7 @@ class LogSettingST extends AbstractST {
     void testBridgeLogSetting() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        resourceManager.createResourceWithWait(KafkaBridgeTemplates.kafkaBridge(testStorage.getClusterName(), LOG_SETTING_CLUSTER_NAME, KafkaResources.plainBootstrapAddress(LOG_SETTING_CLUSTER_NAME), 1)
-            .editMetadata()
-                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
-            .endMetadata()
+        resourceManager.createResourceWithWait(KafkaBridgeTemplates.kafkaBridge(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), KafkaResources.plainBootstrapAddress(LOG_SETTING_CLUSTER_NAME), 1)
             .editSpec()
                 .withNewInlineLogging()
                     .withLoggers(BRIDGE_LOGGERS)
@@ -582,10 +570,7 @@ class LogSettingST extends AbstractST {
             )
         );
 
-        Kafka logSettingKafka = KafkaTemplates.kafkaPersistent(LOG_SETTING_CLUSTER_NAME, 3, 1)
-            .editMetadata()
-                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
-            .endMetadata()
+        Kafka logSettingKafka = KafkaTemplates.kafkaPersistent(Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
                     .withNewInlineLogging()
@@ -629,10 +614,7 @@ class LogSettingST extends AbstractST {
             .build();
 
 //         deploying second Kafka here because of MM and MM2 tests
-        Kafka gcLoggingKafka = KafkaTemplates.kafkaPersistent(GC_LOGGING_SET_NAME, 1, 1)
-            .editMetadata()
-                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
-            .endMetadata()
+        Kafka gcLoggingKafka = KafkaTemplates.kafkaPersistent(Environment.TEST_SUITE_NAMESPACE, GC_LOGGING_SET_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewJvmOptions()

@@ -335,7 +335,7 @@ public class MigrationST extends AbstractST {
                         .withStorage(getStorageBasedOnTestCase(withJbodStorage))
                     .endSpec()
                     .build(),
-                KafkaTemplates.kafkaPersistentNodePools(testStorage.getClusterName(), 3, 3)
+                KafkaTemplates.kafkaPersistentNodePools(testStorage.getNamespaceName(), testStorage.getClusterName(), 3, 3)
                     .editMetadata()
                         .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
                         .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "disabled")
@@ -389,7 +389,7 @@ public class MigrationST extends AbstractST {
         LOGGER.info("Creating two topics for immediate and continuous message transmission and KafkaUser for the TLS");
         resourceManager.createResourceWithWait(
                 KafkaTopicTemplates.topic(testStorage).build(),
-                KafkaTopicTemplates.topic(testStorage.getClusterName(), continuousTopicName, 3, 3, 2, testStorage.getNamespaceName()).build(),
+                KafkaTopicTemplates.topic(testStorage.getNamespaceName(), continuousTopicName, testStorage.getClusterName(), 3, 3, 2).build(),
                 KafkaUserTemplates.tlsUser(testStorage)
                     .editOrNewSpec()
                         .withNewKafkaUserAuthorizationSimple()
@@ -410,7 +410,7 @@ public class MigrationST extends AbstractST {
                         .endKafkaUserAuthorizationSimple()
                     .endSpec()
                     .build(),
-                KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), testStorage.getClusterName(), continuousUserName)
+                KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), continuousUserName, testStorage.getClusterName())
                     .editOrNewSpec()
                         .withNewKafkaUserAuthorizationSimple()
                             .addNewAcl()

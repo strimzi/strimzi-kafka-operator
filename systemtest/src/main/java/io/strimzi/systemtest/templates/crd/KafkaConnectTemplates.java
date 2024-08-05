@@ -6,8 +6,8 @@ package io.strimzi.systemtest.templates.crd;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
-import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.connect.build.DockerOutput;
@@ -25,51 +25,70 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Random;
 
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-
 public class KafkaConnectTemplates {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaConnectTemplates.class);
 
+    private static final String METRICS_CONNECT_CONFIG_MAP_SUFFIX = "-connect-metrics";
+    private static final String CONFIG_MAP_KEY = "metrics-config.yml";
+
     private KafkaConnectTemplates() {}
 
-    public static KafkaConnectBuilder kafkaConnect(String name, final String namespaceName, String clusterName, int kafkaConnectReplicas, String pathToConnectConfig) {
-        KafkaConnect kafkaConnect = getKafkaConnectFromYaml(pathToConnectConfig);
-        return defaultKafkaConnect(kafkaConnect, namespaceName, name, clusterName, kafkaConnectReplicas);
+    public static KafkaConnectBuilder kafkaConnect(
+        final String namespaceName,
+        final String connectName,
+        String clusterName,
+        int kafkaConnectReplicas
+    ) {
+        return defaultKafkaConnect(namespaceName, connectName, clusterName, kafkaConnectReplicas);
     }
 
-    public static KafkaConnectBuilder kafkaConnect(String name, final String namespaceName, String clusterName, int kafkaConnectReplicas) {
-        return kafkaConnect(name, namespaceName, clusterName, kafkaConnectReplicas, TestConstants.PATH_TO_KAFKA_CONNECT_CONFIG);
+    public static KafkaConnectBuilder kafkaConnect(
+        final String namespaceName,
+        String clusterName,
+        int kafkaConnectReplicas
+    ) {
+        return kafkaConnect(namespaceName, clusterName, clusterName, kafkaConnectReplicas);
     }
 
-    public static KafkaConnectBuilder kafkaConnect(String name, final String namespaceName, int kafkaConnectReplicas) {
-        return kafkaConnect(name, namespaceName, name, kafkaConnectReplicas, TestConstants.PATH_TO_KAFKA_CONNECT_CONFIG);
+    public static KafkaConnectBuilder kafkaConnectWithMetricsAndFileSinkPlugin(
+        String namespaceName,
+        String connectName,
+        String clusterName,
+        int replicas
+    ) {
+        return kafkaConnectWithFilePlugin(namespaceName, connectName, clusterName, replicas)
+            .editOrNewSpec()
+            .withNewJmxPrometheusExporterMetricsConfig()
+                .withNewValueFrom()
+                    .withNewConfigMapKeyRef(CONFIG_MAP_KEY, getConfigMapName(connectName), false)
+                .endValueFrom()
+            .endJmxPrometheusExporterMetricsConfig()
+            .endSpec();
     }
 
-    public static KafkaConnectBuilder kafkaConnectWithMetrics(String name, String namespaceName, int kafkaConnectReplicas) {
-        return kafkaConnectWithMetrics(name, namespaceName, name, kafkaConnectReplicas);
+    public static ConfigMap connectMetricsConfigMap(String namespaceName, String connectName) {
+        return new ConfigMapBuilder(TestUtils.configMapFromYaml(TestConstants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG, "connect-metrics"))
+            .editOrNewMetadata()
+                .withNamespace(namespaceName)
+                .withName(getConfigMapName(connectName))
+            .endMetadata()
+            .build();
     }
 
-    public static KafkaConnectBuilder kafkaConnectWithMetrics(String name, String namespaceName, String clusterName, int kafkaConnectReplicas) {
-        KafkaConnect kafkaConnect = getKafkaConnectFromYaml(TestConstants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG);
-        createOrReplaceConnectMetrics(namespaceName);
-        return defaultKafkaConnect(kafkaConnect, namespaceName, name, clusterName, kafkaConnectReplicas);
+    private static String getConfigMapName(String connectName) {
+        return connectName + METRICS_CONNECT_CONFIG_MAP_SUFFIX;
     }
 
-    public static KafkaConnectBuilder kafkaConnectWithMetricsAndFileSinkPlugin(String name, String namespaceName, String clusterName, int replicas) {
-        createOrReplaceConnectMetrics(namespaceName);
-        return kafkaConnectWithFilePlugin(name, namespaceName, clusterName, replicas, TestConstants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG);
-    }
-
-    private static void createOrReplaceConnectMetrics(String namespaceName) {
-        ConfigMap metricsCm = TestUtils.configMapFromYaml(TestConstants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG, "connect-metrics");
-        kubeClient().createConfigMapInNamespace(namespaceName, metricsCm);
-    }
-
-    private static KafkaConnectBuilder defaultKafkaConnect(KafkaConnect kafkaConnect, final String namespaceName, String name, String kafkaClusterName, int kafkaConnectReplicas) {
-        return new KafkaConnectBuilder(kafkaConnect)
+    private static KafkaConnectBuilder defaultKafkaConnect(
+        final String namespaceName,
+        String connectName,
+        String kafkaClusterName,
+        int kafkaConnectReplicas
+    ) {
+        return new KafkaConnectBuilder()
             .withNewMetadata()
-                .withName(name)
+                .withName(connectName)
                 .withNamespace(namespaceName)
             .endMetadata()
             .editOrNewSpec()
@@ -77,36 +96,40 @@ public class KafkaConnectTemplates {
                 .withBootstrapServers(KafkaResources.tlsBootstrapAddress(kafkaClusterName))
                 .withReplicas(kafkaConnectReplicas)
                 .withNewTls()
-                    .withTrustedCertificates(new CertSecretSourceBuilder().withSecretName(kafkaClusterName + "-cluster-ca-cert").withCertificate("ca.crt").build())
+                    .withTrustedCertificates(
+                        new CertSecretSourceBuilder()
+                            .withSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaClusterName))
+                            .withCertificate("ca.crt")
+                            .build()
+                    )
                 .endTls()
-                .addToConfig("group.id", KafkaConnectResources.componentName(name))
-                .addToConfig("offset.storage.topic", KafkaConnectResources.configStorageTopicOffsets(name))
-                .addToConfig("config.storage.topic", KafkaConnectResources.metricsAndLogConfigMapName(name))
-                .addToConfig("status.storage.topic", KafkaConnectResources.configStorageTopicStatus(name))
+                .addToConfig("group.id", KafkaConnectResources.componentName(connectName))
+                .addToConfig("offset.storage.topic", KafkaConnectResources.configStorageTopicOffsets(connectName))
+                .addToConfig("config.storage.topic", KafkaConnectResources.metricsAndLogConfigMapName(connectName))
+                .addToConfig("status.storage.topic", KafkaConnectResources.configStorageTopicStatus(connectName))
+                .addToConfig("config.storage.replication.factor", "-1")
+                .addToConfig("offset.storage.replication.factor", "-1")
+                .addToConfig("status.storage.replication.factor", "-1")
                 .withNewInlineLogging()
                     .addToLoggers("connect.root.logger.level", "DEBUG")
                 .endInlineLogging()
             .endSpec();
     }
 
-    public static KafkaConnectBuilder kafkaConnectWithFilePlugin(String clusterName, String namespaceName, int replicas) {
-        return kafkaConnectWithFilePlugin(clusterName, namespaceName, clusterName, replicas);
-    }
-
-    public static KafkaConnectBuilder kafkaConnectWithFilePlugin(String name, String namespaceName, String clusterName, int replicas) {
-        return kafkaConnectWithFilePlugin(name, namespaceName, clusterName, replicas, TestConstants.PATH_TO_KAFKA_CONNECT_CONFIG);
+    public static KafkaConnectBuilder kafkaConnectWithFilePlugin(String namespaceName, String clusterName, int replicas) {
+        return kafkaConnectWithFilePlugin(namespaceName, clusterName, clusterName, replicas);
     }
 
     /**
      * Method for creating the KafkaConnect builder with File plugin - using the KafkaConnect build feature.
-     * @param name Name for the KafkaConnect resource
      * @param namespaceName namespace, where the KafkaConnect resource will be deployed
+     * @param connectName Name for the KafkaConnect resource
      * @param clusterName name of the Kafka cluster
      * @param replicas number of KafkaConnect replicas
      * @return KafkaConnect builder with File plugin
      */
-    public static KafkaConnectBuilder kafkaConnectWithFilePlugin(String name, String namespaceName, String clusterName, int replicas, String pathToConnectConfig) {
-        return addFileSinkPluginOrImage(namespaceName, kafkaConnect(name, namespaceName, clusterName, replicas, pathToConnectConfig));
+    public static KafkaConnectBuilder kafkaConnectWithFilePlugin(String namespaceName, String connectName, String clusterName, int replicas) {
+        return addFileSinkPluginOrImage(namespaceName, kafkaConnect(namespaceName, connectName, clusterName, replicas));
     }
 
     /**
@@ -165,9 +188,5 @@ public class KafkaConnectTemplates {
         }
 
         return dockerOutputBuilder.build();
-    }
-
-    private static KafkaConnect getKafkaConnectFromYaml(String yamlPath) {
-        return TestUtils.configFromYaml(yamlPath, KafkaConnect.class);
     }
 }

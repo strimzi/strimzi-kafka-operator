@@ -51,10 +51,9 @@ class NamespaceRbacScopeOperatorST extends AbstractST {
                 KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
             )
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getNamespaceName(), testStorage.getClusterName(), 3, 3)
             .editMetadata()
                 .addToLabels("app", "strimzi")
-                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .build());
 

@@ -93,7 +93,7 @@ public class KafkaNodePoolST extends AbstractST {
                     .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[91-93]"))
                 .endMetadata()
                 .build(),
-            KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1).build()
+            KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), testStorage.getClusterName(), 1, 1).build()
         );
 
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), nodePoolNameInitial), 2);
@@ -203,11 +203,11 @@ public class KafkaNodePoolST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.mixedPoolPersistentStorage(testStorage.getNamespaceName(), volatileRolePoolName, testStorage.getClusterName(), 3).build(),
-            KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1).build()
+            KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), testStorage.getClusterName(), 1, 1).build()
         );
 
         LOGGER.info("Create KafkaTopic {}/{} with 6 replicas, spawning across all brokers", testStorage.getNamespaceName(), testStorage.getTopicName());
-        final KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 1, 6, testStorage.getNamespaceName()).build();
+        final KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName(), 1, 6).build();
         resourceManager.createResourceWithWait(kafkaTopic);
 
         LOGGER.info("wait for Kafka pods stability");
@@ -285,7 +285,7 @@ public class KafkaNodePoolST extends AbstractST {
         resourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), poolAName, testStorage.getClusterName(), 1).build(),
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), poolB1Name, testStorage.getClusterName(), brokerNodePoolReplicaCount).build(),
-            KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 3)
+            KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), testStorage.getClusterName(), 1, 3)
                 .editOrNewSpec()
                     .editKafka()
                         .addToConfig("auto.create.topics.enable", "false")  // topics replica count helps ensure there are enough brokers
@@ -444,7 +444,7 @@ public class KafkaNodePoolST extends AbstractST {
 
     private void transmitMessagesWithNewTopicAndClean(TestStorage testStorage, int topicReplicas) {
         final String topicName = testStorage.getTopicName() + "-replicas-" + topicReplicas + "-" + hashStub(String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
-        final KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(testStorage.getClusterName(), topicName, 1, topicReplicas, testStorage.getNamespaceName()).build();
+        final KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(testStorage.getNamespaceName(), topicName, testStorage.getClusterName(), 1, topicReplicas).build();
         resourceManager.createResourceWithWait(kafkaTopic);
 
         LOGGER.info("Transmit messages with Kafka {}/{} using topic {}", testStorage.getNamespaceName(), testStorage.getClusterName(), topicName);

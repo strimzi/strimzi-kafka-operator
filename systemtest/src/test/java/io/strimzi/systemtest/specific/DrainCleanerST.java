@@ -56,13 +56,9 @@ public class DrainCleanerST extends AbstractST {
                 KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), replicas).build()
             )
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), replicas)
-            .editMetadata()
-                .withNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE)
-            .endMetadata()
-            .build());
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getClusterName(), replicas).build());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), TestConstants.DRAIN_CLEANER_NAMESPACE).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getTopicName(), testStorage.getClusterName()).build());
 
         drainCleaner.createDrainCleaner();
         // allow NetworkPolicies for the webhook in case that we have "default to deny all" mode enabled

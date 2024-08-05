@@ -134,21 +134,21 @@ public class HttpBridgeCorsST extends AbstractST {
                 KafkaNodePoolTemplates.controllerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getControllerPoolName(), suiteTestStorage.getClusterName(), 3).build()
             )
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(suiteTestStorage.getClusterName(), 1, 3)
-            .editMetadata()
-                .withNamespace(suiteTestStorage.getNamespaceName())
-            .endMetadata()
-            .build());
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(suiteTestStorage.getNamespaceName(), suiteTestStorage.getClusterName(), 1, 3).build());
 
         resourceManager.createResourceWithWait(ScraperTemplates.scraperPod(suiteTestStorage.getNamespaceName(), suiteTestStorage.getScraperName()).build());
         suiteTestStorage.addToTestStorage(TestConstants.SCRAPER_POD_KEY, kubeClient().listPodsByPrefixInName(suiteTestStorage.getNamespaceName(), suiteTestStorage.getScraperName()).get(0).getMetadata().getName());
 
-        resourceManager.createResourceWithWait(KafkaBridgeTemplates.kafkaBridgeWithCors(suiteTestStorage.getClusterName(), KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()),
-            1, ALLOWED_ORIGIN, null)
-            .editMetadata()
-                .withNamespace(suiteTestStorage.getNamespaceName())
-            .endMetadata()
-            .build());
+        resourceManager.createResourceWithWait(
+            KafkaBridgeTemplates.kafkaBridgeWithCors(
+                suiteTestStorage.getNamespaceName(),
+                suiteTestStorage.getClusterName(),
+                KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()),
+                1,
+                ALLOWED_ORIGIN,
+                null
+            ).build()
+        );
 
         NetworkPolicyResource.allowNetworkPolicySettingsForBridgeScraper(suiteTestStorage.getNamespaceName(), suiteTestStorage.getScraperPodName(), KafkaBridgeResources.componentName(suiteTestStorage.getClusterName()));
 

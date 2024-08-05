@@ -87,7 +87,7 @@ public class UserOperatorPerformanceUtils {
         for (int i = startPointer; i < endPointer; i++) {
             if (userAuthType.equals(UserAuthType.Tls)) {
                 usersList.add(
-                    KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), userName + "-" + i)
+                    KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), userName + "-" + i, testStorage.getClusterName())
                         .editOrNewSpec()
                             .withAuthorization(usersAcl)
                         .endSpec()
@@ -95,7 +95,7 @@ public class UserOperatorPerformanceUtils {
                 );
             } else {
                 usersList.add(
-                    KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), testStorage.getClusterName(), userName + "-" + i)
+                    KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), userName + "-" + i, testStorage.getClusterName())
                         .editOrNewSpec()
                             .withAuthorization(usersAcl)
                         .endSpec()

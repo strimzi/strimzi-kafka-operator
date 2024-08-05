@@ -4,11 +4,7 @@
  */
 package io.strimzi.systemtest.templates.crd;
 
-import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceBuilder;
-import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.test.TestUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,25 +13,22 @@ public class KafkaRebalanceTemplates {
 
     private KafkaRebalanceTemplates() {}
 
-    public static KafkaRebalanceBuilder kafkaRebalance(String name) {
-        KafkaRebalance kafkaRebalance = getKafkaRebalanceFromYaml(TestConstants.PATH_TO_KAFKA_REBALANCE_CONFIG);
-        return defaultKafkaRebalance(kafkaRebalance, name);
+    public static KafkaRebalanceBuilder kafkaRebalance(String namespaceName, String clusterName) {
+        return defaultKafkaRebalance(namespaceName, clusterName);
     }
 
-    private static KafkaRebalanceBuilder defaultKafkaRebalance(KafkaRebalance kafkaRebalance, String name) {
+    private static KafkaRebalanceBuilder defaultKafkaRebalance(String namespaceName, String clusterName) {
 
         Map<String, String> kafkaRebalanceLabels = new HashMap<>();
-        kafkaRebalanceLabels.put("strimzi.io/cluster", name);
+        kafkaRebalanceLabels.put("strimzi.io/cluster", clusterName);
 
-        return new KafkaRebalanceBuilder(kafkaRebalance)
+        return new KafkaRebalanceBuilder()
             .editMetadata()
-                .withName(name)
-                .withNamespace(ResourceManager.kubeClient().getNamespace())
+                .withName(clusterName)
+                .withNamespace(namespaceName)
                 .withLabels(kafkaRebalanceLabels)
-            .endMetadata();
-    }
-
-    private static KafkaRebalance getKafkaRebalanceFromYaml(String yamlPath) {
-        return TestUtils.configFromYaml(yamlPath, KafkaRebalance.class);
+            .endMetadata()
+            .withNewSpec()
+            .endSpec();
     }
 }

@@ -7,12 +7,8 @@ package io.strimzi.systemtest.templates.crd;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerBuilder;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.test.TestUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 
@@ -22,22 +18,31 @@ public class KafkaMirrorMakerTemplates {
 
     private KafkaMirrorMakerTemplates() {}
 
-    public static KafkaMirrorMakerBuilder kafkaMirrorMaker(String name, String sourceBootstrapServer, String targetBootstrapServer, String groupId, int mirrorMakerReplicas, boolean tlsListener) {
-        KafkaMirrorMaker kafkaMirrorMaker = getKafkaMirrorMakerFromYaml(TestConstants.PATH_TO_KAFKA_MIRROR_MAKER_CONFIG);
-        return defaultKafkaMirrorMaker(kafkaMirrorMaker, name, sourceBootstrapServer, targetBootstrapServer, groupId, mirrorMakerReplicas, tlsListener);
+    public static KafkaMirrorMakerBuilder kafkaMirrorMaker(
+        String namespaceName,
+        String mm1Name,
+        String sourceBootstrapServer,
+        String targetBootstrapServer,
+        String groupId,
+        int mirrorMakerReplicas,
+        boolean tlsListener
+    ) {
+        return defaultKafkaMirrorMaker(namespaceName, mm1Name, sourceBootstrapServer, targetBootstrapServer, groupId, mirrorMakerReplicas, tlsListener);
     }
 
-    private static KafkaMirrorMakerBuilder defaultKafkaMirrorMaker(KafkaMirrorMaker kafkaMirrorMaker,
-                                                                   String name,
-                                                                   String sourceBootstrapServer,
-                                                                   String targetBootstrapServer,
-                                                                   String groupId,
-                                                                   int kafkaMirrorMakerReplicas,
-                                                                   boolean tlsListener) {
-        KafkaMirrorMakerBuilder kmmb = new KafkaMirrorMakerBuilder(kafkaMirrorMaker)
+    private static KafkaMirrorMakerBuilder defaultKafkaMirrorMaker(
+        String namespaceName,
+        String mm1Name,
+        String sourceBootstrapServer,
+        String targetBootstrapServer,
+        String groupId,
+        int kafkaMirrorMakerReplicas,
+        boolean tlsListener
+    ) {
+        KafkaMirrorMakerBuilder kmmb = new KafkaMirrorMakerBuilder()
             .withNewMetadata()
-                .withName(name)
-                .withNamespace(ResourceManager.kubeClient().getNamespace())
+                .withName(mm1Name)
+                .withNamespace(namespaceName)
             .endMetadata()
             .editSpec()
                 .withVersion(Environment.ST_KAFKA_VERSION)
@@ -69,9 +74,5 @@ public class KafkaMirrorMakerTemplates {
 
         return kmmb;
 
-    }
-
-    private static KafkaMirrorMaker getKafkaMirrorMakerFromYaml(String yamlPath) {
-        return TestUtils.configFromYaml(yamlPath, KafkaMirrorMaker.class);
     }
 }
