@@ -20,6 +20,7 @@ import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.NodeRef;
+import io.strimzi.operator.cluster.model.cruisecontrol.ApiCredentials;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
@@ -36,14 +37,12 @@ import io.strimzi.operator.common.model.PasswordGenerator;
 import io.vertx.core.Future;
 
 import java.time.Clock;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_AUTH_FILE_KEY;
-import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_NAME_KEY;
-import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_PASSWORD_KEY;
 
 /**
  * Class used for reconciliation of Cruise Control. This class contains both the steps of the Cruise Control
@@ -137,7 +136,7 @@ public class CruiseControlReconciler {
                 .compose(i -> serviceAccount())
                 .compose(i -> configMap())
                 .compose(i -> certificatesSecret(clock))
-                .compose(i -> apiSecret())
+                .compose(i -> apiSecrets())
                 .compose(i -> service())
                 .compose(i -> deployment(isOpenShift, imagePullPolicy, imagePullSecrets))
                 .compose(i -> waitForDeploymentReadiness());
@@ -238,52 +237,74 @@ public class CruiseControlReconciler {
     }
 
     /**
-     * Cruise Control API secret contains REST API credentials and the authentication file, while the Topic Operator API secret only contains its admin user's credentials.
-     * That way, each component is responsible for managing its credentials, and this method is responsible for keeping the Cruise Control's authentication file in sync.
+     * Generates a new centralized Cruise Control API secret containing an authentication file comprising of all
+     * REST API credentials, it is generated using the following API secrets:
      *
-     * If Cruise Control secret is present and there are no changes to the Topic Operator's secret content, we reuse the old Cruise Control secret's content.
-     * If Cruise Control secret is not present or there are changes in the Topic Operator's secret content, we generate a new Cruise Control secret, which includes the Topic Operator's credentials.
-     * 
-     * If the Topic Operator component is not enabled and Cruise Control's secret is present, we reuse the old Cruise Control secret's content. 
-     * If the Topic Operator component is not enabled and Cruise Control's secret is not present, we generate a new Cruise Control secret.
-     * 
-     * In any case, we generate the Cruise Control secret's content hash, that is later used to detect changes that require a pod restart.
+     *  (1) Previous Centralized API secret
+     *      The centralized API secret contains passwords for the healthcheck and rebalance operator users as well
+     *      the authentication file comprising of all REST API credentials.
+     *
+     *  (2) User-managed API secret
+     *      The user-managed API secret contains a custom authentication file and can specify any number of API users.
+     *
+     *  (3) Topic Operator-managed API secret
+     *      The Topic Operator-managed API secret contains a username and password for the Topic Operator user, which
+     *      has ADMIN role by default.
+     *
+     * If there are any changes to the API user content in any of the secrets, the centralized Cruise Control secret is
+     * updated with the new changes. Otherwise the content in the centralized Cruise Control secret remains the same.
+     *
+     * Strimzi maintains a hash of the centralized Cruise Control API secret content to detect changes that require a pod restart.
      *
      * @return Future which completes when the reconciliation is done.
      */
-    protected Future<Void> apiSecret() {
+    protected Future<Void> apiSecrets() {
         if (cruiseControl != null) {
+
+            Integer centralizedApiSecretIndex = 0;:
+            Integer userManagedApiSecretIndex;
+            Integer topicOperatorManagedApiSecretIndex;
+
+            List<Future<Secret>> futures = new ArrayList<>();
+            // Centralized API secret
+            futures.add(secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name())));
+
+            if (cruiseControl.apiUsersEnabled()) {
+                // User-managed API secret
+                futures.add(secretOperator.getAsync(reconciliation.namespace(), cruiseControl.getUserManagedApiSecretName()));
+                userManagedApiSecretIndex = futures.size() - 1;
+            } else {
+                userManagedApiSecretIndex = null;
+            }
+
             if (isTopicOperatorEnabled) {
-                return Future.join(
-                    secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name())),
-                    secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name()))
-                ).compose(
+                // Topic operator-managed API secret
+                futures.add(secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityTopicOperatorCcApiSecretName(reconciliation.name())));
+                topicOperatorManagedApiSecretIndex = futures.size() - 1;
+            } else {
+                topicOperatorManagedApiSecretIndex = null;
+            }
+
+            return Future.join(futures)
+                .compose(
                     compositeFuture -> {
-                        Secret oldSecret = compositeFuture.resultAt(0);
-                        Secret topicOperatorApiSecret = compositeFuture.resultAt(1);
-                        String cruiseControlAuthFile = oldSecret != null ? Util.decodeFromBase64(oldSecret.getData().get(API_AUTH_FILE_KEY)) : null;
-                        CruiseControl.CruiseControlUser toAdminUser = topicOperatorApiSecret != null
-                            ? new CruiseControl.CruiseControlUser(Util.decodeFromBase64(topicOperatorApiSecret.getData().get(API_TO_ADMIN_NAME_KEY)),
-                            Util.decodeFromBase64(topicOperatorApiSecret.getData().get(API_TO_ADMIN_PASSWORD_KEY)))
-                            : null;
-                        // generate a new CC API secret if there is no CC auth file, or there is no TO API secret, or TO admin password changed
-                        Secret newSecret = cruiseControlAuthFile == null || toAdminUser == null || !cruiseControlAuthFile.contains(toAdminUser.password())
-                            ? cruiseControl.generateApiSecret(passwordGenerator, null, toAdminUser)
-                            : cruiseControl.generateApiSecret(passwordGenerator, oldSecret, null);
-                        this.apiSecretHash = ReconcilerUtils.hashSecretContent(newSecret);
-                        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()), newSecret)
+                        Secret oldCentralizedApiSecret = compositeFuture.resultAt(centralizedApiSecretIndex);
+                        Secret userManagedApiSecret = userManagedApiSecretIndex != null ? compositeFuture.resultAt(userManagedApiSecretIndex) : null;
+                        Secret topicOperatorManagedApiSecret = topicOperatorManagedApiSecretIndex != null ? compositeFuture.resultAt(topicOperatorManagedApiSecretIndex) : null;
+
+                        Map<String, ApiCredentials.Entry> apiCredentials = new HashMap<>();
+                        apiCredentials.putAll(ApiCredentials.generateCoManagedApiCredentials(passwordGenerator, oldCentralizedApiSecret));
+                        apiCredentials.putAll(ApiCredentials.generateUserManagedApiCredentials(userManagedApiSecret, cruiseControl.getUserManagedApiSecretKey()));
+                        apiCredentials.putAll(ApiCredentials.generateToManagedApiCredentials(topicOperatorManagedApiSecret));
+
+                        Map<String, String> mapWithApiCredentials = ApiCredentials.generateMapWithApiCredentials(apiCredentials);
+                        Secret newCentralizedApiUsersSecret = cruiseControl.generateApiSecret(mapWithApiCredentials);
+
+                        this.apiSecretHash = ReconcilerUtils.hashSecretContent(newCentralizedApiUsersSecret);
+                        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()), newCentralizedApiUsersSecret)
                             .map((Void) null);
                     }
                 );
-            } else {
-                return secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()))
-                    .compose(oldSecret -> {
-                        Secret newSecret = cruiseControl.generateApiSecret(passwordGenerator, oldSecret, null);
-                        this.apiSecretHash = ReconcilerUtils.hashSecretContent(newSecret);
-                        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()), newSecret)
-                            .map((Void) null);
-                    });
-            }
         } else {
             return secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()), null)
                     .map((Void) null);

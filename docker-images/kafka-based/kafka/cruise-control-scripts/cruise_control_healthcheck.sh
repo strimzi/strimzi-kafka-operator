@@ -11,7 +11,7 @@ else
 fi
 
 if [ "$STRIMZI_CC_API_AUTH_ENABLED" = true ] ; then
-  ARGS+=(--user "${API_USER}:$(cat /opt/cruise-control/api-auth-config/cruise-control.apiUserPassword)")
+  ARGS+=(--user "${API_HEALTHCHECK_USERNAME}:$(cat /opt/cruise-control/api-auth-config/healthcheck.password)")
 fi
 
 curl "${ARGS[@]}" "${SCHEME}://localhost:${API_PORT}${API_HEALTHCHECK_PATH}"

@@ -538,5 +538,4 @@ public class Util {
     public static String fromAsciiBytes(byte[] bytes) {
         return new String(bytes, StandardCharsets.US_ASCII);
     }
-
 }

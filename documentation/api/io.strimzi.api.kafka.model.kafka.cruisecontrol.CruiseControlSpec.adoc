@@ -144,6 +144,61 @@ spec:
 # ...
 ----
 
+[id='property-cruise-control-capacity-api-users-{context}']
+= API users
+
+Advanced users can create their own REST API users for safely accessing a secured Cruise Control REST API directly.
+
+This allows roles and permissions to be defined to allow advanced users and third-party applications to access the Cruise Control REST API without having to disable HTTP basic authentication.
+
+There are a couple use cases where advanced users would want to access the Cruise Control API without disabling API security:
+
+* Monitoring a Strimzi-managed Kafka cluster with the Cruise Control UI.
+* Gathering Cruise Control specific statistical information that is not currently available via Strimzi Operator or Cruise Control sensor metrics, for examplem detailed information surrounding cluster and partition load and user tasks.
+* Debugging Cruise Control in a secured environment.
+
+For example, advanced users could define their custom API users in a secret by putting their API user credentials in the Jetty's HashLoginService's file format in a text file called `cruise-control-auth.txt` like this:
+
+[source]
+----
+userOne: passwordOne, USER
+userTwo: passwordTwo, VIEWER
+----
+
+Then use this file to create the secret using the following command:
+
+[source]
+----
+kubectl create secret generic cruise-control-api-users-secret  --from-file=key=cruise-control-auth.txt
+----
+
+Then reference the secret in the `spec.cruiseControl.apiUsers` section of the Kafka resource.
+
+The schema would look like this:
+
+.Example Cruise Control apiUsers configuration
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  cruiseControl:
+    # ...
+    apiUsers:
+      type: hashloginservice
+      valueFrom:
+        secretKeyRef:
+          name: cruise-control-api-users-secret
+          key: key
+     ...
+----
+
+Strimzi would then decode and uses the contents of this secret to populate the Cruise Control's API auth credentials file.
+
+>>>>>>> ee9f25276 (Add support for custom CC API users)
 [id='property-cruise-control-broker-capacity-{context}']
 = Configuring capacity limits
 

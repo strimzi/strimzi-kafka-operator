@@ -98,6 +98,12 @@ spec:
         configMapKeyRef:
           name: cruise-control-metrics
           key: metrics-config.yml
+    apiUsers:
+      type: hashloginservice <11>
+      valueFrom: <12>
+        secretKeyRef:
+          name: cruise-control-api-users-secret
+          key: key
 # ...
 ----
 <1> Capacity limits for broker resources.
@@ -110,6 +116,8 @@ spec:
 <8> Template customization. Here a pod is scheduled with additional security attributes.
 <9> Healthchecks to know when to restart a container (liveness) and when a container can accept traffic (readiness).
 <10> Prometheus metrics enabled. In this example, metrics are configured for the Prometheus JMX Exporter (the default metrics exporter).
+<11> Format type of the data for the API user configuration, currently only Jetty's HashLoginService format is supported since that is the format which Cruise Control uses for its API user configuration.
+<12> Reference to secret containing API user configuration.
 
 . Create or update the resource:
 +

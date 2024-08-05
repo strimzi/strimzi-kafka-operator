@@ -38,7 +38,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
     "image", "tlsSidecar", "resources", "livenessProbe", "readinessProbe", "jvmOptions", "logging", "template",
-    "brokerCapacity", "config", "metricsConfig"})
+    "brokerCapacity", "config", "metricsConfig", "apiUsers"})
 @EqualsAndHashCode
 @ToString
 public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving {
@@ -61,7 +61,8 @@ public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurabl
     private BrokerCapacity brokerCapacity;
     private Map<String, Object> config = new HashMap<>(0);
     private MetricsConfig metricsConfig;
-    private Map<String, Object> additionalProperties;
+    private ApiUsers apiUsers;
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The container image used for Cruise Control pods. "
         + "If no image name is explicitly specified, the image name corresponds to the name specified in the Cluster Operator configuration. "
@@ -109,6 +110,16 @@ public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurabl
 
     public void setConfig(Map<String, Object> config) {
         this.config = config;
+    }
+
+    @Description("The Cruise Control `ApiUsers` configuration")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ApiUsers getApiUsers() {
+        return this.apiUsers;
+    }
+
+    public void setApiUsers(ApiUsers apiUsers) {
+        this.apiUsers = apiUsers;
     }
 
     @Description("Metrics configuration.")

@@ -37,9 +37,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_NAME;
-import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_NAME_KEY;
-import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_PASSWORD_KEY;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.TOPIC_OPERATOR_PASSWORD_KEY;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.TOPIC_OPERATOR_USERNAME;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.TOPIC_OPERATOR_USERNAME_KEY;
 import static java.lang.String.format;
 
 /**
@@ -303,8 +303,8 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
             // So if the secret with credentials already exists, we re-use the values
             // But we use the new secret to update labels etc. if needed
             var data = oldSecret.getData();
-            var username = data.get(API_TO_ADMIN_NAME_KEY);
-            var password = data.get(API_TO_ADMIN_PASSWORD_KEY);
+            var username = data.get(TOPIC_OPERATOR_USERNAME_KEY);
+            var password = data.get(TOPIC_OPERATOR_PASSWORD_KEY);
             if (username == null || username.isBlank() || password == null || password.isBlank()) {
                 throw new RuntimeException(format("Secret %s is invalid", oldSecret.getMetadata().getName()));
             } else {
@@ -314,8 +314,8 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
             PasswordGenerator passwordGenerator = new PasswordGenerator(16);
             String apiToAdminPassword = passwordGenerator.generate();
             return Map.of(
-                API_TO_ADMIN_NAME_KEY, Util.encodeToBase64(API_TO_ADMIN_NAME),
-                API_TO_ADMIN_PASSWORD_KEY, Util.encodeToBase64(apiToAdminPassword)
+                    TOPIC_OPERATOR_USERNAME_KEY, Util.encodeToBase64(TOPIC_OPERATOR_USERNAME),
+                    TOPIC_OPERATOR_PASSWORD_KEY, Util.encodeToBase64(apiToAdminPassword)
             );
         }
     }
