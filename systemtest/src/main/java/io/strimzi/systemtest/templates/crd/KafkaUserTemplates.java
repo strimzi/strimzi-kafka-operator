@@ -14,11 +14,11 @@ public class KafkaUserTemplates {
     private KafkaUserTemplates() {}
 
     public static KafkaUserBuilder tlsUser(TestStorage testStorage) {
-        return tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getUsername());
+        return tlsUser(testStorage.getNamespaceName(), testStorage.getUsername(), testStorage.getClusterName());
     }
 
-    public static KafkaUserBuilder tlsUser(String namespaceName, String clusterName, String name) {
-        return defaultUser(namespaceName, clusterName, name)
+    public static KafkaUserBuilder tlsUser(String namespaceName, String userName, String clusterName) {
+        return defaultUser(namespaceName, userName, clusterName)
             .withNewSpec()
                 .withNewKafkaUserTlsClientAuthentication()
                 .endKafkaUserTlsClientAuthentication()
@@ -26,29 +26,29 @@ public class KafkaUserTemplates {
     }
 
     public static KafkaUserBuilder scramShaUser(TestStorage testStorage) {
-        return scramShaUser(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getUsername());
+        return scramShaUser(testStorage.getNamespaceName(), testStorage.getUsername(), testStorage.getClusterName());
     }
 
-    public static KafkaUserBuilder scramShaUser(String namespaceName, String clusterName, String name) {
-        return defaultUser(namespaceName, clusterName, name)
+    public static KafkaUserBuilder scramShaUser(String namespaceName, String userName, String clusterName) {
+        return defaultUser(namespaceName, userName, clusterName)
             .withNewSpec()
                 .withNewKafkaUserScramSha512ClientAuthentication()
                 .endKafkaUserScramSha512ClientAuthentication()
             .endSpec();
     }
 
-    public static KafkaUserBuilder tlsExternalUser(final String namespaceName, final String clusterName, final String name) {
-        return defaultUser(namespaceName, clusterName, name)
+    public static KafkaUserBuilder tlsExternalUser(final String namespaceName, final String userName, final String clusterName) {
+        return defaultUser(namespaceName, userName, clusterName)
             .withNewSpec()
                 .withNewKafkaUserTlsExternalClientAuthentication()
                 .endKafkaUserTlsExternalClientAuthentication()
             .endSpec();
     }
 
-    public static KafkaUserBuilder defaultUser(String namespaceName, String clusterName, String name) {
+    public static KafkaUserBuilder defaultUser(String namespaceName, String userName, String clusterName) {
         return new KafkaUserBuilder()
             .withNewMetadata()
-                .withName(name)
+                .withName(userName)
                 .withNamespace(namespaceName)
                 .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, clusterName)
             .endMetadata();

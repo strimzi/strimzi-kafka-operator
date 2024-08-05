@@ -4,38 +4,32 @@
  */
 package io.strimzi.systemtest.templates.crd;
 
-import io.strimzi.api.kafka.model.bridge.KafkaBridge;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeBuilder;
-import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.test.TestUtils;
 
 public class KafkaBridgeTemplates {
 
     private KafkaBridgeTemplates() {}
 
-    public static KafkaBridgeBuilder kafkaBridge(String name, String bootstrap, int kafkaBridgeReplicas) {
-        return kafkaBridge(name, name, bootstrap, kafkaBridgeReplicas);
+    private final static int DEFAULT_HTTP_PORT = 8080;
+
+    public static KafkaBridgeBuilder kafkaBridge(
+        String namespaceName,
+        String bridgeName,
+        String bootstrap,
+        int kafkaBridgeReplicas
+    ) {
+        return defaultKafkaBridge(namespaceName, bridgeName, bootstrap, kafkaBridgeReplicas);
     }
 
-    public static KafkaBridgeBuilder kafkaBridge(String name, String clusterName, String bootstrap, int kafkaBridgeReplicas) {
-        KafkaBridge kafkaBridge = getKafkaBridgeFromYaml(TestConstants.PATH_TO_KAFKA_BRIDGE_CONFIG);
-        return defaultKafkaBridge(kafkaBridge, name, clusterName, bootstrap, kafkaBridgeReplicas);
-    }
-
-    public static KafkaBridgeBuilder kafkaBridgeWithCors(String name, String bootstrap, int kafkaBridgeReplicas,
-                                                          String allowedCorsOrigin, String allowedCorsMethods) {
-        return kafkaBridgeWithCors(name, name, bootstrap, kafkaBridgeReplicas, allowedCorsOrigin, allowedCorsMethods);
-    }
-
-    public static KafkaBridgeBuilder kafkaBridgeWithCors(String name, String clusterName, String bootstrap,
-                                                  int kafkaBridgeReplicas, String allowedCorsOrigin,
-                                                  String allowedCorsMethods) {
-        KafkaBridge kafkaBridge = getKafkaBridgeFromYaml(TestConstants.PATH_TO_KAFKA_BRIDGE_CONFIG);
-
-        KafkaBridgeBuilder kafkaBridgeBuilder = defaultKafkaBridge(kafkaBridge, name, clusterName, bootstrap, kafkaBridgeReplicas);
-
-        kafkaBridgeBuilder
+    public static KafkaBridgeBuilder kafkaBridgeWithCors(
+        String namespaceName,
+        String bridgeName,
+        String bootstrap,
+        int kafkaBridgeReplicas,
+        String allowedCorsOrigin,
+        String allowedCorsMethods
+    ) {
+        return defaultKafkaBridge(namespaceName, bridgeName, bootstrap, kafkaBridgeReplicas)
             .editSpec()
                 .editHttp()
                     .withNewCors()
@@ -44,39 +38,40 @@ public class KafkaBridgeTemplates {
                     .endCors()
                 .endHttp()
             .endSpec();
-
-        return kafkaBridgeBuilder;
     }
 
-    public static KafkaBridgeBuilder kafkaBridgeWithMetrics(String name, String clusterName, String bootstrap) {
-        return kafkaBridgeWithMetrics(name, clusterName, bootstrap, 1);
-    }
-
-    public static KafkaBridgeBuilder kafkaBridgeWithMetrics(String name, String clusterName, String bootstrap, int kafkaBridgeReplicas) {
-        KafkaBridge kafkaBridge = getKafkaBridgeFromYaml(TestConstants.PATH_TO_KAFKA_BRIDGE_CONFIG);
-
-        return defaultKafkaBridge(kafkaBridge, name, clusterName, bootstrap, kafkaBridgeReplicas)
+    public static KafkaBridgeBuilder kafkaBridgeWithMetrics(
+        String namespaceName,
+        String bridgeName,
+        String bootstrap,
+        int kafkaBridgeReplicas
+    ) {
+        return defaultKafkaBridge(namespaceName, bridgeName, bootstrap, kafkaBridgeReplicas)
             .editSpec()
                 .withEnableMetrics(true)
             .endSpec();
     }
 
-    private static KafkaBridgeBuilder defaultKafkaBridge(KafkaBridge kafkaBridge, String name, String kafkaClusterName, String bootstrap, int kafkaBridgeReplicas) {
-        return new KafkaBridgeBuilder(kafkaBridge)
+    private static KafkaBridgeBuilder defaultKafkaBridge(
+        String namespaceName,
+        String bridgeName,
+        String bootstrap,
+        int kafkaBridgeReplicas
+    ) {
+        return new KafkaBridgeBuilder()
             .withNewMetadata()
-                .withName(name)
-                .withNamespace(ResourceManager.kubeClient().getNamespace())
+                .withName(bridgeName)
+                .withNamespace(namespaceName)
             .endMetadata()
-            .editSpec()
+            .withNewSpec()
                 .withBootstrapServers(bootstrap)
                 .withReplicas(kafkaBridgeReplicas)
                 .withNewInlineLogging()
                     .addToLoggers("bridge.root.logger", "DEBUG")
                 .endInlineLogging()
+                .withNewHttp()
+                    .withPort(DEFAULT_HTTP_PORT)
+                .endHttp()
             .endSpec();
-    }
-
-    private static KafkaBridge getKafkaBridgeFromYaml(String yamlPath) {
-        return TestUtils.configFromYaml(yamlPath, KafkaBridge.class);
     }
 }

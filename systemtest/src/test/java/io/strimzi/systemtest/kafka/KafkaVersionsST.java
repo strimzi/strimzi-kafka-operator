@@ -62,10 +62,7 @@ public class KafkaVersionsST extends AbstractST {
                 KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
             )
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
-            .editMetadata()
-                .withNamespace(testStorage.getNamespaceName())
-            .endMetadata()
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editOrNewSpec()
                 .editOrNewKafka()
                     .withVersion(testKafkaVersion.version())
@@ -97,7 +94,7 @@ public class KafkaVersionsST extends AbstractST {
             .build()
         );
 
-        KafkaUser writeUser = KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaUserWrite)
+        KafkaUser writeUser = KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), kafkaUserWrite, testStorage.getClusterName())
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -111,7 +108,7 @@ public class KafkaVersionsST extends AbstractST {
             .endSpec()
             .build();
 
-        KafkaUser readUser = KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaUserRead)
+        KafkaUser readUser = KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), kafkaUserRead, testStorage.getClusterName())
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -130,7 +127,7 @@ public class KafkaVersionsST extends AbstractST {
             .endSpec()
             .build();
 
-        KafkaUser tlsReadWriteUser = KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaUserReadWriteTls)
+        KafkaUser tlsReadWriteUser = KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), kafkaUserReadWriteTls, testStorage.getClusterName())
                 .editSpec()
                     .withNewKafkaUserAuthorizationSimple()
                         .addNewAcl()

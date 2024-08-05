@@ -90,7 +90,7 @@ public class TopicReplicasChangeST extends AbstractST {
         final int topicReplicationFactor = 5; // Intentionally set higher than available brokers to induce failure
 
         // Create and attempt to deploy a KafkaTopic with an invalid replication factor
-        KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), testStorage.getTopicName(), topicPartitions, topicReplicationFactor, 1, sharedTestStorage.getNamespaceName()).build();
+        KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), sharedTestStorage.getClusterName(), topicPartitions, topicReplicationFactor, 1).build();
         resourceManager.createResourceWithoutWait(kafkaTopic);
 
         // Validate topic creation in Kubernetes and its absence in Kafka due to invalid configuration
@@ -148,7 +148,7 @@ public class TopicReplicasChangeST extends AbstractST {
         final int topicPartitions = 3;
         final int startingTopicReplicationFactor = 2;
 
-        KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), testStorage.getTopicName(), topicPartitions, startingTopicReplicationFactor, 1, sharedTestStorage.getNamespaceName()).build();
+        KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), sharedTestStorage.getClusterName(), topicPartitions, startingTopicReplicationFactor, 1).build();
 
         // --- 1st stage (creating a new with 2 replicas)
         resourceManager.createResourceWithWait(kafkaTopic);
@@ -209,7 +209,7 @@ public class TopicReplicasChangeST extends AbstractST {
         final int topicPartitions = 3;
         final int startingTopicReplicationFactor = 3;
 
-        KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), testStorage.getTopicName(), topicPartitions, startingTopicReplicationFactor, 1, sharedTestStorage.getNamespaceName()).build();
+        KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), sharedTestStorage.getClusterName(), topicPartitions, startingTopicReplicationFactor, 1).build();
 
         // --- 1st stage (creating a new with 3 replicas)
         resourceManager.createResourceWithWait(kafkaTopic);
@@ -274,7 +274,7 @@ public class TopicReplicasChangeST extends AbstractST {
         final int startingTopicReplicationFactor = 2;
         final int increasedTopicReplicationFactor = 3;
         final String ccPodName = kubeClient().listPodsByPrefixInName(sharedTestStorage.getNamespaceName(), CruiseControlResources.componentName(sharedTestStorage.getClusterName())).get(0).getMetadata().getName();
-        final KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), testStorage.getTopicName(), topicPartitions, startingTopicReplicationFactor, 1, sharedTestStorage.getNamespaceName()).build();
+        final KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), sharedTestStorage.getClusterName(), topicPartitions, startingTopicReplicationFactor, 1).build();
 
         // -- 1st stage (start with 2 replicas)
         resourceManager.createResourceWithWait(kafkaTopic);
@@ -341,7 +341,7 @@ public class TopicReplicasChangeST extends AbstractST {
                 .orElseThrow()
                 .getMetadata().getName();
 
-        final KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), testStorage.getTopicName(), topicPartitions, startingTopicReplicationFactor, 1, sharedTestStorage.getNamespaceName()).build();
+        final KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), sharedTestStorage.getClusterName(), topicPartitions, startingTopicReplicationFactor, 1).build();
 
         resourceManager.createResourceWithWait(kafkaTopic);
 
@@ -443,10 +443,7 @@ public class TopicReplicasChangeST extends AbstractST {
         );
         
         // we need to deploy Kafka with CC enabled (to have RF feature)
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithCruiseControlTunedForFastModelGeneration(sharedTestStorage.getClusterName(), 3, 3)
-                    .editMetadata()
-                        .withNamespace(sharedTestStorage.getNamespaceName())
-                    .endMetadata()
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithCruiseControlTunedForFastModelGeneration(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), 3, 3)
                     .editSpec()
                         .editEntityOperator()
                             .editOrNewTopicOperator()
