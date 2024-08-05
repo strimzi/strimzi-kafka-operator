@@ -1,7 +1,7 @@
 # Configuration
 
 ### Label Description
-The `configuration` label encompasses all tests related to configuration management. This includes creating, updating, replacing, and dynamically updating configurations across components.
+The `configuration` label encompasses all tests related to configuration management. This includes creating, updating, replacing, and dynamically updating configurations across all operands managed by Strimzi.
 
 #### Label: `configuration`
 
