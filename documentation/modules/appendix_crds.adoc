@@ -1347,7 +1347,7 @@ include::../api/io.strimzi.api.kafka.model.common.template.ContainerTemplate.ado
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#securitycontext-v1-core[SecurityContext]
 |Security context for the container.
 |volumeMounts
-|xref:type-VolumeMount-{context}[`VolumeMount`] array
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#volumemount-v1-core[VolumeMount] array
 |Additional volume mounts which should be applied to the container.
 |====
 
@@ -1366,38 +1366,6 @@ Used in: xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |value
 |string
 |The environment variable value.
-|====
-
-[id='type-VolumeMount-{context}']
-= `VolumeMount` schema reference
-
-Used in: xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-
-
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|mountPath
-|string
-|
-|mountPropagation
-|string
-|
-|name
-|string
-|
-|readOnly
-|boolean
-|
-|recursiveReadOnly
-|string
-|
-|subPath
-|string
-|
-|subPathExpr
-|string
-|
 |====
 
 [id='type-TieredStorageCustom-{context}']
