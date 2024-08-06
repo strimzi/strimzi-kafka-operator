@@ -5,56 +5,50 @@
 package io.strimzi.operator.common.model.cruisecontrol;
 
 /**
- * Cruise Control API properties.
+ * Secret keys and usernames used by internal components like the:
+ *   (a) Rebalance Operator
+ *   (b) Topic Operator
+ *   (c) Cruise Control healthcheck script
+ * for accessing Cruise Control API.
  */
 public class CruiseControlApiProperties {
     /**
-     * Admin role.
+     * Rebalance Operator username for Cruise Control API.
      */
-    public static final String API_ADMIN_ROLE = "ADMIN";
+    public static final String REBALANCE_OPERATOR_USERNAME = "rebalance-operator";
 
     /**
-     * User role.
+     * The key, within the data section of a Kubernetes Secret, for the Rebalance Operator password.
      */
-    public static final String API_USER_ROLE = "USER";
+    public static final String REBALANCE_OPERATOR_PASSWORD_KEY = "rebalance-operator.password";
 
     /**
-     * Username with the admin role.
+     * Healthcheck username for Cruise Control API.
      */
-    public static final String API_ADMIN_NAME = "admin";
+    public static final String HEALTHCHECK_USERNAME = "healthcheck";
+
+    /**
+     * The key, within the data section of a Kubernetes Secret, for the healthcheck password.
+     */
+    public static final String HEALTHCHECK_PASSWORD_KEY = "healthcheck.password";
+
+    /**
+     * The key, within the data section of a Kubernetes Secret, for Cruise Control authentication file.
+     */
+    public static final String AUTH_FILE_KEY = "cruise-control.authFile";
+
+    /**
+     * Topic Operator username for Cruise Control API.
+     */
+    public static final String TOPIC_OPERATOR_USERNAME = "topic-operator";
+
+    /**
+     * The key, within the data section of a Kubernetes Secret, for the Topic Operator username.
+     */
+    public static final String TOPIC_OPERATOR_USERNAME_KEY = "topic-operator.apiAdminName";
     
     /**
-     * Username with the user role.
+     * The key, within the data section of a Kubernetes Secret, for the Topic Operator password.
      */
-    public static final String API_USER_NAME = "user";
-
-    /**
-     * Username with admin role.
-     */
-    public static final String API_TO_ADMIN_NAME = "topic-operator-admin";
-    
-    /**
-     * The key, within the data section of a Kubernetes Secret, for the admin password used by the Rebalance Operator.
-     */
-    public static final String API_ADMIN_PASSWORD_KEY = "cruise-control.apiAdminPassword";
-
-    /**
-     * The key, within the data section of a Kubernetes Secret, for the user password used the Rebalance Operator.
-     */
-    public static final String API_USER_PASSWORD_KEY = "cruise-control.apiUserPassword";
-
-    /**
-     * The key, within the data section of a Kubernetes Secret, for the authentication file used by Cruise Control.
-     */
-    public static final String API_AUTH_FILE_KEY = "cruise-control.apiAuthFile";
-    
-    /**
-     * The key, within the data section of a Kubernetes Secret, for the admin username used by the Topic Operator.
-     */
-    public static final String API_TO_ADMIN_NAME_KEY = "topic-operator.apiAdminName";
-    
-    /**
-     * The key, within the data section of a Kubernetes Secret, for the admin password used by the Topic Operator.
-     */
-    public static final String API_TO_ADMIN_PASSWORD_KEY = "topic-operator.apiAdminPassword";
+    public static final String TOPIC_OPERATOR_PASSWORD_KEY = "topic-operator.apiAdminPassword";
 }

@@ -29,6 +29,7 @@
 * Uncommented and enabled (by default) KRaft-related metrics in the `kafka-metrics.yaml` example file.
 * Added support for configuring the quotas plugin with type `strimzi` or `kafka` in the `Kafka` custom resource.
   The Strimzi Quotas plugin version was updated to 0.3.1.
+* Add support for custom Cruise Control API users
 
 ### Changes, deprecations and removals
 

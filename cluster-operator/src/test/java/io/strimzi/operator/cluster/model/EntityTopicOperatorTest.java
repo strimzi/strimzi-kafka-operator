@@ -35,9 +35,9 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.operator.cluster.model.EntityTopicOperator.CRUISE_CONTROL_API_PORT;
-import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_NAME;
-import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_NAME_KEY;
-import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_TO_ADMIN_PASSWORD_KEY;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.TOPIC_OPERATOR_PASSWORD_KEY;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.TOPIC_OPERATOR_USERNAME;
+import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.TOPIC_OPERATOR_USERNAME_KEY;
 import static io.strimzi.test.TestUtils.map;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -403,32 +403,32 @@ public class EntityTopicOperatorTest {
         assertThat(newSecret, is(notNullValue()));
         assertThat(newSecret.getData(), is(notNullValue()));
         assertThat(newSecret.getData().size(), is(2));
-        assertThat(newSecret.getData().get(API_TO_ADMIN_NAME_KEY), is(Util.encodeToBase64(API_TO_ADMIN_NAME)));
-        assertThat(newSecret.getData().get(API_TO_ADMIN_NAME_KEY), is(notNullValue()));
+        assertThat(newSecret.getData().get(TOPIC_OPERATOR_USERNAME_KEY), is(Util.encodeToBase64(TOPIC_OPERATOR_USERNAME)));
+        assertThat(newSecret.getData().get(TOPIC_OPERATOR_USERNAME_KEY), is(notNullValue()));
         
-        var name = Util.encodeToBase64(API_TO_ADMIN_NAME);
+        var name = Util.encodeToBase64(TOPIC_OPERATOR_USERNAME);
         var password = Util.encodeToBase64("changeit");
         var oldSecret = entityTopicOperator.generateCruiseControlApiSecret(
-            new SecretBuilder().withData(Map.of(API_TO_ADMIN_NAME_KEY, name, API_TO_ADMIN_PASSWORD_KEY, password)).build());
+            new SecretBuilder().withData(Map.of(TOPIC_OPERATOR_USERNAME_KEY, name, TOPIC_OPERATOR_PASSWORD_KEY, password)).build());
         assertThat(oldSecret, is(notNullValue()));
         assertThat(oldSecret.getData(), is(notNullValue()));
         assertThat(oldSecret.getData().size(), is(2));
-        assertThat(oldSecret.getData().get(API_TO_ADMIN_NAME_KEY), is(name));
-        assertThat(oldSecret.getData().get(API_TO_ADMIN_PASSWORD_KEY), is(password));
+        assertThat(oldSecret.getData().get(TOPIC_OPERATOR_USERNAME_KEY), is(name));
+        assertThat(oldSecret.getData().get(TOPIC_OPERATOR_PASSWORD_KEY), is(password));
         
         assertThrows(RuntimeException.class, () -> entityTopicOperator.generateCruiseControlApiSecret(
-            new SecretBuilder().withData(Map.of(API_TO_ADMIN_NAME_KEY, name)).build()));
+            new SecretBuilder().withData(Map.of(TOPIC_OPERATOR_USERNAME_KEY, name)).build()));
         
         assertThrows(RuntimeException.class, () -> entityTopicOperator.generateCruiseControlApiSecret(
-            new SecretBuilder().withData(Map.of(API_TO_ADMIN_PASSWORD_KEY, password)).build()));
+            new SecretBuilder().withData(Map.of(TOPIC_OPERATOR_PASSWORD_KEY, password)).build()));
 
         assertThrows(RuntimeException.class, () -> entityTopicOperator.generateCruiseControlApiSecret(
             new SecretBuilder().withData(Map.of()).build()));
 
         assertThrows(RuntimeException.class, () -> entityTopicOperator.generateCruiseControlApiSecret(
-            new SecretBuilder().withData(Map.of(API_TO_ADMIN_NAME_KEY, " ", API_TO_ADMIN_PASSWORD_KEY, password)).build()));
+            new SecretBuilder().withData(Map.of(TOPIC_OPERATOR_USERNAME_KEY, " ", TOPIC_OPERATOR_PASSWORD_KEY, password)).build()));
 
         assertThrows(RuntimeException.class, () -> entityTopicOperator.generateCruiseControlApiSecret(
-            new SecretBuilder().withData(Map.of(API_TO_ADMIN_NAME_KEY, name, API_TO_ADMIN_PASSWORD_KEY, " ")).build()));
+            new SecretBuilder().withData(Map.of(TOPIC_OPERATOR_USERNAME_KEY, name, TOPIC_OPERATOR_PASSWORD_KEY, " ")).build()));
     }
 }

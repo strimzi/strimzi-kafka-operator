@@ -144,6 +144,63 @@ spec:
 # ...
 ----
 
+[id='property-cruise-control-capacity-api-users-{context}']
+= API users
+
+With the necessary permissions, create REST API users to safely access a secured Cruise Control REST API directly.
+
+This allows roles and permissions to be defined to allow advanced users and third-party applications to access the Cruise Control REST API without having to disable basic HTTP authentication.
+
+The following use cases would benefit from accessing the Cruise Control API without disabling API security:
+
+* Monitoring a Strimzi-managed Kafka cluster with the Cruise Control user interface.
+* Gathering Cruise Control-specific statistical information not available through Strimzi or Cruise Control sensor metrics, such as detailed information surrounding cluster and partition load and user tasks.
+* Debugging Cruise Control in a secured environment.
+
+Cruise Control reads authentication credentials for API users in Jetty's `HashLoginService` file format.
+
+Standard Cruise Control `USER` and `VIEWER` roles are supported.
+* `USER` has has access to all the `GET` endpoints except bootstrap and train.
+* `VIEWER` has access to `kafka_cluster_state`, `user_tasks` and `review_board` endpoints.
+In this example, we define two custom API users in the supported format in a text file called `cruise-control-auth.txt`:
+
+[source]
+----
+userOne: passwordOne, USER
+userTwo: passwordTwo, VIEWER
+----
+
+Then, use this file to create a secret with the following command:
+
+[source]
+----
+kubectl create secret generic cruise-control-api-users-secret  --from-file=cruise-control-auth.txt=cruise-control-auth.txt
+----
+
+Next, we reference the secret in the `spec.cruiseControl.apiUsers` section of the Kafka resource:
+
+.Example Cruise Control apiUsers configuration
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  cruiseControl:
+    # ...
+    apiUsers:
+      type: hashloginservice
+      valueFrom:
+        secretKeyRef:
+          name: cruise-control-api-users-secret
+          key: cruise-control-auth.txt
+     ...
+----
+
+Strimzi then decodes and uses the contents of this secret to populate Cruise Control's API authentication credentials file.
+
 [id='property-cruise-control-broker-capacity-{context}']
 = Configuring capacity limits
 

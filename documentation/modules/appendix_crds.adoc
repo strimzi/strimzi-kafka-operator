@@ -1869,6 +1869,9 @@ include::../api/io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec
 |metricsConfig
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`]
 |Metrics configuration.
+|apiUsers
+|xref:type-HashLoginServiceApiUsers-{context}[`HashLoginServiceApiUsers`]
+|Configuration of the Cruise Control REST API users.
 |====
 
 [id='type-CruiseControlTemplate-{context}']
@@ -1953,6 +1956,39 @@ Used in: xref:type-BrokerCapacity-{context}[`BrokerCapacity`]
 |outboundNetwork
 |string
 |Broker capacity for outbound network throughput in bytes per second. Use an integer value with standard Kubernetes byte units (K, M, G) or their bibyte (power of two) equivalents (Ki, Mi, Gi) per second. For example, 10000KiB/s.
+|====
+
+[id='type-HashLoginServiceApiUsers-{context}']
+= `HashLoginServiceApiUsers` schema reference
+
+Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
+
+
+The `type` property is a discriminator that distinguishes use of the `HashLoginServiceApiUsers` type from other subtypes which may be added in the future.
+It must have the value `hashLoginService` for the type `HashLoginServiceApiUsers`.
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|type
+|string
+|Must be `hashLoginService`.
+|valueFrom
+|xref:type-PasswordSource-{context}[`PasswordSource`]
+|Secret from which the custom Cruise Control API authentication credentials are read.
+|====
+
+[id='type-PasswordSource-{context}']
+= `PasswordSource` schema reference
+
+Used in: xref:type-HashLoginServiceApiUsers-{context}[`HashLoginServiceApiUsers`], xref:type-Password-{context}[`Password`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|secretKeyRef
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#secretkeyselector-v1-core[SecretKeySelector]
+|Selects a key of a Secret in the resource's namespace.
 |====
 
 [id='type-JmxTransSpec-{context}']
@@ -3230,20 +3266,6 @@ Used in: xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUser
 |valueFrom
 |xref:type-PasswordSource-{context}[`PasswordSource`]
 |Secret from which the password should be read.
-|====
-
-[id='type-PasswordSource-{context}']
-= `PasswordSource` schema reference
-
-Used in: xref:type-Password-{context}[`Password`]
-
-
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|secretKeyRef
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#secretkeyselector-v1-core[SecretKeySelector]
-|Selects a key of a Secret in the resource's namespace.
 |====
 
 [id='type-KafkaUserAuthorizationSimple-{context}']

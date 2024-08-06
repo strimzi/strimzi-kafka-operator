@@ -5957,6 +5957,32 @@ spec:
                     - type
                     - valueFrom
                     description: Metrics configuration.
+                  apiUsers:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        enum:
+                        - hashLoginService
+                        description: "Type of the Cruise Control API users configuration. Supported format is: `hashLoginService`."
+                      valueFrom:
+                        type: object
+                        properties:
+                          secretKeyRef:
+                            type: object
+                            properties:
+                              key:
+                                type: string
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                            description: Selects a key of a Secret in the resource's namespace.
+                        description: Secret from which the custom Cruise Control API authentication credentials are read.
+                    required:
+                    - type
+                    - valueFrom
+                    description: Configuration of the Cruise Control REST API users.
                 description: Configuration for Cruise Control deployment. Deploys a Cruise Control instance when specified.
               jmxTrans:
                 type: object

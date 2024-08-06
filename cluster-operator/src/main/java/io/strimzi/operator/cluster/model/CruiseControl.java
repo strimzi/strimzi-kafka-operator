@@ -35,6 +35,7 @@ import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration;
+import io.strimzi.operator.cluster.model.cruisecontrol.HashLoginServiceApiCredentials;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.logging.SupportsLogging;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
@@ -45,13 +46,12 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.model.PasswordGenerator;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -61,13 +61,6 @@ import java.util.Set;
 import static io.strimzi.api.kafka.model.common.template.DeploymentStrategy.ROLLING_UPDATE;
 import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS;
 import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.CRUISE_CONTROL_GOALS;
-import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_ADMIN_NAME;
-import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_ADMIN_PASSWORD_KEY;
-import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_ADMIN_ROLE;
-import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_AUTH_FILE_KEY;
-import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_USER_NAME;
-import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_USER_PASSWORD_KEY;
-import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.API_USER_ROLE;
 import static java.lang.String.format;
 
 /**
@@ -100,7 +93,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     /**
      * API auth credentials file name
      */
-    public static final String API_AUTH_CREDENTIALS_FILE = API_AUTH_CONFIG_VOLUME_MOUNT + API_AUTH_FILE_KEY;
+    public static final String API_AUTH_CREDENTIALS_FILE = API_AUTH_CONFIG_VOLUME_MOUNT + CruiseControlApiProperties.AUTH_FILE_KEY;
 
     protected static final String ENV_VAR_CRUISE_CONTROL_METRICS_ENABLED = "CRUISE_CONTROL_METRICS_ENABLED";
 
@@ -121,6 +114,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     
     private boolean sslEnabled;
     private boolean authEnabled;
+    private HashLoginServiceApiCredentials apiCredentials;
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
     protected Capacity capacity;
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
@@ -141,7 +135,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
 
     protected static final String ENV_VAR_API_SSL_ENABLED = "STRIMZI_CC_API_SSL_ENABLED";
     protected static final String ENV_VAR_API_AUTH_ENABLED = "STRIMZI_CC_API_AUTH_ENABLED";
-    protected static final String ENV_VAR_API_USER = "API_USER";
+    protected static final String ENV_VAR_API_HEALTHCHECK_USERNAME = "API_HEALTHCHECK";
     protected static final String ENV_VAR_API_PORT = "API_PORT";
     protected static final String ENV_VAR_API_HEALTHCHECK_PATH = "API_HEALTHCHECK_PATH";
 
@@ -213,6 +207,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             CruiseControlConfiguration ccConfiguration = result.configuration;
             result.sslEnabled = ccConfiguration.isApiSslEnabled();
             result.authEnabled = ccConfiguration.isApiAuthEnabled();
+
+            result.apiCredentials = new HashLoginServiceApiCredentials(result.namespace, result.cluster, result.labels, result.ownerReference, ccSpec);
 
             // To avoid illegal storage configurations provided by the user,
             // we rely on the storage configuration provided by the KafkaAssemblyOperator
@@ -404,7 +400,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
 
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_SSL_ENABLED,  String.valueOf(this.sslEnabled)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_AUTH_ENABLED,  String.valueOf(this.authEnabled)));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_USER, API_USER_NAME));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_HEALTHCHECK_USERNAME, CruiseControlApiProperties.HEALTHCHECK_USERNAME));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_PORT, String.valueOf(REST_API_PORT)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_HEALTHCHECK_PATH, API_HEALTHCHECK_PATH));
 
@@ -418,89 +414,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateContainer);
 
         return varList;
-    }
-
-    /**
-     * Creates Cruise Control API auth usernames, passwords, and credentials file.
-     *
-     * @param passwordGenerator  The password generator for API users.
-     * @param oldSecret          The old secret.         
-     * @param adminUser          Additional admin user.
-     *                 
-     * @return Map containing Cruise Control API auth credentials.
-     */
-    public static Map<String, String> generateCruiseControlApiCredentials(PasswordGenerator passwordGenerator,
-                                                                          Secret oldSecret,
-                                                                          CruiseControlUser adminUser) {
-        if (oldSecret != null) {
-            // The credentials should not change with every reconciliation
-            // So if the secret with credentials already exists, we re-use the values
-            // But we use the new secret to update labels etc. if needed
-            var data = oldSecret.getData();
-            var adminPassword = data.get(API_ADMIN_PASSWORD_KEY);
-            var userPassword = data.get(API_USER_PASSWORD_KEY);
-            var authFile = data.get(API_AUTH_FILE_KEY);
-            if (adminPassword == null || adminPassword.isBlank() || userPassword == null
-                    || userPassword.isBlank() || authFile == null || authFile.isBlank()) {
-                throw new RuntimeException(format("Secret %s is invalid", oldSecret.getMetadata().getName()));
-            } else if (!Util.decodeFromBase64(authFile).contains(API_ADMIN_NAME) || !Util.decodeFromBase64(authFile).contains(API_USER_NAME)) {
-                throw new RuntimeException(format("Secret %s has invalid authentication file", oldSecret.getMetadata().getName()));
-            } else {
-                return data;
-            }
-        } else {
-            String apiAdminPassword = passwordGenerator.generate();
-            String apiUserPassword = passwordGenerator.generate();
-
-            /*
-             * Create Cruise Control API auth credentials file following Jetty's
-             *  HashLoginService's file format: username: password [,rolename ...]
-             */
-            String authCredentialsFile =
-                API_ADMIN_NAME + ": " + apiAdminPassword + "," + API_ADMIN_ROLE + "\n" + 
-                    API_USER_NAME + ": " + apiUserPassword + "," + API_USER_ROLE + "\n";
-
-            if (adminUser != null) {
-                authCredentialsFile += adminUser.username() + ": " + adminUser.password() + "," + API_ADMIN_ROLE + "\n";
-            }
-
-            return Map.of(
-                API_ADMIN_PASSWORD_KEY, Util.encodeToBase64(apiAdminPassword),
-                API_USER_PASSWORD_KEY, Util.encodeToBase64(apiUserPassword),
-                API_AUTH_FILE_KEY, Util.encodeToBase64(authCredentialsFile)
-            );
-        }
-    }
-
-    /**
-     * Cruise Control user credentials.
-     * 
-     * @param username Username.
-     * @param password Password.
-     */
-    public record CruiseControlUser(String username, String password) {
-        @Override
-        public String toString() {
-            String mask = "********";
-            return "CruiseControlUser{" +
-                "username='" + username + '\'' +
-                ", password='" + mask + '\'' +
-                '}';
-        }
-    }
-
-    /**
-     * Generate the Secret containing the Cruise Control API auth credentials.
-     *
-     * @param passwordGenerator  The password generator for API users.
-     * @param oldSecret          The old secret.
-     * @param adminUser          Additional admin user.
-     *
-     * @return The generated Secret.
-     */
-    public Secret generateApiSecret(PasswordGenerator passwordGenerator, Secret oldSecret, CruiseControlUser adminUser) {
-        return ModelUtils.createSecret(CruiseControlResources.apiSecretName(cluster), namespace, labels, ownerReference,
-            generateCruiseControlApiCredentials(passwordGenerator, oldSecret, adminUser), Collections.emptyMap(), Collections.emptyMap());
     }
 
     /**
@@ -570,6 +483,13 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                 ownerReference,
                 rules
         );
+    }
+
+    /**
+     * @return Api Credentials Model instance for configuring Cruise Control API users
+     */
+    public HashLoginServiceApiCredentials apiCredentials() {
+        return apiCredentials;
     }
 
     /**
