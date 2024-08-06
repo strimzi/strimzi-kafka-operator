@@ -40,7 +40,7 @@
 :BridgeVersion: 0.29.0
 
 // Drain Cleaner Version
-:DrainCleanerVersion: 1.1.0
+:DrainCleanerVersion: 1.2.0
 
 // Source and download links
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub releases page^]
