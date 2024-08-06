@@ -19,8 +19,8 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 /**
  * Handler for {@link KafkaTopic} events.
  */
-class TopicOperatorEventHandler implements ResourceEventHandler<KafkaTopic> {
-    private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(TopicOperatorEventHandler.class);
+class TopicEventHandler implements ResourceEventHandler<KafkaTopic> {
+    private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(TopicEventHandler.class);
 
     private final TopicOperatorConfig config;
     private final BatchingLoop queue;
@@ -28,7 +28,7 @@ class TopicOperatorEventHandler implements ResourceEventHandler<KafkaTopic> {
     
     private long lastPeriodicTimestampMs;
 
-    public TopicOperatorEventHandler(TopicOperatorConfig config, BatchingLoop queue, MetricsHolder metrics) {
+    public TopicEventHandler(TopicOperatorConfig config, BatchingLoop queue, MetricsHolder metrics) {
         this.config = config;
         this.queue = queue;
         this.metrics = metrics;
