@@ -13,12 +13,16 @@ import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBroker;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBrokerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatusBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.NodeAddressType;
+import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
+import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
+import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -29,10 +33,10 @@ import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaMetadataConfigurationState;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.NodeOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.auth.TlsPemIdentity;
@@ -57,6 +61,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -68,15 +73,9 @@ import static org.mockito.Mockito.when;
 public class KafkaReconcilerStatusTest {
     private final static String NAMESPACE = "testns";
     private final static String CLUSTER_NAME = "testkafka";
+    private static final String NODE_POOL_NAME = "mixed";
     private final static KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private final static PlatformFeaturesAvailability PFA = new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
-    private final static KafkaVersionChange VERSION_CHANGE = new KafkaVersionChange(
-            VERSIONS.defaultVersion(),
-            VERSIONS.defaultVersion(),
-            VERSIONS.defaultVersion().protocolVersion(),
-            VERSIONS.defaultVersion().messageVersion(),
-            VERSIONS.defaultVersion().metadataVersion()
-    );
     private final static ClusterOperatorConfig CO_CONFIG = ResourceUtils.dummyClusterOperatorConfig();
     private final static ClusterCa CLUSTER_CA = new ClusterCa(
             Reconciliation.DUMMY_RECONCILIATION,
@@ -103,26 +102,33 @@ public class KafkaReconcilerStatusTest {
                 .withNewMetadata()
                     .withName(CLUSTER_NAME)
                     .withNamespace(NAMESPACE)
+                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled", Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"))
                 .endMetadata()
                 .withNewSpec()
                     .withNewKafka()
-                        .withReplicas(3)
                         .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("tls")
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(true)
                                 .build())
-                        .withNewEphemeralStorage()
-                        .endEphemeralStorage()
                     .endKafka()
-                    .withNewZookeeper()
-                        .withReplicas(3)
-                        .withNewEphemeralStorage()
-                        .endEphemeralStorage()
-                    .endZookeeper()
                 .endSpec()
                 .build();
+    private static final KafkaNodePool KAFKA_NODE_POOL = new KafkaNodePoolBuilder()
+            .withNewMetadata()
+                .withName(NODE_POOL_NAME)
+                .withNamespace(NAMESPACE)
+                .withLabels(Map.of(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME))
+            .endMetadata()
+            .withNewSpec()
+                .withReplicas(3)
+                .withNewJbodStorage()
+                    .withVolumes(new PersistentClaimStorageBuilder().withId(0).withDeleteClaim(true).withSize("100Gi").build())
+                .endJbodStorage()
+                .withRoles(ProcessRoles.CONTROLLER, ProcessRoles.BROKER)
+            .endSpec()
+            .build();
 
     private static Vertx vertx;
     private static WorkerExecutor sharedWorkerExecutor;
@@ -141,22 +147,21 @@ public class KafkaReconcilerStatusTest {
 
     @Test
     public void testKafkaReconcilerStatus(VertxTestContext context) {
-        Kafka kafka = new KafkaBuilder(KAFKA)
-                .editOrNewSpec()
-                    .editOrNewKafka()
-                        .withReplicas(1)
-                    .endKafka()
+        KafkaNodePool kafkaNodePool = new KafkaNodePoolBuilder(KAFKA_NODE_POOL)
+                .editSpec()
+                    .withReplicas(1)
+                    .withNewEphemeralStorage()
+                    .endEphemeralStorage()
                 .endSpec()
                 .build();
-
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Run the test
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 supplier,
-                kafka
-        );
+                KAFKA,
+                List.of(kafkaNodePool));
 
         KafkaStatus status = new KafkaStatus();
 
@@ -171,9 +176,13 @@ public class KafkaReconcilerStatusTest {
             assertThat(status.getKafkaVersion(), is(VERSIONS.defaultVersion().version()));
 
             // Check model warning conditions
-            assertThat(status.getConditions().size(), is(1));
+            assertThat(status.getConditions().size(), is(2));
             assertThat(status.getConditions().get(0).getType(), is("Warning"));
             assertThat(status.getConditions().get(0).getReason(), is("KafkaStorage"));
+            assertThat(status.getConditions().get(0).getMessage(), containsString("A Kafka cluster with a single broker node and ephemeral storage will lose topic messages after any restart or rolling update"));
+            assertThat(status.getConditions().get(1).getType(), is("Warning"));
+            assertThat(status.getConditions().get(1).getReason(), is("KafkaStorage"));
+            assertThat(status.getConditions().get(1).getMessage(), containsString("A Kafka cluster with a single controller node and ephemeral storage will lose data after any restart or rolling update"));
 
             async.flag();
         }));
@@ -182,11 +191,6 @@ public class KafkaReconcilerStatusTest {
     @Test
     public void testKafkaReconcilerStatusUpdateVersion(VertxTestContext context) {
         Kafka kafka = new KafkaBuilder(KAFKA)
-                .editOrNewSpec()
-                    .editOrNewKafka()
-                        .withReplicas(1)
-                    .endKafka()
-                .endSpec()
                 .editOrNewStatus()
                     .withKafkaVersion(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)
                 .endStatus()
@@ -198,8 +202,8 @@ public class KafkaReconcilerStatusTest {
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 supplier,
-                kafka
-        );
+                kafka,
+                List.of(KAFKA_NODE_POOL));
 
         KafkaStatus status = new KafkaStatus();
 
@@ -216,11 +220,6 @@ public class KafkaReconcilerStatusTest {
     @Test
     public void testKafkaReconcilerStatusDoesNotUpdateVersionOnFailure(VertxTestContext context) {
         Kafka kafka = new KafkaBuilder(KAFKA)
-                .editOrNewSpec()
-                    .editOrNewKafka()
-                        .withReplicas(1)
-                    .endKafka()
-                .endSpec()
                 .editOrNewStatus()
                     .withKafkaVersion(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)
                 .endStatus()
@@ -232,8 +231,8 @@ public class KafkaReconcilerStatusTest {
         KafkaReconciler reconciler = new MockKafkaReconcilerFailsWithVersionUpdate(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 supplier,
-                kafka
-        );
+                kafka,
+                List.of(KAFKA_NODE_POOL));
 
         KafkaStatus status = new KafkaStatus();
 
@@ -253,7 +252,6 @@ public class KafkaReconcilerStatusTest {
                 .editOrNewSpec()
                     .editOrNewKafka()
                         .withVersion(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)
-                        .withReplicas(3)
                     .endKafka()
                 .endSpec()
                 .build();
@@ -264,8 +262,8 @@ public class KafkaReconcilerStatusTest {
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 supplier,
-                kafka
-        );
+                kafka,
+                List.of(KAFKA_NODE_POOL));
 
         KafkaStatus status = new KafkaStatus();
 
@@ -287,8 +285,8 @@ public class KafkaReconcilerStatusTest {
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 supplier,
-                KAFKA
-        );
+                KAFKA,
+                List.of(KAFKA_NODE_POOL));
 
         KafkaStatus status = new KafkaStatus();
 
@@ -327,7 +325,7 @@ public class KafkaReconcilerStatusTest {
         // Mock Kafka broker pods
         Pod pod0 = new PodBuilder()
                 .withNewMetadata()
-                    .withName(CLUSTER_NAME + "-kafka-" + 0)
+                    .withName(CLUSTER_NAME + "-mixed-" + 0)
                     .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
                 .endMetadata()
                 .withNewStatus()
@@ -337,7 +335,7 @@ public class KafkaReconcilerStatusTest {
 
         Pod pod1 = new PodBuilder()
                 .withNewMetadata()
-                    .withName(CLUSTER_NAME + "-kafka-" + 1)
+                    .withName(CLUSTER_NAME + "-mixed-" + 1)
                     .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
                 .endMetadata()
                 .withNewStatus()
@@ -347,7 +345,7 @@ public class KafkaReconcilerStatusTest {
 
         Pod pod2 = new PodBuilder()
                 .withNewMetadata()
-                    .withName(CLUSTER_NAME + "-kafka-" + 2)
+                    .withName(CLUSTER_NAME + "-mixed-" + 2)
                     .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
                 .endMetadata()
                 .withNewStatus()
@@ -371,8 +369,8 @@ public class KafkaReconcilerStatusTest {
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 supplier,
-                kafka
-        );
+                kafka,
+                List.of(KAFKA_NODE_POOL));
 
         KafkaStatus status = new KafkaStatus();
 
@@ -407,6 +405,23 @@ public class KafkaReconcilerStatusTest {
                                 .withTls(true)
                                 .build())
                     .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaNodePool brokers = new KafkaNodePoolBuilder(KAFKA_NODE_POOL)
+                .editMetadata()
+                    .withName("broker")
+                .endMetadata()
+                .editSpec()
+                    .withRoles(ProcessRoles.BROKER)
+                .endSpec()
+                .build();
+        KafkaNodePool controllers = new KafkaNodePoolBuilder(KAFKA_NODE_POOL)
+                .editMetadata()
+                    .withName("controller")
+                .endMetadata()
+                .editSpec()
+                    .withRoles(ProcessRoles.CONTROLLER)
                 .endSpec()
                 .build();
 
@@ -492,8 +507,8 @@ public class KafkaReconcilerStatusTest {
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 supplier,
-                kafka
-        );
+                kafka,
+                List.of(controllers, brokers));
 
         KafkaStatus status = new KafkaStatus();
 
@@ -549,7 +564,7 @@ public class KafkaReconcilerStatusTest {
         // Mock Kafka broker pods
         Pod pod0 = new PodBuilder()
                 .withNewMetadata()
-                    .withName(CLUSTER_NAME + "-kafka-" + 0)
+                    .withName(CLUSTER_NAME + "-mixed-" + 0)
                     .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
                 .endMetadata()
                 .withNewStatus()
@@ -559,7 +574,7 @@ public class KafkaReconcilerStatusTest {
 
         Pod pod1 = new PodBuilder()
                 .withNewMetadata()
-                    .withName(CLUSTER_NAME + "-kafka-" + 1)
+                    .withName(CLUSTER_NAME + "-mixed-" + 1)
                     .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
                 .endMetadata()
                 .withNewStatus()
@@ -569,7 +584,7 @@ public class KafkaReconcilerStatusTest {
 
         Pod pod2 = new PodBuilder()
                 .withNewMetadata()
-                    .withName(CLUSTER_NAME + "-kafka-" + 2)
+                    .withName(CLUSTER_NAME + "-mixed-" + 2)
                     .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
                 .endMetadata()
                 .withNewStatus()
@@ -593,8 +608,8 @@ public class KafkaReconcilerStatusTest {
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 supplier,
-                kafka
-        );
+                kafka,
+                List.of(KAFKA_NODE_POOL));
 
         KafkaStatus status = new KafkaStatus();
 
@@ -640,7 +655,7 @@ public class KafkaReconcilerStatusTest {
         // Mock Kafka broker pods
         Pod pod0 = new PodBuilder()
                 .withNewMetadata()
-                    .withName(CLUSTER_NAME + "-kafka-" + 0)
+                    .withName(CLUSTER_NAME + "-mixed-" + 0)
                     .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
                 .endMetadata()
                 .withNewStatus()
@@ -650,7 +665,7 @@ public class KafkaReconcilerStatusTest {
 
         Pod pod1 = new PodBuilder()
                 .withNewMetadata()
-                    .withName(CLUSTER_NAME + "-kafka-" + 1)
+                    .withName(CLUSTER_NAME + "-mixed-" + 1)
                     .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
                 .endMetadata()
                 .withNewStatus()
@@ -660,7 +675,7 @@ public class KafkaReconcilerStatusTest {
 
         Pod pod2 = new PodBuilder()
                 .withNewMetadata()
-                    .withName(CLUSTER_NAME + "-kafka-" + 2)
+                    .withName(CLUSTER_NAME + "-mixed-" + 2)
                     .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
                 .endMetadata()
                 .withNewStatus()
@@ -684,8 +699,8 @@ public class KafkaReconcilerStatusTest {
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 supplier,
-                kafka
-        );
+                kafka,
+                List.of(KAFKA_NODE_POOL));
 
         KafkaStatus status = new KafkaStatus();
 
@@ -728,7 +743,7 @@ public class KafkaReconcilerStatusTest {
         // Mock Kafka broker pods
         Pod pod0 = new PodBuilder()
                 .withNewMetadata()
-                    .withName(CLUSTER_NAME + "-kafka-" + 0)
+                    .withName(CLUSTER_NAME + "-mixed-" + 0)
                     .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
                 .endMetadata()
                 .withNewStatus()
@@ -738,7 +753,7 @@ public class KafkaReconcilerStatusTest {
 
         Pod pod1 = new PodBuilder()
                 .withNewMetadata()
-                    .withName(CLUSTER_NAME + "-kafka-" + 1)
+                    .withName(CLUSTER_NAME + "-mixed-" + 1)
                     .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
                 .endMetadata()
                 .withNewStatus()
@@ -748,7 +763,7 @@ public class KafkaReconcilerStatusTest {
 
         Pod pod2 = new PodBuilder()
                 .withNewMetadata()
-                    .withName(CLUSTER_NAME + "-kafka-" + 2)
+                    .withName(CLUSTER_NAME + "-mixed-" + 2)
                     .withLabels(Map.of(Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
                 .endMetadata()
                 .withNewStatus()
@@ -772,8 +787,8 @@ public class KafkaReconcilerStatusTest {
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 supplier,
-                kafka
-        );
+                kafka,
+                List.of(KAFKA_NODE_POOL));
 
         KafkaStatus status = new KafkaStatus();
 
@@ -813,7 +828,7 @@ public class KafkaReconcilerStatusTest {
         // Mock Kafka broker pods
         Pod pod0 = new PodBuilder()
                 .withNewMetadata()
-                    .withName(CLUSTER_NAME + "-kafka-" + 0)
+                    .withName(CLUSTER_NAME + "-mixed-" + 0)
                 .endMetadata()
                 .withNewStatus()
                     .withHostIP("10.0.0.5")
@@ -822,7 +837,7 @@ public class KafkaReconcilerStatusTest {
 
         Pod pod1 = new PodBuilder()
                 .withNewMetadata()
-                    .withName(CLUSTER_NAME + "-kafka-" + 1)
+                    .withName(CLUSTER_NAME + "-mixed-" + 1)
                 .endMetadata()
                 .withNewStatus()
                     .withHostIP("10.0.0.5")
@@ -831,7 +846,7 @@ public class KafkaReconcilerStatusTest {
 
         Pod pod2 = new PodBuilder()
                 .withNewMetadata()
-                    .withName(CLUSTER_NAME + "-kafka-" + 2)
+                    .withName(CLUSTER_NAME + "-mixed-" + 2)
                 .endMetadata()
                 .withNewStatus()
                     .withHostIP("10.0.0.5")
@@ -854,8 +869,8 @@ public class KafkaReconcilerStatusTest {
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 supplier,
-                kafka
-        );
+                kafka,
+                List.of(KAFKA_NODE_POOL));
 
         KafkaStatus status = new KafkaStatus();
 
@@ -934,18 +949,18 @@ public class KafkaReconcilerStatusTest {
     static class MockKafkaReconcilerStatusTasks extends KafkaReconciler {
         private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(MockKafkaReconcilerStatusTasks.class.getName());
 
-        public MockKafkaReconcilerStatusTasks(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr) {
-            super(reconciliation, kafkaCr, null, createKafkaCluster(reconciliation, supplier, kafkaCr), CLUSTER_CA, CLIENTS_CA, CO_CONFIG, supplier, PFA, vertx, new KafkaMetadataStateManager(reconciliation, kafkaCr));
+        public MockKafkaReconcilerStatusTasks(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr, List<KafkaNodePool> kafkaNodePools) {
+            super(reconciliation, kafkaCr, null, createKafkaCluster(reconciliation, supplier, kafkaCr, kafkaNodePools), CLUSTER_CA, CLIENTS_CA, CO_CONFIG, supplier, PFA, vertx, new KafkaMetadataStateManager(reconciliation, kafkaCr));
         }
 
-        private static KafkaCluster createKafkaCluster(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr)   {
+        private static KafkaCluster createKafkaCluster(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr, List<KafkaNodePool> kafkaNodePools)   {
             return  KafkaClusterCreator.createKafkaCluster(
                     reconciliation,
                     kafkaCr,
-                    null,
+                    kafkaNodePools,
                     Map.of(),
                     Map.of(),
-                    VERSION_CHANGE,
+                    KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
                     new KafkaMetadataStateManager(reconciliation, kafkaCr).getMetadataConfigurationState(),
                     VERSIONS,
                     supplier.sharedEnvironmentProvider);
@@ -985,18 +1000,18 @@ public class KafkaReconcilerStatusTest {
     static class MockKafkaReconcilerFailsWithVersionUpdate extends KafkaReconciler {
         private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(MockKafkaReconcilerStatusTasks.class.getName());
 
-        public MockKafkaReconcilerFailsWithVersionUpdate(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr) {
-            super(reconciliation, kafkaCr, null, createKafkaCluster(reconciliation, supplier, kafkaCr), CLUSTER_CA, CLIENTS_CA, CO_CONFIG, supplier, PFA, vertx, new KafkaMetadataStateManager(reconciliation, kafkaCr));
+        public MockKafkaReconcilerFailsWithVersionUpdate(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr, List<KafkaNodePool> kafkaNodePools) {
+            super(reconciliation, kafkaCr, kafkaNodePools, createKafkaCluster(reconciliation, supplier, kafkaCr, kafkaNodePools), CLUSTER_CA, CLIENTS_CA, CO_CONFIG, supplier, PFA, vertx, new KafkaMetadataStateManager(reconciliation, kafkaCr));
         }
 
-        private static KafkaCluster createKafkaCluster(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr)   {
+        private static KafkaCluster createKafkaCluster(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr, List<KafkaNodePool> kafkaNodePools)   {
             return  KafkaClusterCreator.createKafkaCluster(
                     reconciliation,
                     kafkaCr,
-                    null,
+                    kafkaNodePools,
                     Map.of(),
                     Map.of(),
-                    VERSION_CHANGE,
+                    KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
                     KafkaMetadataConfigurationState.KRAFT,
                     VERSIONS,
                     supplier.sharedEnvironmentProvider);
