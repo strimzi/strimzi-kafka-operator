@@ -134,7 +134,7 @@ public class KafkaMirrorMaker2Templates {
                 .withReplicas(kafkaMirrorMaker2Replicas)
                 .withConnectCluster(kafkaTargetClusterName)
                 .withClusters(targetClusterSpec, sourceClusterSpec)
-                .editFirstMirror()
+                .addNewMirror()
                     .withSourceCluster(kafkaSourceClusterName)
                     .withTargetCluster(kafkaTargetClusterName)
                     .withNewCheckpointConnector()

@@ -297,11 +297,7 @@ class CustomResourceStatusST extends AbstractST {
 
         // This test check NPE when connect cluster is not specified in labels
         // Check for NPE in CO logs is performed after every test in BaseST
-        resourceManager.createResourceWithoutWait(KafkaConnectorTemplates.kafkaConnector(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), sharedTestStorage.getClusterName(), 2)
-            .withNewMetadata()
-                .withName(testStorage.getClusterName())
-            .endMetadata()
-            .build());
+        resourceManager.createResourceWithoutWait(KafkaConnectorTemplates.kafkaConnector(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), sharedTestStorage.getClusterName(), 2).build());
 
         KafkaConnectorUtils.waitForConnectorNotReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName());
 

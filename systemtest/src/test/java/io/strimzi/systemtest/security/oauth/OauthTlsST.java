@@ -676,7 +676,7 @@ public class OauthTlsST extends OauthAbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, OAUTH_CLIENT_NAME).build());
+        resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, OAUTH_CLIENT_NAME, oauthClusterName).build());
     }
 }
 

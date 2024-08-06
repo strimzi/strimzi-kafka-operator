@@ -50,6 +50,8 @@ public class KafkaConnectorTemplates {
             .endMetadata()
             .editOrNewSpec()
                 .withTasksMax(maxTasks)
+                .withClassName("org.apache.kafka.connect.file.FileStreamSourceConnector")
+                .addToConfig("file", "/opt/kafka/LICENSE")
             .endSpec();
     }
 }

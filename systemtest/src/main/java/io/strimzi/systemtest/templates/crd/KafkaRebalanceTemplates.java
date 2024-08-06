@@ -27,6 +27,8 @@ public class KafkaRebalanceTemplates {
                 .withName(clusterName)
                 .withNamespace(namespaceName)
                 .withLabels(kafkaRebalanceLabels)
-            .endMetadata();
+            .endMetadata()
+            .withNewSpec()
+            .endSpec();
     }
 }
