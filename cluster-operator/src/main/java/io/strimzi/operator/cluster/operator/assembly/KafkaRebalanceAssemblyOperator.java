@@ -1050,7 +1050,10 @@ public class KafkaRebalanceAssemblyOperator
             patchedKafkaRebalance
                     .editMetadata()
                          .addToAnnotations(Map.of(ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.refresh.toString()))
-                    .endMetadata();
+                    .endMetadata()
+                    .editStatus()
+                        .withObservedGeneration(kafkaRebalance.getMetadata().getGeneration())
+                    .endStatus();;
 
             kafkaRebalanceOperator.patchAsync(reconciliation, patchedKafkaRebalance.build()).onComplete(
                     r -> LOGGER.debugCr(reconciliation, "The KafkaRebalance resource is updated with refresh annotation"));
