@@ -1053,7 +1053,7 @@ public class KafkaRebalanceAssemblyOperator
                     .endMetadata()
                     .editStatus()
                         .withObservedGeneration(kafkaRebalance.getMetadata().getGeneration())
-                    .endStatus();;
+                    .endStatus();
 
             kafkaRebalanceOperator.patchAsync(reconciliation, patchedKafkaRebalance.build()).onComplete(
                     r -> LOGGER.debugCr(reconciliation, "The KafkaRebalance resource is updated with refresh annotation"));
