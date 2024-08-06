@@ -289,6 +289,7 @@ public class KafkaTemplates {
         setDefaultConfigurationOfZookeeperKafka(kb, zookeeperReplicas);
         setDefaultLogging(kb, true);
         setMemoryRequestsAndLimitsIfNeeded(kb, true);
+        setZookeeperEphemeralStorage(kb);
 
         return kb;
     }
@@ -327,7 +328,6 @@ public class KafkaTemplates {
         setDefaultSpecOfKafka(kb, kafkaReplicas);
         setDefaultLogging(kb, false);
         setMemoryRequestsAndLimitsIfNeeded(kb, false);
-        setZookeeperEphemeralStorage(kb);
 
         return kb;
     }
