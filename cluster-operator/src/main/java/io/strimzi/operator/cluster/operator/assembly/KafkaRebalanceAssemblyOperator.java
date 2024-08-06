@@ -1052,7 +1052,7 @@ public class KafkaRebalanceAssemblyOperator
                          .addToAnnotations(Map.of(ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.refresh.toString()))
                     .endMetadata()
                     .editStatus()
-                        .withObservedGeneration(kafkaRebalance.getMetadata().getGeneration())
+                         .withObservedGeneration(kafkaRebalance.getMetadata().getGeneration())
                     .endStatus();
 
             kafkaRebalanceOperator.patchAsync(reconciliation, patchedKafkaRebalance.build()).onComplete(
