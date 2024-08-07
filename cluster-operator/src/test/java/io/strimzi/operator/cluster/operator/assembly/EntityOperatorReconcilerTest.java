@@ -15,6 +15,8 @@ import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpecBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.ClusterCa;
@@ -42,6 +44,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
 import java.time.Clock;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -57,6 +60,23 @@ import static org.mockito.Mockito.when;
 public class EntityOperatorReconcilerTest {
     private static final String NAMESPACE = "namespace";
     private static final String NAME = "name";
+    private static final Kafka KAFKA = new KafkaBuilder()
+            .withNewMetadata()
+                .withName(NAME)
+                .withNamespace(NAMESPACE)
+                .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled", Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"))
+            .endMetadata()
+            .withNewSpec()
+                .withNewKafka()
+                    .withListeners(new GenericKafkaListenerBuilder()
+                            .withName("plain")
+                            .withPort(9092)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(false)
+                            .build())
+                .endKafka()
+            .endSpec()
+            .build();
 
     private final static ClusterCa CLUSTER_CA = new ClusterCa(
             Reconciliation.DUMMY_RECONCILIATION,
@@ -111,7 +131,7 @@ public class EntityOperatorReconcilerTest {
         when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
-        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, "foo", 120, 30))
+        Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .withNewEntityOperator()
                         .withNewTopicOperator()
@@ -222,7 +242,7 @@ public class EntityOperatorReconcilerTest {
         when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
-        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, "foo", 120, 30))
+        Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .withNewEntityOperator()
                         .withNewTopicOperator()
@@ -336,7 +356,7 @@ public class EntityOperatorReconcilerTest {
         when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
-        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, "foo", 120, 30))
+        Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .withNewEntityOperator()
                         .withNewTopicOperator()
@@ -445,7 +465,7 @@ public class EntityOperatorReconcilerTest {
         when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
-        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, "foo", 120, 30))
+        Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .withNewEntityOperator()
                         .withNewUserOperator()
@@ -543,7 +563,7 @@ public class EntityOperatorReconcilerTest {
         when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
-        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, "foo", 120, 30))
+        Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .withNewEntityOperator()
                     .endEntityOperator()
@@ -636,13 +656,11 @@ public class EntityOperatorReconcilerTest {
         when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
-        Kafka kafka = ResourceUtils.createKafka(NAMESPACE, NAME, 3, "foo", 120, 30);
-
         EntityOperatorReconciler rcnclr = new EntityOperatorReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
                 ResourceUtils.dummyClusterOperatorConfig(),
                 supplier,
-                kafka,
+                KAFKA,
                 CLUSTER_CA
         );
 
