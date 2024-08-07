@@ -16,7 +16,6 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
@@ -62,6 +61,7 @@ import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.kubernetes.ConfigMapTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
@@ -75,7 +75,6 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.TestUtils;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -83,12 +82,10 @@ import org.junit.jupiter.api.Tag;
 
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.TestConstants.BRIDGE;
@@ -1280,87 +1277,84 @@ class KafkaST extends AbstractST {
         final String configMapMountPath = "/mnt/configmap-volume";
 
         resourceManager.createResourceWithWait(
-                NodePoolsConverter.convertNodePoolsIfNeeded(
-                        KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), numberOfKafkaReplicas).build(),
-                        KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
-                )
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), numberOfKafkaReplicas).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+            )
         );
 
         SecretUtils.createSecret(testStorage.getNamespaceName(), secretName, secretKeyBase64, secretValueBase64);
-        ConfigMapUtils.createConfigMap(
-                testStorage.getNamespaceName(),
-                configMapName,
-                configMapKey,
-                configMapValue);
+        resourceManager.createResourceWithWait(ConfigMapTemplates.buildConfigMap(testStorage.getNamespaceName(), configMapName,
+            configMapKey, configMapValue));
 
         AdditionalVolume[] additionalVolumes = new AdditionalVolume[]{
-                // Secret additional volume
-                new AdditionalVolumeBuilder()
-                        .withName(secretName)
-                        .withSecret(new SecretVolumeSourceBuilder()
-                                .withSecretName(secretName)
-                                .build())
-                        .build(),
-                // ConfigMap additional volume
-                new AdditionalVolumeBuilder()
-                        .withName(configMapName)
-                        .withConfigMap(new ConfigMapVolumeSourceBuilder()
-                                .withName(configMapName)
-                                .build())
-                        .build()
+            // Secret additional volume
+            new AdditionalVolumeBuilder()
+                .withName(secretName)
+                .withSecret(new SecretVolumeSourceBuilder()
+                    .withSecretName(secretName)
+                    .build())
+                .build(),
+            // ConfigMap additional volume
+            new AdditionalVolumeBuilder()
+                .withName(configMapName)
+                .withConfigMap(new ConfigMapVolumeSourceBuilder()
+                    .withName(configMapName)
+                    .build())
+                .build()
         };
         VolumeMount[] volumeMounts = new VolumeMount[]{
-                new VolumeMountBuilder()
-                        .withName(secretName)
-                        .withMountPath(secretMountPath)
-                        .build(),
-                new VolumeMountBuilder()
-                        .withName(configMapName)
-                        .withMountPath(configMapMountPath)
-                        .build()
+            new VolumeMountBuilder()
+                .withName(secretName)
+                .withMountPath(secretMountPath)
+                .build(),
+            new VolumeMountBuilder()
+                .withName(configMapName)
+                .withMountPath(configMapMountPath)
+                .build()
         };
 
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), numberOfKafkaReplicas, 3)
             .editSpec()
-            .editKafka()
-                .editTemplate()
-                    .editPod()
-                        .addToVolumes(additionalVolumes)
-                    .endPod()
-                    .editKafkaContainer()
-                        .addToVolumeMounts(volumeMounts)
-                    .endKafkaContainer()
-                .endTemplate()
-            .endKafka()
+                .editKafka()
+                    .editTemplate()
+                        .editPod()
+                            .addToVolumes(additionalVolumes)
+                        .endPod()
+                        .editKafkaContainer()
+                            .addToVolumeMounts(volumeMounts)
+                        .endKafkaContainer()
+                    .endTemplate()
+                .endKafka()
             .endSpec()
             .build());
 
         resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
-                .editSpec()
-                    .editTemplate()
-                        .editPod()
-                            .addToVolumes(additionalVolumes)
-                        .endPod()
-                        .editConnectContainer()
-                            .addToVolumeMounts(volumeMounts)
-                        .endConnectContainer()
-                    .endTemplate()
-                .endSpec()
-                .build());
+            .editSpec()
+                .editTemplate()
+                    .editPod()
+                        .addToVolumes(additionalVolumes)
+                    .endPod()
+                    .editConnectContainer()
+                        .addToVolumeMounts(volumeMounts)
+                    .endConnectContainer()
+                .endTemplate()
+            .endSpec()
+            .build());
 
         resourceManager.createResourceWithWait(KafkaBridgeTemplates.kafkaBridge(testStorage.getClusterName(),
                         KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), 1)
-                .editSpec()
-                    .editTemplate()
-                        .editPod()
-                            .addToVolumes(additionalVolumes)
-                        .endPod()
-                        .editBridgeContainer()
-                            .addToVolumeMounts(volumeMounts)
-                        .endBridgeContainer()
-                    .endTemplate()
-                .endSpec()
-                .build());
+            .editSpec()
+                .editTemplate()
+                    .editPod()
+                        .addToVolumes(additionalVolumes)
+                    .endPod()
+                    .editBridgeContainer()
+                        .addToVolumeMounts(volumeMounts)
+                    .endBridgeContainer()
+                .endTemplate()
+            .endSpec()
+            .build());
 
         // 1. check Kafka pods
         List<Pod> kafkaPods = kubeClient(testStorage.getNamespaceName())
@@ -1370,62 +1364,77 @@ class KafkaST extends AbstractST {
                 .listPodsByPrefixInName(testStorage.getControllerComponentName()));
 
         for (Pod kafkaPod : kafkaPods) {
-            verifyPodAdditionalVolumes(testStorage.getNamespaceName(), kafkaPod, "kafka", secretMountPath, configMapMountPath,
-                    secretValueBase64, configMapValue, secretKeyBase64, configMapKey);
+            verifyPodSecretVolume(testStorage.getNamespaceName(), kafkaPod, "kafka", secretMountPath, secretValueBase64, secretKeyBase64);
+            verifyPodConfigMapVolume(testStorage.getNamespaceName(), kafkaPod, "kafka", configMapMountPath, configMapValue, configMapKey);
         }
 
         // 2. check Connect pods
         List<Pod> connectPods = kubeClient(testStorage.getNamespaceName()).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.componentName(testStorage.getClusterName()));
         for (Pod connectPod : connectPods) {
-            verifyPodAdditionalVolumes(testStorage.getNamespaceName(), connectPod, KafkaConnectResources.componentName(testStorage.getClusterName())
-                    , secretMountPath, configMapMountPath,
-                    secretValueBase64, configMapValue, secretKeyBase64, configMapKey);
+            verifyPodSecretVolume(testStorage.getNamespaceName(), connectPod, KafkaConnectResources.componentName(testStorage.getClusterName()), secretMountPath, secretValueBase64, secretKeyBase64);
+            verifyPodConfigMapVolume(testStorage.getNamespaceName(), connectPod, KafkaConnectResources.componentName(testStorage.getClusterName()), configMapMountPath, configMapValue, configMapKey);
         }
-
 
         // 3. check Bridge pods
         List<Pod> bridgePods = kubeClient(testStorage.getNamespaceName()).listPods(Labels.STRIMZI_NAME_LABEL, KafkaBridgeResources.componentName(testStorage.getClusterName()));
 
         for (Pod bridgePod : bridgePods) {
-            verifyPodAdditionalVolumes(testStorage.getNamespaceName(), bridgePod, KafkaBridgeResources.componentName(testStorage.getClusterName()), secretMountPath, configMapMountPath,
-                    secretValueBase64, configMapValue, secretKeyBase64, configMapKey);
+            verifyPodSecretVolume(testStorage.getNamespaceName(), bridgePod, KafkaBridgeResources.componentName(testStorage.getClusterName()), secretMountPath, secretValueBase64, secretKeyBase64);
+            verifyPodConfigMapVolume(testStorage.getNamespaceName(), bridgePod, KafkaBridgeResources.componentName(testStorage.getClusterName()), configMapMountPath, configMapValue, configMapKey);
         }
     }
 
     /**
-     * Verifies the configuration and content of additional volumes mounted in a specified Kubernetes pod.
-     * This includes checks for both a secret and a config map to ensure they are mounted at the specified
-     * paths and contain the expected values.
+     * Verifies the configuration and content of a secret volume mounted in a specified Kubernetes pod.
+     * This includes checks to ensure the secret is mounted at the specified path and contains the expected Base64-encoded value.
      *
-     * @param namespace             The Kubernetes namespace in which the pod is located.
-     * @param pod                   The pod object to verify.
-     * @param secretMountPath       The mount path for the secret volume.
-     * @param configMapMountPath    The mount path for the config map volume.
-     * @param secretValueBase64     The expected Base64-encoded value of the secret to be verified.
-     * @param configMapValue        The expected value of the config map to be verified.
-     * @param secretKeyBase64       The key within the secret volume used to access the secret content.
-     * @param configMapKey          The key within the config map volume used to access the config map content.
+     * @param namespace         The Kubernetes namespace in which the pod is located.
+     * @param pod               The pod object to verify.
+     * @param secretMountPath   The mount path for the secret volume.
+     * @param secretValueBase64 The expected Base64-encoded value of the secret to be verified.
+     * @param secretKeyBase64   The key within the secret volume used to access the secret content.
+     * @param containerName     The name of the container in the pod where the check is to be performed.
      */
-    private void verifyPodAdditionalVolumes(final String namespace, final Pod pod, final String containerName, final String secretMountPath,
-                                            final String configMapMountPath, final String secretValueBase64, final String configMapValue,
-                                            final String secretKeyBase64, final String configMapKey) {
+    private void verifyPodSecretVolume(final String namespace, final Pod pod, final String containerName,
+                                       final String secretMountPath, final String secretValueBase64, final String secretKeyBase64) {
         String podName = pod.getMetadata().getName();
         String secretMountCheck = cmdKubeClient().namespace(namespace)
                 .execInPodContainer(podName, containerName, "sh", "-c", "mount | grep " + secretMountPath).out().trim();
+
+        // Assert that secret mount exists
+        assertThat(secretMountCheck, containsString(secretMountPath));
+
+        // Verify content inside the secret volume
+        String secretContentCheck = cmdKubeClient().namespace(namespace)
+                .execInPodContainer(podName, containerName, "sh", "-c", "cat " + secretMountPath + "/" + secretKeyBase64).out().trim();
+
+        assertThat(secretContentCheck, is(secretValueBase64));
+    }
+
+    /**
+     * Verifies the configuration and content of a config map volume mounted in a specified Kubernetes pod.
+     * This includes checks to ensure the config map is mounted at the specified path and contains the expected value.
+     *
+     * @param namespace            The Kubernetes namespace in which the pod is located.
+     * @param pod                  The pod object to verify.
+     * @param configMapMountPath   The mount path for the config map volume.
+     * @param configMapValue       The expected value of the config map to be verified.
+     * @param configMapKey         The key within the config map volume used to access the config map content.
+     * @param containerName        The name of the container in the pod where the check is to be performed.
+     */
+    private void verifyPodConfigMapVolume(final String namespace, final Pod pod, final String containerName,
+                                          final String configMapMountPath, final String configMapValue, final String configMapKey) {
+        String podName = pod.getMetadata().getName();
         String configMountCheck = cmdKubeClient().namespace(namespace)
                 .execInPodContainer(podName, containerName, "sh", "-c", "mount | grep " + configMapMountPath).out().trim();
 
-        // Assert that mounts exist
-        assertThat(secretMountCheck, containsString(secretMountPath));
+        // Assert that config map mount exists
         assertThat(configMountCheck, containsString(configMapMountPath));
 
-        // Verify content inside the secret and config volumes
-        String secretContentCheck = cmdKubeClient().namespace(namespace)
-                .execInPodContainer(podName, containerName, "sh", "-c", "cat " + secretMountPath + "/" + secretKeyBase64).out().trim();
+        // Verify content inside the config map volume
         String configContentCheck = cmdKubeClient().namespace(namespace)
                 .execInPodContainer(podName, containerName, "sh", "-c", "cat " + configMapMountPath + "/" + configMapKey).out().trim();
 
-        assertThat(secretContentCheck, is(secretValueBase64));
         assertThat(configContentCheck, is(configMapValue));
     }
 
