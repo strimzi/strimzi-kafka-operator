@@ -11,6 +11,7 @@
   On the listener `serverBearerTokenLocation` and `userNamePrefix` have been added. 
   On the client `accessTokenLocation`, `clientAssertion`, `clientAssertionLocation`, `clientAssertionType`, and `saslExtensions` have been added.
 * Add support for custom Cruise Control API users
+* Update HTTP bridge to latest 0.30.0 release
 
 ### Changes, deprecations and removals
 
