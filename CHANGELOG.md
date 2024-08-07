@@ -6,6 +6,7 @@
   Remove support for Apache Kafka 3.6.0, 3.6.1, and 3.6.2.
 * Added alerts for Connectors/Tasks in failed state.
 * Support for specifying additional volumes and volume mounts in Strimzi custom resources
+* Strimzi Drain Cleaner updated to 1.2.0 (included in the Strimzi installation files)
 * Additional OAuth configuration options have been added for 'oauth' authentication on the listener and the client. 
   On the listener `serverBearerTokenLocation` and `userNamePrefix` have been added. 
   On the client `accessTokenLocation`, `clientAssertion`, `clientAssertionLocation`, `clientAssertionType`, and `saslExtensions` have been added.
