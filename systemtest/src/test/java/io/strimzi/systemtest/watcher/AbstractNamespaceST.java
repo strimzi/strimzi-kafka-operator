@@ -228,7 +228,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(MAIN_TEST_NAMESPACE, testStorage.getTargetClusterName(), 1, 1).build());
-        resourceManager.createResourceWithWait(KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getNamespaceName(), mirrorMakerName, PRIMARY_KAFKA_NAME, testStorage.getTargetClusterName(), 1, false).build());
+        resourceManager.createResourceWithWait(KafkaMirrorMaker2Templates.kafkaMirrorMaker2(MAIN_TEST_NAMESPACE, mirrorMakerName, PRIMARY_KAFKA_NAME, testStorage.getTargetClusterName(), 1, false).build());
 
         LOGGER.info("KafkaMirrorMaker2: {}/{} created and ready", MAIN_TEST_NAMESPACE, mirrorMakerName);
     }

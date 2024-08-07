@@ -52,6 +52,7 @@ public class KafkaConnectorTemplates {
                 .withTasksMax(maxTasks)
                 .withClassName("org.apache.kafka.connect.file.FileStreamSourceConnector")
                 .addToConfig("file", "/opt/kafka/LICENSE")
+                .addToConfig("topic", "my-topic")
             .endSpec();
     }
 }
