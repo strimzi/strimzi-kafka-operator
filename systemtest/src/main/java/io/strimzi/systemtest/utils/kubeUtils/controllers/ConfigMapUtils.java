@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.utils.kubeUtils.controllers;
 
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceOperation;
@@ -11,6 +12,7 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Collections;
 import java.util.Map;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -46,6 +48,27 @@ public class ConfigMapUtils {
                 );
             }
         }
+    }
+
+    /**
+     * Creates a ConfigMap in a specified Kubernetes namespace.
+     *
+     * @param namespaceName     the name of the Kubernetes namespace where the ConfigMap will be created
+     * @param configMapName     the name of the ConfigMap to be created
+     * @param dataKey           the key for the data to be stored in the ConfigMap
+     * @param dataValue         the value associated with the key in the ConfigMap
+     */
+    public static void createConfigMap(String namespaceName, String configMapName, String dataKey, String dataValue) {
+        LOGGER.info("Creating ConfigMap: {}/{}", namespaceName, configMapName);
+        kubeClient(namespaceName).createConfigMap(new ConfigMapBuilder()
+                .withApiVersion("v1")
+                .withKind("ConfigMap")
+                .withNewMetadata()
+                    .withName(configMapName)
+                    .withNamespace(namespaceName)
+                .endMetadata()
+                .withData(Collections.singletonMap(dataKey, dataValue))
+                .build());
     }
 
 }
