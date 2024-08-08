@@ -42,6 +42,7 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicList;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -75,6 +76,7 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.annotations.IsolatedTest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -103,6 +105,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
@@ -110,7 +113,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 class KafkaST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(KafkaST.class);
     private static final String OPENSHIFT_CLUSTER_NAME = "openshift-my-cluster";
-
 
     /**
      * @description This test case verifies that Pod's resources (limits and requests), custom JVM configurations, and expected Java configuration
@@ -1235,6 +1237,61 @@ class KafkaST extends AbstractST {
         // ##############################
         ClientUtils.waitForContinuousClientSuccess(testStorage, continuousClientsMessageCount);
         // ##############################
+    }
+
+    /**
+     * @description This test case verifies basic working of Kafka Cluster managed by Cluster Operator with KRaft.
+     *
+     * @steps
+     *  1. - Deploy Kafka annotated to enable KRaft (and additionally annotated to enable management by KafkaNodePool due to default usage of NodePools), and KafkaNodePool targeting given Kafka Cluster.
+     *     - Kafka is deployed, KafkaNodePool custom resource is targeting Kafka Cluster as expected.
+     *  2. - Produce and consume messages in given Kafka Cluster.
+     *     - Clients can produce and consume messages.
+     *  3. - Trigger manual Rolling Update.
+     *     - Rolling update is triggered and completed shortly after.
+     *
+     * @usecase
+     *  - kafka-node-pool
+     *  - kraft
+     */
+    @ParallelNamespaceTest()
+    void testKRaftMode() {
+        assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
+
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final int kafkaReplicas = 3;
+
+        resourceManager.createResourceWithWait(
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), kafkaReplicas).build(),
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), kafkaReplicas).build(),
+            KafkaTemplates.kafkaPersistentKRaft(testStorage.getClusterName(), kafkaReplicas).build()
+        );
+
+        // Check that there is no ZooKeeper
+        Map<String, String> zkPods = PodUtils.podSnapshot(testStorage.getNamespaceName(),
+            KafkaResource.getLabelSelector(testStorage.getClusterName(), KafkaResources.zookeeperComponentName(testStorage.getClusterName())));
+        assertThat("No ZooKeeper Pods should exist", zkPods.size(), is(0));
+
+        // create KafkaTopic with replication factor on all brokers and min.insync replicas configuration to not loss data during Rolling Update.
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getContinuousTopicName(), 1, kafkaReplicas, kafkaReplicas - 1, testStorage.getNamespaceName()).build());
+
+        KafkaClients clients = ClientUtils.getContinuousPlainClientBuilder(testStorage).build();
+        LOGGER.info("Producing and Consuming messages with continuous clients: {}, {} in Namespace {}", testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), testStorage.getNamespaceName());
+        resourceManager.createResourceWithWait(
+            clients.producerStrimzi(),
+            clients.consumerStrimzi()
+        );
+
+        // Roll Kafka
+        LOGGER.info("Forcing rolling update of Kafka via read-only configuration change");
+        final Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerPoolSelector());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().getKafka().getConfig().put("log.retention.hours", 72), testStorage.getNamespaceName());
+
+        LOGGER.info("Waiting for the next reconciliation to happen");
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerPoolSelector(), kafkaReplicas, brokerPods);
+
+        LOGGER.info("Waiting for clients to finish sending/receiving messages");
+        ClientUtils.waitForContinuousClientSuccess(testStorage);
     }
 
     /**
