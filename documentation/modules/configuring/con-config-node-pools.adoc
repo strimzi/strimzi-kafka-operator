@@ -35,17 +35,22 @@ For a deeper understanding of the node pool configuration options, refer to the 
 .Example configuration for a node pool in a cluster using KRaft mode 
 [source,yaml,subs="+attributes"]
 ----
+# Basic configuration (essential)
 apiVersion: {KafkaNodePoolApiVersion}
 kind: KafkaNodePool
 metadata:
   name: kraft-dual-role # <1>
   labels:
     strimzi.io/cluster: my-cluster # <2>
+# Node pool specifications
 spec:
+  # Replicas (essential)
   replicas: 3 # <3>
+  # Roles (essential)
   roles: # <4>
     - controller
     - broker
+  # Storage configuration (essential)
   storage: # <5>
     type: jbod
     volumes:
@@ -53,13 +58,14 @@ spec:
         type: persistent-claim
         size: 100Gi
         deleteClaim: false
+  # Resources requests and limits (optional)
   resources: # <6>
-      requests:
-        memory: 64Gi
-        cpu: "8"
-      limits:
-        memory: 64Gi
-        cpu: "12"      
+    requests:
+      memory: 64Gi
+      cpu: "8"
+    limits:
+      memory: 64Gi
+      cpu: "12"
 ----
 <1> Unique name for the node pool.
 <2> The Kafka cluster the node pool belongs to. A node pool can only belong to a single cluster.
