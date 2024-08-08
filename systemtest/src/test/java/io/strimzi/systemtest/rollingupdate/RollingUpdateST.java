@@ -427,7 +427,7 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Creating new KafkaTopic: {}/{} and producing consuming data", testStorage.getNamespaceName(), topicNameScaledBackDown);
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), topicNameScaledBackDown, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), topicNameScaledBackDown, testStorage.getClusterName()).build());
         final KafkaClients clientsTopicAfterScaleDown = ClientUtils.getInstantTlsClientBuilder(testStorage)
             .withTopicName(topicNameScaledBackDown)
             .build();
