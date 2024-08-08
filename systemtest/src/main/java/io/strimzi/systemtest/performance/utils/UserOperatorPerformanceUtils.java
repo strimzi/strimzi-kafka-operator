@@ -31,6 +31,9 @@ public class UserOperatorPerformanceUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(UserOperatorPerformanceUtils.class);
 
+    // ensuring that object can not be created outside of class
+    private UserOperatorPerformanceUtils() {}
+
     public static void alterAllUsersInList(final TestStorage testStorage, final List<KafkaUser> listOfUsers, final String usersPrefix) {
         LOGGER.info("Altering {} KafkaUsers", listOfUsers.size());
 

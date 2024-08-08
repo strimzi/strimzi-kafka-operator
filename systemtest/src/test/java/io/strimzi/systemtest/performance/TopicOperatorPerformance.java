@@ -20,6 +20,7 @@ import io.strimzi.systemtest.performance.gather.collectors.TopicOperatorMetricsC
 import io.strimzi.systemtest.performance.gather.schedulers.TopicOperatorMetricsCollectionScheduler;
 import io.strimzi.systemtest.performance.report.TopicOperatorPerformanceReporter;
 import io.strimzi.systemtest.performance.report.parser.TopicOperatorMetricsParser;
+import io.strimzi.systemtest.performance.utils.TopicOperatorPerformanceUtils;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -45,13 +46,16 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAccessor;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.TestConstants.PERFORMANCE;
+import static io.strimzi.systemtest.TestConstants.SCALABILITY;
 import static io.strimzi.systemtest.performance.PerformanceConstants.PERFORMANCE_CAPACITY;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -737,6 +741,112 @@ public class TopicOperatorPerformance extends AbstractST {
         }
     }
 
+    private static Stream<Arguments> provideConfigurationsForTestSystemScalability() {
+        final int seed = 50;
+        final int limit = 20; // up to 1000 topics to create
+
+        // this means we would invoke create/update/delete operations x times in one iteration
+        int[] batchEventSizes = IntStream.iterate(seed, n -> n + seed).limit(limit).toArray();
+        return Stream.of(
+            new Object[][]{
+                    {"100", "100"},     // Default configuration
+                    {"100", "10"}       // Default batch size, with lower linger time
+                }
+            )
+            .flatMap(config -> Arrays.stream(batchEventSizes)
+                .mapToObj(numberOfTopics -> {
+                    int eventPerTask = 3;
+                    int numberOfTasks = numberOfTopics / eventPerTask;
+                    int spareEvents = numberOfTopics % eventPerTask;
+
+                    return Arguments.of(config[0], config[1], numberOfTasks, spareEvents);
+                }));
+    }
+
+    @Tag(SCALABILITY)
+    @ParameterizedTest
+    @MethodSource("provideConfigurationsForTestSystemScalability")
+    void testSystemScalability(String maxBatchSize, String maxBatchLingerMs, int numberOfTasks, int spareEvents) throws IOException {
+        final int brokerReplicas = 3;
+        final int controllerReplicas = 3;
+        final String maxQueueSize = String.valueOf(Integer.MAX_VALUE);
+        long allTasksTimeMs = 0;
+
+        try {
+            resourceManager.createResourceWithWait(
+                NodePoolsConverter.convertNodePoolsIfNeeded(
+                    KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerReplicas)
+                        .editSpec()
+                            .withNewPersistentClaimStorage()
+                                .withSize("5Gi")
+                            .endPersistentClaimStorage()
+                        .endSpec()
+                        .build(),
+                    KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerReplicas).build()
+                )
+            );
+            resourceManager.createResourceWithWait(
+                KafkaTemplates.kafkaMetricsConfigMap(testStorage.getNamespaceName(), testStorage.getClusterName()),
+                KafkaTemplates.kafkaWithMetrics(testStorage.getNamespaceName(), testStorage.getClusterName(), brokerReplicas, controllerReplicas)
+                    .editSpec()
+                        .editEntityOperator()
+                            .editTopicOperator()
+                                .withReconciliationIntervalSeconds(10)
+                            .endTopicOperator()
+                            .editOrNewTemplate()
+                                .editOrNewTopicOperatorContainer()
+                                    .addNewEnv()
+                                        .withName("STRIMZI_MAX_QUEUE_SIZE")
+                                        .withValue(maxQueueSize)
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("STRIMZI_MAX_BATCH_SIZE")
+                                        .withValue(maxBatchSize)
+                                    .endEnv()
+                                    .addNewEnv()
+                                        .withName("MAX_BATCH_LINGER_MS")
+                                        .withValue(maxBatchLingerMs)
+                                    .endEnv()
+                                .endTopicOperatorContainer()
+                            .endTemplate()
+                        .endEntityOperator()
+                    .endSpec()
+                    .build(),
+                ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
+            );
+
+            this.testStorage.addToTestStorage(TestConstants.SCRAPER_POD_KEY,
+                kubeClient().listPodsByPrefixInName(this.testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName());
+
+            // warm-up phase processes 100 topics/tasks
+            final int warmUpTasksToProcess = 100;
+            TopicOperatorPerformanceUtils.processAllTopicsConcurrently(testStorage, warmUpTasksToProcess, 0, 0);
+
+            // Calculate total execution time in nanoseconds and then convert to ms
+            allTasksTimeMs = TopicOperatorPerformanceUtils.processAllTopicsConcurrently(testStorage, numberOfTasks, spareEvents, warmUpTasksToProcess);
+
+            LOGGER.info("Total time taken for all tasks (i.e., {} for each operation; creation, modification and deletion) {} ms", numberOfTasks, allTasksTimeMs);
+        } finally {
+            final Map<String, Object> performanceAttributes = new LinkedHashMap<>();
+
+            performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_QUEUE_SIZE, maxQueueSize);
+            performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_BATCH_SIZE, maxBatchSize);
+            performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_NUMBER_OF_TOPICS, numberOfTasks);
+            performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_NUMBER_OF_EVENTS, (numberOfTasks * 3) + spareEvents);
+            performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_BATCH_LINGER_MS, maxBatchLingerMs);
+            performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_PROCESS_TYPE, "TOPIC-CONCURRENT");
+
+            performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_SUCCESSFUL_KAFKA_TOPICS_CREATED_AND_MODIFIED_AND_DELETED, allTasksTimeMs);
+            this.topicOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.TOPIC_OPERATOR_FIXED_SIZE_OF_EVENTS_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
+
+            // safe net if something went wrong during test case and KafkaTopic is not properly deleted
+            LOGGER.info("Start deletion KafkaTopics in namespace:{}", testStorage.getNamespaceName());
+            resourceManager.deleteResourcesOfTypeWithoutWait(KafkaTopic.RESOURCE_KIND);
+            KafkaTopicUtils.waitForTopicWithPrefixDeletion(testStorage.getNamespaceName(), testStorage.getTopicName());
+        }
+    }
+
+
     @BeforeEach
     public void setUp(ExtensionContext extensionContext) {
         this.testStorage = new TestStorage(extensionContext, TestConstants.CO_NAMESPACE);
@@ -753,6 +863,7 @@ public class TopicOperatorPerformance extends AbstractST {
 
     @AfterAll
      void tearDown() {
+        TopicOperatorPerformanceUtils.stopExecutor();
         // show tables with metrics
         TopicOperatorMetricsParser.main(new String[]{PerformanceConstants.TOPIC_OPERATOR_PARSER});
     }
