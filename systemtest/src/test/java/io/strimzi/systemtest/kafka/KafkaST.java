@@ -34,7 +34,6 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicList;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -64,7 +63,6 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.annotations.IsolatedTest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -90,7 +88,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
@@ -1240,8 +1237,6 @@ class KafkaST extends AbstractST {
      */
     @ParallelNamespaceTest()
     void testKRaftMode() {
-        assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
-
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int kafkaReplicas = 3;
 

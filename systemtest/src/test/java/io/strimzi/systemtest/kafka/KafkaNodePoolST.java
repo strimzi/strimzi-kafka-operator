@@ -31,7 +31,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
-import io.strimzi.test.annotations.IsolatedTest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -341,8 +340,6 @@ public class KafkaNodePoolST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testKafkaManagementTransferToAndFromKafkaNodePool() {
-        assumeFalse(Environment.isKRaftModeEnabled());
-
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int originalKafkaReplicaCount = 3;
         final int nodePoolIncreasedKafkaReplicaCount = 5;
