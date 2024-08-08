@@ -230,7 +230,7 @@ public class KafkaClusterCreatorTest {
                 })));
     }
 
-     @Test
+    @Test
     public void testNewClusterWithMixedNodesKRaft(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
