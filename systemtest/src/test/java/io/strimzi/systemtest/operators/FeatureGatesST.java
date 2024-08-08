@@ -5,26 +5,9 @@
 package io.strimzi.systemtest.operators;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.strimzi.api.kafka.model.kafka.Kafka;
-import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.storage.TestStorage;
-import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
-import io.strimzi.systemtest.templates.crd.KafkaTemplates;
-import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
-import io.strimzi.systemtest.utils.ClientUtils;
-import io.strimzi.systemtest.utils.RollingUpdateUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
-import io.strimzi.test.annotations.IsolatedTest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Disabled;
@@ -33,13 +16,8 @@ import org.junit.jupiter.api.Tag;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
-import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
  * Feature Gates should give us additional options on
