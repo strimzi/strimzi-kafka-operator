@@ -1397,15 +1397,15 @@ class KafkaST extends AbstractST {
      */
     private void verifyPodSecretVolume(final String namespace, final Pod pod, final String containerName,
                                        final String secretMountPath, final String secretValueBase64, final String secretKeyBase64) {
-        String podName = pod.getMetadata().getName();
-        String secretMountCheck = cmdKubeClient().namespace(namespace)
-                .execInPodContainer(podName, containerName, "sh", "-c", "mount | grep " + secretMountPath).out().trim();
+        final String podName = pod.getMetadata().getName();
+        final String secretMountCheck = cmdKubeClient().namespace(namespace)
+                .execInPodContainer(podName, containerName, "sh", "-c", "cat /proc/mounts | grep " + secretMountPath).out().trim();
 
         // Assert that secret mount exists
         assertThat(secretMountCheck, containsString(secretMountPath));
 
         // Verify content inside the secret volume
-        String secretContentCheck = cmdKubeClient().namespace(namespace)
+        final String secretContentCheck = cmdKubeClient().namespace(namespace)
                 .execInPodContainer(podName, containerName, "sh", "-c", "cat " + secretMountPath + "/" + secretKeyBase64).out().trim();
 
         assertThat(secretContentCheck, is(secretValueBase64));
@@ -1424,15 +1424,15 @@ class KafkaST extends AbstractST {
      */
     private void verifyPodConfigMapVolume(final String namespace, final Pod pod, final String containerName,
                                           final String configMapMountPath, final String configMapValue, final String configMapKey) {
-        String podName = pod.getMetadata().getName();
-        String configMountCheck = cmdKubeClient().namespace(namespace)
-                .execInPodContainer(podName, containerName, "sh", "-c", "mount | grep " + configMapMountPath).out().trim();
+        final String podName = pod.getMetadata().getName();
+        final String configMountCheck = cmdKubeClient().namespace(namespace)
+            .execInPodContainer(podName, containerName, "sh", "-c", "cat /proc/mounts | grep " + configMapMountPath).out().trim();
 
         // Assert that config map mount exists
         assertThat(configMountCheck, containsString(configMapMountPath));
 
         // Verify content inside the config map volume
-        String configContentCheck = cmdKubeClient().namespace(namespace)
+        final String configContentCheck = cmdKubeClient().namespace(namespace)
                 .execInPodContainer(podName, containerName, "sh", "-c", "cat " + configMapMountPath + "/" + configMapKey).out().trim();
 
         assertThat(configContentCheck, is(configMapValue));
