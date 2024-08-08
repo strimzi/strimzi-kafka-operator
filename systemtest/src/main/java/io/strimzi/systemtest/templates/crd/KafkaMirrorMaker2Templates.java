@@ -57,6 +57,11 @@ public class KafkaMirrorMaker2Templates {
                         .withNewConfigMapKeyRef(CONFIG_MAP_KEY, getConfigMapName(mm2name), false)
                     .endValueFrom()
                 .endJmxPrometheusExporterMetricsConfig()
+                .editFirstMirror()
+                    .withNewHeartbeatConnector()
+                        .addToConfig("checkpoints.topic.replication.factor", -1)
+                    .endHeartbeatConnector()
+                .endMirror()
             .endSpec();
     }
 

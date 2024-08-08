@@ -219,7 +219,7 @@ class RollingUpdateST extends AbstractST {
         // Create new topic to ensure, that ZK is working properly
         String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), newTopicName, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), newTopicName, testStorage.getClusterName()).build());
 
         clients = new KafkaClientsBuilder(clients)
             .withTopicName(newTopicName)
@@ -380,7 +380,7 @@ class RollingUpdateST extends AbstractST {
         // new topic has more replicas than there was available Kafka brokers before scaling up
 
         LOGGER.info("Create new KafkaTopic with replica count requiring existence of brokers added by scaling up");
-        KafkaTopic scaledUpKafkaTopicResource = KafkaTopicTemplates.topic(testStorage.getClusterName(), topicNameScaledUp, testStorage.getNamespaceName())
+        KafkaTopic scaledUpKafkaTopicResource = KafkaTopicTemplates.topic(testStorage.getNamespaceName(), topicNameScaledUp, testStorage.getClusterName())
             .editSpec()
                 .withReplicas(initialReplicas + 1)
             .endSpec()

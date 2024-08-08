@@ -118,10 +118,7 @@ public class TopicST extends AbstractST {
     void testCreateDeleteCreate() throws InterruptedException {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE)
-            .editMetadata()
-                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
-            .endMetadata()
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), sharedTestStorage.getClusterName())
             .editSpec()
                 .withReplicas(3)
             .endSpec()
@@ -142,7 +139,7 @@ public class TopicST extends AbstractST {
             long t0 = System.currentTimeMillis();
 
             LOGGER.info("Iteration {}: Recreating {}", i, testStorage.getTopicName());
-            resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(sharedTestStorage.getClusterName(), testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE)
+            resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), sharedTestStorage.getClusterName())
                 .editSpec()
                     .withReplicas(3)
                 .endSpec()

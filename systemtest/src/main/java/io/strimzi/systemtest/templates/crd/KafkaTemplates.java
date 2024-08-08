@@ -289,6 +289,7 @@ public class KafkaTemplates {
         setDefaultConfigurationOfZookeeperKafka(kb, zookeeperReplicas);
         setDefaultLogging(kb, true);
         setMemoryRequestsAndLimitsIfNeeded(kb, true);
+        setKafkaEphemeralStorage(kb);
         setZookeeperEphemeralStorage(kb);
 
         return kb;
@@ -335,6 +336,16 @@ public class KafkaTemplates {
     // -------------------------------------------------------------------------------------------
     // Application of defaults to the builders
     // -------------------------------------------------------------------------------------------
+
+    private static void setKafkaEphemeralStorage(KafkaBuilder kafkaBuilder) {
+        kafkaBuilder
+            .editSpec()
+                .editOrNewKafka()
+                    .withNewEphemeralStorage()
+                    .endEphemeralStorage()
+                .endKafka()
+            .endSpec();
+    }
 
     private static void setZookeeperEphemeralStorage(KafkaBuilder kafkaBuilder) {
         kafkaBuilder
