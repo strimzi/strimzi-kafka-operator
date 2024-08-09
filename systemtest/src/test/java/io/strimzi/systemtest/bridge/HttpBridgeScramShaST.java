@@ -55,7 +55,7 @@ class HttpBridgeScramShaST extends AbstractST {
             .build();
 
         // Create topic
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(suiteTestStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), suiteTestStorage.getClusterName()).build());
 
         resourceManager.createResourceWithWait(kafkaBridgeClientJb.producerStrimziBridge());
         ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
@@ -77,7 +77,7 @@ class HttpBridgeScramShaST extends AbstractST {
             .withConsumerName(testStorage.getConsumerName())
             .build();
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(suiteTestStorage.getClusterName(), testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), suiteTestStorage.getClusterName()).build());
         resourceManager.createResourceWithWait(kafkaBridgeClientJb.consumerStrimziBridge());
 
         // Send messages to Kafka
@@ -106,10 +106,7 @@ class HttpBridgeScramShaST extends AbstractST {
             )
         );
         // Deploy kafka
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(suiteTestStorage.getClusterName(), 1, 1)
-            .editMetadata()
-                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
-            .endMetadata()
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(Environment.TEST_SUITE_NAMESPACE, suiteTestStorage.getClusterName(), 1, 1)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -124,7 +121,7 @@ class HttpBridgeScramShaST extends AbstractST {
             .endSpec().build());
 
         // Create Kafka user
-        KafkaUser scramShaUser = KafkaUserTemplates.scramShaUser(Environment.TEST_SUITE_NAMESPACE, suiteTestStorage.getClusterName(), suiteTestStorage.getUsername())
+        KafkaUser scramShaUser = KafkaUserTemplates.scramShaUser(Environment.TEST_SUITE_NAMESPACE, suiteTestStorage.getUsername(), suiteTestStorage.getClusterName())
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
@@ -143,11 +140,9 @@ class HttpBridgeScramShaST extends AbstractST {
         certSecret.setSecretName(KafkaResources.clusterCaCertificateSecretName(suiteTestStorage.getClusterName()));
 
         // Deploy http bridge
-        resourceManager.createResourceWithWait(KafkaBridgeTemplates.kafkaBridge(suiteTestStorage.getClusterName(),
-            KafkaResources.tlsBootstrapAddress(suiteTestStorage.getClusterName()), 1)
-            .editMetadata()
-                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
-            .endMetadata()
+        resourceManager.createResourceWithWait(
+            KafkaBridgeTemplates.kafkaBridge(Environment.TEST_SUITE_NAMESPACE,
+                suiteTestStorage.getClusterName(), KafkaResources.tlsBootstrapAddress(suiteTestStorage.getClusterName()), 1)
             .editSpec()
                     .withNewConsumer()
                         .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
@@ -159,7 +154,9 @@ class HttpBridgeScramShaST extends AbstractST {
                     .withNewTls()
                         .withTrustedCertificates(certSecret)
                     .endTls()
-                .endSpec().build());
+                .endSpec()
+                .build()
+        );
 
         kafkaBridgeClientJob = new BridgeClientsBuilder()
             .withBootstrapAddress(KafkaBridgeResources.serviceName(suiteTestStorage.getClusterName()))

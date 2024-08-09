@@ -67,7 +67,7 @@ public class JmxST extends AbstractST {
                 KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
             )
         );
-        Kafka kafka = KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
+        Kafka kafka = KafkaTemplates.kafkaEphemeral(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editOrNewSpec()
                 .editKafka()
                     .withNewJmxOptions()
@@ -98,7 +98,7 @@ public class JmxST extends AbstractST {
         String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
         JmxUtils.downloadJmxTermToPod(testStorage.getNamespaceName(), scraperPodName);
 
-        KafkaConnect connect = KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+        KafkaConnect connect = KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editOrNewSpec()
                 .withNewJmxOptions()
                     .withAuthentication(new KafkaJmxAuthenticationPassword())

@@ -63,10 +63,7 @@ public class PodSetST extends AbstractST {
                 KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), replicas).build()
             )
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), replicas)
-            .editMetadata()
-                .withNamespace(testStorage.getNamespaceName())
-            .endMetadata()
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), testStorage.getClusterName(), replicas)
             .editSpec()
                 .editOrNewKafka()
                     .addToConfig("default.replication.factor", 3)

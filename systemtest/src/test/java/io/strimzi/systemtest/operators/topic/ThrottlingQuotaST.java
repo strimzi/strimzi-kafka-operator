@@ -140,10 +140,7 @@ public class ThrottlingQuotaST extends AbstractST {
         );
         // Deploy kafka with ScramSHA512
         LOGGER.info("Deploying shared Kafka across all test cases in {} Namespace", sharedTestStorage.getNamespaceName());
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(sharedTestStorage.getClusterName(), 3)
-            .editMetadata()
-                .withNamespace(sharedTestStorage.getNamespaceName())
-            .endMetadata()
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(
@@ -170,7 +167,7 @@ public class ThrottlingQuotaST extends AbstractST {
 
         // deploy quota limited admin client and respective Kafka User
 
-        resourceManager.createResourceWithWait(KafkaUserTemplates.defaultUser(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), sharedTestStorage.getUsername())
+        resourceManager.createResourceWithWait(KafkaUserTemplates.defaultUser(sharedTestStorage.getNamespaceName(), sharedTestStorage.getUsername(), sharedTestStorage.getClusterName())
             .editOrNewSpec()
                 .withNewQuotas()
                     .withControllerMutationRate(1.0)
@@ -192,7 +189,7 @@ public class ThrottlingQuotaST extends AbstractST {
 
         // deploy unlimited admin client and respective user for purpose of cleaning up resources
 
-        resourceManager.createResourceWithWait(KafkaUserTemplates.defaultUser(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), sharedTestStorage.getUsername() + "-unlimited")
+        resourceManager.createResourceWithWait(KafkaUserTemplates.defaultUser(sharedTestStorage.getNamespaceName(), sharedTestStorage.getUsername() + "-unlimited", sharedTestStorage.getClusterName())
             .editOrNewSpec()
                 .withAuthentication(new KafkaUserScramSha512ClientAuthentication())
             .endSpec()

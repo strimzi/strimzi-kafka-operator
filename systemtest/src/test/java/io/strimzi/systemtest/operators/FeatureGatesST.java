@@ -74,7 +74,7 @@ public class FeatureGatesST extends AbstractST {
 
         setupClusterOperatorWithFeatureGate("");
 
-        final Kafka kafkaCr = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), kafkaReplicas)
+        final Kafka kafkaCr = KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaReplicas)
             .editOrNewMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
@@ -94,7 +94,7 @@ public class FeatureGatesST extends AbstractST {
         assertThat("No ZooKeeper Pods should exist", zkPods.size(), is(0));
 
         // create KafkaTopic with replication factor on all brokers and min.insync replicas configuration to not loss data during Rolling Update.
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getContinuousTopicName(), 1, kafkaReplicas, kafkaReplicas - 1, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getContinuousTopicName(), testStorage.getClusterName(), 1, kafkaReplicas, kafkaReplicas - 1).build());
 
         KafkaClients clients = ClientUtils.getContinuousPlainClientBuilder(testStorage).build();
         LOGGER.info("Producing and Consuming messages with continuous clients: {}, {} in Namespace {}", testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), testStorage.getNamespaceName());
@@ -153,10 +153,9 @@ public class FeatureGatesST extends AbstractST {
 
         LOGGER.info("Deploying Kafka Cluster: {}/{} controlled by KafkaNodePool: {}", testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaNodePoolName);
 
-        final Kafka kafkaCr = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), originalKafkaReplicaCount, 3)
+        final Kafka kafkaCr = KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), testStorage.getClusterName(), originalKafkaReplicaCount, 3)
             .editOrNewMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
-                .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .build();
 

@@ -119,12 +119,7 @@ public class SpecificST extends AbstractST {
                 KafkaNodePoolTemplates.controllerPool(Environment.TEST_SUITE_NAMESPACE, testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
             )
         );
-        resourceManager.createResourceWithoutWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
-                .editMetadata()
-                // this should not work
-                    .withNamespace(Environment.TEST_SUITE_NAMESPACE)
-                .endMetadata()
-                .build());
+        resourceManager.createResourceWithoutWait(KafkaTemplates.kafkaEphemeral(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), 3).build());
 
         // implicit verification that a user is able to deploy Kafka cluster in namespace <example-1>, where we are allowed
         // to create Custom Resources because of `*-namespaced Role`
@@ -134,12 +129,8 @@ public class SpecificST extends AbstractST {
                 KafkaNodePoolTemplates.controllerPool(namespaceWhereCreationOfCustomResourcesIsApproved, testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
             )
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
-                .editMetadata()
-                // this should work
-                    .withNamespace(namespaceWhereCreationOfCustomResourcesIsApproved)
-                .endMetadata()
-                .build());
+        // this should work
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(namespaceWhereCreationOfCustomResourcesIsApproved, testStorage.getClusterName(), 3).build());
 
         // verify that in `infra-namespace` we are not able to deploy Kafka cluster
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getClusterName(), Environment.TEST_SUITE_NAMESPACE,
