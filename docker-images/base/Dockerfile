@@ -13,12 +13,12 @@ RUN microdnf update -y \
     && microdnf reinstall -y tzdata \
     && microdnf clean all -y
 
-ENV JAVA_HOME /usr/lib/jvm/jre-17
+ENV JAVA_HOME=/usr/lib/jvm/jre-17
 
 #####
 # Add Tini
 #####
-ENV TINI_VERSION v0.19.0
+ENV TINI_VERSION=v0.19.0
 ENV TINI_SHA256_AMD64=93dcc18adc78c65a028a84799ecf8ad40c936fdfc5f2a57b1acda5a8117fa82c
 ENV TINI_SHA256_ARM64=07952557df20bfd2a95f9bef198b445e006171969499a1d361bd9e6f8e5e0e81
 ENV TINI_SHA256_PPC64LE=3f658420974768e40810001a038c29d003728c5fe86da211cff5059e48cfdfde
