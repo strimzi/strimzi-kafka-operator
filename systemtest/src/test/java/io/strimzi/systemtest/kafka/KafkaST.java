@@ -1253,6 +1253,8 @@ class KafkaST extends AbstractST {
      */
     @ParallelNamespaceTest()
     void testKRaftMode() {
+        assumeTrue(Environment.isKRaftModeEnabled() && Environment.isKafkaNodePoolsEnabled());
+
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int kafkaReplicas = 3;
 
