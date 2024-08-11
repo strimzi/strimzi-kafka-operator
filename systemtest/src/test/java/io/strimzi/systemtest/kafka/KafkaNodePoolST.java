@@ -347,11 +347,7 @@ public class KafkaNodePoolST extends AbstractST {
 
         LOGGER.info("Deploying Kafka Cluster: {}/{} controlled by KafkaNodePool: {}", testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaNodePoolName);
 
-        final Kafka kafkaCr = KafkaTemplates.kafkaPersistentNodePools(testStorage.getClusterName(), originalKafkaReplicaCount, 3)
-            .editOrNewMetadata()
-                .withNamespace(testStorage.getNamespaceName())
-            .endMetadata()
-            .build();
+        final Kafka kafkaCr = KafkaTemplates.kafkaPersistentNodePools(testStorage.getNamespaceName(), testStorage.getClusterName(), originalKafkaReplicaCount, 3).build();
 
         // as the only FG set in the CO is 'KafkaNodePools' (kraft is never included) Broker role is the only one that can be taken
         resourceManager.createResourceWithWait(
