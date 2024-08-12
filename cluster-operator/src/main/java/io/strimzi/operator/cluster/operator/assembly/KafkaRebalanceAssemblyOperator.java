@@ -356,9 +356,9 @@ public class KafkaRebalanceAssemblyOperator
         return rebalanceOptionsBuilder;
     }
 
-    private Future<KafkaRebalanceStatus> reconcile(Reconciliation reconciliation, String host,
-                                                   CruiseControlApi apiClient, KafkaRebalance kafkaRebalance,
-                                                   KafkaRebalanceState currentState) {
+    private Future<KafkaRebalanceStatus> reconcileKafkaRebalance(Reconciliation reconciliation, String host,
+                                                                 CruiseControlApi apiClient, KafkaRebalance kafkaRebalance,
+                                                                 KafkaRebalanceState currentState) {
 
         if (kafkaRebalance != null && kafkaRebalance.getStatus() != null
                 && "Ready".equals(rebalanceStateConditionType(kafkaRebalance.getStatus()))
@@ -1133,7 +1133,7 @@ public class KafkaRebalanceAssemblyOperator
                                                 }
                                                 currentState = KafkaRebalanceState.valueOf(rebalanceStateType);
                                             }
-                                            return reconcile(reconciliation, cruiseControlHost(clusterName, clusterNamespace),
+                                            return reconcileKafkaRebalance(reconciliation, cruiseControlHost(clusterName, clusterNamespace),
                                                     apiClient, currentKafkaRebalance, currentState);
                                         }, exception -> Future.failedFuture(exception));
                             });
