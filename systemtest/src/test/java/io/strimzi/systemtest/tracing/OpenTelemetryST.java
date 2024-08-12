@@ -77,7 +77,7 @@ public class OpenTelemetryST extends AbstractST {
     @Tag(ACCEPTANCE)
     @ParallelNamespaceTest
     void testProducerConsumerStreamsService() {
-        TestStorage testStorage = deployInitialResourcesAndGetTestStorage();
+        final TestStorage testStorage = deployInitialResourcesAndGetTestStorage();
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -116,7 +116,7 @@ public class OpenTelemetryST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(MIRROR_MAKER2)
     void testProducerConsumerMirrorMaker2Service() {
-        TestStorage testStorage = deployInitialResourcesAndGetTestStorage();
+        final TestStorage testStorage = deployInitialResourcesAndGetTestStorage();
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -195,7 +195,7 @@ public class OpenTelemetryST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(MIRROR_MAKER)
     void testProducerConsumerMirrorMakerService() {
-        TestStorage testStorage = deployInitialResourcesAndGetTestStorage();
+        final TestStorage testStorage = deployInitialResourcesAndGetTestStorage();
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -264,7 +264,7 @@ public class OpenTelemetryST extends AbstractST {
     @Tag(CONNECT_COMPONENTS)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testProducerConsumerStreamsConnectService() {
-        TestStorage testStorage = deployInitialResourcesAndGetTestStorage();
+        final TestStorage testStorage = deployInitialResourcesAndGetTestStorage();
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -342,7 +342,7 @@ public class OpenTelemetryST extends AbstractST {
     @Tag(BRIDGE)
     @ParallelNamespaceTest
     void testKafkaBridgeService() {
-        TestStorage testStorage = deployInitialResourcesAndGetTestStorage();
+        final TestStorage testStorage = deployInitialResourcesAndGetTestStorage();
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -407,7 +407,7 @@ public class OpenTelemetryST extends AbstractST {
     @Tag(BRIDGE)
     @ParallelNamespaceTest
     void testKafkaBridgeServiceWithHttpTracing() {
-        TestStorage testStorage = deployInitialResourcesAndGetTestStorage();
+        final TestStorage testStorage = deployInitialResourcesAndGetTestStorage();
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
