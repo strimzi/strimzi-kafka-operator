@@ -12,7 +12,6 @@ import io.strimzi.systemtest.parallel.TestSuiteNamespaceManager;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
-import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.interfaces.TestSeparator;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -29,7 +28,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -53,9 +51,6 @@ public abstract class AbstractST implements TestSeparator {
 
     // {thread-safe} this needs to be static because when more threads spawns diff. TestSuites it might produce race conditions
     private static final Object LOCK = new Object();
-
-    protected static ConcurrentHashMap<ExtensionContext, TestStorage> storageMap = new ConcurrentHashMap<>();
-
 
     protected void assertNoCoErrorsLogged(String namespaceName, long sinceSeconds) {
         LOGGER.info("Search in strimzi-cluster-operator log for errors in last {} second(s)", sinceSeconds);
@@ -109,7 +104,6 @@ public abstract class AbstractST implements TestSeparator {
         synchronized (LOCK) {
             LOGGER.info("Not first test we are gonna generate cluster name");
             testSuiteNamespaceManager.createParallelNamespace();
-            storageMap.put(ResourceManager.getTestContext(), new TestStorage(ResourceManager.getTestContext()));
         }
     }
 
@@ -172,7 +166,7 @@ public abstract class AbstractST implements TestSeparator {
         try {
             // This method needs to be disabled for the moment, as it brings flakiness and is unstable due to regexes and current matcher checks.
             // Needs to be reworked on what errors to ignore. Better error logging should be added.
-            //assertNoCoErrorsLogged(clusterOperator.getDeploymentNamespace(), storageMap.get(extensionContext).getTestExecutionTimeInSeconds());
+//            assertNoCoErrorsLogged(clusterOperator.getDeploymentNamespace(), (long) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.TEST_EXECUTION_START_TIME_KEY));
         } finally {
             afterEachMayOverride();
             afterEachMustExecute();
