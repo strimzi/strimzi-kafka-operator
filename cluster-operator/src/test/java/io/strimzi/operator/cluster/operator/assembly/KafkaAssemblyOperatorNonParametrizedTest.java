@@ -20,8 +20,8 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ClusterRoleBindingOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Future;
@@ -40,11 +40,9 @@ import org.mockito.Mockito;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -53,18 +51,19 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaAssemblyOperatorNonParametrizedTest {
-
-    public static final String NAMESPACE = "test";
-    public static final String NAME = "my-kafka";
-    private static Vertx vertx;
-    private static WorkerExecutor sharedWorkerExecutor;
-    private final OpenSslCertManager certManager = new OpenSslCertManager();
-    private final PasswordGenerator passwordGenerator = new PasswordGenerator(12,
+    private static final String NAMESPACE = "test";
+    private static final String NAME = "my-kafka";
+    private static final OpenSslCertManager CERT_MANAGER = new OpenSslCertManager();
+    @SuppressWarnings("SpellCheckingInspection")
+    private static final PasswordGenerator PASSWORD_GENERATOR = new PasswordGenerator(12,
             "abcdefghijklmnopqrstuvwxyz" +
                     "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
             "abcdefghijklmnopqrstuvwxyz" +
                     "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
                     "0123456789");
+
+    private static Vertx vertx;
+    private static WorkerExecutor sharedWorkerExecutor;
 
     @BeforeAll
     public static void before() {
@@ -85,7 +84,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         ArgumentCaptor<ClusterRoleBinding> desiredCrb = ArgumentCaptor.forClass(ClusterRoleBinding.class);
         when(mockCrbOps.reconcile(any(), eq(KafkaResources.initContainerClusterRoleBindingName(NAME, NAMESPACE)), desiredCrb.capture())).thenReturn(Future.succeededFuture());
 
-        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION), certManager, passwordGenerator,
+        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION), CERT_MANAGER, PASSWORD_GENERATOR,
                 supplier, new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup()).with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "1").build());
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
@@ -104,20 +103,22 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
     public void testSelectorLabels(VertxTestContext context) {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
-                        .withName(NAME)
-                        .withNamespace(NAMESPACE)
+                    .withName(NAME)
+                    .withNamespace(NAMESPACE)
+                    .withAnnotations(Map.of(
+                            Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled",
+                            Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"
+                    ))
                 .endMetadata()
                 .withNewSpec()
                     .withNewKafka()
-                        .withReplicas(3)
-                        .withNewEphemeralStorage()
-                        .endEphemeralStorage()
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                .withName("plain")
+                                .withPort(9092)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(false)
+                                .build())
                     .endKafka()
-                    .withNewZookeeper()
-                        .withReplicas(3)
-                        .withNewEphemeralStorage()
-                        .endEphemeralStorage()
-                    .endZookeeper()
                 .endSpec()
                 .build();
 
@@ -133,7 +134,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 .with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "120000")
                 .with(ClusterOperatorConfig.CUSTOM_RESOURCE_SELECTOR.key(), Map.of("selectorLabel", "value").entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(","))).build();
 
-        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION), certManager, passwordGenerator,
+        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION), CERT_MANAGER, PASSWORD_GENERATOR,
                 supplier, config);
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
@@ -152,59 +153,6 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                             supplier.podDisruptionBudgetOperator,
                             supplier.deploymentOperations
                     );
-
-                    async.flag();
-                })));
-    }
-
-    /**
-     * Tests that KRaft cluster cannot be deployed without using NodePools
-     *
-     * @param context   Test context
-     */
-    @Test
-    public void testOptionalCustomResourceFieldsValidation(VertxTestContext context)  {
-        Kafka kafka = new KafkaBuilder()
-                .withNewMetadata()
-                    .withName(NAME)
-                    .withNamespace(NAMESPACE)
-                .endMetadata()
-                .withNewSpec()
-                    .withNewKafka()
-                        .withListeners(new GenericKafkaListenerBuilder()
-                                .withName("listener")
-                                .withPort(9092)
-                                .withTls(true)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withNewKafkaListenerAuthenticationTlsAuth()
-                                .endKafkaListenerAuthenticationTlsAuth()
-                                .build())
-                    .endKafka()
-                .endSpec()
-                .build();
-
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-
-        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
-        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(kafka));
-
-        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup());
-
-        KafkaAssemblyOperator kao = new KafkaAssemblyOperator(
-                vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
-                certManager,
-                passwordGenerator,
-                supplier,
-                config);
-
-        Checkpoint async = context.checkpoint();
-        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME))
-                .onComplete(context.failing(v -> context.verify(() -> {
-                    assertThat(v, instanceOf(InvalidResourceException.class));
-
-                    assertThat(v.getMessage(), containsString("The .spec.zookeeper section of the Kafka custom resource is missing. This section is required for a ZooKeeper-based cluster."));
-                    assertThat(v.getMessage(), containsString("The .spec.kafka.replicas property of the Kafka custom resource is missing. This property is required for a ZooKeeper-based Kafka cluster that is not using Node Pools."));
-                    assertThat(v.getMessage(), containsString("The .spec.kafka.storage section of the Kafka custom resource is missing. This section is required for a ZooKeeper-based Kafka cluster that is not using Node Pools."));
 
                     async.flag();
                 })));
