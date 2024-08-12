@@ -194,17 +194,9 @@ class HttpBridgeTlsST extends AbstractST {
 
         // Create user
         if (auth.getType().equals(TestConstants.TLS_LISTENER_DEFAULT_NAME)) {
-            resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), weirdUserName, testStorage.getClusterName())
-                .editMetadata()
-                    .withNamespace(testStorage.getNamespaceName())
-                .endMetadata()
-                .build());
+            resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), weirdUserName, testStorage.getClusterName()).build());
         } else {
-            resourceManager.createResourceWithWait(KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), weirdUserName, testStorage.getClusterName())
-                .editMetadata()
-                    .withNamespace(testStorage.getNamespaceName())
-                .endMetadata()
-                .build());
+            resourceManager.createResourceWithWait(KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), weirdUserName, testStorage.getClusterName()).build());
         }
 
         // Deploy http bridge

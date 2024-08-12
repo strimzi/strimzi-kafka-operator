@@ -183,11 +183,7 @@ class UserST extends AbstractST {
         final Double mutRate = 10d;
 
         // Create user with correct name
-        resourceManager.createResourceWithWait(KafkaUserTemplates.userWithQuotas(user, prodRate, consRate, reqPerc, mutRate)
-            .editMetadata()
-                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
-            .endMetadata()
-            .build());
+        resourceManager.createResourceWithWait(KafkaUserTemplates.userWithQuotas(user, prodRate, consRate, reqPerc, mutRate).build());
 
         final String userName = user.getMetadata().getName();
         final String statusUserName = KafkaUserResource.kafkaUserClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(userName).get().getStatus().getUsername();

@@ -626,9 +626,6 @@ public class OauthPlainST extends OauthAbstractST {
         String kafkaTargetClusterTopicName = kafkaSourceClusterName + "." + testStorage.getTopicName();
 
         resourceManager.createResourceWithWait(KafkaMirrorMaker2Templates.kafkaMirrorMaker2(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafkaSourceClusterName, testStorage.getTargetClusterName(), 1, false)
-            .editMetadata()
-                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
-            .endMetadata()
             .editSpec()
                 .withMetricsConfig(OAUTH_METRICS)
                 .withClusters(sourceClusterWithOauth, targetClusterWithOauth)

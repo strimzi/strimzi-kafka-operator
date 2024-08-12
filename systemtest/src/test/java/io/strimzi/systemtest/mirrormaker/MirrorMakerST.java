@@ -415,9 +415,6 @@ public class MirrorMakerST extends AbstractST {
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
         resourceManager.createResourceWithWait(KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getSourceClusterName(), testStorage.getTargetClusterName(), ClientUtils.generateRandomConsumerGroup(), 1, false)
-            .editMetadata()
-                .withNamespace(testStorage.getNamespaceName())
-            .endMetadata()
             .editSpec()
                 .withInclude(topicName)
             .endSpec()

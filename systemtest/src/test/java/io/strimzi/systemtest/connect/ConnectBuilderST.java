@@ -244,9 +244,6 @@ class ConnectBuilderST extends AbstractST {
         connectorConfig.put("level", "INFO");
 
         resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), testStorage.getClusterName())
-            .editMetadata()
-                .withNamespace(testStorage.getNamespaceName())
-            .endMetadata()
             .editOrNewSpec()
                 .withClassName(TestConstants.ECHO_SINK_CLASS_NAME)
                 .withConfig(connectorConfig)
@@ -355,9 +352,6 @@ class ConnectBuilderST extends AbstractST {
 
         LOGGER.info("Creating EchoSink KafkaConnector");
         resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), TestConstants.ECHO_SINK_CONNECTOR_NAME, testStorage.getClusterName())
-            .editMetadata()
-                .withNamespace(testStorage.getNamespaceName())
-            .endMetadata()
             .editOrNewSpec()
                 .withClassName(TestConstants.ECHO_SINK_CLASS_NAME)
                 .withConfig(echoSinkConfig)
@@ -386,9 +380,6 @@ class ConnectBuilderST extends AbstractST {
 
         LOGGER.info("Creating Camel-HTTP-Sink KafkaConnector");
         resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), camelConnector, testStorage.getClusterName())
-            .editMetadata()
-                .withNamespace(testStorage.getNamespaceName())
-            .endMetadata()
             .editOrNewSpec()
                 .withClassName(CAMEL_CONNECTOR_HTTP_SINK_CLASS_NAME)
                 .withConfig(camelHttpConfig)
@@ -495,9 +486,6 @@ class ConnectBuilderST extends AbstractST {
         connectorConfig.put("camel.source.path.timerName", "timer");
 
         resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), connectorName, testStorage.getClusterName())
-            .editMetadata()
-                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
-            .endMetadata()
             .editOrNewSpec()
                 .withClassName(CAMEL_CONNECTOR_TIMER_CLASS_NAME)
                 .withConfig(connectorConfig)
