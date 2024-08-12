@@ -27,6 +27,9 @@ public class KafkaRebalanceTemplates {
                 .withName(clusterName)
                 .withNamespace(namespaceName)
                 .withLabels(kafkaRebalanceLabels)
-            .endMetadata();
+            .endMetadata()
+            // spec cannot be null, that's why the `withNewSpec` is used here.
+            .withNewSpec()
+            .endSpec();
     }
 }
