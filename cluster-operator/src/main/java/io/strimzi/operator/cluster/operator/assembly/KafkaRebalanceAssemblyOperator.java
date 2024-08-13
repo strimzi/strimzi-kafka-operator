@@ -356,9 +356,9 @@ public class KafkaRebalanceAssemblyOperator
         return rebalanceOptionsBuilder;
     }
 
-    private Future<KafkaRebalanceStatus> reconcile(Reconciliation reconciliation, String host,
-                                                   CruiseControlApi apiClient, KafkaRebalance kafkaRebalance,
-                                                   KafkaRebalanceState currentState) {
+    private Future<KafkaRebalanceStatus> handleRebalance(Reconciliation reconciliation, String host,
+                                                         CruiseControlApi apiClient, KafkaRebalance kafkaRebalance,
+                                                         KafkaRebalanceState currentState) {
 
         if (kafkaRebalance != null && kafkaRebalance.getStatus() != null
                 && "Ready".equals(rebalanceStateConditionType(kafkaRebalance.getStatus()))
@@ -1031,7 +1031,7 @@ public class KafkaRebalanceAssemblyOperator
      * Reconcile loop for the KafkaRebalance
      */
     @SuppressWarnings({"checkstyle:NPathComplexity"})
-    /* test */ Future<KafkaRebalanceStatus> reconcileRebalance(Reconciliation reconciliation, KafkaRebalance kafkaRebalance) {
+    /* test */ Future<KafkaRebalanceStatus> reconcileKafkaRebalance(Reconciliation reconciliation, KafkaRebalance kafkaRebalance) {
         if (kafkaRebalance == null) {
             LOGGER.infoCr(reconciliation, "KafkaRebalance resource deleted");
             return Future.succeededFuture();
@@ -1133,7 +1133,7 @@ public class KafkaRebalanceAssemblyOperator
                                                 }
                                                 currentState = KafkaRebalanceState.valueOf(rebalanceStateType);
                                             }
-                                            return reconcile(reconciliation, cruiseControlHost(clusterName, clusterNamespace),
+                                            return handleRebalance(reconciliation, cruiseControlHost(clusterName, clusterNamespace),
                                                     apiClient, currentKafkaRebalance, currentState);
                                         }, exception -> Future.failedFuture(exception));
                             });
@@ -1353,12 +1353,12 @@ public class KafkaRebalanceAssemblyOperator
 
     @Override
     protected Future<KafkaRebalanceStatus> createOrUpdate(Reconciliation reconciliation, KafkaRebalance resource) {
-        return reconcileRebalance(reconciliation, resource);
+        return reconcileKafkaRebalance(reconciliation, resource);
     }
 
     @Override
     protected Future<Boolean> delete(Reconciliation reconciliation) {
-        return reconcileRebalance(reconciliation, null).map(v -> Boolean.TRUE);
+        return reconcileKafkaRebalance(reconciliation, null).map(v -> Boolean.TRUE);
     }
 
     @Override
