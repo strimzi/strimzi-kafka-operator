@@ -1311,7 +1311,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
         Checkpoint checkpoint = context.checkpoint();
         krao = createKafkaRebalanceAssemblyOperator(ClusterOperatorConfig.buildFromMap(Map.of(ClusterOperatorConfig.CUSTOM_RESOURCE_SELECTOR.key(), "selector=matching"), KafkaVersionTestUtils.getKafkaVersionLookup()));
-        krao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME), kr)
+        krao.reconcileKafkaRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME), kr)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(v, is(nullValue()));
                     checkpoint.flag();
