@@ -36,7 +36,6 @@ import io.strimzi.systemtest.utils.specific.TracingUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -75,14 +74,10 @@ public class OpenTelemetryST extends AbstractST {
 
     private final Tracing otelTracing = new OpenTelemetryTracing();
 
-    @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
+    @ParallelNamespaceTest
     void testProducerConsumerStreamsService() {
-        // Current implementation of Jaeger deployment and test parallelism does not allow to run this test with STRIMZI_RBAC_SCOPE=NAMESPACE`
-        assumeFalse(Environment.isNamespaceRbacScope());
-
-        // This testStorage gets resources set by BeforeEach, so it must be retrieved from storageMap
-        final TestStorage testStorage = storageMap.get(ResourceManager.getTestContext());
+        final TestStorage testStorage = deployInitialResourcesAndGetTestStorage();
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -121,11 +116,7 @@ public class OpenTelemetryST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(MIRROR_MAKER2)
     void testProducerConsumerMirrorMaker2Service() {
-        // Current implementation of Jaeger deployment and test parallelism does not allow to run this test with STRIMZI_RBAC_SCOPE=NAMESPACE`
-        assumeFalse(Environment.isNamespaceRbacScope());
-
-        // This testStorage gets resources set by BeforeEach, so it must be retrieved from storageMap
-        final TestStorage testStorage = storageMap.get(ResourceManager.getTestContext());
+        final TestStorage testStorage = deployInitialResourcesAndGetTestStorage();
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -204,11 +195,7 @@ public class OpenTelemetryST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(MIRROR_MAKER)
     void testProducerConsumerMirrorMakerService() {
-        // Current implementation of Jaeger deployment and test parallelism does not allow to run this test with STRIMZI_RBAC_SCOPE=NAMESPACE`
-        assumeFalse(Environment.isNamespaceRbacScope());
-
-        // This testStorage gets resources set by BeforeEach, so it must be retrieved from storageMap
-        final TestStorage testStorage = storageMap.get(ResourceManager.getTestContext());
+        final TestStorage testStorage = deployInitialResourcesAndGetTestStorage();
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -277,11 +264,7 @@ public class OpenTelemetryST extends AbstractST {
     @Tag(CONNECT_COMPONENTS)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testProducerConsumerStreamsConnectService() {
-        // Current implementation of Jaeger deployment and test parallelism does not allow to run this test with STRIMZI_RBAC_SCOPE=NAMESPACE`
-        assumeFalse(Environment.isNamespaceRbacScope());
-
-        // This testStorage gets resources set by BeforeEach, so it must be retrieved from storageMap
-        final TestStorage testStorage = storageMap.get(ResourceManager.getTestContext());
+        final TestStorage testStorage = deployInitialResourcesAndGetTestStorage();
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -359,8 +342,7 @@ public class OpenTelemetryST extends AbstractST {
     @Tag(BRIDGE)
     @ParallelNamespaceTest
     void testKafkaBridgeService() {
-        // This testStorage gets resources set by BeforeEach, so it must be retrieved from storageMap
-        final TestStorage testStorage = storageMap.get(ResourceManager.getTestContext());
+        final TestStorage testStorage = deployInitialResourcesAndGetTestStorage();
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -425,8 +407,7 @@ public class OpenTelemetryST extends AbstractST {
     @Tag(BRIDGE)
     @ParallelNamespaceTest
     void testKafkaBridgeServiceWithHttpTracing() {
-        // This testStorage gets resources set by BeforeEach, so it must be retrieved from storageMap
-        final TestStorage testStorage = storageMap.get(ResourceManager.getTestContext());
+        final TestStorage testStorage = deployInitialResourcesAndGetTestStorage();
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -489,8 +470,7 @@ public class OpenTelemetryST extends AbstractST {
         TracingUtils.verify(testStorage.getNamespaceName(), bridgeProducer, testStorage.getScraperPodName(), JAEGER_QUERY_SERVICE);
     }
 
-    @BeforeEach
-    void createTestResources() {
+    private TestStorage deployInitialResourcesAndGetTestStorage() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         SetupJaeger.deployJaegerInstance(testStorage.getNamespaceName());
@@ -517,11 +497,13 @@ public class OpenTelemetryST extends AbstractST {
 
         testStorage.addToTestStorage(TestConstants.KAFKA_TRACING_CLIENT_KEY, kafkaTracingClients);
 
-        storageMap.put(ResourceManager.getTestContext(), testStorage);
+        return testStorage;
     }
 
     @BeforeAll
     void setup() {
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         this.clusterOperator = this.clusterOperator
             .defaultInstallation()
             .createInstallation()

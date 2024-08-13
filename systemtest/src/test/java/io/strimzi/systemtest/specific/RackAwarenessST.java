@@ -39,7 +39,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 
 import java.util.HashMap;
@@ -330,11 +329,6 @@ class RackAwarenessST extends AbstractST {
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(namespace, kafkaConnectPodName);
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespace, kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, msgCount);
-    }
-
-    @BeforeEach
-    void createTestResources() {
-        storageMap.put(ResourceManager.getTestContext(), new TestStorage(ResourceManager.getTestContext()));
     }
 
     @BeforeAll
