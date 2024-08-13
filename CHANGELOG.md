@@ -17,6 +17,8 @@
 
 * The storage overrides for configuring per-broker storage class are deprecated and will be removed in the future.
   If you are using the storage overrides, you should migrate to KafkaNodePool resources and use multiple node pools with a different storage class each. 
+* Strimzi 0.43.0 (and any of its patch releases) is the last Strimzi version with support for Kubernetes 1.23 and 1.24.
+  From Strimzi 0.44.0 on, we will support only Kubernetes 1.25 and newer.
 
 ## 0.42.0
 
