@@ -138,14 +138,14 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public class KafkaAssemblyOperatorTest {
-    private final static String NAMESPACE = "my-namespace";
-    private final static String CLUSTER_NAME = "my-cluster";
-    private final static MockCertManager CERT_MANAGER = new MockCertManager();
-    private final static PasswordGenerator PASSWORD_GENERATOR = new PasswordGenerator(10, "a", "a");
+    private static final String NAMESPACE = "my-namespace";
+    private static final String CLUSTER_NAME = "my-cluster";
+    private static final MockCertManager CERT_MANAGER = new MockCertManager();
+    private static final PasswordGenerator PASSWORD_GENERATOR = new PasswordGenerator(10, "a", "a");
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
 
-    private final static Kafka KAFKA = new KafkaBuilder()
+    private static final Kafka KAFKA = new KafkaBuilder()
             .withNewMetadata()
                 .withName(CLUSTER_NAME)
                 .withNamespace(NAMESPACE)
@@ -167,7 +167,7 @@ public class KafkaAssemblyOperatorTest {
                 .endKafka()
             .endSpec()
             .build();
-    private final static KafkaNodePool CONTROLLERS = new KafkaNodePoolBuilder()
+    private static final KafkaNodePool CONTROLLERS = new KafkaNodePoolBuilder()
             .withNewMetadata()
                 .withName("controllers")
                 .withNamespace(NAMESPACE)
@@ -179,7 +179,7 @@ public class KafkaAssemblyOperatorTest {
                 .withRoles(ProcessRoles.CONTROLLER)
             .endSpec()
             .build();
-    private final static KafkaNodePool BROKERS = new KafkaNodePoolBuilder()
+    private static final KafkaNodePool BROKERS = new KafkaNodePoolBuilder()
             .withNewMetadata()
                 .withName("brokers")
                 .withNamespace(NAMESPACE)
