@@ -35,7 +35,7 @@ For a deeper understanding of the node pool configuration options, refer to the 
 .Example configuration for a node pool in a cluster using KRaft mode 
 [source,yaml,subs="+attributes"]
 ----
-# Basic configuration (essential)
+# Basic configuration (required)
 apiVersion: {KafkaNodePoolApiVersion}
 kind: KafkaNodePool
 metadata:
@@ -44,13 +44,13 @@ metadata:
     strimzi.io/cluster: my-cluster # <2>
 # Node pool specifications
 spec:
-  # Replicas (essential)
+  # Replicas (required)
   replicas: 3 # <3>
-  # Roles (essential)
+  # Roles (required)
   roles: # <4>
     - controller
     - broker
-  # Storage configuration (essential)
+  # Storage configuration (required)
   storage: # <5>
     type: jbod
     volumes:

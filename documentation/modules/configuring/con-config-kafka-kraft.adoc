@@ -30,7 +30,7 @@ For a deeper understanding of the Kafka cluster configuration options, refer to 
 .Example `Kafka` custom resource configuration
 [source,yaml,subs="+attributes"]
 ----
-# Basic configuration (essential)
+# Basic configuration (required)
 apiVersion: {KafkaApiVersion}
 kind: Kafka
 metadata:
@@ -69,7 +69,7 @@ spec:
       -Xmx: 8192m
     # Custom image (optional)  
     image: my-org/my-image:latest # <7>
-    # Listener configuration (essential)
+    # Listener configuration (required)
     listeners: # <8>
       - name: plain # <9>
         port: 9092 # <10>

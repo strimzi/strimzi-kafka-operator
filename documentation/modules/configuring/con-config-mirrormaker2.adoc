@@ -76,7 +76,7 @@ For more information, see xref:con-high-volume-config-properties-{context}[Handl
 .Example `KafkaMirrorMaker2` custom resource configuration
 [source,yaml,subs="+attributes"]
 ----
-# Basic configuration (essential)
+# Basic configuration (required)
 apiVersion: {KafkaMirrorMaker2ApiVersion}
 kind: KafkaMirrorMaker2 # <1>
 metadata:
@@ -85,11 +85,11 @@ metadata:
 spec:
   # Kafka version (recommended)
   version: {DefaultKafkaVersion} # <1>
-  # Replicas (essential)
+  # Replicas (required)
   replicas: 3 # <2>
-  # Connect cluster name (essential)
+  # Connect cluster name (required)
   connectCluster: "my-cluster-target" # <3>
-  # Cluster configurations (essential)
+  # Cluster configurations (required)
   clusters: # <4>
     - alias: "my-cluster-source" # <5>
       # Authentication (optional)
@@ -124,7 +124,7 @@ spec:
         trustedCertificates:
           - pattern: "*.crt"
             secretName: my-cluster-target-cluster-ca-cert
-  # Mirroring configurations (essential)
+  # Mirroring configurations (required)
   mirrors: # <14>
     - sourceCluster: "my-cluster-source" # <15>
       targetCluster: "my-cluster-target" # <16>
@@ -157,7 +157,7 @@ spec:
           sync.group.offsets.interval.seconds: 60 # <31>
           emit.checkpoints.interval.seconds: 60 # <32>
           replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy"
-      # Topic and group patterns (essential)
+      # Topic and group patterns (required)
       topicsPattern: "topic1|topic2|topic3" # <33>
       groupsPattern: "group1|group2|group3" # <34>
   # Resources requests and limits (recommended)

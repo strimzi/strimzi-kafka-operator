@@ -17,15 +17,15 @@ For a deeper understanding of the Kafka Bridge cluster configuration options, re
 .Example `KafkaBridge` custom resource configuration
 [source,yaml,subs="+quotes,attributes"]
 ----
-# Basic configuration (essential)
+# Basic configuration (required)
 apiVersion: {KafkaBridgeApiVersion}
 kind: KafkaBridge
 metadata:
   name: my-bridge
 spec:
-  # Replicas (essential)
+  # Replicas (required)
   replicas: 3 # <1>
-  # Kafka bootstrap servers (essential)
+  # Kafka bootstrap servers (required)
   bootstrapServers: _<cluster_name>_-cluster-kafka-bootstrap:9092 # <2>
   # TLS configuration (optional)
   tls: # <3>
@@ -41,7 +41,7 @@ spec:
       secretName: my-secret
       certificate: public.crt
       key: private.key
-  # HTTP configuration (essential)
+  # HTTP configuration (required)
   http: # <5>
     port: 8080
     # CORS configuration (optional)

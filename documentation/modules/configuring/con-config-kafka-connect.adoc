@@ -37,7 +37,7 @@ For more information, see xref:con-high-volume-config-properties-{context}[Handl
 .Example `KafkaConnect` custom resource configuration
 [source,yaml,subs=attributes+,options="nowrap"]
 ----
-# Basic configuration (essential)
+# Basic configuration (required)
 apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect # <1>
 metadata:
@@ -46,7 +46,7 @@ metadata:
     strimzi.io/use-connector-resources: "true" # <2>
 # Deployment specifications
 spec:
-  # Replicas (essential)
+  # Replicas (required)
   replicas: 3 # <3>
   # Authentication (optional)
   authentication: # <4>
@@ -55,7 +55,7 @@ spec:
       certificate: source.crt
       key: source.key
       secretName: my-user-source
-  # Bootstrap servers (essential)
+  # Bootstrap servers (required)
   bootstrapServers: my-cluster-kafka-bootstrap:9092 # <5>
   # TLS configuration (optional)
   tls: # <6>

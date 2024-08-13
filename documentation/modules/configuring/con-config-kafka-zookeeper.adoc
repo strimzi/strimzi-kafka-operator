@@ -29,7 +29,7 @@ For a deeper understanding of the ZooKeeper cluster configuration options, refer
 .Example `Kafka` custom resource configuration when using ZooKeeper
 [source,yaml,subs="+attributes"]
 ----
-# Basic configuration (essential)
+# Basic configuration (required)
 apiVersion: {KafkaApiVersion}
 kind: Kafka
 metadata:
@@ -37,7 +37,7 @@ metadata:
 # Deployment specifications
 spec:
   kafka:
-    # Replicas (essential)
+    # Replicas (required)
     replicas: 3
     # Kafka version (recommended)
     version: {DefaultKafkaVersion}
@@ -68,7 +68,7 @@ spec:
       -Xmx: 8192m
     # Custom image (optional)
     image: my-org/my-image:latest
-    # Listener configuration (essential)
+    # Listener configuration (required)
     listeners:
       - name: plain
         port: 9092
@@ -103,7 +103,7 @@ spec:
       default.replication.factor: 3
       min.insync.replicas: 2
       inter.broker.protocol.version: "{DefaultInterBrokerVersion}"
-    # Storage configuration (essential)
+    # Storage configuration (required)
     storage:
       type: persistent-claim
       size: 10000Gi
@@ -118,9 +118,9 @@ spec:
           name: my-config-map
           key: my-key
     # ...
-  # ZooKeeper configuration (essential)
+  # ZooKeeper configuration (required)
   zookeeper: # <1>
-    # Replicas (essential)
+    # Replicas (required)
     replicas: 3 # <2>
     # Logging configuration (optional)
     logging: # <3>
@@ -139,7 +139,7 @@ spec:
     jvmOptions: # <5>
       -Xms: 4096m
       -Xmx: 4096m
-    # Storage configuration (essential)
+    # Storage configuration (required)
     storage: # <6>
       type: persistent-claim
       size: 1000Gi
