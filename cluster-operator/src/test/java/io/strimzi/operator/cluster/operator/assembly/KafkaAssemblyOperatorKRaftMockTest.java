@@ -268,6 +268,8 @@ public class KafkaAssemblyOperatorKRaftMockTest {
         assertThat(k.getStatus().getOperatorLastSuccessfulVersion(), is(KafkaAssemblyOperator.OPERATOR_VERSION));
         assertThat(k.getStatus().getKafkaMetadataState().toValue(), is("KRaft"));
         assertThat(k.getStatus().getKafkaNodePools().stream().map(UsedNodePoolStatus::getName).toList(), is(List.of("brokers", "controllers")));
+        assertThat(k.getStatus().getRegisteredNodeIds().size(), is(6));
+        assertThat(k.getStatus().getRegisteredNodeIds(), hasItems(0, 1, 2, 10, 11, 12));
     }
 
     /**
@@ -562,6 +564,11 @@ public class KafkaAssemblyOperatorKRaftMockTest {
                 assertThat(brokers.getStatus().getRoles().size(), is(1));
                 assertThat(brokers.getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
 
+                // Check the Kafka resource status
+                Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                assertThat(k.getStatus().getRegisteredNodeIds().size(), is(8));
+                assertThat(k.getStatus().getRegisteredNodeIds(), hasItems(0, 1, 2, 10, 11, 12, 13, 14));
+
                 // Scale down again
                 Crds.kafkaNodePoolOperation(client).inNamespace(namespace).withName("brokers").edit(p -> new KafkaNodePoolBuilder(p)
                         .editSpec()
@@ -587,6 +594,11 @@ public class KafkaAssemblyOperatorKRaftMockTest {
                 assertThat(brokers.getStatus().getNodeIds(), is(List.of(10, 11, 12)));
                 assertThat(brokers.getStatus().getRoles().size(), is(1));
                 assertThat(brokers.getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
+
+                // Check the Kafka resource status
+                Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                assertThat(k.getStatus().getRegisteredNodeIds().size(), is(6));
+                assertThat(k.getStatus().getRegisteredNodeIds(), hasItems(0, 1, 2, 10, 11, 12));
 
                 async.flag();
             })));
@@ -642,6 +654,8 @@ public class KafkaAssemblyOperatorKRaftMockTest {
                 Kafka kafka = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
                 assertThat(kafka.getStatus().getKafkaNodePools().size(), is(3));
                 assertThat(kafka.getStatus().getKafkaNodePools().stream().map(UsedNodePoolStatus::getName).toList(), hasItems("brokers", "controllers", "new-pool"));
+                assertThat(kafka.getStatus().getRegisteredNodeIds().size(), is(9));
+                assertThat(kafka.getStatus().getRegisteredNodeIds(), hasItems(0, 1, 2, 10, 11, 12, 13, 14, 15));
 
                 KafkaNodePool controllers = Crds.kafkaNodePoolOperation(client).inNamespace(namespace).withName("controllers").get();
                 assertThat(controllers.getStatus().getReplicas(), is(3));
@@ -676,6 +690,8 @@ public class KafkaAssemblyOperatorKRaftMockTest {
                 Kafka kafka = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
                 assertThat(kafka.getStatus().getKafkaNodePools().size(), is(2));
                 assertThat(kafka.getStatus().getKafkaNodePools().stream().map(UsedNodePoolStatus::getName).toList(), hasItems("brokers", "controllers"));
+                assertThat(kafka.getStatus().getRegisteredNodeIds().size(), is(6));
+                assertThat(kafka.getStatus().getRegisteredNodeIds(), hasItems(0, 1, 2, 10, 11, 12));
 
                 KafkaNodePool controllers = Crds.kafkaNodePoolOperation(client).inNamespace(namespace).withName("controllers").get();
                 assertThat(controllers.getStatus().getReplicas(), is(3));

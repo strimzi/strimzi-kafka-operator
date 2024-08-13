@@ -7736,6 +7736,11 @@ spec:
                         type: string
                         description: The name of the KafkaNodePool used by this Kafka resource.
                   description: List of the KafkaNodePools used by this Kafka cluster.
+                registeredNodeIds:
+                  type: array
+                  items:
+                    type: integer
+                  description: Registered node IDs used by this Kafka cluster. This field is used for internal purposes only and will be removed in the future.
                 clusterId:
                   type: string
                   description: Kafka cluster Id.
