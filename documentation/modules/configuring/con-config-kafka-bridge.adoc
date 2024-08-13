@@ -34,7 +34,7 @@ spec:
         pattern: "*.crt"
       - secretName: my-cluster-cluster-cert
         certificate: ca2.crt
-  # Authentication (recommended)
+  # Authentication (optional)
   authentication: # <4>
     type: tls
     certificateAndKey:
@@ -44,6 +44,7 @@ spec:
   # HTTP configuration (essential)
   http: # <5>
     port: 8080
+    # CORS configuration (optional)
     cors: # <6>
       allowedOrigins: "https://strimzi.io"
       allowedMethods: "GET,POST,PUT,DELETE,OPTIONS,PATCH"
@@ -71,15 +72,15 @@ spec:
       # Enabling DEBUG just for send operation
       logger.send.name: "http.openapi.operation.send"
       logger.send.level: DEBUG
-  # JVM options (recommended)
+  # JVM options (optional)
   jvmOptions: # <11>
     "-Xmx": "1g"
     "-Xms": "1g"
-  # Readiness probe (recommended)
+  # Readiness probe (optional)
   readinessProbe: # <12>
     initialDelaySeconds: 15
     timeoutSeconds: 5
-  # Liveness probe (recommended)
+  # Liveness probe (optional)
   livenessProbe:
     initialDelaySeconds: 15
     timeoutSeconds: 5

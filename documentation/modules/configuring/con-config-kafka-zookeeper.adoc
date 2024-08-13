@@ -39,7 +39,7 @@ spec:
   kafka:
     # Replicas (essential)
     replicas: 3
-    # Kafka version (essential)
+    # Kafka version (recommended)
     version: {DefaultKafkaVersion}
     # Logging configuration (optional)
     logging:
@@ -54,15 +54,15 @@ spec:
       limits:
         memory: 64Gi
         cpu: "12"
-    # Readiness probe (recommended)
+    # Readiness probe (optional)
     readinessProbe:
       initialDelaySeconds: 15
       timeoutSeconds: 5
-    # Liveness probe (recommended)
+    # Liveness probe (optional)
     livenessProbe:
       initialDelaySeconds: 15
       timeoutSeconds: 5
-    # JVM options (recommended)
+    # JVM options (optional)
     jvmOptions:
       -Xms: 8192m
       -Xmx: 8192m
@@ -135,7 +135,7 @@ spec:
       limits:
         memory: 8Gi
         cpu: "2"
-    # JVM options (recommended)
+    # JVM options (optional)
     jvmOptions: # <5>
       -Xms: 4096m
       -Xmx: 4096m

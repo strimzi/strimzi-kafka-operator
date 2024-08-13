@@ -38,7 +38,7 @@ metadata:
 # Deployment specifications
 spec:
   kafka:
-    # Kafka version (essential) 
+    # Kafka version (recommended) 
     version: {DefaultKafkaVersion} # <1>
     # KRaft metadata version (recommended)
     metadataVersion: {DefaultKafkaMetadataVersion} # <2>
@@ -55,15 +55,15 @@ spec:
       limits:
         memory: 64Gi
         cpu: "12"
-    #readiness probe (recommended)    
+    # Readiness probe (optional)    
     readinessProbe: # <5>
       initialDelaySeconds: 15
       timeoutSeconds: 5
-    # Liveness probe (recommended)  
+    # Liveness probe (optional)  
     livenessProbe:
       initialDelaySeconds: 15
       timeoutSeconds: 5
-    # JVM options (recommended)
+    # JVM options (optional)
     jvmOptions: # <6>
       -Xms: 8192m
       -Xmx: 8192m

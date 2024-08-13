@@ -83,7 +83,7 @@ metadata:
   name: my-mirror-maker2
 # Deployment specifications
 spec:
-  # Kafka version (essential)
+  # Kafka version (recommended)
   version: {DefaultKafkaVersion} # <1>
   # Replicas (essential)
   replicas: 3 # <2>
@@ -92,7 +92,7 @@ spec:
   # Cluster configurations (essential)
   clusters: # <4>
     - alias: "my-cluster-source" # <5>
-      # Authentication (recommended)
+      # Authentication (optional)
       authentication: # <6>
         certificateAndKey:
           certificate: source.crt
@@ -106,7 +106,7 @@ spec:
           - pattern: "*.crt"
             secretName: my-cluster-source-cluster-ca-cert
     - alias: "my-cluster-target" # <9>
-      # Authentication (recommended)
+      # Authentication (optional)
       authentication: # <10>
         certificateAndKey:
           certificate: target.crt
@@ -128,7 +128,7 @@ spec:
   mirrors: # <14>
     - sourceCluster: "my-cluster-source" # <15>
       targetCluster: "my-cluster-target" # <16>
-      # Source connector configuration (optional)
+      # Source connector configuration (required)
       sourceConnector: # <17>
         tasksMax: 10 # <18>
         autoRestart: # <19>
@@ -173,15 +173,15 @@ spec:
     type: inline
     loggers:
       connect.root.logger.level: INFO
-  # Readiness probe (recommended)
+  # Readiness probe (optional)
   readinessProbe: # <37>
     initialDelaySeconds: 15
     timeoutSeconds: 5
-  # Liveness probe (recommended)
+  # Liveness probe (optional)
   livenessProbe:
     initialDelaySeconds: 15
     timeoutSeconds: 5
-  # JVM options (recommended)
+  # JVM options (optional)
   jvmOptions: # <38>
     "-Xmx": "1g"
     "-Xms": "1g"

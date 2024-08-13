@@ -58,7 +58,7 @@ spec:
         type: persistent-claim
         size: 100Gi
         deleteClaim: false
-  # Resources requests and limits (optional)
+  # Resources requests and limits (recommended)
   resources: # <6>
     requests:
       memory: 64Gi

@@ -48,7 +48,7 @@ metadata:
 spec:
   # Replicas (essential)
   replicas: 3 # <3>
-  # Authentication (recommended)
+  # Authentication (optional)
   authentication: # <4>
     type: tls
     certificateAndKey:
@@ -64,7 +64,7 @@ spec:
         pattern: "*.crt"
       - secretName: my-cluster-cluster-cert
         pattern: "*.crt"
-  # Kafka Connect configuration (optional)
+  # Kafka Connect configuration (recommended)
   config: # <7>
     group.id: my-connect-cluster
     offset.storage.topic: my-connect-cluster-offsets
@@ -77,7 +77,7 @@ spec:
     config.storage.replication.factor: 3
     offset.storage.replication.factor: 3
     status.storage.replication.factor: 3
-  # Build configuration (recommended)
+  # Build configuration (optional)
   build: # <8>
     output: # <9>
       type: docker
@@ -107,7 +107,7 @@ spec:
           secretKeyRef:
             name: aws-creds
             key: awsSecretAccessKey
-  # Resources requests and limits (optional)
+  # Resources requests and limits (recommended)
   resources: # <12>
     requests:
       cpu: "1"
@@ -120,11 +120,11 @@ spec:
     type: inline
     loggers:
       log4j.rootLogger: INFO
-  # Readiness probe (recommended)
+  # Readiness probe (optional)
   readinessProbe: # <14>
     initialDelaySeconds: 15
     timeoutSeconds: 5
-  # Liveness probe (recommended)
+  # Liveness probe (optional)
   livenessProbe:
     initialDelaySeconds: 15
     timeoutSeconds: 5
@@ -135,7 +135,7 @@ spec:
       configMapKeyRef:
         name: my-config-map
         key: my-key
-  # JVM options (recommended)
+  # JVM options (optional)
   jvmOptions: # <16>
     "-Xmx": "1g"
     "-Xms": "1g"
