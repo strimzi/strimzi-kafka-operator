@@ -95,7 +95,7 @@ spec:
     # Authorization (optional)
     authorization: # <17>
       type: simple
-    # Kafka configuration (optional)  
+    # Kafka configuration (recommended)  
     config: # <18>
       auto.create.topics.enable: "false"
       offsets.topic.replication.factor: 3
