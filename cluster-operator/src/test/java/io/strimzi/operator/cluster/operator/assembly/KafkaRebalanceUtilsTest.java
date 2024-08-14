@@ -23,7 +23,7 @@ public class KafkaRebalanceUtilsTest {
                 .withConditions(
                         new ConditionBuilder()
                                 .withType(KafkaRebalanceState.Rebalancing.toString())
-                                .withStatus("Ready")
+                                .withStatus("True")
                                 .build())
                 .build();
 
@@ -37,11 +37,11 @@ public class KafkaRebalanceUtilsTest {
                 .withConditions(
                         new ConditionBuilder()
                                 .withType(KafkaRebalanceState.ProposalReady.toString())
-                                .withStatus("Ready")
+                                .withStatus("True")
                                 .build(),
                         new ConditionBuilder()
                                 .withType(KafkaRebalanceState.Rebalancing.toString())
-                                .withStatus("Ready")
+                                .withStatus("True")
                                 .build())
                 .build();
 
@@ -55,7 +55,7 @@ public class KafkaRebalanceUtilsTest {
                 .withConditions(
                         new ConditionBuilder()
                                 .withType("Some other type")
-                                .withStatus("Ready")
+                                .withStatus("True")
                                 .build())
                 .build();
 
