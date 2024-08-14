@@ -11,10 +11,10 @@ import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ConditionBuilder;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
-import io.strimzi.api.kafka.model.topic.KafkaTopicStatus;
 import io.strimzi.api.kafka.model.topic.KafkaTopicStatusBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.model.StatusDiff;
 import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.model.Either;
@@ -186,7 +186,7 @@ public class BatchingTopicController {
     private List<ReconcilableTopic> addOrRemoveFinalizer(boolean useFinalizer, List<ReconcilableTopic> reconcilableTopics) {
         List<ReconcilableTopic> collect = reconcilableTopics.stream()
                 .map(reconcilableTopic ->
-                        new ReconcilableTopic(reconcilableTopic.reconciliation(), useFinalizer 
+                        new ReconcilableTopic(reconcilableTopic.reconciliation(), useFinalizer
                             ? addFinalizer(reconcilableTopic) : removeFinalizer(reconcilableTopic), reconcilableTopic.topicName()))
                 .collect(Collectors.toList());
         LOGGER.traceOp("{} {} topics", useFinalizer ? "Added finalizers to" : "Removed finalizers from", reconcilableTopics.size());
@@ -1132,7 +1132,7 @@ public class BatchingTopicController {
         } else if (TopicOperatorUtil.isPaused(reconcilableTopic.kt())) {
             conditionType = "ReconciliationPaused";
         }
-        
+
         conditions.add(new ConditionBuilder()
               .withType(conditionType)
               .withStatus("True")
@@ -1210,10 +1210,10 @@ public class BatchingTopicController {
         var oldStatus = Crds.topicOperation(kubeClient)
             .inNamespace(reconcilableTopic.kt().getMetadata().getNamespace())
             .withName(reconcilableTopic.kt().getMetadata().getName()).get().getStatus();
-        
+
         // the observedGeneration is a marker that shows that the operator works and that it saw the last update to the resource
         reconcilableTopic.kt().getStatus().setObservedGeneration(reconcilableTopic.kt().getMetadata().getGeneration());
-        
+
         // set or reset the topicName
         reconcilableTopic.kt().getStatus().setTopicName(
             !TopicOperatorUtil.isManaged(reconcilableTopic.kt())
@@ -1222,8 +1222,9 @@ public class BatchingTopicController {
                 ? oldStatus.getTopicName()
                 : TopicOperatorUtil.topicName(reconcilableTopic.kt())
         );
-        
-        if (statusChanged(reconcilableTopic.kt(), oldStatus)) {
+
+        StatusDiff statusDiff = new StatusDiff(oldStatus, reconcilableTopic.kt().getStatus());
+        if (!statusDiff.isEmpty()) {
             try {
                 var updatedTopic = new KafkaTopicBuilder(reconcilableTopic.kt())
                     .editOrNewMetadata()
@@ -1241,50 +1242,5 @@ public class BatchingTopicController {
                 LOGGER.errorOp("Status update failed: {}", e.getMessage());
             }
         }
-    }
-
-    private boolean statusChanged(KafkaTopic kt, KafkaTopicStatus oldStatus) {
-        return oldStatusOrTopicNameMissing(oldStatus)
-            || nonPausedAndDifferentGenerations(kt, oldStatus)
-            || differentConditions(kt.getStatus().getConditions(), oldStatus.getConditions())
-            || replicasChangesDiffer(kt, oldStatus);
-    }
-
-    private boolean oldStatusOrTopicNameMissing(KafkaTopicStatus oldStatus) {
-        return oldStatus == null || oldStatus.getTopicName() == null;
-    }
-
-    private boolean nonPausedAndDifferentGenerations(KafkaTopic kt, KafkaTopicStatus oldStatus) {
-        return !TopicOperatorUtil.isPaused(kt) && oldStatus.getObservedGeneration() != kt.getMetadata().getGeneration();
-    }
-    
-    private boolean differentConditions(List<Condition> newConditions, List<Condition> oldConditions) {
-        if (Objects.equals(newConditions, oldConditions)) {
-            return false;
-        } else if (newConditions == null || oldConditions == null || newConditions.size() != oldConditions.size()) {
-            return true;
-        } else {
-            for (int i = 0; i < newConditions.size(); i++) {
-                if (conditionsDiffer(newConditions.get(i), oldConditions.get(i))) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private boolean conditionsDiffer(Condition newCondition, Condition oldCondition) {
-        return !Objects.equals(newCondition.getType(), oldCondition.getType())
-            || !Objects.equals(newCondition.getStatus(), oldCondition.getStatus())
-            || !Objects.equals(newCondition.getReason(), oldCondition.getReason())
-            || !Objects.equals(newCondition.getMessage(), oldCondition.getMessage());
-    }
-
-    @SuppressWarnings("BooleanExpressionComplexity")
-    private boolean replicasChangesDiffer(KafkaTopic kt, KafkaTopicStatus oldStatus) {
-        return kt.getStatus().getReplicasChange() == null && oldStatus.getReplicasChange() != null
-            || kt.getStatus().getReplicasChange() != null && oldStatus.getReplicasChange() == null
-            || (kt.getStatus().getReplicasChange() != null && oldStatus.getReplicasChange() != null 
-                && !Objects.equals(kt.getStatus().getReplicasChange(), oldStatus.getReplicasChange()));
     }
 }
