@@ -29,18 +29,24 @@ For a deeper understanding of the ZooKeeper cluster configuration options, refer
 .Example `Kafka` custom resource configuration when using ZooKeeper
 [source,yaml,subs="+attributes"]
 ----
+# Basic configuration (required)
 apiVersion: {KafkaApiVersion}
 kind: Kafka
 metadata:
   name: my-cluster
+# Deployment specifications
 spec:
   kafka:
+    # Replicas (required)
     replicas: 3
+    # Kafka version (recommended)
     version: {DefaultKafkaVersion}
+    # Logging configuration (optional)
     logging:
       type: inline
       loggers:
         kafka.root.logger.level: INFO
+    # Resources requests and limits (recommended)
     resources:
       requests:
         memory: 64Gi
@@ -48,16 +54,21 @@ spec:
       limits:
         memory: 64Gi
         cpu: "12"
+    # Readiness probe (optional)
     readinessProbe:
       initialDelaySeconds: 15
       timeoutSeconds: 5
+    # Liveness probe (optional)
     livenessProbe:
       initialDelaySeconds: 15
       timeoutSeconds: 5
+    # JVM options (optional)
     jvmOptions:
       -Xms: 8192m
       -Xmx: 8192m
+    # Custom image (optional)
     image: my-org/my-image:latest
+    # Listener configuration (required)
     listeners:
       - name: plain
         port: 9092
@@ -80,8 +91,10 @@ spec:
             secretName: my-secret
             certificate: my-certificate.crt
             key: my-key.key
+    # Authorization (optional)
     authorization:
       type: simple
+    # Kafka configuration (recommended)
     config:
       auto.create.topics.enable: "false"
       offsets.topic.replication.factor: 3
@@ -90,11 +103,14 @@ spec:
       default.replication.factor: 3
       min.insync.replicas: 2
       inter.broker.protocol.version: "{DefaultInterBrokerVersion}"
+    # Storage configuration (required)
     storage:
       type: persistent-claim
       size: 10000Gi
+    # Rack awareness (optional)
     rack:
       topologyKey: topology.kubernetes.io/zone
+    # Metrics configuration (optional)
     metricsConfig:
       type: jmxPrometheusExporter
       valueFrom:
@@ -102,12 +118,16 @@ spec:
           name: my-config-map
           key: my-key
     # ...
+  # ZooKeeper configuration (required)
   zookeeper: # <1>
+    # Replicas (required)
     replicas: 3 # <2>
+    # Logging configuration (optional)
     logging: # <3>
       type: inline
       loggers:
         zookeeper.root.logger: INFO
+    # Resources requests and limits (recommended)
     resources: # <4>
       requests:
         memory: 8Gi
@@ -115,27 +135,33 @@ spec:
       limits:
         memory: 8Gi
         cpu: "2"
+    # JVM options (optional)
     jvmOptions: # <5>
       -Xms: 4096m
       -Xmx: 4096m
+    # Storage configuration (required)
     storage: # <6>
       type: persistent-claim
       size: 1000Gi
+    # Metrics configuration (optional)
     metricsConfig: # <7>
       type: jmxPrometheusExporter
       valueFrom:
         configMapKeyRef: # <8>
           name: my-config-map
           key: my-key
-      # ...
+    # ...
+  # Entity operator (recommended)
   entityOperator:
     topicOperator:
       watchedNamespace: my-topic-namespace
       reconciliationIntervalSeconds: 60
+      # Logging configuration (optional)
       logging:
         type: inline
         loggers:
           rootLogger.level: INFO
+      # Resources requests and limits (recommended)
       resources:
         requests:
           memory: 512Mi
@@ -146,10 +172,12 @@ spec:
     userOperator:
       watchedNamespace: my-topic-namespace
       reconciliationIntervalSeconds: 60
+      # Logging configuration (optional)
       logging:
         type: inline
         loggers:
           rootLogger.level: INFO
+      # Resources requests and limits (recommended)
       resources:
         requests:
           memory: 512Mi
@@ -157,8 +185,10 @@ spec:
         limits:
           memory: 512Mi
           cpu: "1"
+  # Kafka Exporter (optional)
   kafkaExporter:
     # ...
+  # Cruise Control (optional)
   cruiseControl:
     # ...
 ----

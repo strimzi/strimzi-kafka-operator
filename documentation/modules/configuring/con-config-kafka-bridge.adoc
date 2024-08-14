@@ -17,36 +17,46 @@ For a deeper understanding of the Kafka Bridge cluster configuration options, re
 .Example `KafkaBridge` custom resource configuration
 [source,yaml,subs="+quotes,attributes"]
 ----
+# Basic configuration (required)
 apiVersion: {KafkaBridgeApiVersion}
 kind: KafkaBridge
 metadata:
   name: my-bridge
 spec:
+  # Replicas (required)
   replicas: 3 # <1>
+  # Kafka bootstrap servers (required)
   bootstrapServers: _<cluster_name>_-cluster-kafka-bootstrap:9092 # <2>
+  # TLS configuration (optional)
   tls: # <3>
     trustedCertificates:
       - secretName: my-cluster-cluster-cert
         pattern: "*.crt"
       - secretName: my-cluster-cluster-cert
         certificate: ca2.crt
+  # Authentication (optional)
   authentication: # <4>
     type: tls
     certificateAndKey:
       secretName: my-secret
       certificate: public.crt
       key: private.key
+  # HTTP configuration (required)
   http: # <5>
     port: 8080
+    # CORS configuration (optional)
     cors: # <6>
       allowedOrigins: "https://strimzi.io"
       allowedMethods: "GET,POST,PUT,DELETE,OPTIONS,PATCH"
+  # Consumer configuration (optional)
   consumer: # <7>
     config:
       auto.offset.reset: earliest
+  # Producer configuration (optional)
   producer: # <8>
     config:
       delivery.timeout.ms: 300000
+  # Resources requests and limits (recommended)
   resources: # <9>
     requests:
       cpu: "1"
@@ -54,23 +64,29 @@ spec:
     limits:
       cpu: "2"
       memory: 2Gi
+  # Logging configuration (optional)
   logging: # <10>
     type: inline
     loggers:
       logger.bridge.level: INFO
-      # enabling DEBUG just for send operation
+      # Enabling DEBUG just for send operation
       logger.send.name: "http.openapi.operation.send"
       logger.send.level: DEBUG
+  # JVM options (optional)
   jvmOptions: # <11>
     "-Xmx": "1g"
     "-Xms": "1g"
+  # Readiness probe (optional)
   readinessProbe: # <12>
     initialDelaySeconds: 15
     timeoutSeconds: 5
+  # Liveness probe (optional)
   livenessProbe:
     initialDelaySeconds: 15
     timeoutSeconds: 5
+  # Custom image (optional)
   image: my-org/my-image:latest # <13>
+  # Pod template (optional)
   template: # <14>
     pod:
       affinity:
@@ -90,6 +106,7 @@ spec:
           value: my-otel-service
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
           value: "http://otlp-host:4317"
+  # Tracing configuration (optional)
   tracing:
     type: opentelemetry # <16>
 ----

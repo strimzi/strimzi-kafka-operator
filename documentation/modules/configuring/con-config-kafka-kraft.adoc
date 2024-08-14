@@ -30,18 +30,24 @@ For a deeper understanding of the Kafka cluster configuration options, refer to 
 .Example `Kafka` custom resource configuration
 [source,yaml,subs="+attributes"]
 ----
+# Basic configuration (required)
 apiVersion: {KafkaApiVersion}
 kind: Kafka
 metadata:
   name: my-cluster
+# Deployment specifications
 spec:
   kafka:
+    # Kafka version (recommended) 
     version: {DefaultKafkaVersion} # <1>
+    # KRaft metadata version (recommended)
     metadataVersion: {DefaultKafkaMetadataVersion} # <2>
+    # Logging configuration (optional)
     logging: # <3>
       type: inline
       loggers:
         kafka.root.logger.level: INFO
+    # Resources requests and limits (recommended)
     resources: # <4>
       requests:
         memory: 64Gi
@@ -49,16 +55,21 @@ spec:
       limits:
         memory: 64Gi
         cpu: "12"
+    # Readiness probe (optional)    
     readinessProbe: # <5>
       initialDelaySeconds: 15
       timeoutSeconds: 5
+    # Liveness probe (optional)  
     livenessProbe:
       initialDelaySeconds: 15
       timeoutSeconds: 5
+    # JVM options (optional)
     jvmOptions: # <6>
       -Xms: 8192m
       -Xmx: 8192m
+    # Custom image (optional)  
     image: my-org/my-image:latest # <7>
+    # Listener configuration (required)
     listeners: # <8>
       - name: plain # <9>
         port: 9092 # <10>
@@ -81,8 +92,10 @@ spec:
             secretName: my-secret
             certificate: my-certificate.crt
             key: my-key.key
+    # Authorization (optional)
     authorization: # <17>
       type: simple
+    # Kafka configuration (recommended)  
     config: # <18>
       auto.create.topics.enable: "false"
       offsets.topic.replication.factor: 3
@@ -90,22 +103,27 @@ spec:
       transaction.state.log.min.isr: 2
       default.replication.factor: 3
       min.insync.replicas: 2
+    # Rack awareness (optional) 
     rack: # <19>
       topologyKey: topology.kubernetes.io/zone
+    # Metrics configuration (optional)
     metricsConfig: # <20>
       type: jmxPrometheusExporter
       valueFrom:
         configMapKeyRef: # <21>
           name: my-config-map
           key: my-key
+  # Entity Operator (recommended)
   entityOperator: # <22>
     topicOperator:
       watchedNamespace: my-topic-namespace
       reconciliationIntervalMs: 60000
+      # Logging configuration (optional)
       logging: # <23>
         type: inline
         loggers:
           rootLogger.level: INFO
+      # Resources requests and limits (recommended)
       resources:
         requests:
           memory: 512Mi
@@ -116,10 +134,12 @@ spec:
     userOperator:
       watchedNamespace: my-topic-namespace
       reconciliationIntervalMs: 60000
+      # Logging configuration (optional)
       logging: # <24>
         type: inline
         loggers:
           rootLogger.level: INFO
+      # Resources requests and limits (recommended)
       resources:
         requests:
           memory: 512Mi
@@ -127,13 +147,15 @@ spec:
         limits:
           memory: 512Mi
           cpu: "1"
+  # Kafka Exporter (optional)
   kafkaExporter: # <25>
     # ...
+  # Cruise Control (optional)
   cruiseControl: # <26>
     # ...
 ----
 <1> Kafka version, which can be changed to a supported version by following the upgrade procedure.
-<2> Kafka metadata version,  which can be changed to a supported version by following the upgrade procedure.  
+<2> Kafka metadata version, which can be changed to a supported version by following the upgrade procedure.  
 <3> Kafka loggers and log levels added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom Log4j configuration must be placed under the `log4j.properties` key in the ConfigMap. For the Kafka `kafka.root.logger.level` logger, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
 <4> Requests for reservation of supported resources, currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
 <5> Healthchecks to know when to restart a container (liveness) and when a container can accept traffic (readiness).
