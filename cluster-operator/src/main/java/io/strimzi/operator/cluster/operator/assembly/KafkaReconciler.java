@@ -968,11 +968,20 @@ public class KafkaReconciler {
                         if (res.succeeded()) {
                             LOGGER.infoCr(reconciliation, "Kafka nodes {} were successfully unregistered from the Kafka cluster", nodeIdsToUnregister);
                             kafkaStatus.setRegisteredNodeIds(currentNodeIds);
-                            unregistrationPromise.complete();
                         } else {
-                            LOGGER.warnCr(reconciliation, "Failed to unregister Kafka nodes {} from the Kafka cluster", nodeIdsToUnregister, res.cause());
-                            unregistrationPromise.complete(); // We still complete the promise, we do not want to fail the reconciliation but just retry next time
+                            LOGGER.warnCr(reconciliation, "Failed to unregister Kafka nodes {} from the Kafka cluster", nodeIdsToUnregister);
+
+                            // When the unregistration failed, we will keep the original registered node IDs to retry
+                            // the unregistration for them. But we will merge it with any existing node IDs to make
+                            // sure we do not lose track of them.
+                            Set<Integer> updatedNodeIds = new HashSet<>(currentNodeIds);
+                            updatedNodeIds.addAll(previousNodeIds);
+                            kafkaStatus.setRegisteredNodeIds(updatedNodeIds.stream().sorted().toList());
                         }
+
+                        // We complete the promise with success even if the unregistration failed as we do not want to
+                        // fail the reconciliation.
+                        unregistrationPromise.complete();
                     });
 
             return unregistrationPromise.future();

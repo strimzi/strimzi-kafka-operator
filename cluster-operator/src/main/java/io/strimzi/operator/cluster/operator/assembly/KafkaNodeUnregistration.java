@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.api.kafka.model.kafka.quotas.QuotasPluginKafka;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.common.AdminClientProvider;
@@ -23,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Class containing methods for handling the configuration around {@link QuotasPluginKafka}
+ * Contains utility methods for unregistering KRaft nodes from a Kafka cluster after scale-down
  */
 public class KafkaNodeUnregistration {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaNodeUnregistration.class.getName());
@@ -87,7 +86,10 @@ public class KafkaNodeUnregistration {
                 .kafkaFutureToVertxFuture(reconciliation, vertx, adminClient.unregisterBroker(nodeIdToUnregister).all())
                 .recover(t -> {
                     if (t instanceof BrokerIdNotRegisteredException)    {
-                        // The broker is not registered anymore, we report success
+                        // The broker is not registered anymore, so it does not need to be unregistered anymore and we
+                        // report success. Situation like this might happen when the operator fails before updating the
+                        // status, when the Kafka API call fails (e.g. due to network connection) but the unregistration
+                        // was done on the Kafka cluster and similar.
                         LOGGER.warnCr(reconciliation, "Node {} is not registered and cannot be unregistered from the Kafka cluster", nodeIdToUnregister, t);
                         return Future.succeededFuture();
                     } else {

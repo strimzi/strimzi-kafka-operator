@@ -189,7 +189,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                 if (status.getRegisteredNodeIds() == null
                         && kafkaAssembly.getStatus().getRegisteredNodeIds() != null)  {
-                    // Copy the list of used node IDs if needed
+                    // Copy the list of registered node IDs if needed
                     status.setRegisteredNodeIds(kafkaAssembly.getStatus().getRegisteredNodeIds());
                 }
             }
