@@ -819,7 +819,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return Kafka auto-rebalancing reconciler
          */
         KafkaAutoRebalancingReconciler kafkaAutoRebalancingReconciler() {
-            return new KafkaAutoRebalancingReconciler(reconciliation, toBeRemovedNodes, addedNodes);
+            return new KafkaAutoRebalancingReconciler(reconciliation, kafkaAssembly, supplier, toBeRemovedNodes, addedNodes);
         }
 
         /**
@@ -829,7 +829,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<ReconciliationState> reconcileKafkaAutoRebalancing() {
             return kafkaAutoRebalancingReconciler()
-                    .reconcile()
+                    .reconcile(kafkaStatus)
                     .map(this);
         }
 
