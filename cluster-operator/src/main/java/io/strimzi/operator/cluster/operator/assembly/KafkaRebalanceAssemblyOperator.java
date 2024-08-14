@@ -58,7 +58,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -210,63 +209,13 @@ public class KafkaRebalanceAssemblyOperator
         return CruiseControlResources.qualifiedServiceName(clusterName, clusterNamespace);
     }
 
-    /**
-     * Searches through the conditions in the supplied status instance and finds those whose type matches one of the values defined
-     * in the {@link KafkaRebalanceState} enum.
-     * If there are none it will return null.
-     * If there is only one it will return that Condition.
-     * If there are more than one it will throw a RuntimeException.
-     *
-     * @param status The KafkaRebalanceStatus instance whose conditions will be searched.
-     * @return The Condition instance from the supplied status that has a type value matching one of the values of the
-     *         {@link KafkaRebalanceState} enum. If none are found then the method will return null.
-     * @throws RuntimeException If there is more than one Condition instance in the supplied status whose type matches one of the
-     *                          {@link KafkaRebalanceState} enum values.
-     */
-    /* test */ protected Condition rebalanceStateCondition(KafkaRebalanceStatus status) {
-        if (status.getConditions() != null) {
-
-            List<Condition> statusConditions = status.getConditions()
-                    .stream()
-                    .filter(condition -> condition.getType() != null)
-                    .filter(condition -> Arrays.stream(KafkaRebalanceState.values())
-                            .anyMatch(stateValue -> stateValue.toString().equals(condition.getType())))
-                    .toList();
-
-            if (statusConditions.size() == 1) {
-                return statusConditions.get(0);
-            } else if (statusConditions.size() > 1) {
-                throw new RuntimeException("Multiple KafkaRebalance State Conditions were present in the KafkaRebalance status");
-            }
-        }
-        // If there are no conditions or none that have the correct status
-        return null;
-    }
-
-    /**
-     * Searches through the conditions in the supplied status instance and finds those whose type matches one of the values defined
-     * in the {@link KafkaRebalanceState} enum.
-     * If there are none it will return null.
-     * If there are more than one it will throw a RuntimeException.
-     * If there is only one it will return that Condition's type as a string.
-     *
-     * @param status The status instance whose conditions will be searched.
-     * @return The type of the rebalance status condition.
-     * @throws RuntimeException If there is more than one Condition instance in the supplied status whose type matches one of the
-     *                          {@link KafkaRebalanceState} enum values.
-     */
-    private String rebalanceStateConditionType(KafkaRebalanceStatus status) {
-        Condition rebalanceStateCondition = rebalanceStateCondition(status);
-        return rebalanceStateCondition != null ? rebalanceStateCondition.getType() : null;
-    }
-
     private KafkaRebalanceStatus updateStatus(KafkaRebalance kafkaRebalance,
                                               KafkaRebalanceStatus desiredStatus,
                                               Throwable e) {
         // Leave the current status when the desired state is null
         if (desiredStatus != null) {
 
-            Condition cond = rebalanceStateCondition(desiredStatus);
+            Condition cond = KafkaRebalanceUtils.rebalanceStateCondition(desiredStatus);
 
             List<Condition> previous = Collections.emptyList();
             if (desiredStatus.getConditions() != null) {
@@ -361,7 +310,7 @@ public class KafkaRebalanceAssemblyOperator
                                                          KafkaRebalanceState currentState) {
 
         if (kafkaRebalance != null && kafkaRebalance.getStatus() != null
-                && "Ready".equals(rebalanceStateConditionType(kafkaRebalance.getStatus()))
+                && KafkaRebalanceUtils.rebalanceState(kafkaRebalance.getStatus()) == KafkaRebalanceState.Ready
                 && rawRebalanceAnnotation(kafkaRebalance) == null) {
             LOGGER.infoCr(reconciliation, "Rebalancing is completed. You can use the `refresh` annotation to ask for a new rebalance request");
         } else {
@@ -393,13 +342,13 @@ public class KafkaRebalanceAssemblyOperator
                                     KafkaRebalanceStatus kafkaRebalanceStatus = updateStatus(kafkaRebalance, desiredStatusAndMap.getStatus(), null);
                                     if (kafkaRebalance.getStatus() != null
                                             && kafkaRebalanceStatus != null
-                                            && !rebalanceStateConditionType(kafkaRebalance.getStatus()).equals(rebalanceStateConditionType(kafkaRebalanceStatus))) {
+                                            && KafkaRebalanceUtils.rebalanceState(kafkaRebalance.getStatus()) !=  KafkaRebalanceUtils.rebalanceState(kafkaRebalanceStatus)) {
                                         String message = "KafkaRebalance state is now updated to [{}]";
 
                                         if (rawRebalanceAnnotation(kafkaRebalance) != null) {
                                             message = message + " with annotation {}={} applied on the KafkaRebalance resource";
                                         }
-                                        LOGGER.infoCr(reconciliation, message, rebalanceStateConditionType(kafkaRebalanceStatus),
+                                        LOGGER.infoCr(reconciliation, message, KafkaRebalanceUtils.rebalanceState(kafkaRebalanceStatus),
                                                 ANNO_STRIMZI_IO_REBALANCE,
                                                 rawRebalanceAnnotation(kafkaRebalance));
                                     }
@@ -472,7 +421,7 @@ public class KafkaRebalanceAssemblyOperator
     private KafkaRebalanceStatus buildRebalanceStatusFromPreviousStatus(KafkaRebalanceStatus currentStatus, Set<Condition> validation) {
         List<Condition> conditions = new ArrayList<>();
         conditions.addAll(validation);
-        Condition currentState = rebalanceStateCondition(currentStatus);
+        Condition currentState = KafkaRebalanceUtils.rebalanceStateCondition(currentStatus);
         conditions.add(currentState);
         return new KafkaRebalanceStatusBuilder()
                 .withSessionId(currentStatus.getSessionId())
@@ -1037,9 +986,9 @@ public class KafkaRebalanceAssemblyOperator
             return Future.succeededFuture();
         }
 
-        LOGGER.debugCr(reconciliation, "KafkaRebalance {} with status [{}] and {}={}",
+        LOGGER.debugCr(reconciliation, "KafkaRebalance {} with state [{}] and {}={}",
                 kafkaRebalance.getMetadata().getName(),
-                kafkaRebalance.getStatus() != null ? rebalanceStateConditionType(kafkaRebalance.getStatus()) : null,
+                KafkaRebalanceUtils.rebalanceState(kafkaRebalance.getStatus()),
                 ANNO_STRIMZI_IO_REBALANCE, rawRebalanceAnnotation(kafkaRebalance));
 
         if (kafkaRebalance.getStatus() != null
@@ -1082,7 +1031,7 @@ public class KafkaRebalanceAssemblyOperator
                     } else if (!Util.matchesSelector(kafkaSelector, kafka)) {
                         LOGGER.debugCr(reconciliation, "{} {} in namespace {} belongs to a Kafka cluster {} which does not match label selector {} and will be ignored", kind(), kafkaRebalance.getMetadata().getName(), clusterNamespace, clusterName, kafkaSelector.getMatchLabels());
                         return Future.succeededFuture(null);
-                    } else if (!isKafkaClusterReady(kafka) && state(kafkaRebalance) != (KafkaRebalanceState.Ready)) {
+                    } else if (!isKafkaClusterReady(kafka) && KafkaRebalanceUtils.rebalanceState(kafkaRebalance.getStatus()) != KafkaRebalanceState.Ready) {
                         LOGGER.warnCr(reconciliation, "Kafka cluster is not Ready");
                         KafkaRebalanceStatus status = new KafkaRebalanceStatus();
                         return Future.succeededFuture(updateStatus(kafkaRebalance, status,
@@ -1127,11 +1076,10 @@ public class KafkaRebalanceAssemblyOperator
                                             if (kafkaRebalanceStatus == null) {
                                                 currentState = KafkaRebalanceState.New;
                                             } else {
-                                                String rebalanceStateType = rebalanceStateConditionType(kafkaRebalanceStatus);
-                                                if (rebalanceStateType == null) {
+                                                currentState = KafkaRebalanceUtils.rebalanceState(kafkaRebalanceStatus);
+                                                if (currentState == null) {
                                                     throw new RuntimeException("Unable to find KafkaRebalance State in current KafkaRebalance status");
                                                 }
-                                                currentState = KafkaRebalanceState.valueOf(rebalanceStateType);
                                             }
                                             return handleRebalance(reconciliation, cruiseControlHost(clusterName, clusterNamespace),
                                                     apiClient, currentKafkaRebalance, currentState);
@@ -1338,17 +1286,6 @@ public class KafkaRebalanceAssemblyOperator
             }
             return false;
         }
-    }
-
-    private KafkaRebalanceState state(KafkaRebalance kafkaRebalance) {
-        KafkaRebalanceStatus rebalanceStatus = kafkaRebalance.getStatus();
-        if (rebalanceStatus != null) {
-            String statusString = rebalanceStateConditionType(rebalanceStatus);
-            if (statusString != null) {
-                return KafkaRebalanceState.valueOf(statusString);
-            }
-        }
-        return null;
     }
 
     @Override
