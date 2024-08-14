@@ -20,39 +20,39 @@ public class KafkaTopicTemplates {
         return defaultTopic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getContinuousTopicName(), 1, 1, 1);
     }
 
-    public static KafkaTopicBuilder topic(String namespaceName, String topicName, String clusterName) {
-        return defaultTopic(namespaceName, topicName, clusterName, 1, 1, 1);
+    public static KafkaTopicBuilder topic(String namespaceName, String topicName, String kafkaClusterName) {
+        return defaultTopic(namespaceName, topicName, kafkaClusterName, 1, 1, 1);
     }
 
-    public static KafkaTopicBuilder topic(String namespaceName, String topicName, String clusterName, int partitions) {
-        return defaultTopic(namespaceName, topicName, clusterName, partitions, 1, 1);
+    public static KafkaTopicBuilder topic(String namespaceName, String topicName, String kafkaClusterName, int partitions) {
+        return defaultTopic(namespaceName, topicName, kafkaClusterName, partitions, 1, 1);
     }
 
     public static KafkaTopicBuilder topic(
         String namespaceName,
         String topicName,
-        String clusterName,
+        String kafkaClusterName,
         int partitions,
         int replicas
     ) {
-        return defaultTopic(namespaceName, topicName, clusterName, partitions, replicas, replicas);
+        return defaultTopic(namespaceName, topicName, kafkaClusterName, partitions, replicas, replicas);
     }
 
     public static KafkaTopicBuilder topic(
         String namespaceName,
         String topicName,
-        String clusterName,
+        String kafkaClusterName,
         int partitions,
         int replicas,
         int minIsr
     ) {
-        return defaultTopic(namespaceName, topicName, clusterName, partitions, replicas, minIsr);
+        return defaultTopic(namespaceName, topicName, kafkaClusterName, partitions, replicas, minIsr);
     }
 
     public static KafkaTopicBuilder defaultTopic(
         String namespaceName,
         String topicName,
-        String clusterName,
+        String kafkaClusterName,
         int partitions,
         int replicas,
         int minIsr
@@ -61,7 +61,7 @@ public class KafkaTopicTemplates {
             .withNewMetadata()
                 .withName(topicName)
                 .withNamespace(namespaceName)
-                .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, clusterName)
+                .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, kafkaClusterName)
             .endMetadata()
             .editSpec()
                 .withPartitions(partitions)

@@ -9,31 +9,33 @@ import io.strimzi.operator.common.model.Labels;
 
 public class KafkaConnectorTemplates {
 
+    private static final int DEFAULT_MAX_TASKS = 2;
+
     private KafkaConnectorTemplates() {}
 
-    public static KafkaConnectorBuilder kafkaConnector(String namespaceName, String clusterName) {
-        return kafkaConnector(namespaceName, clusterName, 2);
+    public static KafkaConnectorBuilder kafkaConnector(String namespaceName, String kafkaConnectClusterName) {
+        return kafkaConnector(namespaceName, kafkaConnectClusterName, DEFAULT_MAX_TASKS);
     }
 
-    public static KafkaConnectorBuilder kafkaConnector(String namespaceName, String clusterName, int maxTasks) {
-        return kafkaConnector(namespaceName, clusterName, clusterName, maxTasks);
+    public static KafkaConnectorBuilder kafkaConnector(String namespaceName, String kafkaConnectClusterName, int maxTasks) {
+        return kafkaConnector(namespaceName, kafkaConnectClusterName, kafkaConnectClusterName, maxTasks);
     }
 
     public static KafkaConnectorBuilder kafkaConnector(
         String namespaceName,
         String connectorName,
-        String clusterName
+        String kafkaConnectClusterName
     ) {
-        return kafkaConnector(namespaceName, connectorName, clusterName, 2);
+        return kafkaConnector(namespaceName, connectorName, kafkaConnectClusterName, DEFAULT_MAX_TASKS);
     }
 
     public static KafkaConnectorBuilder kafkaConnector(
         String namespaceName,
         String connectorName,
-        String clusterName,
+        String kafkaConnectClusterName,
         int maxTasks
     ) {
-        return defaultKafkaConnector(namespaceName, connectorName, clusterName, maxTasks);
+        return defaultKafkaConnector(namespaceName, connectorName, kafkaConnectClusterName, maxTasks);
     }
 
     private static KafkaConnectorBuilder defaultKafkaConnector(

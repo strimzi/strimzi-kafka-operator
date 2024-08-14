@@ -32,25 +32,25 @@ public class KafkaMirrorMaker2Templates {
 
     public static KafkaMirrorMaker2Builder kafkaMirrorMaker2(
         String namespaceName,
-        String mm2Name,
-        String sourceClusterName,
-        String targetClusterName,
+        String kafkaMirrorMaker2Name,
+        String sourceKafkaClusterName,
+        String targetKafkaClusterName,
         int kafkaMirrorMaker2Replicas,
         boolean tlsListener
     ) {
-        return defaultKafkaMirrorMaker2(namespaceName, mm2Name, sourceClusterName, targetClusterName, kafkaMirrorMaker2Replicas, tlsListener);
+        return defaultKafkaMirrorMaker2(namespaceName, kafkaMirrorMaker2Name, sourceKafkaClusterName, targetKafkaClusterName, kafkaMirrorMaker2Replicas, tlsListener);
     }
 
     public static KafkaMirrorMaker2Builder kafkaMirrorMaker2WithMetrics(
         String namespaceName,
         String mm2name,
-        String sourceClusterName,
-        String targetClusterName,
+        String sourceKafkaClusterName,
+        String targetKafkaClusterName,
         int kafkaMirrorMaker2Replicas,
         String sourceNs,
         String targetNs
     ) {
-        return defaultKafkaMirrorMaker2(namespaceName, mm2name, sourceClusterName, targetClusterName, kafkaMirrorMaker2Replicas, false, sourceNs, targetNs)
+        return defaultKafkaMirrorMaker2(namespaceName, mm2name, sourceKafkaClusterName, targetKafkaClusterName, kafkaMirrorMaker2Replicas, false, sourceNs, targetNs)
             .editOrNewSpec()
                 .withNewJmxPrometheusExporterMetricsConfig()
                     .withNewValueFrom()
@@ -65,35 +65,35 @@ public class KafkaMirrorMaker2Templates {
             .endSpec();
     }
 
-    public static ConfigMap mirrorMaker2MetricsConfigMap(String namespaceName, String mm2Name) {
+    public static ConfigMap mirrorMaker2MetricsConfigMap(String namespaceName, String kafkaMirrorMaker2Name) {
         return new ConfigMapBuilder(TestUtils.configMapFromYaml(TestConstants.PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG, "mirror-maker-2-metrics"))
             .editOrNewMetadata()
                 .withNamespace(namespaceName)
-                .withName(getConfigMapName(mm2Name))
+                .withName(getConfigMapName(kafkaMirrorMaker2Name))
             .endMetadata()
             .build();
     }
 
-    private static String getConfigMapName(String mm2Name) {
-        return mm2Name + METRICS_MM2_CONFIG_MAP_SUFFIX;
+    private static String getConfigMapName(String kafkaMirrorMaker2Name) {
+        return kafkaMirrorMaker2Name + METRICS_MM2_CONFIG_MAP_SUFFIX;
     }
 
     private static KafkaMirrorMaker2Builder defaultKafkaMirrorMaker2(
         String namespaceName,
-        String mm2Name,
-        String kafkaSourceClusterName,
-        String kafkaTargetClusterName,
+        String kafkaMirrorMaker2Name,
+        String sourceKafkaClusterName,
+        String targetKafkaClusterName,
         int kafkaMirrorMaker2Replicas,
         boolean tlsListener
     ) {
-        return defaultKafkaMirrorMaker2(namespaceName, mm2Name, kafkaSourceClusterName, kafkaTargetClusterName, kafkaMirrorMaker2Replicas, tlsListener, null, null);
+        return defaultKafkaMirrorMaker2(namespaceName, kafkaMirrorMaker2Name, sourceKafkaClusterName, targetKafkaClusterName, kafkaMirrorMaker2Replicas, tlsListener, null, null);
     }
 
     private static KafkaMirrorMaker2Builder defaultKafkaMirrorMaker2(
         String namespaceName,
-        String mm2Name,
-        String kafkaSourceClusterName,
-        String kafkaTargetClusterName,
+        String kafkaMirrorMaker2Name,
+        String sourceKafkaClusterName,
+        String targetKafkaClusterName,
         int kafkaMirrorMaker2Replicas,
         boolean tlsListener,
         String sourceNs,
@@ -101,47 +101,47 @@ public class KafkaMirrorMaker2Templates {
     ) {
 
         KafkaMirrorMaker2ClusterSpec targetClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder()
-            .withAlias(kafkaTargetClusterName)
-            .withBootstrapServers(targetNs == null ? KafkaResources.plainBootstrapAddress(kafkaTargetClusterName) : KafkaUtils.namespacedPlainBootstrapAddress(kafkaTargetClusterName, targetNs))
+            .withAlias(targetKafkaClusterName)
+            .withBootstrapServers(targetNs == null ? KafkaResources.plainBootstrapAddress(targetKafkaClusterName) : KafkaUtils.namespacedPlainBootstrapAddress(targetKafkaClusterName, targetNs))
             .addToConfig("config.storage.replication.factor", -1)
             .addToConfig("offset.storage.replication.factor", -1)
             .addToConfig("status.storage.replication.factor", -1)
             .build();
 
         KafkaMirrorMaker2ClusterSpec sourceClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder()
-            .withAlias(kafkaSourceClusterName)
-            .withBootstrapServers(sourceNs == null ? KafkaResources.plainBootstrapAddress(kafkaSourceClusterName) : KafkaUtils.namespacedPlainBootstrapAddress(kafkaSourceClusterName, sourceNs))
+            .withAlias(sourceKafkaClusterName)
+            .withBootstrapServers(sourceNs == null ? KafkaResources.plainBootstrapAddress(sourceKafkaClusterName) : KafkaUtils.namespacedPlainBootstrapAddress(sourceKafkaClusterName, sourceNs))
             .build();
 
         if (tlsListener) {
             targetClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder(targetClusterSpec)
-                .withBootstrapServers(targetNs == null ? KafkaResources.tlsBootstrapAddress(kafkaTargetClusterName) : KafkaUtils.namespacedTlsBootstrapAddress(kafkaTargetClusterName, targetNs))
+                .withBootstrapServers(targetNs == null ? KafkaResources.tlsBootstrapAddress(targetKafkaClusterName) : KafkaUtils.namespacedTlsBootstrapAddress(targetKafkaClusterName, targetNs))
                 .withNewTls()
-                    .withTrustedCertificates(new CertSecretSourceBuilder().withSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaTargetClusterName)).withCertificate("ca.crt").build())
+                    .withTrustedCertificates(new CertSecretSourceBuilder().withSecretName(KafkaResources.clusterCaCertificateSecretName(targetKafkaClusterName)).withCertificate("ca.crt").build())
                 .endTls()
                 .build();
 
             sourceClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder(sourceClusterSpec)
-                .withBootstrapServers(sourceNs == null ? KafkaResources.tlsBootstrapAddress(kafkaSourceClusterName) : KafkaUtils.namespacedTlsBootstrapAddress(kafkaSourceClusterName, sourceNs))
+                .withBootstrapServers(sourceNs == null ? KafkaResources.tlsBootstrapAddress(sourceKafkaClusterName) : KafkaUtils.namespacedTlsBootstrapAddress(sourceKafkaClusterName, sourceNs))
                 .withNewTls()
-                    .withTrustedCertificates(new CertSecretSourceBuilder().withSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaSourceClusterName)).withCertificate("ca.crt").build())
+                    .withTrustedCertificates(new CertSecretSourceBuilder().withSecretName(KafkaResources.clusterCaCertificateSecretName(sourceKafkaClusterName)).withCertificate("ca.crt").build())
                 .endTls()
                 .build();
         }
 
         KafkaMirrorMaker2Builder kmm2b = new KafkaMirrorMaker2Builder()
             .withNewMetadata()
-                .withName(mm2Name)
+                .withName(kafkaMirrorMaker2Name)
                 .withNamespace(namespaceName)
             .endMetadata()
             .editOrNewSpec()
                 .withVersion(Environment.ST_KAFKA_VERSION)
                 .withReplicas(kafkaMirrorMaker2Replicas)
-                .withConnectCluster(kafkaTargetClusterName)
+                .withConnectCluster(targetKafkaClusterName)
                 .withClusters(targetClusterSpec, sourceClusterSpec)
                 .addNewMirror()
-                    .withSourceCluster(kafkaSourceClusterName)
-                    .withTargetCluster(kafkaTargetClusterName)
+                    .withSourceCluster(sourceKafkaClusterName)
+                    .withTargetCluster(targetKafkaClusterName)
                     .withNewSourceConnector()
                         .withTasksMax(1)
                         .addToConfig("replication.factor", -1)

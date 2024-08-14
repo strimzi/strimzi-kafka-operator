@@ -13,18 +13,18 @@ public class KafkaRebalanceTemplates {
 
     private KafkaRebalanceTemplates() {}
 
-    public static KafkaRebalanceBuilder kafkaRebalance(String namespaceName, String clusterName) {
-        return defaultKafkaRebalance(namespaceName, clusterName);
+    public static KafkaRebalanceBuilder kafkaRebalance(String namespaceName, String kafkaClusterName) {
+        return defaultKafkaRebalance(namespaceName, kafkaClusterName);
     }
 
-    private static KafkaRebalanceBuilder defaultKafkaRebalance(String namespaceName, String clusterName) {
+    private static KafkaRebalanceBuilder defaultKafkaRebalance(String namespaceName, String kafkaClusterName) {
 
         Map<String, String> kafkaRebalanceLabels = new HashMap<>();
-        kafkaRebalanceLabels.put("strimzi.io/cluster", clusterName);
+        kafkaRebalanceLabels.put("strimzi.io/cluster", kafkaClusterName);
 
         return new KafkaRebalanceBuilder()
             .editMetadata()
-                .withName(clusterName)
+                .withName(kafkaClusterName)
                 .withNamespace(namespaceName)
                 .withLabels(kafkaRebalanceLabels)
             .endMetadata()

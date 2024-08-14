@@ -20,19 +20,19 @@ public class KafkaMirrorMakerTemplates {
 
     public static KafkaMirrorMakerBuilder kafkaMirrorMaker(
         String namespaceName,
-        String mm1Name,
+        String kafkaMirrorMaker1Name,
         String sourceBootstrapServer,
         String targetBootstrapServer,
         String groupId,
         int mirrorMakerReplicas,
         boolean tlsListener
     ) {
-        return defaultKafkaMirrorMaker(namespaceName, mm1Name, sourceBootstrapServer, targetBootstrapServer, groupId, mirrorMakerReplicas, tlsListener);
+        return defaultKafkaMirrorMaker(namespaceName, kafkaMirrorMaker1Name, sourceBootstrapServer, targetBootstrapServer, groupId, mirrorMakerReplicas, tlsListener);
     }
 
     private static KafkaMirrorMakerBuilder defaultKafkaMirrorMaker(
         String namespaceName,
-        String mm1Name,
+        String kafkaMirrorMaker1Name,
         String sourceBootstrapServer,
         String targetBootstrapServer,
         String groupId,
@@ -41,7 +41,7 @@ public class KafkaMirrorMakerTemplates {
     ) {
         KafkaMirrorMakerBuilder kmmb = new KafkaMirrorMakerBuilder()
             .withNewMetadata()
-                .withName(mm1Name)
+                .withName(kafkaMirrorMaker1Name)
                 .withNamespace(namespaceName)
             .endMetadata()
             .editSpec()

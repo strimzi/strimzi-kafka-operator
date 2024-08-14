@@ -36,59 +36,59 @@ public class KafkaConnectTemplates {
 
     public static KafkaConnectBuilder kafkaConnect(
         final String namespaceName,
-        final String connectName,
-        String clusterName,
-        int kafkaConnectReplicas
+        final String kafkaConnectClusterName,
+        final String kafkaClusterName,
+        final int kafkaConnectReplicas
     ) {
-        return defaultKafkaConnect(namespaceName, connectName, clusterName, kafkaConnectReplicas);
+        return defaultKafkaConnect(namespaceName, kafkaConnectClusterName, kafkaClusterName, kafkaConnectReplicas);
     }
 
     public static KafkaConnectBuilder kafkaConnect(
         final String namespaceName,
-        String clusterName,
-        int kafkaConnectReplicas
+        final String kafkaClusterName,
+        final int kafkaConnectReplicas
     ) {
-        return kafkaConnect(namespaceName, clusterName, clusterName, kafkaConnectReplicas);
+        return kafkaConnect(namespaceName, kafkaClusterName, kafkaClusterName, kafkaConnectReplicas);
     }
 
     public static KafkaConnectBuilder kafkaConnectWithMetricsAndFileSinkPlugin(
-        String namespaceName,
-        String connectName,
-        String clusterName,
-        int replicas
+        final String namespaceName,
+        final String kafkaConnectClusterName,
+        final String kafkaClusterName,
+        final int replicas
     ) {
-        return kafkaConnectWithFilePlugin(namespaceName, connectName, clusterName, replicas)
+        return kafkaConnectWithFilePlugin(namespaceName, kafkaConnectClusterName, kafkaClusterName, replicas)
             .editOrNewSpec()
             .withNewJmxPrometheusExporterMetricsConfig()
                 .withNewValueFrom()
-                    .withNewConfigMapKeyRef(CONFIG_MAP_KEY, getConfigMapName(connectName), false)
+                    .withNewConfigMapKeyRef(CONFIG_MAP_KEY, getConfigMapName(kafkaConnectClusterName), false)
                 .endValueFrom()
             .endJmxPrometheusExporterMetricsConfig()
             .endSpec();
     }
 
-    public static ConfigMap connectMetricsConfigMap(String namespaceName, String connectName) {
+    public static ConfigMap connectMetricsConfigMap(String namespaceName, String kafkaConnectClusterName) {
         return new ConfigMapBuilder(TestUtils.configMapFromYaml(TestConstants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG, "connect-metrics"))
             .editOrNewMetadata()
                 .withNamespace(namespaceName)
-                .withName(getConfigMapName(connectName))
+                .withName(getConfigMapName(kafkaConnectClusterName))
             .endMetadata()
             .build();
     }
 
-    private static String getConfigMapName(String connectName) {
-        return connectName + METRICS_CONNECT_CONFIG_MAP_SUFFIX;
+    private static String getConfigMapName(String kafkaConnectClusterName) {
+        return kafkaConnectClusterName + METRICS_CONNECT_CONFIG_MAP_SUFFIX;
     }
 
     private static KafkaConnectBuilder defaultKafkaConnect(
         final String namespaceName,
-        String connectName,
+        String kafkaConnectClusterName,
         String kafkaClusterName,
         int kafkaConnectReplicas
     ) {
         return new KafkaConnectBuilder()
             .withNewMetadata()
-                .withName(connectName)
+                .withName(kafkaConnectClusterName)
                 .withNamespace(namespaceName)
             .endMetadata()
             .editOrNewSpec()
@@ -103,10 +103,10 @@ public class KafkaConnectTemplates {
                             .build()
                     )
                 .endTls()
-                .addToConfig("group.id", KafkaConnectResources.componentName(connectName))
-                .addToConfig("offset.storage.topic", KafkaConnectResources.configStorageTopicOffsets(connectName))
-                .addToConfig("config.storage.topic", KafkaConnectResources.metricsAndLogConfigMapName(connectName))
-                .addToConfig("status.storage.topic", KafkaConnectResources.configStorageTopicStatus(connectName))
+                .addToConfig("group.id", KafkaConnectResources.componentName(kafkaConnectClusterName))
+                .addToConfig("offset.storage.topic", KafkaConnectResources.configStorageTopicOffsets(kafkaConnectClusterName))
+                .addToConfig("config.storage.topic", KafkaConnectResources.metricsAndLogConfigMapName(kafkaConnectClusterName))
+                .addToConfig("status.storage.topic", KafkaConnectResources.configStorageTopicStatus(kafkaConnectClusterName))
                 .addToConfig("config.storage.replication.factor", "-1")
                 .addToConfig("offset.storage.replication.factor", "-1")
                 .addToConfig("status.storage.replication.factor", "-1")
@@ -116,31 +116,31 @@ public class KafkaConnectTemplates {
             .endSpec();
     }
 
-    public static KafkaConnectBuilder kafkaConnectWithFilePlugin(String namespaceName, String clusterName, int replicas) {
-        return kafkaConnectWithFilePlugin(namespaceName, clusterName, clusterName, replicas);
+    public static KafkaConnectBuilder kafkaConnectWithFilePlugin(String namespaceName, String kafkaClusterName, int replicas) {
+        return kafkaConnectWithFilePlugin(namespaceName, kafkaClusterName, kafkaClusterName, replicas);
     }
 
     /**
      * Method for creating the KafkaConnect builder with File plugin - using the KafkaConnect build feature.
      * @param namespaceName namespace, where the KafkaConnect resource will be deployed
-     * @param connectName Name for the KafkaConnect resource
-     * @param clusterName name of the Kafka cluster
+     * @param kafkaConnectClusterName Name for the KafkaConnect resource
+     * @param kafkaClusterName name of the Kafka cluster
      * @param replicas number of KafkaConnect replicas
      * @return KafkaConnect builder with File plugin
      */
-    public static KafkaConnectBuilder kafkaConnectWithFilePlugin(String namespaceName, String connectName, String clusterName, int replicas) {
-        return addFileSinkPluginOrImage(namespaceName, kafkaConnect(namespaceName, connectName, clusterName, replicas));
+    public static KafkaConnectBuilder kafkaConnectWithFilePlugin(String namespaceName, String kafkaConnectClusterName, String kafkaClusterName, int replicas) {
+        return addFileSinkPluginOrImage(namespaceName, kafkaConnect(namespaceName, kafkaConnectClusterName, kafkaClusterName, replicas));
     }
 
     /**
      * Method for adding Connect Build with file-sink plugin to the Connect spec or set Connect's image in case that
      * the image is set in `CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN` env. variable
      * @param namespaceName namespace for output registry
-     * @param connectBuilder builder of the Connect resource
+     * @param kafkaConnectBuilder builder of the Connect resource
      * @return updated Connect resource in builder
      */
     @SuppressFBWarnings("DMI_RANDOM_USED_ONLY_ONCE")
-    public static KafkaConnectBuilder addFileSinkPluginOrImage(String namespaceName, KafkaConnectBuilder connectBuilder) {
+    public static KafkaConnectBuilder addFileSinkPluginOrImage(String namespaceName, KafkaConnectBuilder kafkaConnectBuilder) {
         if (!KubeClusterResource.getInstance().isMicroShift() && Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN.isEmpty()) {
             final Plugin fileSinkPlugin = new PluginBuilder()
                 .withName("file-plugin")
@@ -153,7 +153,7 @@ public class KafkaConnectTemplates {
 
             final String imageFullPath = Environment.getImageOutputRegistry(namespaceName, TestConstants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
-            return connectBuilder
+            return kafkaConnectBuilder
                 .editOrNewSpec()
                     .editOrNewBuild()
                         .withPlugins(fileSinkPlugin)
@@ -167,7 +167,7 @@ public class KafkaConnectTemplates {
 
             LOGGER.info("Using {} image from {} env variable", Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN, Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN_ENV);
 
-            return connectBuilder
+            return kafkaConnectBuilder
                 .editOrNewSpec()
                     .withImage(Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN)
                 .endSpec();

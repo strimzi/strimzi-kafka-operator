@@ -36,54 +36,54 @@ public class KafkaTemplates {
     // Kafka Ephemeral
     // -------------------------------------------------------------------------------------------
 
-    public static KafkaBuilder kafkaEphemeral(String namespaceName, String clusterName, int kafkaReplicas) {
-        return kafkaEphemeral(namespaceName, clusterName, kafkaReplicas, Math.min(kafkaReplicas, 3));
+    public static KafkaBuilder kafkaEphemeral(String namespaceName, String kafkaClusterName, int kafkaReplicas) {
+        return kafkaEphemeral(namespaceName, kafkaClusterName, kafkaReplicas, Math.min(kafkaReplicas, 3));
     }
 
-    public static KafkaBuilder kafkaEphemeral(String namespaceName, String clusterName, int kafkaReplicas, int zookeeperReplicas) {
+    public static KafkaBuilder kafkaEphemeral(String namespaceName, String kafkaClusterName, int kafkaReplicas, int zookeeperReplicas) {
         if (Environment.isKafkaNodePoolsEnabled()) {
             if (Environment.isKRaftModeEnabled()) {
-                return kafkaEphemeralKRaft(namespaceName, clusterName, kafkaReplicas);
+                return kafkaEphemeralKRaft(namespaceName, kafkaClusterName, kafkaReplicas);
             }
-            return kafkaEphemeralNodePools(namespaceName, clusterName, kafkaReplicas, zookeeperReplicas);
+            return kafkaEphemeralNodePools(namespaceName, kafkaClusterName, kafkaReplicas, zookeeperReplicas);
         } else {
-            return kafkaEphemeralWithoutNodePools(namespaceName, clusterName, kafkaReplicas, zookeeperReplicas);
+            return kafkaEphemeralWithoutNodePools(namespaceName, kafkaClusterName, kafkaReplicas, zookeeperReplicas);
         }
     }
 
-    public static KafkaBuilder kafkaEphemeralWithoutNodePools(String namespaceName, String clusterName, int kafkaReplicas, int zookeeperReplicas) {
-        return defaultKafkaWithoutNodePools(namespaceName, clusterName, kafkaReplicas, zookeeperReplicas);
+    public static KafkaBuilder kafkaEphemeralWithoutNodePools(String namespaceName, String kafkaClusterName, int kafkaReplicas, int zookeeperReplicas) {
+        return defaultKafkaWithoutNodePools(namespaceName, kafkaClusterName, kafkaReplicas, zookeeperReplicas);
     }
 
-    public static KafkaBuilder kafkaEphemeralNodePools(String namespaceName, String clusterName, int kafkaReplicas, int zookeeperReplicas) {
-        return defaultKafkaNodePools(namespaceName, clusterName, kafkaReplicas, zookeeperReplicas);
+    public static KafkaBuilder kafkaEphemeralNodePools(String namespaceName, String kafkaClusterName, int kafkaReplicas, int zookeeperReplicas) {
+        return defaultKafkaNodePools(namespaceName, kafkaClusterName, kafkaReplicas, zookeeperReplicas);
     }
 
-    public static KafkaBuilder kafkaEphemeralKRaft(String namespaceName, String clusterName, int kafkaReplicas) {
-        return defaultKafkaKRaft(namespaceName, clusterName, kafkaReplicas);
+    public static KafkaBuilder kafkaEphemeralKRaft(String namespaceName, String kafkaClusterName, int kafkaReplicas) {
+        return defaultKafkaKRaft(namespaceName, kafkaClusterName, kafkaReplicas);
     }
 
     // -------------------------------------------------------------------------------------------
     // Kafka Persistent
     // -------------------------------------------------------------------------------------------
 
-    public static KafkaBuilder kafkaPersistent(String namespaceName, String clusterName, int kafkaReplicas) {
-        return kafkaPersistent(namespaceName, clusterName, kafkaReplicas, Math.min(kafkaReplicas, 3));
+    public static KafkaBuilder kafkaPersistent(String namespaceName, String kafkaClusterName, int kafkaReplicas) {
+        return kafkaPersistent(namespaceName, kafkaClusterName, kafkaReplicas, Math.min(kafkaReplicas, 3));
     }
 
-    public static KafkaBuilder kafkaPersistent(String namespaceName, String clusterName, int kafkaReplicas, int zookeeperReplicas) {
+    public static KafkaBuilder kafkaPersistent(String namespaceName, String kafkaClusterName, int kafkaReplicas, int zookeeperReplicas) {
         if (Environment.isKafkaNodePoolsEnabled()) {
             if (Environment.isKRaftModeEnabled()) {
-                return kafkaPersistentKRaft(namespaceName, clusterName, kafkaReplicas);
+                return kafkaPersistentKRaft(namespaceName, kafkaClusterName, kafkaReplicas);
             }
-            return kafkaPersistentNodePools(namespaceName, clusterName, kafkaReplicas, zookeeperReplicas);
+            return kafkaPersistentNodePools(namespaceName, kafkaClusterName, kafkaReplicas, zookeeperReplicas);
         } else {
-            return kafkaPersistentWithoutNodePools(namespaceName, clusterName, kafkaReplicas, zookeeperReplicas);
+            return kafkaPersistentWithoutNodePools(namespaceName, kafkaClusterName, kafkaReplicas, zookeeperReplicas);
         }
     }
 
-    public static KafkaBuilder kafkaPersistentWithoutNodePools(String namespaceName, String clusterName, int kafkaReplicas, int zookeeperReplicas) {
-        return defaultKafkaWithoutNodePools(namespaceName, clusterName, kafkaReplicas, zookeeperReplicas)
+    public static KafkaBuilder kafkaPersistentWithoutNodePools(String namespaceName, String kafkaClusterName, int kafkaReplicas, int zookeeperReplicas) {
+        return defaultKafkaWithoutNodePools(namespaceName, kafkaClusterName, kafkaReplicas, zookeeperReplicas)
             .editSpec()
                 .editKafka()
                     .withNewPersistentClaimStorage()
@@ -100,8 +100,8 @@ public class KafkaTemplates {
             .endSpec();
     }
 
-    public static KafkaBuilder kafkaPersistentNodePools(String namespaceName, String clusterName, int kafkaReplicas, int zookeeperReplicas) {
-        return defaultKafkaNodePools(namespaceName, clusterName, kafkaReplicas, zookeeperReplicas)
+    public static KafkaBuilder kafkaPersistentNodePools(String namespaceName, String kafkaClusterName, int kafkaReplicas, int zookeeperReplicas) {
+        return defaultKafkaNodePools(namespaceName, kafkaClusterName, kafkaReplicas, zookeeperReplicas)
             .editSpec()
                 .editZookeeper()
                     .withNewPersistentClaimStorage()
@@ -112,18 +112,18 @@ public class KafkaTemplates {
             .endSpec();
     }
 
-    public static KafkaBuilder kafkaPersistentKRaft(String namespaceName, String clusterName, int kafkaReplicas) {
-        return defaultKafkaKRaft(namespaceName, clusterName, kafkaReplicas);
+    public static KafkaBuilder kafkaPersistentKRaft(String namespaceName, String kafkaClusterName, int kafkaReplicas) {
+        return defaultKafkaKRaft(namespaceName, kafkaClusterName, kafkaReplicas);
     }
 
     // -------------------------------------------------------------------------------------------
     // Kafka with metrics
     // -------------------------------------------------------------------------------------------
 
-    public static KafkaBuilder kafkaWithMetrics(String namespaceName, String clusterName, int kafkaReplicas, int zookeeperReplicas) {
-        String configMapName = clusterName + METRICS_KAFKA_CONFIG_MAP_SUFFIX;
+    public static KafkaBuilder kafkaWithMetrics(String namespaceName, String kafkaClusterName, int kafkaReplicas, int zookeeperReplicas) {
+        String configMapName = kafkaClusterName + METRICS_KAFKA_CONFIG_MAP_SUFFIX;
 
-        KafkaBuilder kafkaBuilder = defaultKafka(namespaceName, clusterName, kafkaReplicas, zookeeperReplicas)
+        KafkaBuilder kafkaBuilder = defaultKafka(namespaceName, kafkaClusterName, kafkaReplicas, zookeeperReplicas)
             .editSpec()
                 .withNewKafkaExporter()
                 .endKafkaExporter()
@@ -152,8 +152,8 @@ public class KafkaTemplates {
         return kafkaBuilder;
     }
 
-    public static KafkaBuilder kafkaWithMetricsAndCruiseControlWithMetrics(String namespaceName, String clusterName, int kafkaReplicas, int zookeeperReplicas) {
-        String ccConfigMapName = clusterName + METRICS_CC_CONFIG_MAP_SUFFIX;
+    public static KafkaBuilder kafkaWithMetricsAndCruiseControlWithMetrics(String namespaceName, String kafkaClusterName, int kafkaReplicas, int zookeeperReplicas) {
+        String ccConfigMapName = kafkaClusterName + METRICS_CC_CONFIG_MAP_SUFFIX;
 
         ConfigMapKeySelector cmks = new ConfigMapKeySelectorBuilder()
             .withName(ccConfigMapName)
@@ -166,7 +166,7 @@ public class KafkaTemplates {
             .endValueFrom()
             .build();
 
-        return kafkaWithMetrics(namespaceName, clusterName, kafkaReplicas, zookeeperReplicas)
+        return kafkaWithMetrics(namespaceName, kafkaClusterName, kafkaReplicas, zookeeperReplicas)
             .editSpec()
                 .withNewCruiseControl()
                     .withMetricsConfig(jmxPrometheusExporterMetrics)
@@ -180,8 +180,8 @@ public class KafkaTemplates {
     // ConfigMaps for Kafka with metrics
     // -------------------------------------------------------------------------------------------
 
-    public static ConfigMap kafkaMetricsConfigMap(String namespaceName, String clusterName) {
-        String configMapName = clusterName + METRICS_KAFKA_CONFIG_MAP_SUFFIX;
+    public static ConfigMap kafkaMetricsConfigMap(String namespaceName, String kafkaClusterName) {
+        String configMapName = kafkaClusterName + METRICS_KAFKA_CONFIG_MAP_SUFFIX;
 
         ConfigMap kafkaMetricsCm = TestUtils.configMapFromYaml(TestConstants.PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
 
@@ -193,8 +193,8 @@ public class KafkaTemplates {
             .build();
     }
 
-    public static ConfigMap cruiseControlMetricsConfigMap(String namespaceName, String clusterName) {
-        String configMapName = clusterName + METRICS_CC_CONFIG_MAP_SUFFIX;
+    public static ConfigMap cruiseControlMetricsConfigMap(String namespaceName, String kafkaClusterName) {
+        String configMapName = kafkaClusterName + METRICS_CC_CONFIG_MAP_SUFFIX;
 
         return new ConfigMapBuilder()
             .withNewMetadata()
@@ -216,8 +216,8 @@ public class KafkaTemplates {
     // Kafka with Cruise Control
     // -------------------------------------------------------------------------------------------
 
-    public static KafkaBuilder kafkaWithCruiseControl(String namespaceName, String clusterName, int kafkaReplicas, int zookeeperReplicas) {
-        return defaultKafka(namespaceName, clusterName, kafkaReplicas, zookeeperReplicas)
+    public static KafkaBuilder kafkaWithCruiseControl(String namespaceName, String kafkaClusterName, int kafkaReplicas, int zookeeperReplicas) {
+        return defaultKafka(namespaceName, kafkaClusterName, kafkaReplicas, zookeeperReplicas)
             .editSpec()
                 .editKafka()
                     .addToConfig("cruise.control.metrics.reporter.metrics.reporting.interval.ms", 5_000)
@@ -233,8 +233,8 @@ public class KafkaTemplates {
             .endSpec();
     }
 
-    public static KafkaBuilder kafkaWithCruiseControlTunedForFastModelGeneration(String namespaceName, String clusterName, int kafkaReplicas, int zookeeperReplicas) {
-        return defaultKafka(namespaceName, clusterName, kafkaReplicas, zookeeperReplicas)
+    public static KafkaBuilder kafkaWithCruiseControlTunedForFastModelGeneration(String namespaceName, String kafkaClusterName, int kafkaReplicas, int zookeeperReplicas) {
+        return defaultKafka(namespaceName, kafkaClusterName, kafkaReplicas, zookeeperReplicas)
             .editSpec()
                 .editKafka()
                     .addToConfig("cruise.control.metrics.reporter.metrics.reporting.interval.ms", 5_000)
@@ -262,21 +262,21 @@ public class KafkaTemplates {
     // Kafka default templates
     // -------------------------------------------------------------------------------------------
 
-    private static KafkaBuilder defaultKafka(String namespaceName, String clusterName, int kafkaReplicas, int zookeeperReplicas) {
+    private static KafkaBuilder defaultKafka(String namespaceName, String kafkaClusterName, int kafkaReplicas, int zookeeperReplicas) {
         if (Environment.isKafkaNodePoolsEnabled()) {
             if (Environment.isKRaftModeEnabled()) {
-                return defaultKafkaKRaft(namespaceName, clusterName, kafkaReplicas);
+                return defaultKafkaKRaft(namespaceName, kafkaClusterName, kafkaReplicas);
             }
-            return defaultKafkaNodePools(namespaceName, clusterName, kafkaReplicas, zookeeperReplicas);
+            return defaultKafkaNodePools(namespaceName, kafkaClusterName, kafkaReplicas, zookeeperReplicas);
         } else {
-            return defaultKafkaWithoutNodePools(namespaceName, clusterName, kafkaReplicas, zookeeperReplicas);
+            return defaultKafkaWithoutNodePools(namespaceName, kafkaClusterName, kafkaReplicas, zookeeperReplicas);
         }
     }
 
-    private static KafkaBuilder defaultKafkaWithoutNodePools(String namespaceName, String clusterName, int kafkaReplicas, int zookeeperReplicas) {
+    private static KafkaBuilder defaultKafkaWithoutNodePools(String namespaceName, String kafkaClusterName, int kafkaReplicas, int zookeeperReplicas) {
         KafkaBuilder kb = new KafkaBuilder()
             .withNewMetadata()
-                .withName(clusterName)
+                .withName(kafkaClusterName)
                 .withNamespace(namespaceName)
             .endMetadata()
             .editSpec()
@@ -295,10 +295,10 @@ public class KafkaTemplates {
         return kb;
     }
 
-    private static KafkaBuilder defaultKafkaNodePools(String namespaceName, String clusterName, int kafkaReplicas, int zookeeperReplicas) {
+    private static KafkaBuilder defaultKafkaNodePools(String namespaceName, String kafkaClusterName, int kafkaReplicas, int zookeeperReplicas) {
         KafkaBuilder kb = new KafkaBuilder()
             .withNewMetadata()
-                .withName(clusterName)
+                .withName(kafkaClusterName)
                 .withNamespace(namespaceName)
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
             .endMetadata();
@@ -312,10 +312,10 @@ public class KafkaTemplates {
         return kb;
     }
 
-    private static KafkaBuilder defaultKafkaKRaft(String namespaceName, String clusterName, int kafkaReplicas) {
+    private static KafkaBuilder defaultKafkaKRaft(String namespaceName, String kafkaClusterName, int kafkaReplicas) {
         KafkaBuilder kb = new KafkaBuilder()
             .withNewMetadata()
-                .withName(clusterName)
+                .withName(kafkaClusterName)
                 .withNamespace(namespaceName)
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
