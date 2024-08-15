@@ -186,6 +186,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     // Copy the metadata state if needed
                     status.setKafkaMetadataState(kafkaAssembly.getStatus().getKafkaMetadataState());
                 }
+
+                if (status.getRegisteredNodeIds() == null
+                        && kafkaAssembly.getStatus().getRegisteredNodeIds() != null)  {
+                    // Copy the list of registered node IDs if needed
+                    status.setRegisteredNodeIds(kafkaAssembly.getStatus().getRegisteredNodeIds());
+                }
             }
 
             if (reconcileResult.succeeded())    {

@@ -57,6 +57,7 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOpe
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
@@ -69,6 +70,11 @@ import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.UnregisterBrokerResult;
+import org.apache.kafka.common.KafkaFuture;
+import org.apache.kafka.common.errors.TimeoutException;
+import org.apache.kafka.common.internals.KafkaFutureImpl;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -91,10 +97,15 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.startsWith;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -269,7 +280,6 @@ public class KafkaAssemblyOperatorWithKRaftTest {
 
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(KAFKA));
-        when(mockKafkaOps.get(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(KAFKA);
         when(mockKafkaOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
 
         CrdOperator<KubernetesClient, KafkaNodePool, KafkaNodePoolList> mockKafkaNodePoolOps = supplier.kafkaNodePoolOperator;
@@ -382,7 +392,6 @@ public class KafkaAssemblyOperatorWithKRaftTest {
 
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(KAFKA));
-        when(mockKafkaOps.get(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(KAFKA);
         when(mockKafkaOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
 
         CrdOperator<KubernetesClient, KafkaNodePool, KafkaNodePoolList> mockKafkaNodePoolOps = supplier.kafkaNodePoolOperator;
@@ -538,6 +547,11 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                     .withReplicas(2)
                 .endSpec()
                 .build();
+        Kafka kafkaWithStatus = new KafkaBuilder(KAFKA)
+                .withNewStatus()
+                    .withRegisteredNodeIds(0, 1, 2, 3, 4)
+                .endStatus()
+                .build();
 
         List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(CONTROLLERS, oldBrokersPool), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, oldPools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
@@ -586,13 +600,16 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         when(mockPodOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
-        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(KAFKA));
-        when(mockKafkaOps.get(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(KAFKA);
-        when(mockKafkaOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(kafkaWithStatus));
+        ArgumentCaptor<Kafka> kafkaStatusCaptor = ArgumentCaptor.forClass(Kafka.class);
+        when(mockKafkaOps.updateStatusAsync(any(), kafkaStatusCaptor.capture())).thenReturn(Future.succeededFuture());
 
         CrdOperator<KubernetesClient, KafkaNodePool, KafkaNodePoolList> mockKafkaNodePoolOps = supplier.kafkaNodePoolOperator;
         ArgumentCaptor<KafkaNodePool> kafkaNodePoolStatusCaptor = ArgumentCaptor.forClass(KafkaNodePool.class);
         when(mockKafkaNodePoolOps.updateStatusAsync(any(), kafkaNodePoolStatusCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Used for the check that there were no interactions
+        Admin mockAdmin = supplier.adminClientProvider.createAdminClient(null, null, null, null);
 
         MockKafkaReconciler kr = new MockKafkaReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
@@ -600,7 +617,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 CONFIG,
                 supplier,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
-                KAFKA,
+                kafkaWithStatus,
                 List.of(CONTROLLERS, BROKERS),
                 KAFKA_CLUSTER,
                 CLUSTER_CA,
@@ -646,6 +663,13 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
                     assertThat(kao.state.kafkaStatus.getKafkaNodePools().stream().map(UsedNodePoolStatus::getName).toList(), is(List.of("brokers", "controllers")));
 
+                    assertThat(kafkaStatusCaptor.getAllValues().size(), is(1));
+                    assertThat(kafkaStatusCaptor.getValue().getStatus().getRegisteredNodeIds().size(), is(6));
+                    assertThat(kafkaStatusCaptor.getValue().getStatus().getRegisteredNodeIds(), hasItems(0, 1, 2, 3, 4, 5));
+
+                    // Check node unregistrations
+                    verify(mockAdmin, never()).unregisterBroker(anyInt());
+
                     async.flag();
                 })));
     }
@@ -663,9 +687,14 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                     .withReplicas(5)
                 .endSpec()
                 .build();
+        Kafka kafkaWithStatus = new KafkaBuilder(KAFKA)
+                .withNewStatus()
+                    .withRegisteredNodeIds(0, 1, 2, 3, 4, 5, 6, 7)
+                .endStatus()
+                .build();
 
-        List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(CONTROLLERS, oldBrokersPool), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
-        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, oldPools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaWithStatus, List.of(CONTROLLERS, oldBrokersPool), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
+        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaWithStatus, oldPools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
         List<StrimziPodSet> oldKafkaPodSets = oldKafkaCluster.generatePodSets(false, null, null, brokerId -> null);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -714,13 +743,19 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         when(mockPodOps.waitFor(any(), any(), any(), any(), anyLong(), anyLong(), any())).thenReturn(Future.succeededFuture());
 
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
-        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(KAFKA));
-        when(mockKafkaOps.get(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(KAFKA);
-        when(mockKafkaOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(kafkaWithStatus));
+        ArgumentCaptor<Kafka> kafkaStatusCaptor = ArgumentCaptor.forClass(Kafka.class);
+        when(mockKafkaOps.updateStatusAsync(any(), kafkaStatusCaptor.capture())).thenReturn(Future.succeededFuture());
 
         CrdOperator<KubernetesClient, KafkaNodePool, KafkaNodePoolList> mockKafkaNodePoolOps = supplier.kafkaNodePoolOperator;
         ArgumentCaptor<KafkaNodePool> kafkaNodePoolStatusCaptor = ArgumentCaptor.forClass(KafkaNodePool.class);
         when(mockKafkaNodePoolOps.updateStatusAsync(any(), kafkaNodePoolStatusCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        Admin mockAdmin = supplier.adminClientProvider.createAdminClient(null, null, null, null);
+        UnregisterBrokerResult ubr = mock(UnregisterBrokerResult.class);
+        when(ubr.all()).thenReturn(KafkaFuture.completedFuture(null));
+        ArgumentCaptor<Integer> unregisteredNodeIdCaptor = ArgumentCaptor.forClass(Integer.class);
+        when(mockAdmin.unregisterBroker(unregisteredNodeIdCaptor.capture())).thenReturn(ubr);
 
         MockKafkaReconciler kr = new MockKafkaReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
@@ -728,7 +763,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 CONFIG,
                 supplier,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
-                KAFKA,
+                kafkaWithStatus,
                 List.of(CONTROLLERS, BROKERS),
                 KAFKA_CLUSTER,
                 CLUSTER_CA,
@@ -776,6 +811,340 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles().size(), is(1));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
                     assertThat(kao.state.kafkaStatus.getKafkaNodePools().stream().map(UsedNodePoolStatus::getName).toList(), is(List.of("brokers", "controllers")));
+
+                    // Check Kafka status
+                    assertThat(kafkaStatusCaptor.getAllValues().size(), is(1));
+                    assertThat(kafkaStatusCaptor.getValue().getStatus().getRegisteredNodeIds().size(), is(6));
+                    assertThat(kafkaStatusCaptor.getValue().getStatus().getRegisteredNodeIds(), hasItems(0, 1, 2, 3, 4, 5));
+
+                    // Check node unregistrations
+                    verify(mockAdmin, times(2)).unregisterBroker(anyInt());
+                    assertThat(unregisteredNodeIdCaptor.getAllValues().size(), is(2));
+                    assertThat(unregisteredNodeIdCaptor.getAllValues(), hasItems(6, 7));
+
+                    async.flag();
+                })));
+    }
+
+    /**
+     * Tests reconciliation with scale-down from 5 to 3 Kafka brokers with node unregistration failure. In such case,
+     * the reconciliation should proceed, but the nodes in the status should not be not updated so that the
+     * unregistration is retried in next reconciliation.
+     *
+     * @param context   Test context
+     */
+    @Test
+    @SuppressWarnings({"checkstyle:MethodLength"})
+    public void testScaleDownWithUnregistrationFailure(VertxTestContext context)  {
+        KafkaNodePool oldBrokersPool = new KafkaNodePoolBuilder(BROKERS)
+                .editSpec()
+                    .withReplicas(5)
+                .endSpec()
+                .build();
+        Kafka kafkaWithStatus = new KafkaBuilder(KAFKA)
+                .withNewStatus()
+                    .withRegisteredNodeIds(0, 1, 2, 3, 4, 5, 6, 7)
+                .endStatus()
+                .build();
+
+        List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaWithStatus, List.of(CONTROLLERS, oldBrokersPool), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
+        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaWithStatus, oldPools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> oldKafkaPodSets = oldKafkaCluster.generatePodSets(false, null, null, brokerId -> null);
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        SecretOperator secretOps = supplier.secretOperations;
+        when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
+        when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(new Secret()));
+        when(secretOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        when(mockCmOps.listAsync(any(), eq(oldKafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(oldKafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS)));
+        ArgumentCaptor<String> cmReconciliationCaptor = ArgumentCaptor.forClass(String.class);
+        when(mockCmOps.reconcile(any(), any(), cmReconciliationCaptor.capture(), any())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<String> cmDeletionCaptor = ArgumentCaptor.forClass(String.class);
+        when(mockCmOps.deleteAsync(any(), any(), cmDeletionCaptor.capture(), anyBoolean())).thenReturn(Future.succeededFuture());
+
+        PvcOperator mockPvcOps = supplier.pvcOperations;
+        when(mockPvcOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPvcOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
+
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
+        // Kafka
+        when(mockPodSetOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(oldKafkaPodSets));
+        @SuppressWarnings({ "unchecked" })
+        ArgumentCaptor<List<StrimziPodSet>> kafkaPodSetBatchCaptor =  ArgumentCaptor.forClass(List.class);
+        when(mockPodSetOps.batchReconcile(any(), any(), kafkaPodSetBatchCaptor.capture(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenAnswer(i -> {
+            List<StrimziPodSet> podSets = i.getArgument(2);
+            HashMap<String, ReconcileResult<StrimziPodSet>> result = new HashMap<>();
+
+            for (StrimziPodSet podSet : podSets)    {
+                result.put(podSet.getMetadata().getName(), ReconcileResult.noop(podSet));
+            }
+
+            return Future.succeededFuture(result);
+        });
+        ArgumentCaptor<StrimziPodSet> kafkaPodSetCaptor =  ArgumentCaptor.forClass(StrimziPodSet.class);
+        when(mockPodSetOps.reconcile(any(), any(), startsWith("my-cluster-brokers"), kafkaPodSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
+
+        StatefulSetOperator mockStsOps = supplier.stsOperations;
+        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
+
+        PodOperator mockPodOps = supplier.podOperations;
+        when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
+        when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
+        when(mockPodOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.waitFor(any(), any(), any(), any(), anyLong(), anyLong(), any())).thenReturn(Future.succeededFuture());
+
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
+        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(kafkaWithStatus));
+        ArgumentCaptor<Kafka> kafkaStatusCaptor = ArgumentCaptor.forClass(Kafka.class);
+        when(mockKafkaOps.updateStatusAsync(any(), kafkaStatusCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        CrdOperator<KubernetesClient, KafkaNodePool, KafkaNodePoolList> mockKafkaNodePoolOps = supplier.kafkaNodePoolOperator;
+        ArgumentCaptor<KafkaNodePool> kafkaNodePoolStatusCaptor = ArgumentCaptor.forClass(KafkaNodePool.class);
+        when(mockKafkaNodePoolOps.updateStatusAsync(any(), kafkaNodePoolStatusCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        Admin mockAdmin = supplier.adminClientProvider.createAdminClient(null, null, null, null);
+        ArgumentCaptor<Integer> unregisteredNodeIdCaptor = ArgumentCaptor.forClass(Integer.class);
+        when(mockAdmin.unregisterBroker(unregisteredNodeIdCaptor.capture())).thenAnswer(i -> {
+            if (i.getArgument(0, Integer.class) == 6)   {
+                KafkaFutureImpl<Void> unregistrationFuture = new KafkaFutureImpl<>();
+                unregistrationFuture.completeExceptionally(new TimeoutException("Fake timeout"));
+                UnregisterBrokerResult ubr = mock(UnregisterBrokerResult.class);
+                when(ubr.all()).thenReturn(unregistrationFuture);
+                return ubr;
+            } else {
+                UnregisterBrokerResult ubr = mock(UnregisterBrokerResult.class);
+                when(ubr.all()).thenReturn(KafkaFuture.completedFuture(null));
+                return ubr;
+            }
+        });
+
+        MockKafkaReconciler kr = new MockKafkaReconciler(
+                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
+                vertx,
+                CONFIG,
+                supplier,
+                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                kafkaWithStatus,
+                List.of(CONTROLLERS, BROKERS),
+                KAFKA_CLUSTER,
+                CLUSTER_CA,
+                CLIENTS_CA);
+
+        MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(
+                vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                CERT_MANAGER,
+                PASSWORD_GENERATOR,
+                supplier,
+                CONFIG,
+                kr);
+
+        Checkpoint async = context.checkpoint();
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    // Scale-down of Kafka is done in one go => we should see two invocations (first from scale-down and second from regular patching)
+                    assertThat(kafkaPodSetCaptor.getAllValues().size(), is(1));
+                    assertThat(kafkaPodSetCaptor.getAllValues().get(0).getSpec().getPods().size(), is(3)); // => first capture is from kafkaScaleDown() with new replica count
+                    assertThat(kafkaPodSetBatchCaptor.getAllValues().size(), is(1));
+                    assertThat(kafkaPodSetBatchCaptor.getAllValues().get(0).get(0).getSpec().getPods().size(), is(3)); // => The unchanged controllers pool
+                    assertThat(kafkaPodSetBatchCaptor.getAllValues().get(0).get(1).getSpec().getPods().size(), is(3)); // => second capture is from kafkaPodSet() again with new replica count
+
+                    // Still one maybe-roll invocation
+                    assertThat(kr.maybeRollKafkaInvocations, is(1));
+
+                    // CMs for all remaining pods + the old shared config CM are reconciled
+                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(7));
+                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-controllers-0", "my-cluster-controllers-1", "my-cluster-controllers-2", "my-cluster-brokers-3", "my-cluster-brokers-4", "my-cluster-brokers-5", "my-cluster-kafka-config")));
+
+                    // The  CMs for scaled down pods are deleted
+                    assertThat(cmDeletionCaptor.getAllValues().size(), is(2));
+                    assertThat(cmDeletionCaptor.getAllValues(), is(List.of("my-cluster-brokers-6", "my-cluster-brokers-7")));
+
+                    // Check statuses
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().size(), is(2));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getReplicas(), is(3));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getNodeIds(), is(List.of(0, 1, 2)));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getObservedGeneration(), is(1L));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getRoles().size(), is(1));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getRoles(), hasItems(ProcessRoles.CONTROLLER));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getReplicas(), is(3));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getNodeIds(), is(List.of(3, 4, 5)));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getObservedGeneration(), is(1L));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles().size(), is(1));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
+                    assertThat(kao.state.kafkaStatus.getKafkaNodePools().stream().map(UsedNodePoolStatus::getName).toList(), is(List.of("brokers", "controllers")));
+
+                    // Check Kafka status
+                    assertThat(kafkaStatusCaptor.getAllValues().size(), is(1));
+                    assertThat(kafkaStatusCaptor.getValue().getStatus().getRegisteredNodeIds().size(), is(8));
+                    assertThat(kafkaStatusCaptor.getValue().getStatus().getRegisteredNodeIds(), hasItems(0, 1, 2, 3, 4, 5, 6, 7));
+
+                    // Check node unregistrations
+                    verify(mockAdmin, times(2)).unregisterBroker(anyInt());
+                    assertThat(unregisteredNodeIdCaptor.getAllValues().size(), is(2));
+                    assertThat(unregisteredNodeIdCaptor.getAllValues(), hasItems(6, 7));
+
+                    async.flag();
+                })));
+    }
+
+    /**
+     * Tests reconciliation where node unregistration failed while new nodes are being added. It checks that the new
+     * nodes are added to the registered nodes.
+     *
+     * @param context   Test context
+     */
+    @Test
+    @SuppressWarnings({"checkstyle:MethodLength"})
+    public void testUnregistrationFailureWithScaleUp(VertxTestContext context)  {
+        KafkaNodePool oldBrokersPool = new KafkaNodePoolBuilder(BROKERS)
+                .editSpec()
+                    .withReplicas(2)
+                .endSpec()
+                .build();
+        Kafka kafkaWithStatus = new KafkaBuilder(KAFKA)
+                .withNewStatus()
+                    .withRegisteredNodeIds(0, 1, 2, 3, 4, 1874, 1919)
+                .endStatus()
+                .build();
+
+        List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaWithStatus, List.of(CONTROLLERS, oldBrokersPool), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
+        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaWithStatus, oldPools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> oldKafkaPodSets = oldKafkaCluster.generatePodSets(false, null, null, brokerId -> null);
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        SecretOperator secretOps = supplier.secretOperations;
+        when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
+        when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(new Secret()));
+        when(secretOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        when(mockCmOps.listAsync(any(), eq(oldKafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(oldKafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS)));
+        ArgumentCaptor<String> cmReconciliationCaptor = ArgumentCaptor.forClass(String.class);
+        when(mockCmOps.reconcile(any(), any(), cmReconciliationCaptor.capture(), any())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<String> cmDeletionCaptor = ArgumentCaptor.forClass(String.class);
+        when(mockCmOps.deleteAsync(any(), any(), cmDeletionCaptor.capture(), anyBoolean())).thenReturn(Future.succeededFuture());
+
+        PvcOperator mockPvcOps = supplier.pvcOperations;
+        when(mockPvcOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPvcOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
+
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
+        // Kafka
+        when(mockPodSetOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(oldKafkaPodSets));
+        @SuppressWarnings({ "unchecked" })
+        ArgumentCaptor<List<StrimziPodSet>> kafkaPodSetBatchCaptor =  ArgumentCaptor.forClass(List.class);
+        when(mockPodSetOps.batchReconcile(any(), any(), kafkaPodSetBatchCaptor.capture(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenAnswer(i -> {
+            List<StrimziPodSet> podSets = i.getArgument(2);
+            HashMap<String, ReconcileResult<StrimziPodSet>> result = new HashMap<>();
+
+            for (StrimziPodSet podSet : podSets)    {
+                result.put(podSet.getMetadata().getName(), ReconcileResult.noop(podSet));
+            }
+
+            return Future.succeededFuture(result);
+        });
+        ArgumentCaptor<StrimziPodSet> kafkaPodSetCaptor =  ArgumentCaptor.forClass(StrimziPodSet.class);
+        when(mockPodSetOps.reconcile(any(), any(), startsWith("my-cluster-brokers"), kafkaPodSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
+
+        StatefulSetOperator mockStsOps = supplier.stsOperations;
+        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
+
+        PodOperator mockPodOps = supplier.podOperations;
+        when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
+        when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
+        when(mockPodOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.waitFor(any(), any(), any(), any(), anyLong(), anyLong(), any())).thenReturn(Future.succeededFuture());
+
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
+        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(kafkaWithStatus));
+        ArgumentCaptor<Kafka> kafkaStatusCaptor = ArgumentCaptor.forClass(Kafka.class);
+        when(mockKafkaOps.updateStatusAsync(any(), kafkaStatusCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        CrdOperator<KubernetesClient, KafkaNodePool, KafkaNodePoolList> mockKafkaNodePoolOps = supplier.kafkaNodePoolOperator;
+        ArgumentCaptor<KafkaNodePool> kafkaNodePoolStatusCaptor = ArgumentCaptor.forClass(KafkaNodePool.class);
+        when(mockKafkaNodePoolOps.updateStatusAsync(any(), kafkaNodePoolStatusCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        Admin mockAdmin = supplier.adminClientProvider.createAdminClient(null, null, null, null);
+        ArgumentCaptor<Integer> unregisteredNodeIdCaptor = ArgumentCaptor.forClass(Integer.class);
+        when(mockAdmin.unregisterBroker(unregisteredNodeIdCaptor.capture())).thenAnswer(i -> {
+            if (i.getArgument(0, Integer.class) == 1919)   {
+                KafkaFutureImpl<Void> unregistrationFuture = new KafkaFutureImpl<>();
+                unregistrationFuture.completeExceptionally(new TimeoutException("Fake timeout"));
+                UnregisterBrokerResult ubr = mock(UnregisterBrokerResult.class);
+                when(ubr.all()).thenReturn(unregistrationFuture);
+                return ubr;
+            } else {
+                UnregisterBrokerResult ubr = mock(UnregisterBrokerResult.class);
+                when(ubr.all()).thenReturn(KafkaFuture.completedFuture(null));
+                return ubr;
+            }
+        });
+
+        MockKafkaReconciler kr = new MockKafkaReconciler(
+                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
+                vertx,
+                CONFIG,
+                supplier,
+                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                kafkaWithStatus,
+                List.of(CONTROLLERS, BROKERS),
+                KAFKA_CLUSTER,
+                CLUSTER_CA,
+                CLIENTS_CA);
+
+        MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(
+                vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                CERT_MANAGER,
+                PASSWORD_GENERATOR,
+                supplier,
+                CONFIG,
+                kr);
+
+        Checkpoint async = context.checkpoint();
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    // Scale-up of Kafka is done in one go => we should see two invocations from regular patching
+                    assertThat(kafkaPodSetBatchCaptor.getAllValues().size(), is(1));
+                    assertThat(kafkaPodSetBatchCaptor.getAllValues().get(0).get(0).getSpec().getPods().size(), is(3));
+                    assertThat(kafkaPodSetBatchCaptor.getAllValues().get(0).get(1).getSpec().getPods().size(), is(3));
+
+                    // Still one maybe-roll invocation
+                    assertThat(kr.maybeRollKafkaInvocations, is(1));
+
+                    // CMs for all pods are reconciled
+                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(7));
+                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-controllers-0", "my-cluster-controllers-1", "my-cluster-controllers-2", "my-cluster-brokers-3", "my-cluster-brokers-4", "my-cluster-brokers-5", "my-cluster-kafka-config")));
+
+                    // Only the shared CM is deleted
+                    assertThat(cmDeletionCaptor.getAllValues().size(), is(0));
+
+                    // Check statuses
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().size(), is(2));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getReplicas(), is(3));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getNodeIds(), is(List.of(0, 1, 2)));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getObservedGeneration(), is(1L));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getRoles().size(), is(1));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(0).getStatus().getRoles(), hasItems(ProcessRoles.CONTROLLER));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getReplicas(), is(3));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getNodeIds(), is(List.of(3, 4, 5)));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getObservedGeneration(), is(1L));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles().size(), is(1));
+                    assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
+                    assertThat(kao.state.kafkaStatus.getKafkaNodePools().stream().map(UsedNodePoolStatus::getName).toList(), is(List.of("brokers", "controllers")));
+
+                    // Check Kafka status
+                    assertThat(kafkaStatusCaptor.getAllValues().size(), is(1));
+                    assertThat(kafkaStatusCaptor.getValue().getStatus().getRegisteredNodeIds().size(), is(8));
+                    assertThat(kafkaStatusCaptor.getValue().getStatus().getRegisteredNodeIds(), hasItems(0, 1, 2, 3, 4, 5, 1874, 1919));
+
+                    // Check node unregistrations
+                    verify(mockAdmin, times(2)).unregisterBroker(anyInt());
+                    assertThat(unregisteredNodeIdCaptor.getAllValues().size(), is(2));
+                    assertThat(unregisteredNodeIdCaptor.getAllValues(), hasItems(1874, 1919));
 
                     async.flag();
                 })));
@@ -852,7 +1221,6 @@ public class KafkaAssemblyOperatorWithKRaftTest {
 
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(KAFKA));
-        when(mockKafkaOps.get(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(KAFKA);
         when(mockKafkaOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
 
         CrdOperator<KubernetesClient, KafkaNodePool, KafkaNodePoolList> mockKafkaNodePoolOps = supplier.kafkaNodePoolOperator;
@@ -949,6 +1317,11 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 .withRoles(ProcessRoles.BROKER)
             .endSpec()
             .build();
+        Kafka kafkaWithStatus = new KafkaBuilder(KAFKA)
+                .withNewStatus()
+                    .withRegisteredNodeIds(0, 1, 2, 3, 4, 5, 6, 7)
+                .endStatus()
+                .build();
 
         List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(CONTROLLERS, BROKERS, newPool), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, oldPools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
@@ -1000,13 +1373,19 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         when(mockPodOps.waitFor(any(), any(), any(), any(), anyLong(), anyLong(), any())).thenReturn(Future.succeededFuture());
 
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
-        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(KAFKA));
-        when(mockKafkaOps.get(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(KAFKA);
-        when(mockKafkaOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(kafkaWithStatus));
+        ArgumentCaptor<Kafka> kafkaStatusCaptor = ArgumentCaptor.forClass(Kafka.class);
+        when(mockKafkaOps.updateStatusAsync(any(), kafkaStatusCaptor.capture())).thenReturn(Future.succeededFuture());
 
         CrdOperator<KubernetesClient, KafkaNodePool, KafkaNodePoolList> mockKafkaNodePoolOps = supplier.kafkaNodePoolOperator;
         ArgumentCaptor<KafkaNodePool> kafkaNodePoolStatusCaptor = ArgumentCaptor.forClass(KafkaNodePool.class);
         when(mockKafkaNodePoolOps.updateStatusAsync(any(), kafkaNodePoolStatusCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        Admin mockAdmin = supplier.adminClientProvider.createAdminClient(null, null, null, null);
+        UnregisterBrokerResult ubr = mock(UnregisterBrokerResult.class);
+        when(ubr.all()).thenReturn(KafkaFuture.completedFuture(null));
+        ArgumentCaptor<Integer> unregisteredNodeIdCaptor = ArgumentCaptor.forClass(Integer.class);
+        when(mockAdmin.unregisterBroker(unregisteredNodeIdCaptor.capture())).thenReturn(ubr);
 
         MockKafkaReconciler kr = new MockKafkaReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
@@ -1014,7 +1393,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 CONFIG,
                 supplier,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
-                KAFKA,
+                kafkaWithStatus,
                 List.of(CONTROLLERS, BROKERS),
                 KAFKA_CLUSTER,
                 CLUSTER_CA,
@@ -1061,6 +1440,16 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles().size(), is(1));
                     assertThat(kafkaNodePoolStatusCaptor.getAllValues().get(1).getStatus().getRoles(), hasItems(ProcessRoles.BROKER));
                     assertThat(kao.state.kafkaStatus.getKafkaNodePools().stream().map(UsedNodePoolStatus::getName).toList(), is(List.of("brokers", "controllers")));
+
+                    // Check Kafka status
+                    assertThat(kafkaStatusCaptor.getAllValues().size(), is(1));
+                    assertThat(kafkaStatusCaptor.getValue().getStatus().getRegisteredNodeIds().size(), is(6));
+                    assertThat(kafkaStatusCaptor.getValue().getStatus().getRegisteredNodeIds(), hasItems(0, 1, 2, 3, 4, 5));
+
+                    // Check node unregistrations
+                    verify(mockAdmin, times(2)).unregisterBroker(anyInt());
+                    assertThat(unregisteredNodeIdCaptor.getAllValues().size(), is(2));
+                    assertThat(unregisteredNodeIdCaptor.getAllValues(), hasItems(6, 7));
 
                     async.flag();
                 })));
@@ -1359,7 +1748,6 @@ public class KafkaAssemblyOperatorWithKRaftTest {
 
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(KAFKA));
-        when(mockKafkaOps.get(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(KAFKA);
         when(mockKafkaOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
 
         CrdOperator<KubernetesClient, KafkaNodePool, KafkaNodePoolList> mockKafkaNodePoolOps = supplier.kafkaNodePoolOperator;
@@ -1454,6 +1842,8 @@ public class KafkaAssemblyOperatorWithKRaftTest {
 
         public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, List<KafkaNodePool> nodePools, KafkaCluster kafkaCluster, ClusterCa clusterCa, ClientsCa clientsCa) {
             super(reconciliation, kafkaAssembly, nodePools, kafkaCluster, clusterCa, clientsCa, config, supplier, pfa, vertx, new KafkaMetadataStateManager(reconciliation, kafkaAssembly));
+
+            this.coTlsPemIdentity = new TlsPemIdentity(null, null);
         }
 
         @Override
@@ -1468,6 +1858,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                     .compose(i -> migrateFromStatefulSetToPodSet())
                     .compose(i -> podSet())
                     .compose(this::rollingUpdate)
+                    .compose(i -> nodeUnregistration(kafkaStatus))
                     .compose(i -> sharedKafkaConfigurationCleanup());
         }
 

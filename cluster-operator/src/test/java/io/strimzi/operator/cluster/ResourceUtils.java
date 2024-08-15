@@ -106,6 +106,7 @@ import org.apache.kafka.clients.admin.FinalizedVersionRange;
 import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.clients.admin.QuorumInfo;
 import org.apache.kafka.clients.admin.TopicListing;
+import org.apache.kafka.clients.admin.UnregisterBrokerResult;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.internals.KafkaFutureImpl;
@@ -590,6 +591,11 @@ public class ResourceUtils {
         }
 
         when(mock.describeClientQuotas(any())).thenReturn(dcqr);
+
+        // Mock KRaft node unregistration
+        UnregisterBrokerResult ubr = mock(UnregisterBrokerResult.class);
+        when(ubr.all()).thenReturn(KafkaFuture.completedFuture(null));
+        when(mock.unregisterBroker(anyInt())).thenReturn(ubr);
 
         return mock;
     }

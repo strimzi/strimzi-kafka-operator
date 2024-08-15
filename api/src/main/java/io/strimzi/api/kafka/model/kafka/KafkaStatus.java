@@ -23,12 +23,13 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "conditions", "observedGeneration", "listeners", "kafkaNodePools", "clusterId", "operatorLastSuccessfulVersion", "kafkaVersion", "kafkaMetadataVersion", "kafkaMetadataState" })
+@JsonPropertyOrder({ "conditions", "observedGeneration", "listeners", "kafkaNodePools", "registeredNodeIds", "clusterId", "operatorLastSuccessfulVersion", "kafkaVersion", "kafkaMetadataVersion", "kafkaMetadataState" })
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaStatus extends Status {
     private List<ListenerStatus> listeners;
     private List<UsedNodePoolStatus> kafkaNodePools;
+    private List<Integer> registeredNodeIds;
     
     private String clusterId;
     private String operatorLastSuccessfulVersion;
@@ -52,6 +53,16 @@ public class KafkaStatus extends Status {
 
     public void setKafkaNodePools(List<UsedNodePoolStatus> kafkaNodePools) {
         this.kafkaNodePools = kafkaNodePools;
+    }
+
+    @Description("Registered node IDs used by this Kafka cluster. " +
+            "This field is used for internal purposes only and will be removed in the future.")
+    public List<Integer> getRegisteredNodeIds() {
+        return registeredNodeIds;
+    }
+
+    public void setRegisteredNodeIds(List<Integer> registeredNodeIds) {
+        this.registeredNodeIds = registeredNodeIds;
     }
 
     @Description("Kafka cluster Id")

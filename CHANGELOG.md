@@ -12,6 +12,7 @@
   On the client `accessTokenLocation`, `clientAssertion`, `clientAssertionLocation`, `clientAssertionType`, and `saslExtensions` have been added.
 * Add support for custom Cruise Control API users
 * Update HTTP bridge to latest 0.30.0 release
+* Unregistration of KRaft nodes after scale-down
 
 ### Changes, deprecations and removals
 
