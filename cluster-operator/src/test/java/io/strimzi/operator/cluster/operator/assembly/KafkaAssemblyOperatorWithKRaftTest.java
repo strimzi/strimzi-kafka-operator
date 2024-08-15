@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimConditionBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -27,7 +28,6 @@ import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolList;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.certs.CertManager;
-import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
@@ -38,7 +38,6 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaMetadataConfigurationState;
 import io.strimzi.operator.cluster.model.KafkaPool;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.MetricsAndLogging;
 import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.model.NodeRef;
@@ -73,6 +72,7 @@ import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
@@ -82,6 +82,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 import static org.hamcrest.CoreMatchers.hasItems;
@@ -92,6 +93,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.when;
 
@@ -108,13 +110,6 @@ public class KafkaAssemblyOperatorWithKRaftTest {
     private static final KubernetesVersion KUBERNETES_VERSION = KubernetesVersion.MINIMAL_SUPPORTED_VERSION;
     private static final MockCertManager CERT_MANAGER = new MockCertManager();
     private static final PasswordGenerator PASSWORD_GENERATOR = new PasswordGenerator(10, "a", "a");
-    private final static KafkaVersionChange VERSION_CHANGE = new KafkaVersionChange(
-            VERSIONS.defaultVersion(),
-            VERSIONS.defaultVersion(),
-            VERSIONS.defaultVersion().protocolVersion(),
-            VERSIONS.defaultVersion().messageVersion(),
-            VERSIONS.defaultVersion().metadataVersion()
-    );
     private static final String NAMESPACE = "my-ns";
     private static final String CLUSTER_NAME = "my-cluster";
     private static final Kafka KAFKA = new KafkaBuilder()
@@ -171,9 +166,6 @@ public class KafkaAssemblyOperatorWithKRaftTest {
     private static final KafkaCluster KAFKA_CLUSTER = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, POOLS, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
 
     private static final Map<Integer, Map<String, String>> ADVERTISED_HOSTNAMES = Map.of(
-            0, Map.of("PLAIN_9092", "broker-0"),
-            1, Map.of("PLAIN_9092", "broker-1"),
-            2, Map.of("PLAIN_9092", "broker-2"),
             3, Map.of("PLAIN_9092", "broker-3"),
             4, Map.of("PLAIN_9092", "broker-4"),
             5, Map.of("PLAIN_9092", "broker-5"),
@@ -182,9 +174,6 @@ public class KafkaAssemblyOperatorWithKRaftTest {
     );
 
     private static final Map<Integer, Map<String, String>> ADVERTISED_PORTS = Map.of(
-            0, Map.of("PLAIN_9092", "10000"),
-            1, Map.of("PLAIN_9092", "10001"),
-            2, Map.of("PLAIN_9092", "10002"),
             3, Map.of("PLAIN_9092", "10003"),
             4, Map.of("PLAIN_9092", "10004"),
             5, Map.of("PLAIN_9092", "10005"),
@@ -203,8 +192,8 @@ public class KafkaAssemblyOperatorWithKRaftTest {
 
     private final static ClientsCa CLIENTS_CA = new ClientsCa(
             Reconciliation.DUMMY_RECONCILIATION,
-            new OpenSslCertManager(),
-            new PasswordGenerator(10, "a", "a"),
+            CERT_MANAGER,
+            PASSWORD_GENERATOR,
             KafkaResources.clientsCaCertificateSecretName(CLUSTER_NAME),
             ResourceUtils.createInitialCaCertSecret(NAMESPACE, CLUSTER_NAME, AbstractModel.clusterCaCertSecretName(CLUSTER_NAME), MockCertManager.clusterCaCert(), MockCertManager.clusterCaCertStore(), "123456"),
             KafkaResources.clientsCaKeySecretName(CLUSTER_NAME),
@@ -876,7 +865,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 List.of(CONTROLLERS, BROKERS, newPool),
                 Map.of(),
                 Map.of(),
-                VERSION_CHANGE,
+                KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
                 KafkaMetadataConfigurationState.KRAFT,
                 VERSIONS,
                 supplier.sharedEnvironmentProvider);
@@ -1088,9 +1077,6 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 .editMetadata()
                     .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"))
                 .endMetadata()
-                .editSpec()
-                    .withZookeeper(null)
-                .endSpec()
                 .build();
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -1163,6 +1149,150 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                     assertThat(v.getMessage(), is("KafkaNodePools are enabled, but no KafkaNodePools found for Kafka cluster my-cluster"));
                     async.flag();
                 })));
+    }
+
+    @Test
+    @Timeout(value = 5) // Seconds
+    public void testReconcileMultipleKafkaInOneNamespace(VertxTestContext context) {
+        Kafka foo = new KafkaBuilder()
+                .withNewMetadata()
+                    .withName("foo")
+                    .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withNewSpec()
+                    .editKafka()
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                .withName("plain")
+                                .withPort(9092)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(false)
+                                .build())
+                    .endKafka()
+                .endSpec()
+                .build();
+        Kafka bar = new KafkaBuilder(foo)
+                .editMetadata()
+                    .withName("bar")
+                .endMetadata()
+                .build();
+
+        // create CRs
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
+
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
+        when(mockKafkaOps.listAsync(eq(NAMESPACE), isNull(LabelSelector.class))).thenReturn(Future.succeededFuture(List.of(foo, bar)));
+        when(mockKafkaOps.get(eq(NAMESPACE), eq("foo"))).thenReturn(foo);
+        when(mockKafkaOps.get(eq(NAMESPACE), eq("bar"))).thenReturn(bar);
+        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq("foo"))).thenReturn(Future.succeededFuture(foo));
+        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq("bar"))).thenReturn(Future.succeededFuture(bar));
+        when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
+
+        AtomicBoolean fooReconciled = new AtomicBoolean(false);
+        AtomicBoolean barReconciled = new AtomicBoolean(false);
+
+        KafkaAssemblyOperator ops = new KafkaAssemblyOperator(
+                vertx,
+                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                CERT_MANAGER,
+                PASSWORD_GENERATOR,
+                supplier,
+                config
+        ) {
+            @Override
+            public Future<KafkaStatus> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
+                String name = kafkaAssembly.getMetadata().getName();
+                if ("foo".equals(name)) {
+                    fooReconciled.set(true);
+                } else if ("bar".equals(name)) {
+                    barReconciled.set(true);
+                } else {
+                    context.failNow(new AssertionError("Unexpected name " + name));
+                }
+                return Future.succeededFuture();
+            }
+        };
+
+        // Now try to reconcile all the Kafka clusters
+        Checkpoint async = context.checkpoint();
+        ops.reconcileAll("test", NAMESPACE, context.succeeding(v -> {
+            assertThat(fooReconciled.get(), is(true));
+            assertThat(barReconciled.get(), is(true));
+
+            async.flag();
+        }));
+    }
+
+    @Test
+    @Timeout(value = 5) // Seconds
+    public void testReconcileAllNamespaces(VertxTestContext context) {
+        Kafka foo = new KafkaBuilder()
+                .withNewMetadata()
+                    .withName("foo")
+                    .withNamespace("namespace1")
+                .endMetadata()
+                .withNewSpec()
+                    .editKafka()
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                .withName("plain")
+                                .withPort(9092)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(false)
+                                .build())
+                    .endKafka()
+                .endSpec()
+                .build();
+        Kafka bar = new KafkaBuilder(foo)
+                .editMetadata()
+                    .withName("bar")
+                    .withNamespace("namespace2")
+                .endMetadata()
+                .build();
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
+
+        when(mockKafkaOps.listAsync(eq("*"), isNull(LabelSelector.class))).thenReturn(Future.succeededFuture(List.of(foo, bar)));
+        when(mockKafkaOps.get(eq("namespace1"), eq("foo"))).thenReturn(foo);
+        when(mockKafkaOps.get(eq("namespace2"), eq("bar"))).thenReturn(bar);
+        when(mockKafkaOps.getAsync(eq("namespace1"), eq("foo"))).thenReturn(Future.succeededFuture(foo));
+        when(mockKafkaOps.getAsync(eq("namespace2"), eq("bar"))).thenReturn(Future.succeededFuture(bar));
+        when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
+
+        AtomicBoolean fooReconciled = new AtomicBoolean(false);
+        AtomicBoolean barReconciled = new AtomicBoolean(false);
+
+        KafkaAssemblyOperator ops = new KafkaAssemblyOperator(
+                vertx,
+                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                CERT_MANAGER,
+                PASSWORD_GENERATOR,
+                supplier,
+                config
+        ) {
+            @Override
+            public Future<KafkaStatus> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
+                String name = kafkaAssembly.getMetadata().getName();
+                if ("foo".equals(name)) {
+                    fooReconciled.set(true);
+                } else if ("bar".equals(name)) {
+                    barReconciled.set(true);
+                } else {
+                    context.failNow(new AssertionError("Unexpected name " + name));
+                }
+                return Future.succeededFuture();
+            }
+        };
+
+        Checkpoint async = context.checkpoint();
+        // Now try to reconcile all the Kafka clusters
+        ops.reconcileAll("test", "*", context.succeeding(v -> {
+            assertThat(fooReconciled.get(), is(true));
+            assertThat(barReconciled.get(), is(true));
+
+            async.flag();
+        }));
     }
 
     /**
