@@ -946,9 +946,9 @@ public class KafkaReconciler {
     /**
      * Unregisters the KRaft nodes that were removed from the Kafka cluster
      *
-     * @param kafkaStatus   Kafka status for updating the list of currently used node IDs
+     * @param kafkaStatus   Kafka status for updating the list of currently registered node IDs
      *
-     * @return  Future which completes when the KRaft metadata version is set to the current version or updated.
+     * @return  Future which completes when the nodes removed from the Kafka cluster are unregistered
      */
     protected Future<Void> nodeUnregistration(KafkaStatus kafkaStatus) {
         List<Integer> currentNodeIds = kafka.nodes().stream().map(NodeRef::nodeId).sorted().toList();
