@@ -148,7 +148,7 @@ public class JbodStorageMockZooBasedTest {
         // creating the Kafka operator
         ResourceOperatorSupplier ros =
                 new ResourceOperatorSupplier(JbodStorageMockZooBasedTest.vertx, client,
-                        ResourceUtils.zookeeperLeaderFinder(JbodStorageMockZooBasedTest.vertx, client),
+                        ResourceUtils.zookeeperLeaderFinder(JbodStorageMockZooBasedTest.vertx),
                         ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(), ResourceUtils.kafkaAgentClientProvider(),
                         ResourceUtils.metricsProvider(), ResourceUtils.zooKeeperAdminProvider(), pfa, 60_000L);
 

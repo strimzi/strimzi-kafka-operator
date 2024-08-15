@@ -174,7 +174,7 @@ public class PartialRollingUpdateZooBasedMockTest {
     ResourceOperatorSupplier supplier(KubernetesClient bootstrapClient, PlatformFeaturesAvailability pfa) {
         return new ResourceOperatorSupplier(vertx,
                 bootstrapClient,
-                ResourceUtils.zookeeperLeaderFinder(vertx, bootstrapClient),
+                ResourceUtils.zookeeperLeaderFinder(vertx),
                 ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(), ResourceUtils.kafkaAgentClientProvider(),
                 ResourceUtils.metricsProvider(),
                 ResourceUtils.zooKeeperAdminProvider(),
