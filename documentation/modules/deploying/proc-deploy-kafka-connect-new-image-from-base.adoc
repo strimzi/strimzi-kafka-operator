@@ -3,7 +3,7 @@
 // assembly-deploy-kafka-connect-with-plugins.adoc
 
 [id='creating-new-image-from-base-{context}']
-= Building a new container image with connector plugins from the Kafka Connect base image
+= Building new container images with connector plugins from the Kafka Connect base image
 
 [role="_abstract"]
 Create a custom Docker image with connector plugins from the Kafka Connect base image.

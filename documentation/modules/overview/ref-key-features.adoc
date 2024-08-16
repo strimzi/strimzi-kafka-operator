@@ -1,0 +1,57 @@
+// This assembly is included in:
+//
+// overview/overview.adoc
+
+[id="key-features_{context}"]
+= Key features
+
+//standard introduction
+[role="_abstract"]
+Strimzi simplifies the process of running link:https://kafka.apache.org/[Apache Kafka^] within a Kubernetes cluster.
+
+This guide serves as an introduction to Strimzi, outlining key Kafka concepts that are central to operating Strimzi. 
+It briefly explains Kafka's components, their purposes, and configuration points, including security and monitoring options. 
+Strimzi provides the necessary files to deploy and manage a Kafka cluster, along with link:{BookURLDeploying}#config-examples-{context}[example configuration files^] for monitoring your deployment.
+
+== Kafka capabilities
+
+Kafka's data stream-processing capabilities and component architecture offer:
+
+* High-throughput, low-latency data sharing for microservices and other applications
+* Guaranteed message ordering
+* Message rewind/replay from data storage to reconstruct application state
+* Message compaction to remove outdated records in a key-value log
+* Horizontal scalability within a cluster
+* Data replication to enhance fault tolerance
+* High-volume data retention for immediate access
+
+== Kafka use cases
+
+Kafka's capabilities make it ideal for:
+
+* Event-driven architectures
+* Event sourcing to log application state changes
+* Message brokering
+* Website activity tracking
+* Operational monitoring through metrics
+* Log collection and aggregation
+* Commit logs for distributed systems
+* Stream processing for real-time data responses
+
+== How Strimzi supports Kafka
+
+Strimzi provides container images and operators for running Kafka on Kubernetes.
+These operators are designed with specialized operational knowledge to efficiently manage Kafka on Kubernetes.
+
+Strimzi operators simplify:
+
+* Deploying and running Kafka clusters
+* Deploying and managing Kafka components
+* Configuring Kafka access
+* Securing Kafka access
+* Upgrading Kafka
+* Managing brokers
+* Creating and managing topics
+* Creating and managing users
+
+For detailed information and instructions on using operators to perform these operations, see the guide for link:{BookURLDeploying}[Deploying and Managing Strimzi^].

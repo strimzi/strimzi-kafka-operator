@@ -3,7 +3,7 @@
 // assembly-deploy-kafka-connect-with-plugins.adoc
 
 [id='con-switching-api-to-kafka-connector-{context}']
-= Switching from using the Kafka Connect API to using KafkaConnector custom resources
+= Switching to using `KafkaConnector` custom resources
 
 [role="_abstract"]
 You can switch from using the Kafka Connect API to using `KafkaConnector` custom resources to manage your connectors.

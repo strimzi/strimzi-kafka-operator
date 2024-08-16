@@ -6,3 +6,11 @@ A connector operates with a specific type of external system.
 Each connector defines a schema for its configuration.
 You supply the configuration to Kafka Connect to create a connector instance within Kafka Connect.
 Connector instances then define a set of tasks for moving data between systems.
+
+Plugins provide a set of one or more artifacts that define a connector and task implementation for connecting to a given kind of data source.
+The configuration describes the source input data and target output data to feed into and out of Kafka Connect.
+The plugins might also contain the libraries and files needed to transform the data.
+
+A Kafka Connect deployment can have one or more plugins, but only one version of each plugin.
+Plugins for many external systems are available for use with Kafka Connect.
+You can also create your own plugins.

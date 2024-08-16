@@ -124,6 +124,7 @@
 :OpenTelemetryKafkaClientVersion: 2.6
 :GRPCVersion: 1.61.0
 
+:OpenTelemetry: link:https://opentelemetry.io[OpenTelemetry^]
 :OpenTelemetryDocs: link:https://opentelemetry.io/docs/[OpenTelemetry documentation^]
 :JaegerDocs: link:https://www.jaegertracing.io/docs/[Jaeger documentation^]
 

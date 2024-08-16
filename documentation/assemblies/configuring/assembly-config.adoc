@@ -39,11 +39,13 @@ Use `KafkaNodePool` resources to configure distinct groups of nodes within a Kaf
 .Common configuration
 Common configuration is configured independently for each component, such as the following:
 
+* Bootstrap servers for host/port connection to a Kafka cluster
 * Metrics configuration
 * Healthchecks and liveness probes
 * Resource limits and requests (CPU/Memory)
 * Logging frequency
 * JVM options for maximum and minimum memory allocation
+* Adding additional volumes and volume mounts
 
 .Config maps to centralize configuration
 For specific areas of configuration, namely metrics, logging, and external configuration for Kafka Connect connectors, you can also use `ConfigMap` resources.
@@ -121,9 +123,12 @@ include::../../modules/operators/proc-disabling-fips-mode-cluster-operator.adoc[
 //`KafkaConnect` resource config
 include::../../modules/configuring/con-config-kafka-connect.adoc[leveloffset=+1]
 //running multiple Kafka Connect instances
-include::../../modules/configuring/con-config-kafka-connect-multiple-instances.adoc[leveloffset=+1]
+include::../../modules/configuring/con-config-kafka-connect-multiple-instances.adoc[leveloffset=+2]
 //if authorization is enabled, configure the Kafka Connect user for read/write access rights
 include::../../modules/configuring/proc-config-kafka-connect-user-authorization.adoc[leveloffset=+2]
+
+//`KafkaConnector` resource config
+include::../../modules/configuring/con-config-kafka-connector.adoc[leveloffset=+1]
 //Procedure to manually pause or stop a Kafka connector
 include::../../modules/configuring/proc-manual-stop-pause-connector.adoc[leveloffset=+2]
 //Procedure to manually restart a Kafka connector

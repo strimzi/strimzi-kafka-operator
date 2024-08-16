@@ -1,0 +1,45 @@
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-kafka-connector-config-{context}']
+= Configuring Kafka Connect connectors
+
+[role="_abstract"]
+The `KafkaConnector` resource provides a Kubernetes-native approach to management of connectors by the Cluster Operator.
+To create, delete, or reconfigure connectors with `KafkaConnector` resources, you must set the `use-connector-resources` annotation to `true`  in your `KafkaConnect` custom resource.
+
+.Annotation to enable KafkaConnectors
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaConnectApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect-cluster
+  annotations:
+    strimzi.io/use-connector-resources: "true"
+  # ...
+----
+
+When the use-connector-resources annotation is enabled in your KafkaConnect configuration, you must define and manage connectors using `KafkaConnector` resources. These resources must be deployed in the same namespace as the Kafka Connect cluster they are associated with, and the Kafka cluster interacting with the external data system.
+
+NOTE: Alternatively, you can manage connectors using the Kafka Connect REST API instead of `KafkaConnector` resources.
+To use the API, you must remove the annotation to use `KafkaConnector` resources in the `KafkaConnect` the resource.
+
+`KafkaConnector` resources are configured to connect to external systems and are deployed within the same Kubernetes cluster as the Kafka Connect and Kafka clusters that interact with the external data systems.
+
+.Kafka components are contained in the same Kubernetes cluster
+image:overview/kafka-concepts-kafka-connector.png[Kafka and Kafka Connect clusters]
+
+The configuration specifies how connector instances connect to external data systems, including any necessary authentication.
+You must also specify the data to watch. 
+For example, in a source connector, you might provide a database name in the configuration. 
+Additionally, you can specify where the data should be placed in Kafka by defining a target topic name.
+
+Use the `tasksMax` proeprty to specify the maximum number of tasks.
+For instance, a source connector with `tasksMax: 2` might split the import of source data into two tasks.
+
+include::../../shared/snip-example-source-connector-config.adoc[]
+
+To include external connector configurations, such as user access credentials stored in a secret, use the `externalConfiguration` property of the `KafkaConnect` resource. 
+You can also load values using xref:assembly-loading-config-with-providers-str[configuration providers]. 

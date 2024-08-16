@@ -667,3 +667,61 @@ jvmOptions:
   gcLoggingEnabled: true
 # ...
 ----
+
+[id='con-common-configuration-volumes-{context}']
+== Additional volumes
+
+Strimzi supports specifying additional volumes and volume mounts in the following components:
+
+* Kafka
+* Kafka Connect
+* Kafka Bridge
+* Kafka MirrorMaker2
+* Entity Operator
+* Cruise Control
+* Kafka Exporter
+* Zookeeper
+* User Operator
+* Topic Operator
+
+All additional mounted paths are located inside `/mnt` to ensure compatibility with future Kafka and Strimzi updates.
+
+Supported Volume Types
+
+* Secret
+* ConfigMap
+* EmptyDir
+* PersistentVolumeClaims
+
+.Example configuration for additional volumes
+[source,yaml,subs=attributes+]
+----
+kind: Kafka
+spec:
+  kafka:
+    # ...
+    template:
+      pod:
+        volumes:
+          - name: example-secret
+            secret:
+              secretName: secret-name
+          - name: example-configmap
+            configMap:
+              name: config-map-name
+          - name: temp
+            emptyDir: {}
+          - name: example-pvc-volume
+            persistentVolumeClaim:
+              claimName: myclaim
+      kafkaContainer:
+        volumeMounts:
+          - name: example-secret
+            mountPath: /mnt/secret-volume
+          - name: example-configmap
+            mountPath: /mnt/cm-volume
+          - name: temp
+            mountPath: /mnt/temp
+          - name: example-pvc-volume
+            mountPath: /mnt/data
+----

@@ -1,5 +1,5 @@
 //source connector example
-.Example KafkaConnector source connector configuration
+.Example source connector configuration
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaConnectApiVersion}
