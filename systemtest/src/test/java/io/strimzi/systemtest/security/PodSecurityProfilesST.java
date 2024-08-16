@@ -124,9 +124,9 @@ public class PodSecurityProfilesST extends AbstractST {
             )
         );
         resourceManager.createResourceWithWait(
-            KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1).build(),
-            KafkaTemplates.kafkaPersistent(mm1TargetClusterName, 1).build(),
-            KafkaTemplates.kafkaPersistent(mm2TargetClusterName, 1).build(),
+            KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), testStorage.getClusterName(), 1).build(),
+            KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), mm1TargetClusterName, 1).build(),
+            KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), mm2TargetClusterName, 1).build(),
             KafkaTopicTemplates.topic(testStorage).build()
         );
 
@@ -135,7 +135,7 @@ public class PodSecurityProfilesST extends AbstractST {
 
         LOGGER.info("Deploy all additional operands: MM1, MM2, Bridge, KafkaConnect");
         resourceManager.createResourceWithWait(
-            KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+            KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
@@ -146,10 +146,10 @@ public class PodSecurityProfilesST extends AbstractST {
                     .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .endSpec()
                 .build(),
-            KafkaBridgeTemplates.kafkaBridge(testStorage.getClusterName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), 1).build(),
-            KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName() + "-mm1", testStorage.getClusterName(), mm1TargetClusterName, ClientUtils.generateRandomConsumerGroup(), 1, false)
+            KafkaBridgeTemplates.kafkaBridge(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), 1).build(),
+            KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getNamespaceName(), testStorage.getClusterName() + "-mm1", testStorage.getClusterName(), mm1TargetClusterName, ClientUtils.generateRandomConsumerGroup(), 1, false)
                 .build(),
-            KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getClusterName() + "-mm2", mm2TargetClusterName, testStorage.getClusterName(), 1, false)
+            KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getNamespaceName(), testStorage.getClusterName() + "-mm2", testStorage.getClusterName(), mm2TargetClusterName, 1, false)
                 .editSpec()
                     .editFirstMirror()
                         .editSourceConnector()
@@ -160,7 +160,7 @@ public class PodSecurityProfilesST extends AbstractST {
                 .build());
 
         LOGGER.info("Deploy File Sink Kafka Connector: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
-        resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getClusterName())
+        resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), testStorage.getClusterName())
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .addToConfig("topics", testStorage.getTopicName())

@@ -68,7 +68,7 @@ public class QuotasST extends AbstractST {
             )
         );
         resourceManager.createResourceWithWait(
-            KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1)
+            KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), testStorage.getClusterName(), 1, 1)
                 .editSpec()
                     .editKafka()
                         .addToConfig("client.quota.callback.static.storage.check-interval", "5")
@@ -99,7 +99,7 @@ public class QuotasST extends AbstractST {
                 .build()
         );
         resourceManager.createResourceWithWait(
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build(),
+            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName()).build(),
             KafkaUserTemplates.scramShaUser(testStorage).build()
         );
 
@@ -144,7 +144,7 @@ public class QuotasST extends AbstractST {
             )
         );
         resourceManager.createResourceWithWait(
-            KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1)
+            KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), testStorage.getClusterName(), 1, 1)
                 .editSpec()
                     .editKafka()
                     .addToConfig("client.quota.callback.static.storage.check-interval", "5")
@@ -174,7 +174,7 @@ public class QuotasST extends AbstractST {
                 .build()
         );
         resourceManager.createResourceWithWait(
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build(),
+            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName()).build(),
             KafkaUserTemplates.scramShaUser(testStorage).build()
         );
 

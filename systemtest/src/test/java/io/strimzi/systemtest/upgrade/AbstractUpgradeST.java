@@ -456,7 +456,7 @@ public class AbstractUpgradeST extends AbstractST {
             // Deploy a Kafka cluster
             if (upgradeData.getFromExamples().equals("HEAD")) {
                 resourceManager.createResourceWithWait(KafkaNodePoolTemplates.brokerPoolPersistentStorage(CO_NAMESPACE, poolName, clusterName, 3).build());
-                resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
+                resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(CO_NAMESPACE, clusterName, 3, 3)
                     .editSpec()
                         .editKafka()
                             .withVersion(upgradeKafkaVersion.getVersion())
@@ -486,7 +486,7 @@ public class AbstractUpgradeST extends AbstractST {
 
         if (!cmdKubeClient().getResources(getResourceApiVersion(KafkaUser.RESOURCE_PLURAL)).contains(userName)) {
             if (upgradeData.getFromVersion().equals("HEAD")) {
-                resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(namespaceName, clusterName, userName).build());
+                resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(namespaceName, userName, clusterName).build());
             } else {
                 kafkaUserYaml = new File(dir, upgradeData.getFromExamples() + "/examples/user/kafka-user.yaml");
                 LOGGER.info("Deploying KafkaUser from: {}", kafkaUserYaml.getPath());
@@ -517,7 +517,7 @@ public class AbstractUpgradeST extends AbstractST {
         // setup KafkaConnect + KafkaConnector
         if (!cmdKubeClient().getResources(getResourceApiVersion(KafkaConnect.RESOURCE_PLURAL)).contains(clusterName)) {
             if (acrossUpgradeData.getFromVersion().equals("HEAD")) {
-                resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(clusterName, testStorage.getNamespaceName(), 1)
+                resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), clusterName, 1)
                     .editMetadata()
                         .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                     .endMetadata()
@@ -529,10 +529,7 @@ public class AbstractUpgradeST extends AbstractST {
                         .withVersion(upgradeKafkaVersion.getVersion())
                     .endSpec()
                     .build());
-                resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(clusterName)
-                    .editMetadata()
-                        .withNamespace(testStorage.getNamespaceName())
-                    .endMetadata()
+                resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), clusterName)
                     .editSpec()
                         .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                         .addToConfig("topics", testStorage.getTopicName())
@@ -577,9 +574,8 @@ public class AbstractUpgradeST extends AbstractST {
                 ResourceManager.waitForResourceReadiness(getResourceApiVersion(KafkaConnect.RESOURCE_PLURAL), kafkaConnect.getMetadata().getName());
 
                 // in our examples is no sink connector and thus we are using the same as in HEAD verification
-                resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(clusterName)
+                resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), clusterName)
                     .editMetadata()
-                        .withNamespace(testStorage.getNamespaceName())
                         .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, kafkaConnect.getMetadata().getName())
                     .endMetadata()
                     .editSpec()

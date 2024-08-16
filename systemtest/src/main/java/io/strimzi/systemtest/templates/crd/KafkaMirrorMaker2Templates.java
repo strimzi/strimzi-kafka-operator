@@ -5,91 +5,158 @@
 package io.strimzi.systemtest.templates.crd;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpecBuilder;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.test.TestUtils;
-
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaMirrorMaker2Templates {
 
     private KafkaMirrorMaker2Templates() {}
 
+    private static final String METRICS_MM2_CONFIG_MAP_SUFFIX = "-mm2-metrics";
+    private static final String CONFIG_MAP_KEY = "metrics-config.yml";
+
     public static KafkaMirrorMaker2Builder kafkaMirrorMaker2(TestStorage testStorage, int kafkaMirrorMaker2Replicas, boolean tlsListener) {
-        return kafkaMirrorMaker2(testStorage.getClusterName(), testStorage.getTargetClusterName(), testStorage.getSourceClusterName(), kafkaMirrorMaker2Replicas, tlsListener);
+        return kafkaMirrorMaker2(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getSourceClusterName(), testStorage.getTargetClusterName(), kafkaMirrorMaker2Replicas, tlsListener);
     }
 
-    public static KafkaMirrorMaker2Builder kafkaMirrorMaker2(String name, String targetClusterName, String sourceClusterName, int kafkaMirrorMaker2Replicas, boolean tlsListener) {
-        KafkaMirrorMaker2 kafkaMirrorMaker2 = getKafkaMirrorMaker2FromYaml(TestConstants.PATH_TO_KAFKA_MIRROR_MAKER_2_CONFIG);
-        return defaultKafkaMirrorMaker2(kafkaMirrorMaker2, name, targetClusterName, sourceClusterName, kafkaMirrorMaker2Replicas, tlsListener);
+    public static KafkaMirrorMaker2Builder kafkaMirrorMaker2(
+        String namespaceName,
+        String kafkaMirrorMaker2Name,
+        String sourceKafkaClusterName,
+        String targetKafkaClusterName,
+        int kafkaMirrorMaker2Replicas,
+        boolean tlsListener
+    ) {
+        return defaultKafkaMirrorMaker2(namespaceName, kafkaMirrorMaker2Name, sourceKafkaClusterName, targetKafkaClusterName, kafkaMirrorMaker2Replicas, tlsListener);
     }
 
-    public static KafkaMirrorMaker2Builder kafkaMirrorMaker2WithMetrics(String namespaceName, String name, String targetClusterName, String sourceClusterName, int kafkaMirrorMaker2Replicas, String sourceNs, String targetNs) {
-        KafkaMirrorMaker2 kafkaMirrorMaker2 = getKafkaMirrorMaker2FromYaml(TestConstants.PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG);
-        ConfigMap metricsCm = TestUtils.configMapFromYaml(TestConstants.PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG, "mirror-maker-2-metrics");
-        kubeClient().createConfigMapInNamespace(namespaceName, metricsCm);
-        return defaultKafkaMirrorMaker2(kafkaMirrorMaker2, name, targetClusterName, sourceClusterName, kafkaMirrorMaker2Replicas, false, sourceNs, targetNs);
+    public static KafkaMirrorMaker2Builder kafkaMirrorMaker2WithMetrics(
+        String namespaceName,
+        String mm2name,
+        String sourceKafkaClusterName,
+        String targetKafkaClusterName,
+        int kafkaMirrorMaker2Replicas,
+        String sourceNs,
+        String targetNs
+    ) {
+        return defaultKafkaMirrorMaker2(namespaceName, mm2name, sourceKafkaClusterName, targetKafkaClusterName, kafkaMirrorMaker2Replicas, false, sourceNs, targetNs)
+            .editOrNewSpec()
+                .withNewJmxPrometheusExporterMetricsConfig()
+                    .withNewValueFrom()
+                        .withNewConfigMapKeyRef(CONFIG_MAP_KEY, getConfigMapName(mm2name), false)
+                    .endValueFrom()
+                .endJmxPrometheusExporterMetricsConfig()
+                .editFirstMirror()
+                    .withNewHeartbeatConnector()
+                        .addToConfig("checkpoints.topic.replication.factor", -1)
+                    .endHeartbeatConnector()
+                .endMirror()
+            .endSpec();
     }
 
-    private static KafkaMirrorMaker2Builder defaultKafkaMirrorMaker2(KafkaMirrorMaker2 kafkaMirrorMaker2, String name, String kafkaTargetClusterName, String kafkaSourceClusterName, int kafkaMirrorMaker2Replicas, boolean tlsListener) {
-        return defaultKafkaMirrorMaker2(kafkaMirrorMaker2, name, kafkaTargetClusterName, kafkaSourceClusterName, kafkaMirrorMaker2Replicas, tlsListener, null, null);
+    public static ConfigMap mirrorMaker2MetricsConfigMap(String namespaceName, String kafkaMirrorMaker2Name) {
+        return new ConfigMapBuilder(TestUtils.configMapFromYaml(TestConstants.PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG, "mirror-maker-2-metrics"))
+            .editOrNewMetadata()
+                .withNamespace(namespaceName)
+                .withName(getConfigMapName(kafkaMirrorMaker2Name))
+            .endMetadata()
+            .build();
     }
 
-    private static KafkaMirrorMaker2Builder defaultKafkaMirrorMaker2(KafkaMirrorMaker2 kafkaMirrorMaker2, String name, String kafkaTargetClusterName, String kafkaSourceClusterName, int kafkaMirrorMaker2Replicas, boolean tlsListener, String sourceNs, String targetNs) {
+    private static String getConfigMapName(String kafkaMirrorMaker2Name) {
+        return kafkaMirrorMaker2Name + METRICS_MM2_CONFIG_MAP_SUFFIX;
+    }
+
+    private static KafkaMirrorMaker2Builder defaultKafkaMirrorMaker2(
+        String namespaceName,
+        String kafkaMirrorMaker2Name,
+        String sourceKafkaClusterName,
+        String targetKafkaClusterName,
+        int kafkaMirrorMaker2Replicas,
+        boolean tlsListener
+    ) {
+        return defaultKafkaMirrorMaker2(namespaceName, kafkaMirrorMaker2Name, sourceKafkaClusterName, targetKafkaClusterName, kafkaMirrorMaker2Replicas, tlsListener, null, null);
+    }
+
+    private static KafkaMirrorMaker2Builder defaultKafkaMirrorMaker2(
+        String namespaceName,
+        String kafkaMirrorMaker2Name,
+        String sourceKafkaClusterName,
+        String targetKafkaClusterName,
+        int kafkaMirrorMaker2Replicas,
+        boolean tlsListener,
+        String sourceNs,
+        String targetNs
+    ) {
 
         KafkaMirrorMaker2ClusterSpec targetClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder()
-            .withAlias(kafkaTargetClusterName)
-            .withBootstrapServers(targetNs == null ? KafkaResources.plainBootstrapAddress(kafkaTargetClusterName) : KafkaUtils.namespacedPlainBootstrapAddress(kafkaTargetClusterName, targetNs))
+            .withAlias(targetKafkaClusterName)
+            .withBootstrapServers(targetNs == null ? KafkaResources.plainBootstrapAddress(targetKafkaClusterName) : KafkaUtils.namespacedPlainBootstrapAddress(targetKafkaClusterName, targetNs))
             .addToConfig("config.storage.replication.factor", -1)
             .addToConfig("offset.storage.replication.factor", -1)
             .addToConfig("status.storage.replication.factor", -1)
             .build();
 
         KafkaMirrorMaker2ClusterSpec sourceClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder()
-            .withAlias(kafkaSourceClusterName)
-            .withBootstrapServers(sourceNs == null ? KafkaResources.plainBootstrapAddress(kafkaSourceClusterName) : KafkaUtils.namespacedPlainBootstrapAddress(kafkaSourceClusterName, sourceNs))
+            .withAlias(sourceKafkaClusterName)
+            .withBootstrapServers(sourceNs == null ? KafkaResources.plainBootstrapAddress(sourceKafkaClusterName) : KafkaUtils.namespacedPlainBootstrapAddress(sourceKafkaClusterName, sourceNs))
             .build();
 
         if (tlsListener) {
             targetClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder(targetClusterSpec)
-                .withBootstrapServers(targetNs == null ? KafkaResources.tlsBootstrapAddress(kafkaTargetClusterName) : KafkaUtils.namespacedTlsBootstrapAddress(kafkaTargetClusterName, targetNs))
+                .withBootstrapServers(targetNs == null ? KafkaResources.tlsBootstrapAddress(targetKafkaClusterName) : KafkaUtils.namespacedTlsBootstrapAddress(targetKafkaClusterName, targetNs))
                 .withNewTls()
-                    .withTrustedCertificates(new CertSecretSourceBuilder().withSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaTargetClusterName)).withCertificate("ca.crt").build())
+                    .withTrustedCertificates(new CertSecretSourceBuilder().withSecretName(KafkaResources.clusterCaCertificateSecretName(targetKafkaClusterName)).withCertificate("ca.crt").build())
                 .endTls()
                 .build();
 
             sourceClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder(sourceClusterSpec)
-                .withBootstrapServers(sourceNs == null ? KafkaResources.tlsBootstrapAddress(kafkaSourceClusterName) : KafkaUtils.namespacedTlsBootstrapAddress(kafkaSourceClusterName, sourceNs))
+                .withBootstrapServers(sourceNs == null ? KafkaResources.tlsBootstrapAddress(sourceKafkaClusterName) : KafkaUtils.namespacedTlsBootstrapAddress(sourceKafkaClusterName, sourceNs))
                 .withNewTls()
-                    .withTrustedCertificates(new CertSecretSourceBuilder().withSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaSourceClusterName)).withCertificate("ca.crt").build())
+                    .withTrustedCertificates(new CertSecretSourceBuilder().withSecretName(KafkaResources.clusterCaCertificateSecretName(sourceKafkaClusterName)).withCertificate("ca.crt").build())
                 .endTls()
                 .build();
         }
 
-        KafkaMirrorMaker2Builder kmm2b = new KafkaMirrorMaker2Builder(kafkaMirrorMaker2)
+        KafkaMirrorMaker2Builder kmm2b = new KafkaMirrorMaker2Builder()
             .withNewMetadata()
-                .withName(name)
-                .withNamespace(ResourceManager.kubeClient().getNamespace())
+                .withName(kafkaMirrorMaker2Name)
+                .withNamespace(namespaceName)
             .endMetadata()
             .editOrNewSpec()
                 .withVersion(Environment.ST_KAFKA_VERSION)
                 .withReplicas(kafkaMirrorMaker2Replicas)
-                .withConnectCluster(kafkaTargetClusterName)
+                .withConnectCluster(targetKafkaClusterName)
                 .withClusters(targetClusterSpec, sourceClusterSpec)
-                .editFirstMirror()
-                    .withSourceCluster(kafkaSourceClusterName)
-                    .withTargetCluster(kafkaTargetClusterName)
+                .addNewMirror()
+                    .withSourceCluster(sourceKafkaClusterName)
+                    .withTargetCluster(targetKafkaClusterName)
+                    .withNewSourceConnector()
+                        .withTasksMax(1)
+                        .addToConfig("replication.factor", -1)
+                        .addToConfig("offset-syncs.topic.replication.factor", -1)
+                        .addToConfig("sync.topic.acls.enabled", "false")
+                        .addToConfig("refresh.topics.interval.seconds", 600)
+                    .endSourceConnector()
+                    .withNewCheckpointConnector()
+                        .withTasksMax(1)
+                        .addToConfig("checkpoints.topic.replication.factor", -1)
+                        .addToConfig("sync.group.offsets.enabled", "false")
+                        .addToConfig("refresh.groups.interval.seconds", 600)
+                    .endCheckpointConnector()
+                    .withTopicsPattern(".*")
+                    .withGroupsPattern(".*")
                 .endMirror()
                 .withNewInlineLogging()
                     .addToLoggers("connect.root.logger.level", "DEBUG")
@@ -107,9 +174,5 @@ public class KafkaMirrorMaker2Templates {
         }
 
         return kmm2b;
-    }
-
-    private static KafkaMirrorMaker2 getKafkaMirrorMaker2FromYaml(String yamlPath) {
-        return TestUtils.configFromYaml(yamlPath, KafkaMirrorMaker2.class);
     }
 }

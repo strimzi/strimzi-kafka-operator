@@ -68,7 +68,7 @@ public class AbstractKRaftUpgradeST extends AbstractUpgradeST {
                 resourceManager.createResourceWithWait(
                     KafkaNodePoolTemplates.controllerPoolPersistentStorage(TestConstants.CO_NAMESPACE, CONTROLLER_NODE_NAME, clusterName, 3).build(),
                     KafkaNodePoolTemplates.brokerPoolPersistentStorage(TestConstants.CO_NAMESPACE, BROKER_NODE_NAME, clusterName, 3).build(),
-                    KafkaTemplates.kafkaPersistentKRaft(clusterName, 3)
+                    KafkaTemplates.kafkaPersistentKRaft(TestConstants.CO_NAMESPACE, clusterName, 3)
                         .editMetadata()
                             .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
                             .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
