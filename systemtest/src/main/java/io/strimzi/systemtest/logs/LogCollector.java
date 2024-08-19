@@ -218,10 +218,10 @@ public class LogCollector {
             }
         // Tracing Pods (they can't be labeled because CR of the Jaeger does not propagate labels to the Pods )
         } else if (pod.getMetadata().getName().contains("jaeger") || pod.getMetadata().getName().contains("cert-manager")) {
-            LOGGER.debug("Collecting logs for TestSuite: {}, and Jaeger Pods: {}/{}", this.collectorElement.getTestClassName(), pod.getMetadata().getNamespace(), pod.getMetadata().getName());
+            LOGGER.debug("Collecting logs for TestSuite: {}, and Jaeger or Cert Manager Pods: {}/{}", this.collectorElement.getTestClassName(), pod.getMetadata().getNamespace(), pod.getMetadata().getName());
             pod.getStatus().getContainerStatuses().forEach(
                 containerStatus -> scrapeAndCreateLogs(namespacePath, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));
-        } else if (pod.getMetadata().getName().contains("keycloak") || pod.getMetadata().getName().contains("keycloak")) {
+        } else if (pod.getMetadata().getName().contains("keycloak")) {
             LOGGER.debug("Collecting logs for TestSuite: {}, and Keycloak Pods: {}/{}", this.collectorElement.getTestClassName(), pod.getMetadata().getNamespace(), pod.getMetadata().getName());
             pod.getStatus().getContainerStatuses().forEach(
                 containerStatus -> scrapeAndCreateLogs(namespacePath, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));
