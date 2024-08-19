@@ -12,16 +12,17 @@ import io.strimzi.api.kafka.model.kafka.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.Storage;
-import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlApiUsers;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpecBuilder;
-import io.strimzi.api.kafka.model.kafka.cruisecontrol.HashLoginServiceApiUsers;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
@@ -51,7 +52,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class HashLoginServiceApiCredentialsTest {
     private final static String CLUSTER = "my-cluster";
     private final static String NAMESPACE = "my-namespace";
-    private final static int REPLICAS = 3;
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
     private static final String SECRET_NAME = "secretName";
@@ -84,23 +84,23 @@ public class HashLoginServiceApiCredentialsTest {
 
     private static Kafka createKafka(CruiseControlSpec ccSpec) {
         return new KafkaBuilder()
-            .withNewMetadata()
-                .withName(CLUSTER)
-                .withNamespace(NAMESPACE)
-            .endMetadata()
-            .withNewSpec()
-                .withNewZookeeper()
-                    .withReplicas(REPLICAS)
-                .endZookeeper()
-                .withNewKafka()
-                    .withReplicas(REPLICAS)
-                    .withNewEphemeralStorage()
-                        .withSizeLimit("10Gi")
-                    .endEphemeralStorage()
-                .endKafka()
-                .withCruiseControl(ccSpec)
-            .endSpec()
-            .build();
+                .withNewMetadata()
+                    .withName(CLUSTER)
+                    .withNamespace(NAMESPACE)
+                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled", Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"))
+                .endMetadata()
+                .withNewSpec()
+                    .withNewKafka()
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                .withName("tls")
+                                .withPort(9092)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(true)
+                                .build())
+                    .endKafka()
+                    .withCruiseControl(ccSpec)
+                .endSpec()
+                .build();
     }
 
     private static Secret createSecret(Map<String, String> data) {
@@ -152,7 +152,7 @@ public class HashLoginServiceApiCredentialsTest {
         assertThrows(Exception.class, () -> new HashLoginServiceApiCredentials(NAMESPACE, CLUSTER, LABELS, OWNER_REFERENCE, s4));
     }
 
-    private void assertParseThrows(String illegalConfig, CruiseControlApiUsers apiUsers) {
+    private void assertParseThrows(String illegalConfig) {
         assertThrows(InvalidConfigurationException.class, () -> HashLoginServiceApiCredentials.parseEntriesFromString(illegalConfig));
     }
 
@@ -163,7 +163,6 @@ public class HashLoginServiceApiCredentialsTest {
                         username1: password1,VIEWER
                         username2: password2,USER
                         """;
-        CruiseControlApiUsers apiUsers = new HashLoginServiceApiUsers();
         Map<String, HashLoginServiceApiCredentials.UserEntry> entries =  HashLoginServiceApiCredentials.parseEntriesFromString(config);
         assertThat(entries.get("username0").username(), is("username0"));
         assertThat(entries.get("username0").password(), is("password0"));
@@ -171,19 +170,19 @@ public class HashLoginServiceApiCredentialsTest {
 
         assertParseThrows("""
                             username1: , USER
-                            """, apiUsers);
+                            """);
         assertParseThrows("""
                              : password1, USER
-                            """, apiUsers);
+                            """);
         assertParseThrows("""
                             username1 username2: password1 USER
-                            """, apiUsers);
+                            """);
         assertParseThrows("""
                             username1: password1,USER,VIEWER
-                            """, apiUsers);
+                            """);
         assertParseThrows("""
                             username1: password1 password2,USER
-                            """, apiUsers);
+                            """);
     }
 
     @ParallelTest
@@ -201,7 +200,7 @@ public class HashLoginServiceApiCredentialsTest {
         assertThat(entries.size(), is(0));
     }
 
-    private void assertParseThrowsForUserManagedCreds(String illegalConfig, CruiseControlApiUsers apiUsers) {
+    private void assertParseThrowsForUserManagedCreds(String illegalConfig) {
         illegalConfig = encodeToBase64(illegalConfig);
         Secret secret = createSecret(Map.of(SECRET_KEY, illegalConfig));
         Map<String, HashLoginServiceApiCredentials.UserEntry> entries = new HashMap<>();
@@ -215,7 +214,6 @@ public class HashLoginServiceApiCredentialsTest {
                         username1: password1,VIEWER
                         username2: password2,USER
                         """);
-        CruiseControlApiUsers apiUsers = new HashLoginServiceApiUsers();
         Secret secret = createSecret(Map.of(SECRET_KEY, config));
         Map<String, HashLoginServiceApiCredentials.UserEntry> entries = new HashMap<>();
         HashLoginServiceApiCredentials.generateUserManagedApiCredentials(entries, secret, SECRET_KEY);
@@ -243,27 +241,27 @@ public class HashLoginServiceApiCredentialsTest {
         assertParseThrowsForUserManagedCreds("""
                             username1: password1,USER
                             username2: password2,TEST
-                            """, apiUsers);
+                            """);
         assertParseThrowsForUserManagedCreds("""
                             rebalance-operator: password1,USER
                             username2: password2,USER
-                            """, apiUsers);
+                            """);
         assertParseThrowsForUserManagedCreds("""
                             topic-operator: password1,USER
                             username2: password2,USER
-                            """, apiUsers);
+                            """);
         assertParseThrowsForUserManagedCreds("""
                             healthcheck: password1,USER
                             username2: password2,USER
-                            """, apiUsers);
+                            """);
         assertParseThrowsForUserManagedCreds("""
                             username1: password1,USER
                             username2: password2,ADMIN
-                            """, apiUsers);
+                            """);
         assertParseThrowsForUserManagedCreds("""
                             username1: password1,USER
                             username1: password2,ADMIN
-                            """, apiUsers);
+                            """);
     }
 
     @ParallelTest
@@ -274,7 +272,6 @@ public class HashLoginServiceApiCredentialsTest {
         Map<String, String> map1 = Map.of("cruise-control.authFile",
                 encodeToBase64("rebalance-operator: password,ADMIN\n" +
                                      "healthcheck: password,USER"));
-        CruiseControlApiUsers apiUsers = new HashLoginServiceApiUsers();
         Map<String, HashLoginServiceApiCredentials.UserEntry> entries = new HashMap<>();
         HashLoginServiceApiCredentials.generateCoManagedApiCredentials(entries, mockPasswordGenerator, createSecret(map1));
         assertThat(entries.get("rebalance-operator").username(), is("rebalance-operator"));
