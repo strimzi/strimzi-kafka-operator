@@ -9,8 +9,8 @@ Upgrading to Strimzi 0.32 and newer directly from Strimzi 0.22 and earlier is no
 Please follow the [documentation](https://strimzi.io/docs/operators/latest/full/deploying.html#assembly-upgrade-str) for more details.
 
 **!!! IMPORTANT !!!**
-From Strimzi 0.40 on, we support only Kubernetes 1.23 and newer.
-Kubernetes versions 1.21 and 1.22 are no longer supported.
+Strimzi 0.43.0 (and any of its patch releases) is the last Strimzi version with support for Kubernetes 1.23 and 1.24.
+From Strimzi 0.44.0 on, Strimzi will support only Kubernetes 1.25 and newer.
 
 ## Introduction
 
@@ -21,6 +21,7 @@ cluster using the [Helm](https://helm.sh) package manager.
 ### Supported Features
 
 * **Manages the Kafka Cluster** - Deploys and manages all of the components of this complex application, including dependencies like Apache ZooKeeper® that are traditionally hard to administer.
+* **KRaft support** - Allows running Apache Kafka clusters in the KRaft mode (without ZooKeeper). 
 * **Includes Kafka Connect** - Allows for configuration of common data sources and sinks to move data into and out of the Kafka cluster.
 * **Topic Management** - Creates and manages Kafka Topics within the cluster.
 * **User Management** - Creates and manages Kafka Users within the cluster.
