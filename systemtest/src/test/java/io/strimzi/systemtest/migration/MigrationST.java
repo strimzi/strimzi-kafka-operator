@@ -143,7 +143,7 @@ public class MigrationST extends AbstractST {
     @ParameterizedTest(name = "with: ZK delete claim - {0}, CO deletion during process - {1}, JBOD storage - {2}")
     @MethodSource("getArgumentsForMigrationParametrizedTests")
     void testMigration(Boolean zkDeleteClaim, Boolean deleteCoDuringProcess, Boolean withJbodStorage) {
-        TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         setupMigrationTestCase(testStorage, zkDeleteClaim, withJbodStorage);
         doFirstPartOfMigration(testStorage, deleteCoDuringProcess, withJbodStorage);
@@ -210,7 +210,7 @@ public class MigrationST extends AbstractST {
     @ParameterizedTest(name = "with: CO deletion during process - {0}, JBOD storage - {1}")
     @MethodSource("getArgumentsForRollbackParametrizedTests")
     void testRollback(Boolean deleteCoDuringProcess, Boolean withJbodStorage) {
-        TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         setupMigrationTestCase(testStorage, true, withJbodStorage);
         doFirstPartOfMigration(testStorage, deleteCoDuringProcess, withJbodStorage);
@@ -265,10 +265,10 @@ public class MigrationST extends AbstractST {
      */
     @IsolatedTest
     void testMigrationWithRollback() {
-        TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
-        boolean zkDeleteClaim = true;
-        boolean deleteCoDuringProcess = false;
-        boolean withJbodStorage = false;
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final boolean zkDeleteClaim = true;
+        final boolean deleteCoDuringProcess = false;
+        final boolean withJbodStorage = false;
 
         setupMigrationTestCase(testStorage, zkDeleteClaim, withJbodStorage);
         doFirstPartOfMigration(testStorage, deleteCoDuringProcess, withJbodStorage);
@@ -305,6 +305,7 @@ public class MigrationST extends AbstractST {
         String clientsAdditionConfiguration = "delivery.timeout.ms=40000\nrequest.timeout.ms=5000\nacks=all\n";
 
         immediateClients = new KafkaClientsBuilder()
+            .withNamespaceName(testStorage.getNamespaceName())
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
@@ -315,6 +316,7 @@ public class MigrationST extends AbstractST {
             .build();
 
         continuousClients = new KafkaClientsBuilder()
+            .withNamespaceName(testStorage.getNamespaceName())
             .withProducerName(continuousProducerName)
             .withConsumerName(continuousConsumerName)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))

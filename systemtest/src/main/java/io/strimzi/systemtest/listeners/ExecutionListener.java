@@ -60,15 +60,18 @@ public class ExecutionListener implements TestExecutionListener {
     public static boolean hasSuiteParallelOrIsolatedTest(final ExtensionContext extensionContext) {
         Set<TestIdentifier> testCases = testPlan.getChildren(extensionContext.getUniqueId());
 
+        final Set<String> relevantTags = Set.of(
+            TestConstants.PARALLEL_TEST,
+            TestConstants.ISOLATED_TEST,
+            TestConstants.DYNAMIC_CONFIGURATION, // Dynamic configuration also because in DynamicConfSharedST we use @TestFactory
+            TestConstants.TRACING,  // Tracing, because we deploy Jaeger operator inside additional namespace
+            TestConstants.KAFKA_SMOKE, // KafkaVersionsST, MigrationST because here we use @ParameterizedTest
+            TestConstants.MIGRATION
+        );
+
         for (TestIdentifier testIdentifier : testCases) {
             for (TestTag testTag : testIdentifier.getTags()) {
-                if (testTag.getName().equals(TestConstants.PARALLEL_TEST) || testTag.getName().equals(TestConstants.ISOLATED_TEST) ||
-                        // Dynamic configuration also because in DynamicConfSharedST we use @TestFactory
-                        testTag.getName().equals(TestConstants.DYNAMIC_CONFIGURATION) ||
-                        // Tracing, because we deploy Jaeger operator inside additional namespace
-                        testTag.getName().equals(TestConstants.TRACING) ||
-                        // KafkaVersionsST, because here we use @ParameterizedTest
-                        testTag.getName().equals(TestConstants.KAFKA_SMOKE)) {
+                if (relevantTags.contains(testTag.getName())) {
                     return true;
                 }
             }
