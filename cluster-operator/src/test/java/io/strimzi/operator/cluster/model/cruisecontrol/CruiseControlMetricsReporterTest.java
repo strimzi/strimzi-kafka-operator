@@ -6,7 +6,10 @@ package io.strimzi.operator.cluster.model.cruisecontrol;
 
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
@@ -27,22 +30,30 @@ public class CruiseControlMetricsReporterTest {
     private final static String NAMESPACE = "my-namespace";
 
     private final static Kafka KAFKA = new KafkaBuilder()
-                .withNewMetadata()
-                    .withName(NAME)
-                    .withNamespace(NAMESPACE)
-                .endMetadata()
-                .withNewSpec()
+            .withNewMetadata()
+                .withName(NAME)
+                .withNamespace(NAMESPACE)
+                .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled", Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"))
+            .endMetadata()
+            .withNewSpec()
                 .withNewKafka()
+                    .withListeners(new GenericKafkaListenerBuilder()
+                            .withName("tls")
+                            .withPort(9092)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                            .build())
                 .endKafka()
-                    .withNewCruiseControl()
-                    .endCruiseControl()
-                .endSpec()
-                .build();
+                .withNewCruiseControl()
+                .endCruiseControl()
+            .endSpec()
+            .build();
 
     @Test
     public void testDisabledCruiseControl() {
         Kafka kafka = new KafkaBuilder(KAFKA)
-                .withNewSpec()
+                .editSpec()
+                    .withCruiseControl(null)
                 .endSpec()
                 .build();
 
@@ -79,7 +90,7 @@ public class CruiseControlMetricsReporterTest {
     @Test
     public void testEnabledCruiseControlWithSettingsFromCC() {
         Kafka kafka = new KafkaBuilder(KAFKA)
-                .withNewSpec()
+                .editSpec()
                     .withNewCruiseControl()
                         .withConfig(Map.of("metric.reporter.topic", "my-custom-topic"))
                     .endCruiseControl()

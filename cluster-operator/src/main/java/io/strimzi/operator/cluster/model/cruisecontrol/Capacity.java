@@ -326,6 +326,8 @@ public class Capacity {
             } else {
                 return DiskCapacity.of(BrokerCapacity.DEFAULT_DISK_CAPACITY_IN_MIB);
             }
+        } else if (storage == null) {
+            throw new IllegalStateException("The storage declaration is missing");
         } else {
             throw new IllegalStateException("The declared storage '" + storage.getType() + "' is not supported");
         }
