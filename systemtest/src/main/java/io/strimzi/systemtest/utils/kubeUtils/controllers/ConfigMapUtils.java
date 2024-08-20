@@ -6,7 +6,6 @@ package io.strimzi.systemtest.utils.kubeUtils.controllers;
 
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,20 +17,8 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class ConfigMapUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(ConfigMapUtils.class);
-    private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
     private ConfigMapUtils() { }
-
-    /**
-     * Wait until the config map has been recovered.
-     * @param name The name of the ConfigMap.
-     */
-    public static void waitForConfigMapRecovery(String namespaceName, String name, String configMapUid) {
-        LOGGER.info("Waiting for ConfigMap: {}/{}-{} recovery", namespaceName, name, configMapUid);
-        TestUtils.waitFor("recovery of ConfigMap: " + namespaceName + "/" + name, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, TestConstants.TIMEOUT_FOR_RESOURCE_RECOVERY,
-            () -> !kubeClient().getConfigMapUid(name).equals(configMapUid));
-        LOGGER.info("ConfigMap: {}/{} was recovered", namespaceName, name);
-    }
 
     public static void waitForConfigMapLabelsChange(String namespaceName, String configMapName, Map<String, String> labels) {
         for (Map.Entry<String, String> entry : labels.entrySet()) {
