@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.cruisecontrol;
 
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
