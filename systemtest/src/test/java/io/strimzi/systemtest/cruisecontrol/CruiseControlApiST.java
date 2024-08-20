@@ -72,6 +72,23 @@ public class CruiseControlApiST extends AbstractST {
         assertThat(responseText, containsString("NO_TASK_IN_PROGRESS"));
     }
 
+    /**
+     * @description This test case verifies the creation and usage of CruiseControl's API users.
+     *
+     * @steps
+     *  1. - Create NodePools for the Kafka cluster
+     *     - NodePools are created
+     *  2. - Create Secret containing the `arnost: heslo, USER` in the `.key` field
+     *     - Secret is correctly created
+     *  3. - Deploy Kafka with CruiseControl containing configuration for the CC API users, with reference to the Secret (and its `.key` value) created in
+     *       previous step
+     *     - Kafka cluster with CruiseControl are deployed, the CC API users configuration is applied
+     *  4. - Do request to CruiseControl's API, specifically to `/state` endpoint with `arnost:heslo` user
+     *     - Request is successful and response contains information about state of the CruiseControl
+     *
+     * @usecase
+     *  - cruise-control-api
+     */
     @ParallelNamespaceTest
     void testCruiseControlAPIUsers() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
