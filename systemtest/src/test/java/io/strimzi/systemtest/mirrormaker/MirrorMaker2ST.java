@@ -1008,9 +1008,9 @@ class MirrorMaker2ST extends AbstractST {
         certSecretSource.setCertificate("ca.crt");
         certSecretSource.setSecretName(KafkaResources.clusterCaCertificateSecretName(testStorage.getSourceClusterName()));
 
-        // Initialize CertSecretSource with certificate and secret names for target
+        // Initialize CertSecretSource with certificate and secret names for target (using pattern)
         CertSecretSource certSecretTarget = new CertSecretSource();
-        certSecretTarget.setCertificate("ca.crt");
+        certSecretTarget.setPattern("*.crt");
         certSecretTarget.setSecretName(KafkaResources.clusterCaCertificateSecretName(testStorage.getTargetClusterName()));
 
         resourceManager.createResourceWithWait(KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage, 1, true)

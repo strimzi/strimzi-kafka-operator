@@ -516,10 +516,10 @@ public class OauthTlsST extends OauthAbstractST {
             .withAlias(testStorage.getTargetClusterName())
             .withConfig(connectorConfig)
             .withBootstrapServers(KafkaResources.tlsBootstrapAddress(targetKafkaCluster))
-            // this is for kafka tls connection
+            // this is for kafka tls connection (using pattern)
             .withNewTls()
                 .withTrustedCertificates(new CertSecretSourceBuilder()
-                    .withCertificate("ca.crt")
+                    .withPattern("*.crt")
                     .withSecretName(KafkaResources.clusterCaCertificateSecretName(targetKafkaCluster))
                     .build())
             .endTls()
