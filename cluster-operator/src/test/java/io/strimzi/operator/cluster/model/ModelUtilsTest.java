@@ -30,8 +30,6 @@ import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-
-@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
 @ParallelSuite
 public class ModelUtilsTest {
     @ParallelTest
@@ -175,8 +173,6 @@ public class ModelUtilsTest {
         pod.getMetadata().setOwnerReferences(List.of(otherOwner, owner));
         assertThat(ModelUtils.hasOwnerReference(pod, owner), is(true));
     }
-
-
 
     @ParallelTest
     public void testServiceDnsNames() {

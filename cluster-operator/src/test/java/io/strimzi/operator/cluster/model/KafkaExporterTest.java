@@ -11,11 +11,9 @@ import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
-import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
@@ -29,23 +27,19 @@ import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.strimzi.api.kafka.model.common.ContainerEnvVar;
-import io.strimzi.api.kafka.model.common.InlineLogging;
-import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.DeploymentStrategy;
-import io.strimzi.api.kafka.model.kafka.EphemeralStorage;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.api.kafka.model.kafka.SingleVolumeStorage;
-import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
-import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterSpec;
-import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterSpecBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
@@ -69,99 +63,59 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 @ParallelSuite
 public class KafkaExporterTest {
-    private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
-
-    private final String namespace = "test";
-    private final String cluster = "foo";
-    private final int replicas = 3;
-    private final String image = "my-image:latest";
-    private final int healthDelay = 120;
-    private final int healthTimeout = 30;
-    private final String metricsCMName = "metrics-cm";
-    private final JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics(MetricsModel.CONFIG_MAP_KEY, metricsCMName);
-    private final Map<String, Object> kafkaConfig = singletonMap("foo", "bar");
-    private final Map<String, Object> zooConfig = singletonMap("foo", "bar");
-    private final Storage kafkaStorage = new EphemeralStorage();
-    private final SingleVolumeStorage zkStorage = new EphemeralStorage();
-    private final InlineLogging kafkaLogJson = new InlineLogging();
-    private final InlineLogging zooLogJson = new InlineLogging();
-    private final String exporterOperatorLogging = "debug";
-    private final String version = KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION;
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
-
-    {
-        kafkaLogJson.setLoggers(singletonMap("kafka.root.logger.level", "OFF"));
-        zooLogJson.setLoggers(singletonMap("zookeeper.root.logger", "OFF"));
-    }
-
-    private final String keImage = "my-exporter-image";
-    private final String groupRegex = "my-group-.*";
-    private final String topicRegex = "my-topic-.*";
-    private final String groupExcludeRegex = "my-group-exclude-.*";
-    private final String topicExcludeRegex = "my-topic-exclude-.*";
-    private final boolean showAllOffsets = false;
-
-    private final KafkaExporterSpec exporterOperator = new KafkaExporterSpecBuilder()
-            .withLogging(exporterOperatorLogging)
-            .withGroupRegex(groupRegex)
-            .withTopicRegex(topicRegex)
-            .withGroupExcludeRegex(groupExcludeRegex)
-            .withTopicExcludeRegex(topicExcludeRegex)
-            .withImage(keImage)
-            .withEnableSaramaLogging(true)
-            .withShowAllOffsets(showAllOffsets)
-            .withNewTemplate()
-                .withNewPod()
-                    .withTmpDirSizeLimit("100Mi")
-                .endPod()
-            .endTemplate()
+    private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
+    private static final String NAMESPACE = "my-namespace";
+    private static final String CLUSTER_NAME = "my-cluster";
+    private static final Kafka KAFKA = new KafkaBuilder()
+            .withNewMetadata()
+                .withNamespace(NAMESPACE)
+                .withName(CLUSTER_NAME)
+                .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled", Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"))
+            .endMetadata()
+            .withNewSpec()
+                .withNewKafka()
+                    .withListeners(new GenericKafkaListenerBuilder()
+                            .withName("tls")
+                            .withPort(9092)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                            .build())
+                .endKafka()
+                .withNewKafkaExporter()
+                    .withLogging("debug")
+                    .withGroupRegex("my-group-.*")
+                    .withTopicRegex("my-topic-.*")
+                    .withGroupExcludeRegex("my-group-exclude-.*")
+                    .withTopicExcludeRegex("my-topic-exclude-.*")
+                    .withImage("my-image:latest")
+                    .withEnableSaramaLogging(true)
+                    .withShowAllOffsets(false)
+                    .withNewTemplate()
+                        .withNewPod()
+                            .withTmpDirSizeLimit("100Mi")
+                        .endPod()
+                    .endTemplate()
+                .endKafkaExporter()
+            .endSpec()
             .build();
-    private final Kafka resource =
-            new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
-                    .editSpec()
-                        .editKafka()
-                            .withVersion(version)
-                        .endKafka()
-                        .withKafkaExporter(exporterOperator)
-                    .endSpec()
-                    .build();
-    private final KafkaExporter ke = KafkaExporter.fromCrd(
-        new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, SHARED_ENV_PROVIDER);
+    private static final KafkaExporter KE = KafkaExporter.fromCrd(new Reconciliation("test", KAFKA.getKind(), KAFKA.getMetadata().getNamespace(), KAFKA.getMetadata().getName()), KAFKA, VERSIONS, SHARED_ENV_PROVIDER);
 
-    public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
-        assertThat(resource.getMetadata().getOwnerReferences().size(), is(1));
-        assertThat(resource.getMetadata().getOwnerReferences().get(0), is(ownerRef));
-    }
-
-    private List<EnvVar> getExpectedEnvVars() {
-        List<EnvVar> expected = new ArrayList<>();
-        expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_LOGGING).withValue("1").build());
-        expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_KAFKA_VERSION).withValue(version).build());
-        expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_GROUP_REGEX).withValue(groupRegex).build());
-        expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_TOPIC_REGEX).withValue(topicRegex).build());
-        expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_GROUP_EXCLUDE_REGEX).withValue(groupExcludeRegex).build());
-        expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_TOPIC_EXCLUDE_REGEX).withValue(topicExcludeRegex).build());
-        expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_KAFKA_SERVER).withValue("foo-kafka-bootstrap:" + KafkaCluster.REPLICATION_PORT).build());
-        expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_ENABLE_SARAMA).withValue("true").build());
-        expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_OFFSET_SHOW_ALL).withValue(String.valueOf(showAllOffsets)).build());
-        return expected;
-    }
-
-    private static Volume getVolume(PodSpec podSpec, String volumeName) {
-        return podSpec.getVolumes().stream().filter(volume -> volumeName.equals(volume.getName())).iterator().next();
-    }
-
-    private static VolumeMount getVolumeMount(Container container, String volumeName) {
-        return container.getVolumeMounts().stream().filter(volumeMount -> volumeName.equals(volumeMount.getName())).iterator().next();
+    @AfterAll
+    public static void cleanUp() {
+        ResourceUtils.cleanUpTemporaryTLSFiles();
     }
 
     @ParallelTest
     public void testFromConfigMapDefaultConfig() {
-        Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, null,
-                healthDelay, healthTimeout, jmxMetricsConfig, kafkaConfig, zooConfig,
-                kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, new KafkaExporterSpec(), null);
-        KafkaExporter ke = KafkaExporter.fromCrd(
-            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, SHARED_ENV_PROVIDER);
+        Kafka resource = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .withNewKafkaExporter()
+                    .endKafkaExporter()
+                .endSpec()
+                .build();
+        KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, SHARED_ENV_PROVIDER);
+
         assertThat(ke.getImage(), is(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE));
         assertThat(ke.exporterLogging, is("info"));
         assertThat(ke.groupRegex, is(".*"));
@@ -174,32 +128,31 @@ public class KafkaExporterTest {
 
     @ParallelTest
     public void testFromConfigMap() {
-        assertThat(ke.namespace, is(namespace));
-        assertThat(ke.cluster, is(cluster));
-        assertThat(ke.getImage(), is(keImage));
-        assertThat(ke.exporterLogging, is("debug"));
-        assertThat(ke.groupRegex, is("my-group-.*"));
-        assertThat(ke.topicRegex, is("my-topic-.*"));
-        assertThat(ke.groupExcludeRegex, is("my-group-exclude-.*"));
-        assertThat(ke.topicExcludeRegex, is("my-topic-exclude-.*"));
-        assertThat(ke.saramaLoggingEnabled, is(true));
-        assertThat(ke.showAllOffsets, is(false));
+        assertThat(KE.namespace, is(NAMESPACE));
+        assertThat(KE.cluster, is(CLUSTER_NAME));
+        assertThat(KE.getImage(), is("my-image:latest"));
+        assertThat(KE.exporterLogging, is("debug"));
+        assertThat(KE.groupRegex, is("my-group-.*"));
+        assertThat(KE.topicRegex, is("my-topic-.*"));
+        assertThat(KE.groupExcludeRegex, is("my-group-exclude-.*"));
+        assertThat(KE.topicExcludeRegex, is("my-topic-exclude-.*"));
+        assertThat(KE.saramaLoggingEnabled, is(true));
+        assertThat(KE.showAllOffsets, is(false));
     }
 
     @ParallelTest
     public void testGenerateDeployment() {
-        Deployment dep = ke.generateDeployment(Map.of(), true, null, null);
+        Deployment dep = KE.generateDeployment(Map.of(), true, null, null);
+
+        assertThat(dep.getMetadata().getName(), is(KafkaExporterResources.componentName(CLUSTER_NAME)));
+        assertThat(dep.getMetadata().getNamespace(), is(NAMESPACE));
+        TestUtils.checkOwnerReference(dep, KAFKA);
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
-
         assertThat(containers.size(), is(1));
 
-        assertThat(dep.getMetadata().getName(), is(KafkaExporterResources.componentName(cluster)));
-        assertThat(dep.getMetadata().getNamespace(), is(namespace));
-        TestUtils.checkOwnerReference(dep, resource);
-
         // checks on the main Exporter container
-        assertThat(containers.get(0).getImage(), is(ke.image));
+        assertThat(containers.get(0).getImage(), is(KE.image));
         assertThat(containers.get(0).getEnv(), is(getExpectedEnvVars()));
         assertThat(containers.get(0).getPorts().size(), is(1));
         assertThat(containers.get(0).getPorts().get(0).getName(), is(MetricsModel.METRICS_PORT_NAME));
@@ -230,11 +183,11 @@ public class KafkaExporterTest {
 
         volume = volumes.stream().filter(vol -> KafkaExporter.CLUSTER_CA_CERTS_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volume, is(notNullValue()));
-        assertThat(volume.getSecret().getSecretName(), is(KafkaResources.clusterCaCertificateSecretName(cluster)));
+        assertThat(volume.getSecret().getSecretName(), is(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)));
 
         volume = volumes.stream().filter(vol -> KafkaExporter.KAFKA_EXPORTER_CERTS_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volume, is(notNullValue()));
-        assertThat(volume.getSecret().getSecretName(), is(KafkaExporterResources.secretName(cluster)));
+        assertThat(volume.getSecret().getSecretName(), is(KafkaExporterResources.secretName(CLUSTER_NAME)));
 
         // Test volume mounts
         List<VolumeMount> volumesMounts = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts();
@@ -251,20 +204,19 @@ public class KafkaExporterTest {
         volumeMount = volumesMounts.stream().filter(vol -> KafkaExporter.KAFKA_EXPORTER_CERTS_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volumeMount, is(notNullValue()));
         assertThat(volumeMount.getMountPath(), is(KafkaExporter.KAFKA_EXPORTER_CERTS_VOLUME_MOUNT));
-
     }
 
     @ParallelTest
     public void testEnvVars()   {
-        assertThat(ke.getEnvVars(), is(getExpectedEnvVars()));
+        assertThat(KE.getEnvVars(), is(getExpectedEnvVars()));
     }
 
     @ParallelTest
     public void testImagePullPolicy() {
-        Deployment dep = ke.generateDeployment(Map.of(), true, ImagePullPolicy.ALWAYS, null);
+        Deployment dep = KE.generateDeployment(Map.of(), true, ImagePullPolicy.ALWAYS, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
 
-        dep = ke.generateDeployment(Map.of(), true, ImagePullPolicy.IFNOTPRESENT, null);
+        dep = KE.generateDeployment(Map.of(), true, ImagePullPolicy.IFNOTPRESENT, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
     }
 
@@ -282,23 +234,18 @@ public class KafkaExporterTest {
         envVar2.setName(testEnvTwoKey);
         envVar2.setValue(testEnvTwoValue);
 
-        KafkaExporterSpec exporterSpec = new KafkaExporterSpecBuilder()
-                .withLogging(exporterOperatorLogging)
-                .withGroupRegex(groupRegex)
-                .withTopicRegex(topicRegex)
-                .withImage(keImage)
-                .withNewTemplate()
-                    .withNewContainer()
-                        .withEnv(envVar1, envVar2)
-                    .endContainer()
-                .endTemplate()
+        Kafka resource = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafkaExporter()
+                        .withNewTemplate()
+                            .withNewContainer()
+                                .withEnv(envVar1, envVar2)
+                            .endContainer()
+                        .endTemplate()
+                    .endKafkaExporter()
+                .endSpec()
                 .build();
-
-        Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
-                healthDelay, healthTimeout, jmxMetricsConfig, kafkaConfig, zooConfig,
-                kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, exporterSpec, null);
-        KafkaExporter ke = KafkaExporter.fromCrd(
-            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, SHARED_ENV_PROVIDER);
+        KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         List<EnvVar> kafkaEnvVars = ke.getEnvVars();
         assertThat(kafkaEnvVars.stream().filter(var -> testEnvOneKey.equals(var.getName())).map(EnvVar::getValue).findFirst().orElseThrow(), is(testEnvOneValue));
@@ -319,36 +266,32 @@ public class KafkaExporterTest {
         envVar2.setName(testEnvTwoKey);
         envVar2.setValue(testEnvTwoValue);
 
-        KafkaExporterSpec exporterSpec = new KafkaExporterSpecBuilder()
-                .withLogging(exporterOperatorLogging)
-                .withGroupRegex(groupRegex)
-                .withTopicRegex(topicRegex)
-                .withImage(keImage)
-                .withNewTemplate()
-                    .withNewContainer()
-                        .withEnv(envVar1, envVar2)
-                    .endContainer()
-                .endTemplate()
+        Kafka resource = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafkaExporter()
+                        .withNewTemplate()
+                            .withNewContainer()
+                                .withEnv(envVar1, envVar2)
+                            .endContainer()
+                        .endTemplate()
+                    .endKafkaExporter()
+                .endSpec()
                 .build();
-
-        Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
-                healthDelay, healthTimeout, jmxMetricsConfig, kafkaConfig, zooConfig,
-                kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, exporterSpec, null);
-        KafkaExporter ke = KafkaExporter.fromCrd(
-            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, SHARED_ENV_PROVIDER);
+        KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         List<EnvVar> kafkaEnvVars = ke.getEnvVars();
         assertThat(kafkaEnvVars.stream().filter(var -> testEnvOneKey.equals(var.getName())).map(EnvVar::getValue).findFirst().orElseThrow(), is(testEnvOneValue));
-        assertThat(kafkaEnvVars.stream().filter(var -> testEnvTwoKey.equals(var.getName())).map(EnvVar::getValue).findFirst().orElseThrow(), is(groupRegex));
+        assertThat(kafkaEnvVars.stream().filter(var -> testEnvTwoKey.equals(var.getName())).map(EnvVar::getValue).findFirst().orElseThrow(), is("my-group-.*"));
     }
 
     @ParallelTest
     public void testExporterNotDeployed() {
-        Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
-                healthDelay, healthTimeout, jmxMetricsConfig, kafkaConfig, zooConfig,
-                kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, null, null);
-        KafkaExporter ke = KafkaExporter.fromCrd(
-            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, SHARED_ENV_PROVIDER);
+        Kafka resource = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .withKafkaExporter(null)
+                .endSpec()
+                .build();
+        KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         assertThat(ke, is(nullValue()));
     }
@@ -418,8 +361,7 @@ public class KafkaExporterTest {
                 .withSubPath("def")
                 .build();
 
-        Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        Kafka resource = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .withNewKafkaExporter()
                         .withNewTemplate()
@@ -455,8 +397,7 @@ public class KafkaExporterTest {
                     .endKafkaExporter()
                 .endSpec()
                 .build();
-        KafkaExporter ke = KafkaExporter.fromCrd(
-            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, SHARED_ENV_PROVIDER);
+        KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check Deployment
         Deployment dep = ke.generateDeployment(Map.of(), true, null, null);
@@ -483,8 +424,7 @@ public class KafkaExporterTest {
 
     @ParallelTest
     public void testGenerateDeploymentWithRecreateDeploymentStrategy() {
-        Kafka resource = 
-                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        Kafka resource = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .withNewKafkaExporter()
                         .withNewTemplate()
@@ -495,20 +435,43 @@ public class KafkaExporterTest {
                     .endKafkaExporter()
                 .endSpec()
                 .build();
-        KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), 
-                resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, SHARED_ENV_PROVIDER);
+        KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, SHARED_ENV_PROVIDER);
+
         Deployment dep = ke.generateDeployment(Map.of(), true, null, null);
         assertThat(dep.getSpec().getStrategy().getType(), is("Recreate"));
     }
 
     @ParallelTest
     public void testNetworkPolicy() {
-        NetworkPolicy np = ke.generateNetworkPolicy();
+        NetworkPolicy np = KE.generateNetworkPolicy();
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(MetricsModel.METRICS_PORT))).findFirst().orElse(null), is(notNullValue()));
     }
 
-    @AfterAll
-    public static void cleanUp() {
-        ResourceUtils.cleanUpTemporaryTLSFiles();
+    ////////////////////
+    // Utility methods
+    ////////////////////
+
+    private static List<EnvVar> getExpectedEnvVars() {
+        List<EnvVar> expected = new ArrayList<>();
+
+        expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_LOGGING).withValue("1").build());
+        expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_KAFKA_VERSION).withValue(KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION).build());
+        expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_GROUP_REGEX).withValue("my-group-.*").build());
+        expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_TOPIC_REGEX).withValue("my-topic-.*").build());
+        expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_GROUP_EXCLUDE_REGEX).withValue("my-group-exclude-.*").build());
+        expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_TOPIC_EXCLUDE_REGEX).withValue("my-topic-exclude-.*").build());
+        expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_KAFKA_SERVER).withValue("my-cluster-kafka-bootstrap:" + KafkaCluster.REPLICATION_PORT).build());
+        expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_ENABLE_SARAMA).withValue("true").build());
+        expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_OFFSET_SHOW_ALL).withValue("false").build());
+
+        return expected;
+    }
+
+    private static Volume getVolume(PodSpec podSpec, String volumeName) {
+        return podSpec.getVolumes().stream().filter(volume -> volumeName.equals(volume.getName())).iterator().next();
+    }
+
+    private static VolumeMount getVolumeMount(Container container, String volumeName) {
+        return container.getVolumeMounts().stream().filter(volumeMount -> volumeName.equals(volumeMount.getName())).iterator().next();
     }
 }
