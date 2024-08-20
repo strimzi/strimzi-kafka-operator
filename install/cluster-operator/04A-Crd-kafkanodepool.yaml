@@ -90,7 +90,7 @@ spec:
                         broker:
                           type: integer
                           description: Id of the kafka broker (broker identifier).
-                    description: Overrides for individual brokers. The `overrides` field allows to specify a different configuration for different brokers.
+                    description: Overrides for individual brokers. The `overrides` field allows you to specify a different configuration for different brokers.
                   selector:
                     additionalProperties:
                       type: string
@@ -141,7 +141,7 @@ spec:
                               broker:
                                 type: integer
                                 description: Id of the kafka broker (broker identifier).
-                          description: Overrides for individual brokers. The `overrides` field allows to specify a different configuration for different brokers.
+                          description: Overrides for individual brokers. The `overrides` field allows you to specify a different configuration for different brokers.
                         selector:
                           additionalProperties:
                             type: string
@@ -757,7 +757,86 @@ spec:
                       tmpDirSizeLimit:
                         type: string
                         pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
-                        description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
+                        description: "Defines the total amount of pod memory allocated for the temporary `EmptyDir` volume `/tmp`. Specify the allocation in memory units, for example, `100Mi` for 100 mebibytes. Default value is `5Mi`. The `/tmp` volume is backed by pod memory, not disk storage, so avoid setting a high value as it consumes pod memory resources."
+                      volumes:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              description: Name to use for the volume. Required.
+                            secret:
+                              type: object
+                              properties:
+                                defaultMode:
+                                  type: integer
+                                items:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      key:
+                                        type: string
+                                      mode:
+                                        type: integer
+                                      path:
+                                        type: string
+                                optional:
+                                  type: boolean
+                                secretName:
+                                  type: string
+                              description: Secret to use populate the volume.
+                            configMap:
+                              type: object
+                              properties:
+                                defaultMode:
+                                  type: integer
+                                items:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      key:
+                                        type: string
+                                      mode:
+                                        type: integer
+                                      path:
+                                        type: string
+                                name:
+                                  type: string
+                                optional:
+                                  type: boolean
+                              description: ConfigMap to use to populate the volume.
+                            emptyDir:
+                              type: object
+                              properties:
+                                medium:
+                                  type: string
+                                sizeLimit:
+                                  type: object
+                                  properties:
+                                    amount:
+                                      type: string
+                                    format:
+                                      type: string
+                              description: EmptyDir to use to populate the volume.
+                            persistentVolumeClaim:
+                              type: object
+                              properties:
+                                claimName:
+                                  type: string
+                                readOnly:
+                                  type: boolean
+                              description: PersistentVolumeClaim object to use to populate the volume.
+                          oneOf:
+                          - properties:
+                              secret: {}
+                              configMap: {}
+                              emptyDir: {}
+                              persistentVolumeClaim: {}
+                            required: []
+                        description: Additional volumes that can be mounted to the pod.
                     description: Template for Kafka `Pods`.
                   perPodService:
                     type: object
@@ -911,6 +990,26 @@ spec:
                               runAsUserName:
                                 type: string
                         description: Security context for the container.
+                      volumeMounts:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            mountPath:
+                              type: string
+                            mountPropagation:
+                              type: string
+                            name:
+                              type: string
+                            readOnly:
+                              type: boolean
+                            recursiveReadOnly:
+                              type: string
+                            subPath:
+                              type: string
+                            subPathExpr:
+                              type: string
+                        description: Additional volume mounts which should be applied to the container.
                     description: Template for the Kafka broker container.
                   initContainer:
                     type: object
@@ -992,6 +1091,26 @@ spec:
                               runAsUserName:
                                 type: string
                         description: Security context for the container.
+                      volumeMounts:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            mountPath:
+                              type: string
+                            mountPropagation:
+                              type: string
+                            name:
+                              type: string
+                            readOnly:
+                              type: boolean
+                            recursiveReadOnly:
+                              type: string
+                            subPath:
+                              type: string
+                            subPathExpr:
+                              type: string
+                        description: Additional volume mounts which should be applied to the container.
                     description: Template for the Kafka init container.
                 description: Template for pool resources. The template allows users to specify how the resources belonging to this pool are generated.
             required:

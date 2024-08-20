@@ -161,7 +161,7 @@ spec:
                             - DescribeConfigs
                             - IdempotentWrite
                             - All
-                          description: "List of operations which will be allowed or denied. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All."
+                          description: "List of operations to allow or deny. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All. Only certain operations work with the specified resource."
                       required:
                       - resource
                     description: List of ACL rules which should be applied to this user.
@@ -392,7 +392,7 @@ spec:
                             - DescribeConfigs
                             - IdempotentWrite
                             - All
-                          description: "List of operations which will be allowed or denied. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All."
+                          description: "List of operations to allow or deny. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All. Only certain operations work with the specified resource."
                       required:
                       - resource
                     description: List of ACL rules which should be applied to this user.
@@ -623,7 +623,7 @@ spec:
                             - DescribeConfigs
                             - IdempotentWrite
                             - All
-                          description: "List of operations which will be allowed or denied. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All."
+                          description: "List of operations to allow or deny. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All. Only certain operations work with the specified resource."
                       required:
                       - resource
                     description: List of ACL rules which should be applied to this user.
