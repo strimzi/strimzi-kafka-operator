@@ -592,8 +592,8 @@ public class MetricsST extends AbstractST {
      */
     @ParallelTest
     void testCruiseControlMetrics() {
-        String cruiseControlMetrics = CruiseControlUtils.callApi(namespaceFirst, CruiseControlUtils.HttpMethod.GET, CruiseControlUtils.Scheme.HTTP,
-                CruiseControlUtils.CRUISE_CONTROL_METRICS_PORT, "/metrics", "", true).getResponseText();
+        String cruiseControlMetrics = CruiseControlUtils.callApiWithAdminCredentials(namespaceFirst, CruiseControlUtils.HttpMethod.GET, CruiseControlUtils.Scheme.HTTP,
+                CruiseControlUtils.CRUISE_CONTROL_METRICS_PORT, "/metrics", "").getResponseText();
         Matcher regex = Pattern.compile("^([^#].*)\\s+([^\\s]*)$", Pattern.MULTILINE).matcher(cruiseControlMetrics);
 
         LOGGER.info("Verifying that we have more than 0 groups");

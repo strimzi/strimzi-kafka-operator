@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.cruisecontrol;
 
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
@@ -12,6 +13,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.kubernetes.SecretTemplates;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -61,11 +63,56 @@ public class CruiseControlApiST extends AbstractST {
 
         LOGGER.info("----> CRUISE CONTROL DEPLOYMENT STATE ENDPOINT <----");
         CruiseControlUtils.ApiResult response = CruiseControlUtils.callApi(testStorage.getNamespaceName(), CruiseControlUtils.HttpMethod.GET,
-                CruiseControlUtils.Scheme.HTTP, CRUISE_CONTROL_DEFAULT_PORT, CruiseControlEndpoints.STATE.toString(), "", false);
+                CruiseControlUtils.Scheme.HTTP, CRUISE_CONTROL_DEFAULT_PORT, CruiseControlEndpoints.STATE.toString(), "");
         String responseText = response.getResponseText();
         int responseCode = response.getResponseCode();
 
         LOGGER.info("Verifying that {} REST API is available using HTTP request without credentials", CRUISE_CONTROL_NAME);
+        assertThat(responseCode, is(200));
+        assertThat(responseText, containsString("RUNNING"));
+        assertThat(responseText, containsString("NO_TASK_IN_PROGRESS"));
+    }
+
+    @ParallelNamespaceTest
+    void testCruiseControlAPIUsers() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final String ccApiUserSecretName = "cc-api-users";
+        final String ccApiUser = "arnost: heslo, USER\n";
+
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+            )
+        );
+        resourceManager.createResourceWithWait(
+            SecretTemplates.secret(testStorage.getNamespaceName(), ccApiUserSecretName, "key", ccApiUser).build(),
+            KafkaTemplates.kafkaWithCruiseControl(testStorage.getNamespaceName(), testStorage.getClusterName(), 3, 3)
+                .editOrNewSpec()
+                    .withNewCruiseControl()
+                        .withNewHashLoginServiceApiUsers()
+                            .withNewValueFrom()
+                                .withNewSecretKeyRef("key", ccApiUserSecretName, false)
+                            .endValueFrom()
+                        .endHashLoginServiceApiUsers()
+                    .endCruiseControl()
+                .endSpec()
+                .build()
+        );
+
+        CruiseControlUtils.ApiResult response = CruiseControlUtils.callApi(
+            testStorage.getNamespaceName(),
+            CruiseControlUtils.HttpMethod.GET,
+            CruiseControlUtils.Scheme.HTTPS,
+            CRUISE_CONTROL_DEFAULT_PORT,
+            CruiseControlEndpoints.STATE.toString(),
+            "",
+            "arnost:heslo"
+        );
+
+        String responseText = response.getResponseText();
+        int responseCode = response.getResponseCode();
+
         assertThat(responseCode, is(200));
         assertThat(responseText, containsString("RUNNING"));
         assertThat(responseText, containsString("NO_TASK_IN_PROGRESS"));
