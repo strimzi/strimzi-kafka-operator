@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 0.44.0
+
+
 ## 0.43.0
 
 * Add support for Apache Kafka 3.8.0.
