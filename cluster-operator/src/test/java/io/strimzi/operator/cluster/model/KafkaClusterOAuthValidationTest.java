@@ -4,20 +4,25 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.api.kafka.model.kafka.EphemeralStorage;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationKeycloakBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationScramSha512Builder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
+import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
+import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
@@ -31,12 +36,41 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class KafkaClusterOAuthValidationTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
+    private static final String NAMESPACE = "my-namespace";
+    private static final String CLUSTER_NAME = "my-cluster";
+    private final static Kafka KAFKA = new KafkaBuilder()
+            .withNewMetadata()
+                .withName(CLUSTER_NAME)
+                .withNamespace(NAMESPACE)
+                .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled", Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"))
+            .endMetadata()
+            .withNewSpec()
+                .withNewKafka()
+                    .withListeners(getListeners(null))
+                .endKafka()
+            .endSpec()
+            .build();
+    private final static KafkaNodePool MIXED = new KafkaNodePoolBuilder()
+            .withNewMetadata()
+                .withName("mixed")
+                .withNamespace(NAMESPACE)
+                .withGeneration(1L)
+                .withLabels(Map.of(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME))
+            .endMetadata()
+            .withNewSpec()
+                .withReplicas(3)
+                .withNewJbodStorage()
+                    .withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build())
+                .endJbodStorage()
+                .withRoles(ProcessRoles.CONTROLLER, ProcessRoles.BROKER)
+            .endSpec()
+            .build();
     private final static Set<NodeRef> THREE_NODES = Set.of(
-            new NodeRef("name-kafka-0", 0, "kafka", false, true),
-            new NodeRef("name-kafka-1", 1, "kafka", false, true),
-            new NodeRef("name-kafka-2", 2, "kafka", false, true));
+            new NodeRef("my-cluster-mixed-0", 0, "mixed", true, true),
+            new NodeRef("my-cluster-mixed-1", 1, "mixed", true, true),
+            new NodeRef("my-cluster-mixed-2", 2, "mixed", true, true));
 
-    private List<GenericKafkaListener> getListeners(KafkaListenerAuthenticationOAuth auth)   {
+    private static List<GenericKafkaListener> getListeners(KafkaListenerAuthenticationOAuth auth)   {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
                 .withName("listener1")
                 .withPort(9900)
@@ -86,15 +120,9 @@ public class KafkaClusterOAuthValidationTest {
                         .build())
                 .build());
 
-        Kafka kafkaAssembly = new KafkaBuilder()
-                .withNewMetadata()
-                    .withName("my-cluster")
-                    .withNamespace("my-namespace")
-                .endMetadata()
-                .withNewSpec()
-                    .withNewKafka()
-                        .withReplicas(3)
-                        .withStorage(new EphemeralStorage())
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
                         .withListeners(listeners)
                         .withAuthorization(new KafkaAuthorizationKeycloakBuilder()
                                 .withTokenEndpointUri("http://token-endpoint")
@@ -106,15 +134,11 @@ public class KafkaClusterOAuthValidationTest {
                                         "CN=alice")
                                 .build())
                     .endKafka()
-                    .withNewZookeeper()
-                        .withReplicas(3)
-                        .withStorage(new EphemeralStorage())
-                    .endZookeeper()
                 .endSpec()
                 .build();
 
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
-        KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(MIXED), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
+        KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
     }
 
     @ParallelTest
@@ -128,15 +152,9 @@ public class KafkaClusterOAuthValidationTest {
                             .build())
                     .build());
 
-            Kafka kafkaAssembly = new KafkaBuilder()
-                    .withNewMetadata()
-                        .withName("my-cluster")
-                        .withNamespace("my-namespace")
-                    .endMetadata()
-                    .withNewSpec()
-                        .withNewKafka()
-                            .withReplicas(3)
-                            .withStorage(new EphemeralStorage())
+            Kafka kafka = new KafkaBuilder(KAFKA)
+                    .editSpec()
+                        .editKafka()
                             .withListeners(listeners)
                             .withAuthorization(new KafkaAuthorizationKeycloakBuilder()
                                     .withTokenEndpointUri("http://token-endpoint")
@@ -148,15 +166,11 @@ public class KafkaClusterOAuthValidationTest {
                                             "CN=alice")
                                     .build())
                         .endKafka()
-                        .withNewZookeeper()
-                            .withReplicas(3)
-                            .withStorage(new EphemeralStorage())
-                        .endZookeeper()
                     .endSpec()
                     .build();
 
-            List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
-            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
+            List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(MIXED), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
+            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
         });
     }
 

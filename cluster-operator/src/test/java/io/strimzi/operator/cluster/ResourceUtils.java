@@ -20,13 +20,10 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridgeHttpConfig;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerSpec;
 import io.strimzi.api.kafka.model.common.Logging;
 import io.strimzi.api.kafka.model.common.Probe;
-import io.strimzi.api.kafka.model.common.ProbeBuilder;
 import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectBuilder;
-import io.strimzi.api.kafka.model.kafka.EphemeralStorage;
 import io.strimzi.api.kafka.model.kafka.Kafka;
-import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.kafka.KafkaSpec;
 import io.strimzi.api.kafka.model.kafka.SingleVolumeStorage;
@@ -129,7 +126,6 @@ import java.util.stream.Stream;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
-import static java.util.Collections.singletonMap;
 import static org.mockito.AdditionalMatchers.or;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
@@ -145,78 +141,7 @@ import static org.mockito.Mockito.when;
     "checkstyle:ClassFanOutComplexity"
 })
 public class ResourceUtils {
-
-    private ResourceUtils() {
-
-    }
-
-    public static Kafka createKafka(String namespace, String name, int replicas,
-                                    String image, int healthDelay, int healthTimeout) {
-        Probe probe = new ProbeBuilder()
-                .withInitialDelaySeconds(healthDelay)
-                .withTimeoutSeconds(healthTimeout)
-                .withFailureThreshold(10)
-                .withSuccessThreshold(4)
-                .withPeriodSeconds(33)
-                .build();
-
-        ObjectMeta meta = new ObjectMetaBuilder()
-            .withNamespace(namespace)
-            .withName(name)
-            .withLabels(Labels.fromMap(singletonMap("my-user-label", "cromulent")).toMap())
-            .build();
-
-        KafkaBuilder builder = new KafkaBuilder();
-        return builder.withMetadata(meta)
-                .withNewSpec()
-                    .withNewKafka()
-                        .withReplicas(replicas)
-                        .withImage(image)
-                        .withListeners(new GenericKafkaListenerBuilder()
-                                    .withName("plain")
-                                    .withPort(9092)
-                                    .withType(KafkaListenerType.INTERNAL)
-                                    .withTls(false)
-                                    .build(),
-                                new GenericKafkaListenerBuilder()
-                                    .withName("tls")
-                                    .withPort(9093)
-                                    .withType(KafkaListenerType.INTERNAL)
-                                    .withTls(true)
-                                    .build())
-                        .withLivenessProbe(probe)
-                        .withReadinessProbe(probe)
-                        .withStorage(new EphemeralStorage())
-                    .endKafka()
-                    .withNewZookeeper()
-                        .withReplicas(replicas)
-                        .withImage(image + "-zk")
-                        .withLivenessProbe(probe)
-                        .withReadinessProbe(probe)
-                        .withStorage(new EphemeralStorage())
-                    .endZookeeper()
-                .endSpec()
-                .build();
-    }
-
-    public static Kafka createKafka(String namespace, String name, int replicas,
-                                    String image, int healthDelay, int healthTimeout,
-                                    MetricsConfig metricsConfig,
-                                    Map<String, Object> kafkaConfigurationJson,
-                                    Map<String, Object> zooConfigurationJson) {
-        return new KafkaBuilder(createKafka(namespace, name, replicas, image, healthDelay, healthTimeout))
-                .editSpec()
-                    .editKafka()
-                        .withConfig(kafkaConfigurationJson)
-                        .withMetricsConfig(metricsConfig)
-                    .endKafka()
-                    .editZookeeper()
-                        .withConfig(zooConfigurationJson)
-                        .withMetricsConfig(metricsConfig)
-                    .endZookeeper()
-                .endSpec()
-                .build();
-    }
+    private ResourceUtils() { }
 
     public static Secret createInitialCaCertSecret(String clusterNamespace, String clusterName, String secretName,
                                                    String caCert, String caStore, String caStorePassword) {
