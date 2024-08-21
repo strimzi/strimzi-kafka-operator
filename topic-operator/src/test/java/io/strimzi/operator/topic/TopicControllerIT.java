@@ -2030,7 +2030,7 @@ class TopicControllerIT {
             pausedIsTrue()
         );
 
-        assertEquals(0, kt.getStatus().getObservedGeneration());
+        assertEquals(1, kt.getStatus().getObservedGeneration());
         assertNotExistsInKafka(topicName);
     }
 

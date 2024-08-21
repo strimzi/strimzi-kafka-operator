@@ -1210,16 +1210,11 @@ public class BatchingTopicController {
         var oldStatus = Crds.topicOperation(kubeClient)
             .inNamespace(reconcilableTopic.kt().getMetadata().getNamespace())
             .withName(reconcilableTopic.kt().getMetadata().getName()).get().getStatus();
-
-        // set observedGeneration
-        if ((!TopicOperatorUtil.isManaged(reconcilableTopic.kt()) || TopicOperatorUtil.isPaused(reconcilableTopic.kt())) && oldStatus == null) {
-            // observedGeneration is initialized to 0 when creating a new unmanaged or paused topic
-            reconcilableTopic.kt().getStatus().setObservedGeneration(0L);
-        } else {
-            reconcilableTopic.kt().getStatus().setObservedGeneration(reconcilableTopic.kt().getMetadata().getGeneration());
-        }
-
-        // set topicName
+        
+        // the observedGeneration is a marker that shows that the operator works and that it saw the last update to the resource
+        reconcilableTopic.kt().getStatus().setObservedGeneration(reconcilableTopic.kt().getMetadata().getGeneration());
+        
+        // set or reset the topicName
         reconcilableTopic.kt().getStatus().setTopicName(
             !TopicOperatorUtil.isManaged(reconcilableTopic.kt())
                 ? null
