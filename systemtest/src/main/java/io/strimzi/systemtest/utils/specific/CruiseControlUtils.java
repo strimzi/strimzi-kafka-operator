@@ -77,13 +77,37 @@ public class CruiseControlUtils {
         }
     }
 
+    public static ApiResult callApiWithAdminCredentials(String namespaceName, HttpMethod method, Scheme scheme, int port, String endpoint, String endpointParameters) {
+        return callApi(
+            namespaceName,
+            method,
+            scheme,
+            port,
+            endpoint,
+            endpointParameters,
+            "admin:$(cat /opt/cruise-control/api-auth-config/cruise-control.apiAdminPassword)"
+        );
+    }
+
+    public static ApiResult callApi(String namespaceName, HttpMethod method, Scheme scheme, int port, String endpoint, String endpointParameters) {
+        return callApi(
+            namespaceName,
+            method,
+            scheme,
+            port,
+            endpoint,
+            endpointParameters,
+            ""
+        );
+    }
+
     @SuppressFBWarnings("DM_CONVERT_CASE")
-    public static ApiResult callApi(String namespaceName, HttpMethod method, Scheme scheme, int port, String endpoint, String endpointParameters, boolean withCredentials) {
+    public static ApiResult callApi(String namespaceName, HttpMethod method, Scheme scheme, int port, String endpoint, String endpointParameters, String userCreds) {
         String ccPodName = PodUtils.getFirstPodNameContaining(namespaceName, CONTAINER_NAME);
         String args = " -k -w \"%{http_code}\" ";
 
-        if (withCredentials) {
-            args += " --user admin:$(cat /opt/cruise-control/api-auth-config/cruise-control.apiAdminPassword) ";
+        if (!userCreds.isEmpty()) {
+            args += String.format(" --user %s ", userCreds);
         }
 
         String curl = "curl -X " + method.name() + " " + args + " " + scheme + "://localhost:" + port + endpoint + endpointParameters;
@@ -149,16 +173,5 @@ public class CruiseControlUtils {
         cruiseControlProperties.put("cluster-name", clusterName);
 
         return cruiseControlProperties;
-    }
-
-    /**
-     * Returns user defined network capacity value without KiB/s suffix.
-     *
-     * @param userCapacity User defined network capacity with KiB/s suffix.
-     *
-     * @return User defined network capacity without KiB/s as a Double.
-     */
-    public static Double removeNetworkCapacityKibSuffix(String userCapacity) {
-        return Double.valueOf(userCapacity.substring(0, userCapacity.length() - 5));
     }
 }
