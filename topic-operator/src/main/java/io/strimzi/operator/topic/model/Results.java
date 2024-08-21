@@ -17,7 +17,11 @@ import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
 /**
- * Reconciliation results.
+ * This class is used to hold the results from a call to an external system, or pending updates,
+ * and also to track the Conditions to be applied to a topic. It's used to allow the methods in 
+ * handler classes to return intermediate results, rather than mutating collections passed to them
+ * as arguments (which obscures which method is mutating what). The {@link #merge(Results)} method 
+ * can be used to merge results from two different operations.
  */
 public class Results {
     // results from internal operations
@@ -31,42 +35,47 @@ public class Results {
     private List<Pair<ReconcilableTopic, Collection<AlterConfigOp>>> configChanges = new ArrayList<>();
     
     /**
+     * Adds the given results, except for topics which already have an error recorded in this Results object.
+     * 
      * @param partitionedByError Results partitioned by error.
      */
-    public void setResults(PartitionedByError<ReconcilableTopic, ? extends Object> partitionedByError) {
-        setRightResults(partitionedByError.ok());
-        setLeftResults(partitionedByError.errors());
+    public void accrueResults(PartitionedByError<ReconcilableTopic, ? extends Object> partitionedByError) {
+        accrueRightResults(partitionedByError.ok());
+        accrueLeftResults(partitionedByError.errors());
     }
 
     /**
      * @param ok Success results.
      */
-    public void setRightResults(Stream<? extends Pair<ReconcilableTopic, ? extends Object>> ok) {
-        ok.forEach(pair -> setResult(pair.getKey(), Either.ofRight(null)));
+    public void accrueRightResults(Stream<? extends Pair<ReconcilableTopic, ? extends Object>> ok) {
+        ok.forEach(pair -> accrueResult(pair.getKey(), Either.ofRight(null)));
     }
 
     /**
      * @param ok Success results.
      */
-    public void setRightResults(Collection<ReconcilableTopic> ok) {
-        ok.forEach(rt -> setResult(rt, Either.ofRight(null)));
+    public void accrueRightResults(Collection<ReconcilableTopic> ok) {
+        ok.forEach(rt -> accrueResult(rt, Either.ofRight(null)));
     }
 
     /**
      * @param errors Error results.
      */
-    public void setLeftResults(Stream<Pair<ReconcilableTopic, TopicOperatorException>> errors) {
-        errors.forEach(pair -> setResult(pair.getKey(), Either.ofLeft(pair.getValue())));
+    public void accrueLeftResults(Stream<Pair<ReconcilableTopic, TopicOperatorException>> errors) {
+        errors.forEach(pair -> accrueResult(pair.getKey(), Either.ofLeft(pair.getValue())));
     }
 
-    private void setResult(ReconcilableTopic key,
-                           Either<TopicOperatorException, Object> result) {
+    private void accrueResult(ReconcilableTopic key, 
+                              Either<TopicOperatorException, Object> result) {
         results.compute(key, (k, v) -> {
-            if (v == null) { // use given result if there is no existing result
+            if (v == null) {
+                // use given result if there is no existing result
                 return result;
-            } else if (v.isRight()) { // if the existing result was success use the given result (errors beat successes)
+            } else if (v.isRight()) {
+                // if the existing result was success use the given result (errors beat successes)
                 return result;
-            } else { // otherwise the existing result must be an error, the given result might also be an error, but "first error wins"
+            } else {
+                // otherwise the existing result must be an error, the given result might also be an error, but "first error wins"
                 return v;
             }
         });
@@ -102,26 +111,25 @@ public class Results {
     }
 
     /**
+     * Merge two results into a single instance.
+     * 
      * @param results Results.
      */
-    public void addAll(Results results) {
+    public void merge(Results results) {
         for (var entry : results.results.entrySet()) {
-            this.setResult(entry.getKey(), entry.getValue());
+            this.accrueResult(entry.getKey(), entry.getValue());
         }
         this.setConditions(results.getConditions());
         if (results.getReplicasChanges() != null) {
-            this.setRightResults(results.getReplicasChanges().keySet());
+            this.accrueRightResults(results.getReplicasChanges().keySet());
             this.setReplicasChanges(results.getReplicasChanges());
         }
         if (results.getConfigChanges() != null) {
             this.setConfigChanges(results.getConfigChanges());
         }
     }
-
-    /**
-     * @return All status conditions.
-     */
-    public Map<ReconcilableTopic, Collection<Condition>> getConditions() {
+    
+    private Map<ReconcilableTopic, Collection<Condition>> getConditions() {
         return this.conditions;
     }
 
@@ -132,12 +140,9 @@ public class Results {
     public Collection<Condition> getConditions(ReconcilableTopic reconcilableTopic) {
         return this.conditions.getOrDefault(reconcilableTopic, List.of());
     }
-
-    /**
-     * @param conditions Status conditions.
-     */
-    public void setConditions(Map<ReconcilableTopic, Collection<Condition>> conditions) {
-        conditions.forEach((reconcilableTopic, tc) -> setConditions(reconcilableTopic, tc));
+    
+    private void setConditions(Map<ReconcilableTopic, Collection<Condition>> conditions) {
+        conditions.forEach(this::setConditions);
     }
 
     /**
@@ -157,7 +162,7 @@ public class Results {
     }
 
     /**
-     * @return All replicas change statuses.
+     * @return Replicas change statuses.
      */
     public Map<ReconcilableTopic, ReplicasChangeStatus> getReplicasChanges() {
         return replicasChanges;
@@ -175,7 +180,7 @@ public class Results {
      * @param replicasChangeStatus Replicas change status.
      */
     public void setReplicasChanges(Map<ReconcilableTopic, ReplicasChangeStatus> replicasChangeStatus) {
-        replicasChangeStatus.forEach((reconcilableTopic, status) -> setReplicasChange(reconcilableTopic, status));
+        replicasChangeStatus.forEach(this::setReplicasChange);
     }
     
     /**
@@ -206,10 +211,6 @@ public class Results {
      */
     public Collection<AlterConfigOp> getConfigChanges(ReconcilableTopic reconcilableTopic) {
         var result = this.configChanges.stream().filter(pair -> pair.getKey().equals(reconcilableTopic)).findFirst();
-        if (result.isPresent()) {
-            return result.get().getValue();
-        } else {
-            return null;
-        }
+        return result.map(Pair::getValue).orElse(null);
     }
 }

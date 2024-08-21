@@ -28,6 +28,28 @@ import static org.apache.logging.log4j.core.util.Throwables.getRootCause;
 
 /**
  * Handler for Cruise Control requests.
+ * 
+ * <p>When new or pending replicas changes are detected (status.replicasChange.state=pending) the 
+ * {@link #requestPendingChanges(List<ReconcilableTopic>)} method is called to send a {@code topic_configuration} 
+ * request to Cruise Control. Pending changes are retried in the following reconciliations until
+ * Cruise Control accept the request. Once the request is accepted, the state moves to ongoing.</p>
+ * 
+ * <p>When ongoing replicas changes are detected (status.replicasChange.state=ongoing) the 
+ * {@link #requestOngoingChanges(List<ReconcilableTopic>)} method is called to send a {@code user_tasks}
+ * request to Cruise Control. Ongoing changes are retried in the following reconciliations until
+ * Cruise Control replies with completed or completed with error.</p>
+ * 
+ * <p>Empty state (status.replicasChange == null) means no replicas change.
+ * In case of error the message is reflected in (status.replicasChange.message).</p>
+ *
+ * <br><pre><code>
+ *          /---------------------------------\
+ *         V                                   \
+ *     [empty] ---> [pending] ------------> [ongoing]
+ *                      \                      /
+ *                       \----> [error] <----/
+ *    
+ * </code></pre>  
  */
 public class CruiseControlHandler {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(CruiseControlHandler.class);
@@ -54,7 +76,6 @@ public class CruiseControlHandler {
     /**
      * Send a topic_configuration request to create a task for replication factor change of one or more topics.
      * This should be called when one or more .spec.replicas changes are detected.
-     * Note that this method also updates the KafkaTopic status.
      * 
      * @param reconcilableTopics Pending replicas changes.
      * @return Results with status updates.
@@ -64,16 +85,16 @@ public class CruiseControlHandler {
         if (reconcilableTopics.isEmpty()) {
             return results;
         }
-        results.addAll(updateToPending(reconcilableTopics, "Replicas change pending"));
+        results.merge(updateToPending(reconcilableTopics, "Replicas change pending"));
 
         var timerSample = TopicOperatorUtil.startExternalRequestTimer(metricsHolder, config.enableAdditionalMetrics());
         try {
             LOGGER.debugOp("Sending topic configuration request, topics {}", topicNames(reconcilableTopics));
             var kafkaTopics = reconcilableTopics.stream().map(ReconcilableTopic::kt).collect(Collectors.toList());
             var userTaskId = cruiseControlClient.topicConfiguration(kafkaTopics);
-            results.addAll(updateToOngoing(reconcilableTopics, "Replicas change ongoing", userTaskId));
+            results.merge(updateToOngoing(reconcilableTopics, "Replicas change ongoing", userTaskId));
         } catch (Throwable t) {
-            results.addAll(updateToFailed(reconcilableTopics, format("Replicas change failed, %s", getRootCause(t).getMessage())));
+            results.merge(updateToFailed(reconcilableTopics, format("Replicas change failed, %s", getRootCause(t).getMessage())));
         }
         TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::cruiseControlTopicConfig, config.enableAdditionalMetrics(), config.namespace());
         
@@ -83,7 +104,6 @@ public class CruiseControlHandler {
     /**
      * Send a user_tasks request to check the state of ongoing replication factor changes.
      * This should be called periodically to update the active tasks cache and KafkaTopic status.
-     * Note that this method also updates the KafkaTopic status.
      *
      * @param reconcilableTopics Ongoing replicas changes.
      * @return Results with status updates.
@@ -106,27 +126,27 @@ public class CruiseControlHandler {
             if (userTasksResponse.userTasks().isEmpty()) {
                 // Cruise Control restarted: reset the state because the tasks queue is not persisted
                 // this may also happen when the tasks' retention time expires, or the cache becomes full
-                results.addAll(updateToPending(reconcilableTopics, "Task not found, Resetting the state"));
+                results.merge(updateToPending(reconcilableTopics, "Task not found, Resetting the state"));
             } else {
                 for (var userTask : userTasksResponse.userTasks()) {
                     String userTaskId = userTask.userTaskId();
                     TaskState state = TaskState.get(userTask.status());
                     switch (state) {
                         case COMPLETED:
-                            results.addAll(updateToCompleted(groupByUserTaskId.get(userTaskId), "Replicas change completed"));
+                            results.merge(updateToCompleted(groupByUserTaskId.get(userTaskId), "Replicas change completed"));
                             break;
                         case COMPLETED_WITH_ERROR:
-                            results.addAll(updateToFailed(groupByUserTaskId.get(userTaskId), "Replicas change completed with error"));
+                            results.merge(updateToFailed(groupByUserTaskId.get(userTaskId), "Replicas change completed with error"));
                             break;
                         case ACTIVE:
                         case IN_EXECUTION:
-                            results.addAll(updateToOngoing(reconcilableTopics, "Replicas change ongoing", userTaskId));
+                            results.merge(updateToOngoing(reconcilableTopics, "Replicas change ongoing", userTaskId));
                             break;
                     }
                 }
             }
         } catch (Throwable t) {
-            results.addAll(updateToFailed(reconcilableTopics, format("Replicas change failed, %s", getRootCause(t).getMessage())));
+            results.merge(updateToFailed(reconcilableTopics, format("Replicas change failed, %s", getRootCause(t).getMessage())));
         }
         TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::cruiseControlUserTasks, config.enableAdditionalMetrics(), config.namespace());
         

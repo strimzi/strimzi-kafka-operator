@@ -122,6 +122,7 @@ public class KubernetesHandler {
                 LOGGER.traceCr(reconcilableTopic.reconciliation(), "Updated status to observedGeneration {}, resourceVersion {}",
                     got.getStatus().getObservedGeneration(), got.getMetadata().getResourceVersion());
             } catch (Throwable e) {
+                TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::updateStatusTimer, config.enableAdditionalMetrics(), config.namespace());
                 LOGGER.errorOp("Status update failed: {}", e.getMessage());
             }
             TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::updateStatusTimer, config.enableAdditionalMetrics(), config.namespace());

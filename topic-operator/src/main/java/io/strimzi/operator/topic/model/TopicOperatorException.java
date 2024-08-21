@@ -19,9 +19,7 @@ public abstract class TopicOperatorException extends Exception {
         /** Kafka error wrapper. */
         KAFKA_ERROR("KafkaError"),
         /** Internal server error. */
-        INTERNAL_ERROR("InternalError"),
-        /** Invalid configuration. */
-        INVALID_CONFIG("InvalidConfig");
+        INTERNAL_ERROR("InternalError");
         
         /** Reason as a string. */
         public final String value;

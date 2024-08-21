@@ -62,7 +62,6 @@ import java.util.concurrent.ExecutionException;
 
 import static io.strimzi.api.kafka.model.topic.KafkaTopic.RESOURCE_KIND;
 import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.PENDING;
-import static io.strimzi.operator.topic.model.TopicOperatorException.Reason.INVALID_CONFIG;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -324,7 +323,7 @@ class BatchingTopicControllerTest {
                 .build();
         
         var pendingResults = new Results();
-        pendingResults.setRightResults(List.of(reconcilableTopic));
+        pendingResults.accrueRightResults(List.of(reconcilableTopic));
         pendingResults.setReplicasChange(reconcilableTopic, replicaChangeStatus);
 
         var cruiseControlHandler = Mockito.mock(CruiseControlHandler.class);
@@ -405,7 +404,7 @@ class BatchingTopicControllerTest {
             new Reconciliation("test", RESOURCE_KIND, NAMESPACE, topicName), kafkaTopic, topicName);
 
         var completedResults = new Results();
-        completedResults.setRightResults(List.of(reconcilableTopic));
+        completedResults.accrueRightResults(List.of(reconcilableTopic));
         completedResults.setReplicasChange(reconcilableTopic, null);
 
         var cruiseControlHandler = Mockito.mock(CruiseControlHandler.class);
@@ -483,7 +482,7 @@ class BatchingTopicControllerTest {
             new Reconciliation("test", RESOURCE_KIND, NAMESPACE, topicName), kafkaTopic, topicName);
 
         var completedResults = new Results();
-        completedResults.setRightResults(List.of(reconcilableTopic));
+        completedResults.accrueRightResults(List.of(reconcilableTopic));
         completedResults.setReplicasChange(reconcilableTopic, null);
 
         var cruiseControlHandler = Mockito.mock(CruiseControlHandler.class);
@@ -616,12 +615,12 @@ class BatchingTopicControllerTest {
 
         var warning1 = testTopic.getStatus().getConditions().get(1);
         assertEquals("Property follower.replication.throttled.replicas may conflict with throttled rebalances", warning1.getMessage());
-        assertEquals(INVALID_CONFIG.value, warning1.getReason());
+        assertEquals(BatchingTopicController.INVALID_CONFIG, warning1.getReason());
         assertEquals("True", warning1.getStatus());
 
         var warning2 = testTopic.getStatus().getConditions().get(2);
         assertEquals("Property leader.replication.throttled.replicas may conflict with throttled rebalances", warning2.getMessage());
-        assertEquals(INVALID_CONFIG.value, warning2.getReason());
+        assertEquals(BatchingTopicController.INVALID_CONFIG, warning2.getReason());
         assertEquals("True", warning2.getStatus());
 
         // remove warning condition
@@ -690,12 +689,12 @@ class BatchingTopicControllerTest {
 
         var warning1 = testTopic.getStatus().getConditions().get(1);
         assertEquals("Property cleanup.policy is ignored according to alterable config", warning1.getMessage());
-        assertEquals(INVALID_CONFIG.value, warning1.getReason());
+        assertEquals(BatchingTopicController.INVALID_CONFIG, warning1.getReason());
         assertEquals("True", warning1.getStatus());
 
         var warning2 = testTopic.getStatus().getConditions().get(2);
         assertEquals("Property segment.bytes is ignored according to alterable config", warning2.getMessage());
-        assertEquals(INVALID_CONFIG.value, warning2.getReason());
+        assertEquals(BatchingTopicController.INVALID_CONFIG, warning2.getReason());
         assertEquals("True", warning2.getStatus());
     }
     
@@ -747,12 +746,12 @@ class BatchingTopicControllerTest {
 
         var warning1 = testTopic.getStatus().getConditions().get(1);
         assertEquals("Property cleanup.policy is ignored according to alterable config", warning1.getMessage());
-        assertEquals(INVALID_CONFIG.value, warning1.getReason());
+        assertEquals(BatchingTopicController.INVALID_CONFIG, warning1.getReason());
         assertEquals("True", warning1.getStatus());
 
         var warning2 = testTopic.getStatus().getConditions().get(2);
         assertEquals("Property segment.bytes is ignored according to alterable config", warning2.getMessage());
-        assertEquals(INVALID_CONFIG.value, warning2.getReason());
+        assertEquals(BatchingTopicController.INVALID_CONFIG, warning2.getReason());
         assertEquals("True", warning2.getStatus());
 
         // remove warning condition
@@ -871,12 +870,12 @@ class BatchingTopicControllerTest {
 
         var warning1 = testTopic.getStatus().getConditions().get(1);
         assertEquals("Property cleanup.policy is ignored according to alterable config", warning1.getMessage());
-        assertEquals(INVALID_CONFIG.value, warning1.getReason());
+        assertEquals(BatchingTopicController.INVALID_CONFIG, warning1.getReason());
         assertEquals("True", warning1.getStatus());
 
         var warning2 = testTopic.getStatus().getConditions().get(2);
         assertEquals("Property compression.type is ignored according to alterable config", warning2.getMessage());
-        assertEquals(INVALID_CONFIG.value, warning2.getReason());
+        assertEquals(BatchingTopicController.INVALID_CONFIG, warning2.getReason());
         assertEquals("True", warning2.getStatus());
     }
     
@@ -927,12 +926,12 @@ class BatchingTopicControllerTest {
 
         var warning1 = testTopic.getStatus().getConditions().get(1);
         assertEquals("Property cleanup.policy is ignored according to alterable config", warning1.getMessage());
-        assertEquals(INVALID_CONFIG.value, warning1.getReason());
+        assertEquals(BatchingTopicController.INVALID_CONFIG, warning1.getReason());
         assertEquals("True", warning1.getStatus());
 
         var warning2 = testTopic.getStatus().getConditions().get(2);
         assertEquals("Property compression.type is ignored according to alterable config", warning2.getMessage());
-        assertEquals(INVALID_CONFIG.value, warning2.getReason());
+        assertEquals(BatchingTopicController.INVALID_CONFIG, warning2.getReason());
         assertEquals("True", warning2.getStatus());
     }
 }
