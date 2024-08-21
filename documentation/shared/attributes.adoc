@@ -13,7 +13,7 @@
 :toclevels: 3
 
 //Latest Strimzi version
-:ProductVersion: 0.43.0
+:ProductVersion: 0.44.0
 //Strimzi versions used in upgrades sections
 :ConvertAfterProductVersion: 0.22
 :LastReleaseWithCRDUpgrade: 0.24
@@ -37,7 +37,7 @@
 :InterBrokerVersionHigher: 3.8
 
 // Bridge version
-:BridgeVersion: 0.29.0
+:BridgeVersion: 0.30.0
 
 // Drain Cleaner Version
 :DrainCleanerVersion: 1.2.0
