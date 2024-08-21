@@ -233,11 +233,11 @@ spec:
 <4> Specification for the Kafka clusters being synchronized.
 <5> Cluster alias for the source Kafka cluster.
 <6> Authentication for the source cluster, specified as mTLS, token-based OAuth, SASL-based SCRAM-SHA-256/SCRAM-SHA-512, or PLAIN.
-<7> Bootstrap server for connection to the source Kafka cluster. You can specify more than one address in case a server goes down. Each address takes the format `<cluster_name>-kafka-bootstrap:<port_number>`. The Kafka cluster doesn't need to be managed by Strimzi or deployed to a Kubernetes cluster.
+<7> Bootstrap address for connection to the source Kafka cluster. The address takes the format `<cluster_name>-kafka-bootstrap:<port_number>`. The Kafka cluster doesn't need to be managed by Strimzi or deployed to a Kubernetes cluster.
 <8> TLS configuration for encrypted connections to the Kafka cluster, with trusted certificates stored in X.509 format within the specified secrets.
 <9> Cluster alias for the target Kafka cluster.
 <10> Authentication for the target Kafka cluster is configured in the same way as for the source Kafka cluster.
-<11> Bootstrap server for connection to the target Kafka cluster. You can specify more than one address in case a server goes down. Each address takes the format `<cluster_name>-kafka-bootstrap:<port_number>`. The Kafka cluster doesn't need to be managed by Strimzi or deployed to a Kubernetes cluster.
+<11> Bootstrap address for connection to the target Kafka cluster. The address takes the format `<cluster_name>-kafka-bootstrap:<port_number>`. The Kafka cluster doesn't need to be managed by Strimzi or deployed to a Kubernetes cluster.
 <12> Kafka Connect configuration.
 Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by Strimzi.
 <13> TLS encryption for the target Kafka cluster is configured in the same way as for the source Kafka cluster.

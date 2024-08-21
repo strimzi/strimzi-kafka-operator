@@ -15,7 +15,7 @@ You can also use the `KafkaConnect` resource to specify the following:
 
 * Connector plugin configuration to build a container image that includes the plugins to make connections
 * Configuration for the Kafka Connect worker pods that run connectors
-* An annotation to enable use of the `KafkaConnector` resource to manage plugins
+* An annotation to enable use of the `KafkaConnector` resource to manage connectors
 
 The Cluster Operator manages Kafka Connect clusters deployed using the `KafkaConnect` resource and connectors created using the `KafkaConnector` resource.
 
@@ -164,7 +164,7 @@ spec:
 <3> The number of replica nodes for the workers that run tasks.
 <4> Authentication for the Kafka Connect cluster, specified as mTLS, token-based OAuth, SASL-based SCRAM-SHA-256/SCRAM-SHA-512, or PLAIN.
 By default, Kafka Connect connects to Kafka brokers using a plain text connection.
-<5> Bootstrap server for connection to the Kafka cluster. You can specify more than one address in case a server goes down. Each address takes the format `<cluster_name>-kafka-bootstrap:<port_number>`. The Kafka cluster doesn't need to be managed by Strimzi or deployed to a Kubernetes cluster.
+<5> Bootstrap address for connection to the Kafka cluster. The address takes the format `<cluster_name>-kafka-bootstrap:<port_number>`. The Kafka cluster doesn't need to be managed by Strimzi or deployed to a Kubernetes cluster.
 <6> TLS configuration for encrypted connections to the Kafka cluster, with trusted certificates stored in X.509 format within the specified secrets.
 <7> Kafka Connect configuration of workers (not connectors) that run connectors and their tasks.
 Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by Strimzi.

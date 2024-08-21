@@ -111,7 +111,7 @@ spec:
     type: opentelemetry # <16>
 ----
 <1> The number of replica nodes.
-<2> Bootstrap server for connection to the target Kafka cluster. You can specify more than one address in case a server goes down. Each address takes the format `<cluster_name>-kafka-bootstrap:<port_number>`. The Kafka cluster doesn't need to be managed by Strimzi or deployed to a Kubernetes cluster.
+<2> Bootstrap address for connection to the target Kafka cluster. The address takes the format `<cluster_name>-kafka-bootstrap:<port_number>`. The Kafka cluster doesn't need to be managed by Strimzi or deployed to a Kubernetes cluster.
 <3> TLS configuration for encrypted connections to the Kafka cluster, with trusted certificates stored in X.509 format within the specified secrets.
 <4> Authentication for the Kafka Bridge cluster, specified as mTLS, token-based OAuth, SASL-based SCRAM-SHA-256/SCRAM-SHA-512, or PLAIN.
 By default, the Kafka Bridge connects to Kafka brokers without authentication.

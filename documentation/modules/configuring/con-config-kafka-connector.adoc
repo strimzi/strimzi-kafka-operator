@@ -21,22 +21,22 @@ metadata:
   # ...
 ----
 
-When the use-connector-resources annotation is enabled in your KafkaConnect configuration, you must define and manage connectors using `KafkaConnector` resources. These resources must be deployed in the same namespace as the Kafka Connect cluster they are associated with, and the Kafka cluster interacting with the external data system.
+When the `use-connector-resources` annotation is enabled in your `KafkaConnect` configuration, you must define and manage connectors using `KafkaConnector` resources. 
 
 NOTE: Alternatively, you can manage connectors using the Kafka Connect REST API instead of `KafkaConnector` resources.
-To use the API, you must remove the annotation to use `KafkaConnector` resources in the `KafkaConnect` the resource.
+To use the API, you must remove the `strimzi.io/use-connector-resources` annotation to use `KafkaConnector` resources in the `KafkaConnect` the resource.
 
-`KafkaConnector` resources are configured to connect to external systems and are deployed within the same Kubernetes cluster as the Kafka Connect and Kafka clusters that interact with the external data systems.
+`KafkaConnector` resources provide the configuration needed to create connectors within a Kafka Connect cluster, which interacts with a Kafka cluster as specified in the `KafkaConnect` configuration. 
+The Kafka cluster does not need to be managed by Strimzi or deployed to a Kubernetes cluster.
 
-.Kafka components are contained in the same Kubernetes cluster
+.Kafka components contained in the same Kubernetes cluster
 image:overview/kafka-concepts-kafka-connector.png[Kafka and Kafka Connect clusters]
 
-The configuration specifies how connector instances connect to external data systems, including any necessary authentication.
-You must also specify the data to watch. 
-For example, in a source connector, you might provide a database name in the configuration. 
-Additionally, you can specify where the data should be placed in Kafka by defining a target topic name.
+The configuration also specifies how the connector instances interact with external data systems, including any required authentication methods. Additionally, you must define the data to watch. 
+For example, in a source connector that reads data from a database, the configuration might include the database name. 
+You can also define where this data should be placed in Kafka by specifying the target topic name.
 
-Use the `tasksMax` proeprty to specify the maximum number of tasks.
+Use the `tasksMax` property to specify the maximum number of tasks.
 For instance, a source connector with `tasksMax: 2` might split the import of source data into two tasks.
 
 include::../../shared/snip-example-source-connector-config.adoc[]
