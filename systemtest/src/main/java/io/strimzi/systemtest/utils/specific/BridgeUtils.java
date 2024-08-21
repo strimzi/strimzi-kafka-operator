@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.utils.specific;
 
-import io.strimzi.systemtest.utils.HttpUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.http.HttpMethod;
 import org.apache.logging.log4j.LogManager;
@@ -17,7 +16,7 @@ import java.util.regex.Pattern;
 
 public class BridgeUtils {
 
-    private static final Logger LOGGER = LogManager.getLogger(HttpUtils.class);
+    private static final Logger LOGGER = LogManager.getLogger(BridgeUtils.class);
 
     private BridgeUtils() { }
 
