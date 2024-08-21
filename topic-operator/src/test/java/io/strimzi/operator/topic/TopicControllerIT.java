@@ -153,6 +153,24 @@ class TopicControllerIT {
         return name;
     }
 
+    private static Predicate<KafkaTopic> hasConditionMatching(String description,
+                                                              Predicate<Condition> conditionPredicate) {
+        return new Predicate<>() {
+            @Override
+            public boolean test(KafkaTopic kt) {
+                return kt.getStatus() != null
+                    && kt.getMetadata() != null
+                    && kt.getStatus().getConditions() != null
+                    && kt.getStatus().getConditions().stream()
+                    .anyMatch(conditionPredicate);
+            }
+
+            public String toString() {
+                return "status.condition which matches " + description;
+            }
+        };
+    }
+
     private static Predicate<KafkaTopic> isReconcilatedAndHasConditionMatching(String description,
                                                                                Predicate<Condition> conditionPredicate) {
         return new Predicate<>() {
@@ -231,6 +249,13 @@ class TopicControllerIT {
                 && "True".equals(condition.getStatus())
                 ||  "False".equals(condition.getStatus());
         return isReconcilatedAndHasConditionMatching("Ready=True or False", conditionPredicate);
+    }
+
+    private static Predicate<KafkaTopic> unmanagedIsTrue() {
+        Predicate<Condition> conditionPredicate = condition ->
+            "Unmanaged".equals(condition.getType())
+                && "True".equals(condition.getStatus());
+        return hasConditionMatching("Unmanaged=True", conditionPredicate);
     }
 
     private KafkaTopic waitUntil(KafkaTopic kt, Predicate<KafkaTopic> condition) {
@@ -459,7 +484,7 @@ class TopicControllerIT {
     }
 
     private KafkaTopic createTopic(KafkaCluster kc, KafkaTopic kt) throws ExecutionException, InterruptedException {
-        return createTopic(kc, kt, readyIsTrueOrFalse());
+        return TopicOperatorUtil.isManaged(kt) ? createTopic(kc, kt, readyIsTrueOrFalse()) : createTopic(kc, kt, unmanagedIsTrue());
     }
 
     private KafkaTopic createTopic(KafkaCluster kc, KafkaTopic kt, Predicate<KafkaTopic> condition) throws ExecutionException, InterruptedException {
@@ -645,7 +670,6 @@ class TopicControllerIT {
         // then
         assertNull(reconciled.getStatus().getTopicName());
         assertNotExistsInKafka(TopicOperatorUtil.topicName(kt));
-        assertEquals(operatorConfig.useFinalizer(), reconciled.getMetadata().getFinalizers().contains(BatchingTopicController.FINALIZER));
     }
 
     @ParameterizedTest
@@ -1080,29 +1104,26 @@ class TopicControllerIT {
         var unmanaged = modifyTopicAndAwait(kt, theKt ->
                 new KafkaTopicBuilder(theKt)
                     .editOrNewMetadata()
-                    .addToAnnotations(TopicOperatorUtil.MANAGED, "false")
+                        .addToAnnotations(TopicOperatorUtil.MANAGED, "false")
                     .endMetadata()
                     .editOrNewSpec()
-                    .withPartitions(3)
+                        .withPartitions(3)
                     .endSpec()
                     .build(),
             new Predicate<>() {
                 @Override
                 public boolean test(KafkaTopic theKt) {
-                    return theKt.getStatus().getTopicName() == null;
+                    return theKt.getStatus().getConditions().get(0).getType().equals("Unmanaged");
                 }
 
                 @Override
                 public String toString() {
-                    return "status.topicName == null";
+                    return "status=Unmanaged";
                 }
             });
 
         // then
-        assertNotNull(unmanaged.getMetadata().getFinalizers());
-        assertTrue(unmanaged.getMetadata().getFinalizers().contains(BatchingTopicController.FINALIZER));
         assertNull(unmanaged.getStatus().getTopicName());
-
         var topicDescription = awaitTopicDescription(expectedTopicName);
         assertEquals(kt.getSpec().getPartitions(), numPartitions(topicDescription));
         assertEquals(Set.of(kt.getSpec().getReplicas()), replicationFactors(topicDescription));
@@ -1110,7 +1131,7 @@ class TopicControllerIT {
     }
 
     @ParameterizedTest
-    @MethodSource({"managedKafkaTopics", "unmanagedKafkaTopics"}) // same behaviour for managed and unmanaged
+    @MethodSource({"managedKafkaTopics"})
     public void shouldRestoreFinalizerIfRemoved(
         KafkaTopic kt,
         @BrokerConfig(name = "auto.create.topics.enable", value = "false")
@@ -1485,13 +1506,14 @@ class TopicControllerIT {
             @Override
             public boolean test(KafkaTopic theKt) {
                 return theKt.getStatus() != null
-                    && (theKt.getStatus().getObservedGeneration() >= postUpdateGeneration || TopicOperatorUtil.isPaused(kt))
+                    && (theKt.getStatus().getObservedGeneration() >= postUpdateGeneration 
+                        || !TopicOperatorUtil.isManaged(theKt) || TopicOperatorUtil.isPaused(theKt))
                     && predicate.test(theKt);
             }
 
             @Override
             public String toString() {
-                return "observedGeneration" + (!TopicOperatorUtil.isPaused(kt) ? " >= " : " == ") + postUpdateGeneration + " and " + predicate;
+                return "observedGeneration is correct and " + predicate;
             }
         };
         return waitUntil(edited, topicWasSyncedAndMatchesPredicate);
