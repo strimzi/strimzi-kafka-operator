@@ -110,7 +110,16 @@ fi
 
 KEY_STORE=/tmp/kafka/cluster.keystore.p12
 TRUST_STORE=/tmp/kafka/cluster.truststore.p12
-KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$KAFKA_HOME"/libs/kafka-agent*.jar)=$KAFKA_READY:$ZK_CONNECTED:$KEY_STORE:$CERTS_STORE_PASSWORD:$TRUST_STORE:$CERTS_STORE_PASSWORD"
+
+rm -f /tmp/kafka-agent.properties
+tee /tmp/kafka-agent.properties <<EOF
+sslKeyStorePath=${KEY_STORE}
+sslKeyStorePass=${CERTS_STORE_PASSWORD}
+sslTrustStorePath=${TRUST_STORE}
+sslTrustStorePass=${CERTS_STORE_PASSWORD}
+EOF
+
+KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$KAFKA_HOME"/libs/kafka-agent*.jar)=$KAFKA_READY:$ZK_CONNECTED:/tmp/kafka-agent.properties"
 export KAFKA_OPTS
 
 # Configure Garbage Collection logging

@@ -30,12 +30,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * A very simple Java agent which polls the value of the {@code kafka.server:type=KafkaServer,name=BrokerState}
@@ -452,7 +454,7 @@ public class KafkaAgent {
      */
     public static void premain(String agentArgs) {
         String[] args = agentArgs.split(":");
-        if (args.length < 6) {
+        if (args.length < 3) {
             LOGGER.error("Not enough arguments to parse {}", agentArgs);
             System.exit(1);
         } else {
@@ -471,10 +473,23 @@ public class KafkaAgent {
                 }
             }
 
-            String sslKeyStorePath = args[2];
-            String sslKeyStorePass = args[3];
-            String sslTrustStorePath = args[4];
-            String sslTrustStorePass = args[5];
+            final Properties agentProperties = new Properties();
+            final Map<String, String> agentConfigs = new HashMap<>();
+
+            try (FileInputStream fis = new FileInputStream(args[2])) {
+                agentProperties.load(fis);
+                for (String key : agentProperties.stringPropertyNames()) {
+                    agentConfigs.put(key, agentProperties.getProperty(key));
+                }
+            } catch (IOException e) {
+                LOGGER.error("Could not read and parse properties file {}", args[2]);
+                System.exit(1);
+            }
+
+            final String sslKeyStorePath = agentConfigs.get("sslKeyStorePath");
+            final String sslKeyStorePass = agentConfigs.get("sslKeyStorePass");
+            final String sslTrustStorePath = agentConfigs.get("sslTrustStorePath");
+            final String sslTrustStorePass = agentConfigs.get("sslTrustStorePass");
             if (sslKeyStorePath.isEmpty() || sslTrustStorePath.isEmpty()) {
                 LOGGER.error("SSLKeyStorePath or SSLTrustStorePath is empty: sslKeyStorePath={} sslTrustStore={} ", sslKeyStorePath, sslTrustStorePath);
                 System.exit(1);
