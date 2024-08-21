@@ -11,24 +11,15 @@ Update the `spec` properties of the `KafkaConnect` custom resource to configure 
 Use Kafka Connect to set up external data connections to your Kafka cluster.
 Use the properties of the `KafkaConnect` resource to configure your Kafka Connect deployment.
 
+You can also use the `KafkaConnect` resource to specify the following:
+
+* Connector plugin configuration to build a container image that includes the plugins to make connections
+* Configuration for the Kafka Connect worker pods that run connectors
+* An annotation to enable use of the `KafkaConnector` resource to manage connectors
+
+The Cluster Operator manages Kafka Connect clusters deployed using the `KafkaConnect` resource and connectors created using the `KafkaConnector` resource.
+
 For a deeper understanding of the Kafka Connect cluster configuration options, refer to the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
-
-.KafkaConnector configuration
-`KafkaConnector` resources allow you to create and manage connector instances for Kafka Connect in a Kubernetes-native way.
-
-In your Kafka Connect configuration, you enable KafkaConnectors for a Kafka Connect cluster by adding the `strimzi.io/use-connector-resources` annotation.
-You can also add a `build` configuration so that Strimzi automatically builds a container image with the connector plugins you require for your data connections.
-External configuration for Kafka Connect connectors is specified through the `externalConfiguration` property.
-
-To manage connectors, you can use use `KafkaConnector` custom resources or the Kafka Connect REST API.
-`KafkaConnector` resources must be deployed to the same namespace as the Kafka Connect cluster they link to.
-For more information on using these methods to create, reconfigure, or delete connectors, see xref:using-kafka-connect-with-plug-ins-{context}[Adding connectors].
-
-Connector configuration is passed to Kafka Connect as part of an HTTP request and stored within Kafka itself.
-ConfigMaps and Secrets are standard Kubernetes resources used for storing configurations and confidential data.
-You can use ConfigMaps and Secrets to configure certain elements of a connector.
-You can then reference the configuration values in HTTP REST commands, which keeps the configuration separate and more secure, if needed.
-This method applies especially to confidential data, such as usernames, passwords, or certificates.
 
 .Handling high volumes of messages
 You can tune the configuration to handle high volumes of messages.
@@ -169,14 +160,17 @@ spec:
     type: opentelemetry # <21>
 ----
 <1> Use `KafkaConnect`.
-<2> Enables KafkaConnectors for the Kafka Connect cluster.
+<2> Enables the use of `KafkaConnector` resources to start, stop, and manage connector instances.
 <3> The number of replica nodes for the workers that run tasks.
 <4> Authentication for the Kafka Connect cluster, specified as mTLS, token-based OAuth, SASL-based SCRAM-SHA-256/SCRAM-SHA-512, or PLAIN.
 By default, Kafka Connect connects to Kafka brokers using a plain text connection.
-<5> Bootstrap server for connection to the Kafka cluster.
+<5> Bootstrap address for connection to the Kafka cluster. The address takes the format `<cluster_name>-kafka-bootstrap:<port_number>`. The Kafka cluster doesn't need to be managed by Strimzi or deployed to a Kubernetes cluster.
 <6> TLS configuration for encrypted connections to the Kafka cluster, with trusted certificates stored in X.509 format within the specified secrets.
-<7> Kafka Connect configuration of workers (not connectors).
+<7> Kafka Connect configuration of workers (not connectors) that run connectors and their tasks.
 Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by Strimzi.
+In this example, JSON convertors are specified. 
+A replication factor of 3 is set for the internal topics used by Kafka Connect (minimum requirement for production environment). 
+Changing the replication factor after the topics have been created has no effect.
 <8> Build configuration properties for building a container image with connector plugins automatically.
 <9> (Required) Configuration of the container registry where new images are pushed.
 <10> (Required) List of connector plugins and their artifacts to add to the new container image. Each plugin must be configured with at least one `artifact`.

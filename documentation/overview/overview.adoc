@@ -9,7 +9,7 @@ include::shared/attributes.adoc[]
 // Add include directives to include modules and assemblies here
 
 //key features
-include::assemblies/overview/assembly-key-features.adoc[leveloffset=+1]
+include::modules/overview/ref-key-features.adoc[leveloffset=+1]
 //Kafka components
 include::assemblies/overview/assembly-kafka-components.adoc[leveloffset=+1]
 //Kafka concepts
@@ -22,8 +22,8 @@ include::modules/overview/con-overview-components-kafka-bridge-clients.adoc[leve
 //Product components
 include::assemblies/overview/assembly-overview-components.adoc[leveloffset=+1]
 //Main configuration points
-include::assemblies/overview/assembly-configuration-points.adoc[leveloffset=+1]
+include::modules/overview/con-configuration-points.adoc[leveloffset=+1]
 //security options
-include::assemblies/overview/assembly-security-overview.adoc[leveloffset=+1]
+include::modules/overview/con-security-overview.adoc[leveloffset=+1]
 //Metrics and monitoring
-include::assemblies/overview/assembly-metrics-overview.adoc[leveloffset=+1]
+include::modules/overview/con-metrics-overview.adoc[leveloffset=+1]

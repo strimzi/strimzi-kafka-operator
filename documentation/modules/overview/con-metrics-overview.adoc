@@ -3,8 +3,9 @@
 // overview/overview.adoc
 
 [id="metrics-overview_{context}"]
-= Monitoring
+= Monitoring Kafka
 
+[role="_abstract"]
 Monitoring data allows you to monitor the performance and health of Strimzi.
 You can configure your deployment to capture metrics data for analysis and notifications.
 
@@ -14,17 +15,11 @@ Alerting rules can provide time-critical notifications on such metrics through a
 Monitoring visualizations present real-time metrics data to help determine when and how to update the configuration of your deployment.
 Example metrics configuration files are provided with Strimzi.
 
-Distributed tracing complements the gathering of metrics data by providing a facility for end-to-end tracking of messages through Strimzi.
+You can employ the following tools for metrics and monitoring:
 
-Cruise Control provides support for rebalancing of Kafka clusters, based on workload data.
-
-.Metrics and monitoring tools
-Strimzi can employ the following tools for metrics and monitoring:
-
-Prometheus:: {PrometheusHome} pulls metrics from Kafka, ZooKeeper and Kafka Connect clusters. The Prometheus *Alertmanager* plugin handles alerts and routes them to a notification service.
+Prometheus:: {PrometheusHome} pulls metrics from Kafka, ZooKeeper and Kafka Connect clusters. 
+The Prometheus *Alertmanager* plugin handles alerts and routes them to a notification service.
 Kafka Exporter:: {kafka-exporter-project} adds additional Prometheus metrics.
 Grafana:: {GrafanaHome} provides dashboard visualizations of Prometheus metrics.
-OpenTelemetry:: {OpenTelemetryDocs} provides distributed tracing support to track transactions between applications.
-Cruise Control:: {CruiseControlProject} monitors data distribution and performs data rebalances across a Kafka cluster.
-
-include::../../modules/overview/con-metrics-overview-tools.adoc[leveloffset=+1]
+OpenTelemetry:: {OpenTelemetry} complements the gathering of metrics data by providing a facility for end-to-end tracking of messages through Strimzi.
+Cruise Control:: {CruiseControlProject} monitors data distribution and performs data rebalances, based on workload data, across a Kafka cluster.

@@ -1,0 +1,39 @@
+// This assembly is included in:
+//
+// overview/overview.adoc
+
+[id="security-overview_{context}"]
+= Securing Kafka
+
+[role="_abstract"]
+A secure deployment of Strimzi might encompass one or more of the following security measures:
+
+Encryption:: 
+Strimzi supports Transport Layer Security (TLS), a protocol for encrypted communication. 
++
+* Communication is always encrypted between Strimzi components. 
+* To set up TLS-encrypted communication between Kafka and clients, you configure listeners in the `Kafka` custom resource.
+
+Authentication::
+Kafka listeners use authentication to ensure a secure client connection to the Kafka cluster. 
+Clients can also be configured for mutual authentication.
+Security credentials are created and managed by the Cluster and User Operator.
++
+Supported authentication mechanisms:
++
+* mTLS authentication (on listeners with TLS-enabled encryption)
+* SASL SCRAM-SHA-512
+* OAuth 2.0 token based authentication
+* Custom authentication (supported by Kafka)
+
+Authorization:: Authorization controls the operations that are permitted on Kafka brokers by specific clients or users.
++
+Supported authorization mechanisms:
++
+* Simple authorization using ACL rules
+* OAuth 2.0 authorization (if you are using OAuth 2.0 token-based authentication)
+* Open Policy Agent (OPA) authorization
+* Custom authorization (supported by Kafka)
+
+Federal Information Processing Standards (FIPS):: Strimzi is designed to run on FIPS-enabled Kubernetes clusters to ensure data security and system interoperability.
+For more information about the NIST validation program and validated modules, see link:https://csrc.nist.gov/Projects/cryptographic-module-validation-program/validated-modules[Cryptographic Module Validation Program^] on the NIST website.

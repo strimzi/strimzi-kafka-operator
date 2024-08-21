@@ -7,7 +7,7 @@
 
 //Standard introduction text for the product
 [role="_abstract"]
-include::../../shared/snip-intro-text.adoc[leveloffset=+1]
+Strimzi simplifies the process of running link:https://kafka.apache.org/[Apache Kafka^] within a Kubernetes cluster.
 
 This guide provides instructions for deploying and managing Strimzi.
 Deployment options and steps are covered using the example installation files included with Strimzi. 

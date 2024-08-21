@@ -1,0 +1,24 @@
+// This assembly is included in:
+//
+// overview/overview.adoc
+
+[id="configuration-points_{context}"]
+= Configuring Kafka
+
+[role="_abstract"]
+Strimzi enables the deployment of Kafka components on Kubernetes through highly configurable custom resources. 
+These resources leverage Custom Resource Definitions (CRDs) to extend Kubernetes capabilities, offering a flexible way to manage Kafka components. 
+After a new custom resource type is added to your cluster by installing a CRD, you can create instances of the resource based on its specification. 
+Many additional configuration options can be specified in a custom resource, some common and some specific to a particular component.
+
+Use custom resources to configure the following components:
+
+* Kafka clusters
+* Node pools for Kafka clusters
+* MirrorMaker source and target clusters
+* Kafka Connect
+* Kafka Bridge
+
+Strimzi provides link:{BookURLDeploying}#config-examples-{context}[example configuration files^], which can serve as a starting point when building your own Kafka component configuration for deployment.
+
+For detailed configuration instructions and examples, see the guide for link:{BookURLDeploying}[Deploying and Managing Strimzi^].

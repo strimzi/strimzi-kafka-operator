@@ -3,7 +3,7 @@
 // assembly-config.adoc
 
 [id='con-config-kafka-connect-multiple-instances-{context}']
-== Configuring Kafka Connect for multiple instances
+= Configuring Kafka Connect for multiple instances
 
 [role="_abstract"]
 By default, Strimzi configures the group ID and names of the internal topics used by Kafka Connect.
