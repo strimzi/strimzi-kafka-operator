@@ -867,7 +867,7 @@ class ConnectST extends AbstractST {
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .withNewTls()
                     .withTrustedCertificates(new CertSecretSourceBuilder()
-                        .withCertificate("ca.crt")
+                        .withPattern("*.crt")
                         .withSecretName(KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()))
                         .build())
                 .endTls()
