@@ -119,6 +119,9 @@ public class TieredStorageST extends AbstractST {
                             .addToConfig("storage.aws.secret.access.key", SetupMinio.ADMIN_CREDS)
                         .endRemoteStorageManager()
                     .endTieredStorageCustomTiered()
+                    // reduce the interval to speed up the test
+                    .addToConfig("remote.log.manager.task.interval.ms", 5000)
+                    .addToConfig("log.retention.check.interval.ms", 5000)
                 .endKafka()
             .endSpec()
             .build());

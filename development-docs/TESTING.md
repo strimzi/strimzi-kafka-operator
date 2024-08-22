@@ -396,11 +396,11 @@ Pass additional parameters to `mvn` by populating the `EXTRA_ARGS` env var.
 
 Use the `verify` build goal and provide `-Dit.test=TestClassName[#testMethodName]` system property.
 
-    mvn verify -pl systemtest -P all -Dit.test=KafkaST#testCustomAndUpdatedValues
+    mvn verify -pl systemtest -P all -Dit.test=KafkaST#testJvmAndResources
 
 You can also run a test with a particular feature gate enabled via the feature gate environment variable.
 
-    STRIMZI_FEATURE_GATES="+FeatureName" mvn verify -pl systemtest -P all -Dit.test=KafkaST#testCustomAndUpdatedValues
+    STRIMZI_FEATURE_GATES="+FeatureName" mvn verify -pl systemtest -P all -Dit.test=KafkaST#testJvmAndResources
 
 ## Skip Teardown
 
