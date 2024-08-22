@@ -4,9 +4,7 @@
  */
 package io.strimzi.operator.topic.cruisecontrol;
 
-import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.ReplicasChangeStatusBuilder;
-import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.topic.TopicOperatorConfig;
 import io.strimzi.operator.topic.TopicOperatorUtil;
@@ -42,14 +40,13 @@ import static org.apache.logging.log4j.core.util.Throwables.getRootCause;
  * <p>Empty state (status.replicasChange == null) means no replicas change.
  * In case of error the message is reflected in (status.replicasChange.message).</p>
  *
- * <br><pre><code>
+ * <br><pre>
  *          /---------------------------------\
  *         V                                   \
- *     [empty] ---> [pending] ------------> [ongoing]
+ *     [empty] ---&gt; [pending] ------------&gt; [ongoing]
  *                      \                      /
- *                       \----> [error] <----/
- *    
- * </code></pre>  
+ *                       \----> [error] &lt;-----/
+ * </pre>  
  */
 public class CruiseControlHandler {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(CruiseControlHandler.class);
@@ -116,7 +113,6 @@ public class CruiseControlHandler {
         
         var groupByUserTaskId = reconcilableTopics.stream()
             .filter(rt -> hasReplicasChangeStatus(rt.kt()) && rt.kt().getStatus().getReplicasChange().getSessionId() != null)
-            .map(rt -> new ReconcilableTopic(new Reconciliation("", KafkaTopic.RESOURCE_KIND, "", ""), rt.kt(), rt.topicName()))
             .collect(Collectors.groupingBy(rt -> rt.kt().getStatus().getReplicasChange().getSessionId(), HashMap::new, Collectors.toList()));
 
         var timerSample = TopicOperatorUtil.startExternalRequestTimer(metricsHolder, config.enableAdditionalMetrics());
