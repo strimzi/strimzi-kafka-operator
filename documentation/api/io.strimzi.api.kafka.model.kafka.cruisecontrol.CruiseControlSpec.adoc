@@ -160,8 +160,10 @@ The following use cases would benefit from accessing the Cruise Control API with
 Cruise Control reads authentication credentials for API users in Jetty's `HashLoginService` file format.
 
 Standard Cruise Control `USER` and `VIEWER` roles are supported.
-* `USER` has has access to all the `GET` endpoints except bootstrap and train.
-* `VIEWER` has access to `kafka_cluster_state`, `user_tasks` and `review_board` endpoints.
+
+* `USER` has has access to all the `GET` endpoints except `bootstrap` and `train`.
+* `VIEWER` has access to `kafka_cluster_state`, `user_tasks`, and `review_board` endpoints.
+
 In this example, we define two custom API users in the supported format in a text file called `cruise-control-auth.txt`:
 
 [source]
