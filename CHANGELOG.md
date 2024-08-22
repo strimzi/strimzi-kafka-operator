@@ -6,7 +6,8 @@
 
 ### Changes, deprecations and removals
 
-* When enabled, finalizers are no more reconciled on unmanaged KafkaTopics.
+* When finalizers are enabled (default), if they are removed from unmanaged KafkaTopic resources, the Topic Operator restores them in the next reconciliation.
+  This does not happen for paused KafkaTopic resources, and it's not expected by users, so we disabled that behavior.
 
 ## 0.43.0
 
