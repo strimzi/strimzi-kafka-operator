@@ -6,7 +6,7 @@
 = Managing KafkaTopic resources without impacting Kafka topics
 
 [role="_abstract"]
-This procedure describes how to convert Kafka topics that are currently managed through the `KafkaTopic` resource into non-managed topics.
+This procedure describes how to convert Kafka topics that are currently managed through the `KafkaTopic` resource into unmanaged topics.
 This capability can be useful in various scenarios. 
 For instance, you might want to update the `metadata.name` of a `KafkaTopic` resource.
 You can only do that by deleting the original `KafkaTopic` resource and recreating a new one.
@@ -24,7 +24,7 @@ This allows you to retain the Kafka topic while making changes to the resource's
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl annotate kafkatopic my-topic-1 strimzi.io/managed="false"
+kubectl annotate kafkatopic my-topic-1 strimzi.io/managed="false" --overwrite
 ----
 +
 Specify the `metadata.name` of the topic in your `KafkaTopic` resource, which is `my-topic-1` in this example.
@@ -33,10 +33,10 @@ Specify the `metadata.name` of the topic in your `KafkaTopic` resource, which is
 +
 [source,shell,subs="+quotes"]
 ----
-oc get kafkatopics my-topic-1 -o yaml
+kubectl get kafkatopic my-topic-1 -o yaml
 ----
 +
-.Example topic with a `Ready` status
+.Example topic with an `Unmanaged` status
 [source,shell,subs="+attributes"]
 ----
 apiVersion: {KafkaTopicApiVersion}
@@ -45,25 +45,25 @@ metadata:
   generation: 124
   name: my-topic-1
   finalizer: 
-    strimzi.io/topic-operator
+  - strimzi.io/topic-operator
   labels:
     strimzi.io/cluster: my-cluster
+  annotations:
+    strimzi.io/managed: "false"
 spec:
   partitions: 10
   replicas: 2
-
-# ...
+  config:
+    retention.ms: 432000000
 status: 
   observedGeneration: 124 # <1>
-  topicName: my-topic-1
   conditions:
-  - type: Ready
-    status: True
-    lastTransitionTime: 20230301T103000Z  
+  - lastTransitionTime: "2024-08-22T06:07:57.671085635Z"
+    status: "True"
+    type: Unmanaged # <2>
 ----
-<1> Successful reconciliation of the resource means the topic is no longer managed.
-+
-The value of `metadata.generation` (the current version of the deployment) must `match status.observedGeneration` (the latest reconciliation of the resource).
+<1> The value of `metadata.generation` must `match status.observedGeneration`.
+<2> The `Unmanaged` condition means that the `KafkaTopic` is no longer reconciled.
 
 . You can now make changes to the `KafkaTopic` resource without it affecting the Kafka topic it was managing.
 +

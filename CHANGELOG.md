@@ -2,6 +2,12 @@
 
 ## 0.44.0
 
+* Add the "Unmanaged" KafkaTopic status update.
+
+### Changes, deprecations and removals
+
+* When finalizers are enabled (default), the Topic Operator will no longer restore finalizers on unmanaged `KafkaTopic` resources if they are removed, aligning the behavior with paused topics, where finalizers are also not restored.
+  This change matches user expectations.
 
 ## 0.43.0
 

@@ -186,7 +186,8 @@ public class BatchingTopicController {
     private List<ReconcilableTopic> addOrRemoveFinalizer(boolean useFinalizer, List<ReconcilableTopic> reconcilableTopics) {
         List<ReconcilableTopic> collect = reconcilableTopics.stream()
                 .map(reconcilableTopic ->
-                        new ReconcilableTopic(reconcilableTopic.reconciliation(), useFinalizer ? addFinalizer(reconcilableTopic) : removeFinalizer(reconcilableTopic), reconcilableTopic.topicName()))
+                        new ReconcilableTopic(reconcilableTopic.reconciliation(), useFinalizer 
+                            ? addFinalizer(reconcilableTopic) : removeFinalizer(reconcilableTopic), reconcilableTopic.topicName()))
                 .collect(Collectors.toList());
         LOGGER.traceOp("{} {} topics", useFinalizer ? "Added finalizers to" : "Removed finalizers from", reconcilableTopics.size());
         return collect;
@@ -411,28 +412,31 @@ public class BatchingTopicController {
         }
 
         // process remaining
+        Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results = new HashMap<>();
         var remainingAfterDeletions = partitionedByDeletion.get(false);
         var timerSamples = remainingAfterDeletions.stream().collect(
             Collectors.toMap(identity(), rt -> startReconciliationTimer(metrics)));
-        Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results = new HashMap<>();
-        var partitionedByManaged = remainingAfterDeletions.stream().collect(Collectors.partitioningBy(reconcilableTopic -> TopicOperatorUtil.isManaged(reconcilableTopic.kt())));
-        
-        // process remaining unmanaged
+
+        var partitionedByManaged = remainingAfterDeletions.stream().collect(
+            Collectors.partitioningBy(reconcilableTopic -> TopicOperatorUtil.isManaged(reconcilableTopic.kt())));
+
+        // process unmanaged
         var unmanaged = partitionedByManaged.get(false);
-        addOrRemoveFinalizer(useFinalizer, unmanaged).forEach(rt -> putResult(results, rt, Either.ofRight(null)));
-        metrics.reconciliationsCounter(namespace).increment(unmanaged.size());
+        unmanaged.forEach(rt -> putResult(results, rt, Either.ofRight(null)));
 
-        // process remaining managed, skipping paused KTs
-        var partitionedByPaused = validateManagedTopics(partitionedByManaged).stream().filter(hasTopicSpec)
+        // process paused
+        var managed = partitionedByManaged.get(true);
+        var partitionedByPaused = validateManagedTopics(managed).stream().filter(hasTopicSpec)
             .collect(Collectors.partitioningBy(reconcilableTopic -> TopicOperatorUtil.isPaused(reconcilableTopic.kt())));
-        partitionedByPaused.get(true).forEach(reconcilableTopic -> putResult(results, reconcilableTopic, Either.ofRight(null)));
+        var paused = partitionedByPaused.get(true);
+        paused.forEach(rt -> putResult(results, rt, Either.ofRight(null)));
 
+        // process managed not paused
         var mayNeedUpdate = partitionedByPaused.get(false);
-        metrics.reconciliationsCounter(namespace).increment(mayNeedUpdate.size());
-        var addedFinalizer = addOrRemoveFinalizer(useFinalizer, mayNeedUpdate);
-        var currentStatesOrError = describeTopic(addedFinalizer);
-        
+        addOrRemoveFinalizer(useFinalizer, mayNeedUpdate);
+
         // figure out necessary updates
+        var currentStatesOrError = describeTopic(mayNeedUpdate);
         createMissingTopics(results, currentStatesOrError);
         List<Pair<ReconcilableTopic, Collection<AlterConfigOp>>> someAlterConfigs = configChanges(results, currentStatesOrError);
         List<Pair<ReconcilableTopic, NewPartitions>> someCreatePartitions = partitionChanges(results, currentStatesOrError);
@@ -441,10 +445,11 @@ public class BatchingTopicController {
         var alterConfigsResults = alterConfigs(someAlterConfigs);
         var createPartitionsResults = createPartitions(someCreatePartitions);
         var checkReplicasChangesResults = checkReplicasChanges(batch, currentStatesOrError);
-        
+
         // update statuses
         accumulateResults(results, alterConfigsResults, createPartitionsResults, checkReplicasChangesResults);
         updateStatuses(results);
+        metrics.reconciliationsCounter(namespace).increment(results.size());
         timerSamples.keySet().forEach(rt -> stopReconciliationTimer(metrics, timerSamples.get(rt), namespace));
         LOGGER.traceOp("Reconciled batch of {} KafkaTopics", results.size());
     }
@@ -594,8 +599,8 @@ public class BatchingTopicController {
         return hasSpec;
     };
 
-    private List<ReconcilableTopic> validateManagedTopics(Map<Boolean, List<ReconcilableTopic>> partitionedByManaged) {
-        var mayNeedUpdate = partitionedByManaged.get(true).stream().filter(reconcilableTopic -> {
+    private List<ReconcilableTopic> validateManagedTopics(List<ReconcilableTopic> reconcilableTopics) {
+        var mayNeedUpdate = reconcilableTopics.stream().filter(reconcilableTopic -> {
             var e = validate(reconcilableTopic);
             if (e.isRightEqual(false)) {
                 // Do nothing
@@ -1121,8 +1126,15 @@ public class BatchingTopicController {
     
     private void updateStatusForSuccess(ReconcilableTopic reconcilableTopic) {
         List<Condition> conditions = new ArrayList<>();
+        var conditionType = "Ready";
+        if (!TopicOperatorUtil.isManaged(reconcilableTopic.kt())) {
+            conditionType = "Unmanaged";
+        } else if (TopicOperatorUtil.isPaused(reconcilableTopic.kt())) {
+            conditionType = "ReconciliationPaused";
+        }
+        
         conditions.add(new ConditionBuilder()
-              .withType(TopicOperatorUtil.isPaused(reconcilableTopic.kt()) ? "ReconciliationPaused" : "Ready")
+              .withType(conditionType)
               .withStatus("True")
               .withLastTransitionTime(StatusUtils.iso8601Now())
               .build());
@@ -1198,24 +1210,29 @@ public class BatchingTopicController {
         var oldStatus = Crds.topicOperation(kubeClient)
             .inNamespace(reconcilableTopic.kt().getMetadata().getNamespace())
             .withName(reconcilableTopic.kt().getMetadata().getName()).get().getStatus();
+        
+        // the observedGeneration is a marker that shows that the operator works and that it saw the last update to the resource
+        reconcilableTopic.kt().getStatus().setObservedGeneration(reconcilableTopic.kt().getMetadata().getGeneration());
+        
+        // set or reset the topicName
+        reconcilableTopic.kt().getStatus().setTopicName(
+            !TopicOperatorUtil.isManaged(reconcilableTopic.kt())
+                ? null
+                : oldStatus != null && oldStatus.getTopicName() != null
+                ? oldStatus.getTopicName()
+                : TopicOperatorUtil.topicName(reconcilableTopic.kt())
+        );
+        
         if (statusChanged(reconcilableTopic.kt(), oldStatus)) {
-            // the observedGeneration is initialized to 0 when creating a paused topic (oldStatus null, paused true)
-            // this will result in metadata.generation: 1 > status.observedGeneration: 0 (not reconciled)
-            reconcilableTopic.kt().getStatus().setObservedGeneration(reconcilableTopic.kt().getStatus() != null && oldStatus != null
-                ? !TopicOperatorUtil.isPaused(reconcilableTopic.kt()) ? reconcilableTopic.kt().getMetadata().getGeneration() : oldStatus.getObservedGeneration()
-                : !TopicOperatorUtil.isPaused(reconcilableTopic.kt()) ? reconcilableTopic.kt().getMetadata().getGeneration() : 0L);
-            reconcilableTopic.kt().getStatus().setTopicName(!TopicOperatorUtil.isManaged(reconcilableTopic.kt()) ? null
-                : oldStatus != null && oldStatus.getTopicName() != null ? oldStatus.getTopicName()
-                : TopicOperatorUtil.topicName(reconcilableTopic.kt()));
-            var updatedTopic = new KafkaTopicBuilder(reconcilableTopic.kt())
-                .editOrNewMetadata()
-                .withResourceVersion(null)
-                .endMetadata()
-                .withStatus(reconcilableTopic.kt().getStatus())
-                .build();
-            LOGGER.debugCr(reconcilableTopic.reconciliation(), "Updating status with {}", updatedTopic.getStatus());
-            var timerSample = TopicOperatorUtil.startExternalRequestTimer(metrics, enableAdditionalMetrics);
             try {
+                var updatedTopic = new KafkaTopicBuilder(reconcilableTopic.kt())
+                    .editOrNewMetadata()
+                        .withResourceVersion(null)
+                    .endMetadata()
+                    .withStatus(reconcilableTopic.kt().getStatus())
+                    .build();
+                LOGGER.debugCr(reconcilableTopic.reconciliation(), "Updating status with {}", updatedTopic.getStatus());
+                var timerSample = TopicOperatorUtil.startExternalRequestTimer(metrics, enableAdditionalMetrics);
                 var got = Crds.topicOperation(kubeClient).resource(updatedTopic).updateStatus();
                 TopicOperatorUtil.stopExternalRequestTimer(timerSample, metrics::updateStatusTimer, enableAdditionalMetrics, namespace);
                 LOGGER.traceCr(reconcilableTopic.reconciliation(), "Updated status to observedGeneration {}, resourceVersion {}",
