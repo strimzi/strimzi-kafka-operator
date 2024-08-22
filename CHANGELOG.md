@@ -2,6 +2,11 @@
 
 ## 0.44.0
 
+* Add the "Unmanaged" KafkaTopic status update.
+
+### Changes, deprecations and removals
+
+* When enabled, finalizers are no more reconciled on unmanaged KafkaTopics.
 
 ## 0.43.0
 

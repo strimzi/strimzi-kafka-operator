@@ -484,7 +484,7 @@ class TopicControllerIT {
     }
 
     private KafkaTopic createTopic(KafkaCluster kc, KafkaTopic kt) throws ExecutionException, InterruptedException {
-        return TopicOperatorUtil.isManaged(kt) ? createTopic(kc, kt, readyIsTrueOrFalse()) : createTopic(kc, kt, unmanagedIsTrue());
+        return createTopic(kc, kt, TopicOperatorUtil.isManaged(kt) ? readyIsTrueOrFalse() : unmanagedIsTrue());
     }
 
     private KafkaTopic createTopic(KafkaCluster kc, KafkaTopic kt, Predicate<KafkaTopic> condition) throws ExecutionException, InterruptedException {
