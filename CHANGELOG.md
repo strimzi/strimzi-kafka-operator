@@ -6,8 +6,8 @@
 
 ### Changes, deprecations and removals
 
-* When finalizers are enabled (default), if they are removed from unmanaged KafkaTopic resources, the Topic Operator restores them in the next reconciliation.
-  This does not happen for paused KafkaTopic resources, and it's not expected by users, so we disabled that behavior.
+* When finalizers are enabled (default), the Topic Operator will no longer restore finalizers on unmanaged `KafkaTopic` resources if they are removed, aligning the behavior with paused topics, where finalizers are also not restored.
+  This change matches user expectations.
 
 ## 0.43.0
 

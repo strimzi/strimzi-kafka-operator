@@ -36,7 +36,7 @@ Specify the `metadata.name` of the topic in your `KafkaTopic` resource, which is
 kubectl get kafkatopic my-topic-1 -o yaml
 ----
 +
-.Example topic with the `Unmanaged` status
+.Example topic with an `Unmanaged` status
 [source,shell,subs="+attributes"]
 ----
 apiVersion: {KafkaTopicApiVersion}
@@ -63,7 +63,7 @@ status:
     type: Unmanaged # <2>
 ----
 <1> The value of `metadata.generation` must `match status.observedGeneration`.
-<2> The Unmanaged condition means that the KafkaTopic is not reconciled anymore.
+<2> The `Unmanaged` condition means that the `KafkaTopic` is no longer reconciled.
 
 . You can now make changes to the `KafkaTopic` resource without it affecting the Kafka topic it was managing.
 +
