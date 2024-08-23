@@ -109,6 +109,9 @@ spec:
                         accessTokenIsJwt:
                           type: boolean
                           description: Configure whether access token should be treated as JWT. This should be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
+                        accessTokenLocation:
+                          type: string
+                          description: Path to the token file containing an access token to be used for authentication.
                         audience:
                           type: string
                           description: "OAuth audience to use when authenticating against the authorization server. Some authorization servers require the audience to be explicitly set. The possible values depend on how the authorization server is configured. By default, `audience` is not specified when performing the token endpoint request."
@@ -129,6 +132,25 @@ spec:
                             - certificate
                             - key
                           description: Reference to the `Secret` which holds the certificate and private key pair.
+                        clientAssertion:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                              description: The key under which the secret value is stored in the Kubernetes Secret.
+                            secretName:
+                              type: string
+                              description: The name of the Kubernetes Secret containing the secret value.
+                          required:
+                            - key
+                            - secretName
+                          description: Link to Kubernetes secret containing the client assertion which was manually configured for the client.
+                        clientAssertionLocation:
+                          type: string
+                          description: Path to the file containing the client assertion to be used for authentication.
+                        clientAssertionType:
+                          type: string
+                          description: "The client assertion type. If not set, and either `clientAssertion` or `clientAssertionLocation` is configured, this value defaults to `urn:ietf:params:oauth:client-assertion-type:jwt-bearer`."
                         clientId:
                           type: string
                           description: OAuth Client ID which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
@@ -195,6 +217,11 @@ spec:
                             - key
                             - secretName
                           description: Link to Kubernetes Secret containing the refresh token which can be used to obtain access token from the authorization server.
+                        saslExtensions:
+                          additionalProperties:
+                            type: string
+                          type: object
+                          description: SASL extensions parameters.
                         scope:
                           type: string
                           description: OAuth scope to use when authenticating against the authorization server. Some authorization servers require this to be set. The possible values depend on how authorization server is configured. By default `scope` is not specified when doing the token endpoint request.
@@ -308,6 +335,9 @@ spec:
                         accessTokenIsJwt:
                           type: boolean
                           description: Configure whether access token should be treated as JWT. This should be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
+                        accessTokenLocation:
+                          type: string
+                          description: Path to the token file containing an access token to be used for authentication.
                         audience:
                           type: string
                           description: "OAuth audience to use when authenticating against the authorization server. Some authorization servers require the audience to be explicitly set. The possible values depend on how the authorization server is configured. By default, `audience` is not specified when performing the token endpoint request."
@@ -328,6 +358,25 @@ spec:
                             - certificate
                             - key
                           description: Reference to the `Secret` which holds the certificate and private key pair.
+                        clientAssertion:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                              description: The key under which the secret value is stored in the Kubernetes Secret.
+                            secretName:
+                              type: string
+                              description: The name of the Kubernetes Secret containing the secret value.
+                          required:
+                            - key
+                            - secretName
+                          description: Link to Kubernetes secret containing the client assertion which was manually configured for the client.
+                        clientAssertionLocation:
+                          type: string
+                          description: Path to the file containing the client assertion to be used for authentication.
+                        clientAssertionType:
+                          type: string
+                          description: "The client assertion type. If not set, and either `clientAssertion` or `clientAssertionLocation` is configured, this value defaults to `urn:ietf:params:oauth:client-assertion-type:jwt-bearer`."
                         clientId:
                           type: string
                           description: OAuth Client ID which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
@@ -394,6 +443,11 @@ spec:
                             - key
                             - secretName
                           description: Link to Kubernetes Secret containing the refresh token which can be used to obtain access token from the authorization server.
+                        saslExtensions:
+                          additionalProperties:
+                            type: string
+                          type: object
+                          description: SASL extensions parameters.
                         scope:
                           type: string
                           description: OAuth scope to use when authenticating against the authorization server. Some authorization servers require this to be set. The possible values depend on how authorization server is configured. By default `scope` is not specified when doing the token endpoint request.
@@ -1142,7 +1196,86 @@ spec:
                         tmpDirSizeLimit:
                           type: string
                           pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
-                          description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
+                          description: "Defines the total amount of pod memory allocated for the temporary `EmptyDir` volume `/tmp`. Specify the allocation in memory units, for example, `100Mi` for 100 mebibytes. Default value is `5Mi`. The `/tmp` volume is backed by pod memory, not disk storage, so avoid setting a high value as it consumes pod memory resources."
+                        volumes:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                                description: Name to use for the volume. Required.
+                              secret:
+                                type: object
+                                properties:
+                                  defaultMode:
+                                    type: integer
+                                  items:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        key:
+                                          type: string
+                                        mode:
+                                          type: integer
+                                        path:
+                                          type: string
+                                  optional:
+                                    type: boolean
+                                  secretName:
+                                    type: string
+                                description: Secret to use populate the volume.
+                              configMap:
+                                type: object
+                                properties:
+                                  defaultMode:
+                                    type: integer
+                                  items:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        key:
+                                          type: string
+                                        mode:
+                                          type: integer
+                                        path:
+                                          type: string
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
+                                description: ConfigMap to use to populate the volume.
+                              emptyDir:
+                                type: object
+                                properties:
+                                  medium:
+                                    type: string
+                                  sizeLimit:
+                                    type: object
+                                    properties:
+                                      amount:
+                                        type: string
+                                      format:
+                                        type: string
+                                description: EmptyDir to use to populate the volume.
+                              persistentVolumeClaim:
+                                type: object
+                                properties:
+                                  claimName:
+                                    type: string
+                                  readOnly:
+                                    type: boolean
+                                description: PersistentVolumeClaim object to use to populate the volume.
+                            oneOf:
+                              - properties:
+                                  secret: {}
+                                  configMap: {}
+                                  emptyDir: {}
+                                  persistentVolumeClaim: {}
+                                required: []
+                          description: Additional volumes that can be mounted to the pod.
                       description: Template for Kafka MirrorMaker `Pods`.
                     podDisruptionBudget:
                       type: object
@@ -1246,6 +1379,26 @@ spec:
                                 runAsUserName:
                                   type: string
                           description: Security context for the container.
+                        volumeMounts:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              mountPath:
+                                type: string
+                              mountPropagation:
+                                type: string
+                              name:
+                                type: string
+                              readOnly:
+                                type: boolean
+                              recursiveReadOnly:
+                                type: string
+                              subPath:
+                                type: string
+                              subPathExpr:
+                                type: string
+                          description: Additional volume mounts which should be applied to the container.
                       description: Template for Kafka MirrorMaker container.
                     serviceAccount:
                       type: object

@@ -159,6 +159,22 @@ spec:
       annotations:
         summary: 'All Kafka Connect containers down or in CrashLookBackOff status'
         description: 'All Kafka Connect containers have been down or in CrashLookBackOff status for 3 minutes'
+    - alert: ConnectFailedConnector
+      expr: sum(kafka_connect_connector_status{status="failed"}) > 0
+      for: 5m
+      labels:
+        severity: major
+      annotations:
+        summary: 'Kafka Connect Connector Failure'
+        description: 'One or more connectors have been in failed state for 5 minutes,'
+    - alert: ConnectFailedTask
+      expr: sum(kafka_connect_worker_connector_failed_task_count) > 0
+      for: 5m
+      labels:
+        severity: major
+      annotations:
+        summary: 'Kafka Connect Task Failure'
+        description: 'One or more tasks have been in failed state for 5 minutes.'
   - name: bridge
     rules:
     - alert: BridgeContainersDown
@@ -175,8 +191,8 @@ spec:
       labels:
         severity: warning
       annotations:
-        summary: 'Kafka Bridge average consumer fetch latency'
-        description: 'The average fetch latency is {{ $value }} on {{ $labels.clientId }}'
+        summary: 'Kafka Bridge producer average request latency'
+        description: 'The average producer request latency is {{ $value }} on {{ $labels.clientId }}'
     - alert: AvgConsumerFetchLatency
       expr: strimzi_bridge_kafka_consumer_fetch_latency_avg > 500
       for: 10s
@@ -184,7 +200,7 @@ spec:
         severity: warning
       annotations:
         summary: 'Kafka Bridge consumer average fetch latency'
-        description: 'The average consumer commit latency is {{ $value }} on {{ $labels.clientId }}'
+        description: 'The average consumer fetch latency is {{ $value }} on {{ $labels.clientId }}'
     - alert: AvgConsumerCommitLatency
       expr: strimzi_bridge_kafka_consumer_commit_latency_avg > 200
       for: 10s
