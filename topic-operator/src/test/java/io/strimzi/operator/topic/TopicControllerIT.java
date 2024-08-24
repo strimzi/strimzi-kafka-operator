@@ -548,14 +548,50 @@ class TopicControllerIT {
 
     private KafkaTopic pauseTopic(String namespace, String topicName) {
         var current = Crds.topicOperation(kubernetesClient).inNamespace(namespace).withName(topicName).get();
-        var paused = Crds.topicOperation(kubernetesClient).resource(new KafkaTopicBuilder(current)
+        var kafkaTopic = Crds.topicOperation(kubernetesClient).resource(new KafkaTopicBuilder(current)
             .editMetadata()
-            .withAnnotations(Map.of(ResourceAnnotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"))
+                .withAnnotations(Map.of(ResourceAnnotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"))
             .endMetadata()
             .build()).update();
         LOGGER.info("Test paused KafkaTopic {} with resourceVersion {}",
-            paused.getMetadata().getName(), TopicOperatorUtil.resourceVersion(paused));
-        return waitUntil(paused, pausedIsTrue());
+            kafkaTopic.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kafkaTopic));
+        return waitUntil(kafkaTopic, pausedIsTrue());
+    }
+
+    private KafkaTopic unpauseTopic(String namespace, String topicName) {
+        var current = Crds.topicOperation(kubernetesClient).inNamespace(namespace).withName(topicName).get();
+        var kafkaTopic = Crds.topicOperation(kubernetesClient).resource(new KafkaTopicBuilder(current)
+            .editMetadata()
+                .withAnnotations(Map.of(ResourceAnnotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "false"))
+            .endMetadata()
+            .build()).update();
+        LOGGER.info("Test unpaused KafkaTopic {} with resourceVersion {}",
+            kafkaTopic.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kafkaTopic));
+        return waitUntil(kafkaTopic, readyIsTrue());
+    }
+
+    private KafkaTopic unmanageTopic(String namespace, String topicName) {
+        var current = Crds.topicOperation(kubernetesClient).inNamespace(namespace).withName(topicName).get();
+        var kafkaTopic = Crds.topicOperation(kubernetesClient).resource(new KafkaTopicBuilder(current)
+            .editMetadata()
+                .withAnnotations(Map.of(TopicOperatorUtil.MANAGED, "false"))
+            .endMetadata()
+            .build()).update();
+        LOGGER.info("Test unmanaged KafkaTopic {} with resourceVersion {}",
+            kafkaTopic.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kafkaTopic));
+        return waitUntil(kafkaTopic, unmanagedIsTrue());
+    }
+
+    private KafkaTopic manageTopic(String namespace, String topicName) {
+        var current = Crds.topicOperation(kubernetesClient).inNamespace(namespace).withName(topicName).get();
+        var kafkaTopic = Crds.topicOperation(kubernetesClient).resource(new KafkaTopicBuilder(current)
+            .editMetadata()
+                .withAnnotations(Map.of(TopicOperatorUtil.MANAGED, "true"))
+            .endMetadata()
+            .build()).update();
+        LOGGER.info("Test managed KafkaTopic {} with resourceVersion {}",
+            kafkaTopic.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kafkaTopic));
+        return waitUntil(kafkaTopic, readyIsTrue());
     }
 
     private TopicDescription awaitTopicDescription(String expectedTopicName) throws InterruptedException, ExecutionException, TimeoutException {
@@ -671,17 +707,12 @@ class TopicControllerIT {
     @ParameterizedTest
     @MethodSource("unmanagedKafkaTopics")
     public void shouldNotCreateTopicInKafkaWhenUnmanagedTopicCreatedInKube(
-        KafkaTopic kt,
+        KafkaTopic kafkaTopic,
         @BrokerConfig(name = "auto.create.topics.enable", value = "false")
-        KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException {
-        // given
-
-        // when
-        var reconciled = createTopic(kafkaCluster, kt, unmanagedStatusTrue());
-
-        // then
-        assertNull(reconciled.getStatus().getTopicName());
-        assertNotExistsInKafka(TopicOperatorUtil.topicName(kt));
+        KafkaCluster kafkaCluster
+    ) throws ExecutionException, InterruptedException {
+        createTopic(kafkaCluster, kafkaTopic);
+        assertNotExistsInKafka(TopicOperatorUtil.topicName(kafkaTopic));
     }
 
     @ParameterizedTest
@@ -1470,11 +1501,12 @@ class TopicControllerIT {
     @ParameterizedTest
     @MethodSource("managedKafkaTopics")
     public void shouldFailChangeToSpecTopicName(
-        KafkaTopic kt,
+        KafkaTopic kafkaTopic,
         @BrokerConfig(name = "auto.create.topics.enable", value = "false")
-        KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException, TimeoutException {
-        var expectedTopicName = TopicOperatorUtil.topicName(kt);
-        shouldFailOnModification(kafkaCluster, kt,
+        KafkaCluster kafkaCluster
+    ) throws ExecutionException, InterruptedException, TimeoutException {
+        var expectedTopicName = TopicOperatorUtil.topicName(kafkaTopic);
+        shouldFailOnModification(kafkaCluster, kafkaTopic,
             theKt -> {
                 theKt.getSpec().setTopicName("CHANGED-" + expectedTopicName);
                 return theKt;
@@ -2030,11 +2062,10 @@ class TopicControllerIT {
     @Test
     public void shouldNotReconcilePausedKafkaTopicOnAdd(
         @BrokerConfig(name = BatchingTopicController.AUTO_CREATE_TOPICS_ENABLE, value = "false")
-        KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException {
+        KafkaCluster kafkaCluster
+    ) throws ExecutionException, InterruptedException {
         var topicName = "my-topic";
-
-        // generation: 1, observedGeneration: 0
-        KafkaTopic kt = createTopic(
+        var kafkaTopic = createTopic(
             kafkaCluster,
             kafkaTopic(NAMESPACE, topicName, SELECTOR,
                 Map.of(ResourceAnnotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"),
@@ -2042,53 +2073,95 @@ class TopicControllerIT {
             pausedIsTrue()
         );
 
-        assertEquals(1, kt.getStatus().getObservedGeneration());
+        assertEquals(1, kafkaTopic.getStatus().getObservedGeneration());
         assertNotExistsInKafka(topicName);
     }
 
     @Test
     public void shouldNotReconcilePausedKafkaTopicOnUpdate(
         @BrokerConfig(name = "auto.create.topics.enable", value = "false")
-        KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException {
+        KafkaCluster kafkaCluster
+    ) throws ExecutionException, InterruptedException {
         var topicName = "my-topic";
-
-        // generation: 1, observedGeneration: 1
         createTopic(kafkaCluster,
             kafkaTopic(NAMESPACE, topicName, SELECTOR, null, true, topicName, 1, 1, Map.of()));
-
-        // generation: 2, observedGeneration: 1
-        KafkaTopic kt = pauseTopic(NAMESPACE, topicName);
-
-        // generation: 3, observedGeneration: 1
-        TopicOperatorTestUtil.changeTopic(kubernetesClient, kt, theKt -> {
+        
+        var kafkaTopic = pauseTopic(NAMESPACE, topicName);
+        
+        TopicOperatorTestUtil.changeTopic(kubernetesClient, kafkaTopic, theKt -> {
             theKt.getSpec().setConfig(Map.of(TopicConfig.FLUSH_MS_CONFIG, "1000"));
             return theKt;
         });
 
-        assertEquals(1, kt.getStatus().getObservedGeneration());
+        assertEquals(1, kafkaTopic.getStatus().getObservedGeneration());
         assertEquals(Map.of(), topicConfigMap(topicName));
     }
 
     @Test
     public void shouldReconcilePausedKafkaTopicOnDelete(
         @BrokerConfig(name = "auto.create.topics.enable", value = "false")
-        KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException {
+        KafkaCluster kafkaCluster
+    ) throws ExecutionException, InterruptedException {
         var topicName = "my-topic";
-
-        // generation: 1, observedGeneration: 1
         createTopic(kafkaCluster,
             kafkaTopic(NAMESPACE, topicName, SELECTOR, null, true, topicName, 1, 1, Map.of()));
+        
+        var kafkaTopic = pauseTopic(NAMESPACE, topicName);
 
-        // generation: 2, observedGeneration: 1
-        KafkaTopic kt = pauseTopic(NAMESPACE, topicName);
-
-        Crds.topicOperation(kubernetesClient).resource(kt).delete();
+        Crds.topicOperation(kubernetesClient).resource(kafkaTopic).delete();
         LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
-            kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
-        Resource<KafkaTopic> resource = Crds.topicOperation(kubernetesClient).resource(kt);
+            kafkaTopic.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kafkaTopic));
+        Resource<KafkaTopic> resource = Crds.topicOperation(kubernetesClient).resource(kafkaTopic);
         TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
 
         assertNotExistsInKafka(topicName);
+    }
+
+    @Test
+    public void topicIdShouldBeEmptyOnPausedKafkaTopic(
+        @BrokerConfig(name = "auto.create.topics.enable", value = "false")
+        KafkaCluster kafkaCluster
+    ) throws ExecutionException, InterruptedException {
+        var topicName = "my-topic";
+        var kafkaTopic = createTopic(kafkaCluster,
+            kafkaTopic(NAMESPACE, topicName, SELECTOR, null, true, topicName, 1, 1, Map.of()));
+
+        assertNotNull(kafkaTopic.getStatus().getTopicName());
+        assertNotNull(kafkaTopic.getStatus().getTopicId());
+
+        kafkaTopic = pauseTopic(NAMESPACE, topicName);
+
+        assertNotNull(kafkaTopic.getStatus().getTopicName());
+        assertNull(kafkaTopic.getStatus().getTopicId());
+        
+        kafkaTopic = unpauseTopic(NAMESPACE, topicName);
+
+        assertNotNull(kafkaTopic.getStatus().getTopicName());
+        assertNotNull(kafkaTopic.getStatus().getTopicId());
+    }
+
+    @Test
+    public void topicNameAndIdShouldBeEmptyOnUnmanagedKafkaTopic(
+        @BrokerConfig(name = "auto.create.topics.enable", value = "false")
+        KafkaCluster kafkaCluster
+    ) throws ExecutionException, InterruptedException {
+        var topicName = "my-topic";
+
+        var kafkaTopic = createTopic(kafkaCluster,
+            kafkaTopic(NAMESPACE, topicName, SELECTOR, null, true, topicName, 1, 1, Map.of()));
+
+        assertNotNull(kafkaTopic.getStatus().getTopicName());
+        assertNotNull(kafkaTopic.getStatus().getTopicId());
+
+        kafkaTopic = unmanageTopic(NAMESPACE, topicName);
+
+        assertNull(kafkaTopic.getStatus().getTopicName());
+        assertNull(kafkaTopic.getStatus().getTopicId());
+
+        kafkaTopic = manageTopic(NAMESPACE, topicName);
+
+        assertNotNull(kafkaTopic.getStatus().getTopicName());
+        assertNotNull(kafkaTopic.getStatus().getTopicId());
     }
 
     @Test
@@ -2141,7 +2214,7 @@ class TopicControllerIT {
         var topicName = "my-topic";
         maybeStartOperator(topicOperatorConfig(NAMESPACE, kafkaCluster));
 
-        var created = Crds.topicOperation(kubernetesClient)
+        Crds.topicOperation(kubernetesClient)
             .resource(kafkaTopicWithNoSpec(topicName, false))
             .create();
 

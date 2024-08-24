@@ -102,6 +102,9 @@ public class BatchingTopicController {
 
     // Key: topic name, Value: The KafkaTopics known to manage that topic
     /* test */ final Map<String, List<KubeRef>> topics = new HashMap<>();
+    
+    // topic name id map, which is updated on every reconciliation
+    private Map<String, String> topicNameIdMap;
 
     private final TopicOperatorMetricsHolder metrics;
     private final String namespace;
@@ -134,6 +137,7 @@ public class BatchingTopicController {
         this.namespace = config.namespace();
         this.enableAdditionalMetrics = config.enableAdditionalMetrics();
         this.replicasChangeHandler = replicasChangeHandler;
+        this.topicNameIdMap = new HashMap<>();
     }
 
     /**
@@ -312,8 +316,7 @@ public class BatchingTopicController {
         return partitionedByError(kts.stream().map(reconcilableTopic -> {
             try {
                 values.get(reconcilableTopic.topicName()).get();
-                reconcilableTopic.kt().setStatus(new KafkaTopicStatusBuilder()
-                    .withTopicId(ctr.topicId(reconcilableTopic.topicName()).get().toString()).build());
+                topicNameIdMap.put(reconcilableTopic.topicName(), ctr.topicId(reconcilableTopic.topicName()).get().toString());
                 return new Pair<>(reconcilableTopic, Either.ofRight((null)));
             } catch (ExecutionException e) {
                 if (e.getCause() != null && e.getCause() instanceof TopicExistsException) {
@@ -388,6 +391,9 @@ public class BatchingTopicController {
 
     private void updateInternal(List<ReconcilableTopic> batch) {
         LOGGER.debugOp("Reconciling batch {}", batch);
+        Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results = new HashMap<>();
+        topicNameIdMap.clear();
+        
         // process deletions
         var partitionedByDeletion = batch.stream().filter(reconcilableTopic -> {
             var kt = reconcilableTopic.kt();
@@ -412,7 +418,6 @@ public class BatchingTopicController {
         }
 
         // process remaining
-        Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results = new HashMap<>();
         var remainingAfterDeletions = partitionedByDeletion.get(false);
         var timerSamples = remainingAfterDeletions.stream().collect(
             Collectors.toMap(identity(), rt -> startReconciliationTimer(metrics)));
@@ -878,6 +883,7 @@ public class BatchingTopicController {
             ExecutionException exception = null;
             try {
                 description = cs1.get(reconcilableTopic.topicName()).get();
+                topicNameIdMap.put(reconcilableTopic.topicName(), description.topicId().toString());
             } catch (ExecutionException e) {
                 exception = e;
             } catch (InterruptedException e) {
@@ -1214,33 +1220,39 @@ public class BatchingTopicController {
         // the observedGeneration is a marker that shows that the operator works and that it saw the last update to the resource
         reconcilableTopic.kt().getStatus().setObservedGeneration(reconcilableTopic.kt().getMetadata().getGeneration());
 
-        // set or reset the topicName
+        // add or remove topicName
         reconcilableTopic.kt().getStatus().setTopicName(
             !TopicOperatorUtil.isManaged(reconcilableTopic.kt())
                 ? null
                 : oldStatus != null && oldStatus.getTopicName() != null
-                ? oldStatus.getTopicName()
-                : TopicOperatorUtil.topicName(reconcilableTopic.kt())
+                    ? oldStatus.getTopicName()
+                    : TopicOperatorUtil.topicName(reconcilableTopic.kt())
+        );
+
+        // add or remove topicId
+        reconcilableTopic.kt().getStatus().setTopicId(
+            (!TopicOperatorUtil.isManaged(reconcilableTopic.kt()) || TopicOperatorUtil.isPaused(reconcilableTopic.kt()))
+                ? null : topicNameIdMap.get(reconcilableTopic.topicName())
         );
 
         StatusDiff statusDiff = new StatusDiff(oldStatus, reconcilableTopic.kt().getStatus());
         if (!statusDiff.isEmpty()) {
-            try {
-                var updatedTopic = new KafkaTopicBuilder(reconcilableTopic.kt())
-                    .editOrNewMetadata()
-                        .withResourceVersion(null)
-                    .endMetadata()
-                    .withStatus(reconcilableTopic.kt().getStatus())
-                    .build();
-                LOGGER.debugCr(reconcilableTopic.reconciliation(), "Updating status with {}", updatedTopic.getStatus());
-                var timerSample = TopicOperatorUtil.startExternalRequestTimer(metrics, enableAdditionalMetrics);
+            var updatedTopic = new KafkaTopicBuilder(reconcilableTopic.kt())
+                .editOrNewMetadata()
+                    .withResourceVersion(null)
+                .endMetadata()
+                .withStatus(reconcilableTopic.kt().getStatus())
+                .build();
+            LOGGER.debugCr(reconcilableTopic.reconciliation(), "Updating status with {}", updatedTopic.getStatus());
+            var timerSample = TopicOperatorUtil.startExternalRequestTimer(metrics, enableAdditionalMetrics);
+            try {    
                 var got = Crds.topicOperation(kubeClient).resource(updatedTopic).updateStatus();
-                TopicOperatorUtil.stopExternalRequestTimer(timerSample, metrics::updateStatusTimer, enableAdditionalMetrics, namespace);
                 LOGGER.traceCr(reconcilableTopic.reconciliation(), "Updated status to observedGeneration {}, resourceVersion {}",
                     got.getStatus().getObservedGeneration(), got.getMetadata().getResourceVersion());
             } catch (Throwable e) {
                 LOGGER.errorOp("Status update failed: {}", e.getMessage());
             }
+            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metrics::updateStatusTimer, enableAdditionalMetrics, namespace);
         }
     }
 }
