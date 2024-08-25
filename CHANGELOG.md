@@ -6,6 +6,8 @@
 
 ### Changes, deprecations and removals
 
+* **From Strimzi 0.44.0 on, we support only Kubernetes 1.25 and newer.**
+  Kubernetes 1.23 and 1.24 are not supported anymore.
 * When finalizers are enabled (default), the Topic Operator will no longer restore finalizers on unmanaged `KafkaTopic` resources if they are removed, aligning the behavior with paused topics, where finalizers are also not restored.
   This change matches user expectations.
 
