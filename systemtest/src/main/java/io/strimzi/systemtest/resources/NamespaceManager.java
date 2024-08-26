@@ -290,7 +290,7 @@ public class NamespaceManager {
 
     public static void labelNamespace(String namespaceName, Map<String, String> labels) {
         TestUtils.waitFor(
-            String.join("%s will be updated with %s and the labels will be present", namespaceName, labels.toString()),
+            String.format("%s will be updated with %s and the labels will be present", namespaceName, labels.toString()),
             TestConstants.GLOBAL_POLL_INTERVAL,
             TestConstants.GLOBAL_STATUS_TIMEOUT,
             () -> {
@@ -298,7 +298,7 @@ public class NamespaceManager {
                     kubeClient().getClient().namespaces().withName(namespaceName).edit(namespace ->
                         new NamespaceBuilder(namespace)
                             .editOrNewMetadata()
-                            .addToLabels("pod-security.kubernetes.io/enforce", "restricted")
+                                .addToLabels(labels)
                             .endMetadata()
                             .build()
                     );
