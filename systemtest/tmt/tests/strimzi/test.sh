@@ -28,8 +28,7 @@ echo "Using container tag '$DOCKER_TAG'"
 echo "Using CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN=$CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN"
 
 mvn compile -pl config-model-generator -DskipTests -Dmaven.javadoc.skip=true --no-transfer-progress
-# REVERT!
-mvn verify -pl systemtest -P smoke \
+mvn verify -pl systemtest -P ${TEST_PROFILE} \
     $([[ "${TEST_GROUPS}" != "" ]] && echo "-Dgroups=${TEST_GROUPS}" || echo "") \
     $([[ "${TESTS}" != "" ]] && echo "-Dit.test=${TESTS}" || echo "") \
     -DexcludedGroups="${EXCLUDED_TEST_GROUPS}" \
