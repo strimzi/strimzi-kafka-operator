@@ -1108,7 +1108,6 @@ spec:
                               configMap: {}
                               emptyDir: {}
                               persistentVolumeClaim: {}
-                            required: []
                         description: Additional volumes that can be mounted to the pod.
                     description: Template for Kafka Connect `Pods`.
                   apiService:
@@ -2018,7 +2017,6 @@ spec:
                               configMap: {}
                               emptyDir: {}
                               persistentVolumeClaim: {}
-                            required: []
                         description: Additional volumes that can be mounted to the pod.
                     description: Template for Kafka Connect Build `Pods`. The build pod is used only on Kubernetes.
                   buildContainer:

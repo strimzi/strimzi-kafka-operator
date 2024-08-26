@@ -1566,7 +1566,6 @@ spec:
                                   configMap: {}
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
-                                required: []
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for Kafka `Pods`.
                       bootstrapService:
@@ -3017,7 +3016,6 @@ spec:
                                   configMap: {}
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
-                                required: []
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for ZooKeeper `Pods`.
                       clientService:
@@ -4324,7 +4322,6 @@ spec:
                                   configMap: {}
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
-                                required: []
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for Entity Operator `Pods`.
                       topicOperatorContainer:
@@ -5598,7 +5595,6 @@ spec:
                                   configMap: {}
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
-                                required: []
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for Cruise Control `Pods`.
                       apiService:
@@ -6680,7 +6676,6 @@ spec:
                                   configMap: {}
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
-                                required: []
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for JmxTrans `Pods`.
                       container:
@@ -7517,7 +7512,6 @@ spec:
                                   configMap: {}
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
-                                required: []
                             description: Additional volumes that can be mounted to the pod.
                         description: Template for Kafka Exporter `Pods`.
                       service:

@@ -1098,7 +1098,6 @@ spec:
                                   configMap: {}
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
-                                required: []
                           description: Additional volumes that can be mounted to the pod.
                       description: Template for Kafka Bridge `Pods`.
                     apiService:

@@ -616,11 +616,17 @@ class CrdGenerator {
                 for (OneOf.Alternative.Property prop: alt.value()) {
                     properties.putObject(prop.value());
                 }
-                ArrayNode required = alternative.putArray("required");
+
+                ArrayNode required = nf.arrayNode();
                 for (OneOf.Alternative.Property prop: alt.value()) {
                     if (prop.required()) {
                         required.add(prop.value());
                     }
+                }
+                // We attach only non-empty array. Empty arrays would be removed by Kubernetes and might confuse various
+                // tools when diffing the resources (such as ArgoCD)
+                if (!required.isEmpty())    {
+                    alternative.set("required", required);
                 }
             }
         } else {
