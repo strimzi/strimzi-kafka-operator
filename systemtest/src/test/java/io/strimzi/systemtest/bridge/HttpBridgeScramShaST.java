@@ -34,10 +34,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
 import static io.strimzi.systemtest.TestConstants.BRIDGE;
-import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 
-@Tag(INTERNAL_CLIENTS_USED)
 @Tag(BRIDGE)
 @Tag(REGRESSION)
 class HttpBridgeScramShaST extends AbstractST {

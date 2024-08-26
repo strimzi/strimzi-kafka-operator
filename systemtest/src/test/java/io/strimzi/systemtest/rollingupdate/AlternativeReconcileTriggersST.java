@@ -56,7 +56,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.systemtest.TestConstants.ROLLING_UPDATE;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -67,7 +66,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
-@Tag(INTERNAL_CLIENTS_USED)
 @Tag(ROLLING_UPDATE)
 class AlternativeReconcileTriggersST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(AlternativeReconcileTriggersST.class);

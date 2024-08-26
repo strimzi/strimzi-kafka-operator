@@ -30,7 +30,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
-import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 
 @Tag(REGRESSION)
@@ -60,7 +59,6 @@ public class CustomAuthorizerST extends AbstractST {
      *  - kafka-user
      */
     @ParallelTest
-    @Tag(INTERNAL_CLIENTS_USED)
     void testAclRuleReadAndWrite() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String kafkaUserWrite = "kafka-user-write";
@@ -147,7 +145,6 @@ public class CustomAuthorizerST extends AbstractST {
      *  - kafka-user
      */
     @ParallelTest
-    @Tag(INTERNAL_CLIENTS_USED)
     void testAclWithSuperUser() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 

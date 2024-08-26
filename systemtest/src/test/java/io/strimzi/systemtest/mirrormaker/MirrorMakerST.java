@@ -53,7 +53,6 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
 import static io.strimzi.systemtest.TestConstants.COMPONENT_SCALING;
-import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
@@ -67,7 +66,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag(REGRESSION)
 @Tag(MIRROR_MAKER)
-@Tag(INTERNAL_CLIENTS_USED)
 public class MirrorMakerST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MirrorMakerST.class);

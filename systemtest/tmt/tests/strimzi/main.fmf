@@ -16,7 +16,7 @@ environment:
   STRIMZI_USE_KRAFT_IN_TESTS: "true"
 adjust:
   - environment+:
-      EXCLUDED_TEST_GROUPS: "loadbalancer,arm64unsupported"
+      EXCLUDED_TEST_GROUPS: "loadbalancer"
     when: arch == aarch64, arm64
 
 /smoke:

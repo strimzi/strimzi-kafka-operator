@@ -351,11 +351,6 @@ public interface TestConstants {
     String BRIDGE = "bridge";
 
     /**
-     * Tag for tests which use internal Kafka clients (used clients in cluster)
-     */
-    String INTERNAL_CLIENTS_USED = "internalclients";
-
-    /**
      * Tag for tests which use external Kafka clients (called from test code)
      */
     String EXTERNAL_CLIENTS_USED = "externalclients";
@@ -414,12 +409,6 @@ public interface TestConstants {
      * Tag for tests that covers Tiered Storage integration
      */
     String TIERED_STORAGE = "tieredstorage";
-
-    /**
-     * Tag for tests, without ARM,AARCH64 support
-     */
-    String ARM64_UNSUPPORTED = "arm64unsupported";
-
     String ISOLATED_TEST = "isolatedtest";
     String PARALLEL_TEST = "paralleltest";
     /**
