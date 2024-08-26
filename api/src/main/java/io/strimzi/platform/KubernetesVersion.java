@@ -13,9 +13,9 @@ public class KubernetesVersion implements Comparable<KubernetesVersion> {
 
     // Notable Kubernetes versions => this includes the minimal supported version and for example also any Kubernetes
     // versions from some features are supported.
-    public static final KubernetesVersion V1_23 = new KubernetesVersion(1, 23);
+    public static final KubernetesVersion V1_25 = new KubernetesVersion(1, 25);
 
-    public static final KubernetesVersion MINIMAL_SUPPORTED_VERSION = V1_23;
+    public static final KubernetesVersion MINIMAL_SUPPORTED_VERSION = V1_25;
     public static final int MINIMAL_SUPPORTED_MAJOR = MINIMAL_SUPPORTED_VERSION.major;
     public static final int MINIMAL_SUPPORTED_MINOR = MINIMAL_SUPPORTED_VERSION.minor;
 

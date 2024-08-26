@@ -20,7 +20,7 @@
 :UpgradeGuide: link:https://strimzi.io/docs/operators/0.24.0/deploying.html#assembly-upgrade-resources-str[Strimzi 0.24.0 upgrade documentation^]
 
 // Kubernetes versions
-:KubernetesVersion: 1.23 and later
+:KubernetesVersion: 1.25 and later
 
 // Kafka upgrade attributes used in kafka upgrades section
 :DefaultKafkaVersion: 3.8.0
@@ -80,7 +80,7 @@
 :K8sMeaningOfMemory: link:https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-memory[Meaning of memory^]
 :K8sManagingComputingResources: link:https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/[Managing Compute Resources for Containers^]
 :K8sLivenessReadinessProbes: link:https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/[Configure Liveness and Readiness Probes^]
-:K8sNetworkPolicyPeerAPI: link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer API reference^]
+:K8sNetworkPolicyPeerAPI: link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer API reference^]
 :K8sImagePullPolicies: link:https://kubernetes.io/docs/concepts/containers/images/#updating-images[Disruptions^]
 :K8sCRDs: link:https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/[Extend the Kubernetes API with CustomResourceDefinitions^]
 :K8sResizingPersistentVolumesUsingKubernetes: link:https://kubernetes.io/blog/2018/07/12/resizing-persistent-volumes-using-kubernetes/[Resizing Persistent Volumes using Kubernetes^]
