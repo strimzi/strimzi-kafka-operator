@@ -365,44 +365,45 @@ public class Capacity {
         String inboundNetwork = processInboundNetwork(brokerCapacity, null);
         String outboundNetwork = processOutboundNetwork(brokerCapacity, null);
 
-        // We create a capacity for each broker node
+        // Initialize default capacities
         for (NodeRef node : kafkaBrokerNodes) {
             DiskCapacity disk = processDisk(kafkaStorage.get(node.poolName()), node.nodeId());
             CpuCapacity cpu = processCpu(null, brokerCapacity, kafkaBrokerResources.get(node.poolName()));
 
             BrokerCapacity broker = new BrokerCapacity(node.nodeId(), cpu, disk, inboundNetwork, outboundNetwork);
             capacityEntries.put(node.nodeId(), broker);
+        }
 
-            if (brokerCapacity != null) {
-                // For checking for duplicate brokerIds
-                Set<Integer> overrideIds = new HashSet<>();
-                List<BrokerCapacityOverride> overrides = brokerCapacity.getOverrides();
-                // Override broker entries
-                if (overrides != null) {
-                    if (overrides.isEmpty()) {
-                        LOGGER.warnCr(reconciliation, "Ignoring empty overrides list");
-                    } else {
-                        for (BrokerCapacityOverride override : overrides) {
-                            List<Integer> ids = override.getBrokers();
-                            inboundNetwork = processInboundNetwork(brokerCapacity, override);
-                            outboundNetwork = processOutboundNetwork(brokerCapacity, override);
-                            for (int id : ids) {
-                                if (id == BrokerCapacity.DEFAULT_BROKER_ID) {
-                                    LOGGER.warnCr(reconciliation, "Ignoring broker capacity override with illegal broker id -1.");
-                                } else {
-                                    if (capacityEntries.containsKey(id)) {
-                                        if (overrideIds.add(id)) {
-                                            BrokerCapacity brokerCapacityEntry = capacityEntries.get(id);
-                                            brokerCapacityEntry.setCpu(processCpu(override, brokerCapacity, kafkaBrokerResources.get(Integer.toString(id))));
-                                            brokerCapacityEntry.setInboundNetwork(inboundNetwork);
-                                            brokerCapacityEntry.setOutboundNetwork(outboundNetwork);
-                                        } else {
-                                            LOGGER.warnCr(reconciliation, "Duplicate broker id {} found in overrides, using first occurrence.", id);
-                                        }
+        // Override default capacities
+        if (brokerCapacity != null) {
+            // For checking for duplicate brokerIds
+            Set<Integer> overrideIds = new HashSet<>();
+            List<BrokerCapacityOverride> overrides = brokerCapacity.getOverrides();
+            // Override broker entries
+            if (overrides != null) {
+                if (overrides.isEmpty()) {
+                    LOGGER.warnCr(reconciliation, "Ignoring empty overrides list");
+                } else {
+                    for (BrokerCapacityOverride override : overrides) {
+                        List<Integer> ids = override.getBrokers();
+                        inboundNetwork = processInboundNetwork(brokerCapacity, override);
+                        outboundNetwork = processOutboundNetwork(brokerCapacity, override);
+                        for (int id : ids) {
+                            if (id == BrokerCapacity.DEFAULT_BROKER_ID) {
+                                LOGGER.warnCr(reconciliation, "Ignoring broker capacity override with illegal broker id -1.");
+                            } else {
+                                if (capacityEntries.containsKey(id)) {
+                                    if (overrideIds.add(id)) {
+                                        BrokerCapacity brokerCapacityEntry = capacityEntries.get(id);
+                                        brokerCapacityEntry.setCpu(processCpu(override, brokerCapacity, kafkaBrokerResources.get(Integer.toString(id))));
+                                        brokerCapacityEntry.setInboundNetwork(inboundNetwork);
+                                        brokerCapacityEntry.setOutboundNetwork(outboundNetwork);
                                     } else {
-                                        LOGGER.warnCr(reconciliation, "Ignoring broker capacity override for unknown node ID {}", id);
-                                        overrideIds.add(id);
+                                        LOGGER.warnCr(reconciliation, "Duplicate broker id {} found in overrides, using first occurrence.", id);
                                     }
+                                } else {
+                                    LOGGER.warnCr(reconciliation, "Ignoring broker capacity override for unknown node ID {}", id);
+                                    overrideIds.add(id);
                                 }
                             }
                         }
