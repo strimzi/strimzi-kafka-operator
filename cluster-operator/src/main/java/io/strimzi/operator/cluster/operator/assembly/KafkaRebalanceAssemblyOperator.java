@@ -1026,31 +1026,22 @@ public class KafkaRebalanceAssemblyOperator
                                 new InvalidResourceException(CruiseControlIssues.cruiseControlDisabled.getMessage())));
                     }
 
-                    Future<Void> resourcePatchFuture = Future.future(future -> {
-                        if (kafkaRebalance.getStatus() != null
-                                && kafkaRebalance.getStatus().getObservedGeneration() != kafkaRebalance.getMetadata().getGeneration()) {
+                    Future<KafkaRebalance> resourcePatchFuture;
+                    if (kafkaRebalance.getStatus() != null
+                            && kafkaRebalance.getStatus().getObservedGeneration() != kafkaRebalance.getMetadata().getGeneration()) {
 
-                            KafkaRebalanceBuilder patchedKafkaRebalance = new KafkaRebalanceBuilder(kafkaRebalance);
+                        KafkaRebalanceBuilder patchedKafkaRebalance = new KafkaRebalanceBuilder(kafkaRebalance);
 
-                            patchedKafkaRebalance
-                                    .editMetadata()
-                                        .addToAnnotations(Map.of(ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.refresh.toString()))
-                                    .endMetadata();
+                        patchedKafkaRebalance
+                                .editMetadata()
+                                    .addToAnnotations(Map.of(ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.refresh.toString()))
+                                .endMetadata();
 
-                            kafkaRebalanceOperator.patchAsync(reconciliation, patchedKafkaRebalance.build()).onComplete(
-                                    r -> {
-                                        if (r.succeeded()) {
-                                        LOGGER.debugCr(reconciliation, "The KafkaRebalance resource is updated with refresh annotation");
-                                            future.complete();
-                                        } else {
-                                        LOGGER.errorCr(reconciliation, "Failed to update the KafkaRebalance resource with refresh annotation");
-                                        future.fail(r.cause());
-                                        }
-                                    });
-                        } else {
-                            future.complete();
-                        }
-                    });
+                        resourcePatchFuture = kafkaRebalanceOperator.patchAsync(reconciliation, patchedKafkaRebalance.build()).onComplete(
+                                r -> LOGGER.debugCr(reconciliation, "The KafkaRebalance resource is updated with refresh annotation"));
+                    } else {
+                        resourcePatchFuture = Future.succeededFuture();
+                    }
 
                     String ccSecretName =  CruiseControlResources.secretName(clusterName);
                     String ccApiSecretName =  CruiseControlResources.apiSecretName(clusterName);
