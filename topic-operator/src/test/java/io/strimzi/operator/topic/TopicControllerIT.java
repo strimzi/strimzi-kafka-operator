@@ -2296,5 +2296,4 @@ class TopicControllerIT {
                 resourceVersionAfterUpdate.equals(kt.getMetadata().getResourceVersion())
         );
     }
-
 }

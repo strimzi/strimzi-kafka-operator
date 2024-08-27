@@ -1245,7 +1245,7 @@ public class BatchingTopicController {
                 .build();
             LOGGER.debugCr(reconcilableTopic.reconciliation(), "Updating status with {}", updatedTopic.getStatus());
             var timerSample = TopicOperatorUtil.startExternalRequestTimer(metrics, enableAdditionalMetrics);
-            try {    
+            try {
                 var got = Crds.topicOperation(kubeClient).resource(updatedTopic).updateStatus();
                 LOGGER.traceCr(reconcilableTopic.reconciliation(), "Updated status to observedGeneration {}, resourceVersion {}",
                     got.getStatus().getObservedGeneration(), got.getMetadata().getResourceVersion());
