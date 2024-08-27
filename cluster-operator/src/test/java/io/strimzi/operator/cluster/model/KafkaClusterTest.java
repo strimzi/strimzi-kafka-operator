@@ -4131,16 +4131,6 @@ public class KafkaClusterTest {
 
     @ParallelTest
     public void testNodesAndStatuses()  {
-        //KafkaCluster KC = KafkaCluster.fromCrd(
-        //        Reconciliation.DUMMY_RECONCILIATION,
-        //        KAFKA,
-        //        List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
-        //        VERSIONS,
-        //        KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-        //        KafkaMetadataConfigurationState.KRAFT,
-        //        null, SHARED_ENV_PROVIDER
-        //);
-
         Set<NodeRef> nodes = KC.nodes();
         assertThat(nodes.size(), is(8));
         assertThat(nodes, hasItems(new NodeRef(CLUSTER + "-controllers-0", 0, "controllers", true, false),
