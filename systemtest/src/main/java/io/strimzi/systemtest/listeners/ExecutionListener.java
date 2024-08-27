@@ -52,15 +52,16 @@ public class ExecutionListener implements TestExecutionListener {
 
     /**
      * Checks if test suite has test case, which is labeled as {@link io.strimzi.systemtest.annotations.ParallelTest} or
-     * {@link io.strimzi.systemtest.annotations.IsolatedTest}.
+     * {@link io.strimzi.systemtest.annotations.IsolatedTest} or is suite with explicit need of creating shared namespace.
      *
      * @param extensionContext  ExtensionContext of the test case
      * @return                  true if test suite contains Parallel or Isolated test case. Otherwise, false.
      */
-    public static boolean hasSuiteParallelOrIsolatedTest(final ExtensionContext extensionContext) {
+    public static boolean requiresSharedNamespace(final ExtensionContext extensionContext) {
         Set<TestIdentifier> testCases = testPlan.getChildren(extensionContext.getUniqueId());
 
-        final Set<String> relevantTags = Set.of(
+        // name of suites or tags which indicates need of creation of shared namespace test-suite-namespace
+        final Set<String> identifiersRequiringSharedNamespace = Set.of(
             TestConstants.PARALLEL_TEST,
             TestConstants.ISOLATED_TEST,
             TestConstants.DYNAMIC_CONFIGURATION, // Dynamic configuration also because in DynamicConfSharedST we use @TestFactory
@@ -71,7 +72,7 @@ public class ExecutionListener implements TestExecutionListener {
 
         for (TestIdentifier testIdentifier : testCases) {
             for (TestTag testTag : testIdentifier.getTags()) {
-                if (relevantTags.contains(testTag.getName())) {
+                if (identifiersRequiringSharedNamespace.contains(testTag.getName())) {
                     return true;
                 }
             }
