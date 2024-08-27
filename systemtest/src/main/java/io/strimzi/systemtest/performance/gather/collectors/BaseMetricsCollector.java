@@ -5,11 +5,19 @@
 package io.strimzi.systemtest.performance.gather.collectors;
 
 import io.skodjob.testframe.MetricsCollector;
+import io.skodjob.testframe.MetricsComponent;
+import io.skodjob.testframe.exceptions.MetricsCollectionException;
+import io.skodjob.testframe.metrics.Metric;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.performance.PerformanceConstants;
+import io.strimzi.systemtest.utils.specific.MetricsUtils;
+import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -22,7 +30,7 @@ import java.util.regex.Pattern;
  * Metrics gathered include system CPU count, JVM memory allocation, thread details, and other
  * system performance indicators.
  */
-public abstract class BaseMetricsCollector extends MetricsCollector {
+public class BaseMetricsCollector extends MetricsCollector {
 
     private static final Logger LOGGER = LogManager.getLogger(BaseMetricsCollector.class);
 
@@ -30,7 +38,7 @@ public abstract class BaseMetricsCollector extends MetricsCollector {
      * Constructs a new {@code BaseMetricsCollector} instance configured via the provided builder.
      * @param builder       The builder used to configure this collector.
      */
-    protected BaseMetricsCollector(Builder builder) {
+    public BaseMetricsCollector(MetricsCollector.Builder builder) {
         super(builder);
     }
 
@@ -82,7 +90,7 @@ public abstract class BaseMetricsCollector extends MetricsCollector {
      * Retrieves the maximum duration of garbage collection pauses in the JVM.
      * @return              A map with keys representing unique label combinations and their corresponding maximum GC pause times.
      */
-    public Map<String, Double>  getJvmGcPauseSecondsMax() {
+    public Map<String, Double> getJvmGcPauseSecondsMax() {
         return collectMetricWithLabels(PerformanceConstants.JVM_GC_PAUSE_SECONDS_MAX);
     }
 
@@ -142,4 +150,99 @@ public abstract class BaseMetricsCollector extends MetricsCollector {
         return collectSpecificMetric(pattern);
     }
 
+    protected Map<String, Double> collectMetricWithLabels(String labels) {
+        Map<String, Double> values = new HashMap<>();
+
+        for (Map.Entry<String, List<Metric>> entry : this.collectedData.entrySet()) {
+            List<Metric> metrics = collectMetricWithLabels(entry.getKey(), labels);
+            metrics.forEach(metric -> values.put(metric.getName(), MetricsUtils.getDoubleMetricValueBasedOnType(metric)));
+        }
+
+        return values;
+    }
+
+    public List<Double> collectSpecificMetric(Pattern pattern) {
+        List<Double> metrics = new ArrayList<>();
+
+        for (Map.Entry<String, List<Metric>> entry : this.collectedData.entrySet()) {
+            Metric metric = findMetricWithPatternInMetrics(entry.getValue(), pattern);
+
+            if (metric != null) {
+                Double value = MetricsUtils.getDoubleMetricValueBasedOnType(metric);
+                if (value != null) {
+                    metrics.add(value);
+                }
+            }
+        }
+
+        return metrics;
+    }
+
+    protected Metric findMetricWithPatternInMetrics(List<Metric> metrics, Pattern pattern) {
+        return metrics.stream().filter(metric -> pattern.matcher(metric.getStringMetric()).find()).findFirst().orElse(null);
+    }
+
+    public final synchronized List<Double> waitForSpecificMetricAndCollect(Pattern pattern) {
+        List<Double> values = collectSpecificMetric(pattern);
+
+        if (values.isEmpty()) {
+            TestUtils.waitFor(String.format("metrics contain pattern: %s", pattern.toString()),
+                TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT, () -> {
+                    try {
+                        this.collectMetricsFromPods();
+                    } catch (MetricsCollectionException e) {
+                        throw new RuntimeException(e);
+                    }
+                    LOGGER.debug("Collected data: {}", this.collectedData);
+                    List<Double> vals = this.collectSpecificMetric(pattern);
+
+                    if (!vals.isEmpty()) {
+                        values.addAll(vals);
+                        return true;
+                    }
+
+                    return false;
+                });
+        }
+
+        return values;
+    }
+
+    protected BaseMetricsCollector.Builder newBuilder() {
+        return new BaseMetricsCollector.Builder();
+    }
+
+    protected BaseMetricsCollector.Builder updateBuilder(BaseMetricsCollector.Builder builder) {
+        return (BaseMetricsCollector.Builder) super.updateBuilder(builder);
+    }
+
+    public BaseMetricsCollector.Builder toBuilder() {
+        return this.updateBuilder(this.newBuilder());
+    }
+
+    public static class Builder extends MetricsCollector.Builder {
+        @Override
+        public BaseMetricsCollector build() {
+            return new BaseMetricsCollector(this);
+        }
+
+        // Override the builder methods to return the type of this Builder, allowing method chaining
+        @Override
+        public BaseMetricsCollector.Builder withNamespaceName(String namespaceName) {
+            super.withNamespaceName(namespaceName);
+            return this;
+        }
+
+        @Override
+        public BaseMetricsCollector.Builder withScraperPodName(String scraperPodName) {
+            super.withScraperPodName(scraperPodName);
+            return this;
+        }
+
+        @Override
+        public BaseMetricsCollector.Builder withComponent(MetricsComponent component) {
+            super.withComponent(component);
+            return this;
+        }
+    }
 }

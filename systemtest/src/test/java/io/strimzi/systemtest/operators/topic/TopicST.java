@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.operators.topic;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
-import io.skodjob.testframe.MetricsCollector;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicStatus;
@@ -22,6 +21,7 @@ import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.metrics.TopicOperatorMetricsComponent;
+import io.strimzi.systemtest.performance.gather.collectors.BaseMetricsCollector;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -313,15 +313,14 @@ public class TopicST extends AbstractST {
             LOGGER.info("{}: {}", KafkaTopic.RESOURCE_KIND, item);
         });
 
-        MetricsCollector toMetricsCollector = new MetricsCollector.Builder()
+        BaseMetricsCollector toMetricsCollector = new BaseMetricsCollector.Builder()
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
             .withScraperPodName(scraperPodName)
             .withComponent(TopicOperatorMetricsComponent.create(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName()))
             .build();
 
         assertMetricResourceNotNull(toMetricsCollector, "strimzi_reconciliations_successful_total", KafkaTopic.RESOURCE_KIND);
-        assertMetricResourceNotNull(toMetricsCollector, "strimzi_reconciliations_duration_seconds_count", KafkaTopic.RESOURCE_KIND);
-        assertMetricResourceNotNull(toMetricsCollector, "strimzi_reconciliations_duration_seconds_sum", KafkaTopic.RESOURCE_KIND);
+        assertMetricResourceNotNull(toMetricsCollector, "strimzi_reconciliations_duration_seconds_bucket", KafkaTopic.RESOURCE_KIND);
         assertMetricResourceNotNull(toMetricsCollector, "strimzi_reconciliations_duration_seconds_max", KafkaTopic.RESOURCE_KIND);
         assertMetricResourceNotNull(toMetricsCollector, "strimzi_reconciliations_total", KafkaTopic.RESOURCE_KIND);
         assertMetricResourcesHigherThanOrEqualTo(toMetricsCollector, KafkaTopic.RESOURCE_KIND, expectedNumOfTopics);
