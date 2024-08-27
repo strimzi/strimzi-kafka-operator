@@ -128,7 +128,7 @@ prepare:
       make java_install
 
       # Build images only for non-release triggers
-      if [[ ${RELEASE} != True ]]; then
+      if [[ ${RELEASE:-False} != True ]]; then
         make docker_build
         make docker_tag
         make docker_push
