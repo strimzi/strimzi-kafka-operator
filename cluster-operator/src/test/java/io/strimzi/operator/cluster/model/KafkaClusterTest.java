@@ -2780,7 +2780,7 @@ public class KafkaClusterTest {
 
     @ParallelTest
     public void testAffinityAndRack() {
-                Affinity mergedRackAffinity = new AffinityBuilder()
+        Affinity mergedRackAffinity = new AffinityBuilder()
                 .withNewNodeAffinity()
                     .withNewRequiredDuringSchedulingIgnoredDuringExecution()
                         .withNodeSelectorTerms(
@@ -2880,6 +2880,7 @@ public class KafkaClusterTest {
         }
     }
 
+    @SuppressWarnings({"checkstyle:MethodLength"})
     @ParallelTest
     public void testAffinityAndRackInKafkaAndKafkaPool() {
         Affinity mergedRackAffinity = new AffinityBuilder()
