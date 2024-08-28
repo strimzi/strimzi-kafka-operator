@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.upgrade.kraft;
 
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.KindIPv6NotSupported;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.resources.NamespaceManager;
@@ -26,6 +25,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 
+import static io.strimzi.systemtest.Environment.TEST_SUITE_NAMESPACE;
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
 import static io.strimzi.systemtest.TestConstants.KRAFT_UPGRADE;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -47,21 +47,20 @@ public class KRaftStrimziDowngradeST extends AbstractKRaftUpgradeST {
         assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getEnvMaxK8sVersion()));
 
         LOGGER.debug("Running downgrade test from version {} to {}", from, to);
-        performDowngrade(parameters);
+        performDowngrade(CO_NAMESPACE, TEST_SUITE_NAMESPACE, parameters);
     }
 
     @MicroShiftNotSupported("Due to lack of Kafka Connect build feature")
     @KindIPv6NotSupported("Our current CI setup doesn't allow pushing into internal registries that is needed in this test")
     @Test
     void testDowngradeOfKafkaConnectAndKafkaConnector() throws IOException {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion(bundleDowngradeVersionData.getDeployKafkaVersion());
 
-        doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(bundleDowngradeVersionData, testStorage, upgradeKafkaVersion);
+        doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(CO_NAMESPACE, TEST_SUITE_NAMESPACE, bundleDowngradeVersionData, testStorage, upgradeKafkaVersion);
     }
 
-    @SuppressWarnings("MethodLength")
-    private void performDowngrade(BundleVersionModificationData downgradeData) throws IOException {
+    private void performDowngrade(String clusterOperatorNamespaceName, String componentsNamespaceName, BundleVersionModificationData downgradeData) throws IOException {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         String lowerMetadataVersion = downgradeData.getProcedures().getMetadataVersion();
@@ -71,30 +70,28 @@ public class KRaftStrimziDowngradeST extends AbstractKRaftUpgradeST {
         // We support downgrade only when you didn't upgrade to new inter.broker.protocol.version and log.message.format.version
         // https://strimzi.io/docs/operators/latest/full/deploying.html#con-target-downgrade-version-str
 
-        setupEnvAndUpgradeClusterOperator(downgradeData, testStorage, testUpgradeKafkaVersion, TestConstants.CO_NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(clusterOperatorNamespaceName, componentsNamespaceName, downgradeData, testStorage, testUpgradeKafkaVersion);
+        logClusterOperatorPodImage(clusterOperatorNamespaceName);
 
-        logPodImages(TestConstants.CO_NAMESPACE);
-
-        boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(TestConstants.CO_NAMESPACE, eoSelector);
+        boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(componentsNamespaceName, eoSelector);
 
         // Downgrade CO
-        changeClusterOperator(downgradeData, TestConstants.CO_NAMESPACE);
+        changeClusterOperator(clusterOperatorNamespaceName, componentsNamespaceName, downgradeData);
 
         // Wait for Kafka cluster rolling update
-        waitForKafkaClusterRollingUpdate();
-
-        logPodImages(TestConstants.CO_NAMESPACE);
+        waitForKafkaClusterRollingUpdate(componentsNamespaceName);
+        logComponentsPodImages(componentsNamespaceName);
 
         // Downgrade kafka
-        changeKafkaAndMetadataVersion(downgradeData);
+        changeKafkaAndMetadataVersion(componentsNamespaceName, downgradeData);
 
         // Verify that pods are stable
-        PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, clusterName);
+        PodUtils.verifyThatRunningPodsAreStable(componentsNamespaceName, clusterName);
 
-        checkAllImages(downgradeData, TestConstants.CO_NAMESPACE);
+        checkAllComponentsImages(componentsNamespaceName, downgradeData);
 
         // Verify upgrade
-        verifyProcedure(downgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.CO_NAMESPACE, wasUTOUsedBefore);
+        verifyProcedure(componentsNamespaceName, downgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), wasUTOUsedBefore);
     }
 
     @BeforeEach
@@ -105,7 +102,7 @@ public class KRaftStrimziDowngradeST extends AbstractKRaftUpgradeST {
     @AfterEach
     void afterEach() {
         cleanUpKafkaTopics();
-        deleteInstalledYamls(coDir, TestConstants.CO_NAMESPACE);
+        deleteInstalledYamls(CO_NAMESPACE, TEST_SUITE_NAMESPACE, coDir);
         NamespaceManager.getInstance().deleteNamespaceWithWait(CO_NAMESPACE);
     }
 }

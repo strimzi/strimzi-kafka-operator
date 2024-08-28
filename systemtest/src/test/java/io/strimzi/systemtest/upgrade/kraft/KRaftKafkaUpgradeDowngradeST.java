@@ -8,7 +8,6 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -30,6 +29,7 @@ import org.junit.jupiter.api.Tag;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.systemtest.Environment.TEST_SUITE_NAMESPACE;
 import static io.strimzi.systemtest.TestConstants.KRAFT_UPGRADE;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
@@ -47,7 +47,7 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
 
     @IsolatedTest
     void testKafkaClusterUpgrade() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
 
         for (int x = 0; x < sortedVersions.size() - 1; x++) {
@@ -57,19 +57,19 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
             // If it is an upgrade test we keep the metadata version as the lower version number
             String metadataVersion = initialVersion.metadataVersion();
 
-            runVersionChange(initialVersion, newVersion, testStorage, metadataVersion, 3, 3);
+            runVersionChange(TEST_SUITE_NAMESPACE, initialVersion, newVersion, testStorage, metadataVersion, 3, 3);
         }
 
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TEST_SUITE_NAMESPACE, continuousClientsMessageCount);
         // ##############################
     }
 
     @IsolatedTest
     void testKafkaClusterDowngrade() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
 
         for (int x = sortedVersions.size() - 1; x > 0; x--) {
@@ -78,32 +78,32 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
 
             // If it is a downgrade then we make sure that we are using the lowest metadataVersion from the whole list
             String metadataVersion = sortedVersions.get(0).metadataVersion();
-            runVersionChange(initialVersion, newVersion, testStorage, metadataVersion, 3, 3);
+            runVersionChange(TEST_SUITE_NAMESPACE, initialVersion, newVersion, testStorage, metadataVersion, 3, 3);
         }
 
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TEST_SUITE_NAMESPACE, continuousClientsMessageCount);
         // ##############################
     }
 
     @IsolatedTest
     void testUpgradeWithNoMetadataVersionSet() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
 
         for (int x = 0; x < sortedVersions.size() - 1; x++) {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
             TestKafkaVersion newVersion = sortedVersions.get(x + 1);
 
-            runVersionChange(initialVersion, newVersion, testStorage, null, 3, 3);
+            runVersionChange(TEST_SUITE_NAMESPACE, initialVersion, newVersion, testStorage, null, 3, 3);
         }
 
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.CO_NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TEST_SUITE_NAMESPACE, continuousClientsMessageCount);
         // ##############################
     }
 
@@ -116,17 +116,17 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
-    void runVersionChange(TestKafkaVersion initialVersion, TestKafkaVersion newVersion, TestStorage testStorage, String initMetadataVersion, int controllerReplicas, int brokerReplicas) {
+    void runVersionChange(String namespaceName, TestKafkaVersion initialVersion, TestKafkaVersion newVersion, TestStorage testStorage, String initMetadataVersion, int controllerReplicas, int brokerReplicas) {
         boolean isUpgrade = initialVersion.isUpgrade(newVersion);
         Map<String, String> controllerPods;
         Map<String, String> brokerPods;
 
         boolean sameMinorVersion = initialVersion.metadataVersion().equals(newVersion.metadataVersion());
 
-        if (KafkaResource.kafkaClient().inNamespace(TestConstants.CO_NAMESPACE).withName(clusterName).get() == null) {
+        if (KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get() == null) {
             LOGGER.info("Deploying initial Kafka version {} with metadataVersion={}", initialVersion.version(), initMetadataVersion);
 
-            KafkaBuilder kafka = KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), clusterName, controllerReplicas, brokerReplicas)
+            KafkaBuilder kafka = KafkaTemplates.kafkaPersistent(namespaceName, clusterName, controllerReplicas, brokerReplicas)
                 .editMetadata()
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
@@ -149,8 +149,8 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
             }
 
             resourceManager.createResourceWithWait(
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(TestConstants.CO_NAMESPACE, CONTROLLER_NODE_NAME, clusterName, controllerReplicas).build(),
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(TestConstants.CO_NAMESPACE, BROKER_NODE_NAME, clusterName, brokerReplicas).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(namespaceName, CONTROLLER_NODE_NAME, clusterName, controllerReplicas).build(),
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(namespaceName, BROKER_NODE_NAME, clusterName, brokerReplicas).build(),
                 kafka.build()
             );
 
@@ -158,11 +158,12 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
             // Attach clients which will continuously produce/consume messages to/from Kafka brokers during rolling update
             // ##############################
             // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
-            resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(TestConstants.CO_NAMESPACE, testStorage.getContinuousTopicName(), clusterName, 3, 3, 2).build());
+            resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(namespaceName, testStorage.getContinuousTopicName(), clusterName, 3, 3, 2).build());
             // 40s is used within TF environment to make upgrade/downgrade more stable on slow env
             String producerAdditionConfiguration = "delivery.timeout.ms=300000\nrequest.timeout.ms=20000";
 
             KafkaClients kafkaBasicClientJob = ClientUtils.getContinuousPlainClientBuilder(testStorage)
+                .withNamespaceName(namespaceName)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
                 .withMessageCount(continuousClientsMessageCount)
                 .withAdditionalConfig(producerAdditionConfiguration)
@@ -175,47 +176,47 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
 
         LOGGER.info("Deployment of initial Kafka version (" + initialVersion.version() + ") complete");
 
-        String controllerVersionResult = KafkaResource.kafkaClient().inNamespace(TestConstants.CO_NAMESPACE).withName(clusterName).get().getStatus().getKafkaVersion();
+        String controllerVersionResult = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getKafkaVersion();
         LOGGER.info("Pre-change Kafka version: " + controllerVersionResult);
 
-        controllerPods = PodUtils.podSnapshot(TestConstants.CO_NAMESPACE, controllerSelector);
-        brokerPods = PodUtils.podSnapshot(TestConstants.CO_NAMESPACE, brokerSelector);
+        controllerPods = PodUtils.podSnapshot(namespaceName, controllerSelector);
+        brokerPods = PodUtils.podSnapshot(namespaceName, brokerSelector);
 
         LOGGER.info("Updating Kafka CR version field to " + newVersion.version());
 
         // Change the version in Kafka CR
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
             kafka.getSpec().getKafka().setVersion(newVersion.version());
-        }, TestConstants.CO_NAMESPACE);
+        }, namespaceName);
 
         LOGGER.info("Waiting for readiness of new Kafka version (" + newVersion.version() + ") to complete");
 
         // Wait for the controllers' version change roll
-        controllerPods = RollingUpdateUtils.waitTillComponentHasRolled(TestConstants.CO_NAMESPACE, controllerSelector, controllerReplicas, controllerPods);
+        controllerPods = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, controllerSelector, controllerReplicas, controllerPods);
         LOGGER.info("1st Controllers roll (image change) is complete");
 
         // Wait for the brokers' version change roll
-        brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(TestConstants.CO_NAMESPACE, brokerSelector, brokerReplicas, brokerPods);
+        brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, brokerSelector, brokerReplicas, brokerPods);
         LOGGER.info("1st Brokers roll (image change) is complete");
 
-        String currentMetadataVersion = KafkaResource.kafkaClient().inNamespace(TestConstants.CO_NAMESPACE).withName(clusterName).get().getSpec().getKafka().getMetadataVersion();
+        String currentMetadataVersion = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getKafka().getMetadataVersion();
 
         LOGGER.info("Deployment of Kafka (" + newVersion.version() + ") complete");
 
-        PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, clusterName);
+        PodUtils.verifyThatRunningPodsAreStable(namespaceName, clusterName);
 
-        String controllerPodName = kubeClient().listPodsByPrefixInName(TestConstants.CO_NAMESPACE, KafkaResource.getStrimziPodSetName(clusterName, CONTROLLER_NODE_NAME)).get(0).getMetadata().getName();
-        String brokerPodName = kubeClient().listPodsByPrefixInName(TestConstants.CO_NAMESPACE, KafkaResource.getStrimziPodSetName(clusterName, BROKER_NODE_NAME)).get(0).getMetadata().getName();
+        String controllerPodName = kubeClient().listPodsByPrefixInName(namespaceName, KafkaResource.getStrimziPodSetName(clusterName, CONTROLLER_NODE_NAME)).get(0).getMetadata().getName();
+        String brokerPodName = kubeClient().listPodsByPrefixInName(namespaceName, KafkaResource.getStrimziPodSetName(clusterName, BROKER_NODE_NAME)).get(0).getMetadata().getName();
 
         // Extract the Kafka version number from the jars in the lib directory
-        controllerVersionResult = KafkaUtils.getVersionFromKafkaPodLibs(controllerPodName);
+        controllerVersionResult = KafkaUtils.getVersionFromKafkaPodLibs(namespaceName, controllerPodName);
         LOGGER.info("Post-change Kafka version query returned: " + controllerVersionResult);
 
         assertThat("Kafka container had version " + controllerVersionResult + " where " + newVersion.version() +
             " was expected", controllerVersionResult, is(newVersion.version()));
 
         // Extract the Kafka version number from the jars in the lib directory
-        String brokerVersionResult = KafkaUtils.getVersionFromKafkaPodLibs(brokerPodName);
+        String brokerVersionResult = KafkaUtils.getVersionFromKafkaPodLibs(namespaceName, brokerPodName);
         LOGGER.info("Post-change Kafka version query returned: " + brokerVersionResult);
 
         assertThat("Kafka container had version " + brokerVersionResult + " where " + newVersion.version() +
@@ -230,27 +231,27 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
                 kafka.getSpec().getKafka().setMetadataVersion(newVersion.metadataVersion());
 
                 LOGGER.info("Kafka config after updating '{}'", kafka.getSpec().getKafka().toString());
-            }, TestConstants.CO_NAMESPACE);
+            }, namespaceName);
 
             LOGGER.info("Metadata version changed, it doesn't require rolling update, so the Pods should be stable");
-            PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, clusterName);
-            assertFalse(RollingUpdateUtils.componentHasRolled(TestConstants.CO_NAMESPACE, controllerSelector, controllerPods));
-            assertFalse(RollingUpdateUtils.componentHasRolled(TestConstants.CO_NAMESPACE, brokerSelector, brokerPods));
+            PodUtils.verifyThatRunningPodsAreStable(namespaceName, clusterName);
+            assertFalse(RollingUpdateUtils.componentHasRolled(namespaceName, controllerSelector, controllerPods));
+            assertFalse(RollingUpdateUtils.componentHasRolled(namespaceName, brokerSelector, brokerPods));
         }
 
         if (!isUpgrade) {
             LOGGER.info("Verifying that metadataVersion attribute updated correctly to version {}", initMetadataVersion);
-            assertThat(Crds.kafkaOperation(kubeClient().getClient()).inNamespace(TestConstants.CO_NAMESPACE).withName(clusterName)
+            assertThat(Crds.kafkaOperation(kubeClient().getClient()).inNamespace(namespaceName).withName(clusterName)
                 .get().getStatus().getKafkaMetadataVersion().contains(initMetadataVersion), is(true));
         } else {
             if (currentMetadataVersion != null) {
                 LOGGER.info("Verifying that metadataVersion attribute updated correctly to version {}", newVersion.metadataVersion());
-                assertThat(Crds.kafkaOperation(kubeClient().getClient()).inNamespace(TestConstants.CO_NAMESPACE).withName(clusterName)
+                assertThat(Crds.kafkaOperation(kubeClient().getClient()).inNamespace(namespaceName).withName(clusterName)
                     .get().getStatus().getKafkaMetadataVersion().contains(newVersion.metadataVersion()), is(true));
             }
         }
 
-        LOGGER.info("Waiting till Kafka Cluster {}/{} with specified version {} has the same version in status and specification", TestConstants.CO_NAMESPACE, clusterName, newVersion.version());
-        KafkaUtils.waitUntilStatusKafkaVersionMatchesExpectedVersion(clusterName, TestConstants.CO_NAMESPACE, newVersion.version());
+        LOGGER.info("Waiting till Kafka Cluster {}/{} with specified version {} has the same version in status and specification", namespaceName, clusterName, newVersion.version());
+        KafkaUtils.waitUntilStatusKafkaVersionMatchesExpectedVersion(namespaceName, clusterName, newVersion.version());
     }
 }

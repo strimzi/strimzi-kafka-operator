@@ -67,7 +67,9 @@ public class ExecutionListener implements TestExecutionListener {
             TestConstants.DYNAMIC_CONFIGURATION, // Dynamic configuration also because in DynamicConfSharedST we use @TestFactory
             TestConstants.TRACING,  // Tracing, because we deploy Jaeger operator inside additional namespace
             TestConstants.KAFKA_SMOKE, // KafkaVersionsST, MigrationST because here we use @ParameterizedTest
-            TestConstants.MIGRATION
+            TestConstants.MIGRATION,
+            TestConstants.UPGRADE,
+            TestConstants.KRAFT_UPGRADE
         );
 
         for (TestIdentifier testIdentifier : testCases) {

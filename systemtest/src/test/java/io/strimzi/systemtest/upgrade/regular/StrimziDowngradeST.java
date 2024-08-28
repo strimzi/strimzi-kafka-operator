@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.upgrade.regular;
 
-import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.KindIPv6NotSupported;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
@@ -22,13 +22,13 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.util.List;
 
+import static io.strimzi.systemtest.Environment.TEST_SUITE_NAMESPACE;
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
 import static io.strimzi.systemtest.TestConstants.UPGRADE;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -52,48 +52,49 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
         assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getEnvMaxK8sVersion()));
 
         LOGGER.debug("Running downgrade test from version {} to {}", from, to);
-        performDowngrade(parameters);
+        performDowngrade(CO_NAMESPACE, TEST_SUITE_NAMESPACE, parameters);
     }
 
     @MicroShiftNotSupported("Due to lack of Kafka Connect build feature")
     @KindIPv6NotSupported("Our current CI setup doesn't allow pushing into internal registries that is needed in this test")
-    @Test
+    @IsolatedTest
     void testDowngradeOfKafkaConnectAndKafkaConnector() throws IOException {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final BundleVersionModificationData bundleDowngradeDataWithFeatureGates = bundleDowngradeMetadata.stream()
                 .filter(bundleMetadata -> bundleMetadata.getFeatureGatesBefore() != null && !bundleMetadata.getFeatureGatesBefore().isEmpty() ||
                         bundleMetadata.getFeatureGatesAfter() != null && !bundleMetadata.getFeatureGatesAfter().isEmpty()).toList().get(0);
         UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion(bundleDowngradeDataWithFeatureGates.getDeployKafkaVersion());
 
-        doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(bundleDowngradeDataWithFeatureGates, testStorage, upgradeKafkaVersion);
+        doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(CO_NAMESPACE, TEST_SUITE_NAMESPACE, bundleDowngradeDataWithFeatureGates, testStorage, upgradeKafkaVersion);
     }
 
-    @SuppressWarnings("MethodLength")
-    private void performDowngrade(BundleVersionModificationData downgradeData) throws IOException {
+    private void performDowngrade(String clusterOperatorNamespaceName, String componentsNamespaceName, BundleVersionModificationData downgradeData) throws IOException {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         UpgradeKafkaVersion testUpgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(downgradeData.getFromKafkaVersionsUrl(), downgradeData.getDeployKafkaVersion());
 
         // Setup env
         // We support downgrade only when you didn't upgrade to new inter.broker.protocol.version and log.message.format.version
         // https://strimzi.io/docs/operators/latest/full/deploying.html#con-target-downgrade-version-str
-        setupEnvAndUpgradeClusterOperator(downgradeData, testStorage, testUpgradeKafkaVersion, TestConstants.CO_NAMESPACE);
-        logPodImages(TestConstants.CO_NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(clusterOperatorNamespaceName, componentsNamespaceName, downgradeData, testStorage, testUpgradeKafkaVersion);
+
+        logClusterOperatorPodImage(clusterOperatorNamespaceName);
+        logComponentsPodImages(componentsNamespaceName);
 
         // Check if UTO is used before changing the CO -> used for check for KafkaTopics
-        boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(TestConstants.CO_NAMESPACE, eoSelector);
+        boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(componentsNamespaceName, eoSelector);
 
         // Downgrade CO
-        changeClusterOperator(downgradeData, TestConstants.CO_NAMESPACE);
+        changeClusterOperator(clusterOperatorNamespaceName, componentsNamespaceName, downgradeData);
         // Wait for Kafka cluster rolling update
-        waitForKafkaClusterRollingUpdate();
-        logPodImages(TestConstants.CO_NAMESPACE);
+        waitForKafkaClusterRollingUpdate(componentsNamespaceName);
+        logComponentsPodImages(componentsNamespaceName);
         // Downgrade kafka
-        changeKafkaAndLogFormatVersion(downgradeData);
+        changeKafkaAndLogFormatVersion(componentsNamespaceName, downgradeData);
         // Verify that pods are stable
-        PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, clusterName);
-        checkAllImages(downgradeData, TestConstants.CO_NAMESPACE);
+        PodUtils.verifyThatRunningPodsAreStable(componentsNamespaceName, clusterName);
+        checkAllComponentsImages(componentsNamespaceName, downgradeData);
         // Verify upgrade
-        verifyProcedure(downgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.CO_NAMESPACE, wasUTOUsedBefore);
+        verifyProcedure(componentsNamespaceName, downgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), wasUTOUsedBefore);
     }
 
     @BeforeEach
@@ -104,7 +105,11 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
     @AfterEach
     void afterEach() {
         cleanUpKafkaTopics();
-        deleteInstalledYamls(coDir, TestConstants.CO_NAMESPACE);
+        deleteInstalledYamls(CO_NAMESPACE, TEST_SUITE_NAMESPACE, coDir);
         NamespaceManager.getInstance().deleteNamespaceWithWait(CO_NAMESPACE);
+        if (!TEST_SUITE_NAMESPACE.equals(CO_NAMESPACE)) {
+            NamespaceManager.getInstance().deleteNamespaceWithWait(TEST_SUITE_NAMESPACE);
+        }
+
     }
 }
