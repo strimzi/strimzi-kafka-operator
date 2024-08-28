@@ -3,7 +3,10 @@ set -xe
 
 rm -rf ~/.kube
 
-KUBE_VERSION=${KUBE_VERSION:-1.25.0}
+# There is a bug in 0.24.0 - https://github.com/kubernetes-sigs/kind/issues/3713
+KIND_VERSION=${KIND_VERSION:-"v0.23.0"}
+# To properly upgrade Kind version check the releases in github https://github.com/kubernetes-sigs/kind/releases and use proper image based on Kind version
+KIND_NODE_IMAGE=${KIND_NODE_IMAGE:-"kindest/node:v1.25.16@sha256:5da57dfc290ac3599e775e63b8b6c49c0c85d3fec771cd7d55b45fae14b38d3b"}
 COPY_DOCKER_LOGIN=${COPY_DOCKER_LOGIN:-"false"}
 
 DEFAULT_CLUSTER_MEMORY=$(free -m | grep "Mem" | awk '{print $2}')
@@ -43,17 +46,9 @@ function label_node {
 
 function install_kubernetes_provisioner {
 
-    if [ "${TEST_KUBERNETES_VERSION:-latest}" = "latest" ]; then
-        # get the latest released tag
-        TEST_KUBERNETES_VERSION=$(curl https://api.github.com/repos/kubernetes-sigs/kind/releases/latest | grep -Po "(?<=\"tag_name\": \").*(?=\")")
-    fi
-    TEST_KUBERNETES_URL=https://github.com/kubernetes-sigs/kind/releases/download/${TEST_KUBERNETES_VERSION}/kind-linux-${ARCH}
+    KIND_URL=https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/kind-linux-${ARCH}
 
-    if [ "$KUBE_VERSION" != "latest" ] && [ "$KUBE_VERSION" != "stable" ]; then
-        KUBE_VERSION="v${KUBE_VERSION}"
-    fi
-
-    curl -Lo kind ${TEST_KUBERNETES_URL} && chmod +x kind
+    curl -Lo kind ${KIND_URL} && chmod +x kind
     sudo cp kind /usr/local/bin
 }
 
@@ -148,7 +143,7 @@ if [[ "$IP_FAMILY" = "ipv4" || "$IP_FAMILY" = "dual" ]]; then
     # https://github.com/kubernetes-sigs/kind/issues/2875
     # https://github.com/containerd/containerd/blob/main/docs/cri/config.md#registry-configuration
     # See: https://github.com/containerd/containerd/blob/main/docs/hosts.md
-    cat <<EOF | kind create cluster --config=-
+    cat <<EOF | kind create cluster --image "${KIND_NODE_IMAGE}" --config=-
     kind: Cluster
     apiVersion: kind.x-k8s.io/v1alpha4
     nodes:
@@ -211,7 +206,7 @@ elif [[ "$IP_FAMILY" = "ipv6" ]]; then
         \"fixed-cidr-v6\": \"${ula_fixed_ipv6}::/80\"
     }"
 
-    cat <<EOF | kind create cluster --config=-
+    cat <<EOF | kind create cluster --image "${KIND_NODE_IMAGE}" --config=-
     kind: Cluster
     apiVersion: kind.x-k8s.io/v1alpha4
     nodes:

@@ -119,21 +119,21 @@ prepare:
         HOST="myregistry.local"
       fi
       export MVN_ARGS="-B -DskipTests -Dmaven.javadoc.skip=true --no-transfer-progress"
-      
+
       # Setup local registry for building images and connect image
       export DOCKER_REGISTRY="${HOST}:5001"
       export DOCKER_ORG="strimzi"
       export DOCKER_TAG="test"
-      
+
       make java_install
-            
+
       # Build images only for non-release triggers
-      if [[ ${RELEASE} != True ]]; then
+      if [[ ${RELEASE:-False} != True ]]; then
         make docker_build
         make docker_tag
         make docker_push
       fi
-            
+
       # Get latest Kafka version from kafka-versions.yaml
       export KAFKA_VERSION=$(cat kafka-versions.yaml | yq eval '.[] | select(.default) | .version' -)
       # Set env var for KafkaConnect build image to avoid building images
@@ -145,7 +145,7 @@ prepare:
       else
         export BASE_IMAGE="${DOCKER_REGISTRY}/${DOCKER_ORG}/kafka:${DOCKER_TAG}-kafka-KAFKA_VERSION"
       fi
-      
+
       # Build the connect image
       eval $(./systemtest/src/test/resources/connect-build/build-connect-image.sh "$KAFKA_VERSION" "$BASE_IMAGE" "$CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN")
       docker push $CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN
