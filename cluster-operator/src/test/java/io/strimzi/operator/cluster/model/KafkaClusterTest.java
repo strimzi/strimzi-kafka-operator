@@ -37,6 +37,7 @@ import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
+import io.fabric8.kubernetes.api.model.WeightedPodAffinityTermBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
@@ -99,7 +100,6 @@ import io.strimzi.test.annotations.ParallelTest;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matchers;
 
-import java.io.IOException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -108,7 +108,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.cluster.model.jmx.JmxModel.JMX_PORT;
@@ -2530,65 +2529,675 @@ public class KafkaClusterTest {
     }
 
     @ParallelTest
-    public void withAffinityWithoutRack() throws IOException {
-        AtomicReference<KafkaPool> pool = new AtomicReference<>();
+    public void testRackAffinity() {
+        Affinity rackAffinity = new AffinityBuilder()
+                .withNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(new NodeSelectorTermBuilder()
+                                .addNewMatchExpression()
+                                    .withKey("failure-domain.beta.kubernetes.io/zone")
+                                    .withOperator("Exists")
+                                .endMatchExpression()
+                                .build())
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .withNewPodAntiAffinity()
+                    .withPreferredDuringSchedulingIgnoredDuringExecution(
+                            new WeightedPodAffinityTermBuilder()
+                                    .withWeight(100)
+                                    .withNewPodAffinityTerm()
+                                        .withNewLabelSelector()
+                                            .withMatchLabels(Map.of("strimzi.io/cluster", "foo", "strimzi.io/name", "foo-kafka"))
+                                        .endLabelSelector()
+                                        .withTopologyKey("failure-domain.beta.kubernetes.io/zone")
+                                    .endPodAffinityTerm()
+                                    .build()
+                    )
+                .endPodAntiAffinity()
+                .build();
 
-        ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, (kafkaAssembly1, versions) -> {
-            List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
-            pool.set(pools.get(0));
-            return KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, pools, versions, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
-        }, this.getClass().getSimpleName() + ".withAffinityWithoutRack");
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withNewRack()
+                            .withTopologyKey("failure-domain.beta.kubernetes.io/zone")
+                        .endRack()
+                    .endKafka()
+                .endSpec()
+                .build();
 
-        resourceTester.assertDesiredModel(".yaml", model -> model.getMergedAffinity(pool.get()));
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
+        assertThat(podSets.size(), is(3));
+
+        for (StrimziPodSet podSet : podSets)    {
+            // We need to loop through the pods to make sure they have the right values
+            List<Pod> pods = PodSetUtils.podSetToPods(podSet);
+
+            for (Pod pod : pods) {
+                assertThat(pod.getSpec().getAffinity(), is(rackAffinity));
+            }
+        }
     }
 
     @ParallelTest
-    public void withRackWithoutAffinity() throws IOException {
-        AtomicReference<KafkaPool> pool = new AtomicReference<>();
+    public void testAffinityAndTolerations() {
+        Affinity affinity = new AffinityBuilder()
+                .withNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(new NodeSelectorTermBuilder()
+                                .addNewMatchExpression()
+                                    .withKey("key1")
+                                    .withOperator("In")
+                                    .withValues("value1", "value2")
+                                .endMatchExpression()
+                                .build())
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .build();
 
-        ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, (kafkaAssembly1, versions) -> {
-            List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
-            pool.set(pools.get(0));
-            return KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, pools, versions, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
-        }, this.getClass().getSimpleName() + ".withRackWithoutAffinity");
+        List<Toleration> toleration = List.of(new TolerationBuilder()
+                .withEffect("NoExecute")
+                .withKey("key1")
+                .withOperator("Equal")
+                .withValue("value1")
+                .build());
 
-        resourceTester.assertDesiredModel(".yaml", model -> model.getMergedAffinity(pool.get()));
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withNewTemplate()
+                            .withNewPod()
+                                .withAffinity(affinity)
+                                .withTolerations(toleration)
+                            .endPod()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
+        assertThat(podSets.size(), is(3));
+
+        for (StrimziPodSet podSet : podSets)    {
+            // We need to loop through the pods to make sure they have the right values
+            List<Pod> pods = PodSetUtils.podSetToPods(podSet);
+
+            for (Pod pod : pods) {
+                assertThat(pod.getSpec().getAffinity(), is(affinity));
+                assertThat(pod.getSpec().getTolerations(), is(toleration));
+            }
+        }
     }
 
     @ParallelTest
-    public void withRackAndAffinityWithMoreTerms() throws IOException {
-        AtomicReference<KafkaPool> pool = new AtomicReference<>();
+    public void testAffinityAndTolerationsInKafkaAndKafkaPool() {
+        Affinity affinity = new AffinityBuilder()
+                .withNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(new NodeSelectorTermBuilder()
+                                .addNewMatchExpression()
+                                    .withKey("key1")
+                                    .withOperator("In")
+                                    .withValues("value1", "value2")
+                                .endMatchExpression()
+                                .build())
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .build();
+        Affinity poolAffinity = new AffinityBuilder()
+                .withNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(new NodeSelectorTermBuilder()
+                                .addNewMatchExpression()
+                                    .withKey("key2")
+                                    .withOperator("In")
+                                    .withValues("value3", "value4")
+                                .endMatchExpression()
+                                .build())
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .build();
 
-        ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, (kafkaAssembly1, versions) -> {
-            List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
-            pool.set(pools.get(0));
-            return KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, pools, versions, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
-        }, this.getClass().getSimpleName() + ".withRackAndAffinityWithMoreTerms");
+        List<Toleration> toleration = List.of(new TolerationBuilder()
+                .withEffect("NoExecute")
+                .withKey("key1")
+                .withOperator("Equal")
+                .withValue("value1")
+                .build());
+        List<Toleration> poolToleration = List.of(new TolerationBuilder()
+                .withEffect("NoExecute")
+                .withKey("key2")
+                .withOperator("Equal")
+                .withValue("value2")
+                .build());
 
-        resourceTester.assertDesiredModel(".yaml", model -> model.getMergedAffinity(pool.get()));
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withNewTemplate()
+                            .withNewPod()
+                                .withAffinity(affinity)
+                                .withTolerations(toleration)
+                            .endPod()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaNodePool brokers = new KafkaNodePoolBuilder(POOL_BROKERS)
+                .editSpec()
+                    .withNewTemplate()
+                        .withNewPod()
+                            .withAffinity(poolAffinity)
+                            .withTolerations(poolToleration)
+                        .endPod()
+                    .endTemplate()
+                .endSpec()
+                .build();
+
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, brokers), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
+        assertThat(podSets.size(), is(3));
+
+        for (StrimziPodSet podSet : podSets)    {
+            // We need to loop through the pods to make sure they have the right values
+            List<Pod> pods = PodSetUtils.podSetToPods(podSet);
+
+            for (Pod pod : pods) {
+                if (pod.getMetadata().getName().contains("brokers"))    {
+                    assertThat(pod.getSpec().getAffinity(), is(poolAffinity));
+                    assertThat(pod.getSpec().getTolerations(), is(poolToleration));
+                } else {
+                    assertThat(pod.getSpec().getAffinity(), is(affinity));
+                    assertThat(pod.getSpec().getTolerations(), is(toleration));
+                }
+            }
+        }
     }
 
     @ParallelTest
-    public void withRackAndAffinity() throws IOException {
-        AtomicReference<KafkaPool> pool = new AtomicReference<>();
+    public void testAffinityAndTolerationsInKafkaPool() {
+        Affinity poolAffinity = new AffinityBuilder()
+                .withNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(new NodeSelectorTermBuilder()
+                                .addNewMatchExpression()
+                                    .withKey("key2")
+                                    .withOperator("In")
+                                    .withValues("value3", "value4")
+                                .endMatchExpression()
+                                .build())
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .build();
 
-        ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, (kafkaAssembly1, versions) -> {
-            List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
-            pool.set(pools.get(0));
-            return KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, pools, versions, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
-        }, this.getClass().getSimpleName() + ".withRackAndAffinity");
+        List<Toleration> poolToleration = List.of(new TolerationBuilder()
+                .withEffect("NoExecute")
+                .withKey("key2")
+                .withOperator("Equal")
+                .withValue("value2")
+                .build());
 
-        resourceTester.assertDesiredModel(".yaml", model -> model.getMergedAffinity(pool.get()));
+        KafkaNodePool brokers = new KafkaNodePoolBuilder(POOL_BROKERS)
+                .editSpec()
+                    .withNewTemplate()
+                        .withNewPod()
+                            .withAffinity(poolAffinity)
+                            .withTolerations(poolToleration)
+                        .endPod()
+                    .endTemplate()
+                .endSpec()
+                .build();
+
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_CONTROLLERS, POOL_MIXED, brokers), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
+        assertThat(podSets.size(), is(3));
+
+        for (StrimziPodSet podSet : podSets)    {
+            // We need to loop through the pods to make sure they have the right values
+            List<Pod> pods = PodSetUtils.podSetToPods(podSet);
+
+            for (Pod pod : pods) {
+                if (pod.getMetadata().getName().contains("brokers"))    {
+                    assertThat(pod.getSpec().getAffinity(), is(poolAffinity));
+                    assertThat(pod.getSpec().getTolerations(), is(poolToleration));
+                } else {
+                    assertThat(pod.getSpec().getAffinity(), is(new Affinity()));
+                    assertThat(pod.getSpec().getTolerations(), is(List.of()));
+                }
+            }
+        }
     }
 
     @ParallelTest
-    public void withTolerations() throws IOException {
-        ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, (kafkaAssembly1, versions) -> {
-            List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
-            return KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
-        }, this.getClass().getSimpleName() + ".withTolerations");
+    public void testAffinityAndRack() {
+                Affinity mergedRackAffinity = new AffinityBuilder()
+                .withNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(
+                                new NodeSelectorTermBuilder()
+                                        .addNewMatchExpression()
+                                            .withKey("key1")
+                                            .withOperator("In")
+                                            .withValues("value1", "value2")
+                                        .endMatchExpression()
+                                        .addNewMatchExpression()
+                                            .withKey("failure-domain.beta.kubernetes.io/zone")
+                                            .withOperator("Exists")
+                                        .endMatchExpression()
+                                        .build()
+                        )
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .withNewPodAntiAffinity()
+                    .withPreferredDuringSchedulingIgnoredDuringExecution(
+                            new WeightedPodAffinityTermBuilder()
+                                    .withWeight(50)
+                                    .withNewPodAffinityTerm()
+                                        .withNewLabelSelector()
+                                            .withMatchLabels(Map.of("storage", "true"))
+                                        .endLabelSelector()
+                                        .withTopologyKey("kubernetes.io/hostname")
+                                    .endPodAffinityTerm()
+                                    .build(),
+                            new WeightedPodAffinityTermBuilder()
+                                    .withWeight(100)
+                                    .withNewPodAffinityTerm()
+                                        .withNewLabelSelector()
+                                            .withMatchLabels(Map.of("strimzi.io/cluster", "foo", "strimzi.io/name", "foo-kafka"))
+                                        .endLabelSelector()
+                                        .withTopologyKey("failure-domain.beta.kubernetes.io/zone")
+                                    .endPodAffinityTerm()
+                                    .build()
+                    )
+                .endPodAntiAffinity()
+                .build();
 
-        resourceTester.assertDesiredResource(".yaml", cr -> cr.getSpec().getKafka().getTemplate().getPod().getTolerations());
+        Affinity affinity = new AffinityBuilder()
+                .withNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(new NodeSelectorTermBuilder()
+                                .addNewMatchExpression()
+                                    .withKey("key1")
+                                    .withOperator("In")
+                                    .withValues("value1", "value2")
+                                .endMatchExpression()
+                                .build())
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .withNewPodAntiAffinity()
+                    .withPreferredDuringSchedulingIgnoredDuringExecution(
+                            new WeightedPodAffinityTermBuilder()
+                                    .withWeight(50)
+                                    .withNewPodAffinityTerm()
+                                        .withNewLabelSelector()
+                                            .withMatchLabels(Map.of("storage", "true"))
+                                        .endLabelSelector()
+                                        .withTopologyKey("kubernetes.io/hostname")
+                                    .endPodAffinityTerm()
+                                    .build()
+                    )
+                .endPodAntiAffinity()
+                .build();
+
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withNewRack()
+                            .withTopologyKey("failure-domain.beta.kubernetes.io/zone")
+                        .endRack()
+                        .withNewTemplate()
+                            .withNewPod()
+                                .withAffinity(affinity)
+                            .endPod()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
+        assertThat(podSets.size(), is(3));
+
+        for (StrimziPodSet podSet : podSets)    {
+            // We need to loop through the pods to make sure they have the right values
+            List<Pod> pods = PodSetUtils.podSetToPods(podSet);
+
+            for (Pod pod : pods) {
+                assertThat(pod.getSpec().getAffinity(), is(mergedRackAffinity));
+            }
+        }
+    }
+
+    @ParallelTest
+    public void testAffinityAndRackInKafkaAndKafkaPool() {
+        Affinity mergedRackAffinity = new AffinityBuilder()
+                .withNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(
+                                new NodeSelectorTermBuilder()
+                                        .addNewMatchExpression()
+                                            .withKey("key1")
+                                            .withOperator("In")
+                                            .withValues("value1", "value2")
+                                        .endMatchExpression()
+                                        .addNewMatchExpression()
+                                            .withKey("failure-domain.beta.kubernetes.io/zone")
+                                            .withOperator("Exists")
+                                        .endMatchExpression()
+                                        .build()
+                        )
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .withNewPodAntiAffinity()
+                    .withPreferredDuringSchedulingIgnoredDuringExecution(
+                            new WeightedPodAffinityTermBuilder()
+                                    .withWeight(50)
+                                    .withNewPodAffinityTerm()
+                                        .withNewLabelSelector()
+                                            .withMatchLabels(Map.of("storage", "true"))
+                                        .endLabelSelector()
+                                        .withTopologyKey("kubernetes.io/hostname")
+                                    .endPodAffinityTerm()
+                                    .build(),
+                            new WeightedPodAffinityTermBuilder()
+                                    .withWeight(100)
+                                    .withNewPodAffinityTerm()
+                                        .withNewLabelSelector()
+                                            .withMatchLabels(Map.of("strimzi.io/cluster", "foo", "strimzi.io/name", "foo-kafka"))
+                                        .endLabelSelector()
+                                        .withTopologyKey("failure-domain.beta.kubernetes.io/zone")
+                                    .endPodAffinityTerm()
+                                    .build()
+                    )
+                .endPodAntiAffinity()
+                .build();
+
+        Affinity poolMergedRackAffinity = new AffinityBuilder()
+                .withNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(
+                                new NodeSelectorTermBuilder()
+                                        .addNewMatchExpression()
+                                            .withKey("key2")
+                                            .withOperator("In")
+                                            .withValues("value3", "value4")
+                                        .endMatchExpression()
+                                        .addNewMatchExpression()
+                                            .withKey("failure-domain.beta.kubernetes.io/zone")
+                                            .withOperator("Exists")
+                                        .endMatchExpression()
+                                        .build()
+                        )
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .withNewPodAntiAffinity()
+                    .withPreferredDuringSchedulingIgnoredDuringExecution(
+                            new WeightedPodAffinityTermBuilder()
+                                    .withWeight(50)
+                                    .withNewPodAffinityTerm()
+                                        .withNewLabelSelector()
+                                            .withMatchLabels(Map.of("database", "true"))
+                                        .endLabelSelector()
+                                        .withTopologyKey("kubernetes.io/hostname")
+                                    .endPodAffinityTerm()
+                                    .build(),
+                            new WeightedPodAffinityTermBuilder()
+                                    .withWeight(100)
+                                    .withNewPodAffinityTerm()
+                                        .withNewLabelSelector()
+                                            .withMatchLabels(Map.of("strimzi.io/cluster", "foo", "strimzi.io/name", "foo-kafka"))
+                                        .endLabelSelector()
+                                        .withTopologyKey("failure-domain.beta.kubernetes.io/zone")
+                                    .endPodAffinityTerm()
+                                    .build()
+                    )
+                .endPodAntiAffinity()
+                .build();
+
+        Affinity affinity = new AffinityBuilder()
+                .withNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(new NodeSelectorTermBuilder()
+                                .addNewMatchExpression()
+                                    .withKey("key1")
+                                    .withOperator("In")
+                                    .withValues("value1", "value2")
+                                .endMatchExpression()
+                                .build())
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .withNewPodAntiAffinity()
+                    .withPreferredDuringSchedulingIgnoredDuringExecution(
+                            new WeightedPodAffinityTermBuilder()
+                                    .withWeight(50)
+                                    .withNewPodAffinityTerm()
+                                        .withNewLabelSelector()
+                                            .withMatchLabels(Map.of("storage", "true"))
+                                        .endLabelSelector()
+                                        .withTopologyKey("kubernetes.io/hostname")
+                                    .endPodAffinityTerm()
+                                    .build()
+                    )
+                .endPodAntiAffinity()
+                .build();
+        Affinity poolAffinity = new AffinityBuilder()
+                .withNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(new NodeSelectorTermBuilder()
+                                .addNewMatchExpression()
+                                    .withKey("key2")
+                                    .withOperator("In")
+                                    .withValues("value3", "value4")
+                                .endMatchExpression()
+                                .build())
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .withNewPodAntiAffinity()
+                    .withPreferredDuringSchedulingIgnoredDuringExecution(
+                            new WeightedPodAffinityTermBuilder()
+                                    .withWeight(50)
+                                    .withNewPodAffinityTerm()
+                                        .withNewLabelSelector()
+                                            .withMatchLabels(Map.of("database", "true"))
+                                        .endLabelSelector()
+                                        .withTopologyKey("kubernetes.io/hostname")
+                                    .endPodAffinityTerm()
+                                    .build()
+                    )
+                .endPodAntiAffinity()
+                .build();
+
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withNewRack()
+                            .withTopologyKey("failure-domain.beta.kubernetes.io/zone")
+                        .endRack()
+                        .withNewTemplate()
+                            .withNewPod()
+                                .withAffinity(affinity)
+                            .endPod()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaNodePool brokers = new KafkaNodePoolBuilder(POOL_BROKERS)
+                .editSpec()
+                    .withNewTemplate()
+                        .withNewPod()
+                            .withAffinity(poolAffinity)
+                        .endPod()
+                    .endTemplate()
+                .endSpec()
+                .build();
+
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, brokers), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
+        assertThat(podSets.size(), is(3));
+
+        for (StrimziPodSet podSet : podSets)    {
+            // We need to loop through the pods to make sure they have the right values
+            List<Pod> pods = PodSetUtils.podSetToPods(podSet);
+
+            for (Pod pod : pods) {
+                if (pod.getMetadata().getName().contains("brokers"))    {
+                    assertThat(pod.getSpec().getAffinity(), is(poolMergedRackAffinity));
+                } else {
+                    assertThat(pod.getSpec().getAffinity(), is(mergedRackAffinity));
+                }
+            }
+        }
+    }
+
+    @ParallelTest
+    public void testAffinityAndRackInKafkaPool() {
+        Affinity rackAffinity = new AffinityBuilder()
+                .withNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(new NodeSelectorTermBuilder()
+                                .addNewMatchExpression()
+                                    .withKey("failure-domain.beta.kubernetes.io/zone")
+                                    .withOperator("Exists")
+                                .endMatchExpression()
+                                .build())
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .withNewPodAntiAffinity()
+                    .withPreferredDuringSchedulingIgnoredDuringExecution(
+                            new WeightedPodAffinityTermBuilder()
+                                    .withWeight(100)
+                                    .withNewPodAffinityTerm()
+                                        .withNewLabelSelector()
+                                            .withMatchLabels(Map.of("strimzi.io/cluster", "foo", "strimzi.io/name", "foo-kafka"))
+                                        .endLabelSelector()
+                                        .withTopologyKey("failure-domain.beta.kubernetes.io/zone")
+                                    .endPodAffinityTerm()
+                                    .build()
+                    )
+                .endPodAntiAffinity()
+                .build();
+
+        Affinity mergedRackAffinity = new AffinityBuilder()
+                .withNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(
+                                new NodeSelectorTermBuilder()
+                                        .addNewMatchExpression()
+                                            .withKey("key2")
+                                            .withOperator("In")
+                                            .withValues("value3", "value4")
+                                        .endMatchExpression()
+                                        .addNewMatchExpression()
+                                            .withKey("failure-domain.beta.kubernetes.io/zone")
+                                            .withOperator("Exists")
+                                        .endMatchExpression()
+                                        .build()
+                        )
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .withNewPodAntiAffinity()
+                    .withPreferredDuringSchedulingIgnoredDuringExecution(
+                            new WeightedPodAffinityTermBuilder()
+                                    .withWeight(50)
+                                    .withNewPodAffinityTerm()
+                                        .withNewLabelSelector()
+                                            .withMatchLabels(Map.of("database", "true"))
+                                        .endLabelSelector()
+                                        .withTopologyKey("kubernetes.io/hostname")
+                                    .endPodAffinityTerm()
+                                    .build(),
+                            new WeightedPodAffinityTermBuilder()
+                                    .withWeight(100)
+                                    .withNewPodAffinityTerm()
+                                        .withNewLabelSelector()
+                                            .withMatchLabels(Map.of("strimzi.io/cluster", "foo", "strimzi.io/name", "foo-kafka"))
+                                        .endLabelSelector()
+                                        .withTopologyKey("failure-domain.beta.kubernetes.io/zone")
+                                    .endPodAffinityTerm()
+                                    .build()
+                    )
+                .endPodAntiAffinity()
+                .build();
+
+        Affinity poolAffinity = new AffinityBuilder()
+                .withNewNodeAffinity()
+                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
+                        .withNodeSelectorTerms(new NodeSelectorTermBuilder()
+                                .addNewMatchExpression()
+                                    .withKey("key2")
+                                    .withOperator("In")
+                                    .withValues("value3", "value4")
+                                .endMatchExpression()
+                                .build())
+                    .endRequiredDuringSchedulingIgnoredDuringExecution()
+                .endNodeAffinity()
+                .withNewPodAntiAffinity()
+                    .withPreferredDuringSchedulingIgnoredDuringExecution(
+                            new WeightedPodAffinityTermBuilder()
+                                    .withWeight(50)
+                                    .withNewPodAffinityTerm()
+                                        .withNewLabelSelector()
+                                            .withMatchLabels(Map.of("database", "true"))
+                                        .endLabelSelector()
+                                        .withTopologyKey("kubernetes.io/hostname")
+                                    .endPodAffinityTerm()
+                                    .build()
+                    )
+                .endPodAntiAffinity()
+                .build();
+
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withNewRack()
+                            .withTopologyKey("failure-domain.beta.kubernetes.io/zone")
+                        .endRack()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaNodePool brokers = new KafkaNodePoolBuilder(POOL_BROKERS)
+                .editSpec()
+                    .withNewTemplate()
+                        .withNewPod()
+                            .withAffinity(poolAffinity)
+                        .endPod()
+                    .endTemplate()
+                .endSpec()
+                .build();
+
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, brokers), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
+        assertThat(podSets.size(), is(3));
+
+        for (StrimziPodSet podSet : podSets)    {
+            // We need to loop through the pods to make sure they have the right values
+            List<Pod> pods = PodSetUtils.podSetToPods(podSet);
+
+            for (Pod pod : pods) {
+                if (pod.getMetadata().getName().contains("brokers"))    {
+                    assertThat(pod.getSpec().getAffinity(), is(mergedRackAffinity));
+                } else {
+                    assertThat(pod.getSpec().getAffinity(), is(rackAffinity));
+                }
+            }
+        }
     }
 
     @ParallelTest
