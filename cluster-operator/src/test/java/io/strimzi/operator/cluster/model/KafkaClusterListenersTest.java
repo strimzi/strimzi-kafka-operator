@@ -9,8 +9,11 @@ import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.Volume;
+import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.openshift.api.model.Route;
+import io.strimzi.api.kafka.model.common.GenericSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.template.ExternalTrafficPolicy;
 import io.strimzi.api.kafka.model.common.template.IpFamily;
 import io.strimzi.api.kafka.model.common.template.IpFamilyPolicy;
@@ -23,6 +26,7 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurati
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBootstrapBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBroker;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBrokerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationCustomBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.kafka.listener.NodeAddressType;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
@@ -718,6 +722,16 @@ public class KafkaClusterListenersTest {
                 assertThat(ingress.getMetadata().getAnnotations().entrySet().containsAll(perPodIngressAnnotations2.entrySet()), is(false));
             }
         }
+    }
+
+    @ParallelTest
+    public void testListenerResourcesWithInternalListenerOnly()  {
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+
+        assertThat(kc.generatePerPodServices().size(), is(0));
+        assertThat(kc.generateExternalIngresses().size(), is(0));
+        assertThat(kc.generateExternalRoutes().size(), is(0));
     }
 
     @ParallelTest
@@ -2028,7 +2042,7 @@ public class KafkaClusterListenersTest {
                 .editSpec()
                 .editKafka()
                 .withListeners(new GenericKafkaListenerBuilder()
-                        .withName("external")
+                        .withName("clusterip")
                         .withPort(9094)
                         .withType(KafkaListenerType.CLUSTER_IP)
                         .withTls(true)
@@ -2050,9 +2064,9 @@ public class KafkaClusterListenersTest {
             List<ContainerPort> ports = kc.getContainerPortList(pool);
 
             if (!"controllers".equals(pool.poolName)) {
-                assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
+                assertThat(ports.contains(ContainerUtils.createContainerPort("tcp-clusterip", 9094)), is(true));
             } else {
-                assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(false));
+                assertThat(ports.contains(ContainerUtils.createContainerPort("tcp-clusterip", 9094)), is(false));
             }
         }
 
@@ -2060,11 +2074,11 @@ public class KafkaClusterListenersTest {
         List<Service> bootstrapServices = kc.generateExternalBootstrapServices();
         assertThat(bootstrapServices.size(), is(1));
 
-        assertThat(bootstrapServices.get(0).getMetadata().getName(), is(KafkaResources.externalBootstrapServiceName(CLUSTER)));
+        assertThat(bootstrapServices.get(0).getMetadata().getName(), is("foo-kafka-clusterip-bootstrap"));
         assertThat(bootstrapServices.get(0).getSpec().getType(), is("ClusterIP"));
         assertThat(bootstrapServices.get(0).getSpec().getSelector(), is(expectedBrokerSelectorLabels()));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().size(), is(1));
-        assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME));
+        assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getName(), is("tcp-clusterip"));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getPort(), is(9094));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getTargetPort().getIntVal(), is(9094));
         assertThat(bootstrapServices.get(0).getSpec().getPorts().get(0).getNodePort(), is(nullValue()));
@@ -2076,11 +2090,11 @@ public class KafkaClusterListenersTest {
         assertThat(services.size(), is(5));
 
         for (Service service : services) {
-            if (service.getMetadata().getName().startsWith("foo-brokers-6")) {
+            if (service.getMetadata().getName().startsWith("foo-brokers-clusterip-6")) {
                 assertThat(service.getMetadata().getAnnotations().get("anno"), is("anno-value-6"));
                 assertThat(service.getMetadata().getLabels().get("label"), is("label-value-6"));
                 TestUtils.checkOwnerReference(service, POOL_BROKERS);
-            } else if (service.getMetadata().getName().startsWith("foo-mixed-3")) {
+            } else if (service.getMetadata().getName().startsWith("foo-mixed-clusterip-3")) {
                 assertThat(service.getMetadata().getAnnotations().get("anno"), is("anno-value-3"));
                 assertThat(service.getMetadata().getLabels().get("label"), is("label-value-3"));
                 TestUtils.checkOwnerReference(service, POOL_MIXED);
@@ -2097,11 +2111,11 @@ public class KafkaClusterListenersTest {
                 }
             }
 
-            assertThat(service.getMetadata().getName(), oneOf("foo-mixed-3", "foo-mixed-4", "foo-brokers-5", "foo-brokers-6", "foo-brokers-7"));
+            assertThat(service.getMetadata().getName(), oneOf("foo-mixed-clusterip-3", "foo-mixed-clusterip-4", "foo-brokers-clusterip-5", "foo-brokers-clusterip-6", "foo-brokers-clusterip-7"));
             assertThat(service.getSpec().getType(), is("ClusterIP"));
             assertThat(service.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), oneOf("foo-mixed-3", "foo-mixed-4", "foo-brokers-5", "foo-brokers-6", "foo-brokers-7"));
             assertThat(service.getSpec().getPorts().size(), is(1));
-            assertThat(service.getSpec().getPorts().get(0).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME));
+            assertThat(service.getSpec().getPorts().get(0).getName(), is("tcp-clusterip"));
             assertThat(service.getSpec().getPorts().get(0).getPort(), is(9094));
             assertThat(service.getSpec().getPorts().get(0).getTargetPort().getIntVal(), is(9094));
             assertThat(service.getSpec().getPorts().get(0).getNodePort(), is(nullValue()));
@@ -2168,6 +2182,147 @@ public class KafkaClusterListenersTest {
         for (Service svc : services)    {
             assertThat(svc.getSpec().getIpFamilyPolicy(), is("PreferDualStack"));
             assertThat(svc.getSpec().getIpFamilies(), contains("IPv6", "IPv4"));
+        }
+    }
+
+    @ParallelTest
+    public void testCustomAuthSecretsAreMounted() {
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                .editKafka()
+                .withListeners(new GenericKafkaListenerBuilder()
+                        .withName("plain")
+                        .withPort(9092)
+                        .withType(KafkaListenerType.INTERNAL)
+                        .withTls(false)
+                        .withAuth(
+                                new KafkaListenerAuthenticationCustomBuilder()
+                                        .withSecrets(new GenericSecretSourceBuilder().withSecretName("test").withKey("foo").build(),
+                                                new GenericSecretSourceBuilder().withSecretName("test2").withKey("bar").build())
+                                        .build())
+                        .build())
+                .endKafka()
+                .endSpec()
+                .build();
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+
+        for (KafkaPool pool : pools) {
+            // Volume mounts
+            Container cont = kc.createContainer(null, pool);
+            assertThat(cont.getVolumeMounts().stream().filter(mount -> "custom-listener-plain-9092-0".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT + "/custom-listener-plain-9092/test"));
+            assertThat(cont.getVolumeMounts().stream().filter(mount -> "custom-listener-plain-9092-1".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT + "/custom-listener-plain-9092/test2"));
+
+            // Volumes
+            List<Volume> volumes = kc.getNonDataVolumes(false, "foo-brokers-6", null);
+
+            assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().size(), is(1));
+            assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getKey(), is("foo"));
+            assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getPath(), is("foo"));
+
+            assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().size(), is(1));
+            assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getKey(), is("bar"));
+            assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getPath(), is("bar"));
+        }
+    }
+
+    @ParallelTest
+    public void testExternalCertificateIngress() {
+        String cert = "my-external-cert.crt";
+        String key = "my.key";
+        String secret = "my-secret";
+
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                .withName("external")
+                                .withPort(9094)
+                                .withType(KafkaListenerType.NODEPORT)
+                                .withTls(true)
+                                .withNewConfiguration()
+                                    .withNewBrokerCertChainAndKey()
+                                        .withCertificate(cert)
+                                        .withKey(key)
+                                        .withSecretName(secret)
+                                    .endBrokerCertChainAndKey()
+                                .endConfiguration()
+                                .build())
+                    .endKafka()
+                .endSpec()
+                .build();
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+
+        // Test volumes
+        List<Volume> volumes = kc.getNonDataVolumes(false, "foo-brokers-6", null);
+        Volume vol = volumes.stream().filter(v -> "custom-external-9094-certs".equals(v.getName())).findFirst().orElse(null);
+
+        assertThat(vol, is(notNullValue()));
+        assertThat(vol.getSecret().getSecretName(), is(secret));
+        assertThat(vol.getSecret().getItems().get(0).getKey(), is(key));
+        assertThat(vol.getSecret().getItems().get(0).getPath(), is("tls.key"));
+        assertThat(vol.getSecret().getItems().get(1).getKey(), is(cert));
+        assertThat(vol.getSecret().getItems().get(1).getPath(), is("tls.crt"));
+
+        for (KafkaPool pool : pools) {
+            // Test volume mounts
+            Container cont = kc.createContainer(null, pool);
+            VolumeMount mount = cont.getVolumeMounts().stream().filter(v -> "custom-external-9094-certs".equals(v.getName())).findFirst().orElse(null);
+
+            assertThat(mount, is(notNullValue()));
+            assertThat(mount.getName(), is("custom-external-9094-certs"));
+            assertThat(mount.getMountPath(), is("/opt/kafka/certificates/custom-external-9094-certs"));
+        }
+    }
+
+    @ParallelTest
+    public void testCustomCertificateTls() {
+        String cert = "my-external-cert.crt";
+        String key = "my.key";
+        String secret = "my-secret";
+
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                .withName("tls")
+                                .withPort(9093)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(true)
+                                .withNewConfiguration()
+                                    .withNewBrokerCertChainAndKey()
+                                        .withCertificate(cert)
+                                        .withKey(key)
+                                        .withSecretName(secret)
+                                    .endBrokerCertChainAndKey()
+                                .endConfiguration()
+                                .build())
+                    .endKafka()
+                .endSpec()
+                .build();
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+
+        // Test volumes
+        List<Volume> volumes = kc.getNonDataVolumes(false, "foo-brokers-6", null);
+        Volume vol = volumes.stream().filter(v -> "custom-tls-9093-certs".equals(v.getName())).findFirst().orElse(null);
+
+        assertThat(vol, is(notNullValue()));
+        assertThat(vol.getSecret().getSecretName(), is(secret));
+        assertThat(vol.getSecret().getItems().get(0).getKey(), is(key));
+        assertThat(vol.getSecret().getItems().get(0).getPath(), is("tls.key"));
+        assertThat(vol.getSecret().getItems().get(1).getKey(), is(cert));
+        assertThat(vol.getSecret().getItems().get(1).getPath(), is("tls.crt"));
+
+        for (KafkaPool pool : pools) {
+            // Test volume mounts
+            Container cont = kc.createContainer(null, pool);
+            VolumeMount mount = cont.getVolumeMounts().stream().filter(v -> "custom-tls-9093-certs".equals(v.getName())).findFirst().orElse(null);
+
+            assertThat(mount, is(notNullValue()));
+            assertThat(mount.getName(), is("custom-tls-9093-certs"));
+            assertThat(mount.getMountPath(), is("/opt/kafka/certificates/custom-tls-9093-certs"));
         }
     }
 }
