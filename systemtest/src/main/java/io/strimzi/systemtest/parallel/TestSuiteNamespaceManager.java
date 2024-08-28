@@ -47,7 +47,7 @@ public class TestSuiteNamespaceManager {
     public void createTestSuiteNamespace() {
         final String testSuiteName = ResourceManager.getTestContext().getRequiredTestClass().getName();
 
-        if (ExecutionListener.hasSuiteParallelOrIsolatedTest(ResourceManager.getTestContext())) {
+        if (ExecutionListener.requiresSharedNamespace(ResourceManager.getTestContext())) {
             // if RBAC is enabled we don't run tests in parallel mode and with that said we don't create another namespaces
             if (!Environment.isNamespaceRbacScope()) {
                 NamespaceManager.getInstance().createNamespaceAndPrepare(Environment.TEST_SUITE_NAMESPACE, CollectorElement.createCollectorElement(testSuiteName));
@@ -63,7 +63,7 @@ public class TestSuiteNamespaceManager {
      *
      */
     public void deleteTestSuiteNamespace() {
-        if (ExecutionListener.hasSuiteParallelOrIsolatedTest(ResourceManager.getTestContext())) {
+        if (ExecutionListener.requiresSharedNamespace(ResourceManager.getTestContext())) {
             // if RBAC is enabled we don't run tests in parallel mode and with that said we don't create another namespaces
             if (!Environment.isNamespaceRbacScope()) {
                 final String testSuiteName = ResourceManager.getTestContext().getRequiredTestClass().getName();
