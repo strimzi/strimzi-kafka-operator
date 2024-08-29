@@ -376,14 +376,14 @@ public class Capacity {
 
         // Override default capacities
         if (brokerCapacity != null) {
-            // For checking for duplicate brokerIds
-            Set<Integer> overrideIds = new HashSet<>();
             List<BrokerCapacityOverride> overrides = brokerCapacity.getOverrides();
             // Override broker entries
             if (overrides != null) {
                 if (overrides.isEmpty()) {
                     LOGGER.warnCr(reconciliation, "Ignoring empty overrides list");
                 } else {
+                    // For checking for duplicate brokerIds
+                    Set<Integer> overrideIds = new HashSet<>();
                     for (BrokerCapacityOverride override : overrides) {
                         List<Integer> ids = override.getBrokers();
                         inboundNetwork = processInboundNetwork(brokerCapacity, override);
