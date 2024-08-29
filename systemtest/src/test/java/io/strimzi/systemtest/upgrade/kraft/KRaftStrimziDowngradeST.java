@@ -57,7 +57,7 @@ public class KRaftStrimziDowngradeST extends AbstractKRaftUpgradeST {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion(bundleDowngradeVersionData.getDeployKafkaVersion());
 
-        doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(CO_NAMESPACE, TEST_SUITE_NAMESPACE, bundleDowngradeVersionData, testStorage, upgradeKafkaVersion);
+        doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(CO_NAMESPACE, bundleDowngradeVersionData, testStorage, upgradeKafkaVersion);
     }
 
     private void performDowngrade(String clusterOperatorNamespaceName, String componentsNamespaceName, BundleVersionModificationData downgradeData) throws IOException {
@@ -70,7 +70,7 @@ public class KRaftStrimziDowngradeST extends AbstractKRaftUpgradeST {
         // We support downgrade only when you didn't upgrade to new inter.broker.protocol.version and log.message.format.version
         // https://strimzi.io/docs/operators/latest/full/deploying.html#con-target-downgrade-version-str
 
-        setupEnvAndUpgradeClusterOperator(clusterOperatorNamespaceName, componentsNamespaceName, downgradeData, testStorage, testUpgradeKafkaVersion);
+        setupEnvAndUpgradeClusterOperator(clusterOperatorNamespaceName, downgradeData, testStorage, testUpgradeKafkaVersion);
         logClusterOperatorPodImage(clusterOperatorNamespaceName);
 
         boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(componentsNamespaceName, eoSelector);
@@ -97,12 +97,20 @@ public class KRaftStrimziDowngradeST extends AbstractKRaftUpgradeST {
     @BeforeEach
     void setupEnvironment() {
         NamespaceManager.getInstance().createNamespaceAndPrepare(CO_NAMESPACE);
+
+        if (!CO_NAMESPACE.equals(TEST_SUITE_NAMESPACE)) {
+            NamespaceManager.getInstance().createNamespaceAndPrepare(TEST_SUITE_NAMESPACE);
+        }
     }
 
     @AfterEach
     void afterEach() {
-        cleanUpKafkaTopics();
+        cleanUpKafkaTopics(TEST_SUITE_NAMESPACE);
         deleteInstalledYamls(CO_NAMESPACE, TEST_SUITE_NAMESPACE, coDir);
         NamespaceManager.getInstance().deleteNamespaceWithWait(CO_NAMESPACE);
+
+        if (!CO_NAMESPACE.equals(TEST_SUITE_NAMESPACE)) {
+            NamespaceManager.getInstance().deleteNamespaceWithWait(TEST_SUITE_NAMESPACE);
+        }
     }
 }

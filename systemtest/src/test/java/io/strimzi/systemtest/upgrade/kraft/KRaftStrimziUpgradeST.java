@@ -23,6 +23,7 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -68,38 +69,38 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(CO_NAMESPACE, TEST_SUITE_NAMESPACE, acrossUpgradeData, testStorage, upgradeKafkaVersion);
+        setupEnvAndUpgradeClusterOperator(CO_NAMESPACE, acrossUpgradeData, testStorage, upgradeKafkaVersion);
 
-        Map<String, String> controllerSnapshot = PodUtils.podSnapshot(TEST_SUITE_NAMESPACE, controllerSelector);
-        Map<String, String> brokerSnapshot = PodUtils.podSnapshot(TEST_SUITE_NAMESPACE, brokerSelector);
-        Map<String, String> eoSnapshot = PodUtils.podSnapshot(TEST_SUITE_NAMESPACE, eoSelector);
+        Map<String, String> controllerSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), controllerSelector);
+        Map<String, String> brokerSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), brokerSelector);
+        Map<String, String> eoSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), eoSelector);
 
         // Make snapshots of all Pods
-        makeComponentsSnapshots(TEST_SUITE_NAMESPACE);
+        makeComponentsSnapshots(testStorage.getNamespaceName());
 
         // Check if UTO is used before changing the CO -> used for check for KafkaTopics
-        boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(TEST_SUITE_NAMESPACE, eoSelector);
+        boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(testStorage.getNamespaceName(), eoSelector);
 
         // Upgrade CO
-        changeClusterOperator(CO_NAMESPACE, TEST_SUITE_NAMESPACE, acrossUpgradeData);
+        changeClusterOperator(CO_NAMESPACE, testStorage.getNamespaceName(), acrossUpgradeData);
         logClusterOperatorPodImage(CO_NAMESPACE);
-        logComponentsPodImages(TEST_SUITE_NAMESPACE);
+        logComponentsPodImages(testStorage.getNamespaceName());
 
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TEST_SUITE_NAMESPACE, controllerSelector, 3, controllerSnapshot);
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TEST_SUITE_NAMESPACE, brokerSelector, 3, brokerSnapshot);
-        DeploymentUtils.waitTillDepHasRolled(TEST_SUITE_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoSnapshot);
-        checkAllComponentsImages(TEST_SUITE_NAMESPACE, acrossUpgradeData);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), controllerSelector, 3, controllerSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), brokerSelector, 3, brokerSnapshot);
+        DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoSnapshot);
+        checkAllComponentsImages(testStorage.getNamespaceName(), acrossUpgradeData);
 
         // Verify that Pods are stable
-        PodUtils.verifyThatRunningPodsAreStable(TEST_SUITE_NAMESPACE, clusterName);
+        PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), clusterName);
         // Verify upgrade
-        verifyProcedure(TEST_SUITE_NAMESPACE, acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), wasUTOUsedBefore);
+        verifyProcedure(testStorage.getNamespaceName(), acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), wasUTOUsedBefore);
 
-        String controllerPodName = kubeClient().listPodsByPrefixInName(TEST_SUITE_NAMESPACE, KafkaResource.getStrimziPodSetName(clusterName, CONTROLLER_NODE_NAME)).get(0).getMetadata().getName();
-        String brokerPodName = kubeClient().listPodsByPrefixInName(TEST_SUITE_NAMESPACE, KafkaResource.getStrimziPodSetName(clusterName, BROKER_NODE_NAME)).get(0).getMetadata().getName();
+        String controllerPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(clusterName, CONTROLLER_NODE_NAME)).get(0).getMetadata().getName();
+        String brokerPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(clusterName, BROKER_NODE_NAME)).get(0).getMetadata().getName();
 
-        assertThat(KafkaUtils.getVersionFromKafkaPodLibs(TEST_SUITE_NAMESPACE, controllerPodName), containsString(acrossUpgradeData.getProcedures().getVersion()));
-        assertThat(KafkaUtils.getVersionFromKafkaPodLibs(TEST_SUITE_NAMESPACE, brokerPodName), containsString(acrossUpgradeData.getProcedures().getVersion()));
+        assertThat(KafkaUtils.getVersionFromKafkaPodLibs(testStorage.getNamespaceName(), controllerPodName), containsString(acrossUpgradeData.getProcedures().getVersion()));
+        assertThat(KafkaUtils.getVersionFromKafkaPodLibs(testStorage.getNamespaceName(), brokerPodName), containsString(acrossUpgradeData.getProcedures().getVersion()));
     }
 
     @IsolatedTest
@@ -108,33 +109,33 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         UpgradeKafkaVersion upgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(acrossUpgradeData.getFromKafkaVersionsUrl(), acrossUpgradeData.getStartingKafkaVersion());
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(CO_NAMESPACE, TEST_SUITE_NAMESPACE, acrossUpgradeData, testStorage, upgradeKafkaVersion);
+        setupEnvAndUpgradeClusterOperator(CO_NAMESPACE, acrossUpgradeData, testStorage, upgradeKafkaVersion);
 
         // Make snapshots of all Pods
-        makeComponentsSnapshots(TEST_SUITE_NAMESPACE);
+        makeComponentsSnapshots(testStorage.getNamespaceName());
 
         // Check if UTO is used before changing the CO -> used for check for KafkaTopics
-        boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(TEST_SUITE_NAMESPACE, eoSelector);
+        boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(testStorage.getNamespaceName(), eoSelector);
 
         // Upgrade CO
-        changeClusterOperator(CO_NAMESPACE, TEST_SUITE_NAMESPACE, acrossUpgradeData);
+        changeClusterOperator(CO_NAMESPACE, testStorage.getNamespaceName(), acrossUpgradeData);
 
-        waitForKafkaClusterRollingUpdate(TEST_SUITE_NAMESPACE);
+        waitForKafkaClusterRollingUpdate(testStorage.getNamespaceName());
 
         logPodImages(CO_NAMESPACE);
 
         // Upgrade kafka
-        changeKafkaAndMetadataVersion(TEST_SUITE_NAMESPACE, acrossUpgradeData, true);
+        changeKafkaAndMetadataVersion(testStorage.getNamespaceName(), acrossUpgradeData, true);
 
         logPodImages(CO_NAMESPACE);
 
-        checkAllComponentsImages(TEST_SUITE_NAMESPACE, acrossUpgradeData);
+        checkAllComponentsImages(testStorage.getNamespaceName(), acrossUpgradeData);
 
         // Verify that Pods are stable
-        PodUtils.verifyThatRunningPodsAreStable(TEST_SUITE_NAMESPACE, clusterName);
+        PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), clusterName);
 
         // Verify upgrade
-        verifyProcedure(TEST_SUITE_NAMESPACE, acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), wasUTOUsedBefore);
+        verifyProcedure(testStorage.getNamespaceName(), acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), wasUTOUsedBefore);
     }
 
     @IsolatedTest
@@ -142,32 +143,32 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(CO_NAMESPACE, TEST_SUITE_NAMESPACE, acrossUpgradeData, testStorage, null);
+        setupEnvAndUpgradeClusterOperator(CO_NAMESPACE, acrossUpgradeData, testStorage, null);
 
         // Check if UTO is used before changing the CO -> used for check for KafkaTopics
-        boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(TEST_SUITE_NAMESPACE, eoSelector);
+        boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(testStorage.getNamespaceName(), eoSelector);
 
         // Upgrade CO
-        changeClusterOperator(CO_NAMESPACE, TEST_SUITE_NAMESPACE, acrossUpgradeData);
+        changeClusterOperator(CO_NAMESPACE, testStorage.getNamespaceName(), acrossUpgradeData);
 
         // Wait till first upgrade finished
-        controllerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TEST_SUITE_NAMESPACE, controllerSelector, 3, controllerPods);
-        brokerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TEST_SUITE_NAMESPACE, brokerSelector, 3, brokerPods);
-        eoPods = DeploymentUtils.waitTillDepHasRolled(TEST_SUITE_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
+        controllerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), controllerSelector, 3, controllerPods);
+        brokerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), brokerSelector, 3, brokerPods);
+        eoPods = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
 
         LOGGER.info("Rolling to new images has finished!");
         logPodImages(CO_NAMESPACE);
 
         // Upgrade kafka
-        changeKafkaAndMetadataVersion(TEST_SUITE_NAMESPACE, acrossUpgradeData);
-        logComponentsPodImages(TEST_SUITE_NAMESPACE);
-        checkAllComponentsImages(TEST_SUITE_NAMESPACE, acrossUpgradeData);
+        changeKafkaAndMetadataVersion(testStorage.getNamespaceName(), acrossUpgradeData);
+        logComponentsPodImages(testStorage.getNamespaceName());
+        checkAllComponentsImages(testStorage.getNamespaceName(), acrossUpgradeData);
 
         // Verify that Pods are stable
-        PodUtils.verifyThatRunningPodsAreStable(TEST_SUITE_NAMESPACE, clusterName);
+        PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), clusterName);
 
         // Verify upgrade
-        verifyProcedure(TEST_SUITE_NAMESPACE, acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), wasUTOUsedBefore);
+        verifyProcedure(testStorage.getNamespaceName(), acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), wasUTOUsedBefore);
     }
 
     @MicroShiftNotSupported("Due to lack of Kafka Connect build feature")
@@ -177,7 +178,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         final TestStorage testStorage = new TestStorage(extensionContext);
         final UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion(acrossUpgradeData.getDefaultKafka());
 
-        doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(CO_NAMESPACE, TEST_SUITE_NAMESPACE, acrossUpgradeData, testStorage, upgradeKafkaVersion);
+        doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(CO_NAMESPACE, acrossUpgradeData, testStorage, upgradeKafkaVersion);
     }
 
     private void performUpgrade(String clusterOperatorNamespaceName, String componentsNamespaceName, BundleVersionModificationData upgradeData) throws IOException {
@@ -187,7 +188,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion();
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(clusterOperatorNamespaceName, componentsNamespaceName, upgradeData, testStorage, upgradeKafkaVersion);
+        setupEnvAndUpgradeClusterOperator(clusterOperatorNamespaceName, upgradeData, testStorage, upgradeKafkaVersion);
 
         // Upgrade CO to HEAD
         logClusterOperatorPodImage(clusterOperatorNamespaceName);
@@ -220,5 +221,20 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
     @BeforeEach
     void setupEnvironment() {
         NamespaceManager.getInstance().createNamespaceAndPrepare(CO_NAMESPACE);
+
+        if (!CO_NAMESPACE.equals(TEST_SUITE_NAMESPACE)) {
+            NamespaceManager.getInstance().createNamespaceAndPrepare(TEST_SUITE_NAMESPACE);
+        }
+    }
+
+    @AfterEach
+    void afterEach() {
+        cleanUpKafkaTopics(TEST_SUITE_NAMESPACE);
+        deleteInstalledYamls(CO_NAMESPACE, TEST_SUITE_NAMESPACE, coDir);
+        NamespaceManager.getInstance().deleteNamespaceWithWait(CO_NAMESPACE);
+
+        if (!CO_NAMESPACE.equals(TEST_SUITE_NAMESPACE)) {
+            NamespaceManager.getInstance().deleteNamespaceWithWait(TEST_SUITE_NAMESPACE);
+        }
     }
 }

@@ -9,6 +9,7 @@ import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -24,11 +25,15 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
+import static io.strimzi.systemtest.Environment.TEST_SUITE_NAMESPACE;
+import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -215,5 +220,19 @@ public class AbstractKRaftUpgradeST extends AbstractUpgradeST {
         kafkaTopicYaml = new File(examplesPath + "/examples/topic/kafka-topic.yaml");
         LOGGER.info("Deploying KafkaTopic from: {}, in Namespace {}", kafkaTopicYaml.getPath(), namespaceName);
         cmdKubeClient(namespaceName).applyContent(TestUtils.readFile(kafkaTopicYaml));
+    }
+
+    @BeforeEach
+    void setupEnvironment() {
+        NamespaceManager.getInstance().createNamespaceAndPrepare(CO_NAMESPACE);
+        NamespaceManager.getInstance().createNamespaceAndPrepare(TEST_SUITE_NAMESPACE);
+    }
+
+    @AfterEach
+    void afterEach() {
+        cleanUpKafkaTopics(TEST_SUITE_NAMESPACE);
+        deleteInstalledYamls(CO_NAMESPACE, TEST_SUITE_NAMESPACE, coDir);
+        NamespaceManager.getInstance().deleteNamespaceWithWait(CO_NAMESPACE);
+        NamespaceManager.getInstance().deleteNamespaceWithWait(TEST_SUITE_NAMESPACE);
     }
 }

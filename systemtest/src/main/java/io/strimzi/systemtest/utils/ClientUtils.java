@@ -115,6 +115,16 @@ public class ClientUtils {
     }
 
     /**
+     * Waits for the instant producer client to succeed with explicitly specified namespace automatically deleting the associated job afterward.
+     *
+     * @param namespaceName Explicit namespace name.
+     * @param testStorage The {@link TestStorage} instance containing details about the client's name.
+     */
+    public static void waitForInstantProducerClientSuccess(String namespaceName, TestStorage testStorage) {
+        waitForClientSuccess(testStorage.getProducerName(), namespaceName, testStorage.getMessageCount());
+    }
+
+    /**
      * Waits for the instant producer client to succeed, automatically deleting the associated job afterward.
      * {@link TestStorage#getProducerName()} is used for identifying producer Job and
      * {@link TestStorage#getConsumerName()} for identifying consumer Job.
