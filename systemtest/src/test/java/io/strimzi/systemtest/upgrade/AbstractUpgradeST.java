@@ -54,12 +54,14 @@ import org.apache.logging.log4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
+import java.util.stream.IntStream;
 
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
 import static io.strimzi.systemtest.TestConstants.DEFAULT_SINK_FILE_PATH;
@@ -222,16 +224,14 @@ public class AbstractUpgradeST extends AbstractST {
     }
 
     protected void logPodImages(String namespaceName, LabelSelector... labelSelectors) {
-        for (LabelSelector labelSelector : labelSelectors) {
-            List<Pod> pods = kubeClient().listPods(namespaceName, labelSelector);
-
-            pods.forEach(pod ->
+        Arrays.stream(labelSelectors).parallel()
+            .map(selector -> kubeClient().listPods(namespaceName, selector))
+            .flatMap(Collection::stream)
+            .forEach(pod ->
                 pod.getSpec().getContainers().forEach(container ->
                     LOGGER.info("Pod: {}/{} has image {}",
                         pod.getMetadata().getNamespace(), pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getImage())
-                )
-            );
-        }
+                ));
     }
 
     protected void waitForKafkaClusterRollingUpdate() {
@@ -355,9 +355,13 @@ public class AbstractUpgradeST extends AbstractST {
             } else {
                 kafkaTopicYaml = new File(dir, upgradeData.getFromExamples() + "/examples/topic/kafka-topic.yaml");
             }
-            for (int x = 0; x < upgradeTopicCount; x++) {
-                cmdKubeClient().applyContent(TestUtils.getContent(kafkaTopicYaml, TestUtils::toYamlString).replace("name: \"my-topic\"", "name: \"" + topicName + "-" + x + "\""));
-            }
+
+            String topicNameTemplate = topicName + "-%s";
+            IntStream.range(0, upgradeTopicCount)
+                    .mapToObj(topicNameTemplate::formatted)
+                    .map(this::getKafkaYamlWithName)
+                    .parallel()
+                    .forEach(cmdKubeClient()::applyContent);
         }
 
         if (upgradeData.getContinuousClientsMessages() != 0) {
@@ -396,6 +400,14 @@ public class AbstractUpgradeST extends AbstractST {
         }
 
         makeSnapshots();
+    }
+
+    private String getKafkaYamlWithName(String name) {
+        String initialName = "name: \"my-topic\"";
+        String newName =  "name: \"%s\"".formatted(name);
+
+        return TestUtils.getContent(kafkaTopicYaml, TestUtils::toYamlString)
+                .replace(initialName, newName);
     }
 
     protected void verifyProcedure(BundleVersionModificationData upgradeData, String producerName, String consumerName, String namespace, boolean wasUTOUsedBefore) {
