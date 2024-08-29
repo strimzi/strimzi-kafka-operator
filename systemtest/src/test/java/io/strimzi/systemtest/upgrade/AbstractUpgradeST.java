@@ -224,7 +224,8 @@ public class AbstractUpgradeST extends AbstractST {
     }
 
     protected void logPodImages(String namespaceName, LabelSelector... labelSelectors) {
-        Arrays.stream(labelSelectors).parallel()
+        Arrays.stream(labelSelectors)
+            .parallel()
             .map(selector -> kubeClient().listPods(namespaceName, selector))
             .flatMap(Collection::stream)
             .forEach(pod ->
@@ -358,10 +359,10 @@ public class AbstractUpgradeST extends AbstractST {
 
             String topicNameTemplate = topicName + "-%s";
             IntStream.range(0, upgradeTopicCount)
-                    .mapToObj(topicNameTemplate::formatted)
-                    .map(this::getKafkaYamlWithName)
-                    .parallel()
-                    .forEach(cmdKubeClient()::applyContent);
+                .mapToObj(topicNameTemplate::formatted)
+                .map(this::getKafkaYamlWithName)
+                .parallel()
+                .forEach(cmdKubeClient()::applyContent);
         }
 
         if (upgradeData.getContinuousClientsMessages() != 0) {
@@ -406,8 +407,7 @@ public class AbstractUpgradeST extends AbstractST {
         String initialName = "name: \"my-topic\"";
         String newName =  "name: \"%s\"".formatted(name);
 
-        return TestUtils.getContent(kafkaTopicYaml, TestUtils::toYamlString)
-                .replace(initialName, newName);
+        return TestUtils.getContent(kafkaTopicYaml, TestUtils::toYamlString).replace(initialName, newName);
     }
 
     protected void verifyProcedure(BundleVersionModificationData upgradeData, String producerName, String consumerName, String namespace, boolean wasUTOUsedBefore) {
