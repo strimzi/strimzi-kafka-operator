@@ -3758,7 +3758,7 @@ public class KafkaClusterZooBasedTest {
             List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
             pool.set(pools.get(0));
             return KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, pools, versions, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
-        }, "KafkaClusterTest.withAffinityWithoutRack");
+        }, getClass().getSimpleName() + ".withAffinityWithoutRack");
 
         resourceTester.assertDesiredModel(".yaml", model -> model.getMergedAffinity(pool.get()));
     }
@@ -3771,7 +3771,7 @@ public class KafkaClusterZooBasedTest {
             List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
             pool.set(pools.get(0));
             return KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, pools, versions, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
-        }, "KafkaClusterTest.withRackWithoutAffinity");
+        }, getClass().getSimpleName() + ".withRackWithoutAffinity");
 
         resourceTester.assertDesiredModel(".yaml", model -> model.getMergedAffinity(pool.get()));
     }
@@ -3784,7 +3784,7 @@ public class KafkaClusterZooBasedTest {
             List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
             pool.set(pools.get(0));
             return KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, pools, versions, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
-        }, "KafkaClusterTest.withRackAndAffinityWithMoreTerms");
+        }, getClass().getSimpleName() + ".withRackAndAffinityWithMoreTerms");
 
         resourceTester.assertDesiredModel(".yaml", model -> model.getMergedAffinity(pool.get()));
     }
@@ -3797,7 +3797,7 @@ public class KafkaClusterZooBasedTest {
             List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
             pool.set(pools.get(0));
             return KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, pools, versions, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
-        }, "KafkaClusterTest.withRackAndAffinity");
+        }, getClass().getSimpleName() + ".withRackAndAffinity");
 
         resourceTester.assertDesiredModel(".yaml", model -> model.getMergedAffinity(pool.get()));
     }
@@ -3807,7 +3807,7 @@ public class KafkaClusterZooBasedTest {
         ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, (kafkaAssembly1, versions) -> {
             List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
             return KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
-        }, "KafkaClusterTest.withTolerations");
+        }, getClass().getSimpleName() + ".withTolerations");
 
         resourceTester.assertDesiredResource(".yaml", cr -> cr.getSpec().getKafka().getTemplate().getPod().getTolerations());
     }
