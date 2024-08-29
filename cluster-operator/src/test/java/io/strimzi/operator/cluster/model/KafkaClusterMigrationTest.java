@@ -255,29 +255,35 @@ public class KafkaClusterMigrationTest {
 
             // controllers
             List<ContainerPort> ports = kc.getContainerPortList(KAFKA_POOL_CONTROLLERS);
-            // control plane port is always set
-            assertThat(ports.get(0).getContainerPort(), is(9090));
+
             if (state.isZooKeeperToPostMigration()) {
-                assertThat(ports.size(), is(3));
+                assertThat(ports.size(), is(4));
+                // Agent and control plane ports are always set
+                assertThat(ports.get(0).getContainerPort(), is(8443));
+                assertThat(ports.get(1).getContainerPort(), is(9090));
                 // replication and clients only up to post-migration to contact brokers
-                assertThat(ports.get(1).getContainerPort(), is(9091));
-                assertThat(ports.get(2).getContainerPort(), is(9092));
+                assertThat(ports.get(2).getContainerPort(), is(9091));
+                assertThat(ports.get(3).getContainerPort(), is(9092));
             } else {
-                assertThat(ports.size(), is(1));
+                assertThat(ports.size(), is(2));
+                // Agent and control plane ports are always set
+                assertThat(ports.get(0).getContainerPort(), is(8443));
+                assertThat(ports.get(1).getContainerPort(), is(9090));
             }
 
             // brokers
             ports = kc.getContainerPortList(KAFKA_POOL_BROKERS);
             if (state.isZooKeeperToMigration()) {
+                assertThat(ports.size(), is(4));
+                assertThat(ports.get(0).getContainerPort(), is(8443));
+                assertThat(ports.get(1).getContainerPort(), is(9090)); // control plane port exposed up to migration when it's still ZooKeeper in the configuration
+                assertThat(ports.get(2).getContainerPort(), is(9091));
+                assertThat(ports.get(3).getContainerPort(), is(9092));
+            } else {
                 assertThat(ports.size(), is(3));
-                // control plane port exposed up to migration when it's still ZooKeeper in the configuration
-                assertThat(ports.get(0).getContainerPort(), is(9090));
+                assertThat(ports.get(0).getContainerPort(), is(8443));
                 assertThat(ports.get(1).getContainerPort(), is(9091));
                 assertThat(ports.get(2).getContainerPort(), is(9092));
-            } else {
-                assertThat(ports.size(), is(2));
-                assertThat(ports.get(0).getContainerPort(), is(9091));
-                assertThat(ports.get(1).getContainerPort(), is(9092));
             }
         }
     }

@@ -969,22 +969,25 @@ public class KafkaClusterTest {
             List<ContainerPort> ports = kc.createContainer(null, pool).getPorts();
 
             if ("controllers".equals(pool.poolName))    {
-                assertThat(ports.size(), is(2));
-                assertThat(ports.get(0).getContainerPort(), is(9090));
-                assertThat(ports.get(1).getContainerPort(), is(9404));
+                assertThat(ports.size(), is(3));
+                assertThat(ports.get(0).getContainerPort(), is(8443));
+                assertThat(ports.get(1).getContainerPort(), is(9090));
+                assertThat(ports.get(2).getContainerPort(), is(9404));
             } else if ("mixed".equals(pool.poolName))    {
+                assertThat(ports.size(), is(6));
+                assertThat(ports.get(0).getContainerPort(), is(8443));
+                assertThat(ports.get(1).getContainerPort(), is(9090));
+                assertThat(ports.get(2).getContainerPort(), is(9091));
+                assertThat(ports.get(3).getContainerPort(), is(9093));
+                assertThat(ports.get(4).getContainerPort(), is(9094));
+                assertThat(ports.get(5).getContainerPort(), is(9404));
+            } else {
                 assertThat(ports.size(), is(5));
-                assertThat(ports.get(0).getContainerPort(), is(9090));
+                assertThat(ports.get(0).getContainerPort(), is(8443));
                 assertThat(ports.get(1).getContainerPort(), is(9091));
                 assertThat(ports.get(2).getContainerPort(), is(9093));
                 assertThat(ports.get(3).getContainerPort(), is(9094));
                 assertThat(ports.get(4).getContainerPort(), is(9404));
-            } else {
-                assertThat(ports.size(), is(4));
-                assertThat(ports.get(0).getContainerPort(), is(9091));
-                assertThat(ports.get(1).getContainerPort(), is(9093));
-                assertThat(ports.get(2).getContainerPort(), is(9094));
-                assertThat(ports.get(3).getContainerPort(), is(9404));
             }
         }
     }

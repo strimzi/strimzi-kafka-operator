@@ -1234,6 +1234,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     /* test */ List<ContainerPort> getContainerPortList(KafkaPool pool) {
         List<ContainerPort> ports = new ArrayList<>(listeners.size() + 3);
 
+        ports.add(ContainerUtils.createContainerPort(KAFKA_AGENT_PORT_NAME, KAFKA_AGENT_PORT));
+
         if (kafkaMetadataConfigState.isZooKeeperToMigration() || pool.isController()) {
             // The control plane listener is on all nodes in ZooKeeper based clusters and on nodes with controller role in KRaft
             // this excludes all the KRaft broker-only nodes even during the migration
