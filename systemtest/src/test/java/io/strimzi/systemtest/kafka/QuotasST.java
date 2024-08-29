@@ -32,7 +32,6 @@ import org.junit.jupiter.api.Tag;
 
 import java.util.Collections;
 
-import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.QUOTAS_PLUGIN;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -53,7 +52,6 @@ public class QuotasST extends AbstractST {
      * Test to check Kafka Quotas Plugin for disk space
      */
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaQuotasPluginIntegration() {
         assumeFalse(cluster.isMinikube() || cluster.isMicroShift());
 
@@ -131,7 +129,6 @@ public class QuotasST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     @Tag(REGRESSION)
     void testKafkaQuotasPluginWithBandwidthLimitation() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());

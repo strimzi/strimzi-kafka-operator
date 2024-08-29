@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.util.List;
 
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
-import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.UPGRADE;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -48,7 +47,6 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
 
     @ParameterizedTest(name = "testDowngradeStrimziVersion-{0}-{1}")
     @MethodSource("io.strimzi.systemtest.upgrade.VersionModificationDataLoader#loadYamlDowngradeData")
-    @Tag(INTERNAL_CLIENTS_USED)
     void testDowngradeStrimziVersion(String from, String to, BundleVersionModificationData parameters) throws Exception {
         assumeTrue(StUtils.isAllowOnCurrentEnvironment(parameters.getEnvFlakyVariable()));
         assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getEnvMaxK8sVersion()));

@@ -65,7 +65,6 @@ import java.util.regex.Pattern;
 
 import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
 import static io.strimzi.systemtest.TestConstants.COMPONENT_SCALING;
-import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.systemtest.TestConstants.ROLLING_UPDATE;
 import static io.strimzi.systemtest.k8s.Events.Killing;
@@ -79,7 +78,6 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
-@Tag(INTERNAL_CLIENTS_USED)
 class RollingUpdateST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(RollingUpdateST.class);

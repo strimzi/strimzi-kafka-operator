@@ -41,7 +41,6 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
 import static io.strimzi.systemtest.TestConstants.EXTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.TestConstants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
@@ -65,7 +64,6 @@ public class MultipleListenersST extends AbstractST {
         runListenersTest(testCases.get(KafkaListenerType.NODEPORT), testStorage.getClusterName());
     }
 
-    @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMultipleInternal() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -75,7 +73,6 @@ public class MultipleListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(ACCEPTANCE)
     @Tag(EXTERNAL_CLIENTS_USED)
-    @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCombinationOfInternalAndExternalListeners() {
         // Nodeport needs cluster wide rights to work properly which is not possible with STRIMZI_RBAC_SCOPE=NAMESPACE
@@ -95,8 +92,8 @@ public class MultipleListenersST extends AbstractST {
     }
 
     @Tag(LOADBALANCER_SUPPORTED)
-    @Tag(EXTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @Tag(EXTERNAL_CLIENTS_USED)
     void testMultipleLoadBalancers() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         runListenersTest(testCases.get(KafkaListenerType.LOADBALANCER), testStorage.getClusterName());
@@ -114,7 +111,6 @@ public class MultipleListenersST extends AbstractST {
     @OpenShiftOnly
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMixtureOfExternalListeners() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -134,7 +130,6 @@ public class MultipleListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCombinationOfEveryKindOfListener() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());

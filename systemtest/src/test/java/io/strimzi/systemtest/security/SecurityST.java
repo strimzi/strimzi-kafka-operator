@@ -89,7 +89,6 @@ import static io.strimzi.systemtest.TestConstants.CONNECT;
 import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.TestConstants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.TestConstants.EXTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER;
 import static io.strimzi.systemtest.TestConstants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
@@ -183,7 +182,6 @@ class SecurityST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag(CRUISE_CONTROL)
     @Tag("ClusterCaCerts")
@@ -199,7 +197,6 @@ class SecurityST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag(CRUISE_CONTROL)
     @Tag("ClientsCaCerts")
@@ -217,7 +214,6 @@ class SecurityST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(SANITY)
     @Tag(ACCEPTANCE)
-    @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag(CRUISE_CONTROL)
     @Tag("AllCaCerts")
@@ -349,7 +345,6 @@ class SecurityST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag(CRUISE_CONTROL)
     @Tag("ClusterCaKeys")
@@ -363,7 +358,6 @@ class SecurityST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag(CRUISE_CONTROL)
     @Tag("ClientsCaKeys")
@@ -377,7 +371,6 @@ class SecurityST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag(CRUISE_CONTROL)
     @Tag("AllCaKeys")
@@ -604,7 +597,6 @@ class SecurityST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     @Tag(CRUISE_CONTROL)
     void testAutoRenewCaCertsTriggerByExpiredCertificate() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -637,7 +629,6 @@ class SecurityST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     void testCertRenewalInMaintenanceTimeWindow() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String clusterSecretName = KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName());
@@ -741,7 +732,6 @@ class SecurityST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     void testCertRegeneratedAfterInternalCAisDeleted() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -1108,7 +1098,6 @@ class SecurityST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     void testCaRenewalBreakInMiddle() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 

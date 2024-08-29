@@ -40,13 +40,11 @@ import org.junit.jupiter.api.Tag;
 
 import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
 import static io.strimzi.systemtest.TestConstants.BRIDGE;
-import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 
 @Tag(REGRESSION)
 @Tag(BRIDGE)
 @Tag(ACCEPTANCE)
-@Tag(INTERNAL_CLIENTS_USED)
 class HttpBridgeTlsST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeTlsST.class);
     private BridgeClients kafkaBridgeClientJob;

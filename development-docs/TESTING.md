@@ -276,7 +276,6 @@ The following table shows currently used tags:
 | mirrormaker2       |                 Execute tests that deploy KafkaMirrorMaker2 resource                  |
 | conneccomponents   |  Execute tests that deploy KafkaConnect, KafkaMirrorMaker2, KafkaConnector resources  |
 | bridge             |                          Execute tests that use Kafka Bridge                          |
-| internalclients    |         Execute tests that use internal (from the Pod) Kafka clients in tests         |
 | externalclients    |          Execute tests that use external (from code) Kafka clients in tests           |
 | olm                |                Execute tests that test examples from Strimzi manifests                |
 | metrics            |                         Execute tests where metrics are used                          |
