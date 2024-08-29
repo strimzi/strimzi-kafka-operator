@@ -25,7 +25,7 @@ public class SetupMinio {
     private static final Logger LOGGER = LogManager.getLogger(SetupMinio.class);
 
     public static final String MINIO = "minio";
-    public static final String ADMIN_CREDS = "minioadmin";
+    public static final String ADMIN_CREDS = "minioadminLongerThan16BytesForFIPS";
     public static final String MINIO_STORAGE_ALIAS = "local";
     public static final int MINIO_PORT = 9000;
     private static final String MINIO_IMAGE = "quay.io/minio/minio:latest";
