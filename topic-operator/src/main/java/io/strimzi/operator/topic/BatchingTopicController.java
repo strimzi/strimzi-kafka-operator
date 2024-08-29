@@ -292,10 +292,15 @@ public class BatchingTopicController {
     }
 
     private PartitionedByError<ReconcilableTopic, Void> createTopics(List<ReconcilableTopic> kts) {
+        Map<ReconcilableTopic, TopicOperatorException> newTopicsErrors = new HashMap<>();
         var newTopics = kts.stream().map(reconcilableTopic -> {
-            // Admin create
-            return buildNewTopic(reconcilableTopic.kt(), reconcilableTopic.topicName());
-        }).collect(Collectors.toSet());
+            try {
+                return buildNewTopic(reconcilableTopic.kt(), reconcilableTopic.topicName());
+            } catch (Exception e) {
+                newTopicsErrors.put(reconcilableTopic, new TopicOperatorException.InternalError(e));
+                return null;
+            }
+        }).filter(Objects::nonNull).collect(Collectors.toSet());
 
         LOGGER.debugOp("Admin.createTopics({})", newTopics);
         var timerSample = TopicOperatorUtil.startExternalRequestTimer(metrics, enableAdditionalMetrics);
@@ -310,6 +315,9 @@ public class BatchingTopicController {
         });
         Map<String, KafkaFuture<Void>> values = ctr.values();
         return partitionedByError(kts.stream().map(reconcilableTopic -> {
+            if (newTopicsErrors.containsKey(reconcilableTopic)) {
+                return new Pair<>(reconcilableTopic, Either.ofLeft(newTopicsErrors.get(reconcilableTopic)));
+            }
             try {
                 values.get(reconcilableTopic.topicName()).get();
                 reconcilableTopic.kt().setStatus(new KafkaTopicStatusBuilder()
@@ -363,7 +371,7 @@ public class BatchingTopicController {
                     .map(BatchingTopicController::configValueAsString)
                     .collect(Collectors.joining(","));
         } else {
-            throw new RuntimeException("Cannot convert " + value);
+            throw new RuntimeException("Invalid config value: " + value);
         }
         return valueStr;
     }

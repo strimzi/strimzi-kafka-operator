@@ -1781,6 +1781,29 @@ class TopicControllerIT {
         assertEquals("KafkaError", condition.getReason());
         assertEquals("org.apache.kafka.common.errors.TopicAuthorizationException: not allowed", condition.getMessage());
     }
+    
+    @Test
+    public void shouldFailTheReconciliationWithInvalidConfig(
+        @BrokerConfig(name = "auto.create.topics.enable", value = "false")
+        KafkaCluster kafkaCluster
+    ) throws ExecutionException, InterruptedException {
+        KafkaTopic kafkaTopic = new KafkaTopicBuilder()
+            .withNewMetadata()
+                .withNamespace(NAMESPACE)
+                .withName("my-topic")
+                .withLabels(SELECTOR)
+            .endMetadata()
+            .withNewSpec()
+                .withConfig(new HashMap<>() {{ put("cleanup.policy", null); }})
+                .withPartitions(1)
+                .withReplicas(1)
+            .endSpec()
+            .build();
+        var created = createTopic(kafkaCluster, kafkaTopic);
+        var condition = assertExactlyOneCondition(created);
+        assertEquals("InternalError", condition.getReason());
+        assertEquals("java.lang.RuntimeException: Invalid config value: null", condition.getMessage());
+    }
 
     private static KafkaTopic setGzipCompression(KafkaTopic kt) {
         return setCompression(kt, "gzip");
