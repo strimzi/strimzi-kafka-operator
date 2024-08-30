@@ -28,7 +28,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -80,7 +79,6 @@ public class KafkaRollerST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(KafkaRollerST.class);
 
     @ParallelNamespaceTest
-    @KRaftNotSupported
     void testKafkaDoesNotRollsWhenTopicIsUnderReplicated() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         Instant startTime = Instant.now();
@@ -133,7 +131,10 @@ public class KafkaRollerST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaTopicWith4Replicas);
 
         //Test that the new pod does not have errors or failures in events
-        String uid = kubeClient(testStorage.getNamespaceName()).getPodUid(KafkaResource.getKafkaPodName(testStorage.getClusterName(), KafkaNodePoolResource.getBrokerPoolName(testStorage.getClusterName()),  3));
+
+        // last pod has index 3 (as it is 4th) or 6 (being 7th) as there are also 3 controllers
+        final int scaledBrokerPodIndex = !Environment.isKRaftModeEnabled() ? 3 : 6;
+        String uid = kubeClient(testStorage.getNamespaceName()).getPodUid(KafkaResource.getKafkaPodName(testStorage.getClusterName(), KafkaNodePoolResource.getBrokerPoolName(testStorage.getClusterName()),  scaledBrokerPodIndex));
         List<Event> events = kubeClient(testStorage.getNamespaceName()).listEventsByResourceUid(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
 

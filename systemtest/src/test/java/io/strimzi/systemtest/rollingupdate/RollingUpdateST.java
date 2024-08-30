@@ -306,7 +306,6 @@ class RollingUpdateST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
     @Tag(COMPONENT_SCALING)
-    @KRaftNotSupported("The scaling of the Kafka Pods is not working properly at the moment, topic with extra operators will also need a workaround")
     void testKafkaScaleUpScaleDown() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
