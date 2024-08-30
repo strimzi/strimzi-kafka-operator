@@ -18,7 +18,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
@@ -253,7 +252,6 @@ public class MultipleClusterOperatorsST extends AbstractST {
      */
     @IsolatedTest
     @Tag(CRUISE_CONTROL)
-    @KRaftNotSupported("The scaling of the Kafka Pods is not working properly at the moment")
     void testKafkaCCAndRebalanceWithMultipleCOs() {
         assumeFalse(Environment.isNamespaceRbacScope());
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), DEFAULT_NAMESPACE);

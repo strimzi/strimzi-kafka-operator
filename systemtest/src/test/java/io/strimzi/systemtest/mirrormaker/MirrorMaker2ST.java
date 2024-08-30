@@ -21,7 +21,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -711,7 +710,6 @@ class MirrorMaker2ST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @KRaftNotSupported("This the is failing with KRaft and need more investigation")
     void testRestoreOffsetsInConsumerGroup() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 

@@ -209,7 +209,6 @@ class RecoveryST extends AbstractST {
     }
 
     @IsolatedTest
-    @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test class")
     void testRecoveryFromKafkaAndZookeeperPodDeletion() {
         final String kafkaStrimziPodSet = StrimziPodSetResource.getBrokerComponentName(sharedClusterName);
         final String zkName = KafkaResources.zookeeperComponentName(sharedClusterName);
@@ -217,15 +216,18 @@ class RecoveryST extends AbstractST {
         final LabelSelector brokerSelector = KafkaResource.getLabelSelector(sharedClusterName, kafkaStrimziPodSet);
         final LabelSelector controllerSelector = KafkaResource.getLabelSelector(sharedClusterName, zkName);
 
-        LOGGER.info("Deleting most of the Kafka and ZK Pods");
+        LOGGER.info("Deleting most of the Kafka pods");
         List<Pod> kafkaPodList = kubeClient().listPods(brokerSelector);
-        List<Pod> zkPodList = kubeClient().listPods(controllerSelector);
-
         kafkaPodList.subList(0, kafkaPodList.size() - 1).forEach(pod -> kubeClient().deletePod(pod));
-        zkPodList.subList(0, zkPodList.size() - 1).forEach(pod -> kubeClient().deletePod(pod));
+
+        if (!Environment.isKRaftModeEnabled()) {
+            LOGGER.info("Deleting most of the Zookeeper pods");
+            List<Pod> zkPodList = kubeClient().listPods(controllerSelector);
+            zkPodList.subList(0, zkPodList.size() - 1).forEach(pod -> kubeClient().deletePod(pod));
+            StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(Environment.TEST_SUITE_NAMESPACE, sharedClusterName, zkName, ZOOKEEPER_REPLICAS);
+        }
 
         StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(Environment.TEST_SUITE_NAMESPACE, sharedClusterName, kafkaStrimziPodSet, KAFKA_REPLICAS);
-        StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(Environment.TEST_SUITE_NAMESPACE, sharedClusterName, zkName, ZOOKEEPER_REPLICAS);
         KafkaUtils.waitForKafkaReady(Environment.TEST_SUITE_NAMESPACE, sharedClusterName);
     }
 
