@@ -34,6 +34,21 @@ Specify SASL mechanisms in the client configuration:
 * `OAUTHBEARER` for credentials exchange using a bearer token
 * `PLAIN` to pass client credentials (clientId + secret) or an access token
 
+.SASL extensions for custom `OAUTHBEARER` implementations
+
+If your Kafka broker uses a custom `OAUTHBEARER` implementation, you may need to pass additional SASL extension options.
+These extensions can include attributes or information required as client context by the authorization server. 
+The options are passed as key-value pairs and are sent to the Kafka broker when a new session is started.
+
+Pass SASL extension values using `oauth.sasl.extension.` as a key prefix. 
+
+.Example configuration to pass SASL extension values
+[source,properties]
+----
+oauth.sasl.extension.key1="value1"
+oauth.sasl.extension.key2="value2"  
+----
+
 .Configuring a JAAS module
 
 Specify a JAAS module that implements the SASL authentication mechanism as a `sasl.jaas.config` property value:
