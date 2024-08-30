@@ -240,12 +240,15 @@ public class KafkaAgent {
         ServerConnector httpsConn = new ServerConnector(server,
                 new SslConnectionFactory(getSSLContextFactory(), "http/1.1"),
                 new HttpConnectionFactory(https));
+        httpsConn.setHost("0.0.0.0");
         httpsConn.setPort(HTTPS_PORT);
 
         ContextHandler brokerStateContext = new ContextHandler(BROKER_STATE_PATH);
         brokerStateContext.setHandler(getBrokerStateHandler());
 
         ServerConnector httpConn  = new ServerConnector(server);
+        // The HTTP port should not be exposed outside the Pod, so it listens only on localhost
+        httpConn.setHost("localhost");
         httpConn.setPort(HTTP_PORT);
 
         ContextHandler readinessContext = new ContextHandler(READINESS_ENDPOINT_PATH);
