@@ -433,25 +433,25 @@ public class KafkaAssemblyOperatorManualRollingUpdatesZooBasedTest {
     @Test
     public void testManualPodRollingUpdateWithPodSetsWithError1(VertxTestContext context) {
         testManualPodRollingUpdateWithPodSetsWithErrorConditions(
-            context, false, true, "", true);
+            context, false, true, "-ContinueReconciliationOnManualRollingUpdateFailure", true);
     }
 
     @Test
     public void testManualPodRollingUpdateWithPodSetsWithError2(VertxTestContext context) {
         testManualPodRollingUpdateWithPodSetsWithErrorConditions(
-            context, true, false, "", true);
+            context, true, false, "-ContinueReconciliationOnManualRollingUpdateFailure", true);
     }
 
     @Test
     public void testManualPodRollingUpdateWithPodSetsWithError3(VertxTestContext context) {
         testManualPodRollingUpdateWithPodSetsWithErrorConditions(
-            context, false, true, "+ContinueReconciliationOnManualRollingUpdateFailure", false);
+            context, false, true, "", false);
     }
 
     @Test
     public void testManualPodRollingUpdateWithPodSetsWithError4(VertxTestContext context) {
         testManualPodRollingUpdateWithPodSetsWithErrorConditions(
-            context, true, false, "+ContinueReconciliationOnManualRollingUpdateFailure", false);
+            context, true, false, "", false);
     }
 
     private void testManualPodRollingUpdateWithPodSetsWithErrorConditions(VertxTestContext context,

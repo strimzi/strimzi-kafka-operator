@@ -22,7 +22,7 @@ public class FeatureGates {
 
     // When adding new feature gates, do not forget to add them to allFeatureGates(), toString(), equals(), and `hashCode() methods
     private final FeatureGate continueOnManualRUFailure =
-        new FeatureGate(CONTINUE_ON_MANUAL_RU_FAILURE, false);
+        new FeatureGate(CONTINUE_ON_MANUAL_RU_FAILURE, true);
 
     /**
      * Constructs the feature gates configuration.
