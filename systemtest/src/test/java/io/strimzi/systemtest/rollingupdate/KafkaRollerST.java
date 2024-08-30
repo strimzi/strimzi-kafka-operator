@@ -130,8 +130,6 @@ public class KafkaRollerST extends AbstractST {
         KafkaTopic kafkaTopicWith4Replicas = KafkaTopicTemplates.topic(testStorage.getNamespaceName(), topicNameWith4Replicas, testStorage.getClusterName(), 1, 4, 4).build();
         resourceManager.createResourceWithWait(kafkaTopicWith4Replicas);
 
-        //Test that the new pod does not have errors or failures in events
-
         // last pod has index 3 (as it is 4th) or 6 (being 7th) as there are also 3 controllers
         final int scaledBrokerPodIndex = !Environment.isKRaftModeEnabled() ? 3 : 6;
         String uid = kubeClient(testStorage.getNamespaceName()).getPodUid(KafkaResource.getKafkaPodName(testStorage.getClusterName(), KafkaNodePoolResource.getBrokerPoolName(testStorage.getClusterName()),  scaledBrokerPodIndex));
