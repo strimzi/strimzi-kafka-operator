@@ -46,6 +46,8 @@ import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.systemtest.enums.ConditionStatus.False;
@@ -124,7 +126,7 @@ public class TopicST extends AbstractST {
         assertThat(adminClient.listTopics(), containsString(testStorage.getTopicName()));
 
         for (int i = 0; i < 10; i++) {
-            Thread.sleep(2_000);
+            LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(2));
 
             LOGGER.info("Iteration {}: Deleting {}", i, testStorage.getTopicName());
             cmdKubeClient(Environment.TEST_SUITE_NAMESPACE).deleteByName(KafkaTopic.RESOURCE_KIND, testStorage.getTopicName());
@@ -132,8 +134,7 @@ public class TopicST extends AbstractST {
 
             assertThat(adminClient.listTopics(), not(containsString(testStorage.getTopicName())));
 
-            Thread.sleep(2_000);
-            long t0 = System.currentTimeMillis();
+            LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(2));
 
             LOGGER.info("Iteration {}: Recreating {}", i, testStorage.getTopicName());
             resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), sharedTestStorage.getClusterName())
@@ -297,7 +298,7 @@ public class TopicST extends AbstractST {
      *  - kafkatopic-not-ready
      */
     @IsolatedTest
-    void testKafkaTopicDifferentStatesInUTOMode() throws InterruptedException {
+    void testKafkaTopicDifferentStatesInUTOMode() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         int initialReplicas = 1;
         int initialPartitions = 5;
@@ -369,7 +370,8 @@ public class TopicST extends AbstractST {
 
         // Wait some time to check if error is still present in KafkaTopic status
         LOGGER.info("Waiting {} ms for next reconciliation", topicOperatorReconciliationIntervalMs);
-        Thread.sleep(topicOperatorReconciliationIntervalMs);
+
+        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(topicOperatorReconciliationIntervalMs));
         assertKafkaTopicStatus(testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE, Ready, False, reason, reasonMessage, expectedObservedGeneration);
 
         LOGGER.info("Changing KafkaTopic's spec to correct state");
@@ -384,7 +386,7 @@ public class TopicST extends AbstractST {
     }
 
     @ParallelTest
-    void testKafkaTopicChangingMinInSyncReplicas() throws InterruptedException {
+    void testKafkaTopicChangingMinInSyncReplicas() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), sharedTestStorage.getClusterName(), 5).build());
@@ -406,7 +408,7 @@ public class TopicST extends AbstractST {
 
         // Wait some time to check if error is still present in KafkaTopic status
         LOGGER.info("Waiting {} ms for next reconciliation", topicOperatorReconciliationIntervalMs);
-        Thread.sleep(topicOperatorReconciliationIntervalMs);
+        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(topicOperatorReconciliationIntervalMs));
         assertKafkaTopicStatus(testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE, resourceStatus, conditionStatus, reason, reasonMessage, 2);
     }
 
