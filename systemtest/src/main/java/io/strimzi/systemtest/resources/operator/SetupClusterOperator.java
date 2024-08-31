@@ -25,6 +25,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
+import io.strimzi.systemtest.logs.CollectorElement;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -42,7 +43,6 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.OpenShift;
-import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -617,7 +617,7 @@ public class SetupClusterOperator {
                         return yamlPath;
                 }
 
-                TestUtils.writeFile(tmpFile.getAbsolutePath(), tmpFileContent);
+                TestUtils.writeFile(tmpFile.toPath(), tmpFileContent);
                 return tmpFile.getAbsolutePath();
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -715,7 +715,7 @@ public class SetupClusterOperator {
                 fileNameArr[1] = "Role";
                 final String changeFileName = Arrays.stream(fileNameArr).map(item -> "-" + item).collect(Collectors.joining()).substring(1);
                 File tmpFile = Files.createTempFile(changeFileName.replace(".yaml", ""), ".yaml").toFile();
-                TestUtils.writeFile(tmpFile.getAbsolutePath(), TestUtils.readFile(oldFile).replace("ClusterRole", "Role"));
+                TestUtils.writeFile(tmpFile.toPath(), TestUtils.readFile(oldFile).replace("ClusterRole", "Role"));
                 LOGGER.info("Replaced ClusterRole for Role in {}", oldFile.getAbsolutePath());
 
                 return tmpFile;

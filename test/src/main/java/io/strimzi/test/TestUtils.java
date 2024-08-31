@@ -57,6 +57,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -72,7 +73,7 @@ public final class TestUtils {
 
     public static final String USER_PATH = System.getProperty("user.dir");
 
-    public static final String LINE_SEPARATOR = System.getProperty("line.separator");
+    public static final String LINE_SEPARATOR = System.lineSeparator();
 
     public static final String CRD_TOPIC = USER_PATH + "/../packaging/install/cluster-operator/043-Crd-kafkatopic.yaml";
 
@@ -179,9 +180,7 @@ public final class TestUtils {
                     }
                 }
                 onTimeout.run();
-                WaitException waitException = new WaitException("Timeout after " + timeoutMs + " ms waiting for " + description);
-                waitException.printStackTrace();
-                throw waitException;
+                throw new WaitException("Timeout after " + timeoutMs + " ms waiting for " + description);
             }
             long sleepTime = Math.min(pollIntervalMs, timeLeft);
             if (LOGGER.isTraceEnabled()) {
@@ -249,7 +248,7 @@ public final class TestUtils {
                 textBuilder.append((char) character);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.warn("Failed to read from InputStream", e);
         }
         return textBuilder.toString();
     }
@@ -341,25 +340,6 @@ public final class TestUtils {
 
     }
 
-    public static <T> T configFromMultiYamlFile(String yamlFile, String expectedKind, Class<T> kindClass) {
-        return configFromMultiYamlFile(new File(yamlFile), expectedKind, kindClass);
-    }
-
-    public static <T> T configFromMultiYamlFile(File yamlFile, String expectedKind, Class<T> kindClass) {
-        try {
-            YAMLFactory yamlFactory = new YAMLFactory();
-            ObjectMapper mapper = new ObjectMapper();
-            YAMLParser yamlParser = yamlFactory.createParser(yamlFile);
-            List<Map<String, Object>> resources = mapper.readValues(yamlParser, new TypeReference<Map<String, Object>>() { }).readAll();
-
-            return mapper.convertValue(resources.stream().filter(resource -> resource.get("kind").equals(expectedKind)).findFirst().get(), kindClass);
-        } catch (InvalidFormatException e) {
-            throw new IllegalArgumentException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public static <T> T configFromYaml(File yamlFile, Class<T> c) {
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         try {
@@ -391,18 +371,7 @@ public final class TestUtils {
         try {
             Files.writeString(filePath, text, StandardCharsets.UTF_8);
         } catch (IOException e) {
-            LOGGER.info("Exception during writing text in file");
-            e.printStackTrace();
-        }
-    }
-
-    /** Method to create and write file */
-    public static void writeFile(String filePath, String text) {
-        try {
-            Files.writeString(Paths.get(filePath), text, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            LOGGER.info("Exception during writing text in file");
-            e.printStackTrace();
+            LOGGER.warn("Exception during writing text in file", e);
         }
     }
 
@@ -520,30 +489,10 @@ public final class TestUtils {
      * result.
      *
      * @param unused the result of a completion stage, unused by this method
-     * @param error an error thrown by the an earlier completion stage
+     * @param error an error thrown by an earlier completion stage
      */
     public static void assertSuccessful(Object unused, Throwable error) {
         assertThat(error, is(nullValue()));
-    }
-
-    /**
-     * Creates an empty file in the default temporary-file directory with an UUID as prefix and .tmp as suffix.
-     * 
-     * @return The empty file just created.
-     */
-    public static File tempFile() {
-        return tempFile(null);
-    }
-
-    /**
-     * Creates an empty file in the default temporary-file directory with an UUID as prefix and given suffix.
-     * 
-     * @param suffix The suffix of the empty file (default: .tmp).
-     * 
-     * @return The empty file just created.
-     */
-    public static File tempFile(String suffix) {
-        return tempFile(null, suffix);
     }
 
     /**
@@ -577,11 +526,15 @@ public final class TestUtils {
     public static String jsonFromResource(String resourcePath) {
         try {
             URI resourceURI = Objects.requireNonNull(TestUtils.class.getClassLoader().getResource(resourcePath)).toURI();
-            Optional<String> content = Files.lines(Paths.get(resourceURI), UTF_8).reduce((x, y) -> x + y);
-            if (content.isEmpty()) {
-                throw new IOException(format("File %s from resources was empty", resourcePath));
+            try (Stream<String> lines = Files.lines(Paths.get(resourceURI), UTF_8)) {
+                Optional<String> content = lines.reduce((x, y) -> x + y);
+
+                if (content.isEmpty()) {
+                    throw new IOException(format("File %s from resources was empty", resourcePath));
+                }
+
+                return content.get();
             }
-            return content.get();
         } catch (Throwable t) {
             throw new RuntimeException(t);
         }

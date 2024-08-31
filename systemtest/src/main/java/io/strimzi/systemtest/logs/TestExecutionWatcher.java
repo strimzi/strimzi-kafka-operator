@@ -6,7 +6,6 @@ package io.strimzi.systemtest.logs;
 
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.exceptions.KubernetesClusterUnstableException;
-import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
