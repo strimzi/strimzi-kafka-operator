@@ -474,7 +474,6 @@ public class Labels extends ResourceLabels {
     }
 
     /**
-     *
      * When adding new labels, ensure the names of any resources are truncated for sanitization purposes to be compatible with Kubernetes
      * Note: Valid label values must be a maximum length of 63 characters
      * https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set

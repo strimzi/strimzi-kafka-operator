@@ -124,7 +124,7 @@ public class CruiseControlReconciler {
      * @param imagePullPolicy   Image pull policy
      * @param imagePullSecrets  List of Image pull secrets
      * @param clock             The clock for supplying the reconciler with the time instant of each reconciliation cycle.
- *                              That time is used for checking maintenance windows
+     *                          That time is used for checking maintenance windows
      *
      * @return                  Future which completes when the reconciliation completes
      */

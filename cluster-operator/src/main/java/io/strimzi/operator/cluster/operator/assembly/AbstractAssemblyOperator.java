@@ -39,6 +39,13 @@ import java.util.List;
  *
  * <p>This class manages a per-assembly locking strategy so only one operation per assembly
  * can proceed at once.</p>
+ *
+ * @param <C>   Kubernetes Client type
+ * @param <T>   Type representing the custom resource
+ * @param <R>   Type extending the Fabric8 Resource class
+ * @param <P>   Type representing the .spec section of the custom resource
+ * @param <S>   Type representing the .status section of the custom resource
+ * @param <L>   Type representing the custom resource list
  */
 public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T extends CustomResource<P, S>,
         L extends KubernetesResourceList<T>, R extends Resource<T>, P extends Spec, S extends Status>

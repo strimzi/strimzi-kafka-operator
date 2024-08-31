@@ -8,5 +8,8 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 
 /**
  * Holder record for ConfigMaps with Metrics and Logging configuration
+ *
+ * @param metricsCm     Config Map with metrics configuration
+ * @param loggingCm     Config Map with logging configuration
  */
 public record MetricsAndLogging(ConfigMap metricsCm, ConfigMap loggingCm) { }

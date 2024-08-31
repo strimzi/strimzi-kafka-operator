@@ -344,7 +344,7 @@ public class CaReconciler {
      * Kafka and ZooKeeper anymore.
      *
      * @param clock    The clock for supplying the reconciler with the time instant of each reconciliation cycle.
-                       That time is used for checking maintenance windows
+     *                 That time is used for checking maintenance windows
      */
     Future<Void> reconcileClusterOperatorSecret(Clock clock) {
         return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()))
@@ -622,6 +622,9 @@ public class CaReconciler {
 
     /**
      * Helper class to pass both Cluster and Clients CA as a result of the reconciliation
+     *
+     * @param clusterCa     The Cluster CA instance
+     * @param clientsCa     The Clients CA instance
      */
     public record CaReconciliationResult(ClusterCa clusterCa, ClientsCa clientsCa) { }
 }

@@ -336,7 +336,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
             validateImages(versions, kafkaMirrorMakerImages);
         }
 
-       /**
+        /**
          * The Kafka MirrorMaker 2 image to use for a Kafka MirrorMaker 2 cluster.
          * @param image The image given in the CR.
          * @param version The version given in the CR.

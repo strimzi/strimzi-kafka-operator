@@ -880,7 +880,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         return logging;
     }
 
-     /**
+    /**
      * @return  Returns the preferred Deployment Strategy. This is used for the migration form Deployment to
      * StrimziPodSet or the other way around
      */

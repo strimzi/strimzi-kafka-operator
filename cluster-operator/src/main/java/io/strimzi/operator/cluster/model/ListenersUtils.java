@@ -723,7 +723,7 @@ public class ListenersUtils {
                 : null;
     }
 
-     /**
+    /**
      * Returns broker service external IPs
      * 
      * @param listener  Listener for which the external IPs should be found

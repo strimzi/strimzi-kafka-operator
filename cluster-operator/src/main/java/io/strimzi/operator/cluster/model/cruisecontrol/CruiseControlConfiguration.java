@@ -81,10 +81,10 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
             String.join(",", CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS_LIST);
 
     /**
-    * Map containing default values for required configuration properties. The map needs to be sorted so that the order
-    * of the entries in the Cruise Control configuration is deterministic and does not cause unnecessary rolling updates
-    * of Cruise Control deployment.
-    */
+     * Map containing default values for required configuration properties. The map needs to be sorted so that the order
+     * of the entries in the Cruise Control configuration is deterministic and does not cause unnecessary rolling updates
+     * of Cruise Control deployment.
+     */
     private static final Map<String, String> CRUISE_CONTROL_DEFAULT_PROPERTIES_MAP = Collections.unmodifiableSortedMap(new TreeMap<>(Map.ofEntries(
             Map.entry(CruiseControlConfigurationParameters.PARTITION_METRICS_WINDOW_MS_CONFIG_KEY.getValue(), Integer.toString(300_000)),
             Map.entry(CruiseControlConfigurationParameters.PARTITION_METRICS_WINDOW_NUM_CONFIG_KEY.getValue(), "1"),

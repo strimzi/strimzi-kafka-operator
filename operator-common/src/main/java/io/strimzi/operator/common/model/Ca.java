@@ -102,9 +102,11 @@ public abstract class Ca {
         }
 
         /**
+         * Checks whether the key has the desired suffix based on the entry.
          *
-         * @param key to check the type of
-         * @return whether this key has the correct suffix for the entry
+         * @param key   The key that will be checked whether it matches
+         *
+         * @return  True if the key matches. False otherwise.
          */
         private boolean matchesType(String key) {
             return key.endsWith(suffix);

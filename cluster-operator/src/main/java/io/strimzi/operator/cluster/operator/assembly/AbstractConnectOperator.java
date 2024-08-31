@@ -473,7 +473,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @param connectorName                 Name of the connector
      * @param status                        The new/future status of the connector
      * @param previousAutoRestartStatus     Previous auto-restart status used to generate the new status (increment the restart counter etc.)
-
+     *
      * @return  Future with connector status and conditions which completes when the connector is restarted
      */
     private Future<ConnectorStatusAndConditions> autoRestartConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, ConnectorStatusAndConditions status, AutoRestartStatus previousAutoRestartStatus) {

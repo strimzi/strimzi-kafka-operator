@@ -146,7 +146,7 @@ public class BatchingTopicController {
      *
      * @param admin The {@link Admin} client used to interact with the Kafka cluster.
      * @param name The name of the configuration to retrieve.
-     * @return An {@link Optional<String>} containing the value of the requested configuration if found, or an empty Optional if not.
+     * @return An {@link Optional} {@link String} containing the value of the requested configuration if found, or an empty Optional if not.
      * @throws RuntimeException if there is an error during the operation. This exception wraps the underlying exception's message.
      */
     private static Optional<String> getClusterConfig(Admin admin, String name) {
