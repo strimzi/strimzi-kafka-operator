@@ -244,11 +244,23 @@ class TopicControllerIT {
     }
 
     private static Predicate<KafkaTopic> readyIsTrueOrFalse() {
+        return typeIsTrueOrFalse("Ready");
+    }
+
+    private static Predicate<KafkaTopic> unmanagedIsTrueOrFalse() {
+        return typeIsTrueOrFalse("Unmanaged");
+    }
+
+    private static Predicate<KafkaTopic> typeIsTrueOrFalse(String type) {
         Predicate<Condition> conditionPredicate = condition ->
-            "Ready".equals(condition.getType())
-                && "True".equals(condition.getStatus())
-                ||  "False".equals(condition.getStatus());
-        return isReconcilatedAndHasConditionMatching("Ready=True or False", conditionPredicate);
+            type.equals(condition.getType())
+                    && "True".equals(condition.getStatus())
+                    || "False".equals(condition.getStatus());
+        return isReconcilatedAndHasConditionMatching(type + "=True or False", conditionPredicate);
+    }
+
+    private static Predicate<KafkaTopic> unmanagedStatusTrue() {
+        return typeIsTrueOrFalse("Unmanaged");
     }
 
     private static Predicate<KafkaTopic> unmanagedIsTrue() {
@@ -665,7 +677,7 @@ class TopicControllerIT {
         // given
 
         // when
-        var reconciled = createTopic(kafkaCluster, kt);
+        var reconciled = createTopic(kafkaCluster, kt, unmanagedStatusTrue());
 
         // then
         assertNull(reconciled.getStatus().getTopicName());
@@ -1137,7 +1149,7 @@ class TopicControllerIT {
         @BrokerConfig(name = "auto.create.topics.enable", value = "false")
         KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException, TimeoutException {
         // given
-        var created = createTopic(kafkaCluster, kt);
+        var created = createTopic(kafkaCluster, kt, TopicOperatorUtil.isManaged(kt) ? readyIsTrueOrFalse() : unmanagedIsTrueOrFalse());
         if (TopicOperatorUtil.isManaged(kt)) {
             assertCreateSuccess(kt, created);
         }
@@ -2153,4 +2165,63 @@ class TopicControllerIT {
         KafkaTopic kafkaTopic = createTopic(kafkaCluster, kafkaTopic(NAMESPACE, topicName, true, topicName, 2, 1));
         assertTrue(readyIsTrue().test(kafkaTopic));
     }
+
+    @Test
+    public void shouldUpdateAnUnmanagedTopic(
+            @BrokerConfig(name = "auto.create.topics.enable", value = "false")
+            KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException {
+        var topicName = "my-topic";
+
+        // create the topic
+        var topic = createTopic(kafkaCluster,
+                kafkaTopic(NAMESPACE, topicName, SELECTOR, null, null, topicName, 1, 1,
+                        Map.of(TopicConfig.RETENTION_MS_CONFIG, "1000")));
+        topic = Crds.topicOperation(kubernetesClient).resource(topic).get();
+
+        TopicOperatorTestUtil.waitUntilCondition(Crds.topicOperation(kubernetesClient).resource(topic), kt ->
+                Optional.of(kt)
+                    .map(KafkaTopic::getStatus)
+                    .map(KafkaTopicStatus::getConditions)
+                    .flatMap(c -> Optional.of(c.get(0)))
+                    .map(Condition::getType)
+                    .filter("Ready"::equals)
+                    .isPresent()
+        );
+
+        // set unmanaged
+        topic = Crds.topicOperation(kubernetesClient).resource(topic).get();
+        topic.setStatus(null);
+        topic.getMetadata().getAnnotations().put(TopicOperatorUtil.MANAGED, "false");
+        topic = Crds.topicOperation(kubernetesClient).resource(topic).update();
+
+        TopicOperatorTestUtil.waitUntilCondition(Crds.topicOperation(kubernetesClient).resource(topic), kt ->
+            Optional.of(kt)
+                    .map(KafkaTopic::getStatus)
+                    .map(KafkaTopicStatus::getConditions)
+                    .flatMap(c -> Optional.of(c.get(0)))
+                    .map(Condition::getType)
+                    .filter("Unmanaged"::equals)
+                    .isPresent()
+        );
+
+        // apply a change to the unmanaged topic
+        topic = Crds.topicOperation(kubernetesClient).resource(topic).get();
+        topic.setStatus(null);
+        topic.getSpec().getConfig().put(TopicConfig.RETENTION_MS_CONFIG, "1001");
+        topic = Crds.topicOperation(kubernetesClient).resource(topic).update();
+        var resourceVersionOnUpdate = topic.getMetadata().getResourceVersion();
+
+        TopicOperatorTestUtil.waitUntilCondition(Crds.topicOperation(kubernetesClient).resource(topic), kt ->
+                !resourceVersionOnUpdate.equals(kt.getMetadata().getResourceVersion())
+        );
+        topic = Crds.topicOperation(kubernetesClient).resource(topic).get();
+        var resourceVersionAfterUpdate = topic.getMetadata().getResourceVersion();
+
+        // Wait a bit to check the resource is not getting updated continuously
+        Thread.sleep(500L);
+        TopicOperatorTestUtil.waitUntilCondition(Crds.topicOperation(kubernetesClient).resource(topic), kt ->
+                resourceVersionAfterUpdate.equals(kt.getMetadata().getResourceVersion())
+        );
+    }
+
 }
