@@ -468,6 +468,14 @@ public abstract class AbstractOperator<
         return Future.succeededFuture();
     }
 
+    /**
+     * Find the names of all resources that should be reconciled
+     *
+     * @param namespace The namespace where the resources should be looked up
+     *
+     * @return  A future with a set of resources found in given namespace
+     */
+    @Override
     public Future<Set<NamespaceAndName>> allResourceNames(String namespace) {
         return resourceOperator.listAsync(namespace, selector())
                 .map(resourceList ->
