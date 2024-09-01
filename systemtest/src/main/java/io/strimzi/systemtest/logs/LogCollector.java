@@ -15,7 +15,6 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
-import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

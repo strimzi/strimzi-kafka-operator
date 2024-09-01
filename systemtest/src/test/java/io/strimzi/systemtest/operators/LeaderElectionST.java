@@ -10,12 +10,12 @@ import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.resources.operator.specific.HelmResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
-import io.strimzi.test.annotations.IsolatedTest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -47,7 +47,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  *
  * <a href="https://strimzi.io/docs/operators/in-development/configuring.html#assembly-using-multiple-cluster-operator-replicas-str">the documentation</a>
  */
-
 @Tag(REGRESSION)
 public class LeaderElectionST extends AbstractST {
 

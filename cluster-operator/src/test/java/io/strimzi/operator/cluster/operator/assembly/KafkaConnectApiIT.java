@@ -9,7 +9,6 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.annotations.IsolatedTest;
 import io.strimzi.test.container.StrimziKafkaCluster;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -23,6 +22,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
@@ -84,7 +84,7 @@ public class KafkaConnectApiIT {
         vertx.close();
     }
 
-    @IsolatedTest
+    @Test
     @SuppressWarnings({"unchecked", "checkstyle:MethodLength", "checkstyle:NPathComplexity"})
     public void test(VertxTestContext context) throws InterruptedException {
         KafkaConnectApi client = new KafkaConnectApiImpl(vertx);
@@ -235,7 +235,7 @@ public class KafkaConnectApiIT {
             }));
     }
 
-    @IsolatedTest
+    @Test
     public void testChangeLoggers(VertxTestContext context) {
         String desired = "log4j.rootLogger=TRACE, CONSOLE\n" +
                 "log4j.logger.org.apache.zookeeper=WARN\n" +
@@ -272,7 +272,7 @@ public class KafkaConnectApiIT {
                         }))));
     }
 
-    @IsolatedTest
+    @Test
     public void testHierarchy() {
         String rootLevel = "TRACE";
         String desired = "log4j.rootLogger=" + rootLevel + ", CONSOLE\n" +
