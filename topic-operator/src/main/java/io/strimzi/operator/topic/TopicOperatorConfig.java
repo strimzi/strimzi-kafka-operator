@@ -50,14 +50,15 @@ import static io.strimzi.operator.common.config.ConfigParameterParser.strictlyPo
  * @param saslEnabled                           Whether the Admin client should be configured to use SASL.
  * @param saslMechanism                         The SASL mechanism for the Admin client.
  * @param saslCustomConfigJson                  The SASL custom values for the Admin client when using alternate auth mechanisms.
- * @param saslUsername,                         The SASL username for the Admin client.
- * @param saslPassword,                         The SASL password for the Admin client.
+ * @param saslUsername                          The SASL username for the Admin client.
+ * @param saslPassword                          The SASL password for the Admin client.
  * @param securityProtocol                      The security protocol for the Admin client.
  * @param useFinalizer                          Whether to use finalizers.
  * @param maxQueueSize                          The capacity of the queue.
  * @param maxBatchSize                          The maximum size of a reconciliation batch.
  * @param maxBatchLingerMs                      The maximum time to wait for a reconciliation batch to contain {@code maxBatchSize} items.
  * @param enableAdditionalMetrics               Whether to enable additional metrics.
+ * @param featureGates                          Configured feature gates.
  * @param cruiseControlEnabled                  Whether Cruise Control integration is enabled.
  * @param cruiseControlRackEnabled              Whether the target Kafka cluster has rack awareness.
  * @param cruiseControlHostname                 Cruise Control hostname.

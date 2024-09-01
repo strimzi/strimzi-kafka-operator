@@ -7,6 +7,10 @@ package io.strimzi.operator.topic.model;
 /**
  * A key-value pair.
  * We can't use Map.entry because it forbids null values, which we want to allow.
+ *
+ * @param getKey    The key
+ * @param getValue  The value
+ *
  * @param <K> Type of key.
  * @param <V> Type of value.
  */

@@ -185,7 +185,7 @@ public class ClusterOperator extends AbstractVerticle {
     }
 
     /**
-      Periodical reconciliation (in case we lost some event)
+     * Periodical reconciliation (in case we lost some event)
      */
     private void reconcileAll(String trigger) {
         if (!config.isPodSetReconciliationOnly()) {

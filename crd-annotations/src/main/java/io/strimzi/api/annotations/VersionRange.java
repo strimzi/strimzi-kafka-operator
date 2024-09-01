@@ -81,7 +81,8 @@ public class VersionRange<Version extends Comparable<Version>> {
 
     /**
      * Abstracts the parsing of a version.
-     * @param <Version>
+     *
+     * @param <Version> Custom Resource API Version
      */
     interface VersionParser<Version extends Comparable<Version>> {
         Version parse(String version) throws IllegalArgumentException;

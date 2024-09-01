@@ -13,6 +13,10 @@ import java.util.Objects;
  * Reference to a resource in Kube.
  * Equality is based on {@link #namespace()} and {@link #name()}.
  * {@link #creationTime()} is present to allow disambiguation of multiple KafkaTopics managing the same topic in Kafka.
+ *
+ * @param namespace     The namespace of the resource
+ * @param name          The name of the resource
+ * @param creationTime  The creation time of the resource
  */
 public record KubeRef(String namespace, String name, long creationTime) {
     /**

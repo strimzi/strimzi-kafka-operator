@@ -18,6 +18,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Abstract class for collecting Kafka Admin API requests and sending them to Kafka in batches. The batches are sent
  * when we collect some (configurable) amount of requests or after some (configurable) time interval
+ *
+ * @param <T>   The type that is reconciled by given batch reconciler instance
  */
 public abstract class AbstractBatchReconciler<T> {
     private final static Logger LOGGER = LogManager.getLogger(AbstractBatchReconciler.class);

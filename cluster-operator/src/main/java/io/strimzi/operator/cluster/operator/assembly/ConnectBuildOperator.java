@@ -212,10 +212,10 @@ public class ConnectBuildOperator {
     /**
      * Checks if the builder Pod finished the build
      *
-     @param namespace               Namespace of the Connect cluster
-     * @param podName               The name of the Pod which should be checked whether it finished
+     * @param namespace     Namespace of the Connect cluster
+     * @param podName       The name of the Pod which should be checked whether it finished
      *
-     * @return                      True if the build already finished, false if it is still building
+     * @return      True if the build already finished, false if it is still building
      */
     private boolean kubernetesBuildPodFinished(String namespace, String podName, String containerName)   {
         Pod buildPod = podOperator.get(namespace, podName);

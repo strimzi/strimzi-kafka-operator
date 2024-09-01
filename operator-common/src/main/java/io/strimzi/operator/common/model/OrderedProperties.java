@@ -466,9 +466,11 @@ public class OrderedProperties {
 
         /**
          * Write comment to a Writer, handling newlines embedded in the comment
+         *
          * @param bufferedWriter BufferedWriter to write.
          * @param comment A comment to be written
-         * @throws IOException
+         *
+         * @throws IOException  Throws IOException when IO operations fail
          */
         private static void writeComment(BufferedWriter bufferedWriter, String comment) throws IOException {
             for (String line : LINE_SPLITTER.split(comment)) {

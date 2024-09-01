@@ -16,6 +16,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Abstract cache provides a periodically refreshed cache. The cache is based around ConcurrentHashMap and a scheduled
  * periodical timer which regularly updates the cache. It also provides method to access the cache and its data.
+ *
+ * @param <T> Type of the resource that will be cached
  */
 public abstract class AbstractCache<T> {
     private final static Logger LOGGER = LogManager.getLogger(AbstractCache.class);

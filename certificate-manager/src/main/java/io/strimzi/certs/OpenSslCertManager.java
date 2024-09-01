@@ -124,8 +124,10 @@ public class OpenSslCertManager implements CertManager {
      * Add basic constraints and subject alt names section to the provided openssl configuration file
      *
      * @param sbj subject information
+     *
      * @return openssl configuration file with subject alt names added
-     * @throws IOException
+     *
+     * @throws IOException  Throws IOException when IO operations fail
      */
     private Path buildConfigFile(Subject sbj, boolean isCa) throws IOException {
         Path sna = createDefaultConfig();

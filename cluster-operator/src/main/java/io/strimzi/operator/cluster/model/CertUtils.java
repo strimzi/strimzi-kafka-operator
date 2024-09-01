@@ -281,7 +281,7 @@ public class CertUtils {
      *
      * @param certSecretSource      Represents a certificate inside a Secret
      * @param prefix                Prefix used to generate the volume name
-
+     *
      * @return  The generated volume name
      */
     private static String trustedCertificateVolumeName(CertSecretSource certSecretSource, String prefix)    {

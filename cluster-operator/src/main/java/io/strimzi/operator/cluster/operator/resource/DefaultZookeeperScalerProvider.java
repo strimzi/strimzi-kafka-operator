@@ -25,6 +25,7 @@ public class DefaultZookeeperScalerProvider implements ZookeeperScalerProvider {
      * @param zkNodeAddress                 Function for generating the Zookeeper node addresses
      * @param tlsPemIdentity                Trust set and identity for TLS client authentication for connecting to ZooKeeper
      * @param operationTimeoutMs            Operation timeout
+     * @param zkAdminSessionTimeoutMs       Session timeout for the ZooKeeper connection
      *
      * @return  ZookeeperScaler instance
      */

@@ -25,6 +25,8 @@ import static java.util.Arrays.asList;
 
 /**
  * Abstraction for things which convert a single configuration parameter value from a String to some specific type.
+ *
+ * @param <T> Configuration type that will be parsed
  */
 public interface ConfigParameterParser<T> {
 

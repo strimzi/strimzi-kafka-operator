@@ -13,6 +13,9 @@ import java.util.concurrent.CompletionStage;
 
 /**
  * Interface for operators using the Kafka Admin API
+ *
+ * @param <T>   The type that is being reconciled by the operator instance
+ * @param <S>   Collection type that is used by given operator instance
  */
 public interface AdminApiOperator<T, S extends Collection<String>> {
     /**

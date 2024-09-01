@@ -170,7 +170,7 @@ public class ZooKeeperEraser {
      * If deleteClaim is set to true (PVCs have Kafka CR as owner), this method deletes the PVCs.
      * If deleteClaim is set to false (PVCs don't have Kafka CR as owner), this method doesn't delete the PVCs (user has to do it manually).
      *
-      @return  Future which completes when the PVCs which should be deleted
+     * @return  Future which completes when the PVCs which should be deleted
      */
     protected Future<Void> deletePersistentClaims() {
         Labels zkSelectorLabels = Labels.EMPTY
