@@ -104,14 +104,20 @@ public class CruiseControlMetricsReporterTest {
         userConfiguration.put("default.replication.factor", 3);
         userConfiguration.put("min.insync.replicas", 2);
         userConfiguration.put("num.partitions", 20);
+        KafkaConfiguration configuration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
 
-        CruiseControlMetricsReporter ccmr = CruiseControlMetricsReporter.fromCrd(kafka, new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet()), 5);
+        CruiseControlMetricsReporter ccmr = CruiseControlMetricsReporter.fromCrd(kafka, configuration, 5);
 
         assertThat(ccmr, is(notNullValue()));
-        assertThat(ccmr.numPartitions(), is(nullValue()));
-        assertThat(ccmr.replicationFactor(), is(nullValue()));
-        assertThat(ccmr.minInSyncReplicas(), is(nullValue())); // This does not inherit the Kafka value
+        assertThat(ccmr.numPartitions(), is(50));
+        assertThat(ccmr.replicationFactor(), is(5));
+        assertThat(ccmr.minInSyncReplicas(), is(4)); // This does not inherit the Kafka value
         assertThat(ccmr.topicName(), is("my-custom-topic"));
+
+        // Values were removed from the Kafka configuration
+        assertThat(configuration.getConfigOption("cruise.control.metrics.topic.num.partitions"), is(nullValue()));
+        assertThat(configuration.getConfigOption("cruise.control.metrics.topic.replication.factor"), is(nullValue()));
+        assertThat(configuration.getConfigOption("cruise.control.metrics.topic.min.insync.replicas"), is(nullValue()));
     }
 
     @Test
