@@ -991,23 +991,6 @@ public class KafkaRebalanceAssemblyOperator
                 KafkaRebalanceUtils.rebalanceState(kafkaRebalance.getStatus()),
                 ANNO_STRIMZI_IO_REBALANCE, rawRebalanceAnnotation(kafkaRebalance));
 
-        if (kafkaRebalance.getStatus() != null
-                && kafkaRebalance.getStatus().getObservedGeneration() != kafkaRebalance.getMetadata().getGeneration()) {
-
-            KafkaRebalanceBuilder patchedKafkaRebalance = new KafkaRebalanceBuilder(kafkaRebalance);
-
-            patchedKafkaRebalance
-                    .editMetadata()
-                         .addToAnnotations(Map.of(ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.refresh.toString()))
-                    .endMetadata()
-                    .editStatus()
-                         .withObservedGeneration(kafkaRebalance.getMetadata().getGeneration())
-                    .endStatus();
-
-            kafkaRebalanceOperator.patchAsync(reconciliation, patchedKafkaRebalance.build()).onComplete(
-                    r -> LOGGER.debugCr(reconciliation, "The KafkaRebalance resource is updated with refresh annotation"));
-        }
-
         String clusterName = kafkaRebalance.getMetadata().getLabels() == null ? null : kafkaRebalance.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
         String clusterNamespace = kafkaRebalance.getMetadata().getNamespace();
         if (clusterName == null) {
@@ -1043,21 +1026,37 @@ public class KafkaRebalanceAssemblyOperator
                                 new InvalidResourceException(CruiseControlIssues.cruiseControlDisabled.getMessage())));
                     }
 
+                    Future<KafkaRebalance> resourcePatchFuture;
+                    if (kafkaRebalance.getStatus() != null
+                            && kafkaRebalance.getStatus().getObservedGeneration() != kafkaRebalance.getMetadata().getGeneration()) {
+
+                        KafkaRebalanceBuilder patchedKafkaRebalance = new KafkaRebalanceBuilder(kafkaRebalance);
+
+                        patchedKafkaRebalance
+                                .editMetadata()
+                                    .addToAnnotations(Map.of(ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.refresh.toString()))
+                                .endMetadata();
+
+                        resourcePatchFuture = kafkaRebalanceOperator.patchAsync(reconciliation, patchedKafkaRebalance.build()).onComplete(
+                                r -> LOGGER.debugCr(reconciliation, "The KafkaRebalance resource is updated with refresh annotation"));
+                    } else {
+                        resourcePatchFuture = Future.succeededFuture();
+                    }
+
                     String ccSecretName =  CruiseControlResources.secretName(clusterName);
                     String ccApiSecretName =  CruiseControlResources.apiSecretName(clusterName);
 
                     Future<Secret> ccSecretFuture = secretOperations.getAsync(clusterNamespace, ccSecretName);
                     Future<Secret> ccApiSecretFuture = secretOperations.getAsync(clusterNamespace, ccApiSecretName);
 
-                    return Future.join(ccSecretFuture, ccApiSecretFuture)
+                    return Future.join(resourcePatchFuture, ccSecretFuture, ccApiSecretFuture)
                             .compose(compositeFuture -> {
-
-                                Secret ccSecret = compositeFuture.resultAt(0);
+                                Secret ccSecret = compositeFuture.resultAt(1);
                                 if (ccSecret == null) {
                                     return Future.failedFuture(Util.missingSecretException(clusterNamespace, ccSecretName));
                                 }
 
-                                Secret ccApiSecret = compositeFuture.resultAt(1);
+                                Secret ccApiSecret = compositeFuture.resultAt(2);
                                 if (ccApiSecret == null) {
                                     return Future.failedFuture(Util.missingSecretException(clusterNamespace, ccApiSecretName));
                                 }
