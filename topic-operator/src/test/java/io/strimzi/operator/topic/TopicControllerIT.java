@@ -1781,6 +1781,56 @@ class TopicControllerIT {
         assertEquals("KafkaError", condition.getReason());
         assertEquals("org.apache.kafka.common.errors.TopicAuthorizationException: not allowed", condition.getMessage());
     }
+    
+    @Test
+    public void shouldFailTheReconciliationWithNullConfig(
+        @BrokerConfig(name = "auto.create.topics.enable", value = "false")
+        KafkaCluster kafkaCluster
+    ) throws ExecutionException, InterruptedException {
+        invalidConfigFailsReconciliation(
+                kafkaCluster,
+                null,
+                "KafkaError",
+                "org.apache.kafka.common.errors.InvalidConfigurationException: Null value not supported for topic configs: cleanup.policy");
+    }
+
+    @Test
+    public void shouldFailTheReconciliationWithUnexpectedConfig(
+            @BrokerConfig(name = "auto.create.topics.enable", value = "false")
+            KafkaCluster kafkaCluster
+    ) throws ExecutionException, InterruptedException {
+        invalidConfigFailsReconciliation(
+                kafkaCluster,
+                Map.of("foo", 12),
+                "InternalError",
+                "io.strimzi.operator.common.model.InvalidResourceException: Invalid value for topic config 'cleanup.policy': {foo=12}");
+    }
+
+    private void invalidConfigFailsReconciliation(
+            KafkaCluster kafkaCluster,
+            Map<String, Integer> policy,
+            String expectedReasons,
+            String expectedMessage
+    ) throws ExecutionException, InterruptedException {
+        Map<String, Object> configs = new HashMap<>();
+        configs.put("cleanup.policy", policy);
+        KafkaTopic kafkaTopic = new KafkaTopicBuilder()
+                .withNewMetadata()
+                .withNamespace(NAMESPACE)
+                .withName("my-topic")
+                .withLabels(SELECTOR)
+                .endMetadata()
+                .withNewSpec()
+                .withConfig(configs)
+                .withPartitions(1)
+                .withReplicas(1)
+                .endSpec()
+                .build();
+        var created = createTopic(kafkaCluster, kafkaTopic);
+        var condition = assertExactlyOneCondition(created);
+        assertEquals(expectedReasons, condition.getReason());
+        assertEquals(expectedMessage, condition.getMessage());
+    }
 
     private static KafkaTopic setGzipCompression(KafkaTopic kt) {
         return setCompression(kt, "gzip");

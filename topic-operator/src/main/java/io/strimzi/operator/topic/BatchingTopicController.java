@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.topic.KafkaTopicStatusBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.StatusDiff;
 import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
@@ -292,10 +293,15 @@ public class BatchingTopicController {
     }
 
     private PartitionedByError<ReconcilableTopic, Void> createTopics(List<ReconcilableTopic> kts) {
+        Map<ReconcilableTopic, TopicOperatorException> newTopicsErrors = new HashMap<>();
         var newTopics = kts.stream().map(reconcilableTopic -> {
-            // Admin create
-            return buildNewTopic(reconcilableTopic.kt(), reconcilableTopic.topicName());
-        }).collect(Collectors.toSet());
+            try {
+                return buildNewTopic(reconcilableTopic.kt(), reconcilableTopic.topicName());
+            } catch (InvalidResourceException e) {
+                newTopicsErrors.put(reconcilableTopic, new TopicOperatorException.InternalError(e));
+                return null;
+            }
+        }).filter(Objects::nonNull).collect(Collectors.toSet());
 
         LOGGER.debugOp("Admin.createTopics({})", newTopics);
         var timerSample = TopicOperatorUtil.startExternalRequestTimer(metrics, enableAdditionalMetrics);
@@ -310,6 +316,9 @@ public class BatchingTopicController {
         });
         Map<String, KafkaFuture<Void>> values = ctr.values();
         return partitionedByError(kts.stream().map(reconcilableTopic -> {
+            if (newTopicsErrors.containsKey(reconcilableTopic)) {
+                return new Pair<>(reconcilableTopic, Either.ofLeft(newTopicsErrors.get(reconcilableTopic)));
+            }
             try {
                 values.get(reconcilableTopic.topicName()).get();
                 reconcilableTopic.kt().setStatus(new KafkaTopicStatusBuilder()
@@ -345,25 +354,27 @@ public class BatchingTopicController {
         Map<String, String> configs = new HashMap<>();
         if (hasConfig(kt)) {
             for (var entry : kt.getSpec().getConfig().entrySet()) {
-                configs.put(entry.getKey(), configValueAsString(entry.getValue()));
+                configs.put(entry.getKey(), configValueAsString(entry.getKey(), entry.getValue()));
             }
         }
         return configs;
     }
 
-    private static String configValueAsString(Object value) {
+    private static String configValueAsString(String key, Object value) {
         String valueStr;
-        if (value instanceof String
+        if (value == null) {
+            valueStr = null;
+        } else if (value instanceof String
                 || value instanceof Boolean) {
             valueStr = value.toString();
         } else if (value instanceof Number) {
             valueStr = value.toString();
         } else if (value instanceof List) {
             valueStr = ((List<?>) value).stream()
-                    .map(BatchingTopicController::configValueAsString)
+                    .map(v -> BatchingTopicController.configValueAsString(key, v))
                     .collect(Collectors.joining(","));
         } else {
-            throw new RuntimeException("Cannot convert " + value);
+            throw new InvalidResourceException("Invalid value for topic config '" + key + "': " + value);
         }
         return valueStr;
     }
@@ -1061,7 +1072,7 @@ public class BatchingTopicController {
         if (hasConfig(kt)) {
             for (var specConfigEntry : kt.getSpec().getConfig().entrySet()) {
                 String key = specConfigEntry.getKey();
-                var specValueStr = configValueAsString(specConfigEntry.getValue());
+                var specValueStr = configValueAsString(specConfigEntry.getKey(), specConfigEntry.getValue());
                 var kafkaConfigEntry = configs.get(key);
                 if (kafkaConfigEntry == null
                         || !Objects.equals(specValueStr, kafkaConfigEntry.value())) {
