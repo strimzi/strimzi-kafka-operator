@@ -8,17 +8,15 @@ These tests ensure that the bridge behaves as expected under various configurati
 
 <!-- generated part -->
 **Tests:**
-- [testScramShaAuthWithWeirdUsername](../../.././development-docs/systemtests/io.strimzi.systemtest.bridge.HttpBridgeKafkaExternalListenersST.md)
-- [testReceiveSimpleMessageTlsScramSha](../../.././development-docs/systemtests/io.strimzi.systemtest.bridge.HttpBridgeScramShaST.md)
-- [testSendSimpleMessageTls](../../.././development-docs/systemtests/io.strimzi.systemtest.bridge.HttpBridgeTlsST.md)
-- [testCustomAndUpdatedValues](../../.././development-docs/systemtests/io.strimzi.systemtest.bridge.HttpBridgeST.md)
 - [testScaleBridgeSubresource](../../.././development-docs/systemtests/io.strimzi.systemtest.bridge.HttpBridgeST.md)
 - [testSendSimpleMessage](../../.././development-docs/systemtests/io.strimzi.systemtest.bridge.HttpBridgeST.md)
+- [testReceiveSimpleMessageTlsScramSha](../../.././development-docs/systemtests/io.strimzi.systemtest.bridge.HttpBridgeScramShaST.md)
 - [testReceiveSimpleMessage](../../.././development-docs/systemtests/io.strimzi.systemtest.bridge.HttpBridgeST.md)
 - [testCorsOriginAllowed](../../.././development-docs/systemtests/io.strimzi.systemtest.bridge.HttpBridgeCorsST.md)
+- [testSendSimpleMessageTls](../../.././development-docs/systemtests/io.strimzi.systemtest.bridge.HttpBridgeTlsST.md)
 - [testCorsForbidden](../../.././development-docs/systemtests/io.strimzi.systemtest.bridge.HttpBridgeCorsST.md)
 - [testReceiveSimpleMessageTls](../../.././development-docs/systemtests/io.strimzi.systemtest.bridge.HttpBridgeTlsST.md)
 - [testConfigureDeploymentStrategy](../../.././development-docs/systemtests/io.strimzi.systemtest.bridge.HttpBridgeST.md)
+- [testCustomAndUpdatedValues](../../.././development-docs/systemtests/io.strimzi.systemtest.bridge.HttpBridgeST.md)
 - [testSendSimpleMessageTlsScramSha](../../.././development-docs/systemtests/io.strimzi.systemtest.bridge.HttpBridgeScramShaST.md)
-- [testTlsAuthWithWeirdUsername](../../.././development-docs/systemtests/io.strimzi.systemtest.bridge.HttpBridgeKafkaExternalListenersST.md)
 - [testScaleBridgeToZero](../../.././development-docs/systemtests/io.strimzi.systemtest.bridge.HttpBridgeST.md)

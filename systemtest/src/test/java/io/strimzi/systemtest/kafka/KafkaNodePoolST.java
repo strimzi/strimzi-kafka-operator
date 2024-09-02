@@ -6,10 +6,6 @@ package io.strimzi.systemtest.kafka;
 
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.skodjob.annotations.Contact;
-import io.skodjob.annotations.Desc;
-import io.skodjob.annotations.Step;
-import io.skodjob.annotations.TestDoc;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
