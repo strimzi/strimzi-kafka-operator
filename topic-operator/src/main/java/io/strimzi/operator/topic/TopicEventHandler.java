@@ -6,15 +6,14 @@ package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.topic.model.TopicEvent.TopicDelete;
 import io.strimzi.operator.topic.model.TopicEvent.TopicUpsert;
 
 import java.util.Objects;
-
-import static io.strimzi.operator.common.Annotations.isReconciliationPausedWithAnnotation;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Handler for {@link KafkaTopic} events.
@@ -38,7 +37,7 @@ class TopicEventHandler implements ResourceEventHandler<KafkaTopic> {
     public void onAdd(KafkaTopic obj) {
         LOGGER.debugOp("Informed about add event for topic {}", TopicOperatorUtil.topicName(obj));
         metrics.resourceCounter(config.namespace()).incrementAndGet();
-        if (isReconciliationPausedWithAnnotation(obj)) {
+        if (Annotations.isReconciliationPausedWithAnnotation(obj)) {
             metrics.pausedResourceCounter(config.namespace()).incrementAndGet();
         }
         queue.offer(new TopicUpsert(System.nanoTime(), obj.getMetadata().getNamespace(),
@@ -49,16 +48,16 @@ class TopicEventHandler implements ResourceEventHandler<KafkaTopic> {
     @Override
     public void onUpdate(KafkaTopic oldObj, KafkaTopic newObj) {
         String trigger = Objects.equals(oldObj, newObj) ? "resync" : "update";
-        if (trigger.equals("resync") && (NANOSECONDS.toMillis(System.nanoTime()) - lastPeriodicTimestampMs) > config.fullReconciliationIntervalMs()) {
+        if (trigger.equals("resync") && (TimeUnit.NANOSECONDS.toMillis(System.nanoTime()) - lastPeriodicTimestampMs) > config.fullReconciliationIntervalMs()) {
             LOGGER.infoOp("Triggering periodic reconciliation of {} resources for namespace {}", KafkaTopic.RESOURCE_KIND, config.namespace());
-            this.lastPeriodicTimestampMs = NANOSECONDS.toMillis(System.nanoTime());
+            this.lastPeriodicTimestampMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime());
         }
         if (trigger.equals("update")) {
             LOGGER.debugOp("Informed about update event for topic {}", TopicOperatorUtil.topicName(newObj));
         }
-        if (isReconciliationPausedWithAnnotation(oldObj) && !isReconciliationPausedWithAnnotation(newObj)) {
+        if (Annotations.isReconciliationPausedWithAnnotation(oldObj) && !Annotations.isReconciliationPausedWithAnnotation(newObj)) {
             metrics.pausedResourceCounter(config.namespace()).decrementAndGet();
-        } else if (!isReconciliationPausedWithAnnotation(oldObj) && isReconciliationPausedWithAnnotation(newObj)) {
+        } else if (!Annotations.isReconciliationPausedWithAnnotation(oldObj) && Annotations.isReconciliationPausedWithAnnotation(newObj)) {
             metrics.pausedResourceCounter(config.namespace()).incrementAndGet();
         }
         queue.offer(new TopicUpsert(System.nanoTime(), newObj.getMetadata().getNamespace(),
@@ -70,7 +69,7 @@ class TopicEventHandler implements ResourceEventHandler<KafkaTopic> {
     public void onDelete(KafkaTopic obj, boolean deletedFinalStateUnknown) {
         LOGGER.debugOp("Informed about delete event for topic {}", TopicOperatorUtil.topicName(obj));
         metrics.resourceCounter(config.namespace()).decrementAndGet();
-        if (isReconciliationPausedWithAnnotation(obj)) {
+        if (Annotations.isReconciliationPausedWithAnnotation(obj)) {
             metrics.pausedResourceCounter(config.namespace()).decrementAndGet();
         }
         if (config.useFinalizer()) {

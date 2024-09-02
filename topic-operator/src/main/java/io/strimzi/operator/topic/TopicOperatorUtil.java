@@ -21,15 +21,13 @@ import org.apache.kafka.clients.admin.Admin;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static java.lang.String.format;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Provides utility methods for managing and interacting 
@@ -78,8 +76,10 @@ public class TopicOperatorUtil {
             config.cruiseControlSslEnabled(),
             config.cruiseControlSslEnabled() ? getFileContent(config.cruiseControlCrtFilePath()) : null,
             config.cruiseControlAuthEnabled(),
-            config.cruiseControlAuthEnabled() ? new String(getFileContent(config.cruiseControlApiUserPath()), UTF_8) : null,
-            config.cruiseControlAuthEnabled() ? new String(getFileContent(config.cruiseControlApiPassPath()), UTF_8) : null
+            config.cruiseControlAuthEnabled() 
+                ? new String(getFileContent(config.cruiseControlApiUserPath()), StandardCharsets.UTF_8) : null,
+            config.cruiseControlAuthEnabled() 
+                ? new String(getFileContent(config.cruiseControlApiPassPath()), StandardCharsets.UTF_8) : null
         );
     }
 
@@ -87,7 +87,7 @@ public class TopicOperatorUtil {
         try {
             return Files.readAllBytes(Path.of(filePath));
         } catch (IOException ioe) {
-            throw new UncheckedIOException(format("File not found: %s", filePath), ioe);
+            throw new UncheckedIOException(String.format("File not found: %s", filePath), ioe);
         }
     }
 
@@ -262,7 +262,8 @@ public class TopicOperatorUtil {
     /**
      * Get Kafka configuration value as string.
      *
-     * @param value Configuration name.
+     * @param key Configuration key.
+     * @param value Configuration value.             
      * @return Value as string.
      */
     public static String configValueAsString(String key, Object value) {
@@ -279,7 +280,8 @@ public class TopicOperatorUtil {
                 .map(v -> configValueAsString(key, v))
                 .collect(Collectors.joining(","));
         } else {
-            throw new InvalidResourceException("Invalid value for topic config '" + key + "': " + value);
+            throw new InvalidResourceException(
+                String.format("Invalid value for topic config '%s': %s", key, value));
         }
         return valueStr;
     }

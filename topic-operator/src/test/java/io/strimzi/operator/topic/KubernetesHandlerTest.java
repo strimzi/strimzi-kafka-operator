@@ -25,8 +25,6 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.api.kafka.model.topic.KafkaTopic.RESOURCE_KIND;
-import static io.strimzi.operator.topic.KubernetesHandler.FINALIZER_STRIMZI_IO_TO;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -60,7 +58,7 @@ class KubernetesHandlerTest {
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092",
             TopicOperatorConfig.NAMESPACE.key(), NAMESPACE
         ));
-        var metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, 
+        var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, 
             new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
         kubernetesHandler = new KubernetesHandler(config, metricsHolder, kubernetesClient);
     }
@@ -76,7 +74,7 @@ class KubernetesHandlerTest {
         assertTrue(kafkaTopic.getMetadata().getFinalizers().isEmpty());
 
         var update = kubernetesHandler.addFinalizer(TopicOperatorTestUtil.reconcilableTopic(kafkaTopic, NAMESPACE));
-        assertThat(update.getMetadata().getFinalizers().get(0), is(FINALIZER_STRIMZI_IO_TO));
+        assertThat(update.getMetadata().getFinalizers().get(0), is(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
     }
 
     @Test
@@ -92,7 +90,7 @@ class KubernetesHandlerTest {
     @Test
     public void removeFinalizerShouldWork() {
         var kafkaTopic = createTopic("my-topic", true);
-        assertThat(kafkaTopic.getMetadata().getFinalizers().get(0), is(FINALIZER_STRIMZI_IO_TO));
+        assertThat(kafkaTopic.getMetadata().getFinalizers().get(0), is(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
 
         var update = kubernetesHandler.removeFinalizer(TopicOperatorTestUtil.reconcilableTopic(kafkaTopic, NAMESPACE));
         assertTrue(update.getMetadata().getFinalizers().isEmpty());
@@ -175,7 +173,7 @@ class KubernetesHandlerTest {
             .endSpec()
             .build();
         if (withFinalizer) {
-            kafkaTopic.getMetadata().getFinalizers().add(FINALIZER_STRIMZI_IO_TO);
+            kafkaTopic.getMetadata().getFinalizers().add(KubernetesHandler.FINALIZER_STRIMZI_IO_TO);
         }
         return Crds.topicOperation(kubernetesClient).resource(kafkaTopic).create();
     }

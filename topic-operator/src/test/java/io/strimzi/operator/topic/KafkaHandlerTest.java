@@ -39,7 +39,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static io.strimzi.api.kafka.model.topic.KafkaTopic.RESOURCE_KIND;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
@@ -66,7 +65,7 @@ public class KafkaHandlerTest {
         var kafkaAdminClientSpy = spy(Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers())));
 
         var kafkaHandler = new KafkaHandler(config, 
-            new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry())), 
+            new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry())), 
             kafkaAdminClientSpy);
         var autoCreateValue = kafkaHandler.clusterConfig(KafkaHandler.AUTO_CREATE_TOPICS_ENABLE);
 
@@ -86,7 +85,7 @@ public class KafkaHandlerTest {
         var kafkaAdminClientSpy = spy(Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers())));
 
         var kafkaHandler = new KafkaHandler(config,
-            new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry())),
+            new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry())),
             kafkaAdminClientSpy);
         var reconcilableTopics = List.of(
             TopicOperatorTestUtil.reconcilableTopic(buildTopic("t1", 1, 1), NAMESPACE),
@@ -111,7 +110,7 @@ public class KafkaHandlerTest {
         var kafkaAdminClientSpy = spy(Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers())));
 
         var kafkaHandler = new KafkaHandler(config,
-            new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry())),
+            new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry())),
             kafkaAdminClientSpy);
 
         // current RF = 2
@@ -141,7 +140,7 @@ public class KafkaHandlerTest {
         var kafkaAdminClientSpy = spy(Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers())));
 
         var kafkaHandler = new KafkaHandler(config,
-            new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry())),
+            new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry())),
             kafkaAdminClientSpy);
         
         List<Pair<ReconcilableTopic, Collection<AlterConfigOp>>> pairs = List.of(
@@ -169,7 +168,7 @@ public class KafkaHandlerTest {
         var kafkaAdminClientSpy = spy(Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers())));
 
         var kafkaHandler = new KafkaHandler(config,
-            new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry())),
+            new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry())),
             kafkaAdminClientSpy);
         List<Pair<ReconcilableTopic, NewPartitions>> pairs = List.of(
             new Pair(TopicOperatorTestUtil.reconcilableTopic(buildTopic(t1.name(), 1, 1), NAMESPACE), NewPartitions.increaseTo(2)),
@@ -194,7 +193,7 @@ public class KafkaHandlerTest {
         var kafkaAdminClientSpy = spy(Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers())));
 
         var kafkaHandler = new KafkaHandler(config,
-            new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry())),
+            new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry())),
             kafkaAdminClientSpy);
         var reconcilableTopics = List.of(
             TopicOperatorTestUtil.reconcilableTopic(buildTopic(t1.name(), 1, 1), NAMESPACE),
@@ -224,7 +223,7 @@ public class KafkaHandlerTest {
         var kafkaAdminClientSpy = spy(Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers())));
 
         var kafkaHandler = new KafkaHandler(config,
-            new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry())),
+            new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry())),
             kafkaAdminClientSpy);
         var reconcilableTopics = List.of(
             TopicOperatorTestUtil.reconcilableTopic(buildTopic(t1.name(), 1, 1), NAMESPACE),

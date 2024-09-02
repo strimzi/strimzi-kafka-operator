@@ -9,7 +9,7 @@ import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 
-import static java.time.Duration.ofMillis;
+import java.time.Duration;
 
 /**
  * Adds fine grained timer to the MicrometerMetricsProvider.
@@ -35,13 +35,13 @@ public class TopicOperatorMetricsProvider extends MicrometerMetricsProvider {
      */
     public Timer fineGrainedTimer(String name, String description, Tags tags) {
         metrics.config().meterFilter(new CustomTimerFilter(name, new double[]{
-            ofMillis(10).toNanos(),
-            ofMillis(20).toNanos(),
-            ofMillis(50).toNanos(),
-            ofMillis(100).toNanos(),
-            ofMillis(500).toNanos(),
-            ofMillis(1000).toNanos(),
-            ofMillis(5000).toNanos()
+            Duration.ofMillis(10).toNanos(),
+            Duration.ofMillis(20).toNanos(),
+            Duration.ofMillis(50).toNanos(),
+            Duration.ofMillis(100).toNanos(),
+            Duration.ofMillis(500).toNanos(),
+            Duration.ofMillis(1000).toNanos(),
+            Duration.ofMillis(5000).toNanos()
         }));
         return buildTimer(name, description, tags);
     }

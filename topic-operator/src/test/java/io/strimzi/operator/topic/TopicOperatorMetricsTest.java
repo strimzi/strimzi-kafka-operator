@@ -10,6 +10,7 @@ import io.kroxylicious.testing.kafka.api.KafkaCluster;
 import io.kroxylicious.testing.kafka.junit5ext.KafkaClusterExtension;
 import io.micrometer.core.instrument.search.MeterNotFoundException;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.strimzi.api.ResourceAnnotations;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
@@ -39,9 +40,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.UnaryOperator;
 
-import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION;
-import static io.strimzi.api.kafka.model.topic.KafkaTopic.RESOURCE_KIND;
-import static java.lang.String.format;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
@@ -88,7 +86,7 @@ public class TopicOperatorMetricsTest {
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092",
             TopicOperatorConfig.NAMESPACE.key(), NAMESPACE)
         );
-        var metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
+        var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
         var eventHandler = new TopicEventHandler(config, mock(BatchingLoop.class), metricsHolder);
 
         var numOfTestResources = 100;
@@ -106,12 +104,12 @@ public class TopicOperatorMetricsTest {
 
         var t1 = buildTopicWithVersion("my-topic-1");
         var t2 = buildTopicWithVersion("my-topic-2");
-        t2.getMetadata().setAnnotations(Map.of(ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
+        t2.getMetadata().setAnnotations(Map.of(ResourceAnnotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
         eventHandler.onUpdate(t1, t2);
         assertMetricMatches(metricsHolder, MetricsHolder.METRICS_RESOURCES_PAUSED, "gauge", is(1.0));
 
         var t3 = buildTopicWithVersion("t3");
-        t3.getMetadata().setAnnotations(Map.of(ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "false"));
+        t3.getMetadata().setAnnotations(Map.of(ResourceAnnotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "false"));
         eventHandler.onUpdate(t2, t3);
         assertMetricMatches(metricsHolder, MetricsHolder.METRICS_RESOURCES_PAUSED, "gauge", is(0.0));
     }
@@ -125,7 +123,7 @@ public class TopicOperatorMetricsTest {
             TopicOperatorConfig.MAX_BATCH_SIZE.key(), String.valueOf(MAX_BATCH_SIZE),
             TopicOperatorConfig.MAX_BATCH_LINGER_MS.key(), String.valueOf(MAX_BATCH_LINGER_MS)
         ));
-        var metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
+        var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
         var batchingLoop = new BatchingLoop(config, mock(BatchingTopicController.class), 1, mock(ItemStore.class), mock(Runnable.class), metricsHolder);
         batchingLoop.start();
         
@@ -165,7 +163,7 @@ public class TopicOperatorMetricsTest {
             new CruiseControlClient.UserTask("Active", null, null, userTaskId, System.currentTimeMillis())), 1);
         Mockito.doReturn(userTaskResponse).when(cruiseControlClient).userTasks(Set.of(userTaskId));
 
-        var metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null,
+        var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null,
             new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
@@ -293,7 +291,7 @@ public class TopicOperatorMetricsTest {
 
         // pause topic
         var t3Paused = updateTopic(TopicOperatorUtil.topicName(t3), kt -> {
-            kt.getMetadata().setAnnotations(Map.of(ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
+            kt.getMetadata().setAnnotations(Map.of(ResourceAnnotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
             return kt;
         });
         controller.onUpdate(List.of(TopicOperatorTestUtil.reconcilableTopic(t3Paused, NAMESPACE)));
@@ -355,7 +353,7 @@ public class TopicOperatorMetricsTest {
             try {
                 LOGGER.info("Searching for metric {}", name);
                 var requiredSearch = metricsHolder.metricsProvider().meterRegistry().get(name)
-                    .tags("kind", RESOURCE_KIND, "namespace", NAMESPACE);
+                    .tags("kind", KafkaTopic.RESOURCE_KIND, "namespace", NAMESPACE);
                 switch (type) {
                     case "counter":
                         assertThat(requiredSearch.counter().count(), matcher);
@@ -367,7 +365,7 @@ public class TopicOperatorMetricsTest {
                         assertThat(requiredSearch.timer().totalTime(TimeUnit.MILLISECONDS), matcher);
                         break;
                     default:
-                        throw new RuntimeException(format("Unknown metric type %s", type));
+                        throw new RuntimeException(String.format("Unknown metric type %s", type));
                 }
                 found = true;
             } catch (MeterNotFoundException mnfe) {
@@ -376,7 +374,7 @@ public class TopicOperatorMetricsTest {
             }
         }
         if (!found) {
-            throw new RuntimeException(format("Unable to find metric %s", name));
+            throw new RuntimeException(String.format("Unable to find metric %s", name));
         }
     }
 }

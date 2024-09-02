@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.topic.cruisecontrol;
 
+import io.strimzi.api.kafka.model.topic.ReplicasChangeState;
 import io.strimzi.api.kafka.model.topic.ReplicasChangeStatusBuilder;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.topic.TopicOperatorConfig;
@@ -12,17 +13,11 @@ import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient.TaskState;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.model.ReconcilableTopic;
 import io.strimzi.operator.topic.model.Results;
+import org.apache.logging.log4j.core.util.Throwables;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.ONGOING;
-import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.PENDING;
-import static io.strimzi.operator.topic.TopicOperatorUtil.hasReplicasChangeStatus;
-import static io.strimzi.operator.topic.TopicOperatorUtil.topicNames;
-import static java.lang.String.format;
-import static org.apache.logging.log4j.core.util.Throwables.getRootCause;
 
 /**
  * Handler for Cruise Control requests.
@@ -86,12 +81,12 @@ public class CruiseControlHandler {
 
         var timerSample = TopicOperatorUtil.startExternalRequestTimer(metricsHolder, config.enableAdditionalMetrics());
         try {
-            LOGGER.debugOp("Sending topic configuration request, topics {}", topicNames(reconcilableTopics));
+            LOGGER.debugOp("Sending topic configuration request, topics {}", TopicOperatorUtil.topicNames(reconcilableTopics));
             var kafkaTopics = reconcilableTopics.stream().map(ReconcilableTopic::kt).collect(Collectors.toList());
             var userTaskId = cruiseControlClient.topicConfiguration(kafkaTopics);
             results.merge(updateToOngoing(reconcilableTopics, "Replicas change ongoing", userTaskId));
         } catch (Throwable t) {
-            results.merge(updateToFailed(reconcilableTopics, format("Replicas change failed, %s", getRootCause(t).getMessage())));
+            results.merge(updateToFailed(reconcilableTopics, String.format("Replicas change failed, %s", Throwables.getRootCause(t).getMessage())));
         }
         TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::cruiseControlTopicConfig, config.enableAdditionalMetrics(), config.namespace());
         
@@ -112,7 +107,7 @@ public class CruiseControlHandler {
         }
         
         var groupByUserTaskId = reconcilableTopics.stream()
-            .filter(rt -> hasReplicasChangeStatus(rt.kt()) && rt.kt().getStatus().getReplicasChange().getSessionId() != null)
+            .filter(rt -> TopicOperatorUtil.hasReplicasChangeStatus(rt.kt()) && rt.kt().getStatus().getReplicasChange().getSessionId() != null)
             .collect(Collectors.groupingBy(rt -> rt.kt().getStatus().getReplicasChange().getSessionId(), HashMap::new, Collectors.toList()));
 
         var timerSample = TopicOperatorUtil.startExternalRequestTimer(metricsHolder, config.enableAdditionalMetrics());
@@ -142,7 +137,7 @@ public class CruiseControlHandler {
                 }
             }
         } catch (Throwable t) {
-            results.merge(updateToFailed(reconcilableTopics, format("Replicas change failed, %s", getRootCause(t).getMessage())));
+            results.merge(updateToFailed(reconcilableTopics, String.format("Replicas change failed, %s", Throwables.getRootCause(t).getMessage())));
         }
         TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::cruiseControlUserTasks, config.enableAdditionalMetrics(), config.namespace());
         
@@ -162,11 +157,11 @@ public class CruiseControlHandler {
     
     private Results updateToPending(List<ReconcilableTopic> reconcilableTopics, String message) {
         var results = new Results();
-        LOGGER.infoOp("{}, Topics: {}", message, topicNames(reconcilableTopics));
+        LOGGER.infoOp("{}, Topics: {}", message, TopicOperatorUtil.topicNames(reconcilableTopics));
         reconcilableTopics.forEach(reconcilableTopic ->
             results.setReplicasChange(reconcilableTopic, 
                 new ReplicasChangeStatusBuilder()
-                    .withState(PENDING)
+                    .withState(ReplicasChangeState.PENDING)
                     .withTargetReplicas(reconcilableTopic.kt().getSpec().getReplicas())
                     .build())
         );
@@ -175,14 +170,14 @@ public class CruiseControlHandler {
     
     private Results updateToOngoing(List<ReconcilableTopic> reconcilableTopics, String message, String userTaskId) {
         var results = new Results();
-        LOGGER.infoOp("{}, Topics: {}", message, topicNames(reconcilableTopics));
+        LOGGER.infoOp("{}, Topics: {}", message, TopicOperatorUtil.topicNames(reconcilableTopics));
         reconcilableTopics.forEach(reconcilableTopic -> {
-            var targetReplicas = hasReplicasChangeStatus(reconcilableTopic.kt())
+            var targetReplicas = TopicOperatorUtil.hasReplicasChangeStatus(reconcilableTopic.kt())
                 ? reconcilableTopic.kt().getStatus().getReplicasChange().getTargetReplicas()
                 : reconcilableTopic.kt().getSpec().getReplicas();
             results.setReplicasChange(reconcilableTopic,
                 new ReplicasChangeStatusBuilder()
-                    .withState(ONGOING)
+                    .withState(ReplicasChangeState.ONGOING)
                     .withTargetReplicas(targetReplicas)
                     .withSessionId(userTaskId)
                     .build());
@@ -192,7 +187,7 @@ public class CruiseControlHandler {
     
     private Results updateToCompleted(List<ReconcilableTopic> reconcilableTopics, String message) {
         var results = new Results();
-        LOGGER.infoOp("{}, Topics: {}", message, topicNames(reconcilableTopics));
+        LOGGER.infoOp("{}, Topics: {}", message, TopicOperatorUtil.topicNames(reconcilableTopics));
         reconcilableTopics.forEach(reconcilableTopic ->
             results.setReplicasChange(reconcilableTopic, null)
         );
@@ -201,12 +196,12 @@ public class CruiseControlHandler {
     
     private Results updateToFailed(List<ReconcilableTopic> reconcilableTopics, String message) {
         var results = new Results();
-        LOGGER.errorOp("{}, Topics: {}", message, topicNames(reconcilableTopics));
+        LOGGER.errorOp("{}, Topics: {}", message, TopicOperatorUtil.topicNames(reconcilableTopics));
         reconcilableTopics.forEach(reconcilableTopic -> {
-            var state = hasReplicasChangeStatus(reconcilableTopic.kt())
+            var state = TopicOperatorUtil.hasReplicasChangeStatus(reconcilableTopic.kt())
                 ? reconcilableTopic.kt().getStatus().getReplicasChange().getState()
-                : PENDING;
-            var targetReplicas = hasReplicasChangeStatus(reconcilableTopic.kt())
+                : ReplicasChangeState.PENDING;
+            var targetReplicas = TopicOperatorUtil.hasReplicasChangeStatus(reconcilableTopic.kt())
                 ? reconcilableTopic.kt().getStatus().getReplicasChange().getTargetReplicas()
                 : reconcilableTopic.kt().getSpec().getReplicas();
             results.setReplicasChange(reconcilableTopic,

@@ -4,12 +4,14 @@
  */
 package io.strimzi.operator.topic;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.config.ConfigParameter;
+import io.strimzi.operator.common.config.ConfigParameterParser;
 import io.strimzi.operator.common.featuregates.FeatureGates;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties;
@@ -22,16 +24,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-
-import static com.fasterxml.jackson.core.JsonParser.Feature.ALLOW_COMMENTS;
-import static io.strimzi.operator.common.config.ConfigParameterParser.BOOLEAN;
-import static io.strimzi.operator.common.config.ConfigParameterParser.INTEGER;
-import static io.strimzi.operator.common.config.ConfigParameterParser.LABEL_PREDICATE;
-import static io.strimzi.operator.common.config.ConfigParameterParser.LONG;
-import static io.strimzi.operator.common.config.ConfigParameterParser.NON_EMPTY_STRING;
-import static io.strimzi.operator.common.config.ConfigParameterParser.STRING;
-import static io.strimzi.operator.common.config.ConfigParameterParser.parseFeatureGates;
-import static io.strimzi.operator.common.config.ConfigParameterParser.strictlyPositive;
 
 /**
  * Topic Operator configuration.
@@ -112,73 +104,73 @@ public record TopicOperatorConfig(
     private static final TypeReference<HashMap<String, String>> STRING_HASH_MAP_TYPE_REFERENCE = new TypeReference<>() { };
     
     /** Namespace in which the operator will run and create resources. */
-    public static final ConfigParameter<String> NAMESPACE = new ConfigParameter<>("STRIMZI_NAMESPACE", NON_EMPTY_STRING, CONFIG_VALUES);
+    public static final ConfigParameter<String> NAMESPACE = new ConfigParameter<>("STRIMZI_NAMESPACE", ConfigParameterParser.NON_EMPTY_STRING, CONFIG_VALUES);
     /** Labels used to filter the custom resources seen by the cluster operator. */
-    public static final ConfigParameter<Labels> RESOURCE_LABELS = new ConfigParameter<>("STRIMZI_RESOURCE_LABELS", LABEL_PREDICATE, "", CONFIG_VALUES);
+    public static final ConfigParameter<Labels> RESOURCE_LABELS = new ConfigParameter<>("STRIMZI_RESOURCE_LABELS", ConfigParameterParser.LABEL_PREDICATE, "", CONFIG_VALUES);
     /** Kafka bootstrap address for the target Kafka cluster used by the internal admin client. */
-    public static final ConfigParameter<String> BOOTSTRAP_SERVERS = new ConfigParameter<>("STRIMZI_KAFKA_BOOTSTRAP_SERVERS", NON_EMPTY_STRING, CONFIG_VALUES);
+    public static final ConfigParameter<String> BOOTSTRAP_SERVERS = new ConfigParameter<>("STRIMZI_KAFKA_BOOTSTRAP_SERVERS", ConfigParameterParser.NON_EMPTY_STRING, CONFIG_VALUES);
     /** Kafka client ID used by the internal admin client. */
-    public static final ConfigParameter<String> CLIENT_ID = new ConfigParameter<>("STRIMZI_CLIENT_ID", NON_EMPTY_STRING, "strimzi-topic-operator-" + UUID.randomUUID(), CONFIG_VALUES);
+    public static final ConfigParameter<String> CLIENT_ID = new ConfigParameter<>("STRIMZI_CLIENT_ID", ConfigParameterParser.NON_EMPTY_STRING, "strimzi-topic-operator-" + UUID.randomUUID(), CONFIG_VALUES);
     /** Periodic reconciliation interval in milliseconds. */
-    public static final ConfigParameter<Long> FULL_RECONCILIATION_INTERVAL_MS = new ConfigParameter<>("STRIMZI_FULL_RECONCILIATION_INTERVAL_MS", strictlyPositive(LONG), "120000", CONFIG_VALUES);
+    public static final ConfigParameter<Long> FULL_RECONCILIATION_INTERVAL_MS = new ConfigParameter<>("STRIMZI_FULL_RECONCILIATION_INTERVAL_MS", ConfigParameterParser.strictlyPositive(ConfigParameterParser.LONG), "120000", CONFIG_VALUES);
     /** TLS: whether to enable configuration. */
-    public static final ConfigParameter<Boolean> TLS_ENABLED = new ConfigParameter<>("STRIMZI_TLS_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
+    public static final ConfigParameter<Boolean> TLS_ENABLED = new ConfigParameter<>("STRIMZI_TLS_ENABLED", ConfigParameterParser.BOOLEAN, "false", CONFIG_VALUES);
     /** TLS: truststore location. */
-    public static final ConfigParameter<String> TRUSTSTORE_LOCATION = new ConfigParameter<>("STRIMZI_TRUSTSTORE_LOCATION", STRING, "", CONFIG_VALUES);
+    public static final ConfigParameter<String> TRUSTSTORE_LOCATION = new ConfigParameter<>("STRIMZI_TRUSTSTORE_LOCATION", ConfigParameterParser.STRING, "", CONFIG_VALUES);
     /** TLS: truststore password. */
-    public static final ConfigParameter<String> TRUSTSTORE_PASSWORD = new ConfigParameter<>("STRIMZI_TRUSTSTORE_PASSWORD", STRING, "", CONFIG_VALUES);
+    public static final ConfigParameter<String> TRUSTSTORE_PASSWORD = new ConfigParameter<>("STRIMZI_TRUSTSTORE_PASSWORD", ConfigParameterParser.STRING, "", CONFIG_VALUES);
     /** TLS: keystore location. */
-    public static final ConfigParameter<String> KEYSTORE_LOCATION = new ConfigParameter<>("STRIMZI_KEYSTORE_LOCATION", STRING, "", CONFIG_VALUES);
+    public static final ConfigParameter<String> KEYSTORE_LOCATION = new ConfigParameter<>("STRIMZI_KEYSTORE_LOCATION", ConfigParameterParser.STRING, "", CONFIG_VALUES);
     /** TLS: keystore location. */
-    public static final ConfigParameter<String> KEYSTORE_PASSWORD = new ConfigParameter<>("STRIMZI_KEYSTORE_PASSWORD", STRING, "", CONFIG_VALUES);
+    public static final ConfigParameter<String> KEYSTORE_PASSWORD = new ConfigParameter<>("STRIMZI_KEYSTORE_PASSWORD", ConfigParameterParser.STRING, "", CONFIG_VALUES);
     /** TLS: endpoint identification algorithm. */
-    public static final ConfigParameter<String> SSL_ENDPOINT_IDENTIFICATION_ALGORITHM = new ConfigParameter<>("STRIMZI_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM", STRING, "HTTPS", CONFIG_VALUES);
+    public static final ConfigParameter<String> SSL_ENDPOINT_IDENTIFICATION_ALGORITHM = new ConfigParameter<>("STRIMZI_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM", ConfigParameterParser.STRING, "HTTPS", CONFIG_VALUES);
     /** SASL: whether to enable configuration. */
-    public static final ConfigParameter<Boolean> SASL_ENABLED = new ConfigParameter<>("STRIMZI_SASL_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
+    public static final ConfigParameter<Boolean> SASL_ENABLED = new ConfigParameter<>("STRIMZI_SASL_ENABLED", ConfigParameterParser.BOOLEAN, "false", CONFIG_VALUES);
     /** SASL: mechanism. */
-    public static final ConfigParameter<String> SASL_MECHANISM = new ConfigParameter<>("STRIMZI_SASL_MECHANISM", STRING, "", CONFIG_VALUES);
+    public static final ConfigParameter<String> SASL_MECHANISM = new ConfigParameter<>("STRIMZI_SASL_MECHANISM", ConfigParameterParser.STRING, "", CONFIG_VALUES);
     /** SASL: custom configuration. */
-    public static final ConfigParameter<String> SASL_CUSTOM_CONFIG_JSON = new ConfigParameter<>("STRIMZI_SASL_CUSTOM_CONFIG_JSON", STRING, "", CONFIG_VALUES);
+    public static final ConfigParameter<String> SASL_CUSTOM_CONFIG_JSON = new ConfigParameter<>("STRIMZI_SASL_CUSTOM_CONFIG_JSON", ConfigParameterParser.STRING, "", CONFIG_VALUES);
     /** SASL: username. */
-    public static final ConfigParameter<String> SASL_USERNAME = new ConfigParameter<>("STRIMZI_SASL_USERNAME", STRING, "", CONFIG_VALUES);
+    public static final ConfigParameter<String> SASL_USERNAME = new ConfigParameter<>("STRIMZI_SASL_USERNAME", ConfigParameterParser.STRING, "", CONFIG_VALUES);
     /** SASL: password. */
-    public static final ConfigParameter<String> SASL_PASSWORD = new ConfigParameter<>("STRIMZI_SASL_PASSWORD", STRING, "", CONFIG_VALUES);
+    public static final ConfigParameter<String> SASL_PASSWORD = new ConfigParameter<>("STRIMZI_SASL_PASSWORD", ConfigParameterParser.STRING, "", CONFIG_VALUES);
     /** SASL: security protocol. */
-    public static final ConfigParameter<String> SECURITY_PROTOCOL = new ConfigParameter<>("STRIMZI_SECURITY_PROTOCOL", STRING, "", CONFIG_VALUES);
+    public static final ConfigParameter<String> SECURITY_PROTOCOL = new ConfigParameter<>("STRIMZI_SECURITY_PROTOCOL", ConfigParameterParser.STRING, "", CONFIG_VALUES);
     /** Whether to use finalizers for KafkaTopic resources. */
-    public static final ConfigParameter<Boolean> USE_FINALIZERS = new ConfigParameter<>("STRIMZI_USE_FINALIZERS", BOOLEAN, "true", CONFIG_VALUES);
+    public static final ConfigParameter<Boolean> USE_FINALIZERS = new ConfigParameter<>("STRIMZI_USE_FINALIZERS", ConfigParameterParser.BOOLEAN, "true", CONFIG_VALUES);
     /** Max topic event queue size. */
-    public static final ConfigParameter<Integer> MAX_QUEUE_SIZE = new ConfigParameter<>("STRIMZI_MAX_QUEUE_SIZE", strictlyPositive(INTEGER), "1024", CONFIG_VALUES);
+    public static final ConfigParameter<Integer> MAX_QUEUE_SIZE = new ConfigParameter<>("STRIMZI_MAX_QUEUE_SIZE", ConfigParameterParser.strictlyPositive(ConfigParameterParser.INTEGER), "1024", CONFIG_VALUES);
     /** Max size of a topic event batch. */
-    public static final ConfigParameter<Integer> MAX_BATCH_SIZE = new ConfigParameter<>("STRIMZI_MAX_BATCH_SIZE", strictlyPositive(INTEGER), "100", CONFIG_VALUES);
+    public static final ConfigParameter<Integer> MAX_BATCH_SIZE = new ConfigParameter<>("STRIMZI_MAX_BATCH_SIZE", ConfigParameterParser.strictlyPositive(ConfigParameterParser.INTEGER), "100", CONFIG_VALUES);
     /** Max linger time in milliseconds before creating a new topic event batch. */
-    public static final ConfigParameter<Long> MAX_BATCH_LINGER_MS = new ConfigParameter<>("STRIMZI_MAX_BATCH_LINGER_MS", strictlyPositive(LONG), "100", CONFIG_VALUES);
+    public static final ConfigParameter<Long> MAX_BATCH_LINGER_MS = new ConfigParameter<>("STRIMZI_MAX_BATCH_LINGER_MS", ConfigParameterParser.strictlyPositive(ConfigParameterParser.LONG), "100", CONFIG_VALUES);
     /** Whether to enable additional metrics related to requests to external services (Kafka, Kubernetes, Cruise Control). */
-    public static final ConfigParameter<Boolean> ENABLE_ADDITIONAL_METRICS = new ConfigParameter<>("STRIMZI_ENABLE_ADDITIONAL_METRICS", BOOLEAN, "false", CONFIG_VALUES);
+    public static final ConfigParameter<Boolean> ENABLE_ADDITIONAL_METRICS = new ConfigParameter<>("STRIMZI_ENABLE_ADDITIONAL_METRICS", ConfigParameterParser.BOOLEAN, "false", CONFIG_VALUES);
     /** An allow list of topic configurations that are reconciles, everything else is ignored. */
-    public static final ConfigParameter<String> ALTERABLE_TOPIC_CONFIG = new ConfigParameter<>("STRIMZI_ALTERABLE_TOPIC_CONFIG", STRING, "ALL", CONFIG_VALUES);
+    public static final ConfigParameter<String> ALTERABLE_TOPIC_CONFIG = new ConfigParameter<>("STRIMZI_ALTERABLE_TOPIC_CONFIG", ConfigParameterParser.STRING, "ALL", CONFIG_VALUES);
     /** Skip cluster level configuration checks. */
-    public static final ConfigParameter<Boolean> SKIP_CLUSTER_CONFIG_REVIEW = new ConfigParameter<>("STRIMZI_SKIP_CLUSTER_CONFIG_REVIEW", BOOLEAN, "false", CONFIG_VALUES);
+    public static final ConfigParameter<Boolean> SKIP_CLUSTER_CONFIG_REVIEW = new ConfigParameter<>("STRIMZI_SKIP_CLUSTER_CONFIG_REVIEW", ConfigParameterParser.BOOLEAN, "false", CONFIG_VALUES);
     /** List of enabled and disabled feature gates. */
-    public static final ConfigParameter<FeatureGates> FEATURE_GATES = new ConfigParameter<>("STRIMZI_FEATURE_GATES", parseFeatureGates(), "", CONFIG_VALUES);
+    public static final ConfigParameter<FeatureGates> FEATURE_GATES = new ConfigParameter<>("STRIMZI_FEATURE_GATES", ConfigParameterParser.parseFeatureGates(), "", CONFIG_VALUES);
     /** Cruise Control: whether to enable configuration. */
-    public static final ConfigParameter<Boolean> CRUISE_CONTROL_ENABLED = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
+    public static final ConfigParameter<Boolean> CRUISE_CONTROL_ENABLED = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_ENABLED", ConfigParameterParser.BOOLEAN, "false", CONFIG_VALUES);
     /** Cruise Control: whether rack awareness is enabled. */
-    public static final ConfigParameter<Boolean> CRUISE_CONTROL_RACK_ENABLED = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_RACK_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
+    public static final ConfigParameter<Boolean> CRUISE_CONTROL_RACK_ENABLED = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_RACK_ENABLED", ConfigParameterParser.BOOLEAN, "false", CONFIG_VALUES);
     /** Cruise Control: server hostname. */
-    public static final ConfigParameter<String> CRUISE_CONTROL_HOSTNAME = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_HOSTNAME", STRING, "127.0.0.1", CONFIG_VALUES);
+    public static final ConfigParameter<String> CRUISE_CONTROL_HOSTNAME = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_HOSTNAME", ConfigParameterParser.STRING, "127.0.0.1", CONFIG_VALUES);
     /** Cruise Control: server port. */
-    public static final ConfigParameter<Integer> CRUISE_CONTROL_PORT = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_PORT", strictlyPositive(INTEGER), "9090", CONFIG_VALUES);
+    public static final ConfigParameter<Integer> CRUISE_CONTROL_PORT = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_PORT", ConfigParameterParser.strictlyPositive(ConfigParameterParser.INTEGER), "9090", CONFIG_VALUES);
     /** Cruise Control: whether rack awareness is enabled. */
-    public static final ConfigParameter<Boolean> CRUISE_CONTROL_SSL_ENABLED = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_SSL_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
+    public static final ConfigParameter<Boolean> CRUISE_CONTROL_SSL_ENABLED = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_SSL_ENABLED", ConfigParameterParser.BOOLEAN, "false", CONFIG_VALUES);
     /** Cruise Control: whether authentication is enabled. */
-    public static final ConfigParameter<Boolean> CRUISE_CONTROL_AUTH_ENABLED = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_AUTH_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
+    public static final ConfigParameter<Boolean> CRUISE_CONTROL_AUTH_ENABLED = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_AUTH_ENABLED", ConfigParameterParser.BOOLEAN, "false", CONFIG_VALUES);
     /** Cruise Control: CA certificate file location. */
-    public static final ConfigParameter<String> CRUISE_CONTROL_CRT_FILE_PATH = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_CRT_FILE_PATH", STRING, "/etc/tls-sidecar/cluster-ca-certs/ca.crt", CONFIG_VALUES);
+    public static final ConfigParameter<String> CRUISE_CONTROL_CRT_FILE_PATH = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_CRT_FILE_PATH", ConfigParameterParser.STRING, "/etc/tls-sidecar/cluster-ca-certs/ca.crt", CONFIG_VALUES);
     /** Cruise Control: username file location. */
-    public static final ConfigParameter<String> CRUISE_CONTROL_API_USER_PATH = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_API_USER_PATH", STRING, "/etc/eto-cc-api/" + CruiseControlApiProperties.TOPIC_OPERATOR_USERNAME_KEY, CONFIG_VALUES);
+    public static final ConfigParameter<String> CRUISE_CONTROL_API_USER_PATH = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_API_USER_PATH", ConfigParameterParser.STRING, "/etc/eto-cc-api/" + CruiseControlApiProperties.TOPIC_OPERATOR_USERNAME_KEY, CONFIG_VALUES);
     /** Cruise Control: password file location. */
-    public static final ConfigParameter<String> CRUISE_CONTROL_API_PASS_PATH = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_API_PASS_PATH", STRING, "/etc/eto-cc-api/" + CruiseControlApiProperties.TOPIC_OPERATOR_PASSWORD_KEY, CONFIG_VALUES);
+    public static final ConfigParameter<String> CRUISE_CONTROL_API_PASS_PATH = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_API_PASS_PATH", ConfigParameterParser.STRING, "/etc/eto-cc-api/" + CruiseControlApiProperties.TOPIC_OPERATOR_PASSWORD_KEY, CONFIG_VALUES);
 
     @SuppressWarnings("unchecked")
     private static <T> T get(Map<String, Object> map, ConfigParameter<T> value) {
@@ -316,7 +308,7 @@ public record TopicOperatorConfig(
         }
 
         ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.configure(ALLOW_COMMENTS, true);
+        objectMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
 
         try {
             Map<String, String> customProperties = objectMapper.readValue(customPropsString, STRING_HASH_MAP_TYPE_REFERENCE);

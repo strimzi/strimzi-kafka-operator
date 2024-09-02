@@ -85,7 +85,6 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
-import static java.lang.String.format;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -1427,7 +1426,7 @@ class TopicControllerIT {
         // then
         assertNull(st1.getConditions().get(0).getReason());
         assertEquals(TopicOperatorException.Reason.RESOURCE_CONFLICT.value, st2.getConditions().get(0).getReason());
-        assertEquals(format("Managed by Ref{namespace='%s', name='%s'}", NAMESPACE, "kt1"),
+        assertEquals(String.format("Managed by Ref{namespace='%s', name='%s'}", NAMESPACE, "kt1"),
             st2.getConditions().get(0).getMessage());
     }
 
@@ -1846,16 +1845,16 @@ class TopicControllerIT {
     ) throws ExecutionException, InterruptedException {
         Map<String, Object> configs = new HashMap<>();
         configs.put("cleanup.policy", policy);
-        KafkaTopic kafkaTopic = new KafkaTopicBuilder()
+        var kafkaTopic = new KafkaTopicBuilder()
                 .withNewMetadata()
-                .withNamespace(NAMESPACE)
-                .withName("my-topic")
-                .withLabels(SELECTOR)
+                    .withNamespace(NAMESPACE)
+                    .withName("my-topic")
+                    .withLabels(SELECTOR)
                 .endMetadata()
                 .withNewSpec()
-                .withConfig(configs)
-                .withPartitions(1)
-                .withReplicas(1)
+                    .withConfig(configs)
+                    .withPartitions(1)
+                    .withReplicas(1)
                 .endSpec()
                 .build();
         var created = createTopic(kafkaCluster, kafkaTopic);
@@ -1956,7 +1955,7 @@ class TopicControllerIT {
         assertTrue(readyIsFalse().test(secondTopic));
         var condition = assertExactlyOneCondition(secondTopic);
         assertEquals(TopicOperatorException.Reason.RESOURCE_CONFLICT.value, condition.getReason());
-        assertEquals(format("Managed by Ref{namespace='%s', name='%s'}", NAMESPACE, firstTopicName), condition.getMessage());
+        assertEquals(String.format("Managed by Ref{namespace='%s', name='%s'}", NAMESPACE, firstTopicName), condition.getMessage());
 
         // increase partitions of topic
         LOGGER.info("Increase partitions of {}", firstTopicName);
@@ -2012,7 +2011,7 @@ class TopicControllerIT {
         // the error message should refer to the ready resource name
         var condition = assertExactlyOneCondition(failed);
         assertEquals(TopicOperatorException.Reason.RESOURCE_CONFLICT.value, condition.getReason());
-        assertEquals(format("Managed by Ref{namespace='%s', name='%s'}",
+        assertEquals(String.format("Managed by Ref{namespace='%s', name='%s'}",
             ready.getMetadata().getNamespace(), ready.getMetadata().getName()), condition.getMessage());
 
         // the failed resource should become ready after we unmanage and delete the other
@@ -2279,7 +2278,7 @@ class TopicControllerIT {
         var config = topicOperatorConfig(NAMESPACE, kafkaCluster);
 
         var creteTopicResult = mock(CreateTopicsResult.class);
-        var existsException = new TopicExistsException(format("Topic '%s' already exists.", topicName));
+        var existsException = new TopicExistsException(String.format("Topic '%s' already exists.", topicName));
         Mockito.doReturn(failedFuture(existsException)).when(creteTopicResult).all();
         Mockito.doReturn(Map.of(topicName, failedFuture(existsException))).when(creteTopicResult).values();
         kafkaAdminClientOp = new Admin[]{Mockito.spy(Admin.create(config.adminClientConfig()))};

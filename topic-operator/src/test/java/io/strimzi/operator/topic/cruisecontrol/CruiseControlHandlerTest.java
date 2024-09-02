@@ -6,8 +6,10 @@ package io.strimzi.operator.topic.cruisecontrol;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.strimzi.api.kafka.model.common.ConditionBuilder;
+import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.topic.KafkaTopicStatusBuilder;
+import io.strimzi.api.kafka.model.topic.ReplicasChangeState;
 import io.strimzi.api.kafka.model.topic.ReplicasChangeStatusBuilder;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.Reconciliation;
@@ -35,8 +37,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.api.kafka.model.topic.KafkaTopic.RESOURCE_KIND;
-import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.ONGOING;
 import static java.util.Map.entry;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -57,7 +57,7 @@ public class CruiseControlHandlerTest {
 
     @BeforeAll
     public static void beforeAll() throws IOException {
-        metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null,
+        metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null,
             new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
         
         serverPort = TestUtils.getFreePort();
@@ -265,7 +265,7 @@ public class CruiseControlHandlerTest {
         assertThat(outputRcs, is(notNullValue()));
         assertThat(outputRcs.getMessage(), is(nullValue()));
         assertThat(outputRcs.getSessionId(), is(notNullValue()));
-        assertThat(outputRcs.getState(), is(ONGOING));
+        assertThat(outputRcs.getState(), is(ReplicasChangeState.ONGOING));
         assertThat(outputRcs.getTargetReplicas(), is(inputRt.kt().getSpec().getReplicas()));
     }
 
@@ -307,7 +307,7 @@ public class CruiseControlHandlerTest {
             .withStatus(status)
             .build();
         return List.of(new ReconcilableTopic(
-            new Reconciliation("test", RESOURCE_KIND, NAMESPACE, topicName), 
+            new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, topicName), 
             kafkaTopic, topicName));
     }
 
@@ -322,7 +322,7 @@ public class CruiseControlHandlerTest {
                 .build()))
             .withReplicasChange(new ReplicasChangeStatusBuilder()
                 .withSessionId("8911ca89-351f-888-8d0f-9aade00e098h")
-                .withState(ONGOING)
+                .withState(ReplicasChangeState.ONGOING)
                 .withTargetReplicas(replicationFactor)
                 .build())
             .build();
@@ -339,7 +339,7 @@ public class CruiseControlHandlerTest {
             .withStatus(status)
             .build();
         return List.of(new ReconcilableTopic(
-            new Reconciliation("test", RESOURCE_KIND, NAMESPACE, topicName), 
+            new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, topicName), 
             kafkaTopic, topicName));
     }
 

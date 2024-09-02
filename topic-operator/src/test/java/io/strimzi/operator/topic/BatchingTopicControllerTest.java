@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.topic.KafkaTopicStatusBuilder;
+import io.strimzi.api.kafka.model.topic.ReplicasChangeState;
 import io.strimzi.api.kafka.model.topic.ReplicasChangeStatusBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.topic.cruisecontrol.CruiseControlHandler;
@@ -60,8 +61,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import static io.strimzi.api.kafka.model.topic.KafkaTopic.RESOURCE_KIND;
-import static io.strimzi.api.kafka.model.topic.ReplicasChangeState.PENDING;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -139,7 +138,7 @@ class BatchingTopicControllerTest {
         Mockito.doReturn(true).when(config).useFinalizer();
         Mockito.doReturn(false).when(config).enableAdditionalMetrics();
 
-        var metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
+        var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdmin), metricsHolder,
@@ -311,14 +310,14 @@ class BatchingTopicControllerTest {
             .endSpec()
             .build();
         var reconcilableTopic = new ReconcilableTopic(
-            new Reconciliation("test", RESOURCE_KIND, NAMESPACE, topicName), kafkaTopic, topicName);
+            new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, topicName), kafkaTopic, topicName);
         
         var currentStatesOrError = new PartitionedByError<>(
             List.of(new Pair<>(reconcilableTopic, Either.ofRight(currentState))), List.of());
 
         var replicaChangeStatus = 
             new ReplicasChangeStatusBuilder()
-                .withState(PENDING)
+                .withState(ReplicasChangeState.PENDING)
                 .withTargetReplicas(replicationFactor)
                 .build();
         
@@ -332,7 +331,7 @@ class BatchingTopicControllerTest {
         Mockito.doReturn(new Results()).when(cruiseControlHandler).completeZombieChanges(anyList());
         
         // run test
-        var metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
+        var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdmin), metricsHolder,
@@ -394,14 +393,14 @@ class BatchingTopicControllerTest {
             .withStatus(new KafkaTopicStatusBuilder()
                 .withReplicasChange(new ReplicasChangeStatusBuilder()
                         .withMessage("Error message")
-                        .withState(PENDING)
+                        .withState(ReplicasChangeState.PENDING)
                         .withTargetReplicas(replicationFactor)
                     .build())
                 .build())
             .build();
 
         var reconcilableTopic = new ReconcilableTopic(
-            new Reconciliation("test", RESOURCE_KIND, NAMESPACE, topicName), kafkaTopic, topicName);
+            new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, topicName), kafkaTopic, topicName);
 
         var completedResults = new Results();
         completedResults.accrueRightResults(List.of(reconcilableTopic));
@@ -416,7 +415,7 @@ class BatchingTopicControllerTest {
         PartitionedByError<ReconcilableTopic, TopicState> currentStatesOrError = new PartitionedByError<>(List.of(), List.of());
         
         // run test
-        var metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
+        var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdmin), metricsHolder,
@@ -472,14 +471,14 @@ class BatchingTopicControllerTest {
                 .endSpec()
             .withStatus(new KafkaTopicStatusBuilder()
                 .withReplicasChange(new ReplicasChangeStatusBuilder()
-                        .withState(PENDING)
+                        .withState(ReplicasChangeState.PENDING)
                         .withTargetReplicas(replicationFactor)
                     .build())
                 .build())
             .build();
 
         var reconcilableTopic = new ReconcilableTopic(
-            new Reconciliation("test", RESOURCE_KIND, NAMESPACE, topicName), kafkaTopic, topicName);
+            new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, topicName), kafkaTopic, topicName);
 
         var completedResults = new Results();
         completedResults.accrueRightResults(List.of(reconcilableTopic));
@@ -494,7 +493,7 @@ class BatchingTopicControllerTest {
         PartitionedByError<ReconcilableTopic, TopicState> currentStatesOrError = new PartitionedByError<>(List.of(), List.of());
 
         // run test
-        var metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
+        var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdmin), metricsHolder,
@@ -515,7 +514,7 @@ class BatchingTopicControllerTest {
               TopicOperatorConfig.SKIP_CLUSTER_CONFIG_REVIEW.key(), "true"
         ));
 
-        var metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
+        var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
         new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdmin), metricsHolder,
@@ -553,13 +552,13 @@ class BatchingTopicControllerTest {
                 .build()).create();
 
         // run test
-        var metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
+        var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdminClientSpy), metricsHolder,
             new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config)));
         controller.onUpdate(List.of(new ReconcilableTopic(
-            new Reconciliation("test", RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
+            new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         Mockito.verify(kafkaAdminClientSpy, Mockito.never()).incrementalAlterConfigs(any());
 
@@ -600,12 +599,12 @@ class BatchingTopicControllerTest {
                 .build()).create();
 
         // run test
-        var metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
+        var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdminClientSpy), metricsHolder,
             new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config)));
-        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
+        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         Mockito.verify(kafkaAdminClientSpy, Mockito.times(1)).incrementalAlterConfigs(any());
 
@@ -639,7 +638,7 @@ class BatchingTopicControllerTest {
                 .endSpec()
                 .build()).update();
         controller.onUpdate(List.of(new ReconcilableTopic(
-            new Reconciliation("test", RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
+            new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         testTopic = Crds.topicOperation(kubernetesClient).inNamespace(NAMESPACE).withName("my-topic").get();
         assertEquals(1, testTopic.getStatus().getConditions().size());
@@ -674,12 +673,12 @@ class BatchingTopicControllerTest {
                 .build()).create();
 
         // run test
-        var metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
+        var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdminClientSpy), metricsHolder,
             new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config)));
-        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
+        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         Mockito.verify(kafkaAdminClientSpy, Mockito.never()).incrementalAlterConfigs(any());
 
@@ -731,12 +730,12 @@ class BatchingTopicControllerTest {
                 .build()).create();
 
         // run test
-        var metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
+        var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdminClientSpy), metricsHolder,
             new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config)));
-        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
+        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         Mockito.verify(kafkaAdminClientSpy, Mockito.times(1)).incrementalAlterConfigs(any());
 
@@ -770,7 +769,7 @@ class BatchingTopicControllerTest {
                 .endSpec()
                 .build()).update();
         controller.onUpdate(List.of(new ReconcilableTopic(
-            new Reconciliation("test", RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
+            new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         testTopic = Crds.topicOperation(kubernetesClient).inNamespace(NAMESPACE).withName("my-topic").get();
         assertEquals(1, testTopic.getStatus().getConditions().size());
@@ -809,12 +808,12 @@ class BatchingTopicControllerTest {
                 .build()).create();
 
         // run test
-        var metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
+        var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdminClientSpy), metricsHolder,
             new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config)));
-        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
+        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         Mockito.verify(kafkaAdminClientSpy, Mockito.times(1)).incrementalAlterConfigs(any());
 
@@ -855,12 +854,12 @@ class BatchingTopicControllerTest {
                 .build()).create();
 
         // run test
-        var metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
+        var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdminClientSpy), metricsHolder,
             new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config)));
-        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
+        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         Mockito.verify(kafkaAdminClientSpy, Mockito.never()).incrementalAlterConfigs(any());
 
@@ -911,12 +910,12 @@ class BatchingTopicControllerTest {
                 .build()).create();
 
         // run test
-        var metricsHolder = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
+        var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdminClientSpy), metricsHolder,
             new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config)));
-        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
+        controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         Mockito.verify(kafkaAdminClientSpy, Mockito.never()).incrementalAlterConfigs(any());
 

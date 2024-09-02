@@ -893,31 +893,4 @@ public class BatchingTopicController {
         kubernetesHandler.updateStatus(reconcilableTopic);
         metricsHolder.failedReconciliationsCounter(config.namespace()).increment();
     }
-
-    private void updateStatusForSuccess(ReconcilableTopic reconcilableTopic, Results results) {
-        List<Condition> conditions = new ArrayList<>();
-        var conditionType = "Ready";
-        if (!TopicOperatorUtil.isManaged(reconcilableTopic.kt())) {
-            conditionType = "Unmanaged";
-        } else if (TopicOperatorUtil.isPaused(reconcilableTopic.kt())) {
-            conditionType = "ReconciliationPaused";
-        }
-        
-        conditions.add(new ConditionBuilder()
-            .withType(conditionType)
-            .withStatus("True")
-            .withLastTransitionTime(StatusUtils.iso8601Now())
-            .build());
-        
-        conditions.addAll(results.getConditions(reconcilableTopic));
-        
-        reconcilableTopic.kt().setStatus(
-            new KafkaTopicStatusBuilder(reconcilableTopic.kt().getStatus())
-                .withConditions(conditions)
-                .withReplicasChange(results.getReplicasChange(reconcilableTopic))
-                .build());
-        
-        kubernetesHandler.updateStatus(reconcilableTopic);
-        metricsHolder.successfulReconciliationsCounter(config.namespace()).increment();
-    }
 }
