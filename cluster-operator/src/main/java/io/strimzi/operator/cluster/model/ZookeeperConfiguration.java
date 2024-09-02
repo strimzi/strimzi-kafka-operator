@@ -23,8 +23,8 @@ public class ZookeeperConfiguration extends AbstractConfiguration {
     protected static final Map<String, String> DEFAULTS;
 
     static {
-        FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesToList(ZookeeperClusterSpec.FORBIDDEN_PREFIXES);
-        FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesToList(ZookeeperClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
+        FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesOrOptionsToList(ZookeeperClusterSpec.FORBIDDEN_PREFIXES);
+        FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesOrOptionsToList(ZookeeperClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
 
         Map<String, String> config = new HashMap<>(5);
         config.put("tickTime", "2000");
@@ -43,6 +43,6 @@ public class ZookeeperConfiguration extends AbstractConfiguration {
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
     public ZookeeperConfiguration(Reconciliation reconciliation, Iterable<Map.Entry<String, Object>> jsonOptions) {
-        super(reconciliation, jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS, DEFAULTS);
+        super(reconciliation, jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS, List.of(), DEFAULTS);
     }
 }

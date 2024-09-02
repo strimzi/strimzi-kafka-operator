@@ -8,7 +8,6 @@ package io.strimzi.operator.cluster.model;
 import io.strimzi.api.kafka.model.connector.AbstractConnectorSpec;
 import io.strimzi.operator.common.Reconciliation;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -16,14 +15,10 @@ import java.util.Map;
  * Class for handling KafkaConnector configuration passed by the user
  */
 public class KafkaConnectorConfiguration extends AbstractConfiguration {
-    private static final List<String> FORBIDDEN_PREFIXES;
-    private static final List<String> FORBIDDEN_PREFIX_EXCEPTIONS;
-    private static final Map<String, String> DEFAULTS;
+    private static final List<String> FORBIDDEN_OPTIONS;
 
     static {
-        FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesToList(AbstractConnectorSpec.FORBIDDEN_PARAMETERS);
-        FORBIDDEN_PREFIX_EXCEPTIONS = List.of();
-        DEFAULTS = new HashMap<>(0);
+        FORBIDDEN_OPTIONS = AbstractConfiguration.splitPrefixesOrOptionsToList(AbstractConnectorSpec.FORBIDDEN_PARAMETERS);
     }
 
     /**
@@ -34,6 +29,6 @@ public class KafkaConnectorConfiguration extends AbstractConfiguration {
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
     public KafkaConnectorConfiguration(Reconciliation reconciliation, Iterable<Map.Entry<String, Object>> jsonOptions) {
-        super(reconciliation, jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS, DEFAULTS);
+        super(reconciliation, jsonOptions, List.of(), List.of(), FORBIDDEN_OPTIONS, Map.of());
     }
 }

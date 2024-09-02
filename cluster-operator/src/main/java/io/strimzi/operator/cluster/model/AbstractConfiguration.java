@@ -9,7 +9,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.OrderedProperties;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -35,125 +34,84 @@ public abstract class AbstractConfiguration {
     }
 
     /**
-     * Constructor used to instantiate this class from String configuration. Should be used to create configuration
-     * from the Assembly.
-     *
-     * @param reconciliation    The reconciliation
-     * @param configuration     Configuration in String format. Should contain zero or more lines with with key=value
-     *                          pairs.
-     * @param forbiddenPrefixes List with configuration key prefixes which are not allowed. All keys which start with one of
-     *                          these prefixes will be ignored.
-     */
-    public AbstractConfiguration(Reconciliation reconciliation, String configuration, List<String> forbiddenPrefixes) {
-        options.addStringPairs(configuration);
-        filterForbidden(reconciliation, forbiddenPrefixes);
-    }
-
-    /**
-     * Constructor used to instantiate this class from String configuration. Should be used to create configuration
-     * from the Assembly.
-     *
-     * @param reconciliation    The reconciliation
-     * @param configuration     Configuration in String format. Should contain zero or more lines with with key=value
-     *                          pairs.
-     * @param forbiddenPrefixes List with configuration key prefixes which are not allowed. All keys which start with one of
-     *                          these prefixes will be ignored.
-     * @param defaults          Properties object with default options
-     */
-    public AbstractConfiguration(Reconciliation reconciliation, String configuration, List<String> forbiddenPrefixes, Map<String, String> defaults) {
-        options.addMapPairs(defaults);
-        options.addStringPairs(configuration);
-        filterForbidden(reconciliation, forbiddenPrefixes);
-    }
-
-    /**
      * Constructor used to instantiate this class from JsonObject. Should be used to create configuration from
      * ConfigMap / CRD.
      *
-     * @param reconciliation  The reconciliation
-     * @param jsonOptions     Json object with configuration options as key ad value pairs.
-     * @param forbiddenPrefixes   List with configuration key prefixes which are not allowed. All keys which start with one of
-     *                           these prefixes will be ignored.
-     */
-    public AbstractConfiguration(Reconciliation reconciliation, Iterable<Map.Entry<String, Object>> jsonOptions, List<String> forbiddenPrefixes) {
-        options.addIterablePairs(jsonOptions);
-        filterForbidden(reconciliation, forbiddenPrefixes);
-    }
-
-    /**
-     * Constructor used to instantiate this class from JsonObject. Should be used to create configuration from
-     * ConfigMap / CRD.
-     *
-     * @param reconciliation  The reconciliation
-     * @param jsonOptions     Json object with configuration options as key ad value pairs.
-     * @param forbiddenPrefixes  List with configuration key prefixes which are not allowed. All keys which start with one of
-     *                           these prefixes will be ignored.
-     * @param forbiddenPrefixExceptions Exceptions excluded from forbidden prefix options checking
-     */
-    public AbstractConfiguration(Reconciliation reconciliation, Iterable<Map.Entry<String, Object>> jsonOptions, List<String> forbiddenPrefixes, List<String> forbiddenPrefixExceptions) {
-        options.addIterablePairs(jsonOptions);
-        filterForbidden(reconciliation, forbiddenPrefixes, forbiddenPrefixExceptions);
-    }
-
-    /**
-     * Constructor used to instantiate this class from JsonObject. Should be used to create configuration from
-     * ConfigMap / CRD.
-     *
-     * @param reconciliation  The reconciliation
-     * @param jsonOptions     Json object with configuration options as key ad value pairs.
-     * @param forbiddenPrefixes   List with configuration key prefixes which are not allowed. All keys which start with one of
-     *                           these prefixes will be ignored.
-     * @param defaults          Properties object with default options
-     */
-    public AbstractConfiguration(Reconciliation reconciliation, Iterable<Map.Entry<String, Object>> jsonOptions, List<String> forbiddenPrefixes, Map<String, String> defaults) {
-        options.addMapPairs(defaults);
-        options.addIterablePairs(jsonOptions);
-        filterForbidden(reconciliation, forbiddenPrefixes);
-    }
-
-    /**
-     * Constructor used to instantiate this class from JsonObject. Should be used to create configuration from
-     * ConfigMap / CRD.
-     *
-     * @param reconciliation  The reconciliation
-     * @param jsonOptions     Json object with configuration options as key ad value pairs.
-     * @param forbiddenPrefixes  List with configuration key prefixes which are not allowed. All keys which start with one of
-     *                           these prefixes will be ignored.
+     * @param reconciliation             The reconciliation
+     * @param jsonOptions                Json object with configuration options as key ad value pairs.
+     * @param forbiddenPrefixes          List with configuration key prefixes which are not allowed. All keys which
+     *                                   start with one of these prefixes will be ignored.
      * @param forbiddenPrefixExceptions  Exceptions excluded from forbidden prefix options checking
-     * @param defaults          Properties object with default options
+     * @param forbiddenOptions           List with the exact configuration options (not prefixes) that should not be used
+     * @param defaults                   Properties object with default options
      */
-    public AbstractConfiguration(Reconciliation reconciliation, Iterable<Map.Entry<String, Object>> jsonOptions, List<String> forbiddenPrefixes, List<String> forbiddenPrefixExceptions, Map<String, String> defaults) {
+    public AbstractConfiguration(Reconciliation reconciliation, Iterable<Map.Entry<String, Object>> jsonOptions, List<String> forbiddenPrefixes, List<String> forbiddenPrefixExceptions, List<String> forbiddenOptions, Map<String, String> defaults) {
         options.addMapPairs(defaults);
         options.addIterablePairs(jsonOptions);
-        filterForbidden(reconciliation, forbiddenPrefixes, forbiddenPrefixExceptions);
+        filterForbidden(reconciliation, forbiddenPrefixes, forbiddenPrefixExceptions, forbiddenOptions);
+    }
+
+    /**
+     * Constructor used to instantiate this class from JsonObject. Should be used to create configuration from
+     * ConfigMap / CRD.
+     *
+     * @param reconciliation             The reconciliation
+     * @param configuration              Configuration in String format. Should contain zero or more lines with
+     *                                   key=value pairs.
+     * @param forbiddenPrefixes          List with configuration key prefixes which are not allowed. All keys which
+     *                                   start with one of these prefixes will be ignored.
+     * @param forbiddenPrefixExceptions  Exceptions excluded from forbidden prefix options checking
+     * @param forbiddenOptions           List with the exact configuration options (not prefixes) that should not be used
+     * @param defaults                   Properties object with default options
+     */
+    public AbstractConfiguration(Reconciliation reconciliation, String configuration, List<String> forbiddenPrefixes, List<String> forbiddenPrefixExceptions, List<String> forbiddenOptions, Map<String, String> defaults) {
+        options.addMapPairs(defaults);
+        options.addStringPairs(configuration);
+        filterForbidden(reconciliation, forbiddenPrefixes, forbiddenPrefixExceptions, forbiddenOptions);
     }
 
     /**
      * Filters forbidden values from the configuration.
      *
-     * @param reconciliation    The reconciliation
-     * @param forbiddenPrefixes List with configuration key prefixes which are not allowed. All keys which start with one of
-     *                          these prefixes will be ignored.
+     * @param reconciliation            The reconciliation
+     * @param forbiddenPrefixes         List with configuration key prefixes which are not allowed. All keys which start
+     *                                  with one of these prefixes will be ignored.
      * @param forbiddenPrefixExceptions Exceptions excluded from forbidden prefix options checking
+     * @param forbiddenOptions          List with the exact configuration options (not prefixes) that should not be used
      */
-    private void filterForbidden(Reconciliation reconciliation, List<String> forbiddenPrefixes, List<String> forbiddenPrefixExceptions)   {
+    private void filterForbidden(Reconciliation reconciliation, List<String> forbiddenPrefixes, List<String> forbiddenPrefixExceptions, List<String> forbiddenOptions)   {
+        // We filter the prefixes first
         options.filter(k -> forbiddenPrefixes.stream().anyMatch(s -> {
             boolean forbidden = k.toLowerCase(Locale.ENGLISH).startsWith(s);
+
             if (forbidden) {
                 if (forbiddenPrefixExceptions.contains(k))
                     forbidden = false;
             }
+
             if (forbidden) {
                 LOGGER.warnCr(reconciliation, "Configuration option \"{}\" is forbidden and will be ignored", k);
             } else {
                 LOGGER.traceCr(reconciliation, "Configuration option \"{}\" is allowed and will be passed to the assembly", k);
             }
+
             return forbidden;
         }));
-    }
 
-    private void filterForbidden(Reconciliation reconciliation, List<String> forbiddenPrefixes)   {
-        this.filterForbidden(reconciliation, forbiddenPrefixes, Collections.emptyList());
+        // Then we filter the forbidden options
+        if (!forbiddenOptions.isEmpty()) {
+            options.filter(k -> forbiddenOptions.stream().anyMatch(s -> {
+                boolean forbidden = k.toLowerCase(Locale.ENGLISH).equals(s);
+
+                if (forbidden) {
+                    LOGGER.warnCr(reconciliation, "Configuration option \"{}\" is forbidden and will be ignored", k);
+                } else {
+                    LOGGER.traceCr(reconciliation, "Configuration option \"{}\" is allowed and will be passed to the assembly", k);
+                }
+
+                return forbidden;
+            }));
+        }
     }
 
     /**
@@ -208,8 +166,9 @@ public abstract class AbstractConfiguration {
     }
 
     /**
-     * Get access to underlying key-value pairs.  Any changes to OrderedProperties will be reflected in
-     * in value returned by subsequent calls to getConfiguration()
+     * Get access to underlying key-value pairs. Any changes to OrderedProperties will be reflected in value returned
+     * by subsequent calls to getConfiguration()
+     *
      * @return A map of keys to values.
      */
     public OrderedProperties asOrderedProperties() {
@@ -222,7 +181,7 @@ public abstract class AbstractConfiguration {
      * @param prefixes  String with comma-separated items
      * @return          List with the values as separate items
      */
-    protected static List<String> splitPrefixesToList(String prefixes) {
+    protected static List<String> splitPrefixesOrOptionsToList(String prefixes) {
         return asList(prefixes.split("\\s*,+\\s*"));
     }
 }

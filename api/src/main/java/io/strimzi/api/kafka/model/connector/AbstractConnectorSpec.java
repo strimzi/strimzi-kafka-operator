@@ -33,7 +33,7 @@ import java.util.Map;
 @ToString(callSuper = true)
 public abstract class AbstractConnectorSpec extends Spec {
     /**
-     * Forbidden options in the connector configuration
+     * Forbidden options in the connector configuration => these are full options and not prefixes
      */
     public static final String FORBIDDEN_PARAMETERS = "name, connector.class, tasks.max";
 

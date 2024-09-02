@@ -24,7 +24,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @ParallelSuite
 public class AbstractConfigurationTest {
-
     static OrderedProperties createProperties(String... keyValues) {
         OrderedProperties properties = new OrderedProperties();
         for (int i = 0; i < keyValues.length; i += 2) {
@@ -150,10 +149,18 @@ public class AbstractConfigurationTest {
         String configuration = "var1=aaa" + LINE_SEPARATOR +
                 "var2=bbb" + LINE_SEPARATOR +
                 "var3=ccc" + LINE_SEPARATOR +
+                "forbidden.prefix=ddd" + LINE_SEPARATOR +
+                "forbidden.prefix.first=eee" + LINE_SEPARATOR +
+                "forbidden.prefix.second=fff" + LINE_SEPARATOR +
+                "forbidden.prefix.exception=ggg" + LINE_SEPARATOR +
+                "forbidden.option=hhh" + LINE_SEPARATOR +
+                "forbidden.option.not.exact=iii" + LINE_SEPARATOR +
                 "forbidden.option=ddd" + LINE_SEPARATOR;
         OrderedProperties expectedConfiguration = createWithDefaults("var3", "ccc",
                 "var2", "bbb",
-                "var1", "aaa");
+                "var1", "aaa",
+                "forbidden.prefix.exception", "ggg",
+                "forbidden.option.not.exact", "iii");
 
         AbstractConfiguration config = new TestConfiguration(configuration);
         assertThat(config.asOrderedProperties(), is(expectedConfiguration));
@@ -164,7 +171,8 @@ public class AbstractConfigurationTest {
         String configuration = "var1=aaa" + LINE_SEPARATOR +
                 "var2=bbb" + LINE_SEPARATOR +
                 "var3=ccc" + LINE_SEPARATOR +
-                "FORBIDDEN.OPTION=ddd" + LINE_SEPARATOR;
+                "FORBIDDEN.OPTION=ddd" + LINE_SEPARATOR +
+                "FORBIDDEN.PREFIX=eee" + LINE_SEPARATOR;
         OrderedProperties expectedConfiguration = createWithDefaults("var3", "ccc",
                 "var2", "bbb",
                 "var1", "aaa");
@@ -174,29 +182,21 @@ public class AbstractConfigurationTest {
     }
 
     @ParallelTest
-    public void testJsonWithForbiddenKeys() {
+    public void testJsonWithForbiddenPrefixesAndOptions() {
         JsonObject configuration = new JsonObject().put("var1", "aaa")
                 .put("var2", "bbb")
                 .put("var3", "ccc")
-                .put("forbidden.option", "ddd");
+                .put("forbidden.prefix", "ddd")
+                .put("forbidden.prefix.first", "eee")
+                .put("forbidden.prefix.second", "fff")
+                .put("forbidden.prefix.exception", "ggg")
+                .put("forbidden.option", "hhh")
+                .put("forbidden.option.not.exact", "iii");
         OrderedProperties expectedConfiguration = createWithDefaults("var3", "ccc",
                 "var2", "bbb",
-                "var1", "aaa");
-
-        AbstractConfiguration config = new TestConfiguration(configuration);
-        assertThat(config.asOrderedProperties(), is(expectedConfiguration));
-    }
-
-    @ParallelTest
-    public void testJsonWithForbiddenKeysPrefix() {
-        JsonObject configuration = new JsonObject().put("var1", "aaa")
-                .put("var2", "bbb")
-                .put("var3", "ccc")
-                .put("forbidden.option.first", "ddd")
-                .put("forbidden.option.second", "ddd");
-        OrderedProperties expectedConfiguration = createWithDefaults("var3", "ccc",
-                "var2", "bbb",
-                "var1", "aaa");
+                "var1", "aaa",
+                "forbidden.prefix.exception", "ggg",
+                "forbidden.option.not.exact", "iii");
 
         AbstractConfiguration config = new TestConfiguration(configuration);
         assertThat(config.asOrderedProperties(), is(expectedConfiguration));
@@ -299,17 +299,20 @@ public class AbstractConfigurationTest {
         String prefixes = "prefix1.field,prefix2.field , prefix3.field, prefix4.field,, ";
         List<String> prefixList = asList("prefix1.field", "prefix2.field", "prefix3.field", "prefix4.field");
 
-        assertThat(AbstractConfiguration.splitPrefixesToList(prefixes).equals(prefixList), is(true));
+        assertThat(AbstractConfiguration.splitPrefixesOrOptionsToList(prefixes).equals(prefixList), is(true));
     }
 }
 
 class TestConfiguration extends AbstractConfiguration {
+    private static final List<String> FORBIDDEN_OPTIONS;
     private static final List<String> FORBIDDEN_PREFIXES;
+    private static final List<String> FORBIDDEN_PREFIXES_EXCEPTIONS;
     private static final Map<String, String> DEFAULTS;
 
     static {
-        FORBIDDEN_PREFIXES = asList(
-                "forbidden.option");
+        FORBIDDEN_PREFIXES = List.of("forbidden.prefix");
+        FORBIDDEN_PREFIXES_EXCEPTIONS = List.of("forbidden.prefix.exception");
+        FORBIDDEN_OPTIONS = List.of("forbidden.option");
 
         DEFAULTS = new HashMap<>();
         DEFAULTS.put("default.option", "hello");
@@ -323,7 +326,7 @@ class TestConfiguration extends AbstractConfiguration {
      *                      pairs.
      */
     public TestConfiguration(String configuration) {
-        super(Reconciliation.DUMMY_RECONCILIATION, configuration, FORBIDDEN_PREFIXES, DEFAULTS);
+        super(Reconciliation.DUMMY_RECONCILIATION, configuration, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIXES_EXCEPTIONS, FORBIDDEN_OPTIONS, DEFAULTS);
     }
 
     /**
@@ -333,16 +336,19 @@ class TestConfiguration extends AbstractConfiguration {
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
     public TestConfiguration(JsonObject jsonOptions) {
-        super(Reconciliation.DUMMY_RECONCILIATION, jsonOptions, FORBIDDEN_PREFIXES, DEFAULTS);
+        super(Reconciliation.DUMMY_RECONCILIATION, jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIXES_EXCEPTIONS, FORBIDDEN_OPTIONS, DEFAULTS);
     }
 }
 
 class TestConfigurationWithoutDefaults extends AbstractConfiguration {
+    private static final List<String> FORBIDDEN_OPTIONS;
     private static final List<String> FORBIDDEN_PREFIXES;
+    private static final List<String> FORBIDDEN_PREFIXES_EXCEPTIONS;
 
     static {
-        FORBIDDEN_PREFIXES = asList(
-                "forbidden.option");
+        FORBIDDEN_PREFIXES = List.of("forbidden.prefix");
+        FORBIDDEN_PREFIXES_EXCEPTIONS = List.of("forbidden.prefix.exception");
+        FORBIDDEN_OPTIONS = List.of("forbidden.option");
     }
 
     /**
@@ -353,7 +359,7 @@ class TestConfigurationWithoutDefaults extends AbstractConfiguration {
      *                      pairs.
      */
     public TestConfigurationWithoutDefaults(String configuration) {
-        super(Reconciliation.DUMMY_RECONCILIATION, configuration, FORBIDDEN_PREFIXES);
+        super(Reconciliation.DUMMY_RECONCILIATION, configuration, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIXES_EXCEPTIONS, FORBIDDEN_OPTIONS, Map.of());
     }
 
     /**
@@ -363,6 +369,6 @@ class TestConfigurationWithoutDefaults extends AbstractConfiguration {
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
     public TestConfigurationWithoutDefaults(JsonObject jsonOptions) {
-        super(Reconciliation.DUMMY_RECONCILIATION, jsonOptions, FORBIDDEN_PREFIXES);
+        super(Reconciliation.DUMMY_RECONCILIATION, jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIXES_EXCEPTIONS, FORBIDDEN_OPTIONS, Map.of());
     }
 }
