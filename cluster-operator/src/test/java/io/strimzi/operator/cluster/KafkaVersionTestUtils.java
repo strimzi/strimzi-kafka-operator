@@ -28,6 +28,7 @@ public class KafkaVersionTestUtils {
     public static final String LATEST_ZOOKEEPER_VERSION = "3.8.4";
     public static final String LATEST_CHECKSUM = "ABCD1234";
     public static final String LATEST_THIRD_PARTY_VERSION = "3.8.x";
+    public static final String KAFKA_390_VERSION = "3.9.0";
     public static final String LATEST_KAFKA_IMAGE = KAFKA_IMAGE_STR + LATEST_KAFKA_VERSION;
     public static final String LATEST_KAFKA_CONNECT_IMAGE = KAFKA_CONNECT_IMAGE_STR + LATEST_KAFKA_VERSION;
     public static final String LATEST_KAFKA_MIRROR_MAKER_IMAGE = KAFKA_MIRROR_MAKER_IMAGE_STR + LATEST_KAFKA_VERSION;

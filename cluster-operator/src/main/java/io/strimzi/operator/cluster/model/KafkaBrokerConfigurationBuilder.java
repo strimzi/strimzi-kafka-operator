@@ -57,6 +57,9 @@ public class KafkaBrokerConfigurationBuilder {
     private final static String CONTROL_PLANE_LISTENER_NAME = "CONTROLPLANE-9090";
     private final static String REPLICATION_LISTENER_NAME = "REPLICATION-9091";
 
+    // Kafka version that requires advertised.listeners configuration for controllers, previous versions do not allow this configuration for controllers.
+    private final static KafkaVersion KAFKA_VERSION_3_9 = new KafkaVersion("3.9.0", "", "", "", "", false, false, "");
+
     // Names of environment variables placeholders replaced only in the running container
     private final static String PLACEHOLDER_CERT_STORE_PASSWORD = "${CERTS_STORE_PASSWORD}";
     private final static String PLACEHOLDER_RACK_ID = "${STRIMZI_RACK_ID}";
@@ -254,18 +257,19 @@ public class KafkaBrokerConfigurationBuilder {
      * generate the per-broker configuration which uses actual broker IDs and addresses instead of just placeholders.
      *
      * @param clusterName                Name of the cluster (important for the advertised hostnames)
+     * @param kafkaVersion               Kafka version of the cluster
      * @param namespace                  Namespace (important for generating the advertised hostname)
      * @param kafkaListeners             The listeners configuration from the Kafka CR
      * @param advertisedHostnameProvider Lambda method which provides the advertised hostname for given listener and
      *                                   broker. This is used to configure the user-configurable listeners.
      * @param advertisedPortProvider     Lambda method which provides the advertised port for given listener and broker.
      *                                   This is used to configure the user-configurable listeners.
-     *
      * @return Returns the builder instance
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
     public KafkaBrokerConfigurationBuilder withListeners(
             String clusterName,
+            KafkaVersion kafkaVersion,
             String namespace,
             List<GenericKafkaListener> kafkaListeners,
             Function<String, String> advertisedHostnameProvider,
@@ -281,8 +285,8 @@ public class KafkaBrokerConfigurationBuilder {
         if (node.controller() || (node.broker() && kafkaMetadataConfigState.isZooKeeperToMigration())) {
             listeners.add(CONTROL_PLANE_LISTENER_NAME + "://0.0.0.0:9090");
 
-            // Control Plane listener to be advertised only with broker in ZooKeeper-based or migration but NOT when full KRaft only or mixed
-            if (node.broker() && kafkaMetadataConfigState.isZooKeeperToMigration()) {
+            // Control Plane listener to be advertised with broker in ZooKeeper-based or migration OR KRaft controller or mixed node with version 3.9+
+            if ((node.broker() && kafkaMetadataConfigState.isZooKeeperToMigration()) || (kafkaVersion.compareTo(KAFKA_VERSION_3_9) >= 0)) {
                 advertisedListeners.add(String.format("%s://%s:9090",
                         CONTROL_PLANE_LISTENER_NAME,
                         // Pod name constructed to be templatable for each individual ordinal
@@ -350,13 +354,18 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println("listener.security.protocol.map=" + String.join(",", securityProtocol));
         writer.println("listeners=" + String.join(",", listeners));
 
-        // Advertised listeners are not allowed on KRaft nodes with controller only role
         if (!isKraftControllerOnly) {
             writer.println("advertised.listeners=" + String.join(",", advertisedListeners));
             writer.println("inter.broker.listener.name=" + REPLICATION_LISTENER_NAME);
-        } else if (node.controller() && kafkaMetadataConfigState.isZooKeeperToPostMigration()) {
-            // needed for KRaft controller only as well until post-migration because it needs to contact brokers
-            writer.println("inter.broker.listener.name=" + REPLICATION_LISTENER_NAME);
+        } else if (node.controller()) {
+            if (advertisedListeners.size() > 0) {
+                writer.println("advertised.listeners=" + String.join(",", advertisedListeners));
+            }
+
+            if (kafkaMetadataConfigState.isZooKeeperToPostMigration()) {
+                // needed for KRaft controller only as well until post-migration because it needs to contact brokers
+                writer.println("inter.broker.listener.name=" + REPLICATION_LISTENER_NAME);
+            }
         }
 
         // Control plane listener is on all ZooKeeper based brokers, needed during migration as well, when broker still using ZooKeeper but KRaft controllers are ready
