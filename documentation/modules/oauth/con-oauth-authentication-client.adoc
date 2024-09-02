@@ -223,3 +223,18 @@ sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthL
 <2> (Optional) Client secret created when creating the _client_ in the authorization server.
 <3> Long-lived refresh token for Kafka clients.
 
+.SASL extensions for custom `OAUTHBEARER` implementations
+
+If your Kafka broker uses a custom `OAUTHBEARER` implementation, you may need to pass additional SASL extension options.
+These extensions can include attributes or information required as client context by the authorization server. 
+The options are passed as key-value pairs and are sent to the Kafka broker when a new session is started.
+
+Pass SASL extension values using `oauth.sasl.extension.` as a key prefix. 
+
+.Example configuration to pass SASL extension values
+[source,properties]
+----
+oauth.sasl.extension.key1="value1"
+oauth.sasl.extension.key2="value2"  
+----
+
