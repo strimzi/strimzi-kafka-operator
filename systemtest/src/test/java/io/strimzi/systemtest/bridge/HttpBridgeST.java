@@ -72,15 +72,7 @@ import static org.hamcrest.Matchers.containsString;
         @Step(value = "Initialize Test Storage and deploy Kafka and Kafka Bridge", expected = "Kafka and Kafka Bridge are deployed with necessary configuration")
     },
     labels = {
-        @Label("plaintext"),
-        @Label("send-simple-message"),
-        @Label("label-verification"),
-        @Label("simple-message-receive"),
-        @Label("kafka-bridge-consumer"),
-        @Label("bridge-scaling"),
-        @Label("bridge-stability"),
-        @Label("label"),
-        @Label("annotation")
+        @Label("bridge"),
     }
 )
 class HttpBridgeST extends AbstractST {
@@ -103,9 +95,7 @@ class HttpBridgeST extends AbstractST {
             @Step(value = "Verify Kafka Bridge service labels", expected = "Labels for Kafka Bridge service are correctly set and verified")
         },
         labels = {
-            @Label("plaintext"),
-            @Label("send-simple-message"),
-            @Label("label-verification")
+            @Label("bridge"),
         }
     )
     void testSendSimpleMessage() {
@@ -149,8 +139,7 @@ class HttpBridgeST extends AbstractST {
             @Step(value = "Verify message reception", expected = "All messages are received by Kafka Bridge consumer client")
         },
         labels = {
-            @Label("simple-message-receive"),
-            @Label("kafka-bridge-consumer")
+            @Label("bridge"),
         }
     )
     void testReceiveSimpleMessage() {
@@ -192,7 +181,7 @@ class HttpBridgeST extends AbstractST {
             @Step(value = "Verify Kafka Bridge configurations for producer and consumer", expected = "Producer and consumer configurations match the updated settings")
         },
         labels = {
-            @Label("configuration")
+            @Label("bridge")
         }
     )
     void testCustomAndUpdatedValues() {
@@ -325,8 +314,7 @@ class HttpBridgeST extends AbstractST {
             @Step(value = "Verify the status of KafkaBridge", expected = "KafkaBridge status should indicate it is ready with zero replicas")
         },
         labels = {
-            @Label("bridge-scaling"),
-            @Label("bridge-stability")
+            @Label("bridge")
         }
     )
     void testScaleBridgeToZero() {
@@ -363,7 +351,7 @@ class HttpBridgeST extends AbstractST {
             @Step(value = "Check pod naming conventions.", expected = "Pod names should match the naming convention and be consistent.")
         },
         labels = {
-            @Label("scaling")
+            @Label("bridge")
         }
     )
     void testScaleBridgeSubresource() {
@@ -412,7 +400,7 @@ class HttpBridgeST extends AbstractST {
             @Step(value = "Check that observed generation is 2 and the new label is present", expected = "Observed generation is 2 and label 'another=label' is present")
         },
         labels = {
-            @Label("configure-deployment-strategy")
+            @Label("bridge")
         }
     )
     void testConfigureDeploymentStrategy() {

@@ -59,8 +59,7 @@ import static io.strimzi.systemtest.TestConstants.REGRESSION;
         @Step(value = "Deploy HTTP bridge with TLS configuration", expected = "HTTP bridge is deployed with TLS configuration")
     },
     labels = {
-        @Label("message-sending"),
-        @Label("tls")
+        @Label("bridge")
     }
 )
 class HttpBridgeTlsST extends AbstractST {
@@ -80,8 +79,7 @@ class HttpBridgeTlsST extends AbstractST {
             @Step(value = "Verify that the consumer successfully receives messages", expected = "Consumer successfully receives the expected number of messages")
         },
         labels = {
-            @Label("message-sending"),
-            @Label("tls")
+            @Label("bridge")
         }
     )
     void testSendSimpleMessageTls() {
@@ -118,7 +116,7 @@ class HttpBridgeTlsST extends AbstractST {
             @Step(value = "Verify message consumption", expected = "Messages are successfully consumed by the Kafka Bridge consumer.")
         },
         labels = {
-            @Label("tls")
+            @Label("bridge")
         }
     )
     void testReceiveSimpleMessageTls() {

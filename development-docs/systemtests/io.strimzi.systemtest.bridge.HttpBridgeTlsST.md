@@ -13,8 +13,7 @@
 
 **Labels:**
 
-* `message-sending` (description file doesn't exist)
-* [tls](labels/tls.md)
+* [bridge](labels/bridge.md)
 
 <hr style="border:1px solid">
 
@@ -36,7 +35,7 @@
 
 **Labels:**
 
-* [tls](labels/tls.md)
+* [bridge](labels/bridge.md)
 
 
 ## testSendSimpleMessageTls
@@ -56,6 +55,5 @@
 
 **Labels:**
 
-* `message-sending` (description file doesn't exist)
-* [tls](labels/tls.md)
+* [bridge](labels/bridge.md)
 

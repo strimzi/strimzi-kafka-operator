@@ -10,15 +10,7 @@
 
 **Labels:**
 
-* [plaintext](labels/plaintext.md)
-* `send-simple-message` (description file doesn't exist)
-* `label-verification` (description file doesn't exist)
-* `simple-message-receive` (description file doesn't exist)
-* `kafka-bridge-consumer` (description file doesn't exist)
-* `bridge-scaling` (description file doesn't exist)
-* `bridge-stability` (description file doesn't exist)
-* [label](labels/label.md)
-* [annotation](labels/annotation.md)
+* [bridge](labels/bridge.md)
 
 <hr style="border:1px solid">
 
@@ -39,7 +31,7 @@
 
 **Labels:**
 
-* `configure-deployment-strategy` (description file doesn't exist)
+* [bridge](labels/bridge.md)
 
 
 ## testCustomAndUpdatedValues
@@ -59,7 +51,7 @@
 
 **Labels:**
 
-* [configuration](labels/configuration.md)
+* [bridge](labels/bridge.md)
 
 
 ## testCustomBridgeLabelsAreProperlySet
@@ -77,8 +69,8 @@
 
 **Labels:**
 
-* [label](labels/label.md)
-* [annotation](labels/annotation.md)
+* `label` (description file doesn't exist)
+* `annotation` (description file doesn't exist)
 
 
 ## testDiscoveryAnnotation
@@ -116,8 +108,7 @@
 
 **Labels:**
 
-* `simple-message-receive` (description file doesn't exist)
-* `kafka-bridge-consumer` (description file doesn't exist)
+* [bridge](labels/bridge.md)
 
 
 ## testScaleBridgeSubresource
@@ -135,7 +126,7 @@
 
 **Labels:**
 
-* `scaling` (description file doesn't exist)
+* [bridge](labels/bridge.md)
 
 
 ## testScaleBridgeToZero
@@ -155,8 +146,7 @@
 
 **Labels:**
 
-* `bridge-scaling` (description file doesn't exist)
-* `bridge-stability` (description file doesn't exist)
+* [bridge](labels/bridge.md)
 
 
 ## testSendSimpleMessage
@@ -179,7 +169,5 @@
 
 **Labels:**
 
-* [plaintext](labels/plaintext.md)
-* `send-simple-message` (description file doesn't exist)
-* `label-verification` (description file doesn't exist)
+* [bridge](labels/bridge.md)
 
