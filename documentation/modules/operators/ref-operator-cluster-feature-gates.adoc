@@ -104,12 +104,6 @@ For more information on using KRraft, see xref:assembly-kraft-mode-{context}[].
 
 Stable feature gates have reached a beta level of maturity, and are generally enabled by default for all users.
 Stable feature gates are production-ready, but they can still be disabled.
-Currently, there are no beta level feature gates.
-
-== Early access feature gates (Alpha)
-
-Early access feature gates have not yet reached the beta stage, and are disabled by default. 
-An early access feature gate provides an opportunity for assessment before its functionality is permanently incorporated into Strimzi.
 
 [id='ref-operator-continue-reconciliation-on-manual-ru-failure-feature-gate-{context}']
 === ContinueReconciliationOnManualRollingUpdateFailure feature gate
@@ -134,6 +128,13 @@ It is ignored by the User and Topic Operators.
 
 .Disabling the ContinueReconciliationOnManualRollingUpdateFailure feature gate
 To disable the `ContinueReconciliationOnManualRollingUpdateFailure` feature gate, specify `-ContinueReconciliationOnManualRollingUpdateFailure` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+
+
+== Early access feature gates (Alpha)
+
+Early access feature gates have not yet reached the beta stage, and are disabled by default. 
+An early access feature gate provides an opportunity for assessment before its functionality is permanently incorporated into Strimzi.
+Currently, there are no alpha level feature gates.
 
 == Enabling feature gates
 
