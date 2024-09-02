@@ -1523,11 +1523,12 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
         when(mockConnectClient.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
 
+        ClusterOperatorConfig coConfig = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), VERSIONS).with(ClusterOperatorConfig.FEATURE_GATES.key(), "-ContinueReconciliationOnManualRollingUpdateFailure").build();
         KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig(),
+                coConfig,
                 x -> mockConnectClient
         );
 
@@ -1619,12 +1620,11 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
         when(mockConnectClient.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
 
-        ClusterOperatorConfig coConfig = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), VERSIONS).with(ClusterOperatorConfig.FEATURE_GATES.key(), "+ContinueReconciliationOnManualRollingUpdateFailure").build();
         KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
-                coConfig,
+                ResourceUtils.dummyClusterOperatorConfig(),
                 x -> mockConnectClient
         );
 

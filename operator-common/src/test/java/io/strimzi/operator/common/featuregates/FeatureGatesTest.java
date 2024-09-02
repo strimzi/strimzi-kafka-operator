@@ -117,7 +117,7 @@ public class FeatureGatesTest {
     @ParallelTest
     public void testEnvironmentVariable()   {
         assertThat(new FeatureGates("").toEnvironmentVariable(), is(""));
-        assertThat(new FeatureGates("-ContinueReconciliationOnManualRollingUpdateFailure").toEnvironmentVariable(), is(""));
-        assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure").toEnvironmentVariable(), is("+ContinueReconciliationOnManualRollingUpdateFailure"));
+        assertThat(new FeatureGates("-ContinueReconciliationOnManualRollingUpdateFailure").toEnvironmentVariable(), is("-ContinueReconciliationOnManualRollingUpdateFailure"));
+        assertThat(new FeatureGates("+ContinueReconciliationOnManualRollingUpdateFailure").toEnvironmentVariable(), is(""));
     }
 }

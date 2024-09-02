@@ -357,12 +357,12 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
 
     @Test
     public void testManualPodRollingUpdateWithPodSetsWithError1(VertxTestContext context) {
-        testManualPodRollingUpdateWithPodSetsWithErrorConditions(context, "", true);
+        testManualPodRollingUpdateWithPodSetsWithErrorConditions(context, "-ContinueReconciliationOnManualRollingUpdateFailure", true);
     }
 
     @Test
     public void testManualPodRollingUpdateWithPodSetsWithError3(VertxTestContext context) {
-        testManualPodRollingUpdateWithPodSetsWithErrorConditions(context, "+ContinueReconciliationOnManualRollingUpdateFailure", false);
+        testManualPodRollingUpdateWithPodSetsWithErrorConditions(context, "", false);
     }
 
     private void testManualPodRollingUpdateWithPodSetsWithErrorConditions(VertxTestContext context, String featureGates, boolean expectError) {

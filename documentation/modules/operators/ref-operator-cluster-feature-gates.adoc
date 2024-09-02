@@ -104,17 +104,11 @@ For more information on using KRraft, see xref:assembly-kraft-mode-{context}[].
 
 Stable feature gates have reached a beta level of maturity, and are generally enabled by default for all users.
 Stable feature gates are production-ready, but they can still be disabled.
-Currently, there are no beta level feature gates.
-
-== Early access feature gates (Alpha)
-
-Early access feature gates have not yet reached the beta stage, and are disabled by default. 
-An early access feature gate provides an opportunity for assessment before its functionality is permanently incorporated into Strimzi.
 
 [id='ref-operator-continue-reconciliation-on-manual-ru-failure-feature-gate-{context}']
 === ContinueReconciliationOnManualRollingUpdateFailure feature gate
 
-The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate has a default state of _disabled_.
+The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate has a default state of _enabled_.
 
 The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate allows the Cluster Operator to continue a reconciliation if the manual rolling update of the operands fails.
 It applies to the following operands that support manual rolling updates using the `strimzi.io/manual-rolling-update` annotation:
@@ -132,8 +126,15 @@ By continuing the reconciliation after this failure, the process can recreate th
 The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate is used by the Cluster Operator.
 It is ignored by the User and Topic Operators.
 
-.Enabling the ContinueReconciliationOnManualRollingUpdateFailure feature gate
-To enable the `ContinueReconciliationOnManualRollingUpdateFailure` feature gate, specify `+ContinueReconciliationOnManualRollingUpdateFailure` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+.Disabling the ContinueReconciliationOnManualRollingUpdateFailure feature gate
+To disable the `ContinueReconciliationOnManualRollingUpdateFailure` feature gate, specify `-ContinueReconciliationOnManualRollingUpdateFailure` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+
+
+== Early access feature gates (Alpha)
+
+Early access feature gates have not yet reached the beta stage, and are disabled by default. 
+An early access feature gate provides an opportunity for assessment before its functionality is permanently incorporated into Strimzi.
+Currently, there are no alpha level feature gates.
 
 == Enabling feature gates
 
