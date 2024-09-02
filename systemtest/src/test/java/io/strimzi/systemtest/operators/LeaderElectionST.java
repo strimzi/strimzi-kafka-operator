@@ -25,7 +25,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collections;
 
-import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -60,7 +59,6 @@ public class LeaderElectionST extends AbstractST {
     private static final String LEADER_MESSAGE = "I'm the new leader";
 
     @IsolatedTest
-    @Tag(ACCEPTANCE)
     void testLeaderElection() {
         // create CO with 2 replicas, wait for Deployment readiness and leader election
         clusterOperator = clusterOperator.defaultInstallation()

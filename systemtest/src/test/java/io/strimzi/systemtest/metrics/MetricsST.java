@@ -142,7 +142,6 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
  * @updated 2023-17-04
  */
 @Tag(SANITY)
-@Tag(ACCEPTANCE)
 @Tag(REGRESSION)
 @Tag(METRICS)
 @Tag(CRUISE_CONTROL)
@@ -202,7 +201,6 @@ public class MetricsST extends AbstractST {
      *  - zookeeper-metrics
      */
     @ParallelTest
-    @Tag(ACCEPTANCE)
     @KRaftNotSupported("ZooKeeper is not supported by KRaft mode and is used in this test case")
     void testZookeeperMetrics() {
         assertMetricValueNotNull(zookeeperCollector, "zookeeper_quorumsize");

@@ -51,7 +51,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
 import static io.strimzi.systemtest.TestConstants.COMPONENT_SCALING;
 import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
@@ -144,7 +143,6 @@ public class MirrorMakerST extends AbstractST {
      * Test mirroring messages by MirrorMaker over tls transport using mutual tls auth
      */
     @ParallelNamespaceTest
-    @Tag(ACCEPTANCE)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testMirrorMakerTlsAuthenticated() {
         TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
