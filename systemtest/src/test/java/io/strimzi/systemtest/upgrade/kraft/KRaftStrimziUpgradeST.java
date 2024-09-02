@@ -55,10 +55,11 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
     @ParameterizedTest(name = "from: {0} (using FG <{2}>) to: {1} (using FG <{3}>) ")
     @MethodSource("io.strimzi.systemtest.upgrade.VersionModificationDataLoader#loadYamlUpgradeDataForKRaft")
     void testUpgradeStrimziVersion(String fromVersion, String toVersion, String fgBefore, String fgAfter, BundleVersionModificationData upgradeData) throws Exception {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         assumeTrue(StUtils.isAllowOnCurrentEnvironment(upgradeData.getEnvFlakyVariable()));
         assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(upgradeData.getEnvMaxK8sVersion()));
 
-        performUpgrade(CO_NAMESPACE, TEST_SUITE_NAMESPACE, upgradeData);
+        performUpgrade(CO_NAMESPACE, testStorage.getNamespaceName(), upgradeData);
     }
 
     @IsolatedTest
@@ -69,7 +70,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(CO_NAMESPACE, acrossUpgradeData, testStorage, upgradeKafkaVersion);
+        setupEnvAndUpgradeClusterOperator(CO_NAMESPACE, testStorage, acrossUpgradeData, upgradeKafkaVersion);
 
         Map<String, String> controllerSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), controllerSelector);
         Map<String, String> brokerSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), brokerSelector);
@@ -109,7 +110,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         UpgradeKafkaVersion upgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(acrossUpgradeData.getFromKafkaVersionsUrl(), acrossUpgradeData.getStartingKafkaVersion());
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(CO_NAMESPACE, acrossUpgradeData, testStorage, upgradeKafkaVersion);
+        setupEnvAndUpgradeClusterOperator(CO_NAMESPACE, testStorage, acrossUpgradeData, upgradeKafkaVersion);
 
         // Make snapshots of all Pods
         makeComponentsSnapshots(testStorage.getNamespaceName());
@@ -143,7 +144,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(CO_NAMESPACE, acrossUpgradeData, testStorage, null);
+        setupEnvAndUpgradeClusterOperator(CO_NAMESPACE, testStorage, acrossUpgradeData, null);
 
         // Check if UTO is used before changing the CO -> used for check for KafkaTopics
         boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(testStorage.getNamespaceName(), eoSelector);
@@ -178,7 +179,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         final TestStorage testStorage = new TestStorage(extensionContext);
         final UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion(acrossUpgradeData.getDefaultKafka());
 
-        doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(CO_NAMESPACE, acrossUpgradeData, testStorage, upgradeKafkaVersion);
+        doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(CO_NAMESPACE, testStorage, acrossUpgradeData, upgradeKafkaVersion);
     }
 
     private void performUpgrade(String clusterOperatorNamespaceName, String componentsNamespaceName, BundleVersionModificationData upgradeData) throws IOException {
@@ -188,7 +189,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion();
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(clusterOperatorNamespaceName, upgradeData, testStorage, upgradeKafkaVersion);
+        setupEnvAndUpgradeClusterOperator(clusterOperatorNamespaceName, testStorage, upgradeData, upgradeKafkaVersion);
 
         // Upgrade CO to HEAD
         logClusterOperatorPodImage(clusterOperatorNamespaceName);
@@ -221,10 +222,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
     @BeforeEach
     void setupEnvironment() {
         NamespaceManager.getInstance().createNamespaceAndPrepare(CO_NAMESPACE);
-
-        if (!CO_NAMESPACE.equals(TEST_SUITE_NAMESPACE)) {
-            NamespaceManager.getInstance().createNamespaceAndPrepare(TEST_SUITE_NAMESPACE);
-        }
+        NamespaceManager.getInstance().createNamespaceAndPrepare(TEST_SUITE_NAMESPACE);
     }
 
     @AfterEach
@@ -232,9 +230,6 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         cleanUpKafkaTopics(TEST_SUITE_NAMESPACE);
         deleteInstalledYamls(CO_NAMESPACE, TEST_SUITE_NAMESPACE, coDir);
         NamespaceManager.getInstance().deleteNamespaceWithWait(CO_NAMESPACE);
-
-        if (!CO_NAMESPACE.equals(TEST_SUITE_NAMESPACE)) {
-            NamespaceManager.getInstance().deleteNamespaceWithWait(TEST_SUITE_NAMESPACE);
-        }
+        NamespaceManager.getInstance().deleteNamespaceWithWait(TEST_SUITE_NAMESPACE);
     }
 }
