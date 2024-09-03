@@ -6,7 +6,6 @@ package io.strimzi.systemtest.upgrade.regular;
 
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.KindIPv6NotSupported;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.resources.NamespaceManager;
@@ -47,7 +46,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * Kafka upgrade is done as part of those tests as well, but the tests for Kafka upgrade/downgrade are in {@link KafkaUpgradeDowngradeST}.
  */
 @Tag(UPGRADE)
-@KRaftNotSupported("Strimzi and Kafka upgrade is not supported with KRaft mode")
 public class StrimziUpgradeST extends AbstractUpgradeST {
 
     private static final Logger LOGGER = LogManager.getLogger(StrimziUpgradeST.class);

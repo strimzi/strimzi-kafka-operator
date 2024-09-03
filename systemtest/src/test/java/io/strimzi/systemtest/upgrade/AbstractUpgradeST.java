@@ -496,7 +496,7 @@ public class AbstractUpgradeST extends AbstractST {
             // Deploy a Kafka cluster
             if (upgradeData.getFromExamples().equals("HEAD")) {
                 resourceManager.createResourceWithWait(KafkaNodePoolTemplates.brokerPoolPersistentStorage(componentsNamespaceName, poolName, clusterName, 3).build());
-                resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(componentsNamespaceName, clusterName, 3, 3)
+                resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistentNodePools(componentsNamespaceName, clusterName, 3, 3)
                     .editSpec()
                         .editKafka()
                             .withVersion(upgradeKafkaVersion.getVersion())

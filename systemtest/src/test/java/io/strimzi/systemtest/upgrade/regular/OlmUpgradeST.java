@@ -10,7 +10,6 @@ import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -49,11 +48,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Tests in this class use OLM for install cluster operator.
  */
 @Tag(OLM_UPGRADE)
-@KRaftNotSupported("Strimzi and Kafka downgrade is not supported with KRaft mode")
 public class OlmUpgradeST extends AbstractUpgradeST {
 
     private static final Logger LOGGER = LogManager.getLogger(OlmUpgradeST.class);
     private final OlmVersionModificationData olmUpgradeData = new VersionModificationDataLoader(ModificationType.OLM_UPGRADE).getOlmUpgradeData();
+
     @IsolatedTest
     void testStrimziUpgrade() throws IOException {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), CO_NAMESPACE);

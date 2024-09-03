@@ -8,7 +8,6 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -42,7 +41,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  * Metadata for upgrade/downgrade procedure are loaded from kafka-versions.yaml in root dir of this repository.
  */
 @Tag(UPGRADE)
-@KRaftNotSupported("Strimzi and Kafka downgrade is not supported with KRaft mode")
 public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaUpgradeDowngradeST.class);
@@ -168,7 +166,7 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
 
         if (KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(clusterName).get() == null) {
             LOGGER.info("Deploying initial Kafka version {} with logMessageFormat={} and interBrokerProtocol={}", initialVersion.version(), initLogMsgFormat, initInterBrokerProtocol);
-            KafkaBuilder kafka = KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), clusterName, kafkaReplicas, zkReplicas)
+            KafkaBuilder kafka = KafkaTemplates.kafkaPersistentNodePools(testStorage.getNamespaceName(), clusterName, kafkaReplicas, zkReplicas)
                 .editSpec()
                     .editKafka()
                         .withVersion(initialVersion.version())
