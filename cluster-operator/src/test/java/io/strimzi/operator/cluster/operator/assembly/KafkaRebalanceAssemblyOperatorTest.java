@@ -174,7 +174,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
         }
 
         supplier = new ResourceOperatorSupplier(vertx, client, null, ResourceUtils.adminClientProvider(),
-            null, ResourceUtils.kafkaAgentClientProvider(), ResourceUtils.metricsProvider(), null, PFA, 2_000);
+            null, ResourceUtils.kafkaAgentClientProvider(), ResourceUtils.metricsProvider(), null, PFA, 2_000, new BrokersInUseCheck());
 
         // Override to inject mocked cruise control address so real cruise control not required
         krao = createKafkaRebalanceAssemblyOperator(ResourceUtils.dummyClusterOperatorConfig());

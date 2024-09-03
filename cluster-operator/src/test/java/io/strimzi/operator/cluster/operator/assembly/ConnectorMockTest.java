@@ -199,7 +199,7 @@ public class ConnectorMockTest {
                 new DefaultKafkaAgentClientProvider(),
                 metricsProvider,
                 new DefaultZooKeeperAdminProvider(),
-                pfa, 10_000);
+                pfa, 10_000, new BrokersInUseCheck());
 
         podSetController = new StrimziPodSetController(namespace, Labels.EMPTY, ros.kafkaOperator, ros.connectOperator, ros.mirrorMaker2Operator, ros.strimziPodSetOperator, ros.podOperations, ros.metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));
         podSetController.start();

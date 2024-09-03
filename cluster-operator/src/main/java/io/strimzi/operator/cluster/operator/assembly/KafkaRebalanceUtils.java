@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.strimzi.api.kafka.model.common.Condition;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
 
@@ -64,5 +65,18 @@ public class KafkaRebalanceUtils {
             }
         }
         return null;
+    }
+
+    /**
+     * Compose the name of the KafkaRebalance custom resource to be used for running an auto-rebalancing in the specified mode
+     * for the specified Kafka cluster
+     *
+     * @param cluster   Kafka cluster name (from Kafka custom resource metadata)
+     * @param kafkaRebalanceMode    Auto-rebalance mode
+     * @return  the name of the KafkaRebalance custom resource to be used for running an auto-rebalancing
+     *          in the specified mode for the specified Kafka cluster
+     */
+    public static String autoRebalancingKafkaRebalanceResourceName(String cluster, KafkaRebalanceMode kafkaRebalanceMode) {
+        return cluster + "-auto-rebalancing-" + kafkaRebalanceMode.toValue();
     }
 }

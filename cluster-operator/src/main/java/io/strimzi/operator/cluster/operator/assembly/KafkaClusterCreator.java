@@ -32,7 +32,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -124,7 +124,7 @@ public class KafkaClusterCreator {
                 .compose(kafka -> {
                     if (checkFailed() && tryToFixProblems)   {
                         // saving removed nodes, because of a scaling down, before they are reverted back
-                        this.toBeRemovedNodes = new HashSet<>(kafka.removedNodes());
+                        this.toBeRemovedNodes = new LinkedHashSet<>(kafka.removedNodes());
                         // We have a failure, and should try to fix issues
                         // Once we fix it, we call this method again, but this time with tryToFixProblems set to false
                         return revertScaleDown(kafka, kafkaCr, nodePools)

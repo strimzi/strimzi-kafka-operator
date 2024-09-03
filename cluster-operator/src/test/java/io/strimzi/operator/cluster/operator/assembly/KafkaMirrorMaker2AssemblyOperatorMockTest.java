@@ -164,7 +164,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                 new DefaultKafkaAgentClientProvider(),
                 ResourceUtils.metricsProvider(),
                 new DefaultZooKeeperAdminProvider(),
-                PFA, 60_000L);
+                PFA, 60_000L, new BrokersInUseCheck());
         podSetController = new StrimziPodSetController(namespace, Labels.EMPTY, supplier.kafkaOperator, supplier.connectOperator, supplier.mirrorMaker2Operator, supplier.strimziPodSetOperator, supplier.podOperations, supplier.metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));
         podSetController.start();
     }

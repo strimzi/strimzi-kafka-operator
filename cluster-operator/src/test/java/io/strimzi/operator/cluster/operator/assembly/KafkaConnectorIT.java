@@ -157,7 +157,7 @@ public class KafkaConnectorIT {
                 new DefaultKafkaAgentClientProvider(),
                 metrics,
                 new DefaultZooKeeperAdminProvider(),
-                pfa, 10_000
+                pfa, 10_000, new BrokersInUseCheck()
         );
 
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
@@ -228,7 +228,7 @@ public class KafkaConnectorIT {
                 new DefaultKafkaAgentClientProvider(),
                 metrics,
                 new DefaultZooKeeperAdminProvider(),
-                pfa, 10_000
+                pfa, 10_000, new BrokersInUseCheck()
         );
 
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
@@ -278,7 +278,7 @@ public class KafkaConnectorIT {
                 new DefaultKafkaAgentClientProvider(),
                 metrics,
                 new DefaultZooKeeperAdminProvider(),
-                pfa, 10_000
+                pfa, 10_000, new BrokersInUseCheck()
         );
 
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
@@ -339,7 +339,7 @@ public class KafkaConnectorIT {
             new DefaultKafkaAgentClientProvider(),
             metrics,
             new DefaultZooKeeperAdminProvider(),
-            pfa, 10_000
+            pfa, 10_000, new BrokersInUseCheck()
         );
 
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
@@ -389,7 +389,7 @@ public class KafkaConnectorIT {
             new DefaultKafkaAgentClientProvider(),
             metrics,
             new DefaultZooKeeperAdminProvider(),
-            pfa, 10_000
+            pfa, 10_000, new BrokersInUseCheck()
         );
 
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
