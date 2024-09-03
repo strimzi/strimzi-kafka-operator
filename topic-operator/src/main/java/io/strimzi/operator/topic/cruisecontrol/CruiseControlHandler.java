@@ -23,19 +23,19 @@ import java.util.stream.Collectors;
  * Handler for Cruise Control requests.
  * 
  * <p>When new or pending replicas changes are detected (status.replicasChange.state=pending) the 
- * {@link #requestPendingChanges(List<ReconcilableTopic>)} method is called to send a {@code topic_configuration} 
+ * {@link #requestPendingChanges(List)} method is called to send a {@code topic_configuration} 
  * request to Cruise Control. Pending changes are retried in the following reconciliations until
  * Cruise Control accept the request. Once the request is accepted, the state moves to ongoing.</p>
  * 
  * <p>When ongoing replicas changes are detected (status.replicasChange.state=ongoing) the 
- * {@link #requestOngoingChanges(List<ReconcilableTopic>)} method is called to send a {@code user_tasks}
+ * {@link #requestOngoingChanges(List)} method is called to send a {@code user_tasks}
  * request to Cruise Control. Ongoing changes are retried in the following reconciliations until
  * Cruise Control replies with completed or completed with error.</p>
  * 
  * <p>Empty state (status.replicasChange == null) means no replicas change.
  * In case of error the message is reflected in (status.replicasChange.message).</p>
  *
- * <br><pre>
+ * <pre>
  *          /---------------------------------\
  *         V                                   \
  *     [empty] ---&gt; [pending] ------------&gt; [ongoing]
@@ -159,7 +159,7 @@ public class CruiseControlHandler {
         var results = new Results();
         LOGGER.infoOp("{}, Topics: {}", message, TopicOperatorUtil.topicNames(reconcilableTopics));
         reconcilableTopics.forEach(reconcilableTopic ->
-            results.setReplicasChange(reconcilableTopic, 
+            results.addReplicasChange(reconcilableTopic, 
                 new ReplicasChangeStatusBuilder()
                     .withState(ReplicasChangeState.PENDING)
                     .withTargetReplicas(reconcilableTopic.kt().getSpec().getReplicas())
@@ -175,7 +175,7 @@ public class CruiseControlHandler {
             var targetReplicas = TopicOperatorUtil.hasReplicasChangeStatus(reconcilableTopic.kt())
                 ? reconcilableTopic.kt().getStatus().getReplicasChange().getTargetReplicas()
                 : reconcilableTopic.kt().getSpec().getReplicas();
-            results.setReplicasChange(reconcilableTopic,
+            results.addReplicasChange(reconcilableTopic,
                 new ReplicasChangeStatusBuilder()
                     .withState(ReplicasChangeState.ONGOING)
                     .withTargetReplicas(targetReplicas)
@@ -189,7 +189,7 @@ public class CruiseControlHandler {
         var results = new Results();
         LOGGER.infoOp("{}, Topics: {}", message, TopicOperatorUtil.topicNames(reconcilableTopics));
         reconcilableTopics.forEach(reconcilableTopic ->
-            results.setReplicasChange(reconcilableTopic, null)
+            results.addReplicasChange(reconcilableTopic, null)
         );
         return results;
     }
@@ -204,7 +204,7 @@ public class CruiseControlHandler {
             var targetReplicas = TopicOperatorUtil.hasReplicasChangeStatus(reconcilableTopic.kt())
                 ? reconcilableTopic.kt().getStatus().getReplicasChange().getTargetReplicas()
                 : reconcilableTopic.kt().getSpec().getReplicas();
-            results.setReplicasChange(reconcilableTopic,
+            results.addReplicasChange(reconcilableTopic,
                 new ReplicasChangeStatusBuilder()
                     .withState(state)
                     .withTargetReplicas(targetReplicas)

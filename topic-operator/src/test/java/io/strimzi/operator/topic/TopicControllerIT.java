@@ -761,8 +761,8 @@ class TopicControllerIT {
             5L,
             TimeUnit.SECONDS)) {
             createTopicAndAssertSuccess(kafkaCluster, kt);
-            assertTrue(operator.controller.topics.containsKey(expectedTopicName)
-                    || operator.controller.topics.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
+            assertTrue(operator.controller.topicRefs.containsKey(expectedTopicName)
+                    || operator.controller.topicRefs.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
                 "Expect selected resource to be present in topics map");
 
             // when
@@ -785,7 +785,7 @@ class TopicControllerIT {
         assertEquals(Set.of(kt.getSpec().getReplicas()), replicationFactors(topicDescription));
         assertEquals(Map.of(), topicConfigMap(expectedTopicName));
 
-        Map<String, List<KubeRef>> topics = new HashMap<>(operator.controller.topics);
+        Map<String, List<KubeRef>> topics = new HashMap<>(operator.controller.topicRefs);
         assertFalse(topics.containsKey(expectedTopicName)
                 || topics.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
             "Transition to a non-selected resource should result in removal from topics map: " + topics);
@@ -818,8 +818,8 @@ class TopicControllerIT {
         assertUnknownTopic(expectedTopicName);
         assertNull(created.getStatus(), "Expect status not to be set");
         assertTrue(created.getMetadata().getFinalizers().isEmpty());
-        assertFalse(operator.controller.topics.containsKey(expectedTopicName)
-                || operator.controller.topics.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
+        assertFalse(operator.controller.topicRefs.containsKey(expectedTopicName)
+                || operator.controller.topicRefs.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
             "Expect unselected resource to be absent from topics map");
 
         // when
@@ -832,8 +832,8 @@ class TopicControllerIT {
             readyIsTrue());
 
         // then
-        assertTrue(operator.controller.topics.containsKey(expectedTopicName)
-                || operator.controller.topics.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
+        assertTrue(operator.controller.topicRefs.containsKey(expectedTopicName)
+                || operator.controller.topicRefs.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
             "Expect selected resource to be present in topics map");
 
         assertNotNull(managed.getMetadata().getFinalizers());
@@ -842,8 +842,8 @@ class TopicControllerIT {
         var topicDescription = awaitTopicDescription(expectedTopicName);
         assertEquals(3, numPartitions(topicDescription));
 
-        assertTrue(operator.controller.topics.containsKey(expectedTopicName)
-                || operator.controller.topics.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
+        assertTrue(operator.controller.topicRefs.containsKey(expectedTopicName)
+                || operator.controller.topicRefs.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
             "Expect selected resource to be present in topics map");
 
     }
@@ -1513,6 +1513,7 @@ class TopicControllerIT {
             operated -> {
                 assertEquals("Changing spec.topicName is not supported", assertExactlyOneCondition(operated).getMessage());
                 assertEquals(TopicOperatorException.Reason.NOT_SUPPORTED.value, assertExactlyOneCondition(operated).getReason());
+                assertEquals(expectedTopicName, operated.getStatus().getTopicName());
             },
             theKt -> {
                 theKt.getSpec().setTopicName(expectedTopicName);
@@ -2110,7 +2111,7 @@ class TopicControllerIT {
 
     @Test
     public void shouldNotReconcilePausedKafkaTopicOnAdd(
-        @BrokerConfig(name = BatchingTopicController.AUTO_CREATE_TOPICS_ENABLE, value = "false")
+        @BrokerConfig(name = KafkaHandler.AUTO_CREATE_TOPICS_ENABLE, value = "false")
         KafkaCluster kafkaCluster
     ) throws ExecutionException, InterruptedException {
         var topicName = "my-topic";

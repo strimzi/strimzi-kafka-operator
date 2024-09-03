@@ -5,7 +5,6 @@
 package io.strimzi.operator.topic;
 
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
-import io.strimzi.api.kafka.model.topic.KafkaTopicStatusBuilder;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
@@ -115,7 +114,7 @@ public class KafkaHandler {
      * @param reconcilableTopics Reconcilable topics.
      * @return Result partitioned by error.
      */
-    public PartitionedByError<ReconcilableTopic, Void> createTopics(List<ReconcilableTopic> reconcilableTopics) {
+    public PartitionedByError<ReconcilableTopic, TopicState> createTopics(List<ReconcilableTopic> reconcilableTopics) {
         Map<ReconcilableTopic, TopicOperatorException> newTopicsErrors = new HashMap<>();
         var newTopics = reconcilableTopics.stream().map(reconcilableTopic -> {
             try {
@@ -144,13 +143,14 @@ public class KafkaHandler {
             }
             try {
                 values.get(reconcilableTopic.topicName()).get();
-                reconcilableTopic.kt().setStatus(new KafkaTopicStatusBuilder()
-                    .withTopicId(ctr.topicId(reconcilableTopic.topicName()).get().toString()).build());
-                return new Pair<>(reconcilableTopic, Either.ofRight((null)));
+                return new Pair<>(reconcilableTopic, Either.ofRight(
+                    new TopicState(new TopicDescription(reconcilableTopic.topicName(), 
+                        false, List.of(), Set.of(), ctr.topicId(reconcilableTopic.topicName()).get()), null)
+                ));
             } catch (ExecutionException e) {
                 if (e.getCause() != null && e.getCause() instanceof TopicExistsException) {
                     // we treat this as a success, the next reconciliation checks the configuration
-                    return new Pair<>(reconcilableTopic, Either.ofRight((null)));
+                    return new Pair<>(reconcilableTopic, Either.ofRight(null));
                 } else {
                     return new Pair<>(reconcilableTopic, Either.ofLeft(handleAdminException(e)));
                 }
@@ -185,16 +185,15 @@ public class KafkaHandler {
         var timerSample = TopicOperatorUtil.startExternalRequestTimer(metricsHolder, config.enableAdditionalMetrics());
         try {
             reassignments = kafkaAdminClient.listPartitionReassignments(apparentDifferentRfPartitions).reassignments().get();
-            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::listReassignmentsTimer, config.enableAdditionalMetrics(), config.namespace());
             LOGGER.traceOp("Admin.listPartitionReassignments({}) completed", apparentDifferentRfPartitions);
         } catch (ExecutionException e) {
-            TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::listReassignmentsTimer, config.enableAdditionalMetrics(), config.namespace());
             LOGGER.traceOp("Admin.listPartitionReassignments({}) failed with {}", apparentDifferentRfPartitions, e);
             return apparentlyDifferentRfTopics.stream().map(pair ->
                 new Pair<>(pair.getKey(), Either.<TopicOperatorException, TopicState>ofLeft(handleAdminException(e)))).toList();
         } catch (InterruptedException e) {
             throw new UncheckedInterruptedException(e);
         }
+        TopicOperatorUtil.stopExternalRequestTimer(timerSample, metricsHolder::listReassignmentsTimer, config.enableAdditionalMetrics(), config.namespace());
 
         var partitionToTargetRf = reassignments.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> {
             var partitionReassignment = entry.getValue();

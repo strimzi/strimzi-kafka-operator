@@ -322,8 +322,8 @@ class BatchingTopicControllerTest {
                 .build();
         
         var pendingResults = new Results();
-        pendingResults.accrueRightResults(List.of(reconcilableTopic));
-        pendingResults.setReplicasChange(reconcilableTopic, replicaChangeStatus);
+        pendingResults.addRightResults(List.of(reconcilableTopic));
+        pendingResults.addReplicasChange(reconcilableTopic, replicaChangeStatus);
 
         var cruiseControlHandler = Mockito.mock(CruiseControlHandler.class);
         Mockito.doReturn(pendingResults).when(cruiseControlHandler).requestPendingChanges(anyList());
@@ -403,8 +403,8 @@ class BatchingTopicControllerTest {
             new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, topicName), kafkaTopic, topicName);
 
         var completedResults = new Results();
-        completedResults.accrueRightResults(List.of(reconcilableTopic));
-        completedResults.setReplicasChange(reconcilableTopic, null);
+        completedResults.addRightResults(List.of(reconcilableTopic));
+        completedResults.addReplicasChange(reconcilableTopic, null);
 
         var cruiseControlHandler = Mockito.mock(CruiseControlHandler.class);
         Mockito.doReturn(new Results()).when(cruiseControlHandler).requestPendingChanges(anyList());
@@ -481,8 +481,8 @@ class BatchingTopicControllerTest {
             new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, topicName), kafkaTopic, topicName);
 
         var completedResults = new Results();
-        completedResults.accrueRightResults(List.of(reconcilableTopic));
-        completedResults.setReplicasChange(reconcilableTopic, null);
+        completedResults.addRightResults(List.of(reconcilableTopic));
+        completedResults.addReplicasChange(reconcilableTopic, null);
 
         var cruiseControlHandler = Mockito.mock(CruiseControlHandler.class);
         Mockito.doReturn(new Results()).when(cruiseControlHandler).requestPendingChanges(anyList());

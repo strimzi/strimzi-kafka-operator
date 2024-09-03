@@ -89,24 +89,16 @@ public class KubernetesHandler {
         var oldStatus = Crds.topicOperation(kubernetesClient)
             .inNamespace(reconcilableTopic.kt().getMetadata().getNamespace())
             .withName(reconcilableTopic.kt().getMetadata().getName()).get().getStatus();
-
-        // the observedGeneration is a marker that shows that the operator works and that it saw the last update to the resource
+        
+        // we always set the observedGeneration because it shows that the operator works, 
+        // and that it saw the last update to the resource
         reconcilableTopic.kt().getStatus().setObservedGeneration(reconcilableTopic.kt().getMetadata().getGeneration());
-
-        // set or reset the topicName
-        reconcilableTopic.kt().getStatus().setTopicName(
-            !TopicOperatorUtil.isManaged(reconcilableTopic.kt())
-                ? null
-                : oldStatus != null && oldStatus.getTopicName() != null
-                ? oldStatus.getTopicName()
-                : TopicOperatorUtil.topicName(reconcilableTopic.kt())
-        );
 
         StatusDiff statusDiff = new StatusDiff(oldStatus, reconcilableTopic.kt().getStatus());
         if (!statusDiff.isEmpty()) {
             var updatedTopic = new KafkaTopicBuilder(reconcilableTopic.kt())
                 .editOrNewMetadata()
-                .withResourceVersion(null)
+                    .withResourceVersion(null)
                 .endMetadata()
                 .withStatus(reconcilableTopic.kt().getStatus())
                 .build();
