@@ -192,6 +192,7 @@ public class CruiseControlClientImpl implements CruiseControlClient {
         }).join();
     }
 
+    @Override
     public Optional<String> errorMessage(HttpResponse<String> response) {
         if (response != null) {
             if (response.statusCode() == 401) {

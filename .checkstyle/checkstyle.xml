@@ -137,6 +137,37 @@
             <property name="tokens" value="LITERAL_ASSERT"/>
         </module>
 
+        <!-- Javadocs -->
+        <module name="MissingJavadocType">
+            <!-- public types -->
+            <property name="scope" value="public" />
+        </module>
+        <module name="MissingJavadocMethod">
+            <!-- public methods -->
+            <property name="scope" value="public" />
+        </module>
+        <module name="JavadocType">
+            <!-- public types -->
+            <property name="scope" value="public" />
+        </module>
+        <module name="JavadocVariable">
+            <!-- public variables -->
+            <property name="scope" value="public" />
+        </module>
+        <module name="JavadocMethod">
+            <!-- public methods -->
+            <property name="accessModifiers" value="public" />
+        </module>
+        <module name="JavadocBlockTagLocation" />
+        <module name="JavadocContentLocation" />
+        <module name="JavadocLeadingAsteriskAlign" />
+        <module name="JavadocMissingLeadingAsterisk" />
+        <module name="JavadocMissingWhitespaceAfterAsterisk" />
+        <module name="JavadocStyle">
+            <property name="checkFirstSentence" value="false"/>
+        </module>
+        <module name="NonEmptyAtclauseDescription"/>
+
         <!-- Make the @SuppressWarnings annotations available to Checkstyle -->
         <module name="SuppressWarningsHolder" />
     </module>

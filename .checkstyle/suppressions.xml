@@ -33,4 +33,13 @@
     <suppress checks="UnnecessaryParentheses"
               files="io[/\\]strimzi[/\\].*"/>
 
+    <!-- Skip Javadoc checks for tests-->
+    <suppress checks="[JavadocMethod|JavaDocType|JavaDocVariable|MissingJavadocType|MissingJavadocMethod]" files="src[/\\]test[/\\]java[/\\].*"/>
+
+    <!-- The test module is currently not ready or Javadoc checks-->
+    <suppress checks="[JavadocMethod|JavaDocType|JavaDocVariable|MissingJavadocType|MissingJavadocMethod]" files="api[/\\]src[/\\]main[/\\]java[/\\]io[/\\]strimzi[/\\].*"/>
+
+    <!-- The api module is currently not ready or Javadoc checks-->
+    <suppress checks="[JavadocMethod|JavaDocType|JavaDocVariable|MissingJavadocType|MissingJavadocMethod]" files="test[/\\]src[/\\]main[/\\]java[/\\]io[/\\]strimzi[/\\].*"/>
+
 </suppressions>

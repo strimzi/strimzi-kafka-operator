@@ -91,9 +91,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>17</maven.compiler.release>
 
-        <!-- Configures if we should fail on warnings when generating Javadocs -->
-        <javadoc.fail.on.warnings>true</javadoc.fail.on.warnings>
-
         <!-- Points to the root directory of the Strimzi project directory and can be used for fixed location to configuration files -->
         <strimziRootDirectory>${basedir}</strimziRootDirectory>
 
@@ -103,11 +100,11 @@
         <maven.failsafe.version>3.1.2</maven.failsafe.version>
         <maven.assembly.version>3.4.2</maven.assembly.version>
         <maven.shade.version>3.4.1</maven.shade.version>
-        <maven.javadoc.version>3.4.1</maven.javadoc.version>
+        <maven.javadoc.version>3.10.0</maven.javadoc.version>
         <maven.source.version>3.0.1</maven.source.version>
         <maven.dependency.version>3.3.0</maven.dependency.version>
         <maven.gpg.version>1.6</maven.gpg.version>
-        <maven.checkstyle.version>3.3.0</maven.checkstyle.version>
+        <maven.checkstyle.version>3.5.0</maven.checkstyle.version>
         <maven.enforcer.version>3.0.0-M2</maven.enforcer.version>
         <maven.jar.version>3.1.0</maven.jar.version>
         <sonatype.nexus.staging.version>1.7.0</sonatype.nexus.staging.version>
@@ -117,7 +114,7 @@
         <maven.resources.version>3.1.0</maven.resources.version>
 
         <!-- Build tools -->
-        <checkstyle.version>10.12.2</checkstyle.version>
+        <checkstyle.version>10.18.1</checkstyle.version>
         <spotbugs.version>4.7.3</spotbugs.version>
         <sundrio.version>0.200.0</sundrio.version>
         <lombok.version>1.18.32</lombok.version>
@@ -1169,7 +1166,7 @@
                             <sourcepath>${project.build.sourceDirectory}:${project.build.directory}/generated-sources/annotations</sourcepath>
                             <show>public</show>
                             <failOnError>true</failOnError>
-                            <failOnWarnings>${javadoc.fail.on.warnings}</failOnWarnings>
+                            <failOnWarnings>false</failOnWarnings>
                         </configuration>
                     </execution>
                 </executions>

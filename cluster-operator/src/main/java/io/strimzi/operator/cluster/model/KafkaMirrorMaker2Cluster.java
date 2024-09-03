@@ -158,6 +158,10 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
 
     }
 
+    /**
+     * @return  Name of the ClusterRoleBinding
+     */
+    @Override
     public String getInitContainerClusterRoleBindingName() {
         return KafkaMirrorMaker2Resources.initContainerClusterRoleBindingName(cluster, namespace);
     }
