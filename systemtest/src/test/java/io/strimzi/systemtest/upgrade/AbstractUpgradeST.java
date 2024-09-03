@@ -125,11 +125,11 @@ public class AbstractUpgradeST extends AbstractST {
         return upgradeTopicCount + btoKafkaTopicsOnlyCount;
     }
 
-    protected void makeComponentsSnapshots(String namespaceName) {
-        controllerPods = PodUtils.podSnapshot(namespaceName, controllerSelector);
-        brokerPods = PodUtils.podSnapshot(namespaceName, brokerSelector);
-        eoPods = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
-        connectPods = PodUtils.podSnapshot(namespaceName, connectLabelSelector);
+    protected void makeComponentsSnapshots(String componentsNamespaceName) {
+        controllerPods = PodUtils.podSnapshot(componentsNamespaceName, controllerSelector);
+        brokerPods = PodUtils.podSnapshot(componentsNamespaceName, brokerSelector);
+        eoPods = DeploymentUtils.depSnapshot(componentsNamespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
+        connectPods = PodUtils.podSnapshot(componentsNamespaceName, connectLabelSelector);
     }
 
     @SuppressWarnings("CyclomaticComplexity")
