@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.skodjob.testframe.MetricsCollector;
 import io.strimzi.api.kafka.model.bridge.KafkaBridge;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
@@ -38,6 +37,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.logs.CollectorElement;
+import io.strimzi.systemtest.performance.gather.collectors.BaseMetricsCollector;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -68,9 +68,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
@@ -166,10 +166,10 @@ public class MetricsST extends AbstractST {
     private String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
     private final String kafkaExporterTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-    private MetricsCollector kafkaCollector;
-    private MetricsCollector zookeeperCollector;
-    private MetricsCollector kafkaExporterCollector;
-    private MetricsCollector clusterOperatorCollector;
+    private BaseMetricsCollector kafkaCollector;
+    private BaseMetricsCollector zookeeperCollector;
+    private BaseMetricsCollector kafkaExporterCollector;
+    private BaseMetricsCollector clusterOperatorCollector;
 
     /**
      * @description This test case check several random metrics exposed by Kafka.
@@ -249,9 +249,9 @@ public class MetricsST extends AbstractST {
                 .build());
         resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(namespaceFirst, kafkaClusterFirstName).build());
 
-        MetricsCollector kafkaConnectCollector = kafkaCollector.toBuilder()
-                .withComponent(KafkaConnectMetricsComponent.create(kafkaClusterFirstName))
-                .build();
+        BaseMetricsCollector kafkaConnectCollector = kafkaCollector.toBuilder()
+            .withComponent(KafkaConnectMetricsComponent.create(kafkaClusterFirstName))
+            .build();
 
         kafkaConnectCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
 
@@ -309,14 +309,14 @@ public class MetricsST extends AbstractST {
 
         if (!Environment.isKRaftModeEnabled()) {
             Pattern pattern = Pattern.compile("kafka_topic_partitions\\{topic=\"" + kafkaExporterTopicName + "\"} ([\\d])");
-            ArrayList<Double> values = kafkaExporterCollector.waitForSpecificMetricAndCollect(pattern);
+            List<Double> values = kafkaExporterCollector.waitForSpecificMetricAndCollect(pattern);
             assertThat(String.format("metric %s doesn't contain correct value", pattern), values.stream().mapToDouble(i -> i).sum(), is(7.0));
         }
 
         kubeClient().listPods(namespaceFirst, brokerPodsSelector).forEach(pod -> {
             String address = pod.getMetadata().getName() + "." + kafkaClusterFirstName + "-kafka-brokers." + namespaceFirst + ".svc";
             Pattern pattern = Pattern.compile("kafka_broker_info\\{address=\"" + address + ".*\",.*} ([\\d])");
-            ArrayList<Double> values = kafkaExporterCollector.waitForSpecificMetricAndCollect(pattern);
+            List<Double> values = kafkaExporterCollector.waitForSpecificMetricAndCollect(pattern);
             assertThat(String.format("metric %s is not null", pattern), values, notNullValue());
         });
     }
@@ -399,9 +399,7 @@ public class MetricsST extends AbstractST {
         int podSetCount = 2;
 
         assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_periodical_total", Kafka.RESOURCE_KIND);
-        assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_duration_seconds_count", Kafka.RESOURCE_KIND);
-        assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_duration_seconds_sum", Kafka.RESOURCE_KIND);
-        assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_duration_seconds_max", Kafka.RESOURCE_KIND);
+        assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_duration_seconds_bucket", Kafka.RESOURCE_KIND);
         assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_successful_total", Kafka.RESOURCE_KIND);
 
         assertCoMetricResources(clusterOperatorCollector, Kafka.RESOURCE_KIND, namespaceFirst, 1);
@@ -422,9 +420,6 @@ public class MetricsST extends AbstractST {
         assertCoMetricResources(clusterOperatorCollector, StrimziPodSet.RESOURCE_KIND, namespaceSecond, podSetCount);
 
         assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_duration_seconds_bucket", StrimziPodSet.RESOURCE_KIND);
-        assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_duration_seconds_count", StrimziPodSet.RESOURCE_KIND);
-        assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_duration_seconds_sum", StrimziPodSet.RESOURCE_KIND);
-        assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_duration_seconds_max", StrimziPodSet.RESOURCE_KIND);
         assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_already_enqueued_total", StrimziPodSet.RESOURCE_KIND);
         assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_successful_total", StrimziPodSet.RESOURCE_KIND);
         assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_total", StrimziPodSet.RESOURCE_KIND);
@@ -445,16 +440,14 @@ public class MetricsST extends AbstractST {
      */
     @ParallelTest
     void testUserOperatorMetrics() {
-        MetricsCollector userOperatorCollector = kafkaCollector.toBuilder()
+        BaseMetricsCollector userOperatorCollector = kafkaCollector.toBuilder()
             .withComponent(UserOperatorMetricsComponent.create(namespaceFirst, kafkaClusterFirstName))
             .build();
 
         userOperatorCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
 
         assertMetricResourceNotNull(userOperatorCollector, "strimzi_reconciliations_successful_total", KafkaUser.RESOURCE_KIND);
-        assertMetricResourceNotNull(userOperatorCollector, "strimzi_reconciliations_duration_seconds_count", KafkaUser.RESOURCE_KIND);
-        assertMetricResourceNotNull(userOperatorCollector, "strimzi_reconciliations_duration_seconds_sum", KafkaUser.RESOURCE_KIND);
-        assertMetricResourceNotNull(userOperatorCollector, "strimzi_reconciliations_duration_seconds_max", KafkaUser.RESOURCE_KIND);
+        assertMetricResourceNotNull(userOperatorCollector, "strimzi_reconciliations_duration_seconds_bucket", KafkaUser.RESOURCE_KIND);
         assertMetricResourceNotNull(userOperatorCollector, "strimzi_reconciliations_periodical_total", KafkaUser.RESOURCE_KIND);
         assertMetricResourceNotNull(userOperatorCollector, "strimzi_reconciliations_total", KafkaUser.RESOURCE_KIND);
 
@@ -490,7 +483,7 @@ public class MetricsST extends AbstractST {
             KafkaMirrorMaker2Templates.kafkaMirrorMaker2WithMetrics(namespaceFirst, mm2ClusterName, kafkaClusterFirstName, kafkaClusterSecondName, 1, namespaceFirst, namespaceSecond).build()
         );
 
-        MetricsCollector kmm2Collector = kafkaCollector.toBuilder()
+        BaseMetricsCollector kmm2Collector = kafkaCollector.toBuilder()
             .withComponent(KafkaMirrorMaker2MetricsComponent.create(mm2ClusterName))
             .build();
 
@@ -544,7 +537,7 @@ public class MetricsST extends AbstractST {
         // Allow connections from scraper to Bridge pods when NetworkPolicies are set to denied by default
         NetworkPolicyResource.allowNetworkPolicySettingsForBridgeScraper(namespaceFirst, scraperPodName, KafkaBridgeResources.componentName(bridgeClusterName));
 
-        MetricsCollector bridgeCollector = kafkaCollector.toBuilder()
+        BaseMetricsCollector bridgeCollector = kafkaCollector.toBuilder()
             .withComponent(KafkaBridgeMetricsComponent.create(namespaceFirst, bridgeClusterName))
             .build();
 
@@ -765,7 +758,7 @@ public class MetricsST extends AbstractST {
                 TestConstants.SAFETY_RECONCILIATION_INTERVAL);
         Thread.sleep(TestConstants.SAFETY_RECONCILIATION_INTERVAL);
 
-        kafkaCollector = new MetricsCollector.Builder()
+        kafkaCollector = new BaseMetricsCollector.Builder()
             .withScraperPodName(scraperPodName)
             .withNamespaceName(namespaceFirst)
             .withComponent(KafkaMetricsComponent.create(kafkaClusterFirstName))
@@ -782,7 +775,7 @@ public class MetricsST extends AbstractST {
             .withComponent(KafkaExporterMetricsComponent.create(namespaceFirst, kafkaClusterFirstName))
             .build();
 
-        clusterOperatorCollector = new MetricsCollector.Builder()
+        clusterOperatorCollector = new BaseMetricsCollector.Builder()
             .withScraperPodName(coScraperPodName)
             .withNamespaceName(TestConstants.CO_NAMESPACE)
             .withComponent(ClusterOperatorMetricsComponent.create(TestConstants.CO_NAMESPACE, clusterOperator.getClusterOperatorName()))

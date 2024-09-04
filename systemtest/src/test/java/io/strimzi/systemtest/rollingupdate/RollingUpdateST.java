@@ -867,8 +867,8 @@ class RollingUpdateST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
 
         LOGGER.info("Check if metrics do not exist in Pods");
-        kafkaCollector.collectMetricsFromPodsWithoutWait().values().forEach(value -> assertThat(value, is("")));
-        zkCollector.collectMetricsFromPodsWithoutWait().values().forEach(value -> assertThat(value, is("")));
+        kafkaCollector.collectMetricsFromPodsWithoutWait().values().forEach(value -> assertThat(value.isEmpty(), is(true)));
+        zkCollector.collectMetricsFromPodsWithoutWait().values().forEach(value -> assertThat(value.isEmpty(), is(true)));
     }
 
     /**
