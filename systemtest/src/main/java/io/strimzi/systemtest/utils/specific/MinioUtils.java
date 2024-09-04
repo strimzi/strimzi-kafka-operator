@@ -24,8 +24,8 @@ public class MinioUtils {
 
     /**
      * Collect data from Minio about usage of a specific bucket
-     * @param namespace
-     * @param bucketName
+     * @param namespace     name of the Namespace where the Minio Pod is running
+     * @param bucketName    name of the bucket for which we want to get info about its size
      * @return Overall statistics about the bucket in String format
      */
     public static String getBucketSizeInfo(String namespace, String bucketName) {

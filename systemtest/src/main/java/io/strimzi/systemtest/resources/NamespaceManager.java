@@ -198,8 +198,8 @@ public class NamespaceManager {
      * Deletes Namespace with {@param namespaceName}, waits for its deletion, and in case that {@param collectorElement}
      * is not {@code null}, removes the Namespace from the {@link #MAP_WITH_SUITE_NAMESPACES}.
      *
-     * @param namespaceName
-     * @param collectorElement
+     * @param namespaceName     name of the Namespace that should be deleted
+     * @param collectorElement  collector element for removing the Namespace from the set
      */
     public void deleteNamespaceWithWaitAndRemoveFromSet(String namespaceName, CollectorElement collectorElement) {
         deleteNamespaceWithWait(namespaceName);

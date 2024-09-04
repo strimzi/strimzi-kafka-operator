@@ -1100,26 +1100,26 @@ class KafkaST extends AbstractST {
     }
 
     /**
-      * @description This test verifies the functionality of resizing JBOD storage volumes on a Kafka cluster.
-      * It checks that the system can handle volume size changes and performs a rolling update to apply these changes.
-      *
-      * @steps
-      *  1. - Deploy a Kafka cluster with JBOD storage and initial volume sizes.
-      *     - Kafka cluster is operational.
-      *  2. - Produce and consume messages continuously to simulate cluster activity.
-      *     - Message traffic is consistent.
-      *  3. - Increase the size of one of the JBOD volumes.
-      *     - Volume size change is applied.
-      *  4. - Verify that the updated volume size is reflected.
-      *     - PVC reflects the new size.
-      *  5. - Ensure continuous message production and consumption are unaffected during the update process.
-      *     - Message flow continues without interruption.
-      *
-      * @usecase
-      *  - jbod
-      *  - volume-resize
-      *  - persistent-volume-claims
-      */
+     * @description This test verifies the functionality of resizing JBOD storage volumes on a Kafka cluster.
+     * It checks that the system can handle volume size changes and performs a rolling update to apply these changes.
+     *
+     * @steps
+     *  1. - Deploy a Kafka cluster with JBOD storage and initial volume sizes.
+     *     - Kafka cluster is operational.
+     *  2. - Produce and consume messages continuously to simulate cluster activity.
+     *     - Message traffic is consistent.
+     *  3. - Increase the size of one of the JBOD volumes.
+     *     - Volume size change is applied.
+     *  4. - Verify that the updated volume size is reflected.
+     *     - PVC reflects the new size.
+     *  5. - Ensure continuous message production and consumption are unaffected during the update process.
+     *     - Message flow continues without interruption.
+     *
+     * @usecase
+     *  - jbod
+     *  - volume-resize
+     *  - persistent-volume-claims
+     */
     @KindNotSupported       // Storage Class standard does not support resizing of volumes
     @MultiNodeClusterOnly   // in multi-node we use different Storage Class, which support re-sizing of volumes
     @ParallelNamespaceTest

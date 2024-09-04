@@ -143,7 +143,7 @@ public class KafkaConnectUtils {
      * @param testStorage      The {@link TestStorage} contains test details.
      * @param connectPods      A map of Kafka Connect Pods.
      * @param scraperPodName   The name of the pod used to perform network requests within the cluster.
-     * @param connectLogMatch  A {@link Predicate <String>} that tests log entries to confirm the presence of the new log level.
+     * @param connectLogMatch  A {@link Predicate} that tests log entries to confirm the presence of the new log level.
      * @param logLevel         The desired log level (e.g., "INFO", "DEBUG") that the method waits to be propagated to the Kafka Connect
      *                         configuration and reflected in the logs.
      */

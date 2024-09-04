@@ -55,7 +55,7 @@ public class AbstractResourceStateMatchers {
      * Checks all conditions in the supplied resource to see if the type of one of them matches the supplied rebalance state.
      *
      * @param state he expected rebalance state to be searched for.
-     * @return
+     * @return matcher for the List of Conditions
      */
     public static Matcher<List<Condition>> hasStateInConditions(KafkaRebalanceState state) {
         return new TypeSafeDiagnosingMatcher<>() {

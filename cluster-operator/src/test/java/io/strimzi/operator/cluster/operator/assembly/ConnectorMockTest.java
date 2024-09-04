@@ -920,7 +920,8 @@ public class ConnectorMockTest {
                 eq(connectorName));
     }
 
-    /** Change the cluster label from one cluster to another
+    /**
+     * Change the cluster label from one cluster to another
      * check the connector is deleted from the old cluster
      * check the connector is added to the new cluster
      * */

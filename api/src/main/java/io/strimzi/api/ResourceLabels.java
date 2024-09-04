@@ -34,11 +34,11 @@ public class ResourceLabels {
     public static final String STRIMZI_CLUSTER_LABEL = STRIMZI_DOMAIN + "cluster";
 
      /**
-     * Type of the Strimzi component to which given resource belongs. E.g. Kafka or ZooKeeper. This label does not
-     * depend on the name of the cluster. This is useful to identify resources which belong to the same component but
-     * different clusters which is useful for example for scheduling (e.g. when you do not want this broker to be
-     * scheduled on a node where any other Kafka broker is running).
-     */
+      * Type of the Strimzi component to which given resource belongs. E.g. Kafka or ZooKeeper. This label does not
+      * depend on the name of the cluster. This is useful to identify resources which belong to the same component but
+      * different clusters which is useful for example for scheduling (e.g. when you do not want this broker to be
+      * scheduled on a node where any other Kafka broker is running).
+      */
     public static final String STRIMZI_COMPONENT_TYPE_LABEL = STRIMZI_DOMAIN + "component-type";
 
     /**

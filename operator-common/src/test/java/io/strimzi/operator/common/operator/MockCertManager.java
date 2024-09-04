@@ -299,7 +299,7 @@ public class MockCertManager implements CertManager {
      * @param certFile path to the file which will contain the self signed certificate
      * @param sbj      subject information
      * @param days     certificate duration
-     * @throws IOException
+     * @throws IOException  during writing to file
      */
     @Override
     public void generateSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException {
@@ -315,7 +315,7 @@ public class MockCertManager implements CertManager {
      * @param certFile path to the file which will contain the new self signed certificate
      * @param sbj      subject information
      * @param days     certificate duration
-     * @throws IOException
+     * @throws IOException  during writing to file
      */
     @Override
     public void renewSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException {

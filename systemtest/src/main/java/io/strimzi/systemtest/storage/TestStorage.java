@@ -30,7 +30,7 @@ import static io.strimzi.systemtest.TestConstants.CONTINUOUS_MESSAGE_COUNT;
 import static io.strimzi.systemtest.TestConstants.MESSAGE_COUNT;
 
 /**
- * TestStorage generate and stores values in the specific @see{ExtensionContext}. This ensures that if one want to
+ * TestStorage generate and stores values in the specific {@link ExtensionContext}. This ensures that if one want to
  * retrieve data from TestStorage it can be done via ExtensionContext (with help of @ConcurrentHashMap)
  */
 final public class TestStorage {

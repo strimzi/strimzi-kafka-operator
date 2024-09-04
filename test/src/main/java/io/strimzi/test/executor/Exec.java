@@ -240,9 +240,9 @@ public class Exec {
      * @param commands arguments for command
      * @param timeoutMs  timeout in ms for kill
      * @return returns ecode of execution
-     * @throws IOException
-     * @throws InterruptedException
-     * @throws ExecutionException
+     * @throws IOException when writing/closing the OutputStreams or starting the process
+     * @throws InterruptedException in the waitFor method, if the wait is interrupted
+     * @throws ExecutionException when getting the output from std
      */
     public int execute(String input, List<String> commands, long timeoutMs) throws IOException, InterruptedException, ExecutionException {
         LOGGER.trace("Running command - " + join(" ", commands.toArray(new String[0])));

@@ -217,7 +217,7 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
                     properties.setProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, ksFile.getAbsolutePath());
                     properties.setProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, TRUSTSTORE_TYPE_CONFIG);
                 }
-            } catch (RuntimeException | IOException | KeyStoreException | CertificateException | NoSuchAlgorithmException | InterruptedException e) {
+            } catch (RuntimeException | IOException | KeyStoreException | CertificateException | NoSuchAlgorithmException e) {
                 e.printStackTrace();
                 throw new RuntimeException();
             }
@@ -256,11 +256,10 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
      * @param key key
      * @param password password
      * @return keystore location as File
-     * @throws IOException
-     * @throws InterruptedException
+     * @throws IOException when opening or writing to file
      */
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
-    private static File createKeystore(byte[] ca, byte[] cert, byte[] key, String password) throws IOException, InterruptedException {
+    private static File createKeystore(byte[] ca, byte[] cert, byte[] key, String password) throws IOException {
 
         File caFile = Files.createTempFile(AbstractKafkaClientProperties.class.getName(), ".crt").toFile();
         caFile.deleteOnExit();

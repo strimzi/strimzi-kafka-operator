@@ -80,7 +80,7 @@ public interface TestConstants {
 
     /**
      * Constants for KafkaConnect EchoSink plugin
-      */
+     */
     String ECHO_SINK_CONNECTOR_NAME = "echo-sink-connector";
     String ECHO_SINK_CLASS_NAME = "cz.scholz.kafka.connect.echosink.EchoSinkConnector";
     String ECHO_SINK_TGZ_URL = "https://github.com/scholzj/echo-sink/archive/1.6.0.tar.gz";

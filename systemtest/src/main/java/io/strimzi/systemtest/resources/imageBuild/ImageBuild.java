@@ -44,7 +44,7 @@ public class ImageBuild {
      * @param dockerfilePath path to Dockerfile
      * @param imageTag tag of the final image that will be pushed into internal registries
      * @param baseImage used base image for the build
-     * @throws IOException
+     * @throws IOException  when reading from file - when file doesn't exist or cannot be opened
      */
     public static void buildImage(String name, String namespace, String dockerfilePath, String imageTag, String baseImage) throws IOException {
         if (KubeClusterResource.getInstance().isOpenShiftLikeCluster()) {
@@ -61,7 +61,7 @@ public class ImageBuild {
      * @param dockerfilePath path to Dockerfile
      * @param imageTag tag of the final image that will be pushed into internal registries
      * @param baseImage used base image for the build
-     * @throws IOException
+     * @throws IOException  when reading from file - when file doesn't exist or cannot be opened
      */
     public static void buildImageKaniko(String name, String namespace, String dockerfilePath, String imageTag, String baseImage) throws IOException {
         createDockerfileConfigMap(namespace, name, dockerfilePath);
@@ -119,7 +119,7 @@ public class ImageBuild {
      * @param dockerfilePath path to Dockerfile
      * @param imageTag tag of the final image that will be pushed into internal registries
      * @param baseImage used base image for the build
-     * @throws IOException
+     * @throws IOException  when reading from file - when file doesn't exist or cannot be opened
      */
     public static void buildImageOpenshift(String name, String namespace, String dockerfilePath, String imageTag, String baseImage) throws IOException {
         String dockerfileContent = Files.readString(Paths.get(dockerfilePath), StandardCharsets.UTF_8);
@@ -176,7 +176,7 @@ public class ImageBuild {
      * @param namespace location of the config map
      * @param configMapName name of the config map
      * @param dockerfilePath path to the Dockerfile
-     * @throws IOException
+     * @throws IOException  when reading from file - when file doesn't exist or cannot be opened
      */
     private static void createDockerfileConfigMap(String namespace, String configMapName, String dockerfilePath) throws IOException {
         String dockerfileContent = Files.readString(Paths.get(dockerfilePath), StandardCharsets.UTF_8);
