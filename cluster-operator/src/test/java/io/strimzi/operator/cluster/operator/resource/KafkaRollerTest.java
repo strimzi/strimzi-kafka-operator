@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
@@ -129,7 +130,7 @@ public class KafkaRollerTest {
     public void testRollTcpProbe(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         AdminClientProvider mock = givenControllerFutureFailsWithTimeout();
-        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(KafkaRollerTest.REPLICAS), podOps,
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(KafkaRollerTest.REPLICAS), podOps,  KafkaVersionTestUtils.getLatestVersion(),
                 noException(), null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true),
                 true, mock, mockKafkaAgentClientProvider(), true, null, -1);
@@ -157,6 +158,42 @@ public class KafkaRollerTest {
         AdminClientProvider mock = mock(AdminClientProvider.class);
         when(mock.createAdminClient(anyString(), any(), any())).thenReturn(admin);
         return mock;
+    }
+
+    @Test
+    public void testTalkingToControllersWith390(VertxTestContext testContext) {
+        PodOperator podOps = mockPodOps(podId -> succeededFuture());
+
+        AdminClientProvider mock = mock(AdminClientProvider.class);
+        when(mock.createControllerAdminClient(anyString(), any(), any())).thenThrow(new RuntimeException("An error while try to create an admin client with bootstrap controllers"));
+
+        KafkaVersion versionSupportsTalkingToControllers = new KafkaVersion("3.9.0", "", "", "", "", false, false, "");
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addKraftPodNames(0, 0, 1), podOps, versionSupportsTalkingToControllers,
+                noException(), null, noException(), noException(), noException(),
+                brokerId -> succeededFuture(true),
+                true, mock, mockKafkaAgentClientProvider(), true, null, -1);
+
+        doSuccessfulRollingRestart(testContext, kafkaRoller,
+                asList(0),
+                asList(0));
+    }
+
+    @Test
+    public void testTalkingToControllersWithOldVersion(VertxTestContext testContext) throws InterruptedException {
+        PodOperator podOps = mockPodOps(podId -> succeededFuture());
+
+        AdminClientProvider mock = mock(AdminClientProvider.class);
+        when(mock.createAdminClient(anyString(), any(), any())).thenThrow(new RuntimeException("An error while try to create an admin client with bootstrap brokers"));
+
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addKraftPodNames(0, 0, 1), podOps, KafkaVersionTestUtils.getLatestVersion(),
+                noException(), null, noException(), noException(), noException(),
+                brokerId -> succeededFuture(true),
+                true, mock, mockKafkaAgentClientProvider(), true, null, -1);
+
+        doFailingRollingRestart(testContext, kafkaRoller,
+                asList(0),
+                KafkaRoller.UnforceableProblem.class, "KafkaQuorumCheck cannot be initialised for c-kafka-0/0 because none of the brokers do not seem to responding to connection attempts",
+                emptyList());
     }
 
     private static KafkaAgentClientProvider mockKafkaAgentClientProvider() {
@@ -312,7 +349,7 @@ public class KafkaRollerTest {
     @Test
     public void testRollWithDisconnectedPodNames(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
-        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addDisconnectedPodNames(REPLICAS), podOps,
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addDisconnectedPodNames(REPLICAS), podOps,  KafkaVersionTestUtils.getLatestVersion(),
                 bootstrapBrokers -> bootstrapBrokers != null && bootstrapBrokers.stream().map(node -> node.nodeId()).toList().equals(singletonList(1)) ? new RuntimeException("Test Exception") : null,
                 null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true),
@@ -328,7 +365,7 @@ public class KafkaRollerTest {
     @Test
     public void testRollHandlesErrorWhenOpeningAdminClient(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
-        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS), podOps,
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS), podOps,  KafkaVersionTestUtils.getLatestVersion(),
             bootstrapBrokers -> bootstrapBrokers != null && bootstrapBrokers.stream().map(node -> node.nodeId()).toList().equals(singletonList(1)) ? new RuntimeException("Test Exception") : null,
             null, noException(), noException(), noException(),
             brokerId -> succeededFuture(true),
@@ -345,7 +382,7 @@ public class KafkaRollerTest {
         int controller = 2;
         int nonController = 1;
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
-        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS), podOps,
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS), podOps,  KafkaVersionTestUtils.getLatestVersion(),
                 noException(), null,
             podId -> podId == nonController ? new RuntimeException("Test Exception") : null, noException(), noException(),
             brokerId -> succeededFuture(true),
@@ -361,7 +398,7 @@ public class KafkaRollerTest {
     public void testRollHandlesErrorWhenGettingControllerFromController(VertxTestContext testContext) {
         int controller = 2;
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
-        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS), podOps,
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS), podOps,  KafkaVersionTestUtils.getLatestVersion(),
             noException(), null,
             podId -> podId == controller ? new RuntimeException("Test Exception") : null, noException(), noException(),
             brokerId -> succeededFuture(true),
@@ -376,7 +413,7 @@ public class KafkaRollerTest {
     @Test
     public void testRollHandlesErrorWhenClosingAdminClient(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
-        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS), podOps,
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS), podOps,  KafkaVersionTestUtils.getLatestVersion(),
             noException(),
             new RuntimeException("Test Exception"), noException(), noException(), noException(),
             brokerId -> succeededFuture(true),
@@ -392,7 +429,7 @@ public class KafkaRollerTest {
     public void testNonControllerNotInitiallyRollable(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         AtomicInteger count = new AtomicInteger(3);
-        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS), podOps,
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS), podOps,  KafkaVersionTestUtils.getLatestVersion(),
                 noException(), null, noException(), noException(), noException(),
             brokerId ->
                     brokerId == 1 ? succeededFuture(count.getAndDecrement() == 0)
@@ -407,7 +444,7 @@ public class KafkaRollerTest {
     public void testControllerNotInitiallyRollable(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         AtomicInteger count = new AtomicInteger(2);
-        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS), podOps,
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS), podOps,  KafkaVersionTestUtils.getLatestVersion(),
                 noException(), null, noException(), noException(), noException(),
             brokerId -> {
                 if (brokerId == 2) {
@@ -427,7 +464,7 @@ public class KafkaRollerTest {
     @Test
     public void testNonControllerNeverRollable(VertxTestContext testContext) throws InterruptedException {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
-        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS), podOps,
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS), podOps,  KafkaVersionTestUtils.getLatestVersion(),
                 noException(), null, noException(), noException(), noException(),
             brokerId ->
                     brokerId == 1 ? succeededFuture(false)
@@ -439,7 +476,7 @@ public class KafkaRollerTest {
                 // Controller last, broker 1 never restarted
                 asList(0, 3, 4, 2));
         // TODO assert subsequent rolls
-        kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS), podOps,
+        kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS), podOps,  KafkaVersionTestUtils.getLatestVersion(),
                 noException(), null, noException(), noException(), noException(),
             brokerId -> succeededFuture(brokerId != 1),
                 false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, 2);
@@ -455,7 +492,7 @@ public class KafkaRollerTest {
     public void testControllerNeverRollable(VertxTestContext testContext) throws InterruptedException {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS),
-                podOps,
+                podOps,  KafkaVersionTestUtils.getLatestVersion(),
                 noException(), null, noException(), noException(), noException(),
             brokerId ->
                     brokerId == 2 ? succeededFuture(false)
@@ -468,7 +505,7 @@ public class KafkaRollerTest {
                 asList(0, 1, 3, 4));
         clearRestarted();
         kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS),
-            podOps,
+            podOps,  KafkaVersionTestUtils.getLatestVersion(),
                 noException(), null, noException(), noException(), noException(),
             brokerId -> succeededFuture(brokerId != 2),
                 false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, 2);
@@ -482,7 +519,7 @@ public class KafkaRollerTest {
     @Test
     public void testRollHandlesErrorWhenGettingConfigFromNonController(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
-        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS), podOps,
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS), podOps,  KafkaVersionTestUtils.getLatestVersion(),
                 noException(), null,
                 noException(), noException(), podId -> podId == 1 ? new KafkaRoller.ForceableProblem("could not get config exception") : null,
             brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, 2);
@@ -496,7 +533,7 @@ public class KafkaRollerTest {
     public void testRollHandlesErrorWhenGettingConfigFromController(VertxTestContext testContext) {
         int controller = 2;
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
-        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS), podOps,
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS), podOps,  KafkaVersionTestUtils.getLatestVersion(),
             noException(), null,
             noException(), noException(), podId -> podId == controller ? new KafkaRoller.ForceableProblem("could not get config exception") : null,
             brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, controller);
@@ -509,7 +546,7 @@ public class KafkaRollerTest {
     @Test
     public void testRollHandlesErrorWhenAlteringConfig(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
-        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS), podOps,
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS), podOps,  KafkaVersionTestUtils.getLatestVersion(),
                 noException(), null,
                 noException(), podId -> new KafkaRoller.ForceableProblem("could not get alter exception"), noException(),
             brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, 2);
@@ -521,7 +558,7 @@ public class KafkaRollerTest {
     @Test
     public void testSuccessfulAlteringConfigNotRoll(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
-        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS), podOps,
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS), podOps,  KafkaVersionTestUtils.getLatestVersion(),
                 noException(), null,
                 noException(), noException(), noException(),
             brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, 2);
@@ -533,7 +570,7 @@ public class KafkaRollerTest {
     @Test
     public void testSuccessfulRollingKRaftControllers(VertxTestContext testContext) {
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addKraftPodNames(0, 3, 3),
-                mockPodOps(podId -> succeededFuture()), noException(), null, noException(), noException(), noException(),
+                mockPodOps(podId -> succeededFuture()), KafkaVersionTestUtils.getLatestVersion(), noException(), null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4, 5),
@@ -543,7 +580,7 @@ public class KafkaRollerTest {
     @Test
     public void testKRaftControllerNoQuorum(VertxTestContext testContext) throws InterruptedException {
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addKraftPodNames(0, 0, 3),
-                mockPodOps(podId -> succeededFuture()), noException(), null, noException(), noException(), noException(),
+                mockPodOps(podId -> succeededFuture()), KafkaVersionTestUtils.getLatestVersion(), noException(), null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(false), false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
         doFailingRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2),
@@ -555,7 +592,7 @@ public class KafkaRollerTest {
     public void testControllerAndOneMoreNeverRollable(VertxTestContext testContext) throws InterruptedException {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS),
-            podOps,
+            podOps,  KafkaVersionTestUtils.getLatestVersion(),
             noException(), null, noException(), noException(), noException(),
             brokerId -> brokerId == 2 || brokerId == 3 ? succeededFuture(false) : succeededFuture(true),
                 false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, 2);
@@ -578,7 +615,7 @@ public class KafkaRollerTest {
         BrokerState brokerstate = new BrokerState(2, recoveryState);
 
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS),
-                podOps,
+                podOps,  KafkaVersionTestUtils.getLatestVersion(),
                 noException(), null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true),
                 false, null, null, false, brokerstate, 1);
@@ -601,7 +638,7 @@ public class KafkaRollerTest {
         BrokerState brokerstate = new BrokerState(2, recoveryState);
 
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addKraftPodNames(0, 0, 3),
-                podOps,
+                podOps,  KafkaVersionTestUtils.getLatestVersion(),
                 noException(), null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true),
                 false, null, null, false, brokerstate, -1);
@@ -621,7 +658,7 @@ public class KafkaRollerTest {
         BrokerState brokerstate = new BrokerState(3, null);
 
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS),
-                podOps,
+                podOps,  KafkaVersionTestUtils.getLatestVersion(),
                 noException(), null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true),
                 false, null, null, false, brokerstate, 1);
@@ -641,7 +678,7 @@ public class KafkaRollerTest {
         BrokerState brokerstate = new BrokerState(-1, null);
 
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS),
-                podOps,
+                podOps,  KafkaVersionTestUtils.getLatestVersion(),
                 noException(), null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true),
                 false, null, null, false, brokerstate, 1);
@@ -659,7 +696,7 @@ public class KafkaRollerTest {
         );
 
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS),
-                podOps,
+                podOps,  KafkaVersionTestUtils.getLatestVersion(),
                 noException(), null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true),
                 false, null, null, false, null, 1);
@@ -673,7 +710,7 @@ public class KafkaRollerTest {
     @Test
     public void testRollWithKRaftNodes(VertxTestContext testContext) {
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addKraftPodNames(3, 3, 3),
-                mockPodOps(podId -> succeededFuture()), noException(), null, noException(), noException(), noException(),
+                mockPodOps(podId -> succeededFuture()), KafkaVersionTestUtils.getLatestVersion(), noException(), null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, 6);
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4, 5, 6, 7, 8),
@@ -701,7 +738,7 @@ public class KafkaRollerTest {
             return succeededFuture();
         });
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addKraftPodNames(3, 3, 3),
-                podOps, noException(), null, noException(), noException(), noException(),
+                podOps,  KafkaVersionTestUtils.getLatestVersion(), noException(), null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4, 5, 6, 7, 8), // brokers, combined, controllers
@@ -709,7 +746,7 @@ public class KafkaRollerTest {
     }
 
     private TestingKafkaRoller rollerWithControllers(PodOperator podOps, int... controllers) {
-        return new TestingKafkaRoller(addPodNames(KafkaRollerTest.REPLICAS), podOps,
+        return new TestingKafkaRoller(addPodNames(KafkaRollerTest.REPLICAS), podOps,  KafkaVersionTestUtils.getLatestVersion(),
                 noException(), null, noException(), noException(), noException(),
             brokerId -> succeededFuture(true),
                 false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, controllers);
@@ -846,6 +883,7 @@ public class KafkaRollerTest {
         @SuppressWarnings("checkstyle:ParameterNumber")
         private TestingKafkaRoller(Set<NodeRef> nodes,
                                    PodOperator podOps,
+                                   KafkaVersion kafkaVersion,
                                    Function<Set<NodeRef>, RuntimeException> acOpenException,
                                    Throwable acCloseException,
                                    Function<Integer, Throwable> controllerException,
@@ -869,7 +907,7 @@ public class KafkaRollerTest {
                     kafkaAgentClientProvider,
                     brokerId -> "",
                     "",
-                    KafkaVersionTestUtils.getLatestVersion(),
+                    kafkaVersion,
                     true,
                     mock(KubernetesRestartEventPublisher.class));
             this.delegateControllerCall = delegateControllerCall;
@@ -901,9 +939,33 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected Admin adminClient(Set<NodeRef> nodes, boolean b) throws ForceableProblem, FatalProblem {
+        protected Admin brokerAdminClient(Set<NodeRef> nodes) throws ForceableProblem, FatalProblem {
             if (delegateAdminClientCall) {
-                return super.adminClient(nodes, b);
+                return super.brokerAdminClient(nodes);
+            }
+            RuntimeException exception = acOpenException.apply(nodes);
+            if (exception != null) {
+                throw new ForceableProblem("An error while try to create the admin client", exception);
+            }
+            Admin ac = mock(AdminClient.class, invocation -> {
+                if ("close".equals(invocation.getMethod().getName())) {
+                    Admin mock = (Admin) invocation.getMock();
+                    unclosedAdminClients.remove(mock);
+                    if (acCloseException != null) {
+                        throw acCloseException;
+                    }
+                    return null;
+                }
+                throw new RuntimeException("Not mocked " + invocation.getMethod());
+            });
+            unclosedAdminClients.put(ac, new Throwable("Pod " + nodes));
+            return ac;
+        }
+
+        @Override
+        protected Admin controllerAdminClient(Set<NodeRef> nodes) throws ForceableProblem, FatalProblem {
+            if (delegateAdminClientCall) {
+                return super.controllerAdminClient(nodes);
             }
             RuntimeException exception = acOpenException.apply(nodes);
             if (exception != null) {
@@ -945,7 +1007,7 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected KafkaQuorumCheck quorumCheck(Admin ac, long controllerQuorumFetchTimeoutMs) {
+        protected KafkaQuorumCheck quorumCheck(Admin ac, NodeRef nodeRef) {
             Admin admin = mock(Admin.class);
             DescribeMetadataQuorumResult qrmResult = mock(DescribeMetadataQuorumResult.class);
             when(admin.describeMetadataQuorum()).thenReturn(qrmResult);
