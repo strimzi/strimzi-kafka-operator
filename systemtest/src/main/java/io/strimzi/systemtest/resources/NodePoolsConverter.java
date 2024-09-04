@@ -51,7 +51,7 @@ public class NodePoolsConverter {
      * it does following:
      *  - removes all controller NodePools (so we have just one NodePool instead of two - easier handling in STs)
      *  - for each NodePool that left (broker NodePools) adds {@link ProcessRoles#CONTROLLER} role to its `spec`
-     * @param nodePools     list of NodePools that should be converted to mixed roles
+     * @param nodePools     List of NodePools that should be converted to mixed roles
      */
     private static void changeNodePoolsToHaveMixedRoles(List<KafkaNodePool> nodePools) {
         if (!Environment.isSeparateRolesMode() && Environment.isKRaftModeEnabled()) {

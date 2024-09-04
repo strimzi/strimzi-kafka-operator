@@ -256,7 +256,7 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
      * @param key key
      * @param password password
      * @return keystore location as File
-     * @throws IOException when opening or writing to file
+     * @throws IOException When opening or writing to file
      */
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     private static File createKeystore(byte[] ca, byte[] cert, byte[] key, String password) throws IOException {
