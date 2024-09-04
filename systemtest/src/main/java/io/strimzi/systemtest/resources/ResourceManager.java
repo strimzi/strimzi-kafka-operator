@@ -517,13 +517,13 @@ public class ResourceManager {
         coDeploymentName = newName;
     }
 
-    public static void waitForResourceReadiness(String resourceType, String resourceName) {
+    public static void waitForResourceReadiness(String namespaceName, String resourceType, String resourceName) {
         LOGGER.info("Waiting for " + resourceType + "/" + resourceName + " readiness");
 
         TestUtils.waitFor("readiness of resource " + resourceType + "/" + resourceName,
                 TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_CMD_CLIENT_TIMEOUT,
-            () -> ResourceManager.cmdKubeClient().getResourceReadiness(resourceType, resourceName));
-        LOGGER.info("Resource " + resourceType + "/" + resourceName + " is ready");
+            () -> ResourceManager.cmdKubeClient().namespace(namespaceName).getResourceReadiness(resourceType, resourceName));
+        LOGGER.info("Resource " + resourceType + "/" + resourceName + " in namespace:" + namespaceName + " is ready");
     }
 
     public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatusMessage(MixedOperation<T, ?, ?> operation, T resource, String message) {

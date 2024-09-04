@@ -44,7 +44,7 @@
     userOperator: strimzi/operator:0.43.0
   deployKafkaVersion: 3.8.0
   client:
-    continuousClientsMessages: 500
+    continuousClientsMessages: 300
   environmentInfo:
     maxK8sVersion: latest
     status: stable
@@ -72,7 +72,7 @@
     userOperator: strimzi/operator:0.43.0
   deployKafkaVersion: 3.8.0
   client:
-    continuousClientsMessages: 500
+    continuousClientsMessages: 300
   environmentInfo:
     maxK8sVersion: latest
     status: stable

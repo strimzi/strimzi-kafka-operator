@@ -116,10 +116,10 @@ public class KafkaUtils {
             });
     }
 
-    public static void waitUntilStatusKafkaVersionMatchesExpectedVersion(String clusterName, String namespace, String expectedKafkaVersion) {
+    public static void waitUntilStatusKafkaVersionMatchesExpectedVersion(String namespaceName, String clusterName, String expectedKafkaVersion) {
         TestUtils.waitFor("Kafka version '" + expectedKafkaVersion + "' in Kafka cluster '" + clusterName + "' to match",
             TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT, () -> {
-                String kafkaVersionInStatus = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getKafkaVersion();
+                String kafkaVersionInStatus = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getKafkaVersion();
                 return expectedKafkaVersion.equals(kafkaVersionInStatus);
             });
     }
@@ -409,9 +409,9 @@ public class KafkaUtils {
         return clusterName + "-" + RANDOM.nextInt(Integer.MAX_VALUE);
     }
 
-    public static String getVersionFromKafkaPodLibs(String kafkaPodName) {
+    public static String getVersionFromKafkaPodLibs(String namespaceName, String kafkaPodName) {
         String command = "ls libs | grep -Po 'kafka_\\d+.\\d+-\\K(\\d+.\\d+.\\d+)(?=.*jar)' | head -1 | cut -d \"-\" -f2";
-        return cmdKubeClient().execInPodContainer(
+        return cmdKubeClient(namespaceName).execInPodContainer(
             kafkaPodName,
             "kafka",
             "/bin/bash",
