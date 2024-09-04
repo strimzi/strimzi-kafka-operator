@@ -252,22 +252,37 @@ public class KafkaAutoRebalancingMockTest {
                     assertThat(kafkaRebalance.getSpec().getGoals().contains("CpuCapacityGoal"), is(true));
 
                     // simulate the auto-rebalancing KafkaRebalance custom resource got by the rebalance operator transitions to New state
-                    KafkaRebalance kafkaRebalancePatch = new KafkaRebalanceBuilder(kafkaRebalance)
-                            .withNewStatus()
-                            .withObservedGeneration(1L)
-                            .withConditions(new ConditionBuilder()
-                                    .withType(KafkaRebalanceState.New.name())
-                                    .withStatus("True")
-                                    .build())
-                            .endStatus()
-                            .build();
-                    Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kafkaRebalancePatch).updateStatus();
+                    patchKafkaRebalanceState(kafkaRebalance, KafkaRebalanceState.New);
                 })))
                 // 3rd reconcile, handling auto-rebalancing with KafkaRebalance in New state
                 .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertThat(k.getStatus().getAutoRebalance().getState(), is(KafkaAutoRebalanceState.RebalanceOnScaleDown));
 
-                    // TODO: TBD
+                    KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(KafkaRebalanceUtils.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaRebalanceMode.REMOVE_BROKERS)).get();
+                    // simulate the auto-rebalancing KafkaRebalance custom resource got by the rebalance operator transitions to Rebalancing state
+                    patchKafkaRebalanceState(kafkaRebalance, KafkaRebalanceState.Rebalancing);
+                })))
+                // 4th reconcile, handling auto-rebalancing with KafkaRebalance in Rebalancing state
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertThat(k.getStatus().getAutoRebalance().getState(), is(KafkaAutoRebalanceState.RebalanceOnScaleDown));
+
+                    KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(KafkaRebalanceUtils.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaRebalanceMode.REMOVE_BROKERS)).get();
+                    // simulate the auto-rebalancing KafkaRebalance custom resource got by the rebalance operator transitions to Ready state
+                    patchKafkaRebalanceState(kafkaRebalance, KafkaRebalanceState.Ready);
+                })))
+                // 5th reconcile, handling auto-rebalancing with KafkaRebalance in Ready state
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertThat(k.getStatus().getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
+                    assertThat(k.getStatus().getAutoRebalance().getModes(), is(nullValue()));
+
+                    KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(KafkaRebalanceUtils.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaRebalanceMode.REMOVE_BROKERS)).get();
+                    assertThat(kafkaRebalance, is(nullValue()));
 
                     reconciliation.flag();
                 })));
@@ -324,16 +339,7 @@ public class KafkaAutoRebalancingMockTest {
                     assertThat(kafkaRebalance.getSpec().getGoals().contains("CpuCapacityGoal"), is(true));
 
                     // simulate the auto-rebalancing KafkaRebalance custom resource got by the rebalance operator transitions to New state
-                    KafkaRebalance kafkaRebalancePatch = new KafkaRebalanceBuilder(kafkaRebalance)
-                            .withNewStatus()
-                            .withObservedGeneration(1L)
-                            .withConditions(new ConditionBuilder()
-                                    .withType(KafkaRebalanceState.New.name())
-                                    .withStatus("True")
-                                    .build())
-                            .endStatus()
-                            .build();
-                    Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kafkaRebalancePatch).updateStatus();
+                    patchKafkaRebalanceState(kafkaRebalance, KafkaRebalanceState.New);
                 })))
                 // 3rd reconcile, handling auto-rebalancing with KafkaRebalance in New state
                 .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
@@ -397,5 +403,18 @@ public class KafkaAutoRebalancingMockTest {
                     assertThat(k.getStatus().getAutoRebalance(), is(nullValue()));
                     reconciliation.flag();
                 })));
+    }
+
+    private void patchKafkaRebalanceState(KafkaRebalance kafkaRebalance, KafkaRebalanceState state) {
+        KafkaRebalance kafkaRebalancePatch = new KafkaRebalanceBuilder(kafkaRebalance)
+                .withNewStatus()
+                .withObservedGeneration(1L)
+                .withConditions(new ConditionBuilder()
+                        .withType(state.name())
+                        .withStatus("True")
+                        .build())
+                .endStatus()
+                .build();
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kafkaRebalancePatch).updateStatus();
     }
 }
