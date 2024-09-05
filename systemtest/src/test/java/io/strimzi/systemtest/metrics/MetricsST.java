@@ -144,7 +144,6 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
  * @updated 2023-17-04
  */
 @Tag(SANITY)
-@Tag(ACCEPTANCE)
 @Tag(REGRESSION)
 @Tag(METRICS)
 @Tag(CRUISE_CONTROL)
@@ -204,7 +203,6 @@ public class MetricsST extends AbstractST {
      *  - zookeeper-metrics
      */
     @ParallelTest
-    @Tag(ACCEPTANCE)
     @KRaftNotSupported("ZooKeeper is not supported by KRaft mode and is used in this test case")
     void testZookeeperMetrics() {
         assertMetricValueNotNull(zookeeperCollector, "zookeeper_quorumsize");
@@ -241,6 +239,7 @@ public class MetricsST extends AbstractST {
     @ParallelTest
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
+    @Tag(ACCEPTANCE)
     void testKafkaConnectAndConnectorMetrics() {
         resourceManager.createResourceWithWait(
             KafkaConnectTemplates.connectMetricsConfigMap(namespaceFirst, kafkaClusterFirstName),
@@ -290,6 +289,7 @@ public class MetricsST extends AbstractST {
      *  - kafka-exporter-metrics
      */
     @IsolatedTest
+    @Tag(ACCEPTANCE)
     void testKafkaExporterMetrics() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String kafkaStrimziPodSetName = StrimziPodSetResource.getBrokerComponentName(kafkaClusterFirstName);
@@ -346,6 +346,7 @@ public class MetricsST extends AbstractST {
      *  - kafka-exporter-metrics
      */
     @ParallelTest
+    @Tag(ACCEPTANCE)
     void testKafkaExporterDifferentSetting() throws InterruptedException, ExecutionException, IOException {
         String consumerOffsetsTopicName = "__consumer_offsets";
         LabelSelector exporterSelector = kubeClient().getDeploymentSelectors(namespaceFirst, KafkaExporterResources.componentName(kafkaClusterFirstName));
@@ -396,6 +397,7 @@ public class MetricsST extends AbstractST {
      *  - cluster-operator-metrics
      */
     @ParallelTest
+    @Tag(ACCEPTANCE)
     void testClusterOperatorMetrics() {
         // Expected PodSet counts per component
         int podSetCount = 2;
@@ -441,6 +443,7 @@ public class MetricsST extends AbstractST {
      *  - user-operator-metrics
      */
     @ParallelTest
+    @Tag(ACCEPTANCE)
     void testUserOperatorMetrics() {
         BaseMetricsCollector userOperatorCollector = kafkaCollector.toBuilder()
             .withComponent(UserOperatorMetricsComponent.create(namespaceFirst, kafkaClusterFirstName))
@@ -479,6 +482,7 @@ public class MetricsST extends AbstractST {
     @ParallelTest
     @Tag(MIRROR_MAKER2)
     @Tag(CONNECT_COMPONENTS)
+    @Tag(ACCEPTANCE)
     void testMirrorMaker2Metrics() {
         resourceManager.createResourceWithWait(
             KafkaMirrorMaker2Templates.mirrorMaker2MetricsConfigMap(namespaceFirst, mm2ClusterName),
@@ -524,6 +528,7 @@ public class MetricsST extends AbstractST {
      */
     @ParallelTest
     @Tag(BRIDGE)
+    @Tag(ACCEPTANCE)
     void testKafkaBridgeMetrics() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -584,6 +589,7 @@ public class MetricsST extends AbstractST {
      *  - cruise-control-metrics
      */
     @ParallelTest
+    @Tag(ACCEPTANCE)
     void testCruiseControlMetrics() {
         String cruiseControlMetrics = CruiseControlUtils.callApiWithAdminCredentials(namespaceFirst, CruiseControlUtils.HttpMethod.GET, CruiseControlUtils.Scheme.HTTP,
                 CruiseControlUtils.CRUISE_CONTROL_METRICS_PORT, "/metrics", "").getResponseText();

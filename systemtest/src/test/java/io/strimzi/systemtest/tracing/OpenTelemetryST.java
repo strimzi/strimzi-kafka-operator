@@ -43,7 +43,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
 
-import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
 import static io.strimzi.systemtest.TestConstants.BRIDGE;
 import static io.strimzi.systemtest.TestConstants.CONNECT;
 import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
@@ -72,7 +71,6 @@ public class OpenTelemetryST extends AbstractST {
 
     private final Tracing otelTracing = new OpenTelemetryTracing();
 
-    @Tag(ACCEPTANCE)
     @ParallelNamespaceTest
     void testProducerConsumerStreamsService() {
         final TestStorage testStorage = deployInitialResourcesAndGetTestStorage();
