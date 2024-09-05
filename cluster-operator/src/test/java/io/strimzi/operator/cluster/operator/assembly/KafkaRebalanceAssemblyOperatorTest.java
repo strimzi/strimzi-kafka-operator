@@ -78,6 +78,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(VertxExtension.class)
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class KafkaRebalanceAssemblyOperatorTest {
     private static final String HOST = "localhost";
     private static final String RESOURCE_NAME = "my-rebalance";

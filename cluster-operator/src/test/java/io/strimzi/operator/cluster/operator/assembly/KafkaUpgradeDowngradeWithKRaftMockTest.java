@@ -72,6 +72,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class KafkaUpgradeDowngradeWithKRaftMockTest {
     private static final Logger LOGGER = LogManager.getLogger(KafkaUpgradeDowngradeWithKRaftMockTest.class);
 

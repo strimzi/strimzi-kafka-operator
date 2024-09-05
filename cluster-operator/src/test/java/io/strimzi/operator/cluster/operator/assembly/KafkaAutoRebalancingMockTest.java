@@ -58,7 +58,9 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_REBALANCE;
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -203,7 +205,7 @@ public class KafkaAutoRebalancingMockTest {
 
         // getting the mocked BrokersInUseCheck class to mock broker scale down operation for check failure
         BrokersInUseCheck operations = supplier.brokersInUseCheck;
-        when(operations.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(3,4)));
+        when(operations.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(3, 4)));
 
         KafkaRebalance kafkaRebalanceTemplate = new KafkaRebalanceBuilder()
                 .withNewMetadata()

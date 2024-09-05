@@ -23,6 +23,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -193,6 +194,20 @@ public class MockDeletionController extends AbstractMockController {
             @Override
             public void onClose(WatcherException e) {
                 LOGGER.error("Mock PodDisruptionBudget deletion watch closed", e);
+            }
+        }));
+
+        watches.add(Crds.kafkaRebalanceOperation(client).inAnyNamespace().watch(new Watcher<>() {
+            @Override
+            public void eventReceived(Action action, KafkaRebalance kafkaRebalance) {
+                if (action == Action.MODIFIED) {
+                    removeFinalizersIfNeeded(Crds.kafkaRebalanceOperation(client), kafkaRebalance);
+                }
+            }
+
+            @Override
+            public void onClose(WatcherException e) {
+                LOGGER.error("Mock KafkaRebalance deletion watch closed", e);
             }
         }));
     }

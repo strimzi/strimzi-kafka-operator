@@ -46,6 +46,8 @@ public class KafkaAutoRebalancingReconciler {
 
     private static final String STRIMZI_IO_AUTO_REBALANCING_FINALIZER = "strimzi.io/auto-rebalancing";
 
+    private static final ScalingNodes EMPTY_SCALING_NODES = new ScalingNodes(Set.of(), Set.of());
+
     private final Reconciliation reconciliation;
     private final Kafka kafkaCr;
     private final CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> kafkaRebalanceOperator;
@@ -83,7 +85,7 @@ public class KafkaAutoRebalancingReconciler {
      * @return  Future which completes when the reconciliation completes
      */
     public Future<Void> reconcile(KafkaStatus kafkaStatus) {
-        // Cruise Control is not defined, so nothing to reconcile
+        // Cruise Control is not defined in the Kafka custom resource, so nothing to reconcile
         if (kafkaCr.getSpec().getCruiseControl() == null) {
             LOGGER.infoCr(reconciliation, "Cruise Control not defined in the Kafka custom resource, no auto-rebalancing to reconcile");
             return Future.succeededFuture();
@@ -109,52 +111,55 @@ public class KafkaAutoRebalancingReconciler {
     }
 
     private Future<Void> computeNextStatus(KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus) {
-        Nodes nodes = getNodesToBeRemovedAdded(kafkaAutoRebalanceStatus);
+        ScalingNodes scalingNodes = getNodesToBeRemovedAdded(kafkaAutoRebalanceStatus);
         switch (kafkaAutoRebalanceStatus.getState()) {
             case Idle:
-                return onIdle(kafkaAutoRebalanceStatus, nodes);
+                return onIdle(kafkaAutoRebalanceStatus, scalingNodes);
             case RebalanceOnScaleDown:
-                return onRebalanceOnScaleDown(kafkaAutoRebalanceStatus, nodes);
+                return onRebalanceOnScaleDown(kafkaAutoRebalanceStatus, scalingNodes);
             case RebalanceOnScaleUp:
-                return onRebalanceOnScaleUp(kafkaAutoRebalanceStatus, nodes);
+                return onRebalanceOnScaleUp(kafkaAutoRebalanceStatus, scalingNodes);
             default:
                 return Future.failedFuture(new RuntimeException("Unexpected state " + kafkaAutoRebalanceStatus.getState()));
         }
     }
 
-    private Future<Void> onIdle(KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus, Nodes nodes) {
-        if (!nodes.toBeRemoved().isEmpty()) {
+    private Future<Void> onIdle(KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus, ScalingNodes scalingNodes) {
+        LOGGER.infoCr(reconciliation, "onIdle");
+        if (!scalingNodes.toBeRemoved().isEmpty()) {
             // TODO:
             // if there is a queued rebalancing scale down (Kafka.status.autoRebalance.modes[remove-brokers] exists), start the rebalancing
             // scale down and transition to RebalanceOnScaleDown.
-            // TODO: TBD -> create KafkaRebalance for auto-rebalancing scaling down, move to RebalanceOnScaleDown
-            return createKafkaRebalance(kafkaCr.getMetadata().getNamespace(), kafkaCr.getMetadata().getName(), KafkaRebalanceMode.REMOVE_BROKERS, nodes.toBeRemoved().stream().toList())
+            return createKafkaRebalance(kafkaCr.getMetadata().getNamespace(), kafkaCr.getMetadata().getName(), KafkaRebalanceMode.REMOVE_BROKERS, scalingNodes.toBeRemoved().stream().toList())
                     .compose(v -> {
-                        updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleDown, nodes);
+                        updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleDown, scalingNodes);
                         return Future.succeededFuture();
                     });
-        } else if (!nodes.added().isEmpty()) {
+        } else if (!scalingNodes.added().isEmpty()) {
             // TODO:
             // If no queued rebalancing scale down but there is a queued rebalancing scale up (Kafka.status.autoRebalance.modes[add-brokers] exists),
             // start the rebalancing scale up and transition to RebalanceOnScaleUp.
-            // TODO: TBD -> create KafkaRebalance for auto-rebalancing scaling up, move to RebalanceOnScaleUp
-            return createKafkaRebalance(kafkaCr.getMetadata().getNamespace(), kafkaCr.getMetadata().getName(), KafkaRebalanceMode.ADD_BROKERS, nodes.added().stream().toList())
+            return createKafkaRebalance(kafkaCr.getMetadata().getNamespace(), kafkaCr.getMetadata().getName(), KafkaRebalanceMode.ADD_BROKERS, scalingNodes.added().stream().toList())
                     .compose(v -> {
-                        updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleUp, nodes);
+                        updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleUp, scalingNodes);
                         return Future.succeededFuture();
                     });
         }
         // TODO:
         // No queued rebalancing (so no scale down/up requested), stay in Idle.
-        updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle, new Nodes(Set.of(), Set.of()));
+        updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle, EMPTY_SCALING_NODES);
         return Future.succeededFuture();
     }
 
-    private Future<Void> onRebalanceOnScaleDown(KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus, Nodes nodes) {
+    private Future<Void> onRebalanceOnScaleDown(KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus, ScalingNodes scalingNodes) {
         return getKafkaRebalance(kafkaCr.getMetadata().getNamespace(), kafkaCr.getMetadata().getName(), KafkaRebalanceMode.REMOVE_BROKERS)
                 .compose(kafkaRebalance -> {
 
                     KafkaRebalanceState kafkaRebalanceState = KafkaRebalanceUtils.rebalanceState(kafkaRebalance.getStatus());
+                    LOGGER.infoCr(reconciliation, "onRebalanceOnScaleDown KafkaRebalance {}/{} in state {}",
+                            kafkaRebalance.getMetadata().getNamespace(),
+                            kafkaRebalance.getMetadata().getName(),
+                            kafkaRebalanceState);
                     switch (kafkaRebalanceState) {
                         case Ready:
                             // TODO:
@@ -167,30 +172,33 @@ public class KafkaAutoRebalancingReconciler {
                             // check if Kafka.status.autoRebalance.modes[remove-brokers].brokers was updated compared to the current running rebalancing scale down
 
                             // If different ...
-                            if (!nodes.toBeRemoved().equals(kafkaRebalance.getSpec().getBrokers().stream().collect(Collectors.toSet()))) {
+                            if (!scalingNodes.toBeRemoved().equals(kafkaRebalance.getSpec().getBrokers().stream().collect(Collectors.toSet()))) {
                                 // start the rebalancing and stay in RebalanceOnScaleDown
-                                refreshKafkaRebalance(kafkaRebalance, nodes.toBeRemoved().stream().toList());
-                                updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleDown, nodes);
+                                return refreshKafkaRebalance(kafkaRebalance, scalingNodes.toBeRemoved().stream().toList())
+                                        .compose(v -> {
+                                            updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleDown, scalingNodes);
+                                            return Future.succeededFuture();
+                                        });
                             } else {
                                 // If no changes ...
-                                if (nodes.added().isEmpty()) {
+                                if (scalingNodes.added().isEmpty()) {
                                     // no queued rebalancing scale up (Kafka.status.autoRebalance.modes[add-brokers] not exists) just transition to Idle, clean
                                     // Kafka.status.autoRebalance.modes and delete the "actual" KafkaRebalance custom resource
-                                    deleteKafkaRebalance(kafkaRebalance);
-                                    updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle, new Nodes(Set.of(), Set.of()));
+                                    return deleteKafkaRebalance(kafkaRebalance)
+                                            .compose(v -> {
+                                                updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle, EMPTY_SCALING_NODES);
+                                                return Future.succeededFuture();
+                                            });
                                 } else {
                                     // if there is a queued rebalancing scale up (Kafka.status.autoRebalance.modes[add-brokers] exists), start the
                                     // rebalancing and transition to RebalanceOnScaleUp
-                                    return createKafkaRebalance(kafkaCr.getMetadata().getNamespace(), kafkaCr.getMetadata().getName(), KafkaRebalanceMode.ADD_BROKERS, nodes.added().stream().toList())
+                                    return createKafkaRebalance(kafkaCr.getMetadata().getNamespace(), kafkaCr.getMetadata().getName(), KafkaRebalanceMode.ADD_BROKERS, scalingNodes.added().stream().toList())
                                             .compose(v -> {
-                                                updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleUp, nodes);
+                                                updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleUp, scalingNodes);
                                                 return Future.succeededFuture();
                                             });
                                 }
                             }
-
-                            LOGGER.infoCr(reconciliation, "onRebalanceOnScaleDown rebalanceReady");
-                            break;
                         case New:
                         case PendingProposal:
                         case ProposalReady:
@@ -202,39 +210,46 @@ public class KafkaAutoRebalancingReconciler {
                             // If no changes, no further action and stay in RebalanceOnScaleDown.
 
                             // If different ...
-                            if (!nodes.toBeRemoved().equals(kafkaRebalance.getSpec().getBrokers().stream().collect(Collectors.toSet()))) {
+                            if (!scalingNodes.toBeRemoved().equals(kafkaRebalance.getSpec().getBrokers().stream().collect(Collectors.toSet()))) {
                                 // update the corresponding KafkaRebalance in order to take into account the updated
                                 // brokers list and refresh it by applying the strimzi.io/rebalance: refresh annotation. Stay in RebalanceOnScaleDown.
-                                refreshKafkaRebalance(kafkaRebalance, nodes.toBeRemoved().stream().toList());
-                                updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleDown, nodes);
+                                return refreshKafkaRebalance(kafkaRebalance, scalingNodes.toBeRemoved().stream().toList())
+                                        .compose(v -> {
+                                            updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleDown, scalingNodes);
+                                            return Future.succeededFuture();
+                                        });
                             } else {
                                 // If no changes ... no further action and stay in RebalanceOnScaleDown.
                                 // TODO: to be verified that nodes are not changed so the status is the previous one
-                                updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleDown, nodes);
-                            }
 
-                            LOGGER.infoCr(reconciliation, "onRebalanceOnScaleDown rebalanceRunning");
-                            break;
+                                updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleDown, scalingNodes);
+                                return Future.succeededFuture();
+                            }
                         case NotReady:
                             // TODO:
                             // the rebalancing scale down failed, transition to Idle and also removing the corresponding mode and brokers list from the
                             // status. The operator also deletes the "actual" KafkaRebalance custom resource.
 
-                            deleteKafkaRebalance(kafkaRebalance);
-                            updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle, new Nodes(Set.of(), Set.of()));
-
-                            LOGGER.infoCr(reconciliation, "onRebalanceOnScaleDown rebalanceNotReady");
-                            break;
+                            return deleteKafkaRebalance(kafkaRebalance)
+                                    .compose(v -> {
+                                        updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle, EMPTY_SCALING_NODES);
+                                        return Future.succeededFuture();
+                                    });
+                        default:
+                            return Future.failedFuture(new RuntimeException("Unexpected state " + kafkaRebalanceState));
                     }
-                    return Future.succeededFuture();
                 }, exception -> Future.failedFuture(exception));
     }
 
-    private Future<Void> onRebalanceOnScaleUp(KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus, Nodes nodes) {
+    private Future<Void> onRebalanceOnScaleUp(KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus, ScalingNodes scalingNodes) {
         return getKafkaRebalance(kafkaCr.getMetadata().getNamespace(), kafkaCr.getMetadata().getName(), KafkaRebalanceMode.ADD_BROKERS)
                 .compose(kafkaRebalance -> {
 
                     KafkaRebalanceState kafkaRebalanceState = KafkaRebalanceUtils.rebalanceState(kafkaRebalance.getStatus());
+                    LOGGER.infoCr(reconciliation, "onRebalanceOnScaleUp KafkaRebalance {}/{} in state {}",
+                            kafkaRebalance.getMetadata().getNamespace(),
+                            kafkaRebalance.getMetadata().getName(),
+                            kafkaRebalanceState);
                     switch (kafkaRebalanceState) {
                         case Ready:
                             // TODO:
@@ -245,33 +260,36 @@ public class KafkaAutoRebalancingReconciler {
                             // Kafka.status.autoRebalance.modes and delete the "actual" KafkaRebalance custom resource. If different, update the
                             // corresponding KafkaRebalance in order to take into account the updated brokers list and refresh it by applying the strimzi.io/rebalance: refresh annotation. Stay in RebalanceOnScaleUp.
 
-                            if (!nodes.toBeRemoved().isEmpty()) {
+                            if (!scalingNodes.toBeRemoved().isEmpty()) {
                                 // if there is a queued rebalancing scale down (Kafka.status.autoRebalance.modes[remove-brokers] exists), start the
                                 // rebalancing scale down and transition to RebalanceOnScaleDown.
-                                deleteKafkaRebalance(kafkaRebalance);
-                                return createKafkaRebalance(kafkaCr.getMetadata().getNamespace(), kafkaCr.getMetadata().getName(), KafkaRebalanceMode.REMOVE_BROKERS, nodes.toBeRemoved().stream().toList())
+                                return deleteKafkaRebalance(kafkaRebalance)
+                                        .compose(v -> createKafkaRebalance(kafkaCr.getMetadata().getNamespace(), kafkaCr.getMetadata().getName(), KafkaRebalanceMode.REMOVE_BROKERS, scalingNodes.toBeRemoved().stream().toList()))
                                         .compose(v -> {
-                                            updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleDown, nodes);
+                                            updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleDown, scalingNodes);
                                             return Future.succeededFuture();
                                         });
                             } else {
                                 // If no queued rebalancing scale down, check if Kafka.status.autoRebalance.modes[add-brokers].brokers was updated
                                 // compared to the current running rebalancing scale up.
-                                if (!nodes.added().equals(kafkaRebalance.getSpec().getBrokers().stream().collect(Collectors.toSet()))) {
+                                if (!scalingNodes.added().equals(kafkaRebalance.getSpec().getBrokers().stream().collect(Collectors.toSet()))) {
                                     // If different, update the corresponding KafkaRebalance in order to take into account the updated brokers list
                                     // and refresh it by applying the strimzi.io/rebalance: refresh annotation. Stay in RebalanceOnScaleUp.
-                                    refreshKafkaRebalance(kafkaRebalance, nodes.added().stream().toList());
-                                    updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleUp, nodes);
+                                    return refreshKafkaRebalance(kafkaRebalance, scalingNodes.added().stream().toList())
+                                            .compose(v -> {
+                                                updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleUp, scalingNodes);
+                                                return Future.succeededFuture();
+                                            });
                                 } else {
                                     // If no changes, no further actions but just transition to Idle, clean
                                     // Kafka.status.autoRebalance.modes and delete the "actual" KafkaRebalance custom resource.
-                                    deleteKafkaRebalance(kafkaRebalance);
-                                    updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle, new Nodes(Set.of(), Set.of()));
+                                    return deleteKafkaRebalance(kafkaRebalance)
+                                            .compose(v -> {
+                                                updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle, EMPTY_SCALING_NODES);
+                                                return Future.succeededFuture();
+                                            });
                                 }
                             }
-
-                            LOGGER.infoCr(reconciliation, "onRebalanceOnScaleUp rebalanceReady");
-                            break;
                         case New:
                         case PendingProposal:
                         case ProposalReady:
@@ -285,51 +303,52 @@ public class KafkaAutoRebalancingReconciler {
                             // corresponding KafkaRebalance in order to take into account the updated brokers list and refresh it by applying the
                             // strimzi.io/rebalance: refresh annotation. Stay in RebalanceOnScaleUp.
 
-                            if (!nodes.toBeRemoved().isEmpty()) {
+                            if (!scalingNodes.toBeRemoved().isEmpty()) {
                                 // if there is a queued rebalancing scale down (Kafka.status.autoRebalance.modes[remove-brokers] exists), stop the current
                                 // rebalancing scale up by applying the strimzi.io/rebalance: stop annotation on the corresponding KafkaRebalance. Start
                                 // the rebalancing scale down and transition to RebalanceOnScaleDown.
 
                                 // TODO: evaluate race condition between stop and delete (does CC stopped rebalance before we delete)
-                                stopKafkaRebalance(kafkaRebalance);
-                                deleteKafkaRebalance(kafkaRebalance);
-
-                                return createKafkaRebalance(kafkaCr.getMetadata().getNamespace(), kafkaCr.getMetadata().getName(), KafkaRebalanceMode.REMOVE_BROKERS, nodes.toBeRemoved().stream().toList())
+                                return stopKafkaRebalance(kafkaRebalance)
+                                        .compose(v -> deleteKafkaRebalance(kafkaRebalance))
+                                        .compose(v -> createKafkaRebalance(kafkaCr.getMetadata().getNamespace(), kafkaCr.getMetadata().getName(), KafkaRebalanceMode.REMOVE_BROKERS, scalingNodes.toBeRemoved().stream().toList()))
                                         .compose(v -> {
-                                            updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleDown, nodes);
+                                            updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleDown, scalingNodes);
                                             return Future.succeededFuture();
                                         });
                             } else {
                                 // If no queued rebalancing scale down, check if Kafka.status.autoRebalance.modes[add-brokers].brokers was updated
                                 // compared to the current running rebalancing scale up
-                                if (!nodes.added().equals(kafkaRebalance.getSpec().getBrokers().stream().collect(Collectors.toSet()))) {
+                                if (!scalingNodes.added().equals(kafkaRebalance.getSpec().getBrokers().stream().collect(Collectors.toSet()))) {
                                     // If different, update the corresponding KafkaRebalance in order to take into account the updated brokers list
                                     // and refresh it by applying the strimzi.io/rebalance: refresh annotation. Stay in RebalanceOnScaleUp.
-                                    refreshKafkaRebalance(kafkaRebalance, nodes.added().stream().toList());
-                                    updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleUp, nodes);
+                                    return refreshKafkaRebalance(kafkaRebalance, scalingNodes.added().stream().toList())
+                                            .compose(v -> {
+                                                updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleUp, scalingNodes);
+                                                return Future.succeededFuture();
+                                            });
                                 } else {
                                     // If no changes ... no further action and stay in RebalanceOnScaleUp.
                                     // TODO: to be verified that nodes are not changed so the status is the previous one
-                                    updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleUp, nodes);
+                                    updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleUp, scalingNodes);
+                                    return Future.succeededFuture();
                                 }
                             }
-
-                            LOGGER.infoCr(reconciliation, "onRebalanceOnScaleUp rebalanceRunning");
-                            break;
                         case NotReady:
                             // TODO:
                             // the rebalancing scale up failed, transition to Idle and also removing the corresponding mode and brokers list from the status.
                             // The operator also deletes the "actual" KafkaRebalance custom resource.
 
-                            deleteKafkaRebalance(kafkaRebalance);
-                            kafkaAutoRebalanceStatus.setState(KafkaAutoRebalanceState.Idle);
-                            kafkaAutoRebalanceStatus.setLastTransitionTime(StatusUtils.iso8601Now());
-                            kafkaAutoRebalanceStatus.setModes(null);
-
-                            LOGGER.infoCr(reconciliation, "onRebalanceOnScaleUp rebalanceNotReady");
-                            break;
+                            return deleteKafkaRebalance(kafkaRebalance)
+                                    .compose(v -> {
+                                        kafkaAutoRebalanceStatus.setState(KafkaAutoRebalanceState.Idle);
+                                        kafkaAutoRebalanceStatus.setLastTransitionTime(StatusUtils.iso8601Now());
+                                        kafkaAutoRebalanceStatus.setModes(null);
+                                        return Future.succeededFuture();
+                                    });
+                        default:
+                            return Future.failedFuture(new RuntimeException("Unexpected state " + kafkaRebalanceState));
                     }
-                    return Future.succeededFuture();
                 }, exception -> Future.failedFuture(exception));
     }
 
@@ -341,7 +360,7 @@ public class KafkaAutoRebalancingReconciler {
         return addedNodes != null && !addedNodes.isEmpty();
     }
 
-    private Nodes getNodesToBeRemovedAdded(final KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus) {
+    private ScalingNodes getNodesToBeRemovedAdded(final KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus) {
         Set<Integer> newToBeRemovedNodes = new HashSet<>();
         Set<Integer> newAddedNodes = new HashSet<>();
 
@@ -386,7 +405,7 @@ public class KafkaAutoRebalancingReconciler {
         }
         LOGGER.infoCr(reconciliation, "newToBeRemovedNodes = {}", newToBeRemovedNodes);
         LOGGER.infoCr(reconciliation, "newAddedNodes = {}", newAddedNodes);
-        return new Nodes(newToBeRemovedNodes, newAddedNodes);
+        return new ScalingNodes(newToBeRemovedNodes, newAddedNodes);
     }
 
     private Future<KafkaRebalance> getKafkaRebalance(String namespace, String cluster, KafkaRebalanceMode kafkaRebalanceMode) {
@@ -405,6 +424,7 @@ public class KafkaAutoRebalancingReconciler {
                     .compose(kafkaRebalanceTemplate -> {
                         KafkaRebalance kafkaRebalance = new KafkaRebalanceBuilder()
                                 .withNewMetadata()
+                                    .withNamespace(namespace)
                                     .withName(KafkaRebalanceUtils.autoRebalancingKafkaRebalanceResourceName(cluster, kafkaRebalanceMode))
                                     .addToAnnotations(ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL, "true")
                                     .addToFinalizers(STRIMZI_IO_AUTO_REBALANCING_FINALIZER)
@@ -415,67 +435,72 @@ public class KafkaAutoRebalancingReconciler {
                                     .withBrokers(brokers)
                                 .endSpec()
                                 .build();
-                        kafkaRebalanceOperator.client().inNamespace(kafkaCr.getMetadata().getNamespace()).resource(kafkaRebalance).create();
-                        return Future.succeededFuture();
+
+                        LOGGER.infoCr(reconciliation, "Create KafkaRebalance {}/{}", kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName());
+                        return kafkaRebalanceOperator.createOrUpdate(reconciliation, kafkaRebalance)
+                                .mapEmpty();
                     });
         } else {
             return Future.succeededFuture();
         }
     }
 
-    private void deleteKafkaRebalance(KafkaRebalance kafkaRebalance) {
+    private Future<Void> deleteKafkaRebalance(KafkaRebalance kafkaRebalance) {
+        LOGGER.infoCr(reconciliation, "Delete KafkaRebalance {}/{}", kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName());
         // remove the finalizer to allow the deletion
-        kafkaRebalanceOperator.client().inNamespace(kafkaRebalance.getMetadata().getNamespace()).resource(kafkaRebalance).edit(
-                kr -> new KafkaRebalanceBuilder(kr)
-                        .editMetadata()
-                            .removeFromFinalizers(STRIMZI_IO_AUTO_REBALANCING_FINALIZER)
-                        .endMetadata()
-                        .build()
-        );
-        kafkaRebalanceOperator.client().inNamespace(kafkaRebalance.getMetadata().getNamespace()).resource(kafkaRebalance).delete();
+        KafkaRebalance kafkaRebalancePatched = new KafkaRebalanceBuilder(kafkaRebalance)
+                .editMetadata()
+                    .removeFromFinalizers(STRIMZI_IO_AUTO_REBALANCING_FINALIZER)
+                .endMetadata()
+                .build();
+        return kafkaRebalanceOperator.patchAsync(reconciliation, kafkaRebalancePatched)
+                .compose(kr -> kafkaRebalanceOperator.deleteAsync(reconciliation, kr.getMetadata().getNamespace(), kr.getMetadata().getName(), false))
+                .mapEmpty();
     }
 
-    private void refreshKafkaRebalance(KafkaRebalance kafkaRebalance, List<Integer> brokers) {
-        kafkaRebalanceOperator.client().inNamespace(kafkaRebalance.getMetadata().getNamespace()).resource(kafkaRebalance).edit(
-                kr -> new KafkaRebalanceBuilder(kr)
-                        .editMetadata()
-                            .addToAnnotations(Map.of(ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.refresh.toString()))
-                        .endMetadata()
-                        .editSpec()
-                            .withBrokers(brokers)
-                        .endSpec()
-                        .build()
-        );
+    private Future<Void> refreshKafkaRebalance(KafkaRebalance kafkaRebalance, List<Integer> brokers) {
+        LOGGER.infoCr(reconciliation, "Refresh KafkaRebalance {}/{}", kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName());
+        KafkaRebalance kafkaRebalancePatched = new KafkaRebalanceBuilder(kafkaRebalance)
+                .editMetadata()
+                    .addToAnnotations(Map.of(ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.refresh.toString()))
+                .endMetadata()
+                .editSpec()
+                    .withBrokers(brokers)
+                .endSpec()
+                .build();
+        return kafkaRebalanceOperator.patchAsync(reconciliation, kafkaRebalancePatched)
+                .mapEmpty();
     }
 
-    private void stopKafkaRebalance(KafkaRebalance kafkaRebalance) {
-        kafkaRebalanceOperator.client().inNamespace(kafkaRebalance.getMetadata().getNamespace()).resource(kafkaRebalance).edit(
-                kr -> new KafkaRebalanceBuilder(kr)
-                        .editMetadata()
-                            .addToAnnotations(Map.of(ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.stop.toString()))
-                        .endMetadata()
-                        .build()
-        );
+    private Future<Void> stopKafkaRebalance(KafkaRebalance kafkaRebalance) {
+        LOGGER.infoCr(reconciliation, "Stop KafkaRebalance {}/{}", kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName());
+        KafkaRebalance kafkaRebalancePatched = new KafkaRebalanceBuilder(kafkaRebalance)
+                .editMetadata()
+                    .addToAnnotations(Map.of(ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.stop.toString()))
+                .endMetadata()
+                .build();
+        return kafkaRebalanceOperator.patchAsync(reconciliation, kafkaRebalancePatched)
+                .mapEmpty();
     }
 
-    private void updateStatus(KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus, KafkaAutoRebalanceState state, Nodes nodes) {
+    private void updateStatus(KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus, KafkaAutoRebalanceState state, ScalingNodes scalingNodes) {
         // just clear the modes field when there are no added nodes or to be removed
         List<KafkaAutoRebalanceModeBrokers> modes = null;
-        if (!nodes.toBeRemoved().isEmpty() || !nodes.added().isEmpty()) {
+        if (!scalingNodes.toBeRemoved().isEmpty() || !scalingNodes.added().isEmpty()) {
             modes = new ArrayList<>(2);
-            if (!nodes.toBeRemoved().isEmpty()) {
+            if (!scalingNodes.toBeRemoved().isEmpty()) {
                 modes.add(
                         new KafkaAutoRebalanceModeBrokersBuilder()
                                 .withMode(KafkaRebalanceMode.REMOVE_BROKERS)
-                                .withBrokers(nodes.toBeRemoved().stream().toList())
+                                .withBrokers(scalingNodes.toBeRemoved().stream().toList())
                                 .build()
                 );
             }
-            if (!nodes.added().isEmpty()) {
+            if (!scalingNodes.added().isEmpty()) {
                 modes.add(
                         new KafkaAutoRebalanceModeBrokersBuilder()
                                 .withMode(KafkaRebalanceMode.ADD_BROKERS)
-                                .withBrokers(nodes.added().stream().toList())
+                                .withBrokers(scalingNodes.added().stream().toList())
                                 .build()
                 );
             }
@@ -488,5 +513,5 @@ public class KafkaAutoRebalancingReconciler {
     /**
      * Utility class to take the updated to be removed and added nodes
      */
-    record Nodes(Set<Integer> toBeRemoved, Set<Integer> added) { }
+    record ScalingNodes(Set<Integer> toBeRemoved, Set<Integer> added) { }
 }
