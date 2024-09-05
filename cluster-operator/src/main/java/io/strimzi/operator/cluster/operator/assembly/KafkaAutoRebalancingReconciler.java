@@ -131,8 +131,12 @@ public class KafkaAutoRebalancingReconciler {
             // if there is a queued rebalancing scale down (Kafka.status.autoRebalance.modes[remove-brokers] exists), start the rebalancing
             // scale down and transition to RebalanceOnScaleDown.
             return createKafkaRebalance(kafkaCr.getMetadata().getNamespace(), kafkaCr.getMetadata().getName(), KafkaRebalanceMode.REMOVE_BROKERS, scalingNodes.toBeRemoved().stream().toList())
-                    .compose(v -> {
-                        updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleDown, scalingNodes);
+                    .compose(created -> {
+                        if (created) {
+                            updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleDown, scalingNodes);
+                        } else {
+                            updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle, EMPTY_SCALING_NODES);
+                        }
                         return Future.succeededFuture();
                     });
         } else if (!scalingNodes.added().isEmpty()) {
@@ -140,8 +144,12 @@ public class KafkaAutoRebalancingReconciler {
             // If no queued rebalancing scale down but there is a queued rebalancing scale up (Kafka.status.autoRebalance.modes[add-brokers] exists),
             // start the rebalancing scale up and transition to RebalanceOnScaleUp.
             return createKafkaRebalance(kafkaCr.getMetadata().getNamespace(), kafkaCr.getMetadata().getName(), KafkaRebalanceMode.ADD_BROKERS, scalingNodes.added().stream().toList())
-                    .compose(v -> {
-                        updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleUp, scalingNodes);
+                    .compose(created -> {
+                        if (created) {
+                            updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleUp, scalingNodes);
+                        } else {
+                            updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle, EMPTY_SCALING_NODES);
+                        }
                         return Future.succeededFuture();
                     });
         }
@@ -193,8 +201,12 @@ public class KafkaAutoRebalancingReconciler {
                                     // if there is a queued rebalancing scale up (Kafka.status.autoRebalance.modes[add-brokers] exists), start the
                                     // rebalancing and transition to RebalanceOnScaleUp
                                     return createKafkaRebalance(kafkaCr.getMetadata().getNamespace(), kafkaCr.getMetadata().getName(), KafkaRebalanceMode.ADD_BROKERS, scalingNodes.added().stream().toList())
-                                            .compose(v -> {
-                                                updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleUp, scalingNodes);
+                                            .compose(created -> {
+                                                if (created) {
+                                                    updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleUp, scalingNodes);
+                                                } else {
+                                                    updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle, EMPTY_SCALING_NODES);
+                                                }
                                                 return Future.succeededFuture();
                                             });
                                 }
@@ -265,8 +277,12 @@ public class KafkaAutoRebalancingReconciler {
                                 // rebalancing scale down and transition to RebalanceOnScaleDown.
                                 return deleteKafkaRebalance(kafkaRebalance)
                                         .compose(v -> createKafkaRebalance(kafkaCr.getMetadata().getNamespace(), kafkaCr.getMetadata().getName(), KafkaRebalanceMode.REMOVE_BROKERS, scalingNodes.toBeRemoved().stream().toList()))
-                                        .compose(v -> {
-                                            updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleDown, scalingNodes);
+                                        .compose(created -> {
+                                            if (created) {
+                                                updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleDown, scalingNodes);
+                                            } else {
+                                                updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle, EMPTY_SCALING_NODES);
+                                            }
                                             return Future.succeededFuture();
                                         });
                             } else {
@@ -312,8 +328,12 @@ public class KafkaAutoRebalancingReconciler {
                                 return stopKafkaRebalance(kafkaRebalance)
                                         .compose(v -> deleteKafkaRebalance(kafkaRebalance))
                                         .compose(v -> createKafkaRebalance(kafkaCr.getMetadata().getNamespace(), kafkaCr.getMetadata().getName(), KafkaRebalanceMode.REMOVE_BROKERS, scalingNodes.toBeRemoved().stream().toList()))
-                                        .compose(v -> {
-                                            updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleDown, scalingNodes);
+                                        .compose(created -> {
+                                            if (created) {
+                                                updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleDown, scalingNodes);
+                                            } else {
+                                                updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle, EMPTY_SCALING_NODES);
+                                            }
                                             return Future.succeededFuture();
                                         });
                             } else {
@@ -412,36 +432,60 @@ public class KafkaAutoRebalancingReconciler {
         return kafkaRebalanceOperator.getAsync(namespace, KafkaRebalanceUtils.autoRebalancingKafkaRebalanceResourceName(cluster, kafkaRebalanceMode));
     }
 
-    private Future<Void> createKafkaRebalance(String namespace, String cluster, KafkaRebalanceMode kafkaRebalanceMode, List<Integer> brokers) {
-        Optional<KafkaAutoRebalanceConfiguration> config =
+    private Future<Boolean> createKafkaRebalance(String namespace, String cluster, KafkaRebalanceMode kafkaRebalanceMode, List<Integer> brokers) {
+        Optional<KafkaAutoRebalanceConfiguration> autoRebalanceConfiguration =
                 kafkaCr.getSpec().getCruiseControl().getAutoRebalance().stream().filter(c -> c.getMode().equals(kafkaRebalanceMode)).findFirst();
-        if (config.isEmpty()) {
-            return Future.failedFuture(new RuntimeException("No configuration specified for mode " + kafkaRebalanceMode));
+        if (autoRebalanceConfiguration.isEmpty()) {
+            return Future.failedFuture(new RuntimeException("No auto-rebalancing configuration specified for mode " + kafkaRebalanceMode));
         }
 
-        if (config.get().getTemplate() != null) {
-            return kafkaRebalanceOperator.getAsync(namespace, config.get().getTemplate().getName())
+        if (autoRebalanceConfiguration.get().getTemplate() != null) {
+            return kafkaRebalanceOperator.getAsync(namespace, autoRebalanceConfiguration.get().getTemplate().getName())
                     .compose(kafkaRebalanceTemplate -> {
-                        KafkaRebalance kafkaRebalance = new KafkaRebalanceBuilder()
-                                .withNewMetadata()
-                                    .withNamespace(namespace)
-                                    .withName(KafkaRebalanceUtils.autoRebalancingKafkaRebalanceResourceName(cluster, kafkaRebalanceMode))
-                                    .addToAnnotations(ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL, "true")
-                                    .addToFinalizers(STRIMZI_IO_AUTO_REBALANCING_FINALIZER)
-                                .endMetadata()
-                                .withSpec(kafkaRebalanceTemplate.getSpec())
-                                .editSpec()
-                                    .withMode(kafkaRebalanceMode)
-                                    .withBrokers(brokers)
-                                .endSpec()
-                                .build();
+                        if (kafkaRebalanceTemplate != null) {
+                            KafkaRebalance kafkaRebalance = new KafkaRebalanceBuilder()
+                                    .withNewMetadata()
+                                        .withNamespace(namespace)
+                                        .withName(KafkaRebalanceUtils.autoRebalancingKafkaRebalanceResourceName(cluster, kafkaRebalanceMode))
+                                        .addToAnnotations(ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL, "true")
+                                        .addToFinalizers(STRIMZI_IO_AUTO_REBALANCING_FINALIZER)
+                                    .endMetadata()
+                                    .withSpec(kafkaRebalanceTemplate.getSpec())
+                                        .editSpec()
+                                            .withMode(kafkaRebalanceMode)
+                                            .withBrokers(brokers)
+                                        .endSpec()
+                                    .build();
 
-                        LOGGER.infoCr(reconciliation, "Create KafkaRebalance {}/{}", kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName());
-                        return kafkaRebalanceOperator.createOrUpdate(reconciliation, kafkaRebalance)
-                                .mapEmpty();
+                            LOGGER.infoCr(reconciliation, "Create KafkaRebalance {}/{} by using configuration from template {}/{}",
+                                    kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName(),
+                                    kafkaRebalanceTemplate.getMetadata().getNamespace(), kafkaRebalanceTemplate.getMetadata().getName());
+                            return kafkaRebalanceOperator.createOrUpdate(reconciliation, kafkaRebalance)
+                                    .map(true);
+                        } else {
+                            LOGGER.warnCr(reconciliation, "The specified KafkaRebalance template {}/{} for auto-rebalancing doesn't exist. Skipping auto-rebalancing.",
+                                    namespace, autoRebalanceConfiguration.get().getTemplate().getName());
+                            return Future.succeededFuture(false);
+                        }
                     });
         } else {
-            return Future.succeededFuture();
+            KafkaRebalance kafkaRebalance = new KafkaRebalanceBuilder()
+                    .withNewMetadata()
+                        .withNamespace(namespace)
+                        .withName(KafkaRebalanceUtils.autoRebalancingKafkaRebalanceResourceName(cluster, kafkaRebalanceMode))
+                        .addToAnnotations(ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL, "true")
+                        .addToFinalizers(STRIMZI_IO_AUTO_REBALANCING_FINALIZER)
+                    .endMetadata()
+                    .withNewSpec()
+                        .withMode(kafkaRebalanceMode)
+                        .withBrokers(brokers)
+                    .endSpec()
+                    .build();
+
+            LOGGER.infoCr(reconciliation, "Create KafkaRebalance {}/{} using default Cruise Control configuration. No template specified.",
+                    kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName());
+            return kafkaRebalanceOperator.createOrUpdate(reconciliation, kafkaRebalance)
+                    .map(true);
         }
     }
 

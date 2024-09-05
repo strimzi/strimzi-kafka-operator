@@ -228,13 +228,7 @@ public class KafkaAutoRebalancingMockTest {
                     assertThat(k.getStatus().getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
 
                     // scaling down the brokers
-                    Crds.kafkaNodePoolOperation(client).inNamespace(namespace).withName("brokers").edit(
-                            p -> new KafkaNodePoolBuilder(p)
-                                    .editSpec()
-                                        .withReplicas(3)
-                                    .endSpec()
-                                    .build()
-                    );
+                    scaleKafkaCluster(3);
                 })))
                 // 2nd reconcile, getting the scaling down
                 .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
@@ -315,13 +309,7 @@ public class KafkaAutoRebalancingMockTest {
                     assertThat(k.getStatus().getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
 
                     // scaling up the brokers
-                    Crds.kafkaNodePoolOperation(client).inNamespace(namespace).withName("brokers").edit(
-                            p -> new KafkaNodePoolBuilder(p)
-                                    .editSpec()
-                                        .withReplicas(7)
-                                    .endSpec()
-                                    .build()
-                    );
+                    scaleKafkaCluster(7);
                 })))
                 // 2nd reconcile, getting the scaling up
                 .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
@@ -346,8 +334,32 @@ public class KafkaAutoRebalancingMockTest {
                 // 3rd reconcile, handling auto-rebalancing with KafkaRebalance in New state
                 .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertThat(k.getStatus().getAutoRebalance().getState(), is(KafkaAutoRebalanceState.RebalanceOnScaleUp));
 
-                    // TODO: TBD
+                    KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(KafkaRebalanceUtils.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaRebalanceMode.ADD_BROKERS)).get();
+                    // simulate the auto-rebalancing KafkaRebalance custom resource got by the rebalance operator transitions to Rebalancing state
+                    patchKafkaRebalanceState(kafkaRebalance, KafkaRebalanceState.Rebalancing);
+                })))
+                // 4th reconcile, handling auto-rebalancing with KafkaRebalance in Rebalancing state
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertThat(k.getStatus().getAutoRebalance().getState(), is(KafkaAutoRebalanceState.RebalanceOnScaleUp));
+
+                    KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(KafkaRebalanceUtils.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaRebalanceMode.ADD_BROKERS)).get();
+                    // simulate the auto-rebalancing KafkaRebalance custom resource got by the rebalance operator transitions to Ready state
+                    patchKafkaRebalanceState(kafkaRebalance, KafkaRebalanceState.Ready);
+                })))
+                // 5th reconcile, handling auto-rebalancing with KafkaRebalance in Ready state
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertThat(k.getStatus().getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
+                    assertThat(k.getStatus().getAutoRebalance().getModes(), is(nullValue()));
+
+                    KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(KafkaRebalanceUtils.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaRebalanceMode.ADD_BROKERS)).get();
+                    assertThat(kafkaRebalance, is(nullValue()));
 
                     reconciliation.flag();
                 })));
@@ -407,6 +419,127 @@ public class KafkaAutoRebalancingMockTest {
                 })));
     }
 
+    @Test
+    @Timeout(value = 10, timeUnit = TimeUnit.MINUTES) // TODO: to be removed after testing implementation
+    public void testAutoRebalancingMissingKafkaRebalanceTemplate(VertxTestContext context) {
+
+        Checkpoint reconciliation = context.checkpoint();
+
+        // 1st reconcile, Kafka cluster creation
+        operator.reconcile(new Reconciliation("initial-reconciliation", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertThat(k.getStatus().getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
+
+                    // scaling up the brokers
+                    scaleKafkaCluster(7);
+                })))
+                // 2nd reconcile, getting the scaling up
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertThat(k.getStatus().getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
+                    assertThat(k.getStatus().getAutoRebalance().getModes(), is(nullValue()));
+
+                    reconciliation.flag();
+                })));
+    }
+
+    @Test
+    @Timeout(value = 10, timeUnit = TimeUnit.MINUTES) // TODO: to be removed after testing implementation
+    public void testAutoRebalancingWithoutSpecifiedTemplate(VertxTestContext context) {
+
+        // edit the Kafka cluster without specifying the KafkaRebalance template
+        // so auto-rebalancing will happen by using default Cruise Control configuration
+        Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).edit(
+                k -> new KafkaBuilder(k)
+                        .editSpec()
+                            .editCruiseControl()
+                                .withAutoRebalance(
+                                        new KafkaAutoRebalanceConfigurationBuilder()
+                                                .withMode(KafkaRebalanceMode.ADD_BROKERS)
+                                                .build(),
+                                        new KafkaAutoRebalanceConfigurationBuilder()
+                                                .withMode(KafkaRebalanceMode.REMOVE_BROKERS)
+                                                .build()
+                                )
+                            .endCruiseControl()
+                        .endSpec()
+                        .build()
+        );
+
+        Checkpoint reconciliation = context.checkpoint();
+
+        // 1st reconcile, Kafka cluster creation
+        operator.reconcile(new Reconciliation("initial-reconciliation", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertThat(k.getStatus().getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
+
+                    // scaling up the brokers
+                    scaleKafkaCluster(7);
+                })))
+                // 2nd reconcile, getting the scaling up
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertThat(k.getStatus().getAutoRebalance().getState(), is(KafkaAutoRebalanceState.RebalanceOnScaleUp));
+                    Optional<KafkaAutoRebalanceModeBrokers> addModeBrokers = k.getStatus().getAutoRebalance().getModes().stream().filter(m -> m.getMode().equals(KafkaRebalanceMode.ADD_BROKERS)).findFirst();
+                    assertThat(addModeBrokers.isPresent(), is(true));
+                    assertThat(addModeBrokers.get().getBrokers().size(), is(2));
+                    assertThat(addModeBrokers.get().getBrokers().containsAll(List.of(8, 9)), is(true));
+
+                    // KafkaRebalance was created with right mode and brokers but leaving goals empty (then rebalancing uses the Cruise Control defaults)
+                    KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(KafkaRebalanceUtils.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaRebalanceMode.ADD_BROKERS)).get();
+                    assertThat(kafkaRebalance, is(notNullValue()));
+                    assertThat(kafkaRebalance.getSpec().getMode(), is(KafkaRebalanceMode.ADD_BROKERS));
+                    assertThat(kafkaRebalance.getSpec().getBrokers().size(), is(2));
+                    assertThat(kafkaRebalance.getSpec().getBrokers().containsAll(List.of(8, 9)), is(true));
+                    assertThat(kafkaRebalance.getSpec().getGoals(), is(nullValue()));
+
+                    reconciliation.flag();
+                })));
+    }
+
+    @Test
+    @Timeout(value = 10, timeUnit = TimeUnit.MINUTES) // TODO: to be removed after testing implementation
+    public void testAutoRebalancingWithoutSpecifiedMode(VertxTestContext context) {
+
+        // edit the Kafka cluster without specifying the KafkaRebalance mode for scaling up
+        Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).edit(
+                k -> new KafkaBuilder(k)
+                        .editSpec()
+                        .editCruiseControl()
+                        .withAutoRebalance(
+                                new KafkaAutoRebalanceConfigurationBuilder()
+                                        .withMode(KafkaRebalanceMode.REMOVE_BROKERS)
+                                        .withNewTemplate("my-add-remove-brokers-rebalancing-template")
+                                        .build()
+                        )
+                        .endCruiseControl()
+                        .endSpec()
+                        .build()
+        );
+
+        Checkpoint reconciliation = context.checkpoint();
+
+        // 1st reconcile, Kafka cluster creation
+        operator.reconcile(new Reconciliation("initial-reconciliation", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertThat(k.getStatus().getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
+
+                    // scaling up the brokers
+                    scaleKafkaCluster(7);
+                })))
+                // 2nd reconcile, auto-rebalancing for scaling up can't run, no mode specified in the auto-rebalance configuration
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.failing(e -> context.verify(() -> {
+                    assertThat(e.getMessage(), is("No auto-rebalancing configuration specified for mode " + KafkaRebalanceMode.ADD_BROKERS));
+                    reconciliation.flag();
+                })));
+    }
+
     private void patchKafkaRebalanceState(KafkaRebalance kafkaRebalance, KafkaRebalanceState state) {
         KafkaRebalance kafkaRebalancePatch = new KafkaRebalanceBuilder(kafkaRebalance)
                 .withNewStatus()
@@ -418,5 +551,15 @@ public class KafkaAutoRebalancingMockTest {
                 .endStatus()
                 .build();
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kafkaRebalancePatch).updateStatus();
+    }
+
+    private void scaleKafkaCluster(int replicas) {
+        Crds.kafkaNodePoolOperation(client).inNamespace(namespace).withName("brokers").edit(
+                p -> new KafkaNodePoolBuilder(p)
+                        .editSpec()
+                            .withReplicas(replicas)
+                        .endSpec()
+                        .build()
+        );
     }
 }
