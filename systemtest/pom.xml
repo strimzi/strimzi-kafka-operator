@@ -223,7 +223,7 @@
         </dependency>
         <dependency>
             <groupId>io.skodjob</groupId>
-            <artifactId>test-frame-common</artifactId>
+            <artifactId>test-docs-generator-maven-plugin</artifactId>
         </dependency>
     </dependencies>
 
@@ -264,7 +264,35 @@
                             </ignoredUnusedDeclaredDependencies>
                         </configuration>
                     </execution>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                        </configuration>
+                    </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>io.skodjob</groupId>
+                <artifactId>test-docs-generator-maven-plugin</artifactId>
+                <version>${skodjob-doc.version}</version>
+                <executions>
+                    <execution>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>test-docs-generator</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <testsPath>${project.basedir}/src/test/java/io/strimzi/systemtest</testsPath>
+                    <docsPath>./development-docs/systemtests/</docsPath>
+                    <generateFmf>false</generateFmf>
+                    <generateDirs>false</generateDirs>
+                </configuration>
             </plugin>
         </plugins>
         <resources>

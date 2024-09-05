@@ -167,6 +167,7 @@
         <kindcontainer.version>1.4.6</kindcontainer.version>
         <junit4.version>4.13.2</junit4.version>
         <skodjob.test-frame.version>0.6.1</skodjob.test-frame.version>
+        <skodjob-doc.version>0.2.1</skodjob-doc.version>
 
         <!-- properties to skip surefire tests during failsafe execution -->
         <skipTests>false</skipTests>
@@ -880,6 +881,12 @@
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>${junit4.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.skodjob</groupId>
+                <artifactId>test-docs-generator-maven-plugin</artifactId>
+                <version>${skodjob-doc.version}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
