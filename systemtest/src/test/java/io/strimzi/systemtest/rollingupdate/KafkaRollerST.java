@@ -470,14 +470,14 @@ public class KafkaRollerST extends AbstractST {
             .build();
 
         KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getControllerPoolName(),
-                controllerNodePool -> controllerNodePool.setSpec(new KafkaNodePoolSpecBuilder(controllerNodePool.getSpec())
-                        .editOrNewTemplate()
-                            .editOrNewPod()
-                                .withAffinity(affinity)
-                            .endPod()
-                        .endTemplate()
-                        .build())
-                );
+            controllerNodePool -> controllerNodePool.setSpec(new KafkaNodePoolSpecBuilder(controllerNodePool.getSpec())
+                .editOrNewTemplate()
+                    .editOrNewPod()
+                        .withAffinity(affinity)
+                    .endPod()
+                .endTemplate()
+                .build())
+        );
 
         // Expect a rolling update on the controller nodes due to the affinity change
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),

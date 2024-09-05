@@ -879,26 +879,24 @@ class RollingUpdateST extends AbstractST {
      */
     private static void modifyNodePoolToUnscheduledAndRecover(final String controllerPoolName, final LabelSelector controllerPoolSelector, final TestStorage testStorage) {
         // change knp to unreasonable CPU request causing trigger of Rolling update
-        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), controllerPoolName,
-            knp -> {
-                knp
-                    .getSpec()
-                    .setResources(
-                        new ResourceRequirements(null, null, Map.of("cpu", new Quantity("100000m")))
-                    );
+        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), controllerPoolName, knp -> {
+            knp
+                .getSpec()
+                .setResources(
+                    new ResourceRequirements(null, null, Map.of("cpu", new Quantity("100000m")))
+                );
         });
 
         PodUtils.waitForPendingPod(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), controllerPoolName));
         LOGGER.info("Verifying stability of {}/{} Pods except the one, which is in pending phase", controllerPoolName, testStorage.getNamespaceName());
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), controllerPoolName));
 
-        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), controllerPoolName,
-            knp -> {
-                knp
-                    .getSpec()
-                    .setResources(
-                        new ResourceRequirements(null, null, Map.of("cpu", new Quantity("100m")))
-                    );
+        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), controllerPoolName, knp -> {
+            knp
+                .getSpec()
+                .setResources(
+                    new ResourceRequirements(null, null, Map.of("cpu", new Quantity("100m")))
+                );
         });
         RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), controllerPoolSelector, 3);
     }
