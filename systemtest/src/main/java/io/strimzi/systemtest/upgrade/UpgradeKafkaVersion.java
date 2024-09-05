@@ -58,6 +58,10 @@ public class UpgradeKafkaVersion {
         this.version = version;
     }
 
+    public void setLogMessageVersion(String logMessageVersion) {
+        this.logMessageVersion = logMessageVersion;
+    }
+
     public String getVersion() {
         return version;
     }
