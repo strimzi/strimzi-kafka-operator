@@ -39,31 +39,33 @@ public class ImageBuild {
     /**
      * Build a specific image from passed Dockerfile and push it into internal registry.
      * It will use OpenShift build on OpenShift like clusters and Kaniko on other distributions.
-     * @param name Image name (it is also used as a name for all needed resources)
-     * @param namespace location where the build will happen
+     *
+     * @param namespace      location where the build will happen
+     * @param name           Image name (it is also used as a name for all needed resources)
      * @param dockerfilePath path to Dockerfile
      * @param imageTag tag of the final image that will be pushed into internal registries
      * @param baseImage used base image for the build
      * @throws IOException  When reading from file - when file doesn't exist or cannot be opened
      */
-    public static void buildImage(String name, String namespace, String dockerfilePath, String imageTag, String baseImage) throws IOException {
+    public static void buildImage(String namespace, String name, String dockerfilePath, String imageTag, String baseImage) throws IOException {
         if (KubeClusterResource.getInstance().isOpenShiftLikeCluster()) {
-            buildImageOpenshift(name, namespace, dockerfilePath, imageTag, baseImage);
+            buildImageOpenshift(namespace, name, dockerfilePath, imageTag, baseImage);
         } else {
-            buildImageKaniko(name, namespace, dockerfilePath, imageTag, baseImage);
+            buildImageKaniko(namespace, name, dockerfilePath, imageTag, baseImage);
         }
     }
 
     /**
      * Build a specific image from passed Dockerfile and push it into internal registry.
-     * @param name Image name (it is also used as a name for all needed resources)
-     * @param namespace location where the build will happen
+     *
+     * @param namespace      location where the build will happen
+     * @param name           Image name (it is also used as a name for all needed resources)
      * @param dockerfilePath path to Dockerfile
      * @param imageTag tag of the final image that will be pushed into internal registries
      * @param baseImage used base image for the build
      * @throws IOException  When reading from file - when file doesn't exist or cannot be opened
      */
-    public static void buildImageKaniko(String name, String namespace, String dockerfilePath, String imageTag, String baseImage) throws IOException {
+    public static void buildImageKaniko(String namespace, String name, String dockerfilePath, String imageTag, String baseImage) throws IOException {
         createDockerfileConfigMap(namespace, name, dockerfilePath);
 
         Job kanikoJob = new JobBuilder()
@@ -109,19 +111,20 @@ public class ImageBuild {
             .build();
 
         ResourceManager.getInstance().createResourceWithWait(kanikoJob);
-        JobUtils.waitForJobSuccess(name, namespace, TestConstants.GLOBAL_TIMEOUT);
+        JobUtils.waitForJobSuccess(namespace, name, TestConstants.GLOBAL_TIMEOUT);
     }
 
     /**
      * Build a specific image from passed Dockerfile and push it into internal registry.
-     * @param name Image name (it is also used as a name for all needed resources)
-     * @param namespace location where the build will happen
+     *
+     * @param namespace      location where the build will happen
+     * @param name           Image name (it is also used as a name for all needed resources)
      * @param dockerfilePath path to Dockerfile
      * @param imageTag tag of the final image that will be pushed into internal registries
      * @param baseImage used base image for the build
      * @throws IOException  When reading from file - when file doesn't exist or cannot be opened
      */
-    public static void buildImageOpenshift(String name, String namespace, String dockerfilePath, String imageTag, String baseImage) throws IOException {
+    public static void buildImageOpenshift(String namespace, String name, String dockerfilePath, String imageTag, String baseImage) throws IOException {
         String dockerfileContent = Files.readString(Paths.get(dockerfilePath), StandardCharsets.UTF_8);
 
         BuildConfig buildConfig = new BuildConfigBuilder()
@@ -168,7 +171,7 @@ public class ImageBuild {
         ResourceManager.getInstance().createResourceWithoutWait(buildConfig);
         BuildConfigResource.buildConfigClient().inNamespace(namespace).withName(name).instantiate(buildRequest);
 
-        BuildUtils.waitForBuildComplete(name, namespace);
+        BuildUtils.waitForBuildComplete(namespace, name);
     }
 
     /**

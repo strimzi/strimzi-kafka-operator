@@ -132,8 +132,8 @@ public class MultipleClusterOperatorsST extends AbstractST {
         String secondCOScraperName = SECOND_NAMESPACE + "-" + TestConstants.SCRAPER_NAME;
 
         LOGGER.info("Deploying Cluster Operators: {}, {} in respective namespaces: {}, {}", FIRST_CO_NAME, SECOND_CO_NAME, FIRST_NAMESPACE, SECOND_NAMESPACE);
-        deployCOInNamespace(FIRST_CO_NAME, FIRST_NAMESPACE, Collections.singletonList(FIRST_CO_SELECTOR_ENV), true);
-        deployCOInNamespace(SECOND_CO_NAME, SECOND_NAMESPACE, Collections.singletonList(SECOND_CO_SELECTOR_ENV), true);
+        deployCOInNamespace(FIRST_NAMESPACE, FIRST_CO_NAME, Collections.singletonList(FIRST_CO_SELECTOR_ENV), true);
+        deployCOInNamespace(SECOND_NAMESPACE, SECOND_CO_NAME, Collections.singletonList(SECOND_CO_SELECTOR_ENV), true);
 
         LOGGER.info("Deploying scraper Pods: {}, {} for later metrics retrieval", firstCOScraperName, secondCOScraperName);
         resourceManager.createResourceWithWait(
@@ -143,9 +143,9 @@ public class MultipleClusterOperatorsST extends AbstractST {
 
         LOGGER.info("Setting up metric collectors targeting Cluster Operators: {}, {}", FIRST_CO_NAME, SECOND_CO_NAME);
         String firstCOScraper = FIRST_NAMESPACE + "-" + TestConstants.SCRAPER_NAME;
-        BaseMetricsCollector firstCoMetricsCollector = setupCOMetricsCollectorInNamespace(FIRST_CO_NAME, FIRST_NAMESPACE, firstCOScraper);
+        BaseMetricsCollector firstCoMetricsCollector = setupCOMetricsCollectorInNamespace(FIRST_NAMESPACE, FIRST_CO_NAME, firstCOScraper);
         String secondCOScraper = SECOND_NAMESPACE + "-" + TestConstants.SCRAPER_NAME;
-        BaseMetricsCollector secondCoMetricsCollector = setupCOMetricsCollectorInNamespace(SECOND_CO_NAME, SECOND_NAMESPACE, secondCOScraper);
+        BaseMetricsCollector secondCoMetricsCollector = setupCOMetricsCollectorInNamespace(SECOND_NAMESPACE, SECOND_CO_NAME, secondCOScraper);
 
         // allowing NetworkPolicies for all scraper Pods to all CO Pods
         NetworkPolicyResource.allowNetworkPolicySettingsForClusterOperator(FIRST_NAMESPACE);
@@ -170,11 +170,11 @@ public class MultipleClusterOperatorsST extends AbstractST {
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), testStorage.getClusterName(), 0);
 
         // verify that metric signalizing managing of kafka is not present in either of cluster operators
-        MetricsUtils.assertCoMetricResourcesNullOrZero(firstCoMetricsCollector, Kafka.RESOURCE_KIND, testStorage.getNamespaceName());
-        MetricsUtils.assertCoMetricResourcesNullOrZero(secondCoMetricsCollector, Kafka.RESOURCE_KIND, testStorage.getNamespaceName());
+        MetricsUtils.assertCoMetricResourcesNullOrZero(testStorage.getNamespaceName(), Kafka.RESOURCE_KIND, firstCoMetricsCollector);
+        MetricsUtils.assertCoMetricResourcesNullOrZero(testStorage.getNamespaceName(), Kafka.RESOURCE_KIND, secondCoMetricsCollector);
 
         LOGGER.info("Adding {} selector of {} into Kafka: {} CR", FIRST_CO_SELECTOR, FIRST_CO_NAME, testStorage.getClusterName());
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> kafka.getMetadata().setLabels(FIRST_CO_SELECTOR), testStorage.getNamespaceName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), kafka -> kafka.getMetadata().setLabels(FIRST_CO_SELECTOR), testStorage.getClusterName());
         KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         resourceManager.createResourceWithWait(
@@ -201,7 +201,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
 
         final KafkaClients basicClients = ClientUtils.getInstantPlainClients(testStorage);
         resourceManager.createResourceWithWait(basicClients.producerStrimzi());
-        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
 
@@ -211,9 +211,9 @@ public class MultipleClusterOperatorsST extends AbstractST {
         MetricsUtils.assertMetricResourcesHigherThanOrEqualTo(firstCoMetricsCollector, KafkaConnector.RESOURCE_KIND, 1);
 
         LOGGER.info("Switch management of Kafka Cluster: {}/{} operand from CO: {} to CO: {}", testStorage.getNamespaceName(), testStorage.getClusterName(), FIRST_CO_NAME, SECOND_CO_NAME);
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), kafka -> {
             kafka.getMetadata().getLabels().replace("app.kubernetes.io/operator", SECOND_CO_NAME);
-        }, testStorage.getNamespaceName());
+        }, testStorage.getClusterName());
 
         LOGGER.info("Verifying that number of managed Kafka resources in increased in CO: {} and decreased om CO: {}", SECOND_CO_NAME, FIRST_CO_NAME);
         MetricsUtils.assertMetricResourcesHigherThanOrEqualTo(secondCoMetricsCollector, Kafka.RESOURCE_KIND, 1);
@@ -259,8 +259,8 @@ public class MultipleClusterOperatorsST extends AbstractST {
         int scaleTo = 4;
 
         LOGGER.info("Deploying 2 Cluster Operators: {}, {} in the same namespace: {}", FIRST_CO_NAME, SECOND_CO_NAME, testStorage.getNamespaceName());
-        deployCOInNamespace(FIRST_CO_NAME, testStorage.getNamespaceName(), List.of(FIRST_CO_SELECTOR_ENV, FIRST_CO_LEASE_NAME_ENV), false);
-        deployCOInNamespace(SECOND_CO_NAME, testStorage.getNamespaceName(), List.of(SECOND_CO_SELECTOR_ENV, SECOND_CO_LEASE_NAME_ENV), false);
+        deployCOInNamespace(testStorage.getNamespaceName(), FIRST_CO_NAME, List.of(FIRST_CO_SELECTOR_ENV, FIRST_CO_LEASE_NAME_ENV), false);
+        deployCOInNamespace(testStorage.getNamespaceName(), SECOND_CO_NAME, List.of(SECOND_CO_SELECTOR_ENV, SECOND_CO_LEASE_NAME_ENV), false);
 
         String secondCOScraperName = testStorage.getNamespaceName() + "-" + TestConstants.SCRAPER_NAME;
 
@@ -269,7 +269,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
 
         LOGGER.info("Setting up metric collectors targeting Cluster Operator: {}", SECOND_CO_NAME);
         String coScraperName = testStorage.getNamespaceName() + "-" + TestConstants.SCRAPER_NAME;
-        BaseMetricsCollector secondCoMetricsCollector = setupCOMetricsCollectorInNamespace(SECOND_CO_NAME, testStorage.getNamespaceName(), coScraperName);
+        BaseMetricsCollector secondCoMetricsCollector = setupCOMetricsCollectorInNamespace(testStorage.getNamespaceName(), SECOND_CO_NAME, coScraperName);
         // allowing NetworkPolicies for all scraper Pods to all CO Pods
         NetworkPolicyResource.allowNetworkPolicySettingsForClusterOperator(testStorage.getNamespaceName());
 
@@ -290,19 +290,19 @@ public class MultipleClusterOperatorsST extends AbstractST {
 
         LOGGER.info("Removing CR selector from Kafka and increasing number of replicas to 4, new Pod should not appear");
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getBrokerPoolName(), knp -> {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp -> {
                 Map<String, String> labels = knp.getMetadata().getLabels();
                 labels.put("app.kubernetes.io/operator", "random-operator-value");
 
                 knp.getMetadata().setLabels(labels);
                 knp.getSpec().setReplicas(scaleTo);
-            }, testStorage.getNamespaceName());
+            });
         }
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), kafka -> {
             kafka.getMetadata().getLabels().clear();
             kafka.getSpec().getKafka().setReplicas(scaleTo);
-        }, testStorage.getNamespaceName());
+        }, testStorage.getClusterName());
 
         // because KafkaRebalance is pointing to Kafka with CC cluster, we need to create KR before adding the label back
         // to test if KR will be ignored
@@ -326,11 +326,11 @@ public class MultipleClusterOperatorsST extends AbstractST {
 
         LOGGER.info("Adding {} selector of {} to Kafka", SECOND_CO_SELECTOR, SECOND_CO_NAME);
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getBrokerPoolName(),
-                knp -> knp.getMetadata().getLabels().putAll(SECOND_CO_SELECTOR), testStorage.getNamespaceName());
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(),
+                knp -> knp.getMetadata().getLabels().putAll(SECOND_CO_SELECTOR));
         }
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> kafka.getMetadata().setLabels(SECOND_CO_SELECTOR), testStorage.getNamespaceName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), kafka -> kafka.getMetadata().setLabels(SECOND_CO_SELECTOR), testStorage.getClusterName());
 
         LOGGER.info("Waiting for Kafka to scales Pods to {}", scaleTo);
         RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), scaleTo);
@@ -348,20 +348,20 @@ public class MultipleClusterOperatorsST extends AbstractST {
         MetricsUtils.assertMetricResourcesHigherThanOrEqualTo(secondCoMetricsCollector, Kafka.RESOURCE_KIND, 1);
     }
 
-    void deployCOInNamespace(String coName, String coNamespace, List<EnvVar> extraEnvs, boolean multipleNamespaces) {
-        String namespace = multipleNamespaces ? TestConstants.WATCH_ALL_NAMESPACES : coNamespace;
+    void deployCOInNamespace(String clusterOperatorNamespaceName, String coName, List<EnvVar> extraEnvs, boolean multipleNamespaces) {
+        String namespace = multipleNamespaces ? TestConstants.WATCH_ALL_NAMESPACES : clusterOperatorNamespaceName;
 
         if (multipleNamespaces) {
             // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
-            List<ClusterRoleBinding> clusterRoleBindingList = ClusterRoleBindingTemplates.clusterRoleBindingsForAllNamespaces(coNamespace, coName);
+            List<ClusterRoleBinding> clusterRoleBindingList = ClusterRoleBindingTemplates.clusterRoleBindingsForAllNamespaces(clusterOperatorNamespaceName, coName);
             clusterRoleBindingList.forEach(
                 clusterRoleBinding -> ResourceManager.getInstance().createResourceWithWait(clusterRoleBinding));
         }
 
-        LOGGER.info("Creating: {} in Namespace: {}", coName, coNamespace);
+        LOGGER.info("Creating: {} in Namespace: {}", coName, clusterOperatorNamespaceName);
 
         clusterOperator = clusterOperator.defaultInstallation()
-            .withNamespace(coNamespace)
+            .withNamespace(clusterOperatorNamespaceName)
             .withClusterOperatorName(coName)
             .withWatchingNamespaces(namespace)
             .withExtraLabels(Collections.singletonMap("app.kubernetes.io/operator", coName))

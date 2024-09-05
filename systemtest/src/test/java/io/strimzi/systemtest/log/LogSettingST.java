@@ -229,18 +229,18 @@ class LogSettingST extends AbstractST {
 
         LOGGER.info("Changing JVM options - setting GC logging to false");
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaNodePoolResource.getBrokerPoolName(LOG_SETTING_CLUSTER_NAME), knp ->
-                knp.getSpec().setJvmOptions(JVM_OPTIONS), Environment.TEST_SUITE_NAMESPACE);
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getBrokerPoolName(LOG_SETTING_CLUSTER_NAME),
+                knp -> knp.getSpec().setJvmOptions(JVM_OPTIONS));
         }
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(LOG_SETTING_CLUSTER_NAME, kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, kafka -> {
             kafka.getSpec().getKafka().setJvmOptions(JVM_OPTIONS);
             if (!Environment.isKRaftModeEnabled()) {
                 kafka.getSpec().getZookeeper().setJvmOptions(JVM_OPTIONS);
                 kafka.getSpec().getEntityOperator().getTopicOperator().setJvmOptions(JVM_OPTIONS);
             }
             kafka.getSpec().getEntityOperator().getUserOperator().setJvmOptions(JVM_OPTIONS);
-        }, Environment.TEST_SUITE_NAMESPACE);
+        }, LOG_SETTING_CLUSTER_NAME);
 
         if (!Environment.isKRaftModeEnabled()) {
             RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Environment.TEST_SUITE_NAMESPACE, controllerSelector, 1, controllerPods);
@@ -295,7 +295,7 @@ class LogSettingST extends AbstractST {
         assertThat("KafkaConnect's log level is set properly", checkLoggersLevel(Environment.TEST_SUITE_NAMESPACE, CONNECT_LOGGERS, connectMap), is(true));
         this.checkGcLogging(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaConnectSelector(), connectDepName, true);
 
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(), kc -> kc.getSpec().setJvmOptions(JVM_OPTIONS), Environment.TEST_SUITE_NAMESPACE);
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), kc -> kc.getSpec().setJvmOptions(JVM_OPTIONS));
         StUtils.waitTillStrimziPodSetOrDeploymentRolled(Environment.TEST_SUITE_NAMESPACE, connectDepName, 1, connectPods, testStorage.getKafkaConnectSelector());
         this.checkGcLogging(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaConnectSelector(), connectDepName, false);
 
@@ -327,7 +327,7 @@ class LogSettingST extends AbstractST {
         assertThat("KafkaMirrorMaker's log level is set properly", checkLoggersLevel(Environment.TEST_SUITE_NAMESPACE, MIRROR_MAKER_LOGGERS, mirrorMakerMap), is(true));
         checkGcLoggingDeployments(Environment.TEST_SUITE_NAMESPACE, mmDepName, true);
 
-        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getClusterName(), mm -> mm.getSpec().setJvmOptions(JVM_OPTIONS), Environment.TEST_SUITE_NAMESPACE);
+        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), mm -> mm.getSpec().setJvmOptions(JVM_OPTIONS));
         DeploymentUtils.waitTillDepHasRolled(Environment.TEST_SUITE_NAMESPACE, mmDepName, 1, mmPods);
         checkGcLoggingDeployments(Environment.TEST_SUITE_NAMESPACE, mmDepName, false);
 
@@ -360,7 +360,7 @@ class LogSettingST extends AbstractST {
         this.checkGcLoggingPods(Environment.TEST_SUITE_NAMESPACE, testStorage.getMM2Selector(), true);
         this.checkGcLogging(Environment.TEST_SUITE_NAMESPACE, testStorage.getMM2Selector(), mm2DepName, true);
 
-        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getClusterName(), mm2 -> mm2.getSpec().setJvmOptions(JVM_OPTIONS), Environment.TEST_SUITE_NAMESPACE);
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), mm2 -> mm2.getSpec().setJvmOptions(JVM_OPTIONS));
         StUtils.waitTillStrimziPodSetOrDeploymentRolled(Environment.TEST_SUITE_NAMESPACE, mm2DepName, 1, mm2Pods, testStorage.getMM2Selector());
 
         this.checkGcLogging(Environment.TEST_SUITE_NAMESPACE, testStorage.getMM2Selector(), mm2DepName,  false);
@@ -395,7 +395,7 @@ class LogSettingST extends AbstractST {
 
         this.checkGcLogging(Environment.TEST_SUITE_NAMESPACE, labelSelector, bridgeDepName, true);
 
-        KafkaBridgeResource.replaceBridgeResourceInSpecificNamespace(testStorage.getClusterName(), bridge -> bridge.getSpec().setJvmOptions(JVM_OPTIONS), Environment.TEST_SUITE_NAMESPACE);
+        KafkaBridgeResource.replaceBridgeResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), bridge -> bridge.getSpec().setJvmOptions(JVM_OPTIONS));
         DeploymentUtils.waitTillDepHasRolled(Environment.TEST_SUITE_NAMESPACE, bridgeDepName, 1, bridgePods);
 
         this.checkGcLogging(Environment.TEST_SUITE_NAMESPACE, labelSelector, bridgeDepName, false);
@@ -420,7 +420,7 @@ class LogSettingST extends AbstractST {
 
         InlineLogging logging = new InlineLogging();
         logging.setLoggers(Collections.singletonMap("rootLogger.level", debugText.strip()));
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(LOG_SETTING_CLUSTER_NAME, kafka -> kafka.getSpec().getCruiseControl().setLogging(logging), Environment.TEST_SUITE_NAMESPACE);
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, kafka -> kafka.getSpec().getCruiseControl().setLogging(logging), LOG_SETTING_CLUSTER_NAME);
 
         LOGGER.info("Waiting for change of root logger in {}", cruiseControlPodName);
         TestUtils.waitFor(" for log to be changed", CC_LOG_CONFIG_RELOAD, CO_OPERATION_TIMEOUT_MEDIUM, () -> {

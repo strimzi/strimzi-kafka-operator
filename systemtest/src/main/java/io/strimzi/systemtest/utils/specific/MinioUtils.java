@@ -24,14 +24,14 @@ public class MinioUtils {
 
     /**
      * Collect data from Minio about usage of a specific bucket
-     * @param namespace     Name of the Namespace where the Minio Pod is running
+     * @param namespaceName     Name of the Namespace where the Minio Pod is running
      * @param bucketName    Name of the bucket for which we want to get info about its size
      * @return Overall statistics about the bucket in String format
      */
-    public static String getBucketSizeInfo(String namespace, String bucketName) {
-        final String minioPod = ResourceManager.kubeClient().listPods(namespace, Map.of(TestConstants.APP_POD_LABEL, SetupMinio.MINIO)).get(0).getMetadata().getName();
+    public static String getBucketSizeInfo(String namespaceName, String bucketName) {
+        final String minioPod = ResourceManager.kubeClient().listPods(namespaceName, Map.of(TestConstants.APP_POD_LABEL, SetupMinio.MINIO)).get(0).getMetadata().getName();
 
-        return ResourceManager.cmdKubeClient().namespace(namespace).execInPod(minioPod,
+        return ResourceManager.cmdKubeClient().namespace(namespaceName).execInPod(minioPod,
             "mc",
             "stat",
             "local/" + bucketName).out();
@@ -56,12 +56,13 @@ public class MinioUtils {
 
     /**
      * Wait until size of the bucket is not 0 B.
-     * @param namespace Minio location
-     * @param bucketName bucket name
+     *
+     * @param namespaceName Minio location
+     * @param bucketName    bucket name
      */
-    public static void waitForDataInMinio(String namespace, String bucketName) {
+    public static void waitForDataInMinio(String namespaceName, String bucketName) {
         TestUtils.waitFor("data sync from Kafka to Minio", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT_LONG, () -> {
-            String bucketSizeInfo = getBucketSizeInfo(namespace, bucketName);
+            String bucketSizeInfo = getBucketSizeInfo(namespaceName, bucketName);
             Map<String, Object> parsedSize = parseTotalSize(bucketSizeInfo);
             double bucketSize = (Double) parsedSize.get("size");
             LOGGER.info("Collected bucket size: {} {}", bucketSize, parsedSize.get("unit"));
@@ -73,12 +74,13 @@ public class MinioUtils {
 
     /**
      * Wait until size of the bucket is 0 B.
-     * @param namespace Minio location
-     * @param bucketName bucket name
+     *
+     * @param namespaceName Minio location
+     * @param bucketName    bucket name
      */
-    public static void waitForNoDataInMinio(String namespace, String bucketName) {
+    public static void waitForNoDataInMinio(String namespaceName, String bucketName) {
         TestUtils.waitFor("data deletion in Minio", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT_LONG, () -> {
-            String bucketSizeInfo = getBucketSizeInfo(namespace, bucketName);
+            String bucketSizeInfo = getBucketSizeInfo(namespaceName, bucketName);
             Map<String, Object> parsedSize = parseTotalSize(bucketSizeInfo);
             double bucketSize = (Double) parsedSize.get("size");
             LOGGER.info("Collected bucket size: {} {}", bucketSize, parsedSize.get("unit"));

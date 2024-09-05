@@ -187,7 +187,7 @@ public class DynamicConfST extends AbstractST {
         Map<String, String> brokerPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector());
         LOGGER.info("Updating listeners of Kafka cluster");
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, k -> {
             k.getSpec().getKafka().setListeners(Arrays.asList(
                 new GenericKafkaListenerBuilder()
                     .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)
@@ -208,7 +208,7 @@ public class DynamicConfST extends AbstractST {
                     .withTls(true)
                     .build()
             ));
-        }, Environment.TEST_SUITE_NAMESPACE);
+        }, testStorage.getClusterName());
 
         RollingUpdateUtils.waitTillComponentHasRolled(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector(), KAFKA_REPLICAS, brokerPods);
         assertThat(RollingUpdateUtils.componentHasRolled(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector(), brokerPods), is(true));
@@ -240,7 +240,7 @@ public class DynamicConfST extends AbstractST {
         brokerPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector());
         LOGGER.info("Updating listeners of Kafka cluster");
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, k -> {
             k.getSpec().getKafka().setListeners(Arrays.asList(
                 new GenericKafkaListenerBuilder()
                     .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)
@@ -255,7 +255,7 @@ public class DynamicConfST extends AbstractST {
                     .withTls(true)
                     .build()
             ));
-        }, Environment.TEST_SUITE_NAMESPACE);
+        }, testStorage.getClusterName());
 
         RollingUpdateUtils.waitTillComponentHasRolled(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector(), KAFKA_REPLICAS, brokerPods);
         assertThat(RollingUpdateUtils.componentHasRolled(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector(), brokerPods), is(true));
@@ -338,7 +338,7 @@ public class DynamicConfST extends AbstractST {
         });
 
         LOGGER.info("Updating listeners of Kafka cluster");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, k -> {
             k.getSpec().getKafka().setListeners(Arrays.asList(
                 new GenericKafkaListenerBuilder()
                     .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
@@ -355,7 +355,7 @@ public class DynamicConfST extends AbstractST {
                     .endKafkaListenerAuthenticationTlsAuth()
                     .build()
             ));
-        }, Environment.TEST_SUITE_NAMESPACE);
+        }, testStorage.getClusterName());
 
         // TODO: remove it ?
         brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector(), KAFKA_REPLICAS, brokerPods);
@@ -372,7 +372,7 @@ public class DynamicConfST extends AbstractST {
         });
 
         LOGGER.info("Updating listeners of Kafka cluster");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, k -> {
             k.getSpec().getKafka().setListeners(Collections.singletonList(
                 new GenericKafkaListenerBuilder()
                     .withName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
@@ -381,7 +381,7 @@ public class DynamicConfST extends AbstractST {
                     .withTls(false)
                     .build()
             ));
-        }, Environment.TEST_SUITE_NAMESPACE);
+        }, testStorage.getClusterName());
 
         RollingUpdateUtils.waitTillComponentHasRolled(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerSelector(), KAFKA_REPLICAS, brokerPods);
 
@@ -407,10 +407,10 @@ public class DynamicConfST extends AbstractST {
         Map<String, String> brokerPods = PodUtils.podSnapshot(namespaceName, brokerSelector);
 
         LOGGER.info("Updating configuration of Kafka cluster");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(namespaceName, k -> {
             KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
             kafkaClusterSpec.setConfig(kafkaConfig);
-        }, namespaceName);
+        }, clusterName);
 
         PodUtils.verifyThatRunningPodsAreStable(namespaceName, StrimziPodSetResource.getBrokerComponentName(clusterName));
         assertThat(RollingUpdateUtils.componentHasRolled(namespaceName, brokerSelector, brokerPods), is(false));

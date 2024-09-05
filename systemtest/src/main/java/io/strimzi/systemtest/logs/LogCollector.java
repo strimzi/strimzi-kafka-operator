@@ -213,17 +213,17 @@ public class LogCollector {
             if (pod.getMetadata().getLabels().get(TestConstants.TEST_SUITE_NAME_LABEL).equals(StUtils.removePackageName(this.collectorElement.getTestClassName()))) {
                 LOGGER.debug("Collecting logs for TestSuite: {}, and Pod: {}/{}", this.collectorElement.getTestClassName(), pod.getMetadata().getNamespace(), pod.getMetadata().getName());
                 pod.getStatus().getContainerStatuses().forEach(
-                    containerStatus -> scrapeAndCreateLogs(namespacePath, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));
+                    containerStatus -> scrapeAndCreateLogs(pod.getMetadata().getNamespace(), namespacePath, pod.getMetadata().getName(), containerStatus));
             }
         // Tracing Pods (they can't be labeled because CR of the Jaeger does not propagate labels to the Pods )
         } else if (pod.getMetadata().getName().contains("jaeger") || pod.getMetadata().getName().contains("cert-manager")) {
             LOGGER.debug("Collecting logs for TestSuite: {}, and Jaeger or Cert Manager Pods: {}/{}", this.collectorElement.getTestClassName(), pod.getMetadata().getNamespace(), pod.getMetadata().getName());
             pod.getStatus().getContainerStatuses().forEach(
-                containerStatus -> scrapeAndCreateLogs(namespacePath, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));
+                containerStatus -> scrapeAndCreateLogs(pod.getMetadata().getNamespace(), namespacePath, pod.getMetadata().getName(), containerStatus));
         } else if (pod.getMetadata().getName().contains("keycloak")) {
             LOGGER.debug("Collecting logs for TestSuite: {}, and Keycloak Pods: {}/{}", this.collectorElement.getTestClassName(), pod.getMetadata().getNamespace(), pod.getMetadata().getName());
             pod.getStatus().getContainerStatuses().forEach(
-                containerStatus -> scrapeAndCreateLogs(namespacePath, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));
+                containerStatus -> scrapeAndCreateLogs(pod.getMetadata().getNamespace(), namespacePath, pod.getMetadata().getName(), containerStatus));
         }
     }
 
@@ -235,7 +235,7 @@ public class LogCollector {
             if (this.collectorElement.getTestMethodName().startsWith(pod.getMetadata().getLabels().get(TestConstants.TEST_CASE_NAME_LABEL))) {
                 LOGGER.debug("Collecting logs for TestCase: {}, and Pod: {}/{}", this.collectorElement.getTestMethodName(), pod.getMetadata().getNamespace(), pod.getMetadata().getName());
                 pod.getStatus().getContainerStatuses().forEach(
-                    containerStatus -> scrapeAndCreateLogs(namespacePath, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));
+                    containerStatus -> scrapeAndCreateLogs(pod.getMetadata().getNamespace(), namespacePath, pod.getMetadata().getName(), containerStatus));
             }
         }
     }
@@ -249,7 +249,7 @@ public class LogCollector {
                 final String podName = pod.getMetadata().getName();
                 try {
                     pod.getStatus().getContainerStatuses().forEach(
-                            containerStatus -> scrapeAndCreateLogs(namespacePath, podName, containerStatus, namespace));
+                            containerStatus -> scrapeAndCreateLogs(namespace, namespacePath, podName, containerStatus));
                 } catch (RuntimeException ex) {
                     LOGGER.warn("Failed to collect logs from Pod: {}/{}", namespace, podName);
                 }
@@ -360,7 +360,7 @@ public class LogCollector {
         writeFile(namespacePath.resolve("cluster-service-versions.log"), clusterServiceVersions);
     }
 
-    private void scrapeAndCreateLogs(Path path, String podName, ContainerStatus containerStatus, String namespace) {
+    private void scrapeAndCreateLogs(String namespace, Path path, String podName, ContainerStatus containerStatus) {
         try {
             String log = kubeClient.getPodResource(namespace, podName).inContainer(containerStatus.getName()).getLog();
             // Write logs from containers to files

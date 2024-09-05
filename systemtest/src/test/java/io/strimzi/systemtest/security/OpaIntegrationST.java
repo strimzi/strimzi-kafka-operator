@@ -101,7 +101,7 @@ public class OpaIntegrationST extends AbstractST {
             .runInstallation();
 
         // Install OPA
-        cmdKubeClient(Environment.TEST_SUITE_NAMESPACE).apply(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml", Environment.TEST_SUITE_NAMESPACE));
+        cmdKubeClient(Environment.TEST_SUITE_NAMESPACE).apply(FileUtils.updateNamespaceOfYamlFile(Environment.TEST_SUITE_NAMESPACE, TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml"));
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -131,6 +131,6 @@ public class OpaIntegrationST extends AbstractST {
     @AfterAll
     void teardown() throws IOException {
         // Delete OPA
-        cmdKubeClient().delete(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml", Environment.TEST_SUITE_NAMESPACE));
+        cmdKubeClient().delete(FileUtils.updateNamespaceOfYamlFile(Environment.TEST_SUITE_NAMESPACE, TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml"));
     }
 }

@@ -67,7 +67,7 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), testStorage.getNamespaceName(), continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getContinuousConsumerName(), testStorage.getContinuousProducerName(), continuousClientsMessageCount);
         // ##############################
     }
 
@@ -88,7 +88,7 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), testStorage.getNamespaceName(), continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getContinuousConsumerName(), testStorage.getContinuousProducerName(), continuousClientsMessageCount);
         // ##############################
     }
 
@@ -107,7 +107,7 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), testStorage.getNamespaceName(), continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getContinuousConsumerName(), testStorage.getContinuousProducerName(), continuousClientsMessageCount);
         // ##############################
     }
 
@@ -193,9 +193,9 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
         LOGGER.info("Updating Kafka CR version field to " + newVersion.version());
 
         // Change the version in Kafka CR
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), kafka -> {
             kafka.getSpec().getKafka().setVersion(newVersion.version());
-        }, testStorage.getNamespaceName());
+        }, clusterName);
 
         LOGGER.info("Waiting for readiness of new Kafka version (" + newVersion.version() + ") to complete");
 
@@ -233,13 +233,13 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
         if (isUpgrade && !sameMinorVersion) {
             LOGGER.info("Updating Kafka config attribute 'metadataVersion' from '{}' to '{}' version", initialVersion.metadataVersion(), newVersion.metadataVersion());
 
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), kafka -> {
                 LOGGER.info("Kafka config before updating '{}'", kafka.getSpec().getKafka().toString());
 
                 kafka.getSpec().getKafka().setMetadataVersion(newVersion.metadataVersion());
 
                 LOGGER.info("Kafka config after updating '{}'", kafka.getSpec().getKafka().toString());
-            }, testStorage.getNamespaceName());
+            }, clusterName);
 
             LOGGER.info("Metadata version changed, it doesn't require rolling update, so the Pods should be stable");
             PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), clusterName);

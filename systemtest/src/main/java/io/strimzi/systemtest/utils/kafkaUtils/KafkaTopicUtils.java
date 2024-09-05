@@ -287,7 +287,7 @@ public class KafkaTopicUtils {
     public static void setFinalizersInAllTopicsToNull(String namespaceName) {
         LOGGER.info("Setting finalizers in all KafkaTopics in Namespace: {} to null", namespaceName);
         KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).list().getItems().forEach(kafkaTopic ->
-            KafkaTopicResource.replaceTopicResourceInSpecificNamespace(kafkaTopic.getMetadata().getName(), kt -> kt.getMetadata().setFinalizers(null), namespaceName)
+            KafkaTopicResource.replaceTopicResourceInSpecificNamespace(namespaceName, kt -> kt.getMetadata().setFinalizers(null), kafkaTopic.getMetadata().getName())
         );
     }
 

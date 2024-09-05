@@ -26,15 +26,15 @@ public class ClusterRoleBindingTemplates {
         LOGGER.info("Creating ClusterRoleBinding that grant cluster-wide access to all OpenShift projects");
 
         final List<ClusterRoleBinding> kCRBList = Arrays.asList(
-            getClusterOperatorNamespacedCrb(coName, namespace),
-            getClusterOperatorEntityOperatorCrb(coName, namespace),
-            getClusterOperatorWatchedCrb(coName, namespace)
+            getClusterOperatorNamespacedCrb(namespace, coName),
+            getClusterOperatorEntityOperatorCrb(namespace, coName),
+            getClusterOperatorWatchedCrb(namespace, coName)
         );
 
         return kCRBList;
     }
 
-    public static ClusterRoleBinding getClusterOperatorNamespacedCrb(final String coName, final String namespaceName) {
+    public static ClusterRoleBinding getClusterOperatorNamespacedCrb(final String namespaceName, final String coName) {
         return new ClusterRoleBindingBuilder()
             .withNewMetadata()
                 .withName(coName + "-namespaced")
@@ -53,7 +53,7 @@ public class ClusterRoleBindingTemplates {
             .build();
     }
 
-    public static ClusterRoleBinding getClusterOperatorEntityOperatorCrb(final String coName, final String namespaceName) {
+    public static ClusterRoleBinding getClusterOperatorEntityOperatorCrb(final String namespaceName, final String coName) {
         return new ClusterRoleBindingBuilder()
             .withNewMetadata()
                 .withName(coName + "-entity-operator")
@@ -72,7 +72,7 @@ public class ClusterRoleBindingTemplates {
             .build();
     }
 
-    public static ClusterRoleBinding getClusterOperatorWatchedCrb(final String coName, final String namespaceName) {
+    public static ClusterRoleBinding getClusterOperatorWatchedCrb(final String namespaceName, final String coName) {
         return new ClusterRoleBindingBuilder()
                 .withNewMetadata()
                     .withName(coName + "-watched")

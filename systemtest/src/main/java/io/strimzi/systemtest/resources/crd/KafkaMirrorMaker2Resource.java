@@ -55,7 +55,7 @@ public class KafkaMirrorMaker2Resource implements ResourceType<KafkaMirrorMaker2
         return Crds.kafkaMirrorMaker2Operation(ResourceManager.kubeClient().getClient());
     }
 
-    public static void replaceKafkaMirrorMaker2ResourceInSpecificNamespace(String resourceName, Consumer<KafkaMirrorMaker2> editor, String namespaceName) {
+    public static void replaceKafkaMirrorMaker2ResourceInSpecificNamespace(String namespaceName, String resourceName, Consumer<KafkaMirrorMaker2> editor) {
         ResourceManager.replaceCrdResource(KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, resourceName, editor, namespaceName);
     }
 

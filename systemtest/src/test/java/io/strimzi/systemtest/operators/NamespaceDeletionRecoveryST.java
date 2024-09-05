@@ -69,7 +69,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         List<PersistentVolumeClaim> persistentVolumeClaimList = kubeClient().getClient().persistentVolumeClaims().list().getItems();
         deleteAndRecreateNamespace(testStorage.getNamespaceName());
 
-        recreatePvcAndUpdatePv(persistentVolumeClaimList, testStorage.getNamespaceName());
+        recreatePvcAndUpdatePv(testStorage.getNamespaceName(), persistentVolumeClaimList);
         recreateClusterOperator(testStorage.getNamespaceName());
 
         // Recreate all KafkaTopic resources
@@ -147,7 +147,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         deleteAndRecreateNamespace(testStorage.getNamespaceName());
 
         LOGGER.info("Recreating PVCs and updating PVs for recovery");
-        recreatePvcAndUpdatePv(persistentVolumeClaimList, testStorage.getNamespaceName());
+        recreatePvcAndUpdatePv(testStorage.getNamespaceName(), persistentVolumeClaimList);
 
         LOGGER.info("Recreating Cluster Operator");
         recreateClusterOperator(testStorage.getNamespaceName());
@@ -171,13 +171,13 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             KafkaCmdClient.listTopicsUsingPodCli(testStorage.getNamespaceName(), kafkaPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName())));
 
         LOGGER.info("Adding Topic Operator to existing Kafka");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> {
             k.getSpec().setEntityOperator(new EntityOperatorSpecBuilder()
                 .withNewTopicOperator()
                 .endTopicOperator()
                 .withNewUserOperator()
                 .endUserOperator().build());
-        }, testStorage.getNamespaceName());
+        }, testStorage.getClusterName());
 
         DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1);
 
@@ -245,10 +245,10 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     }
 
 
-    private void recreatePvcAndUpdatePv(List<PersistentVolumeClaim> persistentVolumeClaimList, String namespace) {
+    private void recreatePvcAndUpdatePv(String namespaceName, List<PersistentVolumeClaim> persistentVolumeClaimList) {
         for (PersistentVolumeClaim pvc : persistentVolumeClaimList) {
             pvc.getMetadata().setResourceVersion(null);
-            kubeClient().createPersistentVolumeClaim(namespace, pvc);
+            kubeClient().createPersistentVolumeClaim(namespaceName, pvc);
 
             PersistentVolume pv = kubeClient().getPersistentVolumeWithName(pvc.getSpec().getVolumeName());
             pv.getSpec().setClaimRef(null);

@@ -133,13 +133,13 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Update resources for Pods");
         // modify zookeeper resource to unreasonable value
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> {
             k.getSpec()
                 .getZookeeper()
                 .setResources(new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("100000m"))
                     .build());
-        }, testStorage.getNamespaceName());
+        }, testStorage.getClusterName());
 
         // consume messages
         resourceManager.createResourceWithWait(clients.consumerStrimzi());
@@ -152,13 +152,13 @@ class RollingUpdateST extends AbstractST {
         LOGGER.info("Verifying stability of Kafka Pods");
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), testStorage.getBrokerComponentName());
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> {
             k.getSpec()
                 .getZookeeper()
                 .setResources(new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("200m"))
                     .build());
-        }, testStorage.getNamespaceName());
+        }, testStorage.getClusterName());
 
         RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3);
 
@@ -172,20 +172,20 @@ class RollingUpdateST extends AbstractST {
         // change kafka to unreasonable CPU request causing trigger of Rolling update and recover by second modification
         // if kafka node pool is enabled change specification directly in KNP CR as changing it in kafka would have no impact in case it is already specified in KNP
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getBrokerPoolName(), knp -> {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp -> {
                 knp.getSpec()
                     .setResources(new ResourceRequirementsBuilder()
                         .addToRequests("cpu", new Quantity("100000m"))
                         .build());
-            }, testStorage.getNamespaceName());
+            });
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> {
                 k.getSpec()
                     .getKafka()
                     .setResources(new ResourceRequirementsBuilder()
                         .addToRequests("cpu", new Quantity("100000m"))
                         .build());
-            }, testStorage.getNamespaceName());
+            }, testStorage.getClusterName());
         }
 
         PodUtils.waitForPendingPod(testStorage.getNamespaceName(), testStorage.getBrokerComponentName());
@@ -198,20 +198,20 @@ class RollingUpdateST extends AbstractST {
         LOGGER.info("Recover Kafka {}/{} from pending state by modifying its resource request to realistic value", testStorage.getClusterName(), testStorage.getNamespaceName());
         // if kafka node pool is enabled change specification directly in KNP CR as changing it in kafka would have no impact in case it is already specified in KNP
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getBrokerPoolName(), knp -> {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp -> {
                 knp.getSpec()
                     .setResources(new ResourceRequirementsBuilder()
                         .addToRequests("cpu", new Quantity("200m"))
                         .build());
-            }, testStorage.getNamespaceName());
+            });
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> {
                 k.getSpec()
                     .getKafka()
                     .setResources(new ResourceRequirementsBuilder()
                         .addToRequests("cpu", new Quantity("200m"))
                         .build());
-            }, testStorage.getNamespaceName());
+            }, testStorage.getClusterName());
         }
 
         // Create new topic to ensure, that ZK is working properly
@@ -333,7 +333,7 @@ class RollingUpdateST extends AbstractST {
             KafkaUserTemplates.tlsUser(testStorage).build()
         );
 
-        VerificationUtils.verifyClusterOperatorKafkaDockerImages(testStorage.getClusterName(), TestConstants.CO_NAMESPACE, testStorage.getNamespaceName(), 3, false);
+        VerificationUtils.verifyClusterOperatorKafkaDockerImages(TestConstants.CO_NAMESPACE, testStorage.getNamespaceName(), testStorage.getClusterName(), 3, false);
 
         LOGGER.info("Running kafkaScaleUpScaleDown {}", testStorage.getClusterName());
 
@@ -355,12 +355,12 @@ class RollingUpdateST extends AbstractST {
         LOGGER.info("Scale up Kafka to {}", scaleTo);
 
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getBrokerPoolName(), knp ->
-                knp.getSpec().setReplicas(scaleTo), testStorage.getNamespaceName());
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp ->
+                knp.getSpec().setReplicas(scaleTo));
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), kafka -> {
                 kafka.getSpec().getKafka().setReplicas(scaleTo);
-            }, testStorage.getNamespaceName());
+            }, testStorage.getClusterName());
         }
 
         RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), scaleTo);
@@ -402,10 +402,10 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Scale down Kafka to {}", initialReplicas);
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getBrokerPoolName(), knp ->
-                knp.getSpec().setReplicas(initialReplicas), testStorage.getNamespaceName());
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(),
+                knp -> knp.getSpec().setReplicas(initialReplicas));
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().getKafka().setReplicas(initialReplicas), testStorage.getNamespaceName());
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> k.getSpec().getKafka().setReplicas(initialReplicas), testStorage.getClusterName());
         }
 
         RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), initialReplicas);
@@ -495,7 +495,7 @@ class RollingUpdateST extends AbstractST {
             }};
 
         LOGGER.info("Scale up ZooKeeper to {}", scaleZkTo);
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().getZookeeper().setReplicas(scaleZkTo), testStorage.getNamespaceName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> k.getSpec().getZookeeper().setReplicas(scaleZkTo), testStorage.getClusterName());
 
         clients.generateNewConsumerGroup();
         resourceManager.createResourceWithWait(clients.consumerTlsStrimzi(testStorage.getClusterName()));
@@ -535,7 +535,7 @@ class RollingUpdateST extends AbstractST {
         // Get zk-3 uid before deletion
         String uid = kubeClient(testStorage.getNamespaceName()).getPodUid(newZkPodNames.get(3));
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().getZookeeper().setReplicas(initialZkReplicas), testStorage.getNamespaceName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> k.getSpec().getZookeeper().setReplicas(initialZkReplicas), testStorage.getClusterName());
 
         RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), initialZkReplicas);
 
@@ -582,9 +582,9 @@ class RollingUpdateST extends AbstractST {
         }
 
         // Changes to readiness probe should trigger a rolling update
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), kafka -> {
             kafka.getSpec().getKafka().setReadinessProbe(new ProbeBuilder().withTimeoutSeconds(6).build());
-        }, testStorage.getNamespaceName());
+        }, testStorage.getClusterName());
 
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
         if (!Environment.isKRaftModeEnabled()) {
@@ -626,12 +626,12 @@ class RollingUpdateST extends AbstractST {
         Map<String, String> controllerPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, testStorage.getControllerSelector());
 
         // Changes to readiness probe should trigger a rolling update
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, kafka -> {
             kafka.getSpec().getKafka().setReadinessProbe(new ProbeBuilder().withTimeoutSeconds(6).build());
             if (!Environment.isKRaftModeEnabled()) {
                 kafka.getSpec().getZookeeper().setReadinessProbe(new ProbeBuilder().withTimeoutSeconds(6).build());
             }
-        }, Environment.TEST_SUITE_NAMESPACE);
+        }, testStorage.getClusterName());
 
         TestUtils.waitFor("rolling update starts", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
             () -> kubeClient(Environment.TEST_SUITE_NAMESPACE).listPods(Environment.TEST_SUITE_NAMESPACE).stream().filter(pod -> pod.getStatus().getPhase().equals("Running"))
@@ -857,10 +857,10 @@ class RollingUpdateST extends AbstractST {
         assertThat(zkCollector.getCollectedData().values().toString().contains("replicaId"), is(true));
 
         LOGGER.info("Removing metrics from Kafka and ZooKeeper and setting them to null");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), kafka -> {
             kafka.getSpec().getKafka().setMetricsConfig(null);
             kafka.getSpec().getZookeeper().setMetricsConfig(null);
-        }, testStorage.getNamespaceName());
+        }, testStorage.getClusterName());
 
         LOGGER.info("Waiting for Kafka and ZooKeeper Pods to roll");
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerPods);
@@ -879,29 +879,27 @@ class RollingUpdateST extends AbstractST {
      */
     private static void modifyNodePoolToUnscheduledAndRecover(final String controllerPoolName, final LabelSelector controllerPoolSelector, final TestStorage testStorage) {
         // change knp to unreasonable CPU request causing trigger of Rolling update
-        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(controllerPoolName,
+        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), controllerPoolName,
             knp -> {
                 knp
                     .getSpec()
                     .setResources(
                         new ResourceRequirements(null, null, Map.of("cpu", new Quantity("100000m")))
                     );
-            },
-            testStorage.getNamespaceName());
+        });
 
         PodUtils.waitForPendingPod(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), controllerPoolName));
         LOGGER.info("Verifying stability of {}/{} Pods except the one, which is in pending phase", controllerPoolName, testStorage.getNamespaceName());
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), controllerPoolName));
 
-        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(controllerPoolName,
+        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), controllerPoolName,
             knp -> {
                 knp
                     .getSpec()
                     .setResources(
                         new ResourceRequirements(null, null, Map.of("cpu", new Quantity("100m")))
                     );
-            },
-            testStorage.getNamespaceName());
+        });
         RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), controllerPoolSelector, 3);
     }
 

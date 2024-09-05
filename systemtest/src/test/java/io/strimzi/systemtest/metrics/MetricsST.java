@@ -262,15 +262,15 @@ public class MetricsST extends AbstractST {
 
         // Check CO metrics and look for KafkaConnect and KafkaConnector
         clusterOperatorCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
-        assertCoMetricResources(clusterOperatorCollector, KafkaConnect.RESOURCE_KIND, namespaceFirst, 1);
-        assertCoMetricResourcesNullOrZero(clusterOperatorCollector, KafkaConnect.RESOURCE_KIND, namespaceSecond);
-        assertCoMetricResourceState(clusterOperatorCollector, KafkaConnect.RESOURCE_KIND, kafkaClusterFirstName, namespaceFirst, 1, "none");
+        assertCoMetricResources(namespaceFirst, KafkaConnect.RESOURCE_KIND, clusterOperatorCollector, 1);
+        assertCoMetricResourcesNullOrZero(namespaceSecond, KafkaConnect.RESOURCE_KIND, clusterOperatorCollector);
+        assertCoMetricResourceState(namespaceFirst, KafkaConnect.RESOURCE_KIND, kafkaClusterFirstName, clusterOperatorCollector, 1, "none");
 
-        assertCoMetricResources(clusterOperatorCollector, KafkaConnector.RESOURCE_KIND, namespaceFirst, 1);
-        assertCoMetricResourcesNullOrZero(clusterOperatorCollector, KafkaConnector.RESOURCE_KIND, namespaceSecond);
+        assertCoMetricResources(namespaceFirst, KafkaConnector.RESOURCE_KIND, clusterOperatorCollector, 1);
+        assertCoMetricResourcesNullOrZero(namespaceSecond, KafkaConnector.RESOURCE_KIND, clusterOperatorCollector);
 
-        assertMetricValueHigherThan(clusterOperatorCollector, getResourceMetricPattern(StrimziPodSet.RESOURCE_KIND, namespaceFirst), 1);
-        assertMetricValueHigherThan(clusterOperatorCollector, getResourceMetricPattern(StrimziPodSet.RESOURCE_KIND, namespaceSecond), 0);
+        assertMetricValueHigherThan(clusterOperatorCollector, getResourceMetricPattern(namespaceFirst, StrimziPodSet.RESOURCE_KIND), 1);
+        assertMetricValueHigherThan(clusterOperatorCollector, getResourceMetricPattern(namespaceSecond, StrimziPodSet.RESOURCE_KIND), 0);
     }
 
     /**
@@ -305,7 +305,7 @@ public class MetricsST extends AbstractST {
             .build();
 
         resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), namespaceFirst, testStorage.getMessageCount(), false);
+        ClientUtils.waitForClientsSuccess(namespaceFirst, testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount(), false);
 
         assertMetricValueNotNull(kafkaExporterCollector, "kafka_consumergroup_current_offset\\{.*\\}");
 
@@ -350,7 +350,7 @@ public class MetricsST extends AbstractST {
     void testKafkaExporterDifferentSetting() throws InterruptedException, ExecutionException, IOException {
         String consumerOffsetsTopicName = "__consumer_offsets";
         LabelSelector exporterSelector = kubeClient().getDeploymentSelectors(namespaceFirst, KafkaExporterResources.componentName(kafkaClusterFirstName));
-        String runScriptContent = getExporterRunScript(kubeClient().listPods(namespaceFirst, exporterSelector).get(0).getMetadata().getName(), namespaceFirst);
+        String runScriptContent = getExporterRunScript(namespaceFirst, kubeClient().listPods(namespaceFirst, exporterSelector).get(0).getMetadata().getName());
         assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--group.filter=\".*\""));
         assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--topic.filter=\".*\""));
         // Check that metrics contains info about consumer_offsets
@@ -358,14 +358,14 @@ public class MetricsST extends AbstractST {
 
         Map<String, String> kafkaExporterSnapshot = DeploymentUtils.depSnapshot(namespaceFirst, KafkaExporterResources.componentName(kafkaClusterFirstName));
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(kafkaClusterFirstName, k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(namespaceFirst, k -> {
             k.getSpec().getKafkaExporter().setGroupRegex("my-group.*");
             k.getSpec().getKafkaExporter().setTopicRegex(topicName);
-        }, namespaceFirst);
+        }, kafkaClusterFirstName);
 
         kafkaExporterSnapshot = DeploymentUtils.waitTillDepHasRolled(namespaceFirst, KafkaExporterResources.componentName(kafkaClusterFirstName), 1, kafkaExporterSnapshot);
 
-        runScriptContent = getExporterRunScript(kubeClient().listPods(namespaceFirst, exporterSelector).get(0).getMetadata().getName(), namespaceFirst);
+        runScriptContent = getExporterRunScript(namespaceFirst, kubeClient().listPods(namespaceFirst, exporterSelector).get(0).getMetadata().getName());
         assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--group.filter=\"my-group.*\""));
         assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--topic.filter=\"" + topicName + "\""));
 
@@ -373,10 +373,10 @@ public class MetricsST extends AbstractST {
         assertMetricValueNullOrZero(kafkaExporterCollector, "kafka_topic_partitions\\{topic=\"" + consumerOffsetsTopicName + "\"}");
 
         LOGGER.info("Changing Topic and group regexes back to default");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(kafkaClusterFirstName, k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(namespaceFirst, k -> {
             k.getSpec().getKafkaExporter().setGroupRegex(".*");
             k.getSpec().getKafkaExporter().setTopicRegex(".*");
-        }, namespaceFirst);
+        }, kafkaClusterFirstName);
 
         DeploymentUtils.waitTillDepHasRolled(namespaceFirst, KafkaExporterResources.componentName(kafkaClusterFirstName), 1, kafkaExporterSnapshot);
     }
@@ -406,22 +406,22 @@ public class MetricsST extends AbstractST {
         assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_duration_seconds_bucket", Kafka.RESOURCE_KIND);
         assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_successful_total", Kafka.RESOURCE_KIND);
 
-        assertCoMetricResources(clusterOperatorCollector, Kafka.RESOURCE_KIND, namespaceFirst, 1);
-        assertCoMetricResources(clusterOperatorCollector, Kafka.RESOURCE_KIND, namespaceSecond, 1);
-        assertCoMetricResourceState(clusterOperatorCollector, Kafka.RESOURCE_KIND, kafkaClusterFirstName, namespaceFirst, 1, "none");
-        assertCoMetricResourceState(clusterOperatorCollector, Kafka.RESOURCE_KIND, kafkaClusterSecondName, namespaceSecond, 1, "none");
+        assertCoMetricResources(namespaceFirst, Kafka.RESOURCE_KIND, clusterOperatorCollector, 1);
+        assertCoMetricResources(namespaceSecond, Kafka.RESOURCE_KIND, clusterOperatorCollector, 1);
+        assertCoMetricResourceState(namespaceFirst, Kafka.RESOURCE_KIND, kafkaClusterFirstName, clusterOperatorCollector, 1, "none");
+        assertCoMetricResourceState(namespaceSecond, Kafka.RESOURCE_KIND, kafkaClusterSecondName, clusterOperatorCollector, 1, "none");
 
-        assertCoMetricResourcesNullOrZero(clusterOperatorCollector, KafkaMirrorMaker.RESOURCE_KIND, namespaceFirst);
-        assertCoMetricResourcesNullOrZero(clusterOperatorCollector, KafkaMirrorMaker.RESOURCE_KIND, namespaceSecond);
-        assertCoMetricResourceStateNotExists(clusterOperatorCollector, KafkaMirrorMaker.RESOURCE_KIND, namespaceFirst, kafkaClusterFirstName);
+        assertCoMetricResourcesNullOrZero(namespaceFirst, KafkaMirrorMaker.RESOURCE_KIND, clusterOperatorCollector);
+        assertCoMetricResourcesNullOrZero(namespaceSecond, KafkaMirrorMaker.RESOURCE_KIND, clusterOperatorCollector);
+        assertCoMetricResourceStateNotExists(kafkaClusterFirstName, KafkaMirrorMaker.RESOURCE_KIND, namespaceFirst, clusterOperatorCollector);
 
-        assertCoMetricResourcesNullOrZero(clusterOperatorCollector, KafkaRebalance.RESOURCE_KIND, namespaceFirst);
-        assertCoMetricResourcesNullOrZero(clusterOperatorCollector, KafkaRebalance.RESOURCE_KIND, namespaceSecond);
-        assertCoMetricResourceStateNotExists(clusterOperatorCollector, KafkaRebalance.RESOURCE_KIND, namespaceFirst, kafkaClusterFirstName);
+        assertCoMetricResourcesNullOrZero(namespaceFirst, KafkaRebalance.RESOURCE_KIND, clusterOperatorCollector);
+        assertCoMetricResourcesNullOrZero(namespaceSecond, KafkaRebalance.RESOURCE_KIND, clusterOperatorCollector);
+        assertCoMetricResourceStateNotExists(kafkaClusterFirstName, KafkaRebalance.RESOURCE_KIND, namespaceFirst, clusterOperatorCollector);
 
         // check StrimziPodSet metrics in CO
-        assertMetricCountHigherThan(clusterOperatorCollector, getResourceMetricPattern(StrimziPodSet.RESOURCE_KIND, namespaceFirst), 0);
-        assertCoMetricResources(clusterOperatorCollector, StrimziPodSet.RESOURCE_KIND, namespaceSecond, podSetCount);
+        assertMetricCountHigherThan(clusterOperatorCollector, getResourceMetricPattern(namespaceFirst, StrimziPodSet.RESOURCE_KIND), 0);
+        assertCoMetricResources(namespaceSecond, StrimziPodSet.RESOURCE_KIND, clusterOperatorCollector, podSetCount);
 
         assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_duration_seconds_bucket", StrimziPodSet.RESOURCE_KIND);
         assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_already_enqueued_total", StrimziPodSet.RESOURCE_KIND);
@@ -456,7 +456,7 @@ public class MetricsST extends AbstractST {
         assertMetricResourceNotNull(userOperatorCollector, "strimzi_reconciliations_periodical_total", KafkaUser.RESOURCE_KIND);
         assertMetricResourceNotNull(userOperatorCollector, "strimzi_reconciliations_total", KafkaUser.RESOURCE_KIND);
 
-        assertMetricResources(userOperatorCollector, KafkaUser.RESOURCE_KIND, namespaceFirst, 2);
+        assertMetricResources(namespaceFirst, KafkaUser.RESOURCE_KIND, userOperatorCollector, 2);
     }
 
     /**
@@ -498,10 +498,10 @@ public class MetricsST extends AbstractST {
 
         // Check CO metrics and look for KafkaBridge
         clusterOperatorCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
-        assertCoMetricResources(clusterOperatorCollector, KafkaMirrorMaker2.RESOURCE_KIND, namespaceFirst, 1);
-        assertCoMetricResourcesNullOrZero(clusterOperatorCollector, KafkaMirrorMaker2.RESOURCE_KIND, namespaceSecond);
-        assertCoMetricResourceState(clusterOperatorCollector, KafkaMirrorMaker2.RESOURCE_KIND, mm2ClusterName, namespaceFirst, 1, "none");
-        assertMetricValueHigherThan(clusterOperatorCollector, getResourceMetricPattern(StrimziPodSet.RESOURCE_KIND, namespaceFirst), 1);
+        assertCoMetricResources(namespaceFirst, KafkaMirrorMaker2.RESOURCE_KIND, clusterOperatorCollector, 1);
+        assertCoMetricResourcesNullOrZero(namespaceSecond, KafkaMirrorMaker2.RESOURCE_KIND, clusterOperatorCollector);
+        assertCoMetricResourceState(namespaceFirst, KafkaMirrorMaker2.RESOURCE_KIND, mm2ClusterName, clusterOperatorCollector, 1, "none");
+        assertMetricValueHigherThan(clusterOperatorCollector, getResourceMetricPattern(namespaceFirst, StrimziPodSet.RESOURCE_KIND), 1);
     }
 
     /**
@@ -572,9 +572,9 @@ public class MetricsST extends AbstractST {
 
         // Check CO metrics and look for KafkaBridge
         clusterOperatorCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
-        assertCoMetricResources(clusterOperatorCollector, KafkaBridge.RESOURCE_KIND, namespaceFirst, 1);
-        assertCoMetricResourcesNullOrZero(clusterOperatorCollector, KafkaBridge.RESOURCE_KIND, namespaceSecond);
-        assertCoMetricResourceState(clusterOperatorCollector, KafkaBridge.RESOURCE_KIND, bridgeClusterName, namespaceFirst, 1, "none");
+        assertCoMetricResources(namespaceFirst, KafkaBridge.RESOURCE_KIND, clusterOperatorCollector, 1);
+        assertCoMetricResourcesNullOrZero(namespaceSecond, KafkaBridge.RESOURCE_KIND, clusterOperatorCollector);
+        assertCoMetricResourceState(namespaceFirst, KafkaBridge.RESOURCE_KIND, bridgeClusterName, clusterOperatorCollector, 1, "none");
     }
 
     /**
@@ -665,9 +665,9 @@ public class MetricsST extends AbstractST {
                 .endValueFrom()
                 .build();
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(kafkaClusterSecondName, k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(namespaceSecond, k -> {
             k.getSpec().getKafka().setMetricsConfig(jmxPrometheusExporterMetrics);
-        }, namespaceSecond);
+        }, kafkaClusterSecondName);
 
         PodUtils.verifyThatRunningPodsAreStable(namespaceSecond, kafkaClusterSecondName);
 

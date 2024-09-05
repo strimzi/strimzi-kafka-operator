@@ -125,7 +125,7 @@ public class KafkaTopicScalabilityUtils {
 
         for (int i = 0; i < numberOfTopics; i++) {
             String currentTopicName = topicPrefix + i;
-            KafkaTopicResource.replaceTopicResourceInSpecificNamespace(currentTopicName, kafkaTopic -> kafkaTopic.setSpec(topicSpec), namespaceName);
+            KafkaTopicResource.replaceTopicResourceInSpecificNamespace(namespaceName, kafkaTopic -> kafkaTopic.setSpec(topicSpec), currentTopicName);
         }
     }
 

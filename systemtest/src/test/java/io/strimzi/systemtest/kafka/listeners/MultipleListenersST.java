@@ -247,7 +247,7 @@ public class MultipleListenersST extends AbstractST {
                             kafkaClients.consumerStrimzi()
                         );
                     }
-                    ClientUtils.waitForClientsSuccess(producerName, consumerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+                    ClientUtils.waitForClientsSuccess(Environment.TEST_SUITE_NAMESPACE, consumerName, producerName, testStorage.getMessageCount());
                 }
             }
         }

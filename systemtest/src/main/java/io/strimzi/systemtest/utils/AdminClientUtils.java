@@ -88,14 +88,14 @@ public class AdminClientUtils {
     /**
      * Constructs and configures an {@link AdminClient} for managing Kafka resources.
      *
-     * @param namespace The Kubernetes namespace where the admin client pod is expected to be located.
-     * @param adminName The name of the admin client, used to locate admin client Pod.
+     * @param namespaceName The Kubernetes namespace where the admin client pod is expected to be located.
+     * @param adminName     The name of the admin client, used to locate admin client Pod.
      * @return An {@link AdminClient} instance that has been configured with the necessary environment-based
-     *         settings to interact with a Kafka cluster
+     * settings to interact with a Kafka cluster
      */
-    public static AdminClient getConfiguredAdminClient(String namespace, String adminName) {
-        final String adminClientPodName = KubeClusterResource.kubeClient().listPods(namespace, getLabelSelector(adminName)).get(0).getMetadata().getName();
-        final AdminClient targetClusterAdminClient = new AdminClient(namespace, adminClientPodName);
+    public static AdminClient getConfiguredAdminClient(String namespaceName, String adminName) {
+        final String adminClientPodName = KubeClusterResource.kubeClient().listPods(namespaceName, getLabelSelector(adminName)).get(0).getMetadata().getName();
+        final AdminClient targetClusterAdminClient = new AdminClient(namespaceName, adminClientPodName);
         targetClusterAdminClient.configureFromEnv();
 
         return targetClusterAdminClient;

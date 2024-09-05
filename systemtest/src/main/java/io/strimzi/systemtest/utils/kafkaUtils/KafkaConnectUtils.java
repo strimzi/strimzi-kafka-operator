@@ -76,17 +76,18 @@ public class KafkaConnectUtils {
     }
 
     /**
-     *  Waits until the kafka connect CR config has changed.
-     * @param propertyKey property key in the Kafka Connect CR config
+     * Waits until the kafka connect CR config has changed.
+     *
+     * @param namespaceName     Namespace name
      * @param propertyValue property value in the Kafka Connect CR config
-     * @param namespace Namespace name
-     * @param clusterName cluster name
+     * @param propertyKey   property key in the Kafka Connect CR config
+     * @param clusterName   cluster name
      */
-    public static void waitForKafkaConnectConfigChange(String propertyKey, String propertyValue, String namespace, String clusterName) {
+    public static void waitForKafkaConnectConfigChange(String namespaceName, String propertyValue, String propertyKey, String clusterName) {
         LOGGER.info("Waiting for KafkaConnect property: {} -> {} to change", propertyKey, propertyValue);
         TestUtils.waitFor("KafkaConnect property: " + propertyKey + " -> " + propertyValue + " to change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> {
-                String propertyValueFromKafkaConnect =  (String) KafkaConnectResource.kafkaConnectClient().inNamespace(namespace).withName(clusterName).get().getSpec().getConfig().get(propertyKey);
+                String propertyValueFromKafkaConnect =  (String) KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getConfig().get(propertyKey);
                 LOGGER.debug("Property key -> {}, Current property value -> {}", propertyKey, propertyValueFromKafkaConnect);
                 LOGGER.debug(propertyValueFromKafkaConnect + " == " + propertyValue);
                 return propertyValueFromKafkaConnect.equals(propertyValue);
@@ -96,16 +97,17 @@ public class KafkaConnectUtils {
 
     /**
      * Wait for designated Kafka Connect pod condition to happen.
+     *
+     * @param namespaceName   Namespace name
      * @param conditionReason Regex of condition reason
-     * @param namespace Namespace name
-     * @param clusterName Cluster name
-     * @param timeoutMs Max wait time in ms
+     * @param clusterName     Cluster name
+     * @param timeoutMs       Max wait time in ms
      */
-    public static void waitForConnectPodCondition(String conditionReason, String namespace, String clusterName, long timeoutMs) {
+    public static void waitForConnectPodCondition(String namespaceName, String conditionReason, String clusterName, long timeoutMs) {
         TestUtils.waitFor("KafkaConnect Pod to have condition: " + conditionReason,
             TestConstants.GLOBAL_POLL_INTERVAL, timeoutMs, () -> {
-                List<String> connectPods = kubeClient().listPodNames(namespace, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
-                List<PodCondition> conditions = kubeClient().getPod(namespace, connectPods.get(0)).getStatus().getConditions();
+                List<String> connectPods = kubeClient().listPodNames(namespaceName, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
+                List<PodCondition> conditions = kubeClient().getPod(namespaceName, connectPods.get(0)).getStatus().getConditions();
                 for (PodCondition condition : conditions) {
                     if (condition.getReason().matches(conditionReason)) {
                         return true;
@@ -115,10 +117,10 @@ public class KafkaConnectUtils {
             });
     }
 
-    public static void waitUntilKafkaConnectStatusConditionContainsMessage(String clusterName, String namespace, String message) {
+    public static void waitUntilKafkaConnectStatusConditionContainsMessage(String namespaceName, String clusterName, String message) {
         TestUtils.waitFor("KafkaConnect status to contain message: [" + message + "]",
             TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT, () -> {
-                List<Condition> conditions = KafkaConnectResource.kafkaConnectClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions();
+                List<Condition> conditions = KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getConditions();
                 for (Condition condition : conditions) {
                     if (condition.getMessage().matches(message)) {
                         return true;

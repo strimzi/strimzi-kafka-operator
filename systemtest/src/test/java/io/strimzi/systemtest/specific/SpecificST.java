@@ -91,8 +91,8 @@ public class SpecificST extends AbstractST {
 
         // ---- c) defining ClusterRoleBindings
         final List<ClusterRoleBinding> clusterRoleBindings = Arrays.asList(
-            ClusterRoleBindingTemplates.getClusterOperatorWatchedCrb(clusterOperator.getClusterOperatorName(), clusterOperator.getDeploymentNamespace()),
-            ClusterRoleBindingTemplates.getClusterOperatorEntityOperatorCrb(clusterOperator.getClusterOperatorName(), clusterOperator.getDeploymentNamespace())
+            ClusterRoleBindingTemplates.getClusterOperatorWatchedCrb(clusterOperator.getDeploymentNamespace(), clusterOperator.getClusterOperatorName()),
+            ClusterRoleBindingTemplates.getClusterOperatorEntityOperatorCrb(clusterOperator.getDeploymentNamespace(), clusterOperator.getClusterOperatorName())
         );
 
         clusterOperator.unInstall();
@@ -133,8 +133,8 @@ public class SpecificST extends AbstractST {
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(namespaceWhereCreationOfCustomResourcesIsApproved, testStorage.getClusterName(), 3).build());
 
         // verify that in `infra-namespace` we are not able to deploy Kafka cluster
-        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getClusterName(), Environment.TEST_SUITE_NAMESPACE,
-                ".*code=403.*");
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(),
+            ".*code=403.*");
 
         final Condition condition = KafkaResource.kafkaClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getClusterName()).get().getStatus().getConditions().stream().filter(c -> "NotReady".equals(c.getType())).findFirst().orElseThrow();
 

@@ -75,26 +75,26 @@ public class ReconciliationST extends AbstractST {
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
 
         LOGGER.info("Adding pause annotation into Kafka resource and also scaling replicas to 4, new Pod should not appear");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), kafka -> {
             Map<String, String> annotations = kafka.getMetadata().getAnnotations();
             annotations.putAll(PAUSE_ANNO);
 
             kafka.getMetadata().setAnnotations(annotations);
-        }, testStorage.getNamespaceName());
+        }, testStorage.getClusterName());
 
         LOGGER.info("Kafka should contain status with {}", CustomResourceStatus.ReconciliationPaused.toString());
         KafkaUtils.waitForKafkaStatus(testStorage.getNamespaceName(), testStorage.getClusterName(), CustomResourceStatus.ReconciliationPaused);
 
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getBrokerPoolName(), knp -> knp.getSpec().setReplicas(SCALE_TO), testStorage.getNamespaceName());
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp -> knp.getSpec().setReplicas(SCALE_TO));
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setReplicas(SCALE_TO), testStorage.getNamespaceName());
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), kafka -> kafka.getSpec().getKafka().setReplicas(SCALE_TO), testStorage.getClusterName());
         }
 
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), testStorage.getBrokerComponentName(), 3);
 
         LOGGER.info("Setting annotation to \"false\", Kafka should be scaled to {}", SCALE_TO);
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> kafka.getMetadata().getAnnotations().replace(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true", "false"), testStorage.getNamespaceName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), kafka -> kafka.getMetadata().getAnnotations().replace(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true", "false"), testStorage.getClusterName());
         RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), SCALE_TO);
 
         LOGGER.info("Deploying KafkaConnect with pause annotation from the start, no Pods should appear");
@@ -111,8 +111,8 @@ public class ReconciliationST extends AbstractST {
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), connectDepName, 0);
 
         LOGGER.info("Setting annotation to \"false\" and creating KafkaConnector");
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(),
-            kc -> kc.getMetadata().getAnnotations().replace(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true", "false"), testStorage.getNamespaceName());
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            kc -> kc.getMetadata().getAnnotations().replace(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true", "false"));
         RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector(), 1);
 
         resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), testStorage.getClusterName()).build());
@@ -121,17 +121,17 @@ public class ReconciliationST extends AbstractST {
         String connectorSpec = KafkaConnectorUtils.getConnectorSpecFromConnectAPI(testStorage.getNamespaceName(), connectPodName, testStorage.getClusterName());
 
         LOGGER.info("Adding pause annotation into the KafkaConnector and scaling taskMax to 4");
-        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getClusterName(), connector -> {
+        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), connector -> {
             connector.getMetadata().setAnnotations(PAUSE_ANNO);
             connector.getSpec().setTasksMax(SCALE_TO);
-        }, testStorage.getNamespaceName());
+        });
 
         KafkaConnectorUtils.waitForConnectorStatus(testStorage.getNamespaceName(), testStorage.getClusterName(), CustomResourceStatus.ReconciliationPaused);
         KafkaConnectorUtils.waitForConnectorSpecFromConnectAPIStability(testStorage.getNamespaceName(), connectPodName, testStorage.getClusterName(), connectorSpec);
 
         LOGGER.info("Setting annotation to \"false\", taskMax should be increased to {}", SCALE_TO);
-        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getClusterName(), connector ->
-            connector.getMetadata().getAnnotations().replace(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true", "false"), testStorage.getNamespaceName());
+        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), connector ->
+            connector.getMetadata().getAnnotations().replace(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true", "false"));
 
         String oldConfig = new JsonObject(connectorSpec).getValue("config").toString();
         KafkaConnectorUtils.waitForConnectorConfigUpdate(testStorage.getNamespaceName(), connectPodName, testStorage.getClusterName(), oldConfig, "localhost");
@@ -162,18 +162,17 @@ public class ReconciliationST extends AbstractST {
         KafkaTopicUtils.waitForTopicWillBePresentInKafka(testStorage.getNamespaceName(), testStorage.getTopicName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), scraperPodName);
 
         LOGGER.info("Adding pause annotation into KafkaTopic resource and changing replication factor");
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getTopicName(), topic -> {
+        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getNamespaceName(), topic -> {
             topic.getMetadata().setAnnotations(PAUSE_ANNO);
             topic.getSpec().setPartitions(SCALE_TO);
-        }, testStorage.getNamespaceName());
+        }, testStorage.getTopicName());
 
         KafkaTopicUtils.waitForKafkaTopicStatus(testStorage.getNamespaceName(), testStorage.getTopicName(), CustomResourceStatus.ReconciliationPaused);
         KafkaTopicUtils.waitForKafkaTopicSpecStability(testStorage.getNamespaceName(), testStorage.getTopicName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
 
         LOGGER.info("Setting annotation to \"false\", partitions should be scaled to {}", SCALE_TO);
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getTopicName(),
-            topic -> topic.getMetadata().getAnnotations().replace(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true", "false"),
-            testStorage.getNamespaceName());
+        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getNamespaceName(), topic -> topic.getMetadata().getAnnotations().replace(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true", "false"), testStorage.getTopicName()
+        );
         KafkaTopicUtils.waitForKafkaTopicPartitionChange(testStorage.getNamespaceName(), testStorage.getTopicName(), SCALE_TO);
 
         resourceManager.createResourceWithWait(KafkaRebalanceTemplates.kafkaRebalance(testStorage.getNamespaceName(), testStorage.getClusterName()).build());
@@ -182,7 +181,7 @@ public class ReconciliationST extends AbstractST {
 
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceState.ProposalReady);
 
-        KafkaRebalanceResource.replaceKafkaRebalanceResourceInSpecificNamespace(testStorage.getClusterName(), rebalance -> rebalance.getMetadata().setAnnotations(PAUSE_ANNO), testStorage.getNamespaceName());
+        KafkaRebalanceResource.replaceKafkaRebalanceResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), rebalance -> rebalance.getMetadata().setAnnotations(PAUSE_ANNO));
 
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceState.ReconciliationPaused);
 
@@ -193,8 +192,8 @@ public class ReconciliationST extends AbstractST {
         KafkaRebalanceUtils.waitForRebalanceStatusStability(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         LOGGER.info("Setting annotation to \"false\" and waiting for KafkaRebalance to be in {} state", KafkaRebalanceState.Ready);
-        KafkaRebalanceResource.replaceKafkaRebalanceResourceInSpecificNamespace(testStorage.getClusterName(),
-            rebalance -> rebalance.getMetadata().getAnnotations().replace(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true", "false"), testStorage.getNamespaceName());
+        KafkaRebalanceResource.replaceKafkaRebalanceResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            rebalance -> rebalance.getMetadata().getAnnotations().replace(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true", "false"));
 
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceState.ProposalReady);
 

@@ -415,32 +415,34 @@ public class StUtils {
 
     /**
      * Retrieve namespace based on the cluster configuration
-     * @param namespace suite namespace
+     *
+     * @param namespaceName    suite namespace
      * @param extensionContext test context for get the parallel namespace
      * @return single or parallel namespace based on cluster configuration
      */
-    public static String getNamespaceBasedOnRbac(String namespace, ExtensionContext extensionContext) {
-        return Environment.isNamespaceRbacScope() ? namespace : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.NAMESPACE_KEY).toString();
+    public static String getNamespaceBasedOnRbac(String namespaceName, ExtensionContext extensionContext) {
+        return Environment.isNamespaceRbacScope() ? namespaceName : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.NAMESPACE_KEY).toString();
     }
 
     /**
      * Copies the image pull secret from the default namespace to the specified target namespace.
-     * @param namespace the target namespace
+     *
+     * @param namespaceName the target namespace
      */
-    public static void copyImagePullSecrets(String namespace) {
+    public static void copyImagePullSecrets(String namespaceName) {
         if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
             LOGGER.info("Checking if Secret: {} is in the default Namespace", Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
             if (kubeClient("default").getSecret(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET) == null) {
                 throw new RuntimeException(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET + " is not in the default Namespace!");
             }
-            LOGGER.info("Creating pull Secret: {}/{}", namespace, Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
+            LOGGER.info("Creating pull Secret: {}/{}", namespaceName, Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
             Secret pullSecret = kubeClient("default").getSecret(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
-            kubeClient(namespace).createSecret(new SecretBuilder()
+            kubeClient(namespaceName).createSecret(new SecretBuilder()
                 .withApiVersion("v1")
                 .withKind("Secret")
                 .withNewMetadata()
                     .withName(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET)
-                    .withNamespace(namespace)
+                    .withNamespace(namespaceName)
                 .endMetadata()
                 .withType("kubernetes.io/dockerconfigjson")
                 .withData(Collections.singletonMap(".dockerconfigjson", pullSecret.getData().get(".dockerconfigjson")))
@@ -451,14 +453,14 @@ public class StUtils {
             if (kubeClient("default").getSecret(Environment.CONNECT_BUILD_REGISTRY_SECRET) == null) {
                 throw new RuntimeException(Environment.CONNECT_BUILD_REGISTRY_SECRET + " is not in the default namespace!");
             }
-            LOGGER.info("Creating pull Secret: {}/{}", namespace, Environment.CONNECT_BUILD_REGISTRY_SECRET);
+            LOGGER.info("Creating pull Secret: {}/{}", namespaceName, Environment.CONNECT_BUILD_REGISTRY_SECRET);
             Secret pullSecret = kubeClient("default").getSecret(Environment.CONNECT_BUILD_REGISTRY_SECRET);
-            kubeClient(namespace).createSecret(new SecretBuilder()
+            kubeClient(namespaceName).createSecret(new SecretBuilder()
                 .withApiVersion("v1")
                 .withKind("Secret")
                 .withNewMetadata()
                     .withName(Environment.CONNECT_BUILD_REGISTRY_SECRET)
-                    .withNamespace(namespace)
+                    .withNamespace(namespaceName)
                 .endMetadata()
                 .withType("kubernetes.io/dockerconfigjson")
                 .withData(Collections.singletonMap(".dockerconfigjson", pullSecret.getData().get(".dockerconfigjson")))

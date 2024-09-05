@@ -53,7 +53,7 @@ public class KafkaRebalanceResource implements ResourceType<KafkaRebalance> {
         return Crds.kafkaRebalanceOperation(ResourceManager.kubeClient().getClient());
     }
 
-    public static void replaceKafkaRebalanceResourceInSpecificNamespace(String resourceName, Consumer<KafkaRebalance> editor, String namespaceName) {
+    public static void replaceKafkaRebalanceResourceInSpecificNamespace(String namespaceName, String resourceName, Consumer<KafkaRebalance> editor) {
         ResourceManager.replaceCrdResource(KafkaRebalance.class, KafkaRebalanceList.class, resourceName, editor, namespaceName);
     }
 }

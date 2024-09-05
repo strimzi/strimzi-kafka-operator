@@ -139,10 +139,10 @@ public class OauthPlainST extends OauthAbstractST {
             .build();
 
         resourceManager.createResourceWithWait(oauthExampleClients.producerStrimziOauthPlain());
-        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, producerName, testStorage.getMessageCount());
 
         resourceManager.createResourceWithWait(oauthExampleClients.consumerStrimziOauthPlain());
-        ClientUtils.waitForClientSuccess(consumerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, consumerName, testStorage.getMessageCount());
 
         assertOauthMetricsForComponent(
             metricsCollector.toBuilder()
@@ -186,10 +186,10 @@ public class OauthPlainST extends OauthAbstractST {
             .build();
 
         resourceManager.createResourceWithWait(plainSaslOauthProducerClientsJob.producerStrimziOauthPlain());
-        ClientUtils.waitForClientSuccess(audienceProducerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, audienceProducerName, testStorage.getMessageCount());
 
         resourceManager.createResourceWithWait(plainSaslOauthConsumerClientsJob.consumerStrimziOauthPlain());
-        ClientUtils.waitForClientSuccess(audienceConsumerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, audienceConsumerName, testStorage.getMessageCount());
     }
 
     @ParallelTest
@@ -215,9 +215,9 @@ public class OauthPlainST extends OauthAbstractST {
 
         LOGGER.info("Use clients without access token containing audience token");
         resourceManager.createResourceWithWait(oauthInternalClientJob.producerStrimziOauthPlain());
-        assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(producerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount()));
+        assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(Environment.TEST_SUITE_NAMESPACE, producerName, testStorage.getMessageCount()));
         resourceManager.createResourceWithWait(oauthInternalClientJob.consumerStrimziOauthPlain());
-        assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(consumerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount()));
+        assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(Environment.TEST_SUITE_NAMESPACE, consumerName, testStorage.getMessageCount()));
 
         JobUtils.deleteJobWithWait(Environment.TEST_SUITE_NAMESPACE, producerName);
         JobUtils.deleteJobWithWait(Environment.TEST_SUITE_NAMESPACE, consumerName);
@@ -237,10 +237,10 @@ public class OauthPlainST extends OauthAbstractST {
             .build();
 
         resourceManager.createResourceWithWait(oauthAudienceInternalClientJob.producerStrimziOauthPlain());
-        ClientUtils.waitForClientSuccess(audienceProducerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, audienceProducerName, testStorage.getMessageCount());
 
         resourceManager.createResourceWithWait(oauthAudienceInternalClientJob.consumerStrimziOauthPlain());
-        ClientUtils.waitForClientSuccess(audienceConsumerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, audienceConsumerName, testStorage.getMessageCount());
     }
 
     @ParallelTest
@@ -267,9 +267,9 @@ public class OauthPlainST extends OauthAbstractST {
             .build();
 
         resourceManager.createResourceWithWait(oauthAudienceInternalClientJob.producerStrimziOauthPlain());
-        assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(audienceProducerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount()));
+        assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(Environment.TEST_SUITE_NAMESPACE, audienceProducerName, testStorage.getMessageCount()));
         resourceManager.createResourceWithWait(oauthAudienceInternalClientJob.consumerStrimziOauthPlain());
-        assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(audienceConsumerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount()));
+        assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(Environment.TEST_SUITE_NAMESPACE, audienceConsumerName, testStorage.getMessageCount()));
 
         JobUtils.deleteJobWithWait(Environment.TEST_SUITE_NAMESPACE, audienceProducerName);
         JobUtils.deleteJobWithWait(Environment.TEST_SUITE_NAMESPACE, audienceConsumerName);
@@ -289,9 +289,9 @@ public class OauthPlainST extends OauthAbstractST {
             .build();
 
         resourceManager.createResourceWithWait(oauthInternalClientJob.producerStrimziOauthPlain());
-        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, producerName, testStorage.getMessageCount());
         resourceManager.createResourceWithWait(oauthInternalClientJob.consumerStrimziOauthPlain());
-        ClientUtils.waitForClientSuccess(consumerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, consumerName, testStorage.getMessageCount());
     }
 
     @Description("As an OAuth KafkaConnect, I should be able to sink messages from kafka Broker Topic.")
@@ -318,10 +318,10 @@ public class OauthPlainST extends OauthAbstractST {
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), oauthClusterName).build());
         resourceManager.createResourceWithWait(oauthExampleClients.producerStrimziOauthPlain());
-        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, producerName, testStorage.getMessageCount());
 
         resourceManager.createResourceWithWait(oauthExampleClients.consumerStrimziOauthPlain());
-        ClientUtils.waitForClientSuccess(consumerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, consumerName, testStorage.getMessageCount());
 
         KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, oauthClusterName, 1)
             .editOrNewSpec()
@@ -399,10 +399,10 @@ public class OauthPlainST extends OauthAbstractST {
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), oauthClusterName).build());
         resourceManager.createResourceWithWait(oauthExampleClients.producerStrimziOauthPlain());
-        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, producerName, testStorage.getMessageCount());
 
         resourceManager.createResourceWithWait(oauthExampleClients.consumerStrimziOauthPlain());
-        ClientUtils.waitForClientSuccess(consumerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, consumerName, testStorage.getMessageCount());
 
 
         resourceManager.createResourceWithWait(
@@ -507,7 +507,7 @@ public class OauthPlainST extends OauthAbstractST {
                 resourceManager.createResourceWithWait(kafkaOauthClientJob.consumerStrimziOauthPlain());
 
                 try {
-                    ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+                    ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, OAUTH_CONSUMER_NAME, testStorage.getMessageCount());
                     return  true;
                 } catch (WaitException e) {
                     e.printStackTrace();
@@ -541,10 +541,10 @@ public class OauthPlainST extends OauthAbstractST {
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), oauthClusterName).build());
         resourceManager.createResourceWithWait(oauthExampleClients.producerStrimziOauthPlain());
-        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, producerName, testStorage.getMessageCount());
 
         resourceManager.createResourceWithWait(oauthExampleClients.consumerStrimziOauthPlain());
-        ClientUtils.waitForClientSuccess(consumerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, consumerName, testStorage.getMessageCount());
 
         String kafkaSourceClusterName = oauthClusterName;
 
@@ -661,7 +661,7 @@ public class OauthPlainST extends OauthAbstractST {
                 resourceManager.createResourceWithWait(kafkaOauthClientJob.consumerStrimziOauthPlain());
 
                 try {
-                    ClientUtils.waitForClientSuccess(consumerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+                    ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, consumerName, testStorage.getMessageCount());
                     return  true;
                 } catch (WaitException e) {
                     e.printStackTrace();
@@ -699,10 +699,10 @@ public class OauthPlainST extends OauthAbstractST {
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), oauthClusterName).build());
         resourceManager.createResourceWithWait(oauthExampleClients.producerStrimziOauthPlain());
-        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, producerName, testStorage.getMessageCount());
 
         resourceManager.createResourceWithWait(oauthExampleClients.consumerStrimziOauthPlain());
-        ClientUtils.waitForClientSuccess(consumerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, consumerName, testStorage.getMessageCount());
 
         // needed for a verification of oauth configuration
         InlineLogging ilDebug = new InlineLogging();
@@ -747,7 +747,7 @@ public class OauthPlainST extends OauthAbstractST {
             .build();
 
         resourceManager.createResourceWithWait(kafkaBridgeClientJob.producerStrimziBridge());
-        ClientUtils.waitForClientSuccess(bridgeProducerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, bridgeProducerName, testStorage.getMessageCount());
 
         assertOauthMetricsForComponent(
             metricsCollector.toBuilder()
@@ -806,7 +806,7 @@ public class OauthPlainST extends OauthAbstractST {
         keycloakInstance.setRealm("internal", false);
 
         // Deploy OAuth metrics CM
-        cmdKubeClient(Environment.TEST_SUITE_NAMESPACE).apply(FileUtils.updateNamespaceOfYamlFile(OAUTH_METRICS_CM_PATH, Environment.TEST_SUITE_NAMESPACE));
+        cmdKubeClient(Environment.TEST_SUITE_NAMESPACE).apply(FileUtils.updateNamespaceOfYamlFile(Environment.TEST_SUITE_NAMESPACE, OAUTH_METRICS_CM_PATH));
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(

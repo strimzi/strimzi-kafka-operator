@@ -49,7 +49,7 @@ public class StrimziPodSetResource implements ResourceType<StrimziPodSet> {
         return ResourceManager.waitForResourceStatus(strimziPodSetClient(), resource, Ready);
     }
 
-    public static void replaceStrimziPodSetInSpecificNamespace(String resourceName, Consumer<StrimziPodSet> editor, String namespaceName) {
+    public static void replaceStrimziPodSetInSpecificNamespace(String namespaceName, Consumer<StrimziPodSet> editor, String resourceName) {
         ResourceManager.replaceCrdResource(StrimziPodSet.class, StrimziPodSetList.class, resourceName, editor, namespaceName);
     }
 
