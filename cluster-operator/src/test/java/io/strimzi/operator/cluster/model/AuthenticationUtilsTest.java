@@ -10,7 +10,6 @@ import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -136,11 +135,6 @@ public class AuthenticationUtilsTest {
      * This is effectively the inverse operation of {@link AuthenticationUtils#jaasConfig(String, Map)}.
      * @param jaasConfig The config string to parse
      * @return A AppConfigurationEntry
-     * @throws ClassNotFoundException
-     * @throws NoSuchMethodException
-     * @throws InstantiationException
-     * @throws IllegalAccessException
-     * @throws InvocationTargetException
      */
     public static AppConfigurationEntry parseJaasConfig(String jaasConfig) {
         // We want to instantiate Kafka's org.apache.kafka.common.security.JaasConfig

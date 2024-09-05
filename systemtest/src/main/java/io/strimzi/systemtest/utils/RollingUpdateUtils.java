@@ -33,9 +33,9 @@ public class RollingUpdateUtils {
 
     /**
      * Method to check that all Pods for expected component (StrimziPodSet, Deployment) were rolled
-     * @param namespaceName Namespace name
-     * @param selector
-     * @param snapshot Snapshot of Pods for component (StrimziPodSet, Deployment) before the rolling update
+     * @param namespaceName     Namespace name
+     * @param selector          {@link LabelSelector} for the Pods we want to check
+     * @param snapshot          Snapshot of Pods for component (StrimziPodSet, Deployment) before the rolling update
      * @return true when the Pods for component (StrimziPodSet, Deployment) are recreated
      */
     public static boolean componentHasRolled(String namespaceName, LabelSelector selector, Map<String, String> snapshot) {
@@ -65,9 +65,9 @@ public class RollingUpdateUtils {
 
     /**
      *  Method to wait when component (StrimziPodSet, Deployment) will be recreated after rolling update
-     * @param namespaceName Namespace name
-     * @param selector
-     * @param snapshot Snapshot of Pods for  component (StrimziPodSet, Deployment) before the rolling update
+     * @param namespaceName     Namespace name
+     * @param selector          {@link LabelSelector} for the Pods we want to check
+     * @param snapshot          Snapshot of Pods for  component (StrimziPodSet, Deployment) before the rolling update
      * @return The snapshot of the  component (StrimziPodSet, Deployment) after rolling update with Uid for every pod
      */
     public static Map<String, String> waitTillComponentHasRolled(String namespaceName, LabelSelector selector, Map<String, String> snapshot) {
@@ -110,9 +110,9 @@ public class RollingUpdateUtils {
 
     /**
      *  Method to wait when Kafka or Zookeeper starts rolling update by rolling first Pod
-     * @param namespaceName Namespace name
-     * @param selector
-     * @param snapshot Snapshot of Kafka or Zookeeper Pods before the rolling update
+     * @param namespaceName     Namespace name
+     * @param selector          {@link LabelSelector} for the Pods we want to check
+     * @param snapshot          Snapshot of Kafka or Zookeeper Pods before the rolling update
      * @return The new Snapshot of actually present Pods after the first successful roll
      */
     public static Map<String, String> waitTillComponentHasStartedRolling(String namespaceName, LabelSelector selector, Map<String, String> snapshot) {

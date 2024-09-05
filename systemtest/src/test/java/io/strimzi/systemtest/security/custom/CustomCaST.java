@@ -69,7 +69,8 @@ public class CustomCaST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(CustomCaST.class);
     private static final String STRIMZI_INTERMEDIATE_CA = "C=CZ, L=Prague, O=Strimzi, CN=StrimziIntermediateCA";
 
-    /** This test focuses on manual renewal of custom cluster CA.
+    /**
+     * This test focuses on manual renewal of custom cluster CA.
      * Steps are following. Create own cluster CA. From the CA create a Bundle that will be used in kafka cluster which is then deployed.
      * Once everything is set up, kafka reconciliation is paused using annotation. Then a newly generated cluster CA keypair is put in place.
      * When annotation is removed, kafka resumes and tries to renew cluster certificates using the new CA keypair.
@@ -145,7 +146,8 @@ public class CustomCaST extends AbstractST {
 
     }
 
-    /** This test focuses on manual renewal of custom clients CA.
+    /**
+     * This test focuses on manual renewal of custom clients CA.
      * Steps are following. Create own cluster CA. From the CA create a Bundle that will be used in kafka cluster which is then deployed.
      * Once everything is set up, kafka reconciliation is paused using annotation. Then a newly generated cluster CA keypair is put in place.
      * When annotation is removed, kafka resumes and tries to renew clients certificates using the new CA keypair.
@@ -201,7 +203,8 @@ public class CustomCaST extends AbstractST {
         ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
     }
 
-    /** This tests focuses on verifying the functionality of custom cluster and clients CAs.
+    /**
+     * This tests focuses on verifying the functionality of custom cluster and clients CAs.
      * Steps are following. Before deploying kafka a clients and cluster CAs are created and deployed as secrets.
      * Kafka is then deployed with those, forcing it NOT to generate own certificate authority.
      * After verification of correct certificates on zookeeper, user certificates are checked for correctness as well.
@@ -281,7 +284,8 @@ public class CustomCaST extends AbstractST {
         ClientUtils.waitForInstantClientSuccess(testStorage);
     }
 
-    /** This tests focuses on invoking certificate renewal without renewing the ClusterCA.
+    /**
+     * This tests focuses on invoking certificate renewal without renewing the ClusterCA.
      * Steps are following. Create own cluster CA. From the CA create a Bundle that will be used in kafka cluster which is then deployed.
      * Once everything is set up, kafka reconciliation is paused using annotation. Then new validityDays and renewalDays are set for cluster CA.
      * When annotation is removed, kafka resumes and tries to renew cluster certificates using the CA with different validityDays and renewalDays.
@@ -403,7 +407,8 @@ public class CustomCaST extends AbstractST {
         }
     }
 
-    /** This tests focuses on invoking certificate renewal without renewing the ClientsCA.
+    /**
+     * This tests focuses on invoking certificate renewal without renewing the ClientsCA.
      * Steps are following. Create own clients CA. From the CA create a Bundle that will be used in kafka cluster which is then deployed.
      * Once everything is set up, kafka reconciliation is paused using annotation. Then new validityDays and renewalDays are set for Clients CA.
      * When annotation is removed, kafka resumes and tries to renew user certificates using the CA with different validityDays and renewalDays.

@@ -54,7 +54,6 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- *
  * PodSecurityProfilesST provides tests for Pod Security profiles. In short, Pod security profiles are a mechanism used
  * in Pods or containers, which may prohibit some set of operations (e.g., running only as a non-root user, allowing
  * only some Volume types etc.).

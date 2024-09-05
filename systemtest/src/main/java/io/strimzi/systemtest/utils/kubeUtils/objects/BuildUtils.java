@@ -19,9 +19,9 @@ public class BuildUtils {
 
     /**
      * Gets OpenShift build name based on name and version
-     * @param name
-     * @param version
-     * @return
+     * @param name      Name of the build
+     * @param version   Version of the build
+     * @return  Returns `name-version` build name
      */
     public static String getBuildName(String name, Long version) {
         return name + "-" + version;

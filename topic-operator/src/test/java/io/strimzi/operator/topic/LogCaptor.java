@@ -72,7 +72,7 @@ public class LogCaptor implements AutoCloseable {
      * @param predicate A predicate (e.g. on the message text)
      * @param timeout A timeout
      * @param unit A timeout unit
-     * @return
+     * @return Created LogCaptor
      */
     public static LogCaptor logEventMatches(Logger logger,
                                             Level level,
@@ -116,7 +116,7 @@ public class LogCaptor implements AutoCloseable {
      * @param predicate A predicate (e.g. on the message text)
      * @param timeout A timeout
      * @param unit A timeout unit
-     * @return
+     * @return Created LogCaptor
      */
     public static LogCaptor logEventMatches(ReconciliationLogger logger,
                               Level level,
@@ -143,7 +143,7 @@ public class LogCaptor implements AutoCloseable {
      * @param messageRegex A regex that the log message much match
      * @param timeout A timeout
      * @param unit A timeout unit
-     * @return
+     * @return Created LogCaptor
      */
     public static LogCaptor logMessageMatches(ReconciliationLogger logger,
                                               Level level,
@@ -177,7 +177,7 @@ public class LogCaptor implements AutoCloseable {
      * @param format The required message template text
      * @param timeout A timeout
      * @param unit A timeout unit
-     * @return
+     * @return Created LogCaptor
      */
     public static LogCaptor logFormatEquals(Logger logger,
                                             Level level,

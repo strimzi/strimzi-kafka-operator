@@ -71,8 +71,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 /**
  * SetupClusterOperator encapsulates the whole installation process of Cluster Operator (i.e., RoleBinding, ClusterRoleBinding,
  * ConfigMap, Deployment, CustomResourceDefinition, preparation of the Namespace). Based on the @code{Environment}
- * values, this class decides how Cluster Operator should be installed (i.e., Olm, Helm, Bundle). Moreover, it provides
- * @code{rollbackToDefaultConfiguration()} method, which basically re-install Cluster Operator to the default values. In
+ * values, this class decides how Cluster Operator should be installed (i.e., Olm, Helm, Bundle). In
  * case user wants to edit specific installation, one can use @code{defaultInstallation()}, which returns SetupClusterOperatorBuilder.
  */
 @SuppressFBWarnings("SSD_DO_NOT_USE_INSTANCE_LOCK_ON_SHARED_STATIC_DATA")
@@ -182,8 +181,8 @@ public class SetupClusterOperator {
     }
 
     /**
-     * Auxiliary method, which provides default Cluster Operator instance. By default we mean using in all cases
-     * @code{BeforeAllOnce.getSharedExtensionContext())} and other attributes are dependent base on the installation type
+     * Auxiliary method, which provides default Cluster Operator instance. By default, we are using the default installation
+     * for each test-classes, all other attributes are dependent base on the installation type
      * (i.e., Olm, Helm, Bundle) and RBAC setup (i.e., Cluster, Namespace).
      *
      *
