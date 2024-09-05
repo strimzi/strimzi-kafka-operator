@@ -233,14 +233,14 @@ class LogSettingST extends AbstractST {
                 knp -> knp.getSpec().setJvmOptions(JVM_OPTIONS));
         }
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME, kafka -> {
             kafka.getSpec().getKafka().setJvmOptions(JVM_OPTIONS);
             if (!Environment.isKRaftModeEnabled()) {
                 kafka.getSpec().getZookeeper().setJvmOptions(JVM_OPTIONS);
                 kafka.getSpec().getEntityOperator().getTopicOperator().setJvmOptions(JVM_OPTIONS);
             }
             kafka.getSpec().getEntityOperator().getUserOperator().setJvmOptions(JVM_OPTIONS);
-        }, LOG_SETTING_CLUSTER_NAME);
+        });
 
         if (!Environment.isKRaftModeEnabled()) {
             RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Environment.TEST_SUITE_NAMESPACE, controllerSelector, 1, controllerPods);
@@ -420,7 +420,7 @@ class LogSettingST extends AbstractST {
 
         InlineLogging logging = new InlineLogging();
         logging.setLoggers(Collections.singletonMap("rootLogger.level", debugText.strip()));
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, kafka -> kafka.getSpec().getCruiseControl().setLogging(logging), LOG_SETTING_CLUSTER_NAME);
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME, kafka -> kafka.getSpec().getCruiseControl().setLogging(logging));
 
         LOGGER.info("Waiting for change of root logger in {}", cruiseControlPodName);
         TestUtils.waitFor(" for log to be changed", CC_LOG_CONFIG_RELOAD, CO_OPERATION_TIMEOUT_MEDIUM, () -> {

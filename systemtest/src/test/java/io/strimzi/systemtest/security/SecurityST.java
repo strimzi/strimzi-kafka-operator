@@ -687,10 +687,10 @@ class SecurityST extends AbstractST {
         newCAValidity.setRenewalDays(150);
         newCAValidity.setValidityDays(200);
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
             k.getSpec().setClusterCa(newCAValidity);
             k.getSpec().setClientsCa(newCAValidity);
-        }, testStorage.getClusterName()
+        }
         );
 
         KafkaUtils.waitForKafkaStatusUpdate(testStorage.getNamespaceName(), testStorage.getClusterName());
@@ -709,7 +709,7 @@ class SecurityST extends AbstractST {
         List<String> maintenanceTimeWindows = KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getMaintenanceTimeWindows();
         maintenanceTimeWindows.add(maintenanceWindowCron);
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), kafka -> kafka.getSpec().setMaintenanceTimeWindows(maintenanceTimeWindows), testStorage.getClusterName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getSpec().setMaintenanceTimeWindows(maintenanceTimeWindows));
 
         LOGGER.info("Waiting for rolling update to trigger during maintenanceTimeWindows");
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
@@ -1146,15 +1146,15 @@ class SecurityST extends AbstractST {
         if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp -> knp.getSpec().setResources(requirements));
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> k.getSpec()
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec()
                     .getKafka()
-                    .setResources(requirements), testStorage.getClusterName()
+                    .setResources(requirements)
             );
         }
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> k.getSpec().setClusterCa(new CertificateAuthorityBuilder()
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().setClusterCa(new CertificateAuthorityBuilder()
             .withRenewalDays(4)
             .withValidityDays(7)
-            .build()), testStorage.getClusterName()
+            .build())
         );
 
         TestUtils.waitFor("any Kafka Pod to be in the pending phase because of selected high cpu resource",
@@ -1184,13 +1184,13 @@ class SecurityST extends AbstractST {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(),
                 knp -> knp.getSpec().setResources(correctRequirements));
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
                 k.getSpec()
                     .getKafka()
                     .setResources(new ResourceRequirementsBuilder()
                         .addToRequests("cpu", new Quantity("200m"))
                         .build());
-            }, testStorage.getClusterName());
+            });
         }
 
         // Wait for the certificates to get replaced
@@ -1501,7 +1501,7 @@ class SecurityST extends AbstractST {
         newClusterCA.setRenewalDays(150);
         newClusterCA.setValidityDays(200);
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> k.getSpec().setClusterCa(newClusterCA), testStorage.getClusterName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().setClusterCa(newClusterCA));
 
         // On the next reconciliation, the Cluster Operator performs a `rolling update`:
         //   a) ZooKeeper
@@ -1597,7 +1597,7 @@ class SecurityST extends AbstractST {
         newClientsCA.setRenewalDays(150);
         newClientsCA.setValidityDays(200);
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> k.getSpec().setClientsCa(newClientsCA), testStorage.getClusterName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().setClientsCa(newClientsCA));
 
         // On the next reconciliation, the Cluster Operator performs a `rolling update` only for the
         // `Kafka pods`.

@@ -54,7 +54,7 @@ public class KafkaTopicResource implements ResourceType<KafkaTopic> {
         return Crds.topicOperation(ResourceManager.kubeClient().getClient());
     }
 
-    public static void replaceTopicResourceInSpecificNamespace(String namespaceName, Consumer<KafkaTopic> editor, String resourceName) {
+    public static void replaceTopicResourceInSpecificNamespace(String namespaceName, String resourceName, Consumer<KafkaTopic> editor) {
         ResourceManager.replaceCrdResource(KafkaTopic.class, KafkaTopicList.class, resourceName, editor, namespaceName);
     }
 

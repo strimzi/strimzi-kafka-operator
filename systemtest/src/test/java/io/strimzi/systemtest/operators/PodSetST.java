@@ -99,9 +99,9 @@ public class PodSetST extends AbstractST {
 
         LOGGER.info("Changing Kafka resource configuration, the Pods should not be rolled");
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setReadinessProbe(new ProbeBuilder().withTimeoutSeconds(probeTimeoutSeconds).build());
-        }, testStorage.getClusterName()
+        }
         );
 
         RollingUpdateUtils.waitForNoKafkaAndZKRollingUpdate(testStorage.getNamespaceName(), testStorage.getClusterName(), brokerPods);

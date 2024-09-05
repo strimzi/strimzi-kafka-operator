@@ -171,13 +171,13 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             KafkaCmdClient.listTopicsUsingPodCli(testStorage.getNamespaceName(), kafkaPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName())));
 
         LOGGER.info("Adding Topic Operator to existing Kafka");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
             k.getSpec().setEntityOperator(new EntityOperatorSpecBuilder()
                 .withNewTopicOperator()
                 .endTopicOperator()
                 .withNewUserOperator()
                 .endUserOperator().build());
-        }, testStorage.getClusterName());
+        });
 
         DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1);
 

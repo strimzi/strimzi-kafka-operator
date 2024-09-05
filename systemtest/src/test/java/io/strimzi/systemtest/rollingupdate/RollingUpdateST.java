@@ -133,13 +133,13 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Update resources for Pods");
         // modify zookeeper resource to unreasonable value
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
             k.getSpec()
                 .getZookeeper()
                 .setResources(new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("100000m"))
                     .build());
-        }, testStorage.getClusterName());
+        });
 
         // consume messages
         resourceManager.createResourceWithWait(clients.consumerStrimzi());
@@ -152,13 +152,13 @@ class RollingUpdateST extends AbstractST {
         LOGGER.info("Verifying stability of Kafka Pods");
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), testStorage.getBrokerComponentName());
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
             k.getSpec()
                 .getZookeeper()
                 .setResources(new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("200m"))
                     .build());
-        }, testStorage.getClusterName());
+        });
 
         RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3);
 
@@ -179,13 +179,13 @@ class RollingUpdateST extends AbstractST {
                         .build());
             });
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
                 k.getSpec()
                     .getKafka()
                     .setResources(new ResourceRequirementsBuilder()
                         .addToRequests("cpu", new Quantity("100000m"))
                         .build());
-            }, testStorage.getClusterName());
+            });
         }
 
         PodUtils.waitForPendingPod(testStorage.getNamespaceName(), testStorage.getBrokerComponentName());
@@ -205,13 +205,13 @@ class RollingUpdateST extends AbstractST {
                         .build());
             });
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
                 k.getSpec()
                     .getKafka()
                     .setResources(new ResourceRequirementsBuilder()
                         .addToRequests("cpu", new Quantity("200m"))
                         .build());
-            }, testStorage.getClusterName());
+            });
         }
 
         // Create new topic to ensure, that ZK is working properly
@@ -358,9 +358,9 @@ class RollingUpdateST extends AbstractST {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp ->
                 knp.getSpec().setReplicas(scaleTo));
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), kafka -> {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
                 kafka.getSpec().getKafka().setReplicas(scaleTo);
-            }, testStorage.getClusterName());
+            });
         }
 
         RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), scaleTo);
@@ -405,7 +405,7 @@ class RollingUpdateST extends AbstractST {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(),
                 knp -> knp.getSpec().setReplicas(initialReplicas));
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> k.getSpec().getKafka().setReplicas(initialReplicas), testStorage.getClusterName());
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().getKafka().setReplicas(initialReplicas));
         }
 
         RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), initialReplicas);
@@ -495,7 +495,7 @@ class RollingUpdateST extends AbstractST {
             }};
 
         LOGGER.info("Scale up ZooKeeper to {}", scaleZkTo);
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> k.getSpec().getZookeeper().setReplicas(scaleZkTo), testStorage.getClusterName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().getZookeeper().setReplicas(scaleZkTo));
 
         clients.generateNewConsumerGroup();
         resourceManager.createResourceWithWait(clients.consumerTlsStrimzi(testStorage.getClusterName()));
@@ -535,7 +535,7 @@ class RollingUpdateST extends AbstractST {
         // Get zk-3 uid before deletion
         String uid = kubeClient(testStorage.getNamespaceName()).getPodUid(newZkPodNames.get(3));
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> k.getSpec().getZookeeper().setReplicas(initialZkReplicas), testStorage.getClusterName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().getZookeeper().setReplicas(initialZkReplicas));
 
         RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), initialZkReplicas);
 
@@ -582,9 +582,9 @@ class RollingUpdateST extends AbstractST {
         }
 
         // Changes to readiness probe should trigger a rolling update
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setReadinessProbe(new ProbeBuilder().withTimeoutSeconds(6).build());
-        }, testStorage.getClusterName());
+        });
 
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
         if (!Environment.isKRaftModeEnabled()) {
@@ -626,12 +626,12 @@ class RollingUpdateST extends AbstractST {
         Map<String, String> controllerPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, testStorage.getControllerSelector());
 
         // Changes to readiness probe should trigger a rolling update
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setReadinessProbe(new ProbeBuilder().withTimeoutSeconds(6).build());
             if (!Environment.isKRaftModeEnabled()) {
                 kafka.getSpec().getZookeeper().setReadinessProbe(new ProbeBuilder().withTimeoutSeconds(6).build());
             }
-        }, testStorage.getClusterName());
+        });
 
         TestUtils.waitFor("rolling update starts", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
             () -> kubeClient(Environment.TEST_SUITE_NAMESPACE).listPods(Environment.TEST_SUITE_NAMESPACE).stream().filter(pod -> pod.getStatus().getPhase().equals("Running"))
@@ -857,10 +857,10 @@ class RollingUpdateST extends AbstractST {
         assertThat(zkCollector.getCollectedData().values().toString().contains("replicaId"), is(true));
 
         LOGGER.info("Removing metrics from Kafka and ZooKeeper and setting them to null");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setMetricsConfig(null);
             kafka.getSpec().getZookeeper().setMetricsConfig(null);
-        }, testStorage.getClusterName());
+        });
 
         LOGGER.info("Waiting for Kafka and ZooKeeper Pods to roll");
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerPods);

@@ -130,9 +130,9 @@ class UserST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(sharedTestStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(sharedTestStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        KafkaUserResource.replaceUserResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, ku -> {
+        KafkaUserResource.replaceUserResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername(), ku -> {
             ku.getSpec().setAuthentication(new KafkaUserScramSha512ClientAuthentication());
-        }, testStorage.getKafkaUsername());
+        });
 
         KafkaUserUtils.waitForKafkaUserIncreaseObserverGeneration(Environment.TEST_SUITE_NAMESPACE, observedGeneration, testStorage.getKafkaUsername());
         KafkaUserUtils.waitForKafkaUserCreation(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername());
@@ -394,7 +394,7 @@ class UserST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        KafkaUserResource.replaceUserResourceInSpecificNamespace(testStorage.getNamespaceName(), user -> {
+        KafkaUserResource.replaceUserResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getKafkaUsername(), user -> {
             user.getSpec().setAuthorization(new KafkaUserAuthorizationSimpleBuilder()
                     .addNewAcl()
                         .withNewAclRuleTopicResource()
@@ -404,7 +404,7 @@ class UserST extends AbstractST {
                         .withOperations(AclOperation.READ, AclOperation.DESCRIBE)
                     .endAcl()
                     .build());
-        }, testStorage.getKafkaUsername()
+        }
         );
 
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));

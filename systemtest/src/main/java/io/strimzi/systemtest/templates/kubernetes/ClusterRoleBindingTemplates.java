@@ -17,18 +17,18 @@ public class ClusterRoleBindingTemplates {
 
     private static final Logger LOGGER = LogManager.getLogger(ClusterRoleBindingTemplates.class);
 
-    public static List<ClusterRoleBinding> clusterRoleBindingsForAllNamespaces(String namespace) {
+    public static List<ClusterRoleBinding> clusterRoleBindingsForAllNamespaces(String namespaceName) {
         LOGGER.info("Creating ClusterRoleBinding that grant cluster-wide access to all OpenShift projects");
-        return clusterRoleBindingsForAllNamespaces(namespace, "strimzi-cluster-operator");
+        return clusterRoleBindingsForAllNamespaces(namespaceName, "strimzi-cluster-operator");
     }
 
-    public static List<ClusterRoleBinding> clusterRoleBindingsForAllNamespaces(String namespace, String coName) {
+    public static List<ClusterRoleBinding> clusterRoleBindingsForAllNamespaces(String namespaceName, String coName) {
         LOGGER.info("Creating ClusterRoleBinding that grant cluster-wide access to all OpenShift projects");
 
         final List<ClusterRoleBinding> kCRBList = Arrays.asList(
-            getClusterOperatorNamespacedCrb(namespace, coName),
-            getClusterOperatorEntityOperatorCrb(namespace, coName),
-            getClusterOperatorWatchedCrb(namespace, coName)
+            getClusterOperatorNamespacedCrb(namespaceName, coName),
+            getClusterOperatorEntityOperatorCrb(namespaceName, coName),
+            getClusterOperatorWatchedCrb(namespaceName, coName)
         );
 
         return kCRBList;

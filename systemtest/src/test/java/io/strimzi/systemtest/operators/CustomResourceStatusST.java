@@ -133,9 +133,9 @@ class CustomResourceStatusST extends AbstractST {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getBrokerPoolName(), knp ->
                 knp.getSpec().setResources(resources));
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, k -> {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), k -> {
                 k.getSpec().getKafka().setResources(resources);
-            }, sharedTestStorage.getClusterName());
+            });
         }
 
         LOGGER.info("Waiting for cluster to be in NotReady state");
@@ -148,9 +148,9 @@ class CustomResourceStatusST extends AbstractST {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getBrokerPoolName(), knp ->
                 knp.getSpec().setResources(resources));
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, k -> {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), k -> {
                 k.getSpec().getKafka().setResources(resources);
-            }, sharedTestStorage.getClusterName());
+            });
         }
 
         KafkaUtils.waitForKafkaReady(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName());
@@ -178,7 +178,7 @@ class CustomResourceStatusST extends AbstractST {
 
         KafkaUserUtils.waitForKafkaUserNotReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername());
 
-        KafkaUserResource.replaceUserResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, user -> user.getSpec().setAuthorization(null), testStorage.getKafkaUsername());
+        KafkaUserResource.replaceUserResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername(), user -> user.getSpec().setAuthorization(null));
         KafkaUserUtils.waitForKafkaUserReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername());
 
         LOGGER.info("Checking status of deployed KafkaUser");

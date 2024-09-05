@@ -386,7 +386,7 @@ public class KafkaNodePoolST extends AbstractST {
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
         LOGGER.info("Disable KafkaNodePool in Kafka Cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "disabled");
             // because Kafka CR with NodePools is missing .spec.kafka.replicas and .spec.kafka.storage, we need to
             // set those here
@@ -396,7 +396,7 @@ public class KafkaNodePoolST extends AbstractST {
                 .withDeleteClaim(true)
                 .build()
             );
-        }, testStorage.getClusterName()
+        }
         );
 
         StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(
@@ -415,11 +415,11 @@ public class KafkaNodePoolST extends AbstractST {
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
         LOGGER.info("Enable KafkaNodePool in Kafka Cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled");
             kafka.getSpec().getKafka().setReplicas(null);
             kafka.getSpec().getKafka().setStorage(null);
-        }, testStorage.getClusterName()
+        }
         );
 
         StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(

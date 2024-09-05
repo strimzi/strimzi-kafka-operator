@@ -339,7 +339,7 @@ class KafkaST extends AbstractST {
         Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName()));
 
         LOGGER.info("Remove User Operator from Entity Operator");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> k.getSpec().getEntityOperator().setUserOperator(null), testStorage.getClusterName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().getEntityOperator().setUserOperator(null));
         
         // Waiting when EO pod will be recreated without UO
         eoSnapshot = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName()), 1, eoSnapshot);
@@ -354,7 +354,7 @@ class KafkaST extends AbstractST {
         });
 
         LOGGER.info("Recreate User Operator");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> k.getSpec().getEntityOperator().setUserOperator(new EntityUserOperatorSpec()), testStorage.getClusterName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().getEntityOperator().setUserOperator(new EntityUserOperatorSpec()));
         //Waiting when EO pod will be recreated with UO
         eoSnapshot = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName()), 1, eoSnapshot);
 
@@ -372,7 +372,7 @@ class KafkaST extends AbstractST {
         assertThat("topic-operator container is not present in EO", entityOperatorContainerNames.stream().anyMatch(name -> name.contains("topic-operator")));
 
         LOGGER.info("Remove Topic Operator from Entity Operator");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> k.getSpec().getEntityOperator().setTopicOperator(null), testStorage.getClusterName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().getEntityOperator().setTopicOperator(null));
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName()), 1, eoSnapshot);
         PodUtils.waitUntilPodContainersCount(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName()), 1);
 
@@ -385,9 +385,9 @@ class KafkaST extends AbstractST {
         });
 
         LOGGER.info("Remove User Operator, after removed Topic Operator");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> {
             k.getSpec().getEntityOperator().setUserOperator(null);
-        }, testStorage.getClusterName());
+        });
 
         // both TO and UO are unset, which means EO should not be deployed
         LOGGER.info("Waiting for deletion of Entity Operator Pod");
@@ -461,11 +461,11 @@ class KafkaST extends AbstractST {
                 jBODVolumeStorage.setVolumes(List.of(idZeroVolumeModified, idOneVolumeOriginal));
             });
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), resource -> {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), resource -> {
                 LOGGER.debug(resource.getMetadata().getName());
                 JbodStorage jBODVolumeStorage = (JbodStorage) resource.getSpec().getKafka().getStorage();
                 jBODVolumeStorage.setVolumes(List.of(idZeroVolumeModified, idOneVolumeOriginal));
-            }, testStorage.getClusterName());
+            });
         }
 
         TestUtils.waitFor("PVC(s)' annotation to change according to Kafka JBOD storage 'delete claim'", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.SAFETY_RECONCILIATION_INTERVAL,
@@ -511,7 +511,7 @@ class KafkaST extends AbstractST {
         Secret secretsWithoutExt = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), brokerSecret);
 
         LOGGER.info("Editing Kafka with external listener");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             List<GenericKafkaListener> lst = asList(
                     new GenericKafkaListenerBuilder()
                             .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)
@@ -530,7 +530,7 @@ class KafkaST extends AbstractST {
                             .build()
             );
             kafka.getSpec().getKafka().setListeners(lst);
-        }, testStorage.getClusterName());
+        });
 
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector()));
 
@@ -798,7 +798,7 @@ class KafkaST extends AbstractST {
             }
         }
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), resource -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), resource -> {
             for (Map.Entry<String, String> label : customSpecifiedLabels.entrySet()) {
                 resource.getMetadata().getLabels().put(label.getKey(), label.getValue());
             }
@@ -810,7 +810,7 @@ class KafkaST extends AbstractST {
                 resource.getSpec().getZookeeper().getTemplate().getPersistentVolumeClaim().getMetadata().setLabels(customSpecifiedLabelOrAnnotationPvc);
                 resource.getSpec().getZookeeper().getTemplate().getPersistentVolumeClaim().getMetadata().setAnnotations(customSpecifiedLabelOrAnnotationPvc);
             }
-        }, testStorage.getClusterName());
+        });
 
         LOGGER.info("Waiting for rolling update of ZooKeeper and Kafka");
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 1, controllerPods);
@@ -1200,7 +1200,7 @@ class KafkaST extends AbstractST {
                 kafkaNodePool.getSpec().setStorage(storage);
             });
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), kafka -> {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
                 JbodStorage storage = (JbodStorage) kafka.getSpec().getKafka().getStorage();
 
                 // set modified volume
@@ -1208,7 +1208,7 @@ class KafkaST extends AbstractST {
 
                 // override storage
                 kafka.getSpec().getKafka().setStorage(storage);
-            }, testStorage.getClusterName());
+            });
         }
 
         // check that volume with index 1 change its size
@@ -1278,7 +1278,7 @@ class KafkaST extends AbstractST {
         // Roll Kafka
         LOGGER.info("Forcing rolling update of Kafka via read-only configuration change");
         final Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerPoolSelector());
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), k -> k.getSpec().getKafka().getConfig().put("log.retention.hours", 72), testStorage.getClusterName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().getKafka().getConfig().put("log.retention.hours", 72));
 
         LOGGER.info("Waiting for the next reconciliation to happen");
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerPoolSelector(), kafkaReplicas, brokerPods);

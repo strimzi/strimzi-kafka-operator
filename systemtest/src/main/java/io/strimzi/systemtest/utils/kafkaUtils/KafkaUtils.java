@@ -254,13 +254,13 @@ public class KafkaUtils {
      * @param value value of specific property
      */
     public static void updateSpecificConfiguration(final String namespaceName, String clusterName, String brokerConfigName, Object value) {
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(namespaceName, kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(namespaceName, clusterName, kafka -> {
             LOGGER.info("Kafka config before updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
             Map<String, Object> config = kafka.getSpec().getKafka().getConfig();
             config.put(brokerConfigName, value);
             kafka.getSpec().getKafka().setConfig(config);
             LOGGER.info("Kafka config after updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
-        }, clusterName);
+        });
     }
 
     /**
@@ -576,11 +576,11 @@ public class KafkaUtils {
     }
 
     public static void annotateKafka(String namespaceName, String clusterName, Map<String, String> annotations) {
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(namespaceName, kafka -> kafka.getMetadata().getAnnotations().putAll(annotations), clusterName);
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(namespaceName, clusterName, kafka -> kafka.getMetadata().getAnnotations().putAll(annotations));
     }
 
     public static void removeAnnotation(String namespaceName, String clusterName, String annotationKey) {
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(namespaceName, kafka -> kafka.getMetadata().getAnnotations().remove(annotationKey), clusterName);
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(namespaceName, clusterName, kafka -> kafka.getMetadata().getAnnotations().remove(annotationKey));
     }
 
     public static void waitUntilKafkaStatusContainsKafkaMetadataState(String namespaceName, String clusterName, KafkaMetadataState desiredKafkaMetadataState) {

@@ -195,7 +195,7 @@ class MirrorMaker2ST extends AbstractST {
         assertThat(mirroredTopic.partitionCount(), is(3));
 
         // Replace source topic resource with new data and check that mm2 update target topic as well
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getNamespaceName(), kt -> kt.getSpec().setPartitions(8), testStorage.getTopicName());
+        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getTopicName(), kt -> kt.getSpec().setPartitions(8));
         AdminClientUtils.waitForTopicPartitionInKafka(targetClusterAdminClient, testStorage.getMirroredSourceTopicName(), 8);
     }
 

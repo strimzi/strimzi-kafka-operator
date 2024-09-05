@@ -181,7 +181,7 @@ public class TieredStorageST extends AbstractST {
 
         // Delete data
         KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
-            testStorage.getNamespaceName(), topic -> topic.getSpec().getConfig().put("retention.ms", 10000), testStorage.getTopicName()
+            testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().getConfig().put("retention.ms", 10000)
         );
 
         MinioUtils.waitForNoDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
