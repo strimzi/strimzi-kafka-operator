@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -278,11 +280,7 @@ public class KafkaTopicUtils {
 
         while (System.currentTimeMillis() < endTime) {
             assertThat(KafkaCmdClient.listTopicsUsingPodCli(namespaceName, queryingPodName, KafkaResources.plainBootstrapAddress(clusterName)), not(hasItems(absentTopicName)));
-            try {
-                Thread.sleep(TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS));
         }
     }
 

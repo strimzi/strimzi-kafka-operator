@@ -73,6 +73,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -756,7 +758,7 @@ public class MetricsST extends AbstractST {
         // wait some time for metrics to be stable - at least reconciliation interval + 10s
         LOGGER.info("Sleeping for {} to give operators and operands some time to stable the metrics values before collecting",
                 TestConstants.SAFETY_RECONCILIATION_INTERVAL);
-        Thread.sleep(TestConstants.SAFETY_RECONCILIATION_INTERVAL);
+        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(TestConstants.SAFETY_RECONCILIATION_INTERVAL));
 
         kafkaCollector = new BaseMetricsCollector.Builder()
             .withScraperPodName(scraperPodName)

@@ -55,6 +55,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -186,11 +187,7 @@ public final class TestUtils {
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace("{} not ready, will try again in {} ms ({}ms till timeout)", description, sleepTime, timeLeft);
             }
-            try {
-                Thread.sleep(sleepTime);
-            } catch (InterruptedException e) {
-                return deadline - System.currentTimeMillis();
-            }
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(sleepTime));
         }
     }
 
