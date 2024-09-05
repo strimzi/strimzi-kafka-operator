@@ -85,9 +85,19 @@ public class CruiseControlClientImpl implements CruiseControlClient {
     }
 
     @Override
-    public void close() throws Exception {
-        stopExecutor(httpClientExecutor, 10_000);
+    public void close() {
         httpClient = null;
+        if (httpClientExecutor == null) {
+            return;
+        }
+        try {
+            httpClientExecutor.shutdown();
+            httpClientExecutor.awaitTermination(10_000, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            if (!httpClientExecutor.isTerminated()) {
+                httpClientExecutor.shutdownNow();
+            }
+        }
     }
 
     @Override
@@ -248,20 +258,6 @@ public class CruiseControlClientImpl implements CruiseControlClient {
             return builder.build();
         } catch (Throwable t) {
             throw new RuntimeException(format("HTTP client build failed: %s", t.getMessage()));
-        }
-    }
-    
-    private static void stopExecutor(ExecutorService executor, long timeoutMs) {
-        if (executor == null || timeoutMs < 0) {
-            return;
-        }
-        try {
-            executor.shutdown();
-            executor.awaitTermination(timeoutMs, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            if (!executor.isTerminated()) {
-                executor.shutdownNow();
-            }
         }
     }
 }

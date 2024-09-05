@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.topic.model.ReconcilableTopic;
+import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -24,6 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
@@ -33,11 +35,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
-import static io.strimzi.api.kafka.model.topic.KafkaTopic.RESOURCE_KIND;
-import static io.strimzi.test.TestUtils.CRD_TOPIC;
-import static io.strimzi.test.TestUtils.USER_PATH;
-import static java.lang.String.format;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class TopicOperatorTestUtil {
@@ -52,10 +49,10 @@ public class TopicOperatorTestUtil {
     public static void setupKubeCluster(KubernetesClient kubernetesClient, String namespace) {
         deleteNamespace(kubernetesClient, namespace);
         createNamespace(kubernetesClient, namespace);
-        createOrReplace(kubernetesClient, "file://" + USER_PATH + "/../packaging/install/topic-operator/01-ServiceAccount-strimzi-topic-operator.yaml", namespace);
-        createOrReplace(kubernetesClient, "file://" + USER_PATH + "/../packaging/install/topic-operator/02-Role-strimzi-topic-operator.yaml", namespace);
-        createOrReplace(kubernetesClient, "file://" + USER_PATH + "/../packaging/install/topic-operator/03-RoleBinding-strimzi-topic-operator.yaml", namespace);
-        createOrReplace(kubernetesClient, "file://" + CRD_TOPIC);
+        createOrReplace(kubernetesClient, "file://" + TestUtils.USER_PATH + "/../packaging/install/topic-operator/01-ServiceAccount-strimzi-topic-operator.yaml", namespace);
+        createOrReplace(kubernetesClient, "file://" + TestUtils.USER_PATH + "/../packaging/install/topic-operator/02-Role-strimzi-topic-operator.yaml", namespace);
+        createOrReplace(kubernetesClient, "file://" + TestUtils.USER_PATH + "/../packaging/install/topic-operator/03-RoleBinding-strimzi-topic-operator.yaml", namespace);
+        createOrReplace(kubernetesClient, "file://" + TestUtils.CRD_TOPIC);
     }
 
     private static void createOrReplace(KubernetesClient kubernetesClient, String resourcesPath) {
@@ -137,7 +134,7 @@ public class TopicOperatorTestUtil {
     }
 
     public static ReconcilableTopic reconcilableTopic(KafkaTopic kafkaTopic, String namespace) {
-        return new ReconcilableTopic(new Reconciliation("test", RESOURCE_KIND, namespace,
+        return new ReconcilableTopic(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, namespace,
             TopicOperatorUtil.topicName(kafkaTopic)), kafkaTopic, TopicOperatorUtil.topicName(kafkaTopic));
     }
 
@@ -182,9 +179,9 @@ public class TopicOperatorTestUtil {
     public static String contentFromTextFile(File filePath) {
         try {
             var resourceURI = Objects.requireNonNull(filePath).toURI();
-            try (var lines = Files.lines(Paths.get(resourceURI), UTF_8)) {
+            try (var lines = Files.lines(Paths.get(resourceURI), StandardCharsets.UTF_8)) {
                 var content = lines.reduce((x, y) -> x + y);
-                return content.orElseThrow(() -> new IOException(format("File %s is empty", filePath.getAbsolutePath())));
+                return content.orElseThrow(() -> new IOException(String.format("File %s is empty", filePath.getAbsolutePath())));
             }
         } catch (Throwable t) {
             throw new RuntimeException(t);

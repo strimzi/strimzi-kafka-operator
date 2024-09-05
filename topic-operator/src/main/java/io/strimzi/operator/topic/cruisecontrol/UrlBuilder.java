@@ -11,8 +11,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.List;
 
-import static java.lang.String.format;
-
 /**
  * Cruise Control URL builder.
  */
@@ -29,7 +27,7 @@ class UrlBuilder {
      * @param ssl Whether SSL should be used.
      */
     public UrlBuilder(String hostname, int port, CruiseControlEndpoints endpoint, boolean ssl) {
-        uri = format("%s://%s:%d%s?", ssl ? "https" : "http", hostname, port, endpoint);
+        uri = String.format("%s://%s:%d%s?", ssl ? "https" : "http", hostname, port, endpoint);
         firstParam = true;
     }
 

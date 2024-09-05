@@ -86,7 +86,6 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
-import static java.lang.String.format;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -289,7 +288,7 @@ class TopicControllerIT {
         }
         if (operator == null) {
             this.operatorConfig = config;
-            operator = TopicOperatorMain.operator(config, kubernetesClient, kafkaAdminClientOp[0]);
+            operator = TopicOperatorMain.operator(config, kafkaAdminClientOp[0]);
             assertFalse(operator.queue.isAlive());
             assertFalse(operator.queue.isReady());
             operator.start();
@@ -485,7 +484,7 @@ class TopicControllerIT {
 
         // Check updates to the KafkaTopic
         assertNotNull(reconciled.getMetadata().getFinalizers());
-        assertEquals(operatorConfig.useFinalizer(), reconciled.getMetadata().getFinalizers().contains(BatchingTopicController.FINALIZER));
+        assertEquals(operatorConfig.useFinalizer(), reconciled.getMetadata().getFinalizers().contains(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
         assertEquals(expectedTopicName, reconciled.getStatus().getTopicName());
         assertNotNull(reconciled.getStatus().getTopicId());
 
@@ -763,8 +762,8 @@ class TopicControllerIT {
             5L,
             TimeUnit.SECONDS)) {
             createTopicAndAssertSuccess(kafkaCluster, kt);
-            assertTrue(operator.controller.topics.containsKey(expectedTopicName)
-                    || operator.controller.topics.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
+            assertTrue(operator.controller.topicRefs.containsKey(expectedTopicName)
+                    || operator.controller.topicRefs.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
                 "Expect selected resource to be present in topics map");
 
             // when
@@ -779,7 +778,7 @@ class TopicControllerIT {
             LOGGER.debug("##Checking");
         }
         assertNotNull(unmanaged.getMetadata().getFinalizers());
-        assertTrue(unmanaged.getMetadata().getFinalizers().contains(BatchingTopicController.FINALIZER));
+        assertTrue(unmanaged.getMetadata().getFinalizers().contains(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
         assertNotNull(unmanaged.getStatus().getTopicName(), "Expect status.topicName to be unchanged from post-creation state");
 
         var topicDescription = awaitTopicDescription(expectedTopicName);
@@ -787,7 +786,7 @@ class TopicControllerIT {
         assertEquals(Set.of(kt.getSpec().getReplicas()), replicationFactors(topicDescription));
         assertEquals(Map.of(), topicConfigMap(expectedTopicName));
 
-        Map<String, List<KubeRef>> topics = new HashMap<>(operator.controller.topics);
+        Map<String, List<KubeRef>> topics = new HashMap<>(operator.controller.topicRefs);
         assertFalse(topics.containsKey(expectedTopicName)
                 || topics.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
             "Transition to a non-selected resource should result in removal from topics map: " + topics);
@@ -820,8 +819,8 @@ class TopicControllerIT {
         assertUnknownTopic(expectedTopicName);
         assertNull(created.getStatus(), "Expect status not to be set");
         assertTrue(created.getMetadata().getFinalizers().isEmpty());
-        assertFalse(operator.controller.topics.containsKey(expectedTopicName)
-                || operator.controller.topics.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
+        assertFalse(operator.controller.topicRefs.containsKey(expectedTopicName)
+                || operator.controller.topicRefs.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
             "Expect unselected resource to be absent from topics map");
 
         // when
@@ -834,18 +833,18 @@ class TopicControllerIT {
             readyIsTrue());
 
         // then
-        assertTrue(operator.controller.topics.containsKey(expectedTopicName)
-                || operator.controller.topics.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
+        assertTrue(operator.controller.topicRefs.containsKey(expectedTopicName)
+                || operator.controller.topicRefs.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
             "Expect selected resource to be present in topics map");
 
         assertNotNull(managed.getMetadata().getFinalizers());
-        assertTrue(managed.getMetadata().getFinalizers().contains(BatchingTopicController.FINALIZER));
+        assertTrue(managed.getMetadata().getFinalizers().contains(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
         assertNotNull(managed.getStatus().getTopicName(), "Expect status.topicName to be unchanged from post-creation state");
         var topicDescription = awaitTopicDescription(expectedTopicName);
         assertEquals(3, numPartitions(topicDescription));
 
-        assertTrue(operator.controller.topics.containsKey(expectedTopicName)
-                || operator.controller.topics.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
+        assertTrue(operator.controller.topicRefs.containsKey(expectedTopicName)
+                || operator.controller.topicRefs.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
             "Expect selected resource to be present in topics map");
 
     }
@@ -1189,7 +1188,7 @@ class TopicControllerIT {
         // when: The finalizer is removed
         LOGGER.debug("Removing finalizer");
         var postUpdate = TopicOperatorTestUtil.changeTopic(kubernetesClient, created, theKt1 -> {
-            theKt1.getMetadata().getFinalizers().remove(BatchingTopicController.FINALIZER);
+            theKt1.getMetadata().getFinalizers().remove(KubernetesHandler.FINALIZER_STRIMZI_IO_TO);
             return theKt1;
         });
         var postUpdateGeneration = postUpdate.getMetadata().getGeneration();
@@ -1198,7 +1197,7 @@ class TopicControllerIT {
         // then: We expect the operator to revert the finalizer
         waitUntil(postUpdate, theKt ->
             theKt.getStatus().getObservedGeneration() >= postUpdateGeneration
-                && theKt.getMetadata().getFinalizers().contains(BatchingTopicController.FINALIZER));
+                && theKt.getMetadata().getFinalizers().contains(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
     }
 
     @ParameterizedTest
@@ -1428,7 +1427,7 @@ class TopicControllerIT {
         // then
         assertNull(st1.getConditions().get(0).getReason());
         assertEquals(TopicOperatorException.Reason.RESOURCE_CONFLICT.value, st2.getConditions().get(0).getReason());
-        assertEquals(format("Managed by Ref{namespace='%s', name='%s'}", NAMESPACE, "kt1"),
+        assertEquals(String.format("Managed by Ref{namespace='%s', name='%s'}", NAMESPACE, "kt1"),
             st2.getConditions().get(0).getMessage());
     }
 
@@ -1515,6 +1514,7 @@ class TopicControllerIT {
             operated -> {
                 assertEquals("Changing spec.topicName is not supported", assertExactlyOneCondition(operated).getMessage());
                 assertEquals(TopicOperatorException.Reason.NOT_SUPPORTED.value, assertExactlyOneCondition(operated).getReason());
+                assertEquals(expectedTopicName, operated.getStatus().getTopicName());
             },
             theKt -> {
                 theKt.getSpec().setTopicName(expectedTopicName);
@@ -1847,16 +1847,16 @@ class TopicControllerIT {
     ) throws ExecutionException, InterruptedException {
         Map<String, Object> configs = new HashMap<>();
         configs.put("cleanup.policy", policy);
-        KafkaTopic kafkaTopic = new KafkaTopicBuilder()
+        var kafkaTopic = new KafkaTopicBuilder()
                 .withNewMetadata()
-                .withNamespace(NAMESPACE)
-                .withName("my-topic")
-                .withLabels(SELECTOR)
+                    .withNamespace(NAMESPACE)
+                    .withName("my-topic")
+                    .withLabels(SELECTOR)
                 .endMetadata()
                 .withNewSpec()
-                .withConfig(configs)
-                .withPartitions(1)
-                .withReplicas(1)
+                    .withConfig(configs)
+                    .withPartitions(1)
+                    .withReplicas(1)
                 .endSpec()
                 .build();
         var created = createTopic(kafkaCluster, kafkaTopic);
@@ -1957,7 +1957,7 @@ class TopicControllerIT {
         assertTrue(readyIsFalse().test(secondTopic));
         var condition = assertExactlyOneCondition(secondTopic);
         assertEquals(TopicOperatorException.Reason.RESOURCE_CONFLICT.value, condition.getReason());
-        assertEquals(format("Managed by Ref{namespace='%s', name='%s'}", NAMESPACE, firstTopicName), condition.getMessage());
+        assertEquals(String.format("Managed by Ref{namespace='%s', name='%s'}", NAMESPACE, firstTopicName), condition.getMessage());
 
         // increase partitions of topic
         LOGGER.info("Increase partitions of {}", firstTopicName);
@@ -2013,7 +2013,7 @@ class TopicControllerIT {
         // the error message should refer to the ready resource name
         var condition = assertExactlyOneCondition(failed);
         assertEquals(TopicOperatorException.Reason.RESOURCE_CONFLICT.value, condition.getReason());
-        assertEquals(format("Managed by Ref{namespace='%s', name='%s'}",
+        assertEquals(String.format("Managed by Ref{namespace='%s', name='%s'}",
             ready.getMetadata().getNamespace(), ready.getMetadata().getName()), condition.getMessage());
 
         // the failed resource should become ready after we unmanage and delete the other
@@ -2038,12 +2038,12 @@ class TopicControllerIT {
 
     @Test
     public void shouldLogWarningIfAutoCreateTopicsIsEnabled(
-        @BrokerConfig(name = BatchingTopicController.AUTO_CREATE_TOPICS_ENABLE, value = "true")
+        @BrokerConfig(name = KafkaHandler.AUTO_CREATE_TOPICS_ENABLE, value = "true")
         KafkaCluster kafkaCluster)
         throws Exception {
         try (var logCaptor = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
             Level.WARN,
-            "It is recommended that " + BatchingTopicController.AUTO_CREATE_TOPICS_ENABLE + " is set to 'false' " +
+            "It is recommended that " + KafkaHandler.AUTO_CREATE_TOPICS_ENABLE + " is set to 'false' " +
                 "to avoid races between the operator and Kafka applications auto-creating topics",
             5L,
             TimeUnit.SECONDS)) {
@@ -2112,7 +2112,7 @@ class TopicControllerIT {
 
     @Test
     public void shouldNotReconcilePausedKafkaTopicOnAdd(
-        @BrokerConfig(name = BatchingTopicController.AUTO_CREATE_TOPICS_ENABLE, value = "false")
+        @BrokerConfig(name = KafkaHandler.AUTO_CREATE_TOPICS_ENABLE, value = "false")
         KafkaCluster kafkaCluster
     ) throws ExecutionException, InterruptedException {
         var topicName = "my-topic";
@@ -2280,7 +2280,7 @@ class TopicControllerIT {
         var config = topicOperatorConfig(NAMESPACE, kafkaCluster);
 
         var creteTopicResult = mock(CreateTopicsResult.class);
-        var existsException = new TopicExistsException(format("Topic '%s' already exists.", topicName));
+        var existsException = new TopicExistsException(String.format("Topic '%s' already exists.", topicName));
         Mockito.doReturn(failedFuture(existsException)).when(creteTopicResult).all();
         Mockito.doReturn(Map.of(topicName, failedFuture(existsException))).when(creteTopicResult).values();
         kafkaAdminClientOp = new Admin[]{Mockito.spy(Admin.create(config.adminClientConfig()))};
