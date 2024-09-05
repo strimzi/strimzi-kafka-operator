@@ -50,7 +50,7 @@ public class StrimziPodSetResource implements ResourceType<StrimziPodSet> {
     }
 
     public static void replaceStrimziPodSetInSpecificNamespace(String namespaceName, String resourceName, Consumer<StrimziPodSet> editor) {
-        ResourceManager.replaceCrdResource(StrimziPodSet.class, StrimziPodSetList.class, resourceName, editor, namespaceName);
+        ResourceManager.replaceCrdResource(namespaceName, StrimziPodSet.class, StrimziPodSetList.class, resourceName, editor);
     }
 
     public static MixedOperation<StrimziPodSet, StrimziPodSetList, Resource<StrimziPodSet>> strimziPodSetClient() {

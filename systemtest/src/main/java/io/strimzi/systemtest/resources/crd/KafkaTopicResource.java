@@ -46,7 +46,7 @@ public class KafkaTopicResource implements ResourceType<KafkaTopic> {
 
     @Override
     public boolean waitForReadiness(KafkaTopic resource) {
-        return ResourceManager.waitForResourceStatus(kafkaTopicClient(), resource.getKind(), resource.getMetadata().getNamespace(),
+        return ResourceManager.waitForResourceStatus(resource.getMetadata().getNamespace(), resource.getKind(), kafkaTopicClient(),
             resource.getMetadata().getName(), CustomResourceStatus.Ready, ResourceOperation.getTimeoutForResourceReadiness(resource.getKind()));
     }
 
@@ -55,7 +55,7 @@ public class KafkaTopicResource implements ResourceType<KafkaTopic> {
     }
 
     public static void replaceTopicResourceInSpecificNamespace(String namespaceName, String resourceName, Consumer<KafkaTopic> editor) {
-        ResourceManager.replaceCrdResource(KafkaTopic.class, KafkaTopicList.class, resourceName, editor, namespaceName);
+        ResourceManager.replaceCrdResource(namespaceName, KafkaTopic.class, KafkaTopicList.class, resourceName, editor);
     }
 
     /**

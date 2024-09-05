@@ -54,6 +54,6 @@ public class KafkaRebalanceResource implements ResourceType<KafkaRebalance> {
     }
 
     public static void replaceKafkaRebalanceResourceInSpecificNamespace(String namespaceName, String resourceName, Consumer<KafkaRebalance> editor) {
-        ResourceManager.replaceCrdResource(KafkaRebalance.class, KafkaRebalanceList.class, resourceName, editor, namespaceName);
+        ResourceManager.replaceCrdResource(namespaceName, KafkaRebalance.class, KafkaRebalanceList.class, resourceName, editor);
     }
 }

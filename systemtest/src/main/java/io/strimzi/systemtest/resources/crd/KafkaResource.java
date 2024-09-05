@@ -123,7 +123,7 @@ public class KafkaResource implements ResourceType<Kafka> {
     }
 
     public static void replaceKafkaResourceInSpecificNamespace(String namespaceName, String resourceName, Consumer<Kafka> editor) {
-        ResourceManager.replaceCrdResource(Kafka.class, KafkaList.class, resourceName, editor, namespaceName);
+        ResourceManager.replaceCrdResource(namespaceName, Kafka.class, KafkaList.class, resourceName, editor);
     }
 
     public static KafkaStatus getKafkaStatus(String namespaceName, String clusterName) {

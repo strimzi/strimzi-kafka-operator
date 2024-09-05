@@ -54,6 +54,6 @@ public class KafkaConnectorResource implements ResourceType<KafkaConnector> {
     }
 
     public static void replaceKafkaConnectorResourceInSpecificNamespace(String namespaceName, String resourceName, Consumer<KafkaConnector> editor) {
-        ResourceManager.replaceCrdResource(KafkaConnector.class, KafkaConnectorList.class, resourceName, editor, namespaceName);
+        ResourceManager.replaceCrdResource(namespaceName, KafkaConnector.class, KafkaConnectorList.class, resourceName, editor);
     }
 }

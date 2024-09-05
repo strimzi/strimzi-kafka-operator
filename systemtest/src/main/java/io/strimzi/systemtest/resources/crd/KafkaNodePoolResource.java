@@ -73,7 +73,7 @@ public class KafkaNodePoolResource implements ResourceType<KafkaNodePool> {
     }
 
     public static void replaceKafkaNodePoolResourceInSpecificNamespace(String namespaceName, String resourceName, Consumer<KafkaNodePool> editor) {
-        ResourceManager.replaceCrdResource(KafkaNodePool.class, KafkaNodePoolList.class, resourceName, editor, namespaceName);
+        ResourceManager.replaceCrdResource(namespaceName, KafkaNodePool.class, KafkaNodePoolList.class, resourceName, editor);
     }
 
     public static LabelSelector getLabelSelector(String clusterName, String poolName, ProcessRoles processRole) {

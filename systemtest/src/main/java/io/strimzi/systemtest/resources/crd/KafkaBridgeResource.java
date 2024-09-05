@@ -58,7 +58,7 @@ public class KafkaBridgeResource implements ResourceType<KafkaBridge> {
     }
 
     public static void replaceBridgeResourceInSpecificNamespace(String namespaceName, String resourceName, Consumer<KafkaBridge> editor) {
-        ResourceManager.replaceCrdResource(KafkaBridge.class, KafkaBridgeList.class, resourceName, editor, namespaceName);
+        ResourceManager.replaceCrdResource(namespaceName, KafkaBridge.class, KafkaBridgeList.class, resourceName, editor);
     }
 
     public static LabelSelector getLabelSelector(String clusterName, String componentName) {

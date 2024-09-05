@@ -58,7 +58,7 @@ public class KafkaConnectResource implements ResourceType<KafkaConnect> {
     }
 
     public static void replaceKafkaConnectResourceInSpecificNamespace(String namespaceName, String resourceName, Consumer<KafkaConnect> editor) {
-        ResourceManager.replaceCrdResource(KafkaConnect.class, KafkaConnectList.class, resourceName, editor, namespaceName);
+        ResourceManager.replaceCrdResource(namespaceName, KafkaConnect.class, KafkaConnectList.class, resourceName, editor);
     }
 
     public static LabelSelector getLabelSelector(String clusterName, String componentName) {

@@ -56,7 +56,7 @@ public class KafkaMirrorMaker2Resource implements ResourceType<KafkaMirrorMaker2
     }
 
     public static void replaceKafkaMirrorMaker2ResourceInSpecificNamespace(String namespaceName, String resourceName, Consumer<KafkaMirrorMaker2> editor) {
-        ResourceManager.replaceCrdResource(KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, resourceName, editor, namespaceName);
+        ResourceManager.replaceCrdResource(namespaceName, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, resourceName, editor);
     }
 
     public static LabelSelector getLabelSelector(String clusterName, String componentName) {

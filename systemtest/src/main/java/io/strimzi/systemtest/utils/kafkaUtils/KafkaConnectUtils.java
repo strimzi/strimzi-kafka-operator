@@ -43,8 +43,8 @@ public class KafkaConnectUtils {
      */
     public static boolean waitForConnectStatus(String namespaceName, String clusterName, Enum<?>  status) {
         KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get();
-        return ResourceManager.waitForResourceStatus(KafkaConnectResource.kafkaConnectClient(),
-            kafkaConnect.getKind(), namespaceName, kafkaConnect.getMetadata().getName(), status, ResourceOperation.getTimeoutForResourceReadiness(kafkaConnect.getKind()));
+        return ResourceManager.waitForResourceStatus(namespaceName, kafkaConnect.getKind(), KafkaConnectResource.kafkaConnectClient(),
+            kafkaConnect.getMetadata().getName(), status, ResourceOperation.getTimeoutForResourceReadiness(kafkaConnect.getKind()));
     }
 
     public static boolean waitForConnectReady(String namespaceName, String clusterName) {

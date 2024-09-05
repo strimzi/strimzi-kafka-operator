@@ -54,6 +54,6 @@ public class KafkaUserResource implements ResourceType<KafkaUser> {
     }
 
     public static void replaceUserResourceInSpecificNamespace(String namespaceName, String resourceName, Consumer<KafkaUser> editor) {
-        ResourceManager.replaceCrdResource(KafkaUser.class, KafkaUserList.class, resourceName, editor, namespaceName);
+        ResourceManager.replaceCrdResource(namespaceName, KafkaUser.class, KafkaUserList.class, resourceName, editor);
     }
 }
