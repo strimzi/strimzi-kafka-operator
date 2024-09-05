@@ -56,10 +56,6 @@ import java.util.stream.Collectors;
 public class KafkaBrokerConfigurationBuilder {
     private final static String CONTROL_PLANE_LISTENER_NAME = "CONTROLPLANE-9090";
     private final static String REPLICATION_LISTENER_NAME = "REPLICATION-9091";
-
-    // Kafka version that requires advertised.listeners configuration for controllers, previous versions do not allow this configuration for controllers.
-    private final static KafkaVersion KAFKA_VERSION_3_9 = new KafkaVersion("3.9.0", "", "", "", "", false, false, "");
-
     // Names of environment variables placeholders replaced only in the running container
     private final static String PLACEHOLDER_CERT_STORE_PASSWORD = "${CERTS_STORE_PASSWORD}";
     private final static String PLACEHOLDER_RACK_ID = "${STRIMZI_RACK_ID}";
@@ -285,8 +281,9 @@ public class KafkaBrokerConfigurationBuilder {
         if (node.controller() || (node.broker() && kafkaMetadataConfigState.isZooKeeperToMigration())) {
             listeners.add(CONTROL_PLANE_LISTENER_NAME + "://0.0.0.0:9090");
 
-            // Control Plane listener to be advertised with broker in ZooKeeper-based or migration OR KRaft controller or mixed node with version 3.9+
-            if ((node.broker() && kafkaMetadataConfigState.isZooKeeperToMigration()) || (kafkaVersion.compareTo(KAFKA_VERSION_3_9) >= 0)) {
+            // Control Plane listener to be advertised with broker in ZooKeeper-based or migration
+            // Kafka version 3.9.0 requires advertised.listeners configuration for controllers, however the previous versions forbids the configuration for controllers.
+            if ((node.broker() && kafkaMetadataConfigState.isZooKeeperToMigration()) || (KafkaVersion.compareDottedVersions(kafkaVersion.version(), "3.9.0") >= 0)) {
                 advertisedListeners.add(String.format("%s://%s:9090",
                         CONTROL_PLANE_LISTENER_NAME,
                         // Pod name constructed to be templatable for each individual ordinal
