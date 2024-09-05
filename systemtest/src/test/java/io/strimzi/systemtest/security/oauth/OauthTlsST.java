@@ -78,7 +78,6 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(OAUTH)
 @Tag(REGRESSION)
-@Tag(ACCEPTANCE)
 @FIPSNotSupported("Keycloak is not customized to run on FIPS env - https://github.com/strimzi/strimzi-kafka-operator/issues/8331")
 public class OauthTlsST extends OauthAbstractST {
     protected static final Logger LOGGER = LogManager.getLogger(OauthTlsST.class);
@@ -119,6 +118,7 @@ public class OauthTlsST extends OauthAbstractST {
     @ParallelTest
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
+    @Tag(ACCEPTANCE)
     void testProducerConsumerConnect() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
@@ -192,6 +192,7 @@ public class OauthTlsST extends OauthAbstractST {
     @Description("As a OAuth bridge, i am able to send messages to bridge endpoint using encrypted communication")
     @ParallelTest
     @Tag(BRIDGE)
+    @Tag(ACCEPTANCE)
     void testProducerConsumerBridge() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
@@ -263,6 +264,7 @@ public class OauthTlsST extends OauthAbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one Namespace")
     @Tag(MIRROR_MAKER)
     @Tag(NODEPORT_SUPPORTED)
+    @Tag(ACCEPTANCE)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testMirrorMaker() {
         // Nodeport needs cluster wide rights to work properly which is not possible with STRIMZI_RBAC_SCOPE=NAMESPACE
