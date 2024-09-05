@@ -54,6 +54,7 @@ public class KafkaUserCrdOperatorIT extends AbstractCustomResourceOperatorIT<Kub
                     .withNamespace(getNamespace())
                 .endMetadata()
                 .withNewSpec()
+                    .withNewKafkaUserScramSha512ClientAuthentication().endKafkaUserScramSha512ClientAuthentication()
                 .endSpec()
                 .withNewStatus()
                 .endStatus()

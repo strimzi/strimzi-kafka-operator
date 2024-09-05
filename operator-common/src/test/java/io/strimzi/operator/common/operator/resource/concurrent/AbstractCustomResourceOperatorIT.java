@@ -5,8 +5,6 @@
 package io.strimzi.operator.common.operator.resource.concurrent;
 
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
-import io.fabric8.kubernetes.api.model.DeletionPropagation;
-import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
@@ -16,8 +14,6 @@ import io.strimzi.api.kafka.model.common.ConditionBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.KubeClusterResource;
-import io.strimzi.test.k8s.cluster.KubeCluster;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -25,7 +21,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
-import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -33,7 +28,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
@@ -71,37 +65,23 @@ public abstract class AbstractCustomResourceOperatorIT<
 
     @BeforeAll
     public void before() {
-        String namespace = getNamespace();
-        KubeClusterResource cluster = KubeClusterResource.getInstance();
-        cluster.setNamespace(namespace);
-
-        assertDoesNotThrow(KubeCluster::bootstrap, "Could not bootstrap server");
         client = new KubernetesClientBuilder().build();
 
-        if (client.namespaces().withName(namespace).get() != null && System.getenv("SKIP_TEARDOWN") == null) {
-            LOGGER.warn("Namespace {} is already created, going to delete it", namespace);
-            client.namespaces().withName(namespace).withPropagationPolicy(DeletionPropagation.BACKGROUND).delete();
-            client.namespaces().withName(namespace).waitUntilCondition(Objects::isNull, 30_000, TimeUnit.MILLISECONDS);
-        }
-
-        LOGGER.info("Creating namespace: {}", namespace);
-        client.namespaces().resource(new NamespaceBuilder().withNewMetadata().withName(namespace).endMetadata().build()).create();
-        client.namespaces().withName(namespace).waitUntilCondition(ns -> ns.getStatus() != null && "Active".equals(ns.getStatus().getPhase()), 30_000, TimeUnit.MILLISECONDS);
+        LOGGER.info("Creating namespace");
+        TestUtils.createNamespace(client, getNamespace());
+        LOGGER.info("Created namespace");
 
         LOGGER.info("Creating CRD");
-        cluster.createCustomResources(getCrd());
-        cluster.waitForCustomResourceDefinition(getCrdName());
+        TestUtils.createCrd(client, getCrdName(), getCrd());
         LOGGER.info("Created CRD");
     }
 
     @AfterAll
     public void after() {
-        String namespace = getNamespace();
-        if (client.namespaces().withName(namespace).get() != null && System.getenv("SKIP_TEARDOWN") == null) {
-            LOGGER.warn("Deleting namespace {} after tests run", namespace);
-            client.namespaces().withName(namespace).withPropagationPolicy(DeletionPropagation.BACKGROUND).delete();
-            client.namespaces().withName(namespace).waitUntilCondition(Objects::isNull, 30_000, TimeUnit.MILLISECONDS);
-        }
+        TestUtils.deleteCrd(client, getCrdName());
+        TestUtils.deleteNamespace(client, getNamespace());
+
+        client.close();
     }
 
     @Test
@@ -123,6 +103,7 @@ public abstract class AbstractCustomResourceOperatorIT<
             .whenComplete((modifiedCustomResource, error) -> assertReady(modifiedCustomResource))
             .thenCompose(rrModified -> {
                 LOGGER.info("Deleting resource");
+
                 return op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null);
             }));
     }
@@ -147,6 +128,7 @@ public abstract class AbstractCustomResourceOperatorIT<
                 LOGGER.info("Saving resource with status change prior to deletion");
                 newStatus.set(getResourceWithNewReadyStatus(op.get(namespace, resourceName)));
                 LOGGER.info("Deleting resource");
+
                 return op.deleteAsync(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, false);
             })
             .thenCompose(i -> {
@@ -154,11 +136,11 @@ public abstract class AbstractCustomResourceOperatorIT<
                 return op.updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, newStatus.get());
             })
             .<Void>handle((i, error) -> {
+                LOGGER.info("Checking exception");
                 assertThat(Util.unwrap(error), instanceOf(KubernetesClientException.class));
                 return null;
             }),
-            1,
-            TimeUnit.MINUTES);
+            1, TimeUnit.MINUTES);
     }
 
     /**

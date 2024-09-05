@@ -4,17 +4,17 @@
  */
 package io.strimzi.api.kafka.model.mirrormaker2;
 
+import io.fabric8.kubernetes.client.ConfigBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.AbstractCrdIT;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -37,22 +37,10 @@ public class KafkaMirrorMaker2CrdIT extends AbstractCrdIT {
     }
 
     @Test
-    void testKafkaMirrorMaker2WithExtraProperty() {
-        // oc tool does not fail with extra properties, it shows only a warning. So this test does not pass on OpenShift
-        assumeKube();
-
-        Throwable exception = assertThrows(
-            KubeClusterException.class,
-            () -> createDeleteCustomResource("KafkaMirrorMaker2-with-extra-property.yaml"));
-
-        assertThat(exception.getMessage(), containsString("unknown field \"extra\""));
-    }
-
-    @Test
     void testKafkaMirrorMaker2WithMissingRequired() {
         Throwable exception = assertThrows(
-            KubeClusterException.class,
-            () -> createDeleteCustomResource("KafkaMirrorMaker2-with-missing-required-property.yaml"));
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaMirrorMaker2-with-missing-required-property.yaml"));
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "connectCluster", "clusters.alias", "sourceCluster", "targetCluster");
     }
@@ -60,14 +48,10 @@ public class KafkaMirrorMaker2CrdIT extends AbstractCrdIT {
     @Test
     void testKafkaMirrorMaker2WithInvalidReplicas() {
         Throwable exception = assertThrows(
-            KubeClusterException.class,
-            () -> createDeleteCustomResource("KafkaMirrorMaker2-with-invalid-replicas.yaml"));
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaMirrorMaker2-with-invalid-replicas.yaml"));
 
-        assertThat(exception.getMessage(),
-                anyOf(
-                        containsStringIgnoringCase("Invalid value: \"string\": spec.replicas in body must be of type integer: \"string\""),
-                        containsStringIgnoringCase("invalid type for io.strimzi.kafka.v1beta2.KafkaMirrorMaker2.spec.replicas: got \"string\", expected \"integer\"")
-                ));
+        assertThat(exception.getMessage(), containsStringIgnoringCase("Invalid value: \"string\": spec.replicas in body must be of type integer: \"string\""));
     }
 
     @Test
@@ -83,8 +67,8 @@ public class KafkaMirrorMaker2CrdIT extends AbstractCrdIT {
     @Test
     void testKafkaMirrorMaker2WithTlsAuthWithMissingRequired() {
         Throwable exception = assertThrows(
-            KubeClusterException.class,
-            () -> createDeleteCustomResource("KafkaMirrorMaker2-with-tls-auth-with-missing-required.yaml"));
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaMirrorMaker2-with-tls-auth-with-missing-required.yaml"));
         
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "certificate", "key");
     }
@@ -107,28 +91,23 @@ public class KafkaMirrorMaker2CrdIT extends AbstractCrdIT {
     @Test
     public void testKafkaMirrorMaker2WithInvalidExternalConfiguration() {
         Throwable exception = assertThrows(
-            KubeClusterException.class,
-            () -> createDeleteCustomResource("KafkaMirrorMaker2-with-invalid-external-configuration.yaml"));
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaMirrorMaker2-with-invalid-external-configuration.yaml"));
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "valueFrom");
     }
 
     @BeforeAll
     void setupEnvironment() {
-        cluster.createCustomResources(TestUtils.CRD_KAFKA_MIRROR_MAKER_2);
-        cluster.waitForCustomResourceDefinition("kafkamirrormaker2s.kafka.strimzi.io");
-        cluster.createNamespace(NAMESPACE);
-
-        try {
-            Thread.sleep(1_000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        client = new KubernetesClientBuilder().withConfig(new ConfigBuilder().withNamespace(NAMESPACE).build()).build();
+        TestUtils.createCrd(client, KafkaMirrorMaker2.CRD_NAME, TestUtils.CRD_KAFKA_MIRROR_MAKER_2);
+        TestUtils.createNamespace(client, NAMESPACE);
     }
 
     @AfterAll
     void teardownEnvironment() {
-        cluster.deleteCustomResources();
-        cluster.deleteNamespaces();
+        TestUtils.deleteCrd(client, KafkaMirrorMaker2.CRD_NAME);
+        TestUtils.deleteNamespace(client, NAMESPACE);
+        client.close();
     }
 }

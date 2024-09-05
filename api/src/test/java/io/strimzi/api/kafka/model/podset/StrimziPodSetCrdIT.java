@@ -5,12 +5,13 @@
 package io.strimzi.api.kafka.model.podset;
 
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
+import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.AbstractCrdIT;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -39,8 +40,8 @@ public class StrimziPodSetCrdIT extends AbstractCrdIT {
     @Test
     void testStrimziPodSettWithMissingRequired() {
         Throwable exception = assertThrows(
-            KubeClusterException.class,
-            () -> createDeleteCustomResource("StrimziPodSet-with-missing-required-property.yaml"));
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("StrimziPodSet-with-missing-required-property.yaml"));
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "pods", "selector");
     }
@@ -68,16 +69,17 @@ public class StrimziPodSetCrdIT extends AbstractCrdIT {
     }
 
     @BeforeAll
-    void setupEnvironment() throws InterruptedException {
-        cluster.createCustomResources(TestUtils.CRD_STRIMZI_POD_SET);
-        cluster.waitForCustomResourceDefinition("strimzipodsets.core.strimzi.io");
-        cluster.createNamespace(NAMESPACE);
+    void setupEnvironment() {
+        client = new KubernetesClientBuilder().withConfig(new ConfigBuilder().withNamespace(NAMESPACE).build()).build();
+        TestUtils.createCrd(client, StrimziPodSet.CRD_NAME, TestUtils.CRD_STRIMZI_POD_SET);
+        TestUtils.createNamespace(client, NAMESPACE);
     }
 
     @AfterAll
     void teardownEnvironment() {
-        cluster.deleteCustomResources();
-        cluster.deleteNamespaces();
+        TestUtils.deleteCrd(client, StrimziPodSet.CRD_NAME);
+        TestUtils.deleteNamespace(client, NAMESPACE);
+        client.close();
     }
 }
 

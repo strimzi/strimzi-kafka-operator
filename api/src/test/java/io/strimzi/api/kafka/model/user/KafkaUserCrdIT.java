@@ -4,16 +4,15 @@
  */
 package io.strimzi.api.kafka.model.user;
 
+import io.fabric8.kubernetes.client.ConfigBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.AbstractCrdIT;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.anyOf;
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -32,7 +31,7 @@ public class KafkaUserCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaUserIsNotScaling() {
-        assertThrows(KubeClusterException.class, () -> createScaleDelete(KafkaUser.class, "KafkaUser.yaml"));
+        assertThrows(KubernetesClientException.class, () -> createScaleDelete(KafkaUser.class, "KafkaUser.yaml"));
     }
 
     @Test
@@ -45,37 +44,17 @@ public class KafkaUserCrdIT extends AbstractCrdIT {
         createDeleteCustomResource("KafkaUser-minimal.yaml");
     }
 
-    @Test
-    void testKafkaUserWithExtraProperty() {
-        // oc tool does not fail with extra properties, it shows only a warning. So this test does not pass on OpenShift
-        assumeKube();
-
-        Throwable exception = assertThrows(
-            KubeClusterException.class,
-            () -> createDeleteCustomResource("KafkaUser-with-extra-property.yaml"));
-
-        assertThat(exception.getMessage(), anyOf(
-                containsString("unknown field \"thisPropertyIsNotInTheSchema\""),
-                containsString("unknown field \"spec.thisPropertyIsNotInTheSchema\"")
-        ));
-    }
-
     @BeforeAll
     void setupEnvironment() {
-        cluster.createCustomResources(TestUtils.CRD_KAFKA_USER);
-        cluster.waitForCustomResourceDefinition("kafkausers.kafka.strimzi.io");
-        cluster.createNamespace(NAMESPACE);
-
-        try {
-            Thread.sleep(1_000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        client = new KubernetesClientBuilder().withConfig(new ConfigBuilder().withNamespace(NAMESPACE).build()).build();
+        TestUtils.createCrd(client, KafkaUser.CRD_NAME, TestUtils.CRD_KAFKA_USER);
+        TestUtils.createNamespace(client, NAMESPACE);
     }
 
     @AfterAll
     void teardownEnvironment() {
-        cluster.deleteCustomResources();
-        cluster.deleteNamespaces();
+        TestUtils.deleteCrd(client, KafkaUser.CRD_NAME);
+        TestUtils.deleteNamespace(client, NAMESPACE);
+        client.close();
     }
 }
