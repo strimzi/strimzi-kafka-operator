@@ -46,7 +46,7 @@ public class KafkaTopicResource implements ResourceType<KafkaTopic> {
 
     @Override
     public boolean waitForReadiness(KafkaTopic resource) {
-        return ResourceManager.waitForResourceStatus(resource.getMetadata().getNamespace(), resource.getKind(), kafkaTopicClient(),
+        return ResourceManager.waitForResourceStatus(resource.getMetadata().getNamespace(), kafkaTopicClient(), resource.getKind(),
             resource.getMetadata().getName(), CustomResourceStatus.Ready, ResourceOperation.getTimeoutForResourceReadiness(resource.getKind()));
     }
 

@@ -484,7 +484,7 @@ public class ResourceManager {
         return waitForResourceStatus(resource.getMetadata().getNamespace(), operation, resource.getKind(), resource.getMetadata().getName(), statusType, conditionStatus, resourceTimeout);
     }
 
-    public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatus(String namespaceName, String kind, MixedOperation<T, ?, ?> operation, String name, Enum<?> statusType, long resourceTimeoutMs) {
+    public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatus(String namespaceName, MixedOperation<T, ?, ?> operation, String kind, String name, Enum<?> statusType, long resourceTimeoutMs) {
         return waitForResourceStatus(namespaceName, operation, kind, name, statusType, ConditionStatus.True, resourceTimeoutMs);
     }
 
