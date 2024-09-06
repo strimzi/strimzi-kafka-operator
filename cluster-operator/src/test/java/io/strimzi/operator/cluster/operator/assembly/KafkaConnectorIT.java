@@ -65,6 +65,7 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.oneOf;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectorIT {
@@ -406,7 +407,7 @@ public class KafkaConnectorIT {
                     return Future.succeededFuture();
                 } else {
                     Promise<Void> promise = Promise.promise();
-                    vertx.setTimer(2000, id -> operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
+                    vertx.setTimer(3000, id -> operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
                             "localhost", connectClient, true, connectorName, connector)
                         .onComplete(result -> promise.complete(result.result())));
                     return promise.future();
@@ -508,7 +509,8 @@ public class KafkaConnectorIT {
             assertThat(kafkaConnector.getStatus().getAutoRestart().getCount(), is(1));
             JsonObject connectorStatus = new JsonObject(kafkaConnector.getStatus().getConnectorStatus());
             assertThat(connectorStatus.getJsonObject("connector"), notNullValue());
-            assertThat(connectorStatus.getJsonObject("connector").getString("state"), is("RESTARTING"));
+            // Depending on the timing, the state might differ. So we try multiple different states => RESTARTING and UNASSIGNED.
+            assertThat(connectorStatus.getJsonObject("connector").getString("state"), is(oneOf("RESTARTING", "UNASSIGNED")));
             MetricsProvider metrics = new MicrometerMetricsProvider(BackendRegistries.getDefaultNow());
             MeterRegistry registry = metrics.meterRegistry();
             assertThat(registry.get(ConnectOperatorMetricsHolder.METRIC_AUTO_RESTARTS).tag("kind", KafkaConnector.RESOURCE_KIND).counter().count(), CoreMatchers.is(1.0));
