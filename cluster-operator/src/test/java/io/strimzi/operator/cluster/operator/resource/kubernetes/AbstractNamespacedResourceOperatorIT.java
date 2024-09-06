@@ -13,7 +13,6 @@ import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
@@ -35,7 +34,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /**
  * The main purpose of the Integration Tests for the operators is to test them against a real Kubernetes cluster.
@@ -63,7 +61,6 @@ public abstract class AbstractNamespacedResourceOperatorIT<C extends KubernetesC
 
     @BeforeAll
     public static void before() {
-        assertDoesNotThrow(() -> KubeCluster.bootstrap(), "Could not bootstrap server");
         vertx = Vertx.vertx();
         sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
         client = new KubernetesClientBuilder().build();

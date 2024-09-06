@@ -13,7 +13,6 @@ import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.cluster.KubeCluster;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -31,7 +30,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
@@ -66,7 +64,6 @@ public abstract class AbstractNamespacedResourceOperatorIT<
         asyncExecutor = ForkJoinPool.commonPool();
         resourceSupport = new ResourceSupport(asyncExecutor);
 
-        assertDoesNotThrow(() -> KubeCluster.bootstrap(), "Could not bootstrap server");
         client = new KubernetesClientBuilder().build();
 
         if (client.namespaces().withName(namespace).get() != null && System.getenv("SKIP_TEARDOWN") == null) {
