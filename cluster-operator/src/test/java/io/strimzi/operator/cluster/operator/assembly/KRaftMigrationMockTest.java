@@ -210,10 +210,7 @@ public class KRaftMigrationMockTest {
                 })))
                 // 2nd reconcile, Kafka custom resource updated with the strimzi.io/kraft: migration annotation
                 .compose(i -> {
-                    Kafka kafkaWithMigrationAnno = kafkaWithKRaftAnno(
-                            Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get(), "migration"
-                    );
-                    Crds.kafkaOperation(client).inNamespace(namespace).resource(kafkaWithMigrationAnno).update();
+                    Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).edit(k -> kafkaWithKRaftAnno(k, "migration"));
                     return Future.succeededFuture();
                 })
                 .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
@@ -275,10 +272,7 @@ public class KRaftMigrationMockTest {
                 })))
                 // 6th reconcile, Kafka custom resource updated with the strimzi.io/kraft: enabled annotation and in post-migration
                 .compose(i -> {
-                    Kafka kafkaWithEnabledAnno = kafkaWithKRaftAnno(
-                            Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get(), "enabled"
-                    );
-                    Crds.kafkaOperation(client).inNamespace(namespace).resource(kafkaWithEnabledAnno).update();
+                    Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).edit(k -> kafkaWithKRaftAnno(k, "enabled"));
                     return Future.succeededFuture();
                 })
                 .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
@@ -330,10 +324,7 @@ public class KRaftMigrationMockTest {
                 })))
                 // 2nd reconcile, Kafka custom resource updated with the strimzi.io/kraft: migration annotation
                 .compose(i -> {
-                    Kafka kafkaWithMigrationAnno = kafkaWithKRaftAnno(
-                            Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get(), "migration"
-                    );
-                    Crds.kafkaOperation(client).inNamespace(namespace).resource(kafkaWithMigrationAnno).update();
+                    Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).edit(k -> kafkaWithKRaftAnno(k, "migration"));
                     return Future.succeededFuture();
                 })
                 .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
@@ -361,10 +352,7 @@ public class KRaftMigrationMockTest {
                 })))
                 // 6th reconcile, Kafka custom resource updated with the strimzi.io/kraft: rollback annotation and in post-migration
                 .compose(i -> {
-                    Kafka kafkaWithRollbackAnno = kafkaWithKRaftAnno(
-                            Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get(), "rollback"
-                    );
-                    Crds.kafkaOperation(client).inNamespace(namespace).resource(kafkaWithRollbackAnno).update();
+                    Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).edit(k -> kafkaWithKRaftAnno(k, "rollback"));
                     return Future.succeededFuture();
                 })
                 .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
@@ -387,10 +375,7 @@ public class KRaftMigrationMockTest {
                 })))
                 // 7th reconcile, Kafka custom resource updated with the strimzi.io/kraft: disabled annotation and in dual-writing
                 .compose(i -> {
-                    Kafka kafkaWithDisabledAnno = kafkaWithKRaftAnno(
-                            Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get(), "disabled"
-                    );
-                    Crds.kafkaOperation(client).inNamespace(namespace).resource(kafkaWithDisabledAnno).update();
+                    Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).edit(k -> kafkaWithKRaftAnno(k, "disabled"));
                     return Future.succeededFuture();
                 })
                 .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
