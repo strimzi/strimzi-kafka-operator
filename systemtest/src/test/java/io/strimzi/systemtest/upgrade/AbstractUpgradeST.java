@@ -133,7 +133,7 @@ public class AbstractUpgradeST extends AbstractST {
     }
 
     @SuppressWarnings("CyclomaticComplexity")
-    protected void changeKafkaAndLogFormatVersion(String componentsNamespaceName, CommonVersionModificationData versionModificationData) throws IOException {
+    protected void changeKafkaVersion(String componentsNamespaceName, CommonVersionModificationData versionModificationData) throws IOException {
         // Get Kafka configurations
         String currentLogMessageFormat = cmdKubeClient(componentsNamespaceName).getResourceJsonPath(getResourceApiVersion(Kafka.RESOURCE_PLURAL), clusterName, ".spec.kafka.config.log\\.message\\.format\\.version");
         String currentInterBrokerProtocol = cmdKubeClient(componentsNamespaceName).getResourceJsonPath(getResourceApiVersion(Kafka.RESOURCE_PLURAL), clusterName, ".spec.kafka.config.inter\\.broker\\.protocol\\.version");
@@ -210,6 +210,16 @@ public class AbstractUpgradeST extends AbstractST {
                 brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(componentsNamespaceName, brokerSelector, brokerPods);
             }
         }
+    }
+
+    protected void changeKafkaVersionInKafkaConnect(String componentsNamespaceName, CommonVersionModificationData versionModificationData) {
+        UpgradeKafkaVersion upgradeToKafkaVersion = new UpgradeKafkaVersion(versionModificationData.getProcedures().getVersion());
+
+        LOGGER.info(String.format("Setting Kafka version to %s in Kafka Connect", upgradeToKafkaVersion.getVersion()));
+        cmdKubeClient(componentsNamespaceName).patchResource(getResourceApiVersion(KafkaConnect.RESOURCE_PLURAL), clusterName, "/spec/version", upgradeToKafkaVersion.getVersion());
+
+        LOGGER.info("Waiting for KafkaConnect rolling update to finish");
+        connectPods = RollingUpdateUtils.waitTillComponentHasRolled(componentsNamespaceName, connectLabelSelector, 1, connectPods);
     }
 
     protected void logComponentsPodImagesWithConnect(String componentsNamespaceName) {
@@ -550,7 +560,11 @@ public class AbstractUpgradeST extends AbstractST {
         }
     }
 
-    protected void deployKafkaConnectAndKafkaConnectorWithWaitForReadiness(final TestStorage testStorage, final BundleVersionModificationData acrossUpgradeData, final UpgradeKafkaVersion upgradeKafkaVersion) {
+    protected void deployKafkaConnectAndKafkaConnectorWithWaitForReadiness(
+        final TestStorage testStorage,
+        final BundleVersionModificationData acrossUpgradeData,
+        final UpgradeKafkaVersion upgradeKafkaVersion
+    ) {
         // setup KafkaConnect + KafkaConnector
         if (!cmdKubeClient(testStorage.getNamespaceName()).getResources(getResourceApiVersion(KafkaConnect.RESOURCE_PLURAL)).contains(clusterName)) {
             if (acrossUpgradeData.getFromVersion().equals("HEAD")) {
@@ -625,14 +639,17 @@ public class AbstractUpgradeST extends AbstractST {
         }
     }
 
-    protected void doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(final String clusterOperatorNamespaceName,
-                                                                              final TestStorage testStorage,
-                                                                              final BundleVersionModificationData bundleDowngradeDataWithFeatureGates,
-                                                                              final UpgradeKafkaVersion upgradeKafkaVersion) throws IOException {
-        this.deployCoWithWaitForReadiness(clusterOperatorNamespaceName, testStorage.getNamespaceName(), bundleDowngradeDataWithFeatureGates);
-        this.deployKafkaClusterWithWaitForReadiness(testStorage.getNamespaceName(), bundleDowngradeDataWithFeatureGates, upgradeKafkaVersion);
-        this.deployKafkaConnectAndKafkaConnectorWithWaitForReadiness(testStorage, bundleDowngradeDataWithFeatureGates, upgradeKafkaVersion);
-        this.deployKafkaUserWithWaitForReadiness(testStorage.getNamespaceName(), bundleDowngradeDataWithFeatureGates);
+    protected void doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(
+        final String clusterOperatorNamespaceName,
+        final TestStorage testStorage,
+        final BundleVersionModificationData upgradeDowngradeData,
+        final UpgradeKafkaVersion upgradeKafkaVersion
+    ) throws IOException {
+        setupEnvAndUpgradeClusterOperator(clusterOperatorNamespaceName, testStorage, upgradeDowngradeData, upgradeKafkaVersion);
+        this.deployKafkaConnectAndKafkaConnectorWithWaitForReadiness(testStorage, upgradeDowngradeData, upgradeKafkaVersion);
+
+        // Check if UTO is used before changing the CO -> used for check for KafkaTopics
+        boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(testStorage.getNamespaceName(), eoSelector);
 
         final KafkaClients clients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(clusterName))
             .withNamespaceName(testStorage.getNamespaceName())
@@ -651,23 +668,39 @@ public class AbstractUpgradeST extends AbstractST {
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
 
         // Upgrade CO to HEAD and wait for readiness of ClusterOperator
-        changeClusterOperator(clusterOperatorNamespaceName, testStorage.getNamespaceName(), bundleDowngradeDataWithFeatureGates);
+        changeClusterOperator(clusterOperatorNamespaceName, testStorage.getNamespaceName(), upgradeDowngradeData);
 
-        // Verify that Kafka and Connect Pods Rolled
-        waitForKafkaClusterRollingUpdate(testStorage.getNamespaceName());
-        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), connectLabelSelector, 1, connectPods);
-        KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), clusterName);
+        if (TestKafkaVersion.supportedVersionsContainsVersion(upgradeKafkaVersion.getVersion())) {
+            // Verify that Kafka and Connect Pods Rolled
+            waitForKafkaClusterRollingUpdate(testStorage.getNamespaceName());
+            connectPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), connectLabelSelector, 1, connectPods);
+            KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), clusterName);
+        }
+
+        logComponentsPodImagesWithConnect(testStorage.getNamespaceName());
+
+        // Upgrade/Downgrade kafka
+        changeKafkaVersion(testStorage.getNamespaceName(), upgradeDowngradeData);
+        changeKafkaVersionInKafkaConnect(testStorage.getNamespaceName(), upgradeDowngradeData);
+
+        logComponentsPodImagesWithConnect(testStorage.getNamespaceName());
+        checkAllComponentsImages(testStorage.getNamespaceName(), upgradeDowngradeData);
 
         // send again new messages
         resourceManager.createResourceWithWait(clients.producerTlsStrimzi(clusterName));
+
         // Verify that Producer finish successfully
         ClientUtils.waitForInstantProducerClientSuccess(testStorage.getNamespaceName(), testStorage);
+
         // Verify FileSink KafkaConnector
         connectorPodName = kubeClient().listPods(testStorage.getNamespaceName(), Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND)).get(0).getMetadata().getName();
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
 
         // Verify that pods are stable
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), clusterName);
+
+        // Verify upgrade
+        verifyProcedure(testStorage.getNamespaceName(), upgradeDowngradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), wasUTOUsedBefore);
     }
 
     protected String downloadExamplesAndGetPath(CommonVersionModificationData versionModificationData) throws IOException {

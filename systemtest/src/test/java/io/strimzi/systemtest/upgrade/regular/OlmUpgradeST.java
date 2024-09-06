@@ -140,7 +140,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
 
         // ======== Kafka upgrade starts ========
         logComponentsPodImages(CO_NAMESPACE);
-        changeKafkaAndLogFormatVersion(CO_NAMESPACE, olmUpgradeData);
+        changeKafkaVersion(CO_NAMESPACE, olmUpgradeData);
         logComponentsPodImages(CO_NAMESPACE);
         // ======== Kafka upgrade ends ========
 

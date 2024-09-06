@@ -187,7 +187,7 @@ public class VersionModificationDataLoader {
 
             downgradeData = updateUpgradeDataWithFeatureGates(downgradeData, featureGates);
 
-            parameters.add(Arguments.of(downgradeData.getFromVersion(), downgradeData.getToVersion(), downgradeData));
+            parameters.add(Arguments.of(downgradeData.getFromVersion(), downgradeData.getToVersion(), downgradeData.getFeatureGatesBefore(), downgradeData.getFeatureGatesAfter(), downgradeData));
         });
 
         return parameters.stream();

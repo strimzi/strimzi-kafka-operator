@@ -41,7 +41,7 @@
     topicOperator: strimzi/operator:latest
     userOperator: strimzi/operator:latest
   client:
-    continuousClientsMessages: 300
+    continuousClientsMessages: 400
   environmentInfo:
     maxK8sVersion: latest
     status: stable
