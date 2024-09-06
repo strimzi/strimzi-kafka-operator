@@ -289,7 +289,7 @@
                 </executions>
                 <configuration>
                     <testsPath>${project.basedir}/src/test/java/io/strimzi/systemtest</testsPath>
-                    <docsPath>./development-docs/systemtests/</docsPath>
+                    <docsPath>${strimziRootDirectory}/development-docs/systemtests/</docsPath>
                     <generateFmf>false</generateFmf>
                     <generateDirs>false</generateDirs>
                 </configuration>
