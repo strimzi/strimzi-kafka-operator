@@ -4,15 +4,15 @@
  */
 package io.strimzi.api.kafka.model.topic;
 
+import io.fabric8.kubernetes.client.ConfigBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.AbstractCrdIT;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * validation done by K8S.
  */
 public class KafkaTopicCrdIT extends AbstractCrdIT {
-
     public static final String NAMESPACE = "topiccrd-it";
 
     @Test
@@ -32,7 +31,7 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaTopicIsNotScaling() {
-        assertThrows(KubeClusterException.class, () -> createScaleDelete(KafkaTopic.class, "KafkaTopic.yaml"));
+        assertThrows(KubernetesClientException.class, () -> createScaleDelete(KafkaTopic.class, "KafkaTopic.yaml"));
     }
 
     @Test
@@ -45,34 +44,17 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
         createDeleteCustomResource("KafkaTopic-minimal.yaml");
     }
 
-    @Test
-    void testCreateKafkaTopicWithExtraProperty() {
-        // oc tool does not fail with extra properties, it shows only a warning. So this test does not pass on OpenShift
-        assumeKube();
-
-        Throwable exception = assertThrows(
-            KubeClusterException.class,
-            () -> createDeleteCustomResource("KafkaTopic-with-extra-property.yaml"));
-
-        assertThat(exception.getMessage(), containsString("unknown field \"foo\""));
-    }
-
     @BeforeAll
     void setupEnvironment() {
-        cluster.createCustomResources(TestUtils.CRD_TOPIC);
-        cluster.waitForCustomResourceDefinition("kafkatopics.kafka.strimzi.io");
-        cluster.createNamespace(NAMESPACE);
-
-        try {
-            Thread.sleep(1_000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        client = new KubernetesClientBuilder().withConfig(new ConfigBuilder().withNamespace(NAMESPACE).build()).build();
+        TestUtils.createCrd(client, KafkaTopic.CRD_NAME, TestUtils.CRD_TOPIC);
+        TestUtils.createNamespace(client, NAMESPACE);
     }
 
     @AfterAll
     void teardownEnvironment() {
-        cluster.deleteCustomResources();
-        cluster.deleteNamespaces();
+        TestUtils.deleteCrd(client, KafkaTopic.CRD_NAME);
+        TestUtils.deleteNamespace(client, NAMESPACE);
+        client.close();
     }
 }

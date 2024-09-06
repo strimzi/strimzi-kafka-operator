@@ -78,8 +78,8 @@ spec:
       initialDelaySeconds: 10
       timeoutSeconds: 4
     jvmOptions:
-      "-Xmx": "512Mi"
-      "-Xms": "512Mi"
+      "-Xmx": "512M"
+      "-Xms": "512M"
     resources:
       limits:
         memory: "512Mi"

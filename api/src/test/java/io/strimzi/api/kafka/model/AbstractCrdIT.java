@@ -5,41 +5,24 @@
 package io.strimzi.api.kafka.model;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.interfaces.TestSeparator;
-import io.strimzi.test.k8s.KubeClusterResource;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInstance;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class AbstractCrdIT implements TestSeparator {
-
-    protected KubeClusterResource cluster = KubeClusterResource.getInstance();
-
-    protected void assumeKube() {
-        assumeFalse(KubeClusterResource.getInstance().isOpenShift());
-    }
-
-    private <T extends CustomResource> T loadResource(Class<T> resourceClass, String resource) {
-        String ssStr = TestUtils.readResource(resourceClass, resource);
-        assertThat("Class path resource " + resource + " was missing", ssStr, is(notNullValue()));
-        return TestUtils.fromYaml(resource, resourceClass, false);
-    }
-
-    protected <T extends CustomResource> void loadCustomResourceToYaml(Class<T> resourceClass, String resource) {
-        T model = loadResource(resourceClass, resource);
-        TestUtils.toYamlString(model);
-    }
+    protected KubernetesClient client;
 
     protected <T extends CustomResource> void createDeleteCustomResource(String resourceName) {
         File resourceFile = new File(this.getClass().getResource(resourceName).getPath());
@@ -49,19 +32,25 @@ public abstract class AbstractCrdIT implements TestSeparator {
     private void createDelete(File resourceFile) {
         RuntimeException creationException = null;
         RuntimeException deletionException = null;
-        try {
+
+        try (FileInputStream fis = new FileInputStream(resourceFile)) {
             try {
-                cmdKubeClient().create(resourceFile, true);
+                client.load(fis).create();
             } catch (RuntimeException t) {
                 creationException = t;
             }
+        } catch (IOException e)   {
+            throw new RuntimeException("Failed to load the resource", e);
         } finally {
-            try {
-                cmdKubeClient().delete(resourceFile);
+            try (FileInputStream fis = new FileInputStream(resourceFile)) {
+                client.load(fis).delete();
+            } catch (IOException e)   {
+                throw new RuntimeException("Failed to load the resource", e);
             } catch (RuntimeException t) {
                 deletionException = t;
             }
         }
+
         if (creationException != null) {
             if (deletionException != null) {
                 creationException.addSuppressed(deletionException);
@@ -73,30 +62,37 @@ public abstract class AbstractCrdIT implements TestSeparator {
     }
 
     protected <T extends CustomResource> void createScaleDelete(Class<T> resourceClass, String resource) {
-        T model = loadResource(resourceClass, resource);
-        String modelKind = model.getKind();
-        String modelName = model.getMetadata().getName();
-        String modelStr = TestUtils.toYamlString(model);
-        createScaleDelete(modelKind, modelName, modelStr);
+        T model = TestUtils.fromYaml(resource, resourceClass);
+        String apiVersion = model.getApiVersion();
+        String kind = model.getKind();
+        String resourceName = model.getMetadata().getName();
+        String resourceYamlAsString = TestUtils.toYamlString(model);
+        createScaleDelete(apiVersion, kind, resourceName, resourceYamlAsString);
     }
 
-    private void createScaleDelete(String kind, String name, String ssStr) {
+    private void createScaleDelete(String apiVersion, String kind, String name, String resourceYamlAsString) {
         RuntimeException creationOrScaleException = null;
         RuntimeException deletionException = null;
-        try {
+
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(resourceYamlAsString.getBytes(StandardCharsets.UTF_8))) {
             try {
-                cmdKubeClient().applyContent(ssStr);
-                cmdKubeClient().scaleByName(kind, name, 10);
+                client.load(bais).create();
+                client.genericKubernetesResources(apiVersion, kind).withName(name).scale(10);
             } catch (RuntimeException t) {
                 creationOrScaleException = t;
             }
+        } catch (IOException e)   {
+            throw new RuntimeException("Failed to load the resource", e);
         } finally {
-            try {
-                cmdKubeClient().deleteContent(ssStr);
+            try (ByteArrayInputStream bais = new ByteArrayInputStream(resourceYamlAsString.getBytes(StandardCharsets.UTF_8))) {
+                client.load(bais).delete();
+            } catch (IOException e)   {
+                throw new RuntimeException("Failed to load the resource", e);
             } catch (RuntimeException t) {
                 deletionException = t;
             }
         }
+
         if (creationOrScaleException != null) {
             if (deletionException != null) {
                 creationOrScaleException.addSuppressed(deletionException);
@@ -117,10 +113,5 @@ public abstract class AbstractCrdIT implements TestSeparator {
                     containsStringIgnoringCase("missing required field \"" + requiredProperty.substring(requiredProperty.lastIndexOf(".") + 1) + "\"")
             ));
         }
-    }
-
-    @BeforeEach
-    public void setupTests() {
-        cluster.cluster();
     }
 }

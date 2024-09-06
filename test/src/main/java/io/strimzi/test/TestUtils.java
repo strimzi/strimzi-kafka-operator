@@ -18,8 +18,12 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -534,6 +538,85 @@ public final class TestUtils {
             }
         } catch (Throwable t) {
             throw new RuntimeException(t);
+        }
+    }
+
+    /**
+     * Creates a CRD resource in the Kubernetes cluster
+     *
+     * @param client    Kubernetes client
+     * @param crdName   Name of the CRD
+     * @param crdPath   Path to the CRD YAML
+     */
+    public static void createCrd(KubernetesClient client, String crdName, String crdPath)   {
+        if (client.apiextensions().v1().customResourceDefinitions().withName(crdName).get() != null) {
+            deleteCrd(client, crdName);
+        }
+
+        client.apiextensions().v1()
+                .customResourceDefinitions()
+                .load(crdPath)
+                .create();
+        client.apiextensions().v1()
+                .customResourceDefinitions()
+                .load(crdPath)
+                .waitUntilCondition(TestUtils::isCrdEstablished, 10, TimeUnit.SECONDS);
+    }
+
+    /**
+     * Checks if the CRD has been established
+     *
+     * @param crd   The CRD resource
+     *
+     * @return  True if the CRD is established. False otherwise.
+     */
+    private static boolean isCrdEstablished(CustomResourceDefinition crd)   {
+        return crd.getStatus() != null
+                && crd.getStatus().getConditions() != null
+                && crd.getStatus().getConditions().stream().anyMatch(c -> "Established".equals(c.getType()) && "True".equals(c.getStatus()));
+    }
+
+    /**
+     * Deletes the CRD from the Kubernetes cluster
+     *
+     * @param client    Kubernetes client
+     * @param crdName   Name of the CRD
+     */
+    public static void deleteCrd(KubernetesClient client, String crdName)   {
+        if (client.apiextensions().v1().customResourceDefinitions().withName(crdName).get() != null) {
+            client.apiextensions().v1().customResourceDefinitions().withName(crdName).withPropagationPolicy(DeletionPropagation.BACKGROUND).delete();
+            client.apiextensions().v1().customResourceDefinitions().withName(crdName).waitUntilCondition(Objects::isNull, 30_000, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    /**
+     * Creates the namespase. If the namespace already exists, it will delete it and recreate it.
+     *
+     * @param client        Kubernetes client
+     * @param namespace     Namespace
+     */
+    public static void createNamespace(KubernetesClient client, String namespace)   {
+        if (client.namespaces().withName(namespace).get() != null) {
+            LOGGER.warn("Namespace {} is already created, going to delete it and recreate it", namespace);
+            deleteNamespace(client, namespace);
+        }
+
+        LOGGER.info("Creating namespace: {}", namespace);
+        client.namespaces().resource(new NamespaceBuilder().withNewMetadata().withName(namespace).endMetadata().build()).create();
+        client.namespaces().withName(namespace).waitUntilCondition(ns -> ns.getStatus() != null && "Active".equals(ns.getStatus().getPhase()), 30_000, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Deletes the namespace if it exists (unless the SKIP_TEARDOWN environment variable is set)
+     *
+     * @param client        Kubernetes client
+     * @param namespace     Namespace
+     */
+    public static void deleteNamespace(KubernetesClient client, String namespace)   {
+        if (client.namespaces().withName(namespace).get() != null && System.getenv("SKIP_TEARDOWN") == null) {
+            LOGGER.warn("Deleting namespace {} after tests run", namespace);
+            client.namespaces().withName(namespace).withPropagationPolicy(DeletionPropagation.BACKGROUND).delete();
+            client.namespaces().withName(namespace).waitUntilCondition(Objects::isNull, 30_000, TimeUnit.MILLISECONDS);
         }
     }
 }

@@ -4,18 +4,17 @@
  */
 package io.strimzi.api.kafka.model.connect;
 
+import io.fabric8.kubernetes.client.ConfigBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.AbstractCrdIT;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -38,22 +37,10 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     }
 
     @Test
-    void testKafkaConnectWithExtraProperty() {
-        // oc tool does not fail with extra properties, it shows only a warning. So this test does not pass on OpenShift
-        assumeKube();
-
-        Throwable exception = assertThrows(
-            KubeClusterException.class,
-            () -> createDeleteCustomResource("KafkaConnect-with-extra-property.yaml"));
-
-        assertThat(exception.getMessage(), containsString("unknown field \"extra\""));
-    }
-
-    @Test
     void testKafkaConnectWithMissingRequired() {
         Throwable exception = assertThrows(
-            KubeClusterException.class,
-            () -> createDeleteCustomResource("KafkaConnect-with-missing-required-property.yaml"));
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaConnect-with-missing-required-property.yaml"));
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.bootstrapServers");
     }
@@ -61,14 +48,10 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     @Test
     void testKafkaConnectWithInvalidReplicas() {
         Throwable exception = assertThrows(
-            KubeClusterException.class,
-            () -> createDeleteCustomResource("KafkaConnect-with-invalid-replicas.yaml"));
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaConnect-with-invalid-replicas.yaml"));
 
-        assertThat(exception.getMessage(),
-                anyOf(
-                        containsStringIgnoringCase("spec.replicas: Invalid value: \"string\": spec.replicas in body must be of type integer: \"string\""),
-                        containsStringIgnoringCase("invalid type for io.strimzi.kafka.v1beta2.KafkaConnect.spec.replicas: got \"string\", expected \"integer\"")
-                ));
+        assertThat(exception.getMessage(), containsStringIgnoringCase("spec.replicas: Invalid value: \"string\": spec.replicas in body must be of type integer: \"string\""));
     }
 
     @Test
@@ -82,20 +65,10 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     }
 
     @Test
-    @Disabled
-    void testLoadKafkaConnectWithTlsAuthWithMissingRequired() {
-        Throwable exception = assertThrows(
-            RuntimeException.class,
-            () -> loadCustomResourceToYaml(KafkaConnect.class, "KafkaConnect-with-tls-auth-with-missing-required.yaml"));
-
-        assertMissingRequiredPropertiesMessage(exception.getMessage(), "certificate", "key");
-    }
-
-    @Test
     void testCreateKafkaConnectWithTlsAuthWithMissingRequired() {
         Throwable exception = assertThrows(
-            KubeClusterException.class,
-            () -> createDeleteCustomResource("KafkaConnect-with-tls-auth-with-missing-required.yaml"));
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaConnect-with-tls-auth-with-missing-required.yaml"));
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "certificate", "key");
     }
@@ -118,28 +91,23 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     @Test
     void testKafkaConnectWithInvalidExternalConfiguration() {
         Throwable exception = assertThrows(
-            KubeClusterException.class,
-            () -> createDeleteCustomResource("KafkaConnect-with-invalid-external-configuration.yaml"));
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaConnect-with-invalid-external-configuration.yaml"));
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "valueFrom");
     }
 
     @BeforeAll
     void setupEnvironment() {
-        cluster.createCustomResources(TestUtils.CRD_KAFKA_CONNECT);
-        cluster.waitForCustomResourceDefinition("kafkaconnects.kafka.strimzi.io");
-        cluster.createNamespace(NAMESPACE);
-
-        try {
-            Thread.sleep(1_000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        client = new KubernetesClientBuilder().withConfig(new ConfigBuilder().withNamespace(NAMESPACE).build()).build();
+        TestUtils.createCrd(client, KafkaConnect.CRD_NAME, TestUtils.CRD_KAFKA_CONNECT);
+        TestUtils.createNamespace(client, NAMESPACE);
     }
 
     @AfterAll
     void teardownEnvironment() {
-        cluster.deleteNamespaces();
-        cluster.deleteCustomResources();
+        TestUtils.deleteCrd(client, KafkaConnect.CRD_NAME);
+        TestUtils.deleteNamespace(client, NAMESPACE);
+        client.close();
     }
 }

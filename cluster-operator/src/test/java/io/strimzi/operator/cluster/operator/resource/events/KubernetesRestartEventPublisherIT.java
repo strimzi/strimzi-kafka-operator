@@ -13,10 +13,10 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.events.v1.Event;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
-import io.strimzi.test.k8s.KubeClusterResource;
-import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
+import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -25,8 +25,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.stream.Collectors.toSet;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -34,59 +36,44 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 
 public class KubernetesRestartEventPublisherIT {
-
-    private static KubeClusterResource cluster;
-    private static KubernetesClient kubeClient;
-    private static KubeCmdClient<?> cmdClient;
+    private static KubernetesClient client;
     private static final String TEST_NAMESPACE = "v1-test-ns";
     private Pod pod;
 
     @BeforeAll
     static void beforeAll() {
-        cluster = KubeClusterResource.getInstance();
-        kubeClient = cluster.client().getClient();
-        cmdClient = cluster.cmdClient();
-        if (kubeClient.namespaces().withName(TEST_NAMESPACE).get() != null) {
-            cluster.client().deleteNamespace(TEST_NAMESPACE);
-            cmdClient.waitForResourceDeletion("namespace", TEST_NAMESPACE);
-        }
-        cmdClient.createNamespace(TEST_NAMESPACE);
-        cmdClient.waitForResourceCreation("namespace", TEST_NAMESPACE);
-        cluster.setNamespace(TEST_NAMESPACE);
+        client = new KubernetesClientBuilder().build();
+        TestUtils.createNamespace(client, TEST_NAMESPACE);
     }
 
     @BeforeEach
     void setup() {
         String podName = "test-pod-" + new Random().nextInt();
         pod = buildPod(podName);
-        kubeClient.pods().inNamespace(TEST_NAMESPACE).resource(pod).create();
-        cmdClient.namespace(TEST_NAMESPACE).waitForResourceCreation("pod", podName);
+        client.pods().inNamespace(TEST_NAMESPACE).resource(pod).create();
+        client.pods().inNamespace(TEST_NAMESPACE).resource(pod).waitUntilCondition(Objects::nonNull, 60_000, TimeUnit.MILLISECONDS);
     }
 
     @AfterAll
     static void afterAll() {
-        cluster.client().deleteNamespace(TEST_NAMESPACE);
-        cmdClient.waitForResourceDeletion("namespace", TEST_NAMESPACE);
+        TestUtils.deleteNamespace(client, TEST_NAMESPACE);
+        client.close();
     }
 
     @AfterEach
     void teardown() {
-        kubeClient.pods().inNamespace(TEST_NAMESPACE).resource(pod).delete();
-        cmdClient.namespace(TEST_NAMESPACE).waitForResourceDeletion("pod", pod.getMetadata().getName());
-        kubeClient.events().v1().events().inNamespace(TEST_NAMESPACE).delete();
+        client.pods().inNamespace(TEST_NAMESPACE).resource(pod).delete();
     }
 
     @Test
     void eventPublicationSucceeds() {
-        KubernetesRestartEventPublisher publisher = new KubernetesRestartEventPublisher(kubeClient, "op") {
-        };
-        publisher.publishRestartEvents(pod, RestartReasons.of(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED)
-                .add(RestartReason.FILE_SYSTEM_RESIZE_NEEDED));
+        KubernetesRestartEventPublisher publisher = new KubernetesRestartEventPublisher(client, "op") { };
+        publisher.publishRestartEvents(pod, RestartReasons.of(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED).add(RestartReason.FILE_SYSTEM_RESIZE_NEEDED));
 
         ListOptions strimziEventsOnly = new ListOptionsBuilder()
                 .withFieldSelector("reportingController=" + KubernetesRestartEventPublisher.CONTROLLER)
                 .build();
-        List<Event> items = kubeClient.events().v1().events().inNamespace(TEST_NAMESPACE).list(strimziEventsOnly).getItems();
+        List<Event> items = client.events().v1().events().inNamespace(TEST_NAMESPACE).list(strimziEventsOnly).getItems();
         assertThat(items, hasSize(2));
         assertThat(items.stream().map(Event::getReason).collect(toSet()), is(Set.of("ClusterCaCertKeyReplaced", "FileSystemResizeNeeded")));
 

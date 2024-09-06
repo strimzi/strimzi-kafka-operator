@@ -5,8 +5,6 @@
 package io.strimzi.operator.cluster.operator.resource.kubernetes;
 
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
-import io.fabric8.kubernetes.api.model.DeletionPropagation;
-import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
@@ -14,8 +12,7 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ConditionBuilder;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.test.k8s.KubeClusterResource;
-import io.strimzi.test.k8s.cluster.KubeCluster;
+import io.strimzi.test.TestUtils;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
@@ -31,7 +28,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -39,7 +35,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /**
  * The main purpose of the Integration Tests for the operators is to test them against a real Kubernetes cluster.
@@ -76,44 +71,28 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
 
     @BeforeAll
     public void before() {
-        String namespace = getNamespace();
-        KubeClusterResource cluster = KubeClusterResource.getInstance();
-        cluster.setNamespace(namespace);
-
-        assertDoesNotThrow(KubeCluster::bootstrap, "Could not bootstrap server");
         vertx = Vertx.vertx();
         sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
         client = new KubernetesClientBuilder().build();
 
-        if (client.namespaces().withName(namespace).get() != null && System.getenv("SKIP_TEARDOWN") == null) {
-            LOGGER.warn("Namespace {} is already created, going to delete it", namespace);
-            client.namespaces().withName(namespace).withPropagationPolicy(DeletionPropagation.BACKGROUND).delete();
-            client.namespaces().withName(namespace).waitUntilCondition(Objects::isNull, 30_000, TimeUnit.MILLISECONDS);
-        }
-
-        LOGGER.info("Creating namespace: {}", namespace);
-        client.namespaces().resource(new NamespaceBuilder().withNewMetadata().withName(namespace).endMetadata().build()).create();
-        client.namespaces().withName(namespace).waitUntilCondition(ns -> ns.getStatus() != null && "Active".equals(ns.getStatus().getPhase()), 30_000, TimeUnit.MILLISECONDS);
+        LOGGER.info("Creating namespace");
+        TestUtils.createNamespace(client, getNamespace());
+        LOGGER.info("Created namespace");
 
         LOGGER.info("Creating CRD");
-        cluster.createCustomResources(getCrd());
-        cluster.waitForCustomResourceDefinition(getCrdName());
+        TestUtils.createCrd(client, getCrdName(), getCrd());
         LOGGER.info("Created CRD");
     }
 
     @AfterAll
     public void after() {
+        LOGGER.info("Deleting CRD");
+        TestUtils.deleteCrd(client, getCrdName());
+        TestUtils.deleteNamespace(client, getNamespace());
+
+        client.close();
         sharedWorkerExecutor.close();
         vertx.close();
-
-        String namespace = getNamespace();
-        if (client.namespaces().withName(namespace).get() != null && System.getenv("SKIP_TEARDOWN") == null) {
-            LOGGER.warn("Deleting namespace {} after tests run", namespace);
-            client.namespaces().withName(namespace).withPropagationPolicy(DeletionPropagation.BACKGROUND).delete();
-            client.namespaces().withName(namespace).waitUntilCondition(Objects::isNull, 30_000, TimeUnit.MILLISECONDS);
-            LOGGER.info("Deleting CRD");
-            KubeClusterResource.getInstance().deleteCustomResources();
-        }
     }
 
     @Test

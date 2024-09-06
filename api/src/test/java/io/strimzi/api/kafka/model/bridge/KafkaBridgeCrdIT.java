@@ -4,18 +4,18 @@
  */
 package io.strimzi.api.kafka.model.bridge;
 
+import io.fabric8.kubernetes.client.ConfigBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.AbstractCrdIT;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.allOf;
-import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -40,8 +40,8 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
     @Test
     void testKafkaBridgeWithMissingRequired() {
         Throwable exception = assertThrows(
-            KubeClusterException.class,
-            () -> createDeleteCustomResource("KafkaBridge-with-missing-required-property.yaml"));
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaBridge-with-missing-required-property.yaml"));
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "bootstrapServers");
     }
@@ -59,8 +59,8 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
     @Test
     void testKafkaBridgeWithTlsAuthWithMissingRequired() {
         Throwable exception = assertThrows(
-            KubeClusterException.class,
-            () -> createDeleteCustomResource("KafkaBridge-with-tls-auth-with-missing-required.yaml"));
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaBridge-with-tls-auth-with-missing-required.yaml"));
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.authentication.certificateAndKey.certificate",
                 "spec.authentication.certificateAndKey.key");
@@ -85,41 +85,28 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
     void testLoadKafkaBridgeWithWrongTracingType() {
         Throwable exception = assertThrows(
             RuntimeException.class,
-            () -> loadCustomResourceToYaml(KafkaBridge.class, "KafkaBridge-with-wrong-tracing-type.yaml"));
+            () -> TestUtils.fromYaml("KafkaBridge-with-wrong-tracing-type.yaml", KafkaBridge.class));
 
         assertThat(exception.getMessage(), allOf(
                 containsStringIgnoringCase("Could not resolve type id 'wrongtype'"),
-                containsStringIgnoringCase("known type ids = [jaeger, opentelemetry]")));
+                containsStringIgnoringCase("known type ids = [jaeger, opentelemetry]"))
+        );
     }
 
     @Test
     void testCreateKafkaBridgeWithWrongTracingType() {
         Throwable exception = assertThrows(
-            KubeClusterException.class,
-            () -> createDeleteCustomResource("KafkaBridge-with-wrong-tracing-type.yaml"));
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaBridge-with-wrong-tracing-type.yaml"));
 
-        assertThat(exception.getMessage(), anyOf(
-                containsStringIgnoringCase("spec.tracing.type in body should be one of [jaeger, opentelemetry]"),
-                containsStringIgnoringCase("spec.tracing.type: Unsupported value: \"wrongtype\": supported values: \"jaeger\", \"opentelemetry\"")));
-    }
-
-    @Test
-    void testKafkaBridgeWithExtraProperty() {
-        // oc tool does not fail with extra properties, it shows only a warning. So this test does not pass on OpenShift
-        assumeKube();
-
-        Throwable exception = assertThrows(
-            KubeClusterException.class,
-            () -> createDeleteCustomResource("KafkaBridge-with-extra-property.yaml"));
-
-        assertThat(exception.getMessage(), containsString("unknown field \"extra\""));
+        assertThat(exception.getMessage(), containsStringIgnoringCase("spec.tracing.type: Unsupported value: \"wrongtype\": supported values: \"jaeger\", \"opentelemetry\""));
     }
 
     @Test
     void testKafkaBridgeWithMissingTracingType() {
         Throwable exception = assertThrows(
-            KubeClusterException.class,
-            () -> createDeleteCustomResource("KafkaBridge-with-missing-tracing-type.yaml"));
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaBridge-with-missing-tracing-type.yaml"));
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "type");
     }
@@ -130,22 +117,17 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
     }
 
     @BeforeAll
-    void setupEnvironment() throws InterruptedException {
-        cluster.createCustomResources(TestUtils.CRD_KAFKA_BRIDGE);
-        cluster.waitForCustomResourceDefinition("kafkabridges.kafka.strimzi.io");
-        cluster.createNamespace(NAMESPACE);
-
-        try {
-            Thread.sleep(1_000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+    void setupEnvironment() {
+        client = new KubernetesClientBuilder().withConfig(new ConfigBuilder().withNamespace(NAMESPACE).build()).build();
+        TestUtils.createCrd(client, KafkaBridge.CRD_NAME, TestUtils.CRD_KAFKA_BRIDGE);
+        TestUtils.createNamespace(client, NAMESPACE);
     }
 
     @AfterAll
     void teardownEnvironment() {
-        cluster.deleteCustomResources();
-        cluster.deleteNamespaces();
+        TestUtils.deleteCrd(client, KafkaBridge.CRD_NAME);
+        TestUtils.deleteNamespace(client, NAMESPACE);
+        client.close();
     }
 }
 
