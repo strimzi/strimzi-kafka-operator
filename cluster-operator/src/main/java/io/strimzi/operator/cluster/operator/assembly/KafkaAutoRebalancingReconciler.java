@@ -23,6 +23,7 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.StatusUtils;
 import io.vertx.core.Future;
 
@@ -447,6 +448,7 @@ public class KafkaAutoRebalancingReconciler {
                                     .withNewMetadata()
                                         .withNamespace(namespace)
                                         .withName(KafkaRebalanceUtils.autoRebalancingKafkaRebalanceResourceName(cluster, kafkaRebalanceMode))
+                                        .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, cluster)
                                         .addToAnnotations(ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL, "true")
                                         .addToFinalizers(STRIMZI_IO_AUTO_REBALANCING_FINALIZER)
                                     .endMetadata()
@@ -473,6 +475,7 @@ public class KafkaAutoRebalancingReconciler {
                     .withNewMetadata()
                         .withNamespace(namespace)
                         .withName(KafkaRebalanceUtils.autoRebalancingKafkaRebalanceResourceName(cluster, kafkaRebalanceMode))
+                        .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, cluster)
                         .addToAnnotations(ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL, "true")
                         .addToFinalizers(STRIMZI_IO_AUTO_REBALANCING_FINALIZER)
                     .endMetadata()
