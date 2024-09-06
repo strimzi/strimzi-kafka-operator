@@ -154,9 +154,7 @@ public class KafkaAutoRebalancingReconciler {
                         return Future.succeededFuture();
                     });
         }
-        // TODO:
-        // No queued rebalancing (so no scale down/up requested), stay in Idle.
-        updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle, EMPTY_SCALING_NODES);
+        // No queued rebalancing (so no scale down/up requested), stay in Idle, no status update
         return Future.succeededFuture();
     }
 
@@ -233,9 +231,6 @@ public class KafkaAutoRebalancingReconciler {
                                         });
                             } else {
                                 // If no changes ... no further action and stay in RebalanceOnScaleDown.
-                                // TODO: to be verified that nodes are not changed so the status is the previous one
-
-                                updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleDown, scalingNodes);
                                 return Future.succeededFuture();
                             }
                         case NotReady:
@@ -350,8 +345,6 @@ public class KafkaAutoRebalancingReconciler {
                                             });
                                 } else {
                                     // If no changes ... no further action and stay in RebalanceOnScaleUp.
-                                    // TODO: to be verified that nodes are not changed so the status is the previous one
-                                    updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleUp, scalingNodes);
                                     return Future.succeededFuture();
                                 }
                             }
