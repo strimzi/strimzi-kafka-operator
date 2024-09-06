@@ -57,8 +57,8 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
     void testUpgradeOfKafkaKafkaConnectAndKafkaConnector(String fromVersion, String toVersion, String fgBefore, String fgAfter, BundleVersionModificationData upgradeData) throws IOException {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion(upgradeData.getOldestKafka());
-        // setting log message version to null, similarly to the examples, which are not configuring LMFV
-        upgradeKafkaVersion.setLogMessageVersion(null);
+        // setting metadata version to null, similarly to the examples, which are not configuring metadataVersion
+        upgradeKafkaVersion.setMetadataVersion(null);
 
         assumeTrue(StUtils.isAllowOnCurrentEnvironment(upgradeData.getEnvFlakyVariable()));
         assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(upgradeData.getEnvMaxK8sVersion()));
@@ -132,7 +132,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         logPodImages(CO_NAMESPACE);
 
         // Upgrade kafka
-        changeKafkaAndMetadataVersion(testStorage.getNamespaceName(), acrossUpgradeData, true);
+        changeKafkaVersion(testStorage.getNamespaceName(), acrossUpgradeData, true);
 
         logPodImages(CO_NAMESPACE);
 
@@ -167,7 +167,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         logPodImages(CO_NAMESPACE);
 
         // Upgrade kafka
-        changeKafkaAndMetadataVersion(testStorage.getNamespaceName(), acrossUpgradeData);
+        changeKafkaVersion(testStorage.getNamespaceName(), acrossUpgradeData);
         logComponentsPodImages(testStorage.getNamespaceName());
         checkAllComponentsImages(testStorage.getNamespaceName(), acrossUpgradeData);
 

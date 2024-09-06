@@ -62,6 +62,10 @@ public class UpgradeKafkaVersion {
         this.logMessageVersion = logMessageVersion;
     }
 
+    public void setMetadataVersion(String metadataVersion) {
+        this.metadataVersion = metadataVersion;
+    }
+
     public String getVersion() {
         return version;
     }

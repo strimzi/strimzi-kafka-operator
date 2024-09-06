@@ -42,9 +42,9 @@ public class KRaftStrimziDowngradeST extends AbstractKRaftUpgradeST {
     @MethodSource("io.strimzi.systemtest.upgrade.VersionModificationDataLoader#loadYamlDowngradeDataForKRaft")
     void testDowngradeOfKafkaKafkaConnectAndKafkaConnector(String from, String to, String fgBefore, String fgAfter, BundleVersionModificationData downgradeData) throws IOException {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        UpgradeKafkaVersion downgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(downgradeData.getFromKafkaVersionsUrl(), downgradeData.getDeployKafkaVersion());
-        // setting log message version to null, similarly to the examples, which are not configuring LMFV
-        downgradeKafkaVersion.setLogMessageVersion(null);
+        String lowerMetadataVersion = downgradeData.getProcedures().getMetadataVersion();
+
+        UpgradeKafkaVersion downgradeKafkaVersion = new UpgradeKafkaVersion(downgradeData.getDeployKafkaVersion(), lowerMetadataVersion);
 
         assumeTrue(StUtils.isAllowOnCurrentEnvironment(downgradeData.getEnvFlakyVariable()));
         assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(downgradeData.getEnvMaxK8sVersion()));

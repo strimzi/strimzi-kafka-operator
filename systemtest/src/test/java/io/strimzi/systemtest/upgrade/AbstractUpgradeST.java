@@ -133,7 +133,7 @@ public class AbstractUpgradeST extends AbstractST {
     }
 
     @SuppressWarnings("CyclomaticComplexity")
-    protected void changeKafkaAndLogFormatVersion(String componentsNamespaceName, CommonVersionModificationData versionModificationData) throws IOException {
+    protected void changeKafkaVersion(String componentsNamespaceName, CommonVersionModificationData versionModificationData) throws IOException {
         // Get Kafka configurations
         String currentLogMessageFormat = cmdKubeClient(componentsNamespaceName).getResourceJsonPath(getResourceApiVersion(Kafka.RESOURCE_PLURAL), clusterName, ".spec.kafka.config.log\\.message\\.format\\.version");
         String currentInterBrokerProtocol = cmdKubeClient(componentsNamespaceName).getResourceJsonPath(getResourceApiVersion(Kafka.RESOURCE_PLURAL), clusterName, ".spec.kafka.config.inter\\.broker\\.protocol\\.version");
@@ -679,8 +679,8 @@ public class AbstractUpgradeST extends AbstractST {
 
         logComponentsPodImagesWithConnect(testStorage.getNamespaceName());
 
-        // Upgrade kafka
-        changeKafkaAndLogFormatVersion(testStorage.getNamespaceName(), upgradeDowngradeData);
+        // Upgrade/Downgrade kafka
+        changeKafkaVersion(testStorage.getNamespaceName(), upgradeDowngradeData);
         changeKafkaVersionInKafkaConnect(testStorage.getNamespaceName(), upgradeDowngradeData);
 
         logComponentsPodImagesWithConnect(testStorage.getNamespaceName());
