@@ -143,6 +143,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     }
 
     @Override
+    @SuppressWarnings({"checkstyle:NPathComplexity"})
     public Future<KafkaStatus> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
         Promise<KafkaStatus> createOrUpdatePromise = Promise.promise();
         ReconciliationState reconcileState = createReconciliationState(reconciliation, kafkaAssembly);
@@ -191,6 +192,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         && kafkaAssembly.getStatus().getRegisteredNodeIds() != null)  {
                     // Copy the list of registered node IDs if needed
                     status.setRegisteredNodeIds(kafkaAssembly.getStatus().getRegisteredNodeIds());
+                }
+
+                if (status.getAutoRebalance() == null
+                        && kafkaAssembly.getStatus().getAutoRebalance() != null) {
+                    // Copy the auto-rebalance state if needed
+                    status.setAutoRebalance(kafkaAssembly.getStatus().getAutoRebalance());
                 }
             }
 

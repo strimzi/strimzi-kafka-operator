@@ -437,20 +437,7 @@ public class KafkaAutoRebalancingReconciler {
             return kafkaRebalanceOperator.getAsync(namespace, autoRebalanceConfiguration.get().getTemplate().getName())
                     .compose(kafkaRebalanceTemplate -> {
                         if (kafkaRebalanceTemplate != null) {
-                            KafkaRebalance kafkaRebalance = new KafkaRebalanceBuilder()
-                                    .withNewMetadata()
-                                        .withNamespace(namespace)
-                                        .withName(KafkaRebalanceUtils.autoRebalancingKafkaRebalanceResourceName(cluster, kafkaRebalanceMode))
-                                        .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, cluster)
-                                        .addToAnnotations(ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL, "true")
-                                        .addToFinalizers(STRIMZI_IO_AUTO_REBALANCING_FINALIZER)
-                                    .endMetadata()
-                                    .withSpec(kafkaRebalanceTemplate.getSpec())
-                                        .editSpec()
-                                            .withMode(kafkaRebalanceMode)
-                                            .withBrokers(brokers)
-                                        .endSpec()
-                                    .build();
+                            KafkaRebalance kafkaRebalance = buildKafkaRebalance(kafkaRebalanceTemplate, namespace, cluster, kafkaRebalanceMode, brokers);
 
                             LOGGER.infoCr(reconciliation, "Create KafkaRebalance {}/{} by using configuration from template {}/{}",
                                     kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName(),
@@ -464,25 +451,38 @@ public class KafkaAutoRebalancingReconciler {
                         }
                     });
         } else {
-            KafkaRebalance kafkaRebalance = new KafkaRebalanceBuilder()
-                    .withNewMetadata()
-                        .withNamespace(namespace)
-                        .withName(KafkaRebalanceUtils.autoRebalancingKafkaRebalanceResourceName(cluster, kafkaRebalanceMode))
-                        .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, cluster)
-                        .addToAnnotations(ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL, "true")
-                        .addToFinalizers(STRIMZI_IO_AUTO_REBALANCING_FINALIZER)
-                    .endMetadata()
-                    .withNewSpec()
-                        .withMode(kafkaRebalanceMode)
-                        .withBrokers(brokers)
-                    .endSpec()
-                    .build();
+            KafkaRebalance kafkaRebalance = buildKafkaRebalance(null, namespace, cluster, kafkaRebalanceMode, brokers);
 
             LOGGER.infoCr(reconciliation, "Create KafkaRebalance {}/{} using default Cruise Control configuration. No template specified.",
                     kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName());
             return kafkaRebalanceOperator.createOrUpdate(reconciliation, kafkaRebalance)
                     .map(true);
         }
+    }
+
+    private KafkaRebalance buildKafkaRebalance(KafkaRebalance kafkaRebalanceTemplate, String namespace, String cluster, KafkaRebalanceMode kafkaRebalanceMode, List<Integer> brokers) {
+        KafkaRebalanceBuilder builder = new KafkaRebalanceBuilder()
+                .withNewMetadata()
+                    .withNamespace(namespace)
+                    .withName(KafkaRebalanceUtils.autoRebalancingKafkaRebalanceResourceName(cluster, kafkaRebalanceMode))
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, cluster)
+                    .addToAnnotations(ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL, "true")
+                    .addToFinalizers(STRIMZI_IO_AUTO_REBALANCING_FINALIZER)
+                .endMetadata();
+        // if specified, using the spec from the KafkaRebalance template
+        if (kafkaRebalanceTemplate != null) {
+            builder.withSpec(kafkaRebalanceTemplate.getSpec())
+                    .editSpec()
+                        .withMode(kafkaRebalanceMode)
+                        .withBrokers(brokers)
+                    .endSpec();
+        } else {
+            builder.withNewSpec()
+                        .withMode(kafkaRebalanceMode)
+                        .withBrokers(brokers)
+                    .endSpec();
+        }
+        return builder.build();
     }
 
     private Future<Void> deleteKafkaRebalance(KafkaRebalance kafkaRebalance) {

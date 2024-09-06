@@ -38,7 +38,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
-import io.vertx.junit5.Timeout;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
@@ -55,7 +54,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_REBALANCE;
 import static org.hamcrest.CoreMatchers.is;
@@ -200,7 +198,6 @@ public class KafkaAutoRebalancingMockTest {
     }
 
     @Test
-    @Timeout(value = 10, timeUnit = TimeUnit.MINUTES) // TODO: to be removed after testing implementation
     public void testAutoRebalancingScaleDown(VertxTestContext context) {
 
         // getting the mocked BrokersInUseCheck class to mock broker scale down operation for check failure
@@ -285,7 +282,6 @@ public class KafkaAutoRebalancingMockTest {
     }
 
     @Test
-    @Timeout(value = 10, timeUnit = TimeUnit.MINUTES) // TODO: to be removed after testing implementation
     public void testAutoRebalancingScaleUp(VertxTestContext context) {
 
         KafkaRebalance kafkaRebalanceTemplate = new KafkaRebalanceBuilder()
@@ -420,7 +416,6 @@ public class KafkaAutoRebalancingMockTest {
     }
 
     @Test
-    @Timeout(value = 10, timeUnit = TimeUnit.MINUTES) // TODO: to be removed after testing implementation
     public void testAutoRebalancingMissingKafkaRebalanceTemplate(VertxTestContext context) {
 
         Checkpoint reconciliation = context.checkpoint();
@@ -446,7 +441,6 @@ public class KafkaAutoRebalancingMockTest {
     }
 
     @Test
-    @Timeout(value = 10, timeUnit = TimeUnit.MINUTES) // TODO: to be removed after testing implementation
     public void testAutoRebalancingWithoutSpecifiedTemplate(VertxTestContext context) {
 
         // edit the Kafka cluster without specifying the KafkaRebalance template
@@ -502,7 +496,6 @@ public class KafkaAutoRebalancingMockTest {
     }
 
     @Test
-    @Timeout(value = 10, timeUnit = TimeUnit.MINUTES) // TODO: to be removed after testing implementation
     public void testAutoRebalancingWithoutSpecifiedMode(VertxTestContext context) {
 
         // edit the Kafka cluster without specifying the KafkaRebalance mode for scaling up
