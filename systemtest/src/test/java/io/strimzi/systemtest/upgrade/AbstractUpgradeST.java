@@ -414,7 +414,7 @@ public class AbstractUpgradeST extends AbstractST {
 
                 kafkaTopicYaml = new File(dir, pathToTopicExamples);
                 cmdKubeClient(testStorage.getNamespaceName()).applyContent(ReadWriteUtils.readFile(kafkaTopicYaml)
-                        .replace("name: \"my-topic\"", "name: \"" + testStorage.getTopicName() + "\"")
+                        .replace("name: my-topic", "name: " + testStorage.getTopicName())
                         .replace("partitions: 1", "partitions: 3")
                         .replace("replicas: 1", "replicas: 3") +
                         "    min.insync.replicas: 2");
@@ -443,8 +443,8 @@ public class AbstractUpgradeST extends AbstractST {
     }
 
     private String getKafkaYamlWithName(String name) {
-        String initialName = "name: \"my-topic\"";
-        String newName =  "name: \"%s\"".formatted(name);
+        String initialName = "name: my-topic";
+        String newName =  "name: %s".formatted(name);
 
         return ReadWriteUtils.readFile(kafkaTopicYaml).replace(initialName, newName);
     }
