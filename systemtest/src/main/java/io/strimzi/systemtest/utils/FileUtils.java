@@ -4,7 +4,13 @@
  */
 package io.strimzi.systemtest.utils;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -19,6 +25,8 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -115,5 +123,33 @@ public class FileUtils {
             e.printStackTrace();
         }
         return null;
+    }
+
+    /**
+     * Loads list of YAML documents from a file and extracts a ConfigMap with given name from it.
+     *
+     * @param yamlPath  Path to the YAML file
+     * @param name      Name of the ConfigMap that should be extracted
+     *
+     * @return  Extracted ConfigMap
+     */
+    public static ConfigMap extractConfigMapFromYAMLWithResources(String yamlPath, String name) {
+        try {
+            YAMLFactory yaml = new YAMLFactory();
+            ObjectMapper mapper = new ObjectMapper(yaml);
+            YAMLParser yamlParser = yaml.createParser(new File(yamlPath));
+            List<ConfigMap> list = mapper.readValues(yamlParser, new TypeReference<ConfigMap>() { }).readAll();
+            Optional<ConfigMap> cmOpt = list.stream().filter(cm -> "ConfigMap".equals(cm.getKind()) && name.equals(cm.getMetadata().getName())).findFirst();
+            if (cmOpt.isPresent()) {
+                return cmOpt.get();
+            } else {
+                LOGGER.warn("ConfigMap {} not found in file {}", name, yamlPath);
+                return null;
+            }
+        } catch (InvalidFormatException e) {
+            throw new IllegalArgumentException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

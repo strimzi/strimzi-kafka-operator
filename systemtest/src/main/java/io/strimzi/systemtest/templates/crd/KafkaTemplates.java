@@ -18,8 +18,8 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
-import io.strimzi.test.ReadWriteUtils;
 
 import java.util.Collections;
 
@@ -183,7 +183,7 @@ public class KafkaTemplates {
     public static ConfigMap kafkaMetricsConfigMap(String namespaceName, String kafkaClusterName) {
         String configMapName = kafkaClusterName + METRICS_KAFKA_CONFIG_MAP_SUFFIX;
 
-        return new ConfigMapBuilder(ReadWriteUtils.readObjectFromYamlFilepath(TestConstants.PATH_TO_KAFKA_METRICS_CONFIG, ConfigMap.class))
+        return new ConfigMapBuilder(FileUtils.extractConfigMapFromYAMLWithResources(TestConstants.PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics"))
             .editMetadata()
                 .withName(configMapName)
                 .withNamespace(namespaceName)
