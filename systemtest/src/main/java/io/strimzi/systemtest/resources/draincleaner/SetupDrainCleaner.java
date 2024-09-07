@@ -23,6 +23,7 @@ import io.strimzi.systemtest.security.CertAndKeyFiles;
 import io.strimzi.systemtest.security.SystemTestCertAndKey;
 import io.strimzi.systemtest.security.SystemTestCertManager;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
+import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
@@ -85,7 +86,7 @@ public class SetupDrainCleaner {
 
                 switch (resourceType) {
                     case TestConstants.ROLE:
-                        Role role = TestUtils.configFromYaml(file, Role.class);
+                        Role role = ReadWriteUtils.readObjectFromYamlFilepath(file, Role.class);
                         ResourceManager.getInstance().createResourceWithWait(new RoleBuilder(role)
                             .editMetadata()
                                 .withNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE)
@@ -93,7 +94,7 @@ public class SetupDrainCleaner {
                             .build());
                         break;
                     case TestConstants.ROLE_BINDING:
-                        RoleBinding roleBinding = TestUtils.configFromYaml(file, RoleBinding.class);
+                        RoleBinding roleBinding = ReadWriteUtils.readObjectFromYamlFilepath(file, RoleBinding.class);
                         ResourceManager.getInstance().createResourceWithWait(new RoleBindingBuilder(roleBinding)
                             .editMetadata()
                                 .withNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE)
@@ -104,11 +105,11 @@ public class SetupDrainCleaner {
                             .build());
                         break;
                     case TestConstants.CLUSTER_ROLE:
-                        ClusterRole clusterRole = TestUtils.configFromYaml(file, ClusterRole.class);
+                        ClusterRole clusterRole = ReadWriteUtils.readObjectFromYamlFilepath(file, ClusterRole.class);
                         ResourceManager.getInstance().createResourceWithWait(clusterRole);
                         break;
                     case TestConstants.SERVICE_ACCOUNT:
-                        ServiceAccount serviceAccount = TestUtils.configFromYaml(file, ServiceAccount.class);
+                        ServiceAccount serviceAccount = ReadWriteUtils.readObjectFromYamlFilepath(file, ServiceAccount.class);
                         ResourceManager.getInstance().createResourceWithWait(new ServiceAccountBuilder(serviceAccount)
                             .editMetadata()
                                 .withNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE)
@@ -116,18 +117,18 @@ public class SetupDrainCleaner {
                             .build());
                         break;
                     case TestConstants.CLUSTER_ROLE_BINDING:
-                        ClusterRoleBinding clusterRoleBinding = TestUtils.configFromYaml(file, ClusterRoleBinding.class);
+                        ClusterRoleBinding clusterRoleBinding = ReadWriteUtils.readObjectFromYamlFilepath(file, ClusterRoleBinding.class);
                         ResourceManager.getInstance().createResourceWithWait(new ClusterRoleBindingBuilder(clusterRoleBinding).build());
                         break;
                     case TestConstants.SECRET:
                         ResourceManager.getInstance().createResourceWithWait(customDrainCleanerSecret);
                         break;
                     case TestConstants.SERVICE:
-                        Service service = TestUtils.configFromYaml(file, Service.class);
+                        Service service = ReadWriteUtils.readObjectFromYamlFilepath(file, Service.class);
                         ResourceManager.getInstance().createResourceWithWait(service);
                         break;
                     case TestConstants.VALIDATION_WEBHOOK_CONFIG:
-                        ValidatingWebhookConfiguration webhookConfiguration = TestUtils.configFromYaml(file, ValidatingWebhookConfiguration.class);
+                        ValidatingWebhookConfiguration webhookConfiguration = ReadWriteUtils.readObjectFromYamlFilepath(file, ValidatingWebhookConfiguration.class);
 
                         // in case that we are running on OpenShift-like cluster, we are not creating the Secret, thus this step is not needed
                         if (customDrainCleanerSecret != null) {

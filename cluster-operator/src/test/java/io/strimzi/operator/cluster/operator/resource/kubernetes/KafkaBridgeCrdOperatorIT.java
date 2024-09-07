@@ -10,7 +10,7 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridgeBuilder;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeList;
 import io.strimzi.api.kafka.model.common.ConditionBuilder;
 import io.strimzi.api.kafka.model.common.InlineLogging;
-import io.strimzi.test.TestUtils;
+import io.strimzi.test.CrdUtils;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
@@ -37,7 +37,7 @@ public class KafkaBridgeCrdOperatorIT extends AbstractCustomResourceOperatorIT<K
 
     @Override
     protected String getCrd() {
-        return TestUtils.CRD_KAFKA_BRIDGE;
+        return CrdUtils.CRD_KAFKA_BRIDGE;
     }
 
     @Override

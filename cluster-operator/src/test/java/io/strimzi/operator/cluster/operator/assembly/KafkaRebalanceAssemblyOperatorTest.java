@@ -42,6 +42,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.platform.KubernetesVersion;
+import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube3.MockKube3;
 import io.vertx.core.Vertx;
@@ -139,8 +140,8 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
         // Configure Cruise Control mock
         cruiseControlPort = TestUtils.getFreePort();
-        tlsKeyFile = TestUtils.tempFile(KafkaRebalanceAssemblyOperatorTest.class.getSimpleName(), ".key");
-        tlsCrtFile = TestUtils.tempFile(KafkaRebalanceAssemblyOperatorTest.class.getSimpleName(), ".crt");
+        tlsKeyFile = ReadWriteUtils.tempFile(KafkaRebalanceAssemblyOperatorTest.class.getSimpleName(), ".key");
+        tlsCrtFile = ReadWriteUtils.tempFile(KafkaRebalanceAssemblyOperatorTest.class.getSimpleName(), ".crt");
         
         new MockCertManager().generateSelfSignedCert(tlsKeyFile, tlsCrtFile,
             new Subject.Builder().withCommonName("Trusted Test CA").build(), 365);
@@ -1412,7 +1413,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 "spec:\n" +
                 "  unknown: \"value\"";
 
-        KafkaRebalance kr = TestUtils.fromYamlString(rebalanceString, KafkaRebalance.class);
+        KafkaRebalance kr = ReadWriteUtils.readObjectFromYamlString(rebalanceString, KafkaRebalance.class);
 
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
         crdCreateKafka();

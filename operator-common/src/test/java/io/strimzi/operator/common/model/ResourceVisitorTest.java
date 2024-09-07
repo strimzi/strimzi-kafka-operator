@@ -6,7 +6,7 @@ package io.strimzi.operator.common.model;
 
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.test.TestUtils;
+import io.strimzi.test.ReadWriteUtils;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.AnnotatedElement;
@@ -21,7 +21,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class ResourceVisitorTest {
     @Test
     public void testDoesNotThrow() {
-        Kafka k = TestUtils.fromYaml("/example.yaml", Kafka.class, true);
+        Kafka k = ReadWriteUtils.readObjectFromYamlFileInResources("/example.yaml", Kafka.class, true);
         assertThat(k, is(notNullValue()));
         ResourceVisitor.visit(new Reconciliation("test", "kind", "namespace", "name"), k, new ResourceVisitor.Visitor() {
             @Override
@@ -38,7 +38,7 @@ public class ResourceVisitorTest {
 
     @Test
     public void testDoesNotThrowWithListenerList() {
-        Kafka k = TestUtils.fromYaml("/example2.yaml", Kafka.class, true);
+        Kafka k = ReadWriteUtils.readObjectFromYamlFileInResources("/example2.yaml", Kafka.class, true);
         assertThat(k, is(notNullValue()));
         ResourceVisitor.visit(new Reconciliation("test", "kind", "namespace", "name"), k, new ResourceVisitor.Visitor() {
             @Override

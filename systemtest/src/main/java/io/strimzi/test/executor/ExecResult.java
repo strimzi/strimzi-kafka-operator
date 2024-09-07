@@ -6,6 +6,9 @@ package io.strimzi.test.executor;
 
 import java.io.Serializable;
 
+/**
+ * Result of an execution of an command
+ */
 public class ExecResult implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -20,18 +23,30 @@ public class ExecResult implements Serializable {
         this.stdErr = stdErr;
     }
 
+    /**
+     * @return True if the command succeeded. False otherwise.
+     */
     public boolean exitStatus() {
         return returnCode == 0;
     }
 
+    /**
+     * @return  The command return code
+     */
     public int returnCode() {
         return returnCode;
     }
 
+    /**
+     * @return  The standard output of the command
+     */
     public String out() {
         return stdOut;
     }
 
+    /**
+     * @return  The error output of the command
+     */
     public String err() {
         return stdErr;
     }

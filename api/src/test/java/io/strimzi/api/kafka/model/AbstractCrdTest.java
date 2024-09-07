@@ -6,7 +6,7 @@ package io.strimzi.api.kafka.model;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.strimzi.test.TestUtils;
+import io.strimzi.test.ReadWriteUtils;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -24,23 +24,23 @@ public abstract class AbstractCrdTest<R extends CustomResource> {
     }
 
     protected void assertDesiredResource(R actual, String expectedResource) {
-        String content = TestUtils.readResource(getClass(), expectedResource);
+        String content = ReadWriteUtils.readFileFromResources(getClass(), expectedResource);
         assertThat("The resource " + expectedResource + " does not exist", content, is(notNullValue()));
 
-        String ssStr = TestUtils.toYamlString(actual);
+        String ssStr = ReadWriteUtils.writeObjectToYamlString(actual);
         assertThat(ssStr.trim(), is(content.trim()));
     }
 
     @Test
     public void roundTrip() {
         String resourceName = crdClass.getSimpleName() + ".yaml";
-        R model = TestUtils.fromYaml(resourceName, crdClass);
+        R model = ReadWriteUtils.readObjectFromYamlFileInResources(resourceName, crdClass);
         assertThat("The classpath resource " + resourceName + " does not exist", model, is(notNullValue()));
 
         ObjectMeta metadata = model.getMetadata();
         assertThat(metadata, is(notNullValue()));
         assertDesiredResource(model, crdClass.getSimpleName() + ".out.yaml");
-        assertDesiredResource(TestUtils.fromYamlString(TestUtils.toYamlString(model), crdClass), crdClass.getSimpleName() + ".out.yaml");
+        assertDesiredResource(ReadWriteUtils.readObjectFromYamlString(ReadWriteUtils.writeObjectToYamlString(model), crdClass), crdClass.getSimpleName() + ".out.yaml");
     }
 
 }

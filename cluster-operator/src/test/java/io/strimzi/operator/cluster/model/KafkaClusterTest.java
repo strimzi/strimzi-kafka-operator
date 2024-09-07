@@ -993,17 +993,17 @@ public class KafkaClusterTest {
 
     @ParallelTest
     public void testAuxiliaryResourcesTemplate() {
-        Map<String, String> pdbLabels = TestUtils.map("l1", "v1", "l2", "v2");
-        Map<String, String> pdbAnnotations = TestUtils.map("a1", "v1", "a2", "v2");
+        Map<String, String> pdbLabels = Map.of("l1", "v1", "l2", "v2");
+        Map<String, String> pdbAnnotations = Map.of("a1", "v1", "a2", "v2");
 
-        Map<String, String> crbLabels = TestUtils.map("l3", "v3", "l4", "v4");
-        Map<String, String> crbAnnotations = TestUtils.map("a3", "v3", "a4", "v4");
+        Map<String, String> crbLabels = Map.of("l3", "v3", "l4", "v4");
+        Map<String, String> crbAnnotations = Map.of("a3", "v3", "a4", "v4");
 
-        Map<String, String> saLabels = TestUtils.map("l5", "v5", "l6", "v6");
-        Map<String, String> saAnnotations = TestUtils.map("a5", "v5", "a6", "v6");
+        Map<String, String> saLabels = Map.of("l5", "v5", "l6", "v6");
+        Map<String, String> saAnnotations = Map.of("a5", "v5", "a6", "v6");
 
-        Map<String, String> jmxLabels = TestUtils.map("l7", "v7", "l8", "v8");
-        Map<String, String> jmxAnnotations = TestUtils.map("a7", "v7", "a8", "v8");
+        Map<String, String> jmxLabels = Map.of("l7", "v7", "l8", "v8");
+        Map<String, String> jmxAnnotations = Map.of("a7", "v7", "a8", "v8");
 
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -1889,8 +1889,8 @@ public class KafkaClusterTest {
 
     @ParallelTest
     public void testCustomizedPodDisruptionBudget()   {
-        Map<String, String> pdbLabels = TestUtils.map("l1", "v1", "l2", "v2");
-        Map<String, String> pdbAnnotations = TestUtils.map("a1", "v1", "a2", "v2");
+        Map<String, String> pdbLabels = Map.of("l1", "v1", "l2", "v2");
+        Map<String, String> pdbAnnotations = Map.of("a1", "v1", "a2", "v2");
 
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -3774,11 +3774,11 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testCustomizedPodSet()   {
         // Prepare various template values
-        Map<String, String> spsLabels = TestUtils.map("l1", "v1", "l2", "v2");
-        Map<String, String> spsAnnotations = TestUtils.map("a1", "v1", "a2", "v2");
+        Map<String, String> spsLabels = Map.of("l1", "v1", "l2", "v2");
+        Map<String, String> spsAnnotations = Map.of("a1", "v1", "a2", "v2");
 
-        Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
-        Map<String, String> podAnnotations = TestUtils.map("a3", "v3", "a4", "v4");
+        Map<String, String> podLabels = Map.of("l3", "v3", "l4", "v4");
+        Map<String, String> podAnnotations = Map.of("a3", "v3", "a4", "v4");
 
         HostAlias hostAlias1 = new HostAliasBuilder()
                 .withHostnames("my-host-1", "my-host-2")
@@ -4040,17 +4040,17 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testCustomizedPodSetInKafkaAndNodePool()   {
         // Prepare various template values
-        Map<String, String> spsLabels = TestUtils.map("l1", "v1", "l2", "v2");
-        Map<String, String> spsAnnotations = TestUtils.map("a1", "v1", "a2", "v2");
+        Map<String, String> spsLabels = Map.of("l1", "v1", "l2", "v2");
+        Map<String, String> spsAnnotations = Map.of("a1", "v1", "a2", "v2");
 
-        Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
-        Map<String, String> podAnnotations = TestUtils.map("a3", "v3", "a4", "v4");
+        Map<String, String> podLabels = Map.of("l3", "v3", "l4", "v4");
+        Map<String, String> podAnnotations = Map.of("a3", "v3", "a4", "v4");
 
-        Map<String, String> poolSpsLabels = TestUtils.map("l5", "v5", "l6", "v6");
-        Map<String, String> poolSpsAnnotations = TestUtils.map("a5", "v5", "a6", "v6");
+        Map<String, String> poolSpsLabels = Map.of("l5", "v5", "l6", "v6");
+        Map<String, String> poolSpsAnnotations = Map.of("a5", "v5", "a6", "v6");
 
-        Map<String, String> poolPodLabels = TestUtils.map("l7", "v7", "l8", "v8");
-        Map<String, String> poolPodAnnotations = TestUtils.map("a7", "v7", "a8", "v8");
+        Map<String, String> poolPodLabels = Map.of("l7", "v7", "l8", "v8");
+        Map<String, String> poolPodAnnotations = Map.of("a7", "v7", "a8", "v8");
 
         HostAlias hostAlias1 = new HostAliasBuilder()
                 .withHostnames("my-host-1", "my-host-2")
@@ -4435,11 +4435,11 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testCustomizedPodSetInNodePool()   {
         // Prepare various template values
-        Map<String, String> spsLabels = TestUtils.map("l1", "v1", "l2", "v2");
-        Map<String, String> spsAnnotations = TestUtils.map("a1", "v1", "a2", "v2");
+        Map<String, String> spsLabels = Map.of("l1", "v1", "l2", "v2");
+        Map<String, String> spsAnnotations = Map.of("a1", "v1", "a2", "v2");
 
-        Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
-        Map<String, String> podAnnotations = TestUtils.map("a3", "v3", "a4", "v4");
+        Map<String, String> podLabels = Map.of("l3", "v3", "l4", "v4");
+        Map<String, String> podAnnotations = Map.of("a3", "v3", "a4", "v4");
 
         HostAlias hostAlias1 = new HostAliasBuilder()
                 .withHostnames("my-host-1", "my-host-2")

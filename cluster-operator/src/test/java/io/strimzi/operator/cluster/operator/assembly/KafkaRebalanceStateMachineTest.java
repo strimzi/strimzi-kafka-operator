@@ -30,6 +30,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -82,8 +83,8 @@ public class KafkaRebalanceStateMachineTest {
 
     @BeforeAll
     public static void before() throws IOException {
-        File tlsKeyFile = TestUtils.tempFile(KafkaRebalanceStateMachineTest.class.getSimpleName(), ".key");
-        File tlsCrtFile = TestUtils.tempFile(KafkaRebalanceStateMachineTest.class.getSimpleName(), ".crt");
+        File tlsKeyFile = ReadWriteUtils.tempFile(KafkaRebalanceStateMachineTest.class.getSimpleName(), ".key");
+        File tlsCrtFile = ReadWriteUtils.tempFile(KafkaRebalanceStateMachineTest.class.getSimpleName(), ".crt");
 
         new MockCertManager().generateSelfSignedCert(tlsKeyFile, tlsCrtFile,
             new Subject.Builder().withCommonName("Trusted Test CA").build(), 365);

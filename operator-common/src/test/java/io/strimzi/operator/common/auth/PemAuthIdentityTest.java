@@ -10,7 +10,8 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.operator.MockCertManager;
 import org.junit.jupiter.api.Test;
 
-import static io.strimzi.test.TestUtils.map;
+import java.util.Map;
+
 import static java.util.Collections.emptyMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -40,7 +41,7 @@ public class PemAuthIdentityTest {
                     .withName(KafkaResources.clusterOperatorCertsSecretName(CLUSTER))
                     .withNamespace(NAMESPACE)
                 .endMetadata()
-                .withData(map("cluster-operator.key", "key"))
+                .withData(Map.of("cluster-operator.key", "key"))
                 .build();
         Exception e = assertThrows(RuntimeException.class, () -> PemAuthIdentity.clusterOperator(secretWithMissingClusterOperatorKey));
         assertThat(e.getMessage(), is("The Secret testns/testcluster-cluster-operator-certs is missing the field cluster-operator.crt"));
@@ -53,7 +54,7 @@ public class PemAuthIdentityTest {
                     .withName(KafkaResources.clusterOperatorCertsSecretName(CLUSTER))
                     .withNamespace(NAMESPACE)
                 .endMetadata()
-                .withData(map("cluster-operator.key", MockCertManager.clusterCaKey(),
+                .withData(Map.of("cluster-operator.key", MockCertManager.clusterCaKey(),
                         "cluster-operator.crt", "bm90YWNlcnQ=", //notacert
                         "cluster-operator.p12", "bm90YXRydXN0c3RvcmU=", //notatruststore
                         "cluster-operator.password", "bm90YXBhc3N3b3Jk")) //notapassword

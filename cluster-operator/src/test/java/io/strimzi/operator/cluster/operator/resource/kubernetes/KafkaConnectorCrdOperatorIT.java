@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorBuilder;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorList;
-import io.strimzi.test.TestUtils;
+import io.strimzi.test.CrdUtils;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
@@ -35,7 +35,7 @@ public class KafkaConnectorCrdOperatorIT extends AbstractCustomResourceOperatorI
 
     @Override
     protected String getCrd() {
-        return TestUtils.CRD_KAFKA_CONNECTOR;
+        return CrdUtils.CRD_KAFKA_CONNECTOR;
     }
 
     @Override

@@ -26,5 +26,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @ResourceLock(mode = ResourceAccessMode.READ_WRITE, value = "global")
 @Test
 public @interface IsolatedTest {
+    /**
+     * @return  The description of why this test needs to run as isolated
+     */
     String value() default "";
 }

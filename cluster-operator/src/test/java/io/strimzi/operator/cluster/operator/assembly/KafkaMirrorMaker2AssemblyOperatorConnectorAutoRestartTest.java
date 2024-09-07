@@ -20,7 +20,6 @@ import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.platform.KubernetesVersion;
-import io.strimzi.test.TestUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -61,7 +60,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorAutoRestartTest {
                 .withNewMetadata()
                     .withName("my-mm2")
                     .withNamespace("namespace")
-                    .withLabels(TestUtils.map("foo", "bar"))
+                    .withLabels(Map.of("foo", "bar"))
                 .endMetadata()
                 .withNewSpec()
                     .withReplicas(1)

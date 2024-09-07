@@ -197,7 +197,7 @@ public class KafkaConnectBuildTest {
         assertThat(pod.getMetadata().getName(), is(KafkaConnectResources.buildPodName(cluster)));
         assertThat(pod.getMetadata().getNamespace(), is(namespace));
 
-        Map<String, String> expectedDeploymentLabels = TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
+        Map<String, String> expectedDeploymentLabels = Map.of(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
                 Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.buildPodName(cluster),
                 Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND,
                 Labels.STRIMZI_COMPONENT_TYPE_LABEL, KafkaConnectBuild.COMPONENT_TYPE,
@@ -325,7 +325,7 @@ public class KafkaConnectBuildTest {
         assertThat(bc.getMetadata().getName(), is(KafkaConnectResources.buildConfigName(cluster)));
         assertThat(bc.getMetadata().getNamespace(), is(namespace));
 
-        Map<String, String> expectedDeploymentLabels = TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
+        Map<String, String> expectedDeploymentLabels = Map.of(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
                 Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.buildPodName(cluster),
                 Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND,
                 Labels.STRIMZI_COMPONENT_TYPE_LABEL, KafkaConnectBuild.COMPONENT_TYPE,
@@ -407,7 +407,7 @@ public class KafkaConnectBuildTest {
         assertThat(bc.getMetadata().getName(), is(KafkaConnectResources.buildConfigName(cluster)));
         assertThat(bc.getMetadata().getNamespace(), is(namespace));
 
-        Map<String, String> expectedDeploymentLabels = TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
+        Map<String, String> expectedDeploymentLabels = Map.of(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
                 Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.buildPodName(cluster),
                 Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND,
                 Labels.STRIMZI_COMPONENT_TYPE_LABEL, KafkaConnectBuild.COMPONENT_TYPE,
@@ -425,14 +425,14 @@ public class KafkaConnectBuildTest {
 
     @ParallelTest
     public void testTemplate()   {
-        Map<String, String> buildPodLabels = TestUtils.map("l1", "v1", "l2", "v2");
-        Map<String, String> buildPodAnnos = TestUtils.map("a1", "v1", "a2", "v2");
+        Map<String, String> buildPodLabels = Map.of("l1", "v1", "l2", "v2");
+        Map<String, String> buildPodAnnos = Map.of("a1", "v1", "a2", "v2");
 
-        Map<String, String> buildConfigLabels = TestUtils.map("l3", "v3", "l4", "v4");
-        Map<String, String> buildConfigAnnos = TestUtils.map("a3", "v3", "a4", "v4");
+        Map<String, String> buildConfigLabels = Map.of("l3", "v3", "l4", "v4");
+        Map<String, String> buildConfigAnnos = Map.of("a3", "v3", "a4", "v4");
 
-        Map<String, String> saLabels = TestUtils.map("l5", "v5", "l6", "v6");
-        Map<String, String> saAnots = TestUtils.map("a5", "v5", "a6", "v6");
+        Map<String, String> saLabels = Map.of("l5", "v5", "l6", "v6");
+        Map<String, String> saAnots = Map.of("a5", "v5", "a6", "v6");
 
         SecretVolumeSource secret = new SecretVolumeSourceBuilder()
                 .withSecretName("secret1")

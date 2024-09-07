@@ -83,7 +83,6 @@ import io.strimzi.operator.common.auth.PemAuthIdentity;
 import io.strimzi.operator.common.auth.PemTrustSet;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.test.TestUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.net.NetClientOptions;
@@ -186,7 +185,7 @@ public class ResourceUtils {
         ObjectMeta meta = new ObjectMetaBuilder()
             .withNamespace(namespace)
             .withName(name)
-            .withLabels(Labels.fromMap(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests", "my-user-label", "cromulent")).toMap())
+            .withLabels(Labels.fromMap(Map.of(Labels.KUBERNETES_DOMAIN + "part-of", "tests", "my-user-label", "cromulent")).toMap())
             .build();
         result.setMetadata(meta);
 
@@ -245,7 +244,7 @@ public class ResourceUtils {
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(name)
                         .withNamespace(namespace)
-                        .withLabels(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
+                        .withLabels(Map.of(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
                                 "my-user-label", "cromulent"))
                         .withAnnotations(emptyMap())
                         .build())
@@ -262,7 +261,7 @@ public class ResourceUtils {
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(name)
                         .withNamespace(namespace)
-                        .withLabels(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
+                        .withLabels(Map.of(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
                                 "my-user-label", "cromulent"))
                         .build())
                 .withNewSpec()
@@ -280,7 +279,7 @@ public class ResourceUtils {
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(name)
                         .withNamespace(namespace)
-                        .withLabels(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
+                        .withLabels(Map.of(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
                                 "my-user-label", "cromulent"))
                         .build())
                 .withNewSpec()
@@ -303,7 +302,7 @@ public class ResourceUtils {
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(name)
                         .withNamespace(namespace)
-                        .withLabels(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
+                        .withLabels(Map.of(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
                                 "my-user-label", "cromulent"))
                         .build())
                 .withNewSpec()
@@ -327,7 +326,7 @@ public class ResourceUtils {
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(name)
                         .withNamespace(namespace)
-                        .withLabels(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
+                        .withLabels(Map.of(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
                                 "my-user-label", "cromulent"))
                         .build())
                 .withNewSpec()
@@ -350,7 +349,7 @@ public class ResourceUtils {
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(name)
                         .withNamespace(namespace)
-                        .withLabels(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
+                        .withLabels(Map.of(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
                                 "my-user-label", "cromulent"))
                         .build())
                 .withNewSpec()

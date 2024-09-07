@@ -77,6 +77,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider;
+import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
@@ -141,7 +142,7 @@ public class KafkaConnectClusterTest {
 
     private final KafkaConnect resource = new KafkaConnectBuilder(ResourceUtils.createEmptyKafkaConnect(namespace, clusterName))
             .withNewSpec()
-                .withConfig((Map<String, Object>) TestUtils.fromYamlString(configurationJson, Map.class))
+                .withConfig((Map<String, Object>) ReadWriteUtils.readObjectFromYamlString(configurationJson, Map.class))
                 .withImage(image)
                 .withReplicas(replicas)
                 .withReadinessProbe(new Probe(healthDelay, healthTimeout))
@@ -169,7 +170,7 @@ public class KafkaConnectClusterTest {
     }
 
     private Map<String, String> expectedLabels(String name)    {
-        return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.clusterName,
+        return TestUtils.modifiableMap(Labels.STRIMZI_CLUSTER_LABEL, this.clusterName,
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_NAME_LABEL, name,
                 Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND,
@@ -716,27 +717,27 @@ public class KafkaConnectClusterTest {
     @ParallelTest
     @SuppressWarnings({"checkstyle:methodlength"})
     public void testTemplate() {
-        Map<String, String> spsLabels = TestUtils.map("l1", "v1", "l2", "v2",
+        Map<String, String> spsLabels = Map.of("l1", "v1", "l2", "v2",
                 Labels.KUBERNETES_PART_OF_LABEL, "custom-part",
                 Labels.KUBERNETES_MANAGED_BY_LABEL, "custom-managed-by");
         Map<String, String> expectedDepLabels = new HashMap<>(spsLabels);
         expectedDepLabels.remove(Labels.KUBERNETES_MANAGED_BY_LABEL);
-        Map<String, String> spsAnnos = TestUtils.map("a1", "v1", "a2", "v2");
+        Map<String, String> spsAnnos = Map.of("a1", "v1", "a2", "v2");
 
-        Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
-        Map<String, String> podAnots = TestUtils.map("a3", "v3", "a4", "v4");
+        Map<String, String> podLabels = Map.of("l3", "v3", "l4", "v4");
+        Map<String, String> podAnots = Map.of("a3", "v3", "a4", "v4");
 
-        Map<String, String> svcLabels = TestUtils.map("l5", "v5", "l6", "v6");
-        Map<String, String> svcAnots = TestUtils.map("a5", "v5", "a6", "v6");
+        Map<String, String> svcLabels = Map.of("l5", "v5", "l6", "v6");
+        Map<String, String> svcAnots = Map.of("a5", "v5", "a6", "v6");
 
-        Map<String, String> pdbLabels = TestUtils.map("l7", "v7", "l8", "v8");
-        Map<String, String> pdbAnots = TestUtils.map("a7", "v7", "a8", "v8");
+        Map<String, String> pdbLabels = Map.of("l7", "v7", "l8", "v8");
+        Map<String, String> pdbAnots = Map.of("a7", "v7", "a8", "v8");
 
-        Map<String, String> crbLabels = TestUtils.map("l9", "v9", "l10", "v10");
-        Map<String, String> crbAnots = TestUtils.map("a9", "v9", "a10", "v10");
+        Map<String, String> crbLabels = Map.of("l9", "v9", "l10", "v10");
+        Map<String, String> crbAnots = Map.of("a9", "v9", "a10", "v10");
 
-        Map<String, String> saLabels = TestUtils.map("l11", "v11", "l12", "v12");
-        Map<String, String> saAnots = TestUtils.map("a11", "v11", "a12", "v12");
+        Map<String, String> saLabels = Map.of("l11", "v11", "l12", "v12");
+        Map<String, String> saAnots = Map.of("a11", "v11", "a12", "v12");
 
         HostAlias hostAlias1 = new HostAliasBuilder()
                 .withHostnames("my-host-1", "my-host-2")

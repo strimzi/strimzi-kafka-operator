@@ -4,141 +4,90 @@
  */
 package io.strimzi.test;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.io.Reader;
 import java.io.StringWriter;
 import java.net.ServerSocket;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BooleanSupplier;
-import java.util.function.Function;
-import java.util.stream.Stream;
 
-import static java.lang.String.format;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.nullValue;
 
-@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
+/**
+ * Class with various utility methods and fields useful for testing
+ */
 public final class TestUtils {
-
     private static final Logger LOGGER = LogManager.getLogger(TestUtils.class);
 
+    /**
+     * Path to the user directory from which the tests are run
+     */
     public static final String USER_PATH = System.getProperty("user.dir");
 
+    /**
+     * The default line separator for the platform where the tests are run
+     */
     public static final String LINE_SEPARATOR = System.lineSeparator();
-
-    public static final String CRD_TOPIC = USER_PATH + "/../packaging/install/cluster-operator/043-Crd-kafkatopic.yaml";
-
-    public static final String CRD_KAFKA = USER_PATH + "/../packaging/install/cluster-operator/040-Crd-kafka.yaml";
-
-    public static final String CRD_KAFKA_CONNECT = USER_PATH + "/../packaging/install/cluster-operator/041-Crd-kafkaconnect.yaml";
-
-    public static final String CRD_KAFKA_USER = USER_PATH + "/../packaging/install/cluster-operator/044-Crd-kafkauser.yaml";
-
-    public static final String CRD_KAFKA_MIRROR_MAKER = USER_PATH + "/../packaging/install/cluster-operator/045-Crd-kafkamirrormaker.yaml";
-
-    public static final String CRD_KAFKA_BRIDGE = USER_PATH + "/../packaging/install/cluster-operator/046-Crd-kafkabridge.yaml";
-
-    public static final String CRD_KAFKA_MIRROR_MAKER_2 = USER_PATH + "/../packaging/install/cluster-operator/048-Crd-kafkamirrormaker2.yaml";
-
-    public static final String CRD_KAFKA_CONNECTOR = USER_PATH + "/../packaging/install/cluster-operator/047-Crd-kafkaconnector.yaml";
-
-    public static final String CRD_KAFKA_REBALANCE = USER_PATH + "/../packaging/install/cluster-operator/049-Crd-kafkarebalance.yaml";
-
-    public static final String CRD_KAFKA_NODE_POOL = USER_PATH + "/../packaging/install/cluster-operator/04A-Crd-kafkanodepool.yaml";
-
-    public static final String CRD_STRIMZI_POD_SET = USER_PATH + "/../packaging/install/cluster-operator/042-Crd-strimzipodset.yaml";
-
-    /**
-     * Default timeout for asynchronous tests.
-     */
-    public static final int DEFAULT_TIMEOUT_DURATION = 30;
-
-    /**
-     * Default timeout unit for asynchronous tests.
-     */
-    public static final TimeUnit DEFAULT_TIMEOUT_UNIT = TimeUnit.SECONDS;
 
     private TestUtils() {
         // All static methods
     }
 
-    /** Returns a Map of the given sequence of key, value pairs. */
-    @SafeVarargs
-    public static <T> Map<T, T> map(T... pairs) {
-        if (pairs.length % 2 != 0) {
-            throw new IllegalArgumentException();
-        }
-        Map<T, T> result = new HashMap<>(pairs.length / 2);
-        for (int i = 0; i < pairs.length; i += 2) {
-            result.put(pairs[i], pairs[i + 1]);
-        }
-        return result;
+    /**
+     * Poll the given {@code ready} function every {@code pollIntervalMs} milliseconds until it returns true,
+     * or throw a WaitException if it doesn't return true within {@code timeoutMs} milliseconds.
+     *
+     * @param description       Description of what we are waiting for (used for logging purposes)
+     * @param pollIntervalMs    Poll interval in milliseconds
+     * @param timeoutMs         Timeout interval in milliseconds
+     * @param ready             Supplier to decide if the wait is complete or not
+     *
+     * @return  The remaining time left until timeout occurs (helpful if you have several calls which need to share a common timeout)
+     */
+    public static long waitFor(String description, long pollIntervalMs, long timeoutMs, BooleanSupplier ready) {
+        return waitFor(description, pollIntervalMs, timeoutMs, ready, () -> { });
     }
 
     /**
      * Poll the given {@code ready} function every {@code pollIntervalMs} milliseconds until it returns true,
      * or throw a WaitException if it doesn't return true within {@code timeoutMs} milliseconds.
-     * @return The remaining time left until timeout occurs
-     * (helpful if you have several calls which need to share a common timeout),
-     * */
-    public static long waitFor(String description, long pollIntervalMs, long timeoutMs, BooleanSupplier ready) {
-        return waitFor(description, pollIntervalMs, timeoutMs, ready, () -> { });
-    }
-
+     *
+     * @param description       Description of what we are waiting for (used for logging purposes)
+     * @param pollIntervalMs    Poll interval in milliseconds
+     * @param timeoutMs         Timeout interval in milliseconds
+     * @param ready             Supplier to decide if the wait is complete or not
+     * @param onTimeout         Runnable that will be run when the timeout is reached
+     *
+     * @return  The remaining time left until timeout occurs (helpful if you have several calls which need to share a common timeout)
+     */
     public static long waitFor(String description, long pollIntervalMs, long timeoutMs, BooleanSupplier ready, Runnable onTimeout) {
         LOGGER.debug("Waiting for {}", description);
         long deadline = System.currentTimeMillis() + timeoutMs;
@@ -195,196 +144,79 @@ public final class TestUtils {
         }
     }
 
-    public static String indent(String s) {
+    /**
+     * Indents the input string with for empty spaces at the beginning of each line.
+     *
+     * TODO: This is used only in system tests and should be moved there.
+     *
+     * @param input     Input string that should be indented
+     *
+     * @return  Indented string
+     */
+    public static String indent(String input) {
         StringBuilder sb = new StringBuilder();
-        String[] lines = s.split("[\n\r]");
+        String[] lines = input.split("[\n\r]");
+
         for (String line : lines) {
             sb.append("    ").append(line).append(System.lineSeparator());
         }
+
         return sb.toString();
     }
 
-    public static String getFileAsString(String filePath) {
-        try {
-            LOGGER.info(filePath);
-            return Files.readString(Paths.get(filePath));
-        } catch (IOException e) {
-            LOGGER.info("File with path {} not found", filePath);
-        }
-        return "";
-    }
-
     /**
-     * Read the classpath resource with the given resourceName and return the content as a String
-     * @param cls The class relative to which the resource will be loaded.
-     * @param resourceName The name of the resource
-     * @return The resource content
+     * Creates a modifiable set wit the desired elements. Use {@code Set.of()} if immutable set is sufficient.
+     *
+     * @param elements  The elements that will be added to the Set
+     *
+     * @return  Modifiable set with the elements
+     *
+     * @param <T>       Type of the elements stored in the Set
      */
-    public static String readResource(Class<?> cls, String resourceName) {
-        try {
-            URL url = cls.getResource(resourceName);
-            if (url == null) {
-                return null;
-            } else {
-                return Files.readString(Paths.get(
-                        url.toURI()));
-            }
-        } catch (IOException | URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * Read loaded resource as an InputStream and return the content as a String
-     * @param stream Loaded resource
-     * @return The resource content
-     */
-    public static String readResource(InputStream stream) {
-        StringBuilder textBuilder = new StringBuilder();
-        try (Reader reader = new BufferedReader(new InputStreamReader(
-                stream, StandardCharsets.UTF_8)
-        )) {
-            int character;
-            while ((character = reader.read()) != -1) {
-                textBuilder.append((char) character);
-            }
-        } catch (IOException e) {
-            LOGGER.warn("Failed to read from InputStream", e);
-        }
-        return textBuilder.toString();
-    }
-
-    public static String readFile(File file) {
-        try {
-            if (file == null) {
-                return null;
-            } else {
-                return Files.readString(file.toPath());
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     @SafeVarargs
-    public static <T> Set<T> set(T... elements) {
+    public static <T> Set<T> modifiableSet(T... elements) {
         return new HashSet<>(asList(elements));
     }
 
-    public static <T> T fromYaml(String resource, Class<T> c) {
-        return fromYaml(resource, c, false);
-    }
+    /**
+     * Creates a modifiable map wit the desired elements. Use {@code Map.of()} if immutable set is sufficient.
+     *
+     * @param pairs     The key-value pairs that should be added to the Map
+     *
+     * @return  Modifiable map with the desired key-value pairs
+     *
+     * @param <T>   Type of the keys and values
+     */
+    @SafeVarargs
+    public static <T> Map<T, T> modifiableMap(T... pairs) {
+        if (pairs.length % 2 != 0) {
+            throw new IllegalArgumentException();
+        } else {
+            Map<T, T> result = new HashMap<>(pairs.length / 2);
 
-    public static <T> T fromYaml(String resource, Class<T> c, boolean ignoreUnknownProperties) {
-        URL url = c.getResource(resource);
-        if (url == null) {
-            return null;
-        }
-        ObjectMapper mapper = new YAMLMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, !ignoreUnknownProperties);
-        try {
-            return mapper.readValue(url, c);
-        } catch (InvalidFormatException e) {
-            throw new IllegalArgumentException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static <T> T fromYamlString(String yamlContent, Class<T> c) {
-        return fromYamlString(yamlContent, c, false);
-    }
-
-    public static <T> T fromYamlString(String yamlContent, Class<T> c, boolean ignoreUnknownProperties) {
-        ObjectMapper mapper = new YAMLMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, !ignoreUnknownProperties);
-        try {
-            return mapper.readValue(yamlContent, c);
-        } catch (InvalidFormatException e) {
-            throw new IllegalArgumentException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static <T> String toYamlString(T instance) {
-        ObjectMapper mapper = new YAMLMapper()
-                .disable(YAMLGenerator.Feature.USE_NATIVE_TYPE_ID)
-                .setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
-        try {
-            return mapper.writeValueAsString(instance);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static <T> T configFromYaml(String yamlPath, Class<T> c) {
-        return configFromYaml(new File(yamlPath), c);
-    }
-
-    public static ConfigMap configMapFromYaml(String yamlPath, String name) {
-        try {
-            YAMLFactory yaml = new YAMLFactory();
-            ObjectMapper mapper = new ObjectMapper(yaml);
-            YAMLParser yamlParser = yaml.createParser(new File(yamlPath));
-            List<ConfigMap> list = mapper.readValues(yamlParser, new TypeReference<ConfigMap>() { }).readAll();
-            Optional<ConfigMap> cmOpt = list.stream().filter(cm -> "ConfigMap".equals(cm.getKind()) && name.equals(cm.getMetadata().getName())).findFirst();
-            if (cmOpt.isPresent()) {
-                return cmOpt.get();
-            } else {
-                LOGGER.warn("ConfigMap {} not found in file {}", name, yamlPath);
-                return null;
+            for (int i = 0; i < pairs.length; i += 2) {
+                result.put(pairs[i], pairs[i + 1]);
             }
-        } catch (InvalidFormatException e) {
-            throw new IllegalArgumentException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
 
-    }
-
-    public static <T> T configFromYaml(File yamlFile, Class<T> c) {
-        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-        try {
-            return mapper.readValue(yamlFile, c);
-        } catch (InvalidFormatException e) {
-            throw new IllegalArgumentException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            return result;
         }
     }
 
-    public static String toJsonString(Object instance) {
-        ObjectMapper mapper = new ObjectMapper()
-                .setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        try {
-            return mapper.writeValueAsString(instance);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /** Map Streams utility methods */
-    public static <K, V> Map.Entry<K, V> entry(K key, V value) {
-        return new AbstractMap.SimpleEntry<>(key, value);
-    }
-
-    /** Method to create and write file */
-    public static void writeFile(Path filePath, String text) {
-        try {
-            Files.writeString(filePath, text, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            LOGGER.warn("Exception during writing text in file", e);
-        }
-    }
-
-    public static void checkOwnerReference(HasMetadata resource, HasMetadata parent)  {
+    /**
+     * Checks that the resource has the owner reference pointing to the parent resource
+     *
+     * @param resource  The resource where the owner reference should be checked
+     * @param owner     The resource which should be the owner
+     */
+    public static void checkOwnerReference(HasMetadata resource, HasMetadata owner)  {
         assertThat(resource.getMetadata().getOwnerReferences().size(), is(1));
 
         OwnerReference or = resource.getMetadata().getOwnerReferences().get(0);
 
-        assertThat(or.getApiVersion(), is(parent.getApiVersion()));
-        assertThat(or.getKind(), is(parent.getKind()));
-        assertThat(or.getName(), is(parent.getMetadata().getName()));
-        assertThat(or.getUid(), is(parent.getMetadata().getUid()));
+        assertThat(or.getApiVersion(), is(owner.getApiVersion()));
+        assertThat(or.getKind(), is(owner.getKind()));
+        assertThat(or.getName(), is(owner.getMetadata().getName()));
+        assertThat(or.getUid(), is(owner.getMetadata().getUid()));
         assertThat(or.getBlockOwnerDeletion(), is(false));
         assertThat(or.getController(), is(false));
     }
@@ -392,6 +224,8 @@ public final class TestUtils {
     /**
      * Changes the {@code subject} of the RoleBinding in the given YAML resource to be the
      * {@code strimzi-cluster-operator} {@code ServiceAccount} in the given namespace.
+     *
+     * TODO: This is used only in system tests and should be moved there.
      *
      * @param roleBindingFile   The RoleBinding YAML file to load and change
      * @param namespace         Namespace of the service account which should be the subject of this RoleBinding
@@ -413,19 +247,18 @@ public final class TestUtils {
         }
     }
 
-    public static String getContent(File file, Function<JsonNode, String> edit) {
-        YAMLMapper mapper = new YAMLMapper();
-        try {
-            JsonNode node = mapper.readTree(file);
-            return edit.apply(node);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static Map<String, String> parseImageMap(String str) {
-        if (str != null) {
-            StringTokenizer tok = new StringTokenizer(str, ", \t\n\r");
+    /**
+     * Parse the image map String into a Map.
+     *
+     * TODO: This is used only in system tests and should be moved there.
+     *
+     * @param imageMapString    String with the image map (contains key-value pairs separated by new lines in a single string)
+     *
+     * @return  Map with the parsed images
+     */
+    public static Map<String, String> parseImageMap(String imageMapString) {
+        if (imageMapString != null) {
+            StringTokenizer tok = new StringTokenizer(imageMapString, ", \t\n\r");
             HashMap<String, String> map = new HashMap<>();
             while (tok.hasMoreTokens()) {
                 String versionImage = tok.nextToken();
@@ -456,18 +289,26 @@ public final class TestUtils {
     /**
      * Awaits completion of the given stage using the default timeout.
      *
-     * @param stage the stage to await completion
+     * @param stage     The stage to await completion
+     *
+     * @return  Result of the completion stage
+     *
+     * @param <T>   Type of the completion stage result
      */
     public static <T> T await(CompletionStage<T> stage) {
-        return await(stage, DEFAULT_TIMEOUT_DURATION, DEFAULT_TIMEOUT_UNIT);
+        return await(stage, 30, TimeUnit.SECONDS);
     }
 
     /**
      * Awaits completion of the given stage using the given timeout and unit.
      *
-     * @param stage the stage to await completion
-     * @param timeout the amount of time to wait for completion
-     * @param unit the unit of time give by the timeout parameter
+     * @param stage     The stage to await completion
+     * @param timeout   The amount of time to wait for completion
+     * @param unit      The unit of time give by the timeout parameter
+     *
+     * @return  Result of the completion stage
+     *
+     * @param <T>   Type of the completion stage result
      */
     public static <T> T await(CompletionStage<T> stage, long timeout, TimeUnit unit) {
         try {
@@ -489,108 +330,16 @@ public final class TestUtils {
      * CompletionStage#whenComplete} to easily assert success without modifying the
      * result.
      *
-     * @param unused the result of a completion stage, unused by this method
-     * @param error an error thrown by an earlier completion stage
+     * @param unused    The result of a completion stage, unused by this method
+     * @param error     An error thrown by an earlier completion stage
      */
+    @SuppressWarnings("unused")
     public static void assertSuccessful(Object unused, Throwable error) {
         assertThat(error, is(nullValue()));
     }
 
     /**
-     * Creates an empty file in the default temporary-file directory, using the given prefix and suffix.
-     * 
-     * @param prefix The prefix of the empty file (default: UUID).
-     * @param suffix The suffix of the empty file (default: .tmp).
-     * 
-     * @return The empty file just created.
-     */
-    public static File tempFile(String prefix, String suffix) {
-        File file;
-        prefix = prefix == null ? UUID.randomUUID().toString() : prefix;
-        suffix = suffix == null ? ".tmp" : suffix;
-        try {
-            file = Files.createTempFile(prefix, suffix).toFile();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        file.deleteOnExit();
-        return file;
-    }
-
-    /**
-     * Get JSON content as string from resource.
-     *
-     * @param resourcePath Resource path.
-     *
-     * @return JSON content as string.
-     */
-    public static String jsonFromResource(String resourcePath) {
-        try {
-            URI resourceURI = Objects.requireNonNull(TestUtils.class.getClassLoader().getResource(resourcePath)).toURI();
-            try (Stream<String> lines = Files.lines(Paths.get(resourceURI), UTF_8)) {
-                Optional<String> content = lines.reduce((x, y) -> x + y);
-
-                if (content.isEmpty()) {
-                    throw new IOException(format("File %s from resources was empty", resourcePath));
-                }
-
-                return content.get();
-            }
-        } catch (Throwable t) {
-            throw new RuntimeException(t);
-        }
-    }
-
-    /**
-     * Creates a CRD resource in the Kubernetes cluster
-     *
-     * @param client    Kubernetes client
-     * @param crdName   Name of the CRD
-     * @param crdPath   Path to the CRD YAML
-     */
-    public static void createCrd(KubernetesClient client, String crdName, String crdPath)   {
-        if (client.apiextensions().v1().customResourceDefinitions().withName(crdName).get() != null) {
-            deleteCrd(client, crdName);
-        }
-
-        client.apiextensions().v1()
-                .customResourceDefinitions()
-                .load(crdPath)
-                .create();
-        client.apiextensions().v1()
-                .customResourceDefinitions()
-                .load(crdPath)
-                .waitUntilCondition(TestUtils::isCrdEstablished, 10, TimeUnit.SECONDS);
-    }
-
-    /**
-     * Checks if the CRD has been established
-     *
-     * @param crd   The CRD resource
-     *
-     * @return  True if the CRD is established. False otherwise.
-     */
-    private static boolean isCrdEstablished(CustomResourceDefinition crd)   {
-        return crd.getStatus() != null
-                && crd.getStatus().getConditions() != null
-                && crd.getStatus().getConditions().stream().anyMatch(c -> "Established".equals(c.getType()) && "True".equals(c.getStatus()));
-    }
-
-    /**
-     * Deletes the CRD from the Kubernetes cluster
-     *
-     * @param client    Kubernetes client
-     * @param crdName   Name of the CRD
-     */
-    public static void deleteCrd(KubernetesClient client, String crdName)   {
-        if (client.apiextensions().v1().customResourceDefinitions().withName(crdName).get() != null) {
-            client.apiextensions().v1().customResourceDefinitions().withName(crdName).withPropagationPolicy(DeletionPropagation.BACKGROUND).delete();
-            client.apiextensions().v1().customResourceDefinitions().withName(crdName).waitUntilCondition(Objects::isNull, 30_000, TimeUnit.MILLISECONDS);
-        }
-    }
-
-    /**
-     * Creates the namespase. If the namespace already exists, it will delete it and recreate it.
+     * Creates the namespace. If the namespace already exists, it will delete it and recreate it.
      *
      * @param client        Kubernetes client
      * @param namespace     Namespace

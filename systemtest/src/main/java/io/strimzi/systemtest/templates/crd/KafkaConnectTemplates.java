@@ -18,7 +18,7 @@ import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.test.TestUtils;
+import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -68,7 +68,7 @@ public class KafkaConnectTemplates {
     }
 
     public static ConfigMap connectMetricsConfigMap(String namespaceName, String kafkaConnectClusterName) {
-        return new ConfigMapBuilder(TestUtils.configMapFromYaml(TestConstants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG, "connect-metrics"))
+        return new ConfigMapBuilder(ReadWriteUtils.readObjectFromYamlFilepath(TestConstants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG, ConfigMap.class))
             .editOrNewMetadata()
                 .withNamespace(namespaceName)
                 .withName(getConfigMapName(kafkaConnectClusterName))

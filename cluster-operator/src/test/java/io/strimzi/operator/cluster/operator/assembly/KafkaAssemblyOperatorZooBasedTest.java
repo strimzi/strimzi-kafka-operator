@@ -90,7 +90,7 @@ import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.platform.KubernetesVersion;
-import io.strimzi.test.TestUtils;
+import io.strimzi.test.ReadWriteUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
@@ -123,7 +123,7 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.common.model.Ca.x509Certificate;
-import static io.strimzi.test.TestUtils.set;
+import static io.strimzi.test.TestUtils.modifiableSet;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -576,7 +576,7 @@ public class KafkaAssemblyOperatorZooBasedTest {
         ArgumentCaptor<PersistentVolumeClaim> pvcCaptor = ArgumentCaptor.forClass(PersistentVolumeClaim.class);
         when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        Set<String> expectedSecrets = set(
+        Set<String> expectedSecrets = modifiableSet(
                 KafkaResources.clientsCaKeySecretName(kafkaName),
                 KafkaResources.clientsCaCertificateSecretName(kafkaName),
                 KafkaResources.clusterCaCertificateSecretName(kafkaName),
@@ -672,7 +672,7 @@ public class KafkaAssemblyOperatorZooBasedTest {
             .onComplete(context.succeeding(status -> context.verify(() -> {
 
                 // We expect a headless and headful service
-                Set<String> expectedServices = set(
+                Set<String> expectedServices = modifiableSet(
                         KafkaResources.zookeeperHeadlessServiceName(kafkaName),
                         KafkaResources.zookeeperServiceName(kafkaName),
                         KafkaResources.bootstrapServiceName(kafkaName),
@@ -701,7 +701,7 @@ public class KafkaAssemblyOperatorZooBasedTest {
                 List<StrimziPodSet> capturedSps = spsCaptor.getAllValues();
                 // We expect a StrimziPodSet for kafka and zookeeper...
                 assertThat(capturedSps.stream().map(sps -> sps.getMetadata().getName()).collect(Collectors.toSet()),
-                        is(set(KafkaResources.kafkaComponentName(kafkaName), KafkaResources.zookeeperComponentName(kafkaName))));
+                        is(modifiableSet(KafkaResources.kafkaComponentName(kafkaName), KafkaResources.zookeeperComponentName(kafkaName))));
 
                 // expected Secrets with certificates
                 assertThat(new TreeSet<>(secretsMap.keySet()), is(new TreeSet<>(expectedSecrets)));
@@ -733,7 +733,7 @@ public class KafkaAssemblyOperatorZooBasedTest {
                 // Check PDBs
                 assertThat(pdbCaptor.getAllValues(), hasSize(2));
                 assertThat(pdbCaptor.getAllValues().stream().map(sts -> sts.getMetadata().getName()).collect(Collectors.toSet()),
-                        is(set(KafkaResources.kafkaComponentName(kafkaName), KafkaResources.zookeeperComponentName(kafkaName))));
+                        is(modifiableSet(KafkaResources.kafkaComponentName(kafkaName), KafkaResources.zookeeperComponentName(kafkaName))));
 
                 // Check PVCs
                 assertThat(pvcCaptor.getAllValues(), hasSize(expectedPvcs.size()));
@@ -745,7 +745,7 @@ public class KafkaAssemblyOperatorZooBasedTest {
 
                 // Verify deleted routes
                 if (openShift) {
-                    Set<String> expectedRoutes = set(KafkaResources.bootstrapServiceName(kafkaName));
+                    Set<String> expectedRoutes = modifiableSet(KafkaResources.bootstrapServiceName(kafkaName));
 
                     for (NodeRef node : kafkaCluster.nodes()) {
                         expectedRoutes.add(node.podName());
@@ -990,7 +990,7 @@ public class KafkaAssemblyOperatorZooBasedTest {
                 .withName(KafkaResources.zookeeperMetricsAndLogConfigMapName(clusterName))
                 .withNamespace(clusterNamespace)
                 .endMetadata()
-                .withData(singletonMap(MetricsModel.CONFIG_MAP_KEY, TestUtils.toYamlString(METRICS_CONFIG)))
+                .withData(singletonMap(MetricsModel.CONFIG_MAP_KEY, ReadWriteUtils.writeObjectToYamlString(METRICS_CONFIG)))
                 .build();
         when(mockCmOps.get(clusterNamespace, KafkaResources.zookeeperMetricsAndLogConfigMapName(clusterName))).thenReturn(zkMetricsCm);
 
@@ -1224,13 +1224,13 @@ public class KafkaAssemblyOperatorZooBasedTest {
         }
 
         // Mock CM patch
-        Set<String> metricsCms = set();
+        Set<String> metricsCms = modifiableSet();
         doAnswer(invocation -> {
             metricsCms.add(invocation.getArgument(1));
             return Future.succeededFuture();
         }).when(mockCmOps).reconcile(any(), eq(clusterNamespace), any(), any());
 
-        Set<String> logCms = set();
+        Set<String> logCms = modifiableSet();
         doAnswer(invocation -> {
             logCms.add(invocation.getArgument(1));
             return Future.succeededFuture();

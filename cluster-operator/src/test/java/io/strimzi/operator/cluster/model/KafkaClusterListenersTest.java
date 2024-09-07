@@ -142,29 +142,29 @@ public class KafkaClusterListenersTest {
     @SuppressWarnings({"checkstyle:MethodLength"})
     @ParallelTest
     public void testListenersTemplate() {
-        Map<String, String> svcLabels = TestUtils.map("l5", "v5", "l6", "v6");
-        Map<String, String> svcAnnotations = TestUtils.map("a5", "v5", "a6", "v6");
+        Map<String, String> svcLabels = Map.of("l5", "v5", "l6", "v6");
+        Map<String, String> svcAnnotations = Map.of("a5", "v5", "a6", "v6");
 
-        Map<String, String> hSvcLabels = TestUtils.map("l7", "v7", "l8", "v8");
-        Map<String, String> hSvcAnnotations = TestUtils.map("a7", "v7", "a8", "v8");
+        Map<String, String> hSvcLabels = Map.of("l7", "v7", "l8", "v8");
+        Map<String, String> hSvcAnnotations = Map.of("a7", "v7", "a8", "v8");
 
-        Map<String, String> exSvcLabels = TestUtils.map("l9", "v9", "l10", "v10");
-        Map<String, String> exSvcAnnotations = TestUtils.map("a9", "v9", "a10", "v10");
+        Map<String, String> exSvcLabels = Map.of("l9", "v9", "l10", "v10");
+        Map<String, String> exSvcAnnotations = Map.of("a9", "v9", "a10", "v10");
 
-        Map<String, String> perPodSvcLabels = TestUtils.map("l11", "v11", "l12", "v12");
-        Map<String, String> perPodSvcAnnotations = TestUtils.map("a11", "v11", "a12", "v12");
+        Map<String, String> perPodSvcLabels = Map.of("l11", "v11", "l12", "v12");
+        Map<String, String> perPodSvcAnnotations = Map.of("a11", "v11", "a12", "v12");
 
-        Map<String, String> exRouteLabels = TestUtils.map("l13", "v13", "l14", "v14");
-        Map<String, String> exRouteAnnotations = TestUtils.map("a13", "v13", "a14", "v14");
+        Map<String, String> exRouteLabels = Map.of("l13", "v13", "l14", "v14");
+        Map<String, String> exRouteAnnotations = Map.of("a13", "v13", "a14", "v14");
 
-        Map<String, String> perPodRouteLabels = TestUtils.map("l15", "v15", "l16", "v16");
-        Map<String, String> perPodRouteAnnotations = TestUtils.map("a15", "v15", "a16", "v16");
+        Map<String, String> perPodRouteLabels = Map.of("l15", "v15", "l16", "v16");
+        Map<String, String> perPodRouteAnnotations = Map.of("a15", "v15", "a16", "v16");
 
-        Map<String, String> exIngressLabels = TestUtils.map("l17", "v17", "l18", "v18");
-        Map<String, String> exIngressAnnotations = TestUtils.map("a17", "v17", "a18", "v18");
+        Map<String, String> exIngressLabels = Map.of("l17", "v17", "l18", "v18");
+        Map<String, String> exIngressAnnotations = Map.of("a17", "v17", "a18", "v18");
 
-        Map<String, String> perPodIngressLabels = TestUtils.map("l19", "v19", "l20", "v20");
-        Map<String, String> perPodIngressAnnotations = TestUtils.map("a19", "v19", "a20", "v20");
+        Map<String, String> perPodIngressLabels = Map.of("l19", "v19", "l20", "v20");
+        Map<String, String> perPodIngressAnnotations = Map.of("a19", "v19", "a20", "v20");
 
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -338,39 +338,39 @@ public class KafkaClusterListenersTest {
     @SuppressWarnings({"checkstyle:MethodLength"})
     @ParallelTest
     public void testListenersTemplateFromKafkaAndNodePools() {
-        Map<String, String> svcLabels = TestUtils.map("l5", "v5", "l6", "v6");
-        Map<String, String> svcAnnotations = TestUtils.map("a5", "v5", "a6", "v6");
+        Map<String, String> svcLabels = Map.of("l5", "v5", "l6", "v6");
+        Map<String, String> svcAnnotations = Map.of("a5", "v5", "a6", "v6");
 
-        Map<String, String> hSvcLabels = TestUtils.map("l7", "v7", "l8", "v8");
-        Map<String, String> hSvcAnnotations = TestUtils.map("a7", "v7", "a8", "v8");
+        Map<String, String> hSvcLabels = Map.of("l7", "v7", "l8", "v8");
+        Map<String, String> hSvcAnnotations = Map.of("a7", "v7", "a8", "v8");
 
-        Map<String, String> exSvcLabels = TestUtils.map("l9", "v9", "l10", "v10");
-        Map<String, String> exSvcAnnotations = TestUtils.map("a9", "v9", "a10", "v10");
+        Map<String, String> exSvcLabels = Map.of("l9", "v9", "l10", "v10");
+        Map<String, String> exSvcAnnotations = Map.of("a9", "v9", "a10", "v10");
 
-        Map<String, String> perPodSvcLabels = TestUtils.map("l11", "v11", "l12", "v12");
-        Map<String, String> perPodSvcAnnotations = TestUtils.map("a11", "v11", "a12", "v12");
+        Map<String, String> perPodSvcLabels = Map.of("l11", "v11", "l12", "v12");
+        Map<String, String> perPodSvcAnnotations = Map.of("a11", "v11", "a12", "v12");
 
-        Map<String, String> exRouteLabels = TestUtils.map("l13", "v13", "l14", "v14");
-        Map<String, String> exRouteAnnotations = TestUtils.map("a13", "v13", "a14", "v14");
+        Map<String, String> exRouteLabels = Map.of("l13", "v13", "l14", "v14");
+        Map<String, String> exRouteAnnotations = Map.of("a13", "v13", "a14", "v14");
 
-        Map<String, String> perPodRouteLabels = TestUtils.map("l15", "v15", "l16", "v16");
-        Map<String, String> perPodRouteAnnotations = TestUtils.map("a15", "v15", "a16", "v16");
+        Map<String, String> perPodRouteLabels = Map.of("l15", "v15", "l16", "v16");
+        Map<String, String> perPodRouteAnnotations = Map.of("a15", "v15", "a16", "v16");
 
-        Map<String, String> exIngressLabels = TestUtils.map("l17", "v17", "l18", "v18");
-        Map<String, String> exIngressAnnotations = TestUtils.map("a17", "v17", "a18", "v18");
+        Map<String, String> exIngressLabels = Map.of("l17", "v17", "l18", "v18");
+        Map<String, String> exIngressAnnotations = Map.of("a17", "v17", "a18", "v18");
 
-        Map<String, String> perPodIngressLabels = TestUtils.map("l19", "v19", "l20", "v20");
-        Map<String, String> perPodIngressAnnotations = TestUtils.map("a19", "v19", "a20", "v20");
+        Map<String, String> perPodIngressLabels = Map.of("l19", "v19", "l20", "v20");
+        Map<String, String> perPodIngressAnnotations = Map.of("a19", "v19", "a20", "v20");
 
         // Node pool values
-        Map<String, String> perPodSvcLabels2 = TestUtils.map("l21", "v21", "l22", "v22");
-        Map<String, String> perPodSvcAnnotations2 = TestUtils.map("a21", "v21", "a22", "v22");
+        Map<String, String> perPodSvcLabels2 = Map.of("l21", "v21", "l22", "v22");
+        Map<String, String> perPodSvcAnnotations2 = Map.of("a21", "v21", "a22", "v22");
 
-        Map<String, String> perPodRouteLabels2 = TestUtils.map("l25", "v25", "l26", "v26");
-        Map<String, String> perPodRouteAnnotations2 = TestUtils.map("a25", "v25", "a26", "v26");
+        Map<String, String> perPodRouteLabels2 = Map.of("l25", "v25", "l26", "v26");
+        Map<String, String> perPodRouteAnnotations2 = Map.of("a25", "v25", "a26", "v26");
 
-        Map<String, String> perPodIngressLabels2 = TestUtils.map("l29", "v29", "l30", "v30");
-        Map<String, String> perPodIngressAnnotations2 = TestUtils.map("a29", "v29", "a30", "v30");
+        Map<String, String> perPodIngressLabels2 = Map.of("l29", "v29", "l30", "v30");
+        Map<String, String> perPodIngressAnnotations2 = Map.of("a29", "v29", "a30", "v30");
 
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -597,14 +597,14 @@ public class KafkaClusterListenersTest {
     @ParallelTest
     public void testListenersTemplateFromNodePools() {
         // Node pool values
-        Map<String, String> perPodSvcLabels2 = TestUtils.map("l21", "v21", "l22", "v22");
-        Map<String, String> perPodSvcAnnotations2 = TestUtils.map("a21", "v21", "a22", "v22");
+        Map<String, String> perPodSvcLabels2 = Map.of("l21", "v21", "l22", "v22");
+        Map<String, String> perPodSvcAnnotations2 = Map.of("a21", "v21", "a22", "v22");
 
-        Map<String, String> perPodRouteLabels2 = TestUtils.map("l25", "v25", "l26", "v26");
-        Map<String, String> perPodRouteAnnotations2 = TestUtils.map("a25", "v25", "a26", "v26");
+        Map<String, String> perPodRouteLabels2 = Map.of("l25", "v25", "l26", "v26");
+        Map<String, String> perPodRouteAnnotations2 = Map.of("a25", "v25", "a26", "v26");
 
-        Map<String, String> perPodIngressLabels2 = TestUtils.map("l29", "v29", "l30", "v30");
-        Map<String, String> perPodIngressAnnotations2 = TestUtils.map("a29", "v29", "a30", "v30");
+        Map<String, String> perPodIngressLabels2 = Map.of("l29", "v29", "l30", "v30");
+        Map<String, String> perPodIngressAnnotations2 = Map.of("a29", "v29", "a30", "v30");
 
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()

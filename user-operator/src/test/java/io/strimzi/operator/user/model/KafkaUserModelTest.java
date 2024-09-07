@@ -31,8 +31,8 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
-import static io.strimzi.test.TestUtils.set;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.hasItem;
@@ -141,7 +141,7 @@ public class KafkaUserModelTest {
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC());
         Secret generatedSecret = model.generateSecret();
 
-        assertThat(generatedSecret.getData().keySet(), is(set("ca.crt", "user.crt", "user.key", "user.p12", "user.password")));
+        assertThat(generatedSecret.getData().keySet(), is(Set.of("ca.crt", "user.crt", "user.key", "user.p12", "user.password")));
 
         assertThat(generatedSecret.getMetadata().getName(), is(ResourceUtils.NAME));
         assertThat(generatedSecret.getMetadata().getNamespace(), is(ResourceUtils.NAMESPACE));
@@ -165,7 +165,7 @@ public class KafkaUserModelTest {
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC());
         Secret generatedSecret = model.generateSecret();
 
-        assertThat(generatedSecret.getData().keySet(), is(set("ca.crt", "user.crt", "user.key", "user.p12", "user.password")));
+        assertThat(generatedSecret.getData().keySet(), is(Set.of("ca.crt", "user.crt", "user.key", "user.p12", "user.password")));
 
         assertThat(generatedSecret.getMetadata().getName(), is(secretPrefix + ResourceUtils.NAME));
         assertThat(generatedSecret.getMetadata().getNamespace(), is(ResourceUtils.NAMESPACE));
@@ -202,7 +202,7 @@ public class KafkaUserModelTest {
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC());
         Secret generatedSecret = model.generateSecret();
 
-        assertThat(generatedSecret.getData().keySet(), is(set("ca.crt", "user.crt", "user.key", "user.p12", "user.password")));
+        assertThat(generatedSecret.getData().keySet(), is(Set.of("ca.crt", "user.crt", "user.key", "user.p12", "user.password")));
 
         assertThat(generatedSecret.getMetadata().getName(), is(ResourceUtils.NAME));
         assertThat(generatedSecret.getMetadata().getNamespace(), is(ResourceUtils.NAMESPACE));
@@ -341,7 +341,7 @@ public class KafkaUserModelTest {
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, oldSecret, 365, 30, null, Clock.systemUTC());
         Secret generatedSecret = model.generateSecret();
 
-        assertThat(generatedSecret.getData().keySet(), is(set("ca.crt", "user.crt", "user.key", "user.p12", "user.password")));
+        assertThat(generatedSecret.getData().keySet(), is(Set.of("ca.crt", "user.crt", "user.key", "user.p12", "user.password")));
 
         assertThat(Util.decodeFromBase64(generatedSecret.getData().get("ca.crt")), is("clients-ca-crt"));
         assertThat(Util.decodeFromBase64(generatedSecret.getData().get("user.crt")), is(MockCertManager.userCert()));

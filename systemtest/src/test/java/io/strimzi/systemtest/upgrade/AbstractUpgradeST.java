@@ -46,6 +46,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
@@ -166,7 +167,7 @@ public class AbstractUpgradeST extends AbstractST {
 
         kafkaTopicYaml = new File(examplesPath + "/examples/topic/kafka-topic.yaml");
         LOGGER.info("Deploying KafkaTopic from: {}", kafkaTopicYaml.getPath());
-        cmdKubeClient(componentsNamespaceName).applyContent(TestUtils.readFile(kafkaTopicYaml));
+        cmdKubeClient(componentsNamespaceName).applyContent(ReadWriteUtils.readFile(kafkaTopicYaml));
         // #######################################################################
 
 
@@ -312,7 +313,7 @@ public class AbstractUpgradeST extends AbstractST {
             } else if (f.getName().matches(".*Deployment.*")) {
                 cmdKubeClient(clusterOperatorNamespaceName).replaceContent(StUtils.changeDeploymentConfiguration(componentsNamespaceName, f, strimziFeatureGatesValue));
             } else {
-                cmdKubeClient(clusterOperatorNamespaceName).replaceContent(TestUtils.getContent(f, TestUtils::toYamlString));
+                cmdKubeClient(clusterOperatorNamespaceName).replaceContent(ReadWriteUtils.readFile(f));
             }
         });
     }
@@ -412,7 +413,7 @@ public class AbstractUpgradeST extends AbstractST {
                 String pathToTopicExamples = upgradeData.getFromExamples().equals("HEAD") ? PATH_TO_KAFKA_TOPIC_CONFIG : upgradeData.getFromExamples() + "/examples/topic/kafka-topic.yaml";
 
                 kafkaTopicYaml = new File(dir, pathToTopicExamples);
-                cmdKubeClient(testStorage.getNamespaceName()).applyContent(TestUtils.getContent(kafkaTopicYaml, TestUtils::toYamlString)
+                cmdKubeClient(testStorage.getNamespaceName()).applyContent(ReadWriteUtils.readFile(kafkaTopicYaml)
                         .replace("name: \"my-topic\"", "name: \"" + testStorage.getTopicName() + "\"")
                         .replace("partitions: 1", "partitions: 3")
                         .replace("replicas: 1", "replicas: 3") +
@@ -445,7 +446,7 @@ public class AbstractUpgradeST extends AbstractST {
         String initialName = "name: \"my-topic\"";
         String newName =  "name: \"%s\"".formatted(name);
 
-        return TestUtils.getContent(kafkaTopicYaml, TestUtils::toYamlString).replace(initialName, newName);
+        return ReadWriteUtils.readFile(kafkaTopicYaml).replace(initialName, newName);
     }
 
     protected void verifyProcedure(String componentsNamespaceNames, BundleVersionModificationData upgradeData, String producerName, String consumerName,  boolean wasUTOUsedBefore) {
@@ -601,7 +602,7 @@ public class AbstractUpgradeST extends AbstractST {
 
                 final String imageFullPath = Environment.getImageOutputRegistry(testStorage.getNamespaceName(), TestConstants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
-                KafkaConnect kafkaConnect = new KafkaConnectBuilder(TestUtils.configFromYaml(kafkaConnectYaml, KafkaConnect.class))
+                KafkaConnect kafkaConnect = new KafkaConnectBuilder(ReadWriteUtils.readObjectFromYamlFilepath(kafkaConnectYaml, KafkaConnect.class))
                     .editMetadata()
                         .withName(clusterName)
                         .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
@@ -621,7 +622,7 @@ public class AbstractUpgradeST extends AbstractST {
 
                 LOGGER.info("Deploying KafkaConnect from: {}", kafkaConnectYaml.getPath());
 
-                cmdKubeClient(testStorage.getNamespaceName()).applyContent(TestUtils.toYamlString(kafkaConnect));
+                cmdKubeClient(testStorage.getNamespaceName()).applyContent(ReadWriteUtils.writeObjectToYamlString(kafkaConnect));
                 ResourceManager.waitForResourceReadiness(testStorage.getNamespaceName(), getResourceApiVersion(KafkaConnect.RESOURCE_PLURAL), kafkaConnect.getMetadata().getName());
 
                 // in our examples is no sink connector and thus we are using the same as in HEAD verification

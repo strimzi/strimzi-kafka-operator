@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.test.TestUtils.map;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -230,7 +229,7 @@ public class EntityUserOperatorTest {
         assertThat(container.getPorts().get(0).getContainerPort(), is(EntityUserOperator.HEALTHCHECK_PORT));
         assertThat(container.getPorts().get(0).getName(), is(EntityUserOperator.HEALTHCHECK_PORT_NAME));
         assertThat(container.getPorts().get(0).getProtocol(), is("TCP"));
-        assertThat(EntityOperatorTest.volumeMounts(container.getVolumeMounts()), is(map(
+        assertThat(EntityOperatorTest.volumeMounts(container.getVolumeMounts()), is(Map.of(
                 EntityUserOperator.USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH,
                 "entity-user-operator-metrics-and-logging", "/opt/user-operator/custom-config/",
                 EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT,

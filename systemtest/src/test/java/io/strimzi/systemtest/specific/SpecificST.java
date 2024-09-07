@@ -24,7 +24,7 @@ import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
-import io.strimzi.test.TestUtils;
+import io.strimzi.test.ReadWriteUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
@@ -53,27 +53,27 @@ public class SpecificST extends AbstractST {
         final String namespaceWhereCreationOfCustomResourcesIsApproved = "example-1";
 
         // --- a) defining Role and ClusterRoles
-        final Role strimziClusterOperator020 = TestUtils.configFromYaml(SetupClusterOperator.getInstance().switchClusterRolesToRolesIfNeeded(new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-ClusterRole-strimzi-cluster-operator-role.yaml"), true), Role.class);
+        final Role strimziClusterOperator020 = ReadWriteUtils.readObjectFromYamlFilepath(SetupClusterOperator.getInstance().switchClusterRolesToRolesIfNeeded(new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-ClusterRole-strimzi-cluster-operator-role.yaml"), true), Role.class);
 
         // specify explicit namespace for Role (for ClusterRole we do not specify namespace because ClusterRole is a non-namespaced resource
         strimziClusterOperator020.getMetadata().setNamespace(namespaceWhereCreationOfCustomResourcesIsApproved);
 
-        final ClusterRole strimziClusterOperator021 = TestUtils.configFromYaml(new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/021-ClusterRole-strimzi-cluster-operator-role.yaml"), ClusterRole.class);
-        final ClusterRole strimziClusterOperator022 = TestUtils.configFromYaml(SetupClusterOperator.getInstance().changeLeaseNameInResourceIfNeeded(new File(
+        final ClusterRole strimziClusterOperator021 = ReadWriteUtils.readObjectFromYamlFilepath(new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/021-ClusterRole-strimzi-cluster-operator-role.yaml"), ClusterRole.class);
+        final ClusterRole strimziClusterOperator022 = ReadWriteUtils.readObjectFromYamlFilepath(SetupClusterOperator.getInstance().changeLeaseNameInResourceIfNeeded(new File(
             TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/022-ClusterRole-strimzi-cluster-operator-role.yaml").getAbsolutePath()), ClusterRole.class);
-        final ClusterRole strimziClusterOperator023 = TestUtils.configFromYaml(new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/023-ClusterRole-strimzi-cluster-operator-role.yaml"), ClusterRole.class);
-        final ClusterRole strimziClusterOperator030 = TestUtils.configFromYaml(new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/030-ClusterRole-strimzi-kafka-broker.yaml"), ClusterRole.class);
-        final ClusterRole strimziClusterOperator031 = TestUtils.configFromYaml(new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/031-ClusterRole-strimzi-entity-operator.yaml"), ClusterRole.class);
-        final ClusterRole strimziClusterOperator033 = TestUtils.configFromYaml(new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/033-ClusterRole-strimzi-kafka-client.yaml"), ClusterRole.class);
+        final ClusterRole strimziClusterOperator023 = ReadWriteUtils.readObjectFromYamlFilepath(new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/023-ClusterRole-strimzi-cluster-operator-role.yaml"), ClusterRole.class);
+        final ClusterRole strimziClusterOperator030 = ReadWriteUtils.readObjectFromYamlFilepath(new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/030-ClusterRole-strimzi-kafka-broker.yaml"), ClusterRole.class);
+        final ClusterRole strimziClusterOperator031 = ReadWriteUtils.readObjectFromYamlFilepath(new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/031-ClusterRole-strimzi-entity-operator.yaml"), ClusterRole.class);
+        final ClusterRole strimziClusterOperator033 = ReadWriteUtils.readObjectFromYamlFilepath(new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/033-ClusterRole-strimzi-kafka-client.yaml"), ClusterRole.class);
 
         final List<Role> roles = Arrays.asList(strimziClusterOperator020);
         final List<ClusterRole> clusterRoles = Arrays.asList(strimziClusterOperator021, strimziClusterOperator022,
                 strimziClusterOperator023, strimziClusterOperator030, strimziClusterOperator031, strimziClusterOperator033);
 
         // ---- b) defining RoleBindings
-        final RoleBinding strimziClusterOperator020Namespaced = TestUtils.configFromYaml(SetupClusterOperator.getInstance().switchClusterRolesToRolesIfNeeded(new File(
+        final RoleBinding strimziClusterOperator020Namespaced = ReadWriteUtils.readObjectFromYamlFilepath(SetupClusterOperator.getInstance().switchClusterRolesToRolesIfNeeded(new File(
             TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml"), true), RoleBinding.class);
-        final RoleBinding strimziClusterOperator022LeaderElection = TestUtils.configFromYaml(SetupClusterOperator.getInstance().changeLeaseNameInResourceIfNeeded(new File(
+        final RoleBinding strimziClusterOperator022LeaderElection = ReadWriteUtils.readObjectFromYamlFilepath(SetupClusterOperator.getInstance().changeLeaseNameInResourceIfNeeded(new File(
             TestConstants.PATH_TO_LEASE_ROLE_BINDING).getAbsolutePath()), RoleBinding.class);
 
         // specify explicit namespace for RoleBindings

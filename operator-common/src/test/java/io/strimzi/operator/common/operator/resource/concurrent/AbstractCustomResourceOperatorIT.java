@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ConditionBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
+import io.strimzi.test.CrdUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -72,13 +73,13 @@ public abstract class AbstractCustomResourceOperatorIT<
         LOGGER.info("Created namespace");
 
         LOGGER.info("Creating CRD");
-        TestUtils.createCrd(client, getCrdName(), getCrd());
+        CrdUtils.createCrd(client, getCrdName(), getCrd());
         LOGGER.info("Created CRD");
     }
 
     @AfterAll
     public void after() {
-        TestUtils.deleteCrd(client, getCrdName());
+        CrdUtils.deleteCrd(client, getCrdName());
         TestUtils.deleteNamespace(client, getNamespace());
 
         client.close();

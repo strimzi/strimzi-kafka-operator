@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBuilder;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
-import io.strimzi.test.TestUtils;
+import io.strimzi.test.ReadWriteUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -56,6 +56,6 @@ public class RoleResource implements ResourceType<Role> {
     }
 
     private static Role getRoleFromYaml(String yamlPath) {
-        return TestUtils.configFromYaml(yamlPath, Role.class);
+        return ReadWriteUtils.readObjectFromYamlFilepath(yamlPath, Role.class);
     }
 }

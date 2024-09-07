@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.topic.model.ReconcilableTopic;
+import io.strimzi.test.CrdUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -52,7 +53,7 @@ public class TopicOperatorTestUtil {
         createOrReplace(kubernetesClient, "file://" + TestUtils.USER_PATH + "/../packaging/install/topic-operator/01-ServiceAccount-strimzi-topic-operator.yaml", namespace);
         createOrReplace(kubernetesClient, "file://" + TestUtils.USER_PATH + "/../packaging/install/topic-operator/02-Role-strimzi-topic-operator.yaml", namespace);
         createOrReplace(kubernetesClient, "file://" + TestUtils.USER_PATH + "/../packaging/install/topic-operator/03-RoleBinding-strimzi-topic-operator.yaml", namespace);
-        createOrReplace(kubernetesClient, "file://" + TestUtils.CRD_TOPIC);
+        createOrReplace(kubernetesClient, "file://" + CrdUtils.CRD_TOPIC);
     }
 
     private static void createOrReplace(KubernetesClient kubernetesClient, String resourcesPath) {

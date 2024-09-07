@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
-import io.strimzi.test.TestUtils;
+import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -69,7 +69,7 @@ public class ClusterRoleBindingResource implements ResourceType<ClusterRoleBindi
     }
 
     private static ClusterRoleBinding getClusterRoleBindingFromYaml(String yamlPath) {
-        return TestUtils.configFromYaml(yamlPath, ClusterRoleBinding.class);
+        return ReadWriteUtils.readObjectFromYamlFilepath(yamlPath, ClusterRoleBinding.class);
     }
 }
 

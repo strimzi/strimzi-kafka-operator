@@ -14,7 +14,7 @@ import io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlParameters;
 import io.strimzi.operator.common.operator.MockCertManager;
-import io.strimzi.test.TestUtils;
+import io.strimzi.test.ReadWriteUtils;
 import org.mockserver.configuration.ConfigurationProperties;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.matchers.Times;
@@ -127,7 +127,7 @@ public class MockCruiseControl {
      */
     public void setupCCStateResponse() {
         // Non-verbose response
-        JsonBody jsonProposalNotReady = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-State-proposal-not-ready.json"));
+        JsonBody jsonProposalNotReady = new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile(CC_JSON_ROOT + "CC-State-proposal-not-ready.json"));
 
         server
                 .when(
@@ -146,7 +146,7 @@ public class MockCruiseControl {
 
 
         // Non-verbose response
-        JsonBody json = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-State.json"));
+        JsonBody json = new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile(CC_JSON_ROOT + "CC-State.json"));
 
         server
                 .when(
@@ -164,7 +164,7 @@ public class MockCruiseControl {
                                 .withDelay(TimeUnit.SECONDS, 0));
 
         // Verbose response
-        JsonBody jsonVerbose = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-State-verbose.json"));
+        JsonBody jsonVerbose = new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile(CC_JSON_ROOT + "CC-State-verbose.json"));
 
         server
                 .when(
@@ -188,7 +188,7 @@ public class MockCruiseControl {
      */
     public void setupCCRebalanceNotEnoughDataError(CruiseControlEndpoints endpoint) {
         // Rebalance response with no goal that returns an error
-        JsonBody jsonError = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-Rebalance-NotEnoughValidWindows-error.json"));
+        JsonBody jsonError = new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile(CC_JSON_ROOT + "CC-Rebalance-NotEnoughValidWindows-error.json"));
 
         server
                 .when(
@@ -214,7 +214,7 @@ public class MockCruiseControl {
      */
     public void setupCCBrokerDoesNotExist(CruiseControlEndpoints endpoint) {
         // Add/remove broker response with no goal that returns an error
-        JsonBody jsonError = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-Broker-not-exist.json"));
+        JsonBody jsonError = new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile(CC_JSON_ROOT + "CC-Broker-not-exist.json"));
 
         server
                 .when(
@@ -248,7 +248,7 @@ public class MockCruiseControl {
      */
     public void setupCCRebalanceResponse(int pendingCalls, int responseDelay, CruiseControlEndpoints endpoint) {
         // Rebalance in progress response with no goals set - non-verbose
-        JsonBody pendingJson = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-Rebalance-no-goals-in-progress.json"));
+        JsonBody pendingJson = new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile(CC_JSON_ROOT + "CC-Rebalance-no-goals-in-progress.json"));
         server
                 .when(
                         request()
@@ -269,7 +269,7 @@ public class MockCruiseControl {
                                 .withDelay(TimeUnit.SECONDS, responseDelay));
 
         // Rebalance response with no goals set - non-verbose
-        JsonBody json = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-Rebalance-no-goals.json"));
+        JsonBody json = new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile(CC_JSON_ROOT + "CC-Rebalance-no-goals.json"));
 
         server
                 .when(
@@ -290,7 +290,7 @@ public class MockCruiseControl {
                                 .withDelay(TimeUnit.SECONDS, responseDelay));
 
         // Rebalance response with no goals set - verbose
-        JsonBody jsonVerbose = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-Rebalance-no-goals-verbose.json"));
+        JsonBody jsonVerbose = new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile(CC_JSON_ROOT + "CC-Rebalance-no-goals-verbose.json"));
 
         server
                 .when(
@@ -316,7 +316,7 @@ public class MockCruiseControl {
      */
     public void setupCCRebalanceBadGoalsError(CruiseControlEndpoints endpoint) {
         // Response if the user has set custom goals which do not include all configured hard.goals
-        JsonBody jsonError = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-Rebalance-bad-goals-error.json"));
+        JsonBody jsonError = new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile(CC_JSON_ROOT + "CC-Rebalance-bad-goals-error.json"));
 
         server
                 .when(
@@ -339,7 +339,7 @@ public class MockCruiseControl {
 
         // Response if the user has set custom goals which do not include all configured hard.goals
         // Note: This uses the no-goals example response but the difference between custom goals and default goals is not tested here
-        JsonBody jsonSummary = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-Rebalance-no-goals-verbose.json"));
+        JsonBody jsonSummary = new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile(CC_JSON_ROOT + "CC-Rebalance-no-goals-verbose.json"));
 
         server
                 .when(
@@ -372,9 +372,9 @@ public class MockCruiseControl {
      */
     public void setupCCUserTasksResponseNoGoals(int activeCalls, int inExecutionCalls) throws IOException, URISyntaxException {
         // User tasks response for the rebalance request with no goals set (non-verbose)
-        JsonBody jsonActive = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-Active.json"));
-        JsonBody jsonInExecution = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-inExecution.json"));
-        JsonBody jsonCompleted = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-completed.json"));
+        JsonBody jsonActive = new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile(CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-Active.json"));
+        JsonBody jsonInExecution = new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile(CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-inExecution.json"));
+        JsonBody jsonCompleted = new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile(CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-completed.json"));
 
         // The first activeCalls times respond that with a status of "Active"
         server
@@ -431,9 +431,9 @@ public class MockCruiseControl {
                                 .withDelay(TimeUnit.SECONDS, 0));
 
         // User tasks response for the rebalance request with no goals set (verbose)
-        JsonBody jsonActiveVerbose = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-verbose-Active.json"));
-        JsonBody jsonInExecutionVerbose = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-verbose-inExecution.json"));
-        JsonBody jsonCompletedVerbose = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-verbose-completed.json"));
+        JsonBody jsonActiveVerbose = new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile(CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-verbose-Active.json"));
+        JsonBody jsonInExecutionVerbose = new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile(CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-verbose-inExecution.json"));
+        JsonBody jsonCompletedVerbose = new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile(CC_JSON_ROOT + "CC-User-task-rebalance-no-goals-verbose-completed.json"));
 
         // The first activeCalls times respond that with a status of "Active"
         server
@@ -496,7 +496,7 @@ public class MockCruiseControl {
      */
     public void setupCCUserTasksCompletedWithError() throws IOException, URISyntaxException {
         // This simulates asking for the status of a task that has Complete with error and fetch_completed_task=true
-        JsonBody compWithErrorJson = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-User-task-status-completed-with-error.json"));
+        JsonBody compWithErrorJson = new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile(CC_JSON_ROOT + "CC-User-task-status-completed-with-error.json"));
 
         server
                 .when(
@@ -520,7 +520,7 @@ public class MockCruiseControl {
      */
     public void setupUserTasktoEmpty() {
         // This simulates asking for the status with empty user task
-        JsonBody jsonEmptyUserTask = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-User-task-status-empty.json"));
+        JsonBody jsonEmptyUserTask = new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile(CC_JSON_ROOT + "CC-User-task-status-empty.json"));
 
         server
                 .when(
@@ -543,7 +543,7 @@ public class MockCruiseControl {
      * Setup response of task being stopped.
      */
     public void setupCCStopResponse() {
-        JsonBody jsonStop = new JsonBody(TestUtils.jsonFromResource(CC_JSON_ROOT + "CC-Stop.json"));
+        JsonBody jsonStop = new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile(CC_JSON_ROOT + "CC-Stop.json"));
 
         server
                 .when(

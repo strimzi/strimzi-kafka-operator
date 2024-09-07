@@ -6,7 +6,7 @@ package io.strimzi.api.kafka.model;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.test.TestUtils;
+import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.interfaces.TestSeparator;
 import org.junit.jupiter.api.TestInstance;
 
@@ -62,11 +62,11 @@ public abstract class AbstractCrdIT implements TestSeparator {
     }
 
     protected <T extends CustomResource> void createScaleDelete(Class<T> resourceClass, String resource) {
-        T model = TestUtils.fromYaml(resource, resourceClass);
+        T model = ReadWriteUtils.readObjectFromYamlFileInResources(resource, resourceClass);
         String apiVersion = model.getApiVersion();
         String kind = model.getKind();
         String resourceName = model.getMetadata().getName();
-        String resourceYamlAsString = TestUtils.toYamlString(model);
+        String resourceYamlAsString = ReadWriteUtils.writeObjectToYamlString(model);
         createScaleDelete(apiVersion, kind, resourceName, resourceYamlAsString);
     }
 

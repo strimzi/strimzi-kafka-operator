@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static io.strimzi.test.TestUtils.map;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -27,7 +26,7 @@ public class PemTrustSetTest {
                     .withName(KafkaResources.clusterOperatorCertsSecretName(CLUSTER))
                     .withNamespace(NAMESPACE)
                 .endMetadata()
-                .withData(map("ca.crt", "notacert"))
+                .withData(Map.of("ca.crt", "notacert"))
                 .build();
         PemTrustSet pemTrustSet = new PemTrustSet(secretWithBadCertificate);
         Exception e = assertThrows(RuntimeException.class, pemTrustSet::jksTrustStore);

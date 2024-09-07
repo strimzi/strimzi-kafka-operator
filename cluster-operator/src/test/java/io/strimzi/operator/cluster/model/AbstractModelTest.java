@@ -11,7 +11,7 @@ import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.test.TestUtils;
+import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
@@ -37,11 +37,11 @@ public class AbstractModelTest {
 
     @ParallelTest
     public void testJvmPerformanceOptions() {
-        JvmOptions opts = TestUtils.fromYamlString("{}", JvmOptions.class);
+        JvmOptions opts = ReadWriteUtils.readObjectFromYamlString("{}", JvmOptions.class);
 
         assertThat(getPerformanceOptions(opts), is(nullValue()));
 
-        opts = TestUtils.fromYamlString("-XX:\n" +
+        opts = ReadWriteUtils.readObjectFromYamlString("-XX:\n" +
                                         "  key1: value1\n" +
                                         "  key2: true\n" +
                                         "  key3: false\n" +

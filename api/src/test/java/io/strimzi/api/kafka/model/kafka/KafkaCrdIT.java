@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.AbstractCrdIT;
+import io.strimzi.test.CrdUtils;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -113,13 +114,13 @@ public class KafkaCrdIT extends AbstractCrdIT {
     @BeforeAll
     void setupEnvironment() {
         client = new KubernetesClientBuilder().withConfig(new ConfigBuilder().withNamespace(NAMESPACE).build()).build();
-        TestUtils.createCrd(client, Kafka.CRD_NAME, TestUtils.CRD_KAFKA);
+        CrdUtils.createCrd(client, Kafka.CRD_NAME, CrdUtils.CRD_KAFKA);
         TestUtils.createNamespace(client, NAMESPACE);
     }
 
     @AfterAll
     void teardownEnvironment() {
-        TestUtils.deleteCrd(client, Kafka.CRD_NAME);
+        CrdUtils.deleteCrd(client, Kafka.CRD_NAME);
         TestUtils.deleteNamespace(client, NAMESPACE);
         client.close();
     }

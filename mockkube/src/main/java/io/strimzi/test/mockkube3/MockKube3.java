@@ -19,7 +19,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
-import io.strimzi.test.TestUtils;
+import io.strimzi.test.CrdUtils;
 import io.strimzi.test.mockkube3.controllers.AbstractMockController;
 import io.strimzi.test.mockkube3.controllers.MockDeletionController;
 import io.strimzi.test.mockkube3.controllers.MockDeploymentController;
@@ -260,7 +260,7 @@ public class MockKube3 {
          * @return  MockKube builder instance
          */
         public MockKube3Builder withKafkaCrd()  {
-            mock.registerCrd(TestUtils.CRD_KAFKA);
+            mock.registerCrd(CrdUtils.CRD_KAFKA);
             return this;
         }
 
@@ -270,7 +270,7 @@ public class MockKube3 {
          * @return  MockKube builder instance
          */
         public MockKube3Builder withKafkaTopicCrd()  {
-            mock.registerCrd(TestUtils.CRD_TOPIC);
+            mock.registerCrd(CrdUtils.CRD_TOPIC);
             return this;
         }
 
@@ -280,7 +280,7 @@ public class MockKube3 {
          * @return  MockKube builder instance
          */
         public MockKube3Builder withKafkaUserCrd()  {
-            mock.registerCrd(TestUtils.CRD_KAFKA_USER);
+            mock.registerCrd(CrdUtils.CRD_KAFKA_USER);
             return this;
         }
 
@@ -290,7 +290,7 @@ public class MockKube3 {
          * @return  MockKube builder instance
          */
         public MockKube3Builder withKafkaConnectCrd()  {
-            mock.registerCrd(TestUtils.CRD_KAFKA_CONNECT);
+            mock.registerCrd(CrdUtils.CRD_KAFKA_CONNECT);
             return this;
         }
 
@@ -300,7 +300,7 @@ public class MockKube3 {
          * @return  MockKube builder instance
          */
         public MockKube3Builder withKafkaConnectorCrd()  {
-            mock.registerCrd(TestUtils.CRD_KAFKA_CONNECTOR);
+            mock.registerCrd(CrdUtils.CRD_KAFKA_CONNECTOR);
             return this;
         }
 
@@ -310,7 +310,7 @@ public class MockKube3 {
          * @return  MockKube builder instance
          */
         public MockKube3Builder withKafkaMirrorMaker2Crd()  {
-            mock.registerCrd(TestUtils.CRD_KAFKA_MIRROR_MAKER_2);
+            mock.registerCrd(CrdUtils.CRD_KAFKA_MIRROR_MAKER_2);
             return this;
         }
 
@@ -320,7 +320,7 @@ public class MockKube3 {
          * @return  MockKube builder instance
          */
         public MockKube3Builder withKafkaRebalanceCrd()  {
-            mock.registerCrd(TestUtils.CRD_KAFKA_REBALANCE);
+            mock.registerCrd(CrdUtils.CRD_KAFKA_REBALANCE);
             return this;
         }
 
@@ -330,7 +330,7 @@ public class MockKube3 {
          * @return  MockKube builder instance
          */
         public MockKube3Builder withKafkaNodePoolCrd()  {
-            mock.registerCrd(TestUtils.CRD_KAFKA_NODE_POOL);
+            mock.registerCrd(CrdUtils.CRD_KAFKA_NODE_POOL);
             return this;
         }
 
@@ -340,7 +340,7 @@ public class MockKube3 {
          * @return  MockKube builder instance
          */
         public MockKube3Builder withStrimziPodSetCrd()  {
-            mock.registerCrd(TestUtils.CRD_STRIMZI_POD_SET);
+            mock.registerCrd(CrdUtils.CRD_STRIMZI_POD_SET);
             return this;
         }
 

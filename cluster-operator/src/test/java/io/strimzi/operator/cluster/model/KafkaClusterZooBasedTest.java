@@ -124,7 +124,6 @@ import java.util.stream.IntStream;
 
 import static io.strimzi.operator.cluster.model.jmx.JmxModel.JMX_PORT;
 import static io.strimzi.operator.cluster.model.jmx.JmxModel.JMX_PORT_NAME;
-import static io.strimzi.test.TestUtils.set;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -555,32 +554,32 @@ public class KafkaClusterZooBasedTest {
     @SuppressWarnings({"checkstyle:MethodLength"})
     @ParallelTest
     public void testTemplate() {
-        Map<String, String> svcLabels = TestUtils.map("l5", "v5", "l6", "v6");
-        Map<String, String> svcAnnotations = TestUtils.map("a5", "v5", "a6", "v6");
+        Map<String, String> svcLabels = Map.of("l5", "v5", "l6", "v6");
+        Map<String, String> svcAnnotations = Map.of("a5", "v5", "a6", "v6");
 
-        Map<String, String> hSvcLabels = TestUtils.map("l7", "v7", "l8", "v8");
-        Map<String, String> hSvcAnnotations = TestUtils.map("a7", "v7", "a8", "v8");
+        Map<String, String> hSvcLabels = Map.of("l7", "v7", "l8", "v8");
+        Map<String, String> hSvcAnnotations = Map.of("a7", "v7", "a8", "v8");
 
-        Map<String, String> exSvcLabels = TestUtils.map("l9", "v9", "l10", "v10");
-        Map<String, String> exSvcAnnotations = TestUtils.map("a9", "v9", "a10", "v10");
+        Map<String, String> exSvcLabels = Map.of("l9", "v9", "l10", "v10");
+        Map<String, String> exSvcAnnotations = Map.of("a9", "v9", "a10", "v10");
 
-        Map<String, String> perPodSvcLabels = TestUtils.map("l11", "v11", "l12", "v12");
-        Map<String, String> perPodSvcAnnotations = TestUtils.map("a11", "v11", "a12", "v12");
+        Map<String, String> perPodSvcLabels = Map.of("l11", "v11", "l12", "v12");
+        Map<String, String> perPodSvcAnnotations = Map.of("a11", "v11", "a12", "v12");
 
-        Map<String, String> exRouteLabels = TestUtils.map("l13", "v13", "l14", "v14");
-        Map<String, String> exRouteAnnotations = TestUtils.map("a13", "v13", "a14", "v14");
+        Map<String, String> exRouteLabels = Map.of("l13", "v13", "l14", "v14");
+        Map<String, String> exRouteAnnotations = Map.of("a13", "v13", "a14", "v14");
 
-        Map<String, String> perPodRouteLabels = TestUtils.map("l15", "v15", "l16", "v16");
-        Map<String, String> perPodRouteAnnotations = TestUtils.map("a15", "v15", "a16", "v16");
+        Map<String, String> perPodRouteLabels = Map.of("l15", "v15", "l16", "v16");
+        Map<String, String> perPodRouteAnnotations = Map.of("a15", "v15", "a16", "v16");
 
-        Map<String, String> pdbLabels = TestUtils.map("l17", "v17", "l18", "v18");
-        Map<String, String> pdbAnnotations = TestUtils.map("a17", "v17", "a18", "v18");
+        Map<String, String> pdbLabels = Map.of("l17", "v17", "l18", "v18");
+        Map<String, String> pdbAnnotations = Map.of("a17", "v17", "a18", "v18");
 
-        Map<String, String> crbLabels = TestUtils.map("l19", "v19", "l20", "v20");
-        Map<String, String> crbAnnotations = TestUtils.map("a19", "v19", "a20", "v20");
+        Map<String, String> crbLabels = Map.of("l19", "v19", "l20", "v20");
+        Map<String, String> crbAnnotations = Map.of("a19", "v19", "a20", "v20");
 
-        Map<String, String> saLabels = TestUtils.map("l21", "v21", "l22", "v22");
-        Map<String, String> saAnnotations = TestUtils.map("a21", "v21", "a22", "v22");
+        Map<String, String> saLabels = Map.of("l21", "v21", "l22", "v22");
+        Map<String, String> saAnnotations = Map.of("a21", "v21", "a22", "v22");
 
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -1520,7 +1519,7 @@ public class KafkaClusterZooBasedTest {
 
     @ParallelTest
     public void testPvcsWithSetStorageSelector() {
-        Map<String, String> selector = TestUtils.map("foo", "bar");
+        Map<String, String> selector = Map.of("foo", "bar");
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
@@ -2401,13 +2400,13 @@ public class KafkaClusterZooBasedTest {
     @ParallelTest
     public void testGenerateBrokerSecret() throws CertificateParsingException {
         Secret secret = generateBrokerSecret(null, emptyMap());
-        assertThat(secret.getData().keySet(), is(set(
+        assertThat(secret.getData().keySet(), is(Set.of(
                 "foo-kafka-0.crt",  "foo-kafka-0.key",
                 "foo-kafka-1.crt", "foo-kafka-1.key",
                 "foo-kafka-2.crt", "foo-kafka-2.key")));
         X509Certificate cert = Ca.cert(secret, "foo-kafka-0.crt");
         assertThat(cert.getSubjectX500Principal().getName(), is("CN=foo-kafka,O=io.strimzi"));
-        assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(set(
+        assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(Set.of(
                 asList(2, "foo-kafka-0.foo-kafka-brokers.test.svc.cluster.local"),
                 asList(2, "foo-kafka-0.foo-kafka-brokers.test.svc"),
                 asList(2, "foo-kafka-bootstrap"),
@@ -2428,13 +2427,13 @@ public class KafkaClusterZooBasedTest {
         externalAddresses.put(2, Collections.singleton("123.10.125.132"));
 
         Secret secret = generateBrokerSecret(Collections.singleton("123.10.125.140"), externalAddresses);
-        assertThat(secret.getData().keySet(), is(set(
+        assertThat(secret.getData().keySet(), is(Set.of(
                 "foo-kafka-0.crt",  "foo-kafka-0.key",
                 "foo-kafka-1.crt", "foo-kafka-1.key",
                 "foo-kafka-2.crt", "foo-kafka-2.key")));
         X509Certificate cert = Ca.cert(secret, "foo-kafka-0.crt");
         assertThat(cert.getSubjectX500Principal().getName(), is("CN=foo-kafka,O=io.strimzi"));
-        assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(set(
+        assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(Set.of(
                 asList(2, "foo-kafka-0.foo-kafka-brokers.test.svc.cluster.local"),
                 asList(2, "foo-kafka-0.foo-kafka-brokers.test.svc"),
                 asList(2, "foo-kafka-bootstrap"),
@@ -2452,18 +2451,18 @@ public class KafkaClusterZooBasedTest {
     @ParallelTest
     public void testGenerateBrokerSecretExternalWithManyDNS() throws CertificateParsingException {
         Map<Integer, Set<String>> externalAddresses = new HashMap<>();
-        externalAddresses.put(0, TestUtils.set("123.10.125.130", "my-broker-0"));
-        externalAddresses.put(1, TestUtils.set("123.10.125.131", "my-broker-1"));
-        externalAddresses.put(2, TestUtils.set("123.10.125.132", "my-broker-2"));
+        externalAddresses.put(0, Set.of("123.10.125.130", "my-broker-0"));
+        externalAddresses.put(1, Set.of("123.10.125.131", "my-broker-1"));
+        externalAddresses.put(2, Set.of("123.10.125.132", "my-broker-2"));
 
-        Secret secret = generateBrokerSecret(TestUtils.set("123.10.125.140", "my-bootstrap"), externalAddresses);
-        assertThat(secret.getData().keySet(), is(set(
+        Secret secret = generateBrokerSecret(Set.of("123.10.125.140", "my-bootstrap"), externalAddresses);
+        assertThat(secret.getData().keySet(), is(Set.of(
                 "foo-kafka-0.crt",  "foo-kafka-0.key",
                 "foo-kafka-1.crt", "foo-kafka-1.key",
                 "foo-kafka-2.crt", "foo-kafka-2.key")));
         X509Certificate cert = Ca.cert(secret, "foo-kafka-0.crt");
         assertThat(cert.getSubjectX500Principal().getName(), is("CN=foo-kafka,O=io.strimzi"));
-        assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(set(
+        assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(Set.of(
                 asList(2, "foo-kafka-0.foo-kafka-brokers.test.svc.cluster.local"),
                 asList(2, "foo-kafka-0.foo-kafka-brokers.test.svc"),
                 asList(2, "foo-kafka-bootstrap"),
@@ -2708,8 +2707,8 @@ public class KafkaClusterZooBasedTest {
 
     @ParallelTest
     public void testCustomizedPodDisruptionBudget()   {
-        Map<String, String> pdbLabels = TestUtils.map("l1", "v1", "l2", "v2");
-        Map<String, String> pdbAnnotations = TestUtils.map("a1", "v1", "a2", "v2");
+        Map<String, String> pdbLabels = Map.of("l1", "v1", "l2", "v2");
+        Map<String, String> pdbAnnotations = Map.of("a1", "v1", "a2", "v2");
 
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -4277,11 +4276,11 @@ public class KafkaClusterZooBasedTest {
     @ParallelTest
     public void testCustomizedPodSet()   {
         // Prepare various template values
-        Map<String, String> spsLabels = TestUtils.map("l1", "v1", "l2", "v2");
-        Map<String, String> spsAnnotations = TestUtils.map("a1", "v1", "a2", "v2");
+        Map<String, String> spsLabels = Map.of("l1", "v1", "l2", "v2");
+        Map<String, String> spsAnnotations = Map.of("a1", "v1", "a2", "v2");
 
-        Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
-        Map<String, String> podAnnotations = TestUtils.map("a3", "v3", "a4", "v4");
+        Map<String, String> podLabels = Map.of("l3", "v3", "l4", "v4");
+        Map<String, String> podAnnotations = Map.of("a3", "v3", "a4", "v4");
 
         HostAlias hostAlias1 = new HostAliasBuilder()
                 .withHostnames("my-host-1", "my-host-2")

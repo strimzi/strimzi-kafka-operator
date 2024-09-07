@@ -116,7 +116,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.common.model.Ca.x509Certificate;
-import static io.strimzi.test.TestUtils.set;
+import static io.strimzi.test.TestUtils.modifiableSet;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonMap;
@@ -527,7 +527,7 @@ public class KafkaAssemblyOperatorTest {
 
         // Secrets
         SecretOperator mockSecretOps = supplier.secretOperations;
-        Set<String> expectedSecrets = set(
+        Set<String> expectedSecrets = modifiableSet(
                 KafkaResources.clientsCaKeySecretName(CLUSTER_NAME),
                 KafkaResources.clientsCaCertificateSecretName(CLUSTER_NAME),
                 KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME),
@@ -687,7 +687,7 @@ public class KafkaAssemblyOperatorTest {
 
                 // Check routes
                 if (openShift) {
-                    Set<String> expectedRoutes = set(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
+                    Set<String> expectedRoutes = modifiableSet(KafkaResources.bootstrapServiceName(CLUSTER_NAME));
                     for (NodeRef node : kafkaCluster.nodes()) {
                         if (node.broker()) {
                             expectedRoutes.add(node.podName());
@@ -883,13 +883,13 @@ public class KafkaAssemblyOperatorTest {
         when(mockCmOps.listAsync(NAMESPACE, updatedKafkaCluster.getSelectorLabels())).thenReturn(Future.succeededFuture(List.of()));
         when(mockCmOps.deleteAsync(any(), any(), any(), anyBoolean())).thenReturn(Future.succeededFuture());
 
-        Set<String> metricsCms = set();
+        Set<String> metricsCms = modifiableSet();
         doAnswer(invocation -> {
             metricsCms.add(invocation.getArgument(1));
             return Future.succeededFuture();
         }).when(mockCmOps).reconcile(any(), eq(NAMESPACE), any(), any());
 
-        Set<String> logCms = set();
+        Set<String> logCms = modifiableSet();
         doAnswer(invocation -> {
             logCms.add(invocation.getArgument(1));
             return Future.succeededFuture();
