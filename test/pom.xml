@@ -40,11 +40,6 @@
             <artifactId>log4j-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.jayway.jsonpath</groupId>
-            <artifactId>json-path</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
         </dependency>
@@ -54,44 +49,11 @@
         </dependency>
         <dependency>
             <groupId>io.fabric8</groupId>
-            <artifactId>openshift-client-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.fabric8</groupId>
-            <artifactId>kubernetes-model-networking</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.fabric8</groupId>
             <artifactId>kubernetes-model-core</artifactId>
         </dependency>
         <dependency>
             <groupId>io.fabric8</groupId>
-            <artifactId>kubernetes-model-rbac</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.fabric8</groupId>
-            <artifactId>kubernetes-model-apps</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.fabric8</groupId>
             <artifactId>kubernetes-model-apiextensions</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.fabric8</groupId>
-            <artifactId>kubernetes-model-batch</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.fabric8</groupId>
-            <artifactId>kubernetes-model-admissionregistration</artifactId>
-            <version>${fabric8.kubernetes-model.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.fabric8</groupId>
-            <artifactId>openshift-model-operatorhub</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.fabric8</groupId>
-            <artifactId>kubernetes-model-storageclass</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
