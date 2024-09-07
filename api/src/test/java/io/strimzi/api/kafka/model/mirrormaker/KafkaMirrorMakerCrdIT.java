@@ -80,6 +80,7 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
         createDeleteCustomResource("KafkaMirrorMaker-with-commit-and-abort.yaml");
     }
 
+    @SuppressWarnings("deprecation") // Kafka Mirror Maker is deprecated
     @BeforeAll
     void setupEnvironment() {
         client = new KubernetesClientBuilder().withConfig(new ConfigBuilder().withNamespace(NAMESPACE).build()).build();
@@ -87,6 +88,7 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
         TestUtils.createNamespace(client, NAMESPACE);
     }
 
+    @SuppressWarnings("deprecation") // Kafka Mirror Maker is deprecated
     @AfterAll
     void teardownEnvironment() {
         TestUtils.deleteCrd(client, KafkaMirrorMaker.CRD_NAME);
