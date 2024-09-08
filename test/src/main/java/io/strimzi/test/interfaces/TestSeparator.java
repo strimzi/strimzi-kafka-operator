@@ -21,12 +21,17 @@ public interface TestSeparator {
     @BeforeEach
     default void beforeEachTest(ExtensionContext testContext) {
         LOGGER.info(String.join("", Collections.nCopies(76, SEPARATOR_CHAR)));
-        LOGGER.info(String.format("%s.%s-STARTED", testContext.getRequiredTestClass().getName(), testContext.getRequiredTestMethod().getName()));
+        LOGGER.info("{}.{}-STARTED", testContext.getRequiredTestClass().getName(), testContext.getRequiredTestMethod().getName());
     }
 
     @AfterEach
     default void afterEachTest(ExtensionContext testContext) {
-        LOGGER.info(String.format("%s.%s-FINISHED", testContext.getRequiredTestClass().getName(), testContext.getRequiredTestMethod().getName()));
+        if (testContext.getExecutionException().isPresent()) {
+            LOGGER.info("{}.{}-FAILED", testContext.getRequiredTestClass().getName(), testContext.getRequiredTestMethod().getName());
+        } else {
+            LOGGER.info("{}.{}-SUCCEEDED", testContext.getRequiredTestClass().getName(), testContext.getRequiredTestMethod().getName());
+        }
+
         LOGGER.info(String.join("", Collections.nCopies(76, SEPARATOR_CHAR)));
     }
 }
