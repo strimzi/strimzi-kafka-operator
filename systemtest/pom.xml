@@ -280,7 +280,7 @@
                 <version>${skodjob-doc.version}</version>
                 <executions>
                     <execution>
-                        <phase>post-integration-test</phase>
+                        <phase>install</phase>
                         <goals>
                             <goal>test-docs-generator</goal>
                         </goals>
