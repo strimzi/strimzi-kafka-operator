@@ -124,9 +124,9 @@ public class KafkaCrdIT extends AbstractCrdIT {
     @Test
     public void testKafkaWithAutoRebalanceEmpty() {
         Throwable exception = assertThrows(
-                KubeClusterException.class,
+                KubernetesClientException.class,
                 () -> createDeleteCustomResource("Kafka-with-autorebalance-empty.yaml"));
-        assertThat(exception.getMessage(), containsString("spec.cruiseControl.autoRebalance in body should have at least 1 items"));
+        assertThat(exception.getMessage(), containsStringIgnoringCase("spec.cruiseControl.autoRebalance in body should have at least 1 items"));
     }
 
     @BeforeAll
