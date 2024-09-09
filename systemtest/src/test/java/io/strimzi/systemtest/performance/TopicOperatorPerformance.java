@@ -4,16 +4,12 @@
  */
 package io.strimzi.systemtest.performance;
 
-import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicSpecBuilder;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.enums.ConditionStatus;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -26,7 +22,6 @@ import io.strimzi.systemtest.performance.report.TopicOperatorPerformanceReporter
 import io.strimzi.systemtest.performance.report.parser.TopicOperatorMetricsParser;
 import io.strimzi.systemtest.performance.utils.TopicOperatorPerformanceUtils;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -36,7 +31,6 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicScalabilityUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.test.WaitException;
-import io.strimzi.test.executor.Exec;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,7 +38,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -53,20 +46,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAccessor;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.TestConstants.PERFORMANCE;
-import static io.strimzi.systemtest.TestConstants.SCALABILITY;
 import static io.strimzi.systemtest.performance.PerformanceConstants.PERFORMANCE_CAPACITY;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -75,26 +61,16 @@ public class TopicOperatorPerformance extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorPerformance.class);
     private static final int NUMBER_OF_MESSAGES = 10000;
-    private static final TemporalAccessor ACTUAL_TIME = LocalDateTime.now();
-
-    private static final String REPORT_DIRECTORY = "topic-operator";
-
-    // topic event batches to test
-    private final List<Integer> eventBatches = List.of(10, 100, 500, 1000);
-    private final String namespace = clusterOperator.getDeploymentNamespace();
-    private final String clusterName = "my-cluster-" + System.nanoTime();
-    private final String topicNamePrefix = "my-topic-" + System.nanoTime();
-    private final int maxBatchSize = 100;
-    private final int maxBatchLingerMs = 10;
-    private final int maxQueueSize = Integer.MAX_VALUE;
-    private long reconciliationTimeMs;
 
     private TestStorage testStorage;
     private TopicOperatorMetricsCollector topicOperatorCollector;
     private TopicOperatorMetricsCollectionScheduler topicOperatorMetricsGatherer;
-    private TopicOperatorPerformanceReporter topicOperatorPerformanceReporter = new TopicOperatorPerformanceReporter();
     private LogCollector logCollector;
-    private static boolean isScalabilityTest = false;
+
+    protected static final TemporalAccessor ACTUAL_TIME = LocalDateTime.now();
+    protected static final String REPORT_DIRECTORY = "topic-operator";
+
+    protected TopicOperatorPerformanceReporter topicOperatorPerformanceReporter = new TopicOperatorPerformanceReporter();
 
     /**
      * Provides configurations for Alice's bulk batch use case, testing different batch sizes and linger times.
@@ -736,115 +712,9 @@ public class TopicOperatorPerformance extends AbstractST {
         }
     }
 
-    @Test
-    void runScalabilityTests() {
-        eventBatches.forEach(numEvents -> {
-            final int eventPerTask = 4;
-            final int numberOfTasks = numEvents / eventPerTask;
-            final int numSpareEvents = numEvents % eventPerTask;
-            try {
-                runWorkload(namespace, clusterName, topicNamePrefix, numberOfTasks, numSpareEvents);
-            } finally {
-                // safe net if something went wrong during test case and KafkaTopic is not properly deleted
-                LOGGER.info("Cleaning namespace: {}", namespace);
-                resourceManager.deleteResourcesOfTypeWithoutWait(KafkaTopic.RESOURCE_KIND);
-                KafkaTopicUtils.waitForTopicWithPrefixDeletion(namespace, topicNamePrefix);
-
-                final Map<String, Object> performanceAttributes = new LinkedHashMap<>();
-
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_QUEUE_SIZE, maxQueueSize);
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_BATCH_SIZE, maxBatchSize);
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_NUMBER_OF_TOPICS, numberOfTasks);
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_NUMBER_OF_EVENTS, (numberOfTasks * 3) + numSpareEvents);
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_MAX_BATCH_LINGER_MS, maxBatchLingerMs);
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_PROCESS_TYPE, "TOPIC-CONCURRENT");
-
-                performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_SUCCESSFUL_KAFKA_TOPICS_CREATED_AND_MODIFIED_AND_DELETED, reconciliationTimeMs);
-                try {
-                    this.topicOperatorPerformanceReporter.logPerformanceData(this.testStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.TOPIC_OPERATOR_FIXED_SIZE_OF_EVENTS_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        });
-    }
-
-    /**
-     * Manages the lifecycle of KafkaTopic resources concurrently using a fixed size thread pool.
-     * A number of tasks are handled simultaneously across the available CPU resources.
-     *
-     * @param namespace          The namespace name.
-     * @param clusterName        The cluster name.
-     * @param topicNamePrefix    The topic name prefix.
-     * @param numTasks           The number of event generation tasks to start.
-     * @param numSpareEvents     The number of spare events to consume.
-     */
-    public void runWorkload(
-            String namespace, String clusterName, String topicNamePrefix, int numTasks, int numSpareEvents
-    ) {
-        ExtensionContext currentContext = ResourceManager.getTestContext();
-        CompletableFuture<Void>[] futures = new CompletableFuture[numTasks];
-        AtomicInteger counter = new AtomicInteger(0);
-        long t = System.nanoTime();
-
-        // start tasks
-        LOGGER.info("Running {} tasks", numTasks);
-        for (int i = 0; i < numTasks; i++) {
-            final String topicName = topicNamePrefix + "-" + i;
-            futures[i] = CompletableFuture.runAsync(() ->
-                    runTask(namespace, clusterName, topicName, currentContext, counter), TopicOperatorPerformanceUtils.EXECUTOR);
-        }
-
-        // consume spare events
-        LOGGER.info("Consuming {} spare events", numSpareEvents);
-        for (int j = 0; j < numSpareEvents; j++) {
-            futures[j] = CompletableFuture.completedFuture(null);
-            counter.incrementAndGet();
-        }
-
-        // wait for all tasks to complete
-        try {
-            CompletableFuture.allOf(futures).get();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        reconciliationTimeMs = (System.nanoTime() - t) / 1_000_000;
-        LOGGER.info("Reconciled {} topic events in {} ms", counter.get(), reconciliationTimeMs);
-    }
-
-    /**
-     * Runs 4 KafkaTopic operations as a single task suitable for parallel processing.
-     *
-     * @param namespace          The namespace name.
-     * @param clusterName        The cluster name.
-     * @param topicName          The topic name.
-     * @param extensionContext   The current context of the test case.
-     * @param counter            Reconciled events counter.
-     */
-    private void runTask(
-            String namespace, String clusterName, String topicName, ExtensionContext extensionContext, AtomicInteger counter
-    ) {
-        TopicOperatorPerformanceUtils.createTopicWithWait(namespace, clusterName, topicName, extensionContext);
-        counter.incrementAndGet();
-
-        TopicOperatorPerformanceUtils.updateTopicWithWait(namespace, clusterName, topicName, extensionContext,
-                Map.of("compression.type", "gzip", "cleanup.policy", "delete", "min.insync.replicas", 2,
-                        "retention.ms", 3690L, "retention.bytes", 9876543L));
-        counter.incrementAndGet();
-
-        TopicOperatorPerformanceUtils.updateTopicWithWait(namespace, clusterName, topicName, extensionContext,
-                Map.of("segment.ms", 123456L,  "segment.bytes", 321654L, "flush.messages", 456123L));
-        counter.incrementAndGet();
-
-        TopicOperatorPerformanceUtils.deleteTopicWithWait(namespace, topicName, extensionContext);
-        counter.incrementAndGet();
-    }
-
     @BeforeEach
     public void setUp(ExtensionContext extensionContext) {
         this.testStorage = new TestStorage(extensionContext, TestConstants.CO_NAMESPACE);
-        isScalabilityTest = extensionContext.getRequiredTestMethod().getName().equals("testScalabilityTest");
     }
 
     // Additional setup and utility methods as needed
@@ -854,57 +724,6 @@ public class TopicOperatorPerformance extends AbstractST {
                 .defaultInstallation()
                 .createInstallation()
                 .runInstallation();
-
-        // we deploy shared Kafka only if we do scalability test
-        if (isScalabilityTest) {
-            final String namespace = clusterOperator.getDeploymentNamespace();
-            final String clusterName = "my-cluster-" + System.nanoTime();
-            final int brokerReplicas = 3;
-            final int controllerReplicas = 3;
-
-            resourceManager.createResourceWithWait(
-                    NodePoolsConverter.convertNodePoolsIfNeeded(
-                            KafkaNodePoolTemplates.brokerPoolPersistentStorage(namespace, testStorage.getBrokerPoolName(), clusterName, brokerReplicas)
-                                    .editSpec()
-                                    .withNewPersistentClaimStorage()
-                                    .withSize("5Gi")
-                                    .endPersistentClaimStorage()
-                                    .endSpec()
-                                    .build(),
-                            KafkaNodePoolTemplates.controllerPoolPersistentStorage(namespace, testStorage.getControllerPoolName(), clusterName, controllerReplicas).build()
-                    )
-            );
-
-            resourceManager.createResourceWithWait(
-                KafkaTemplates.kafkaMetricsConfigMap(namespace, clusterName),
-                KafkaTemplates.kafkaWithMetrics(namespace, clusterName, brokerReplicas, controllerReplicas)
-                    .editSpec()
-                        .editEntityOperator()
-                            .editTopicOperator()
-                                .withReconciliationIntervalSeconds(10)
-                            .endTopicOperator()
-                            .editOrNewTemplate()
-                                .editOrNewTopicOperatorContainer()
-                                    .addNewEnv()
-                                        .withName("STRIMZI_MAX_QUEUE_SIZE")
-                                        .withValue(String.valueOf(maxQueueSize))
-                                    .endEnv()
-                                    .addNewEnv()
-                                        .withName("STRIMZI_MAX_BATCH_SIZE")
-                                        .withValue(String.valueOf(maxBatchSize))
-                                    .endEnv()
-                                    .addNewEnv()
-                                        .withName("MAX_BATCH_LINGER_MS")
-                                        .withValue(String.valueOf(maxBatchLingerMs))
-                                    .endEnv()
-                                .endTopicOperatorContainer()
-                            .endTemplate()
-                        .endEntityOperator()
-                    .endSpec()
-                    .build(),
-                ScraperTemplates.scraperPod(namespace, testStorage.getScraperName()).build()
-            );
-        }
     }
 
     @AfterAll
