@@ -1775,6 +1775,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                         .withRackId(rack)
                         .withLogDirs(VolumeUtils.createVolumeMounts(pool.storage, false))
                         .withListeners(cluster,
+                                kafkaVersion,
                                 namespace,
                                 listeners,
                                 listenerId -> advertisedHostnames.get(node.nodeId()).get(listenerId),
