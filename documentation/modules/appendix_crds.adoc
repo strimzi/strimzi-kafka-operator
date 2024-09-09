@@ -3980,6 +3980,12 @@ Used in: xref:type-KafkaConnector-{context}[`KafkaConnector`]
 |state
 |string (one of [running, paused, stopped])
 |The state the connector should be in. Defaults to running.
+|listOffsets
+|xref:type-ListOffsets-{context}[`ListOffsets`]
+|Configuration for listing offsets.
+|alterOffsets
+|xref:type-AlterOffsets-{context}[`AlterOffsets`]
+|Configuration for altering offsets.
 |====
 
 [id='type-AutoRestart-{context}']
@@ -4004,6 +4010,48 @@ include::../api/io.strimzi.api.kafka.model.connector.AutoRestart.adoc[leveloffse
 |maxRestarts
 |integer
 |The maximum number of connector restarts that the operator will try. If the connector remains in a failed state after reaching this limit, it must be restarted manually by the user. Defaults to an unlimited number of restarts.
+|====
+
+[id='type-ListOffsets-{context}']
+= `ListOffsets` schema reference
+
+Used in: xref:type-KafkaConnectorSpec-{context}[`KafkaConnectorSpec`], xref:type-KafkaMirrorMaker2ConnectorSpec-{context}[`KafkaMirrorMaker2ConnectorSpec`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|toConfigMap
+|xref:type-ResourceReference-{context}[`ResourceReference`]
+|Reference to the ConfigMap where the list of offsets will be written to.
+|====
+
+[id='type-ResourceReference-{context}']
+= `ResourceReference` schema reference
+
+Used in: xref:type-AlterOffsets-{context}[`AlterOffsets`], xref:type-ListOffsets-{context}[`ListOffsets`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|name
+|string
+|Name of the resource.
+|====
+
+[id='type-AlterOffsets-{context}']
+= `AlterOffsets` schema reference
+
+Used in: xref:type-KafkaConnectorSpec-{context}[`KafkaConnectorSpec`], xref:type-KafkaMirrorMaker2ConnectorSpec-{context}[`KafkaMirrorMaker2ConnectorSpec`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|fromConfigMap
+|xref:type-ResourceReference-{context}[`ResourceReference`]
+|Reference to the ConfigMap where the new offsets are stored.
 |====
 
 [id='type-KafkaConnectorStatus-{context}']
@@ -4236,6 +4284,12 @@ Used in: xref:type-KafkaMirrorMaker2MirrorSpec-{context}[`KafkaMirrorMaker2Mirro
 |autoRestart
 |xref:type-AutoRestart-{context}[`AutoRestart`]
 |Automatic restart of connector and tasks configuration.
+|listOffsets
+|xref:type-ListOffsets-{context}[`ListOffsets`]
+|Configuration for listing offsets.
+|alterOffsets
+|xref:type-AlterOffsets-{context}[`AlterOffsets`]
+|Configuration for altering offsets.
 |====
 
 [id='type-KafkaMirrorMaker2Status-{context}']

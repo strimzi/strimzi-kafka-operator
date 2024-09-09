@@ -28,7 +28,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"pause", "tasksMax", "config", "state"})
+@JsonPropertyOrder({"pause", "tasksMax", "config", "state", "listOffsets", "alterOffsets"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public abstract class AbstractConnectorSpec extends Spec {
@@ -43,6 +43,9 @@ public abstract class AbstractConnectorSpec extends Spec {
     private ConnectorState state;
 
     private AutoRestart autoRestart;
+
+    private ListOffsets listOffsets;
+    private AlterOffsets alterOffsets;
 
     /**
      * @return  Max number of tasks
@@ -133,5 +136,39 @@ public abstract class AbstractConnectorSpec extends Spec {
      */
     public void setState(ConnectorState state) {
         this.state = state;
+    }
+
+    /**
+     * @return The listOffsets configuration.
+     */
+    @Description("Configuration for listing offsets")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ListOffsets getListOffsets() {
+        return listOffsets;
+    }
+
+    /**
+     * Configures the behaviour when listing connector offsets.
+     * @param listOffsets The listOffsets configuration.
+     */
+    public void setListOffsets(ListOffsets listOffsets) {
+        this.listOffsets = listOffsets;
+    }
+
+    /**
+     * @return The alterOffsets configuration.
+     */
+    @Description("Configuration for altering offsets")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public AlterOffsets getAlterOffsets() {
+        return alterOffsets;
+    }
+
+    /**
+     * Configures the behaviour when altering connector offsets.
+     * @param alterOffsets The alterOffsets configuration.
+     */
+    public void setAlterOffsets(AlterOffsets alterOffsets) {
+        this.alterOffsets = alterOffsets;
     }
 }

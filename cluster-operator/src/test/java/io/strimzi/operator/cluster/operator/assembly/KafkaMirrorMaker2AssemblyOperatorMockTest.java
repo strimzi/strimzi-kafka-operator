@@ -4,13 +4,19 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
+import io.strimzi.api.kafka.model.common.ConnectorState;
+import io.strimzi.api.kafka.model.connector.KafkaConnectorOffsetsAnnotation;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpecBuilder;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2MirrorSpecBuilder;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -22,6 +28,7 @@ import io.strimzi.operator.cluster.operator.resource.DefaultZooKeeperAdminProvid
 import io.strimzi.operator.cluster.operator.resource.DefaultZookeeperScalerProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
@@ -46,6 +53,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -56,10 +65,18 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.aMapWithSize;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.core.IsNot.not;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -68,9 +85,34 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
     private static final Logger LOGGER = LogManager.getLogger(KafkaMirrorMaker2AssemblyOperatorMockTest.class);
 
     private static final String CLUSTER_NAME = "my-mm2-cluster";
+    private static final String CONFIGMAP_NAME = "my-config-map";
     private static final int REPLICAS = 3;
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final PlatformFeaturesAvailability PFA = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
+    private static final Map<String, String> EXPECTED_CONNECTOR_CONFIG = new HashMap<>();
+    static {
+        EXPECTED_CONNECTOR_CONFIG.put("connector.class", "org.apache.kafka.connect.mirror.MirrorSourceConnector");
+        EXPECTED_CONNECTOR_CONFIG.put("name", "source->target.MirrorSourceConnector");
+        EXPECTED_CONNECTOR_CONFIG.put("replication.factor", "-1");
+        EXPECTED_CONNECTOR_CONFIG.put("source.cluster.alias", "source");
+        EXPECTED_CONNECTOR_CONFIG.put("source.cluster.bootstrap.servers", "source:9092");
+        EXPECTED_CONNECTOR_CONFIG.put("source.cluster.security.protocol", "PLAINTEXT");
+        EXPECTED_CONNECTOR_CONFIG.put("target.cluster.alias", "target");
+        EXPECTED_CONNECTOR_CONFIG.put("target.cluster.bootstrap.servers", "target:9092");
+        EXPECTED_CONNECTOR_CONFIG.put("target.cluster.security.protocol", "PLAINTEXT");
+        EXPECTED_CONNECTOR_CONFIG.put("tasks.max", "1");
+    }
+    private static final String LIST_OFFSETS_JSON = "{\"offsets\": [{" +
+            "\"partition\": {\"kafka_topic\": \"my-topic\",\"kafka_partition\": 2}," +
+            "\"offset\": {\"kafka_offset\": 4}}]}";
+
+    private static final String ALTER_OFFSETS_JSON = "{\"offsets\": [{" +
+            "\"partition\": {\"kafka_topic\": \"my-topic\",\"kafka_partition\": 2}," +
+            "\"offset\": {\"kafka_offset\": 2}}]}";
+
+    private static final String RESET_OFFSETS_JSON = "{\"offsets\": [{" +
+            "\"partition\": {\"kafka_topic\": \"my-topic\",\"kafka_partition\": 2}," +
+            "\"offset\": {\"kafka_offset\": 2}}]}";
 
     private static WorkerExecutor sharedWorkerExecutor;
     private static KubernetesClient client;
@@ -79,6 +121,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
     private String namespace;
     private ResourceOperatorSupplier supplier;
     private StrimziPodSetController podSetController;
+    private String connectorOffsets;
 
     private static Vertx vertx;
     private KafkaMirrorMaker2AssemblyOperator kco;
@@ -160,6 +203,32 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
         return created.future();
     }
 
+
+
+    private KafkaConnectApi mockConnectApi(String state)    {
+        connectorOffsets = LIST_OFFSETS_JSON;
+        Map<String, Object> status = Map.of("connector", Map.of("state", state));
+        KafkaConnectApi mockConnectApi = mock(KafkaConnectApi.class);
+        when(mockConnectApi.list(any(), any(), anyInt())).thenReturn(Future.succeededFuture(new ArrayList<>()));
+        when(mockConnectApi.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
+        when(mockConnectApi.getConnectorConfig(any(), any(), any(), anyInt(), eq("source->target.MirrorSourceConnector"))).thenReturn(Future.succeededFuture(EXPECTED_CONNECTOR_CONFIG));
+        when(mockConnectApi.status(any(), any(), anyInt(), eq("source->target.MirrorSourceConnector"))).thenReturn(Future.succeededFuture(status));
+        when(mockConnectApi.statusWithBackOff(any(), any(), any(), anyInt(), eq("source->target.MirrorSourceConnector"))).thenReturn(Future.succeededFuture(status));
+        when(mockConnectApi.getConnectorTopics(any(), any(), anyInt(), eq("source->target.MirrorSourceConnector"))).thenReturn(Future.succeededFuture(List.of()));
+        when(mockConnectApi.restart(any(), anyInt(), any(), anyBoolean(), anyBoolean())).thenReturn(Future.succeededFuture(Map.of("connector", Map.of("state", "RESTARTING"))));
+        when(mockConnectApi.getConnectorOffsets(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> Future.succeededFuture(connectorOffsets));
+        when(mockConnectApi.alterConnectorOffsets(any(), any(), anyInt(), anyString(), anyString())).thenAnswer(invocation -> {
+            connectorOffsets = invocation.getArgument(4);
+            return Future.succeededFuture();
+        });
+        when(mockConnectApi.resetConnectorOffsets(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> {
+            connectorOffsets = RESET_OFFSETS_JSON;
+            return Future.succeededFuture();
+        });
+
+        return mockConnectApi;
+    }
+
     @Test
     public void testReconcileUpdate(VertxTestContext context) {
         Crds.kafkaMirrorMaker2Operation(client).resource(new KafkaMirrorMaker2Builder()
@@ -236,6 +305,203 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                         }
                     }
                     assertTrue(conditionFound);
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testListOffsets(VertxTestContext context) {
+        String connectorName = "source->target.MirrorSourceConnector";
+        Crds.kafkaMirrorMaker2Operation(client).resource(new KafkaMirrorMaker2Builder()
+                .withNewMetadata()
+                    .withName(CLUSTER_NAME)
+                    .withNamespace(namespace)
+                    .withLabels(Map.of("foo", "bar"))
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(REPLICAS)
+                    .withConnectCluster("target")
+                    .withClusters(new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("source").withBootstrapServers("source:9092").build(),
+                            new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("target").withBootstrapServers("target:9092").build())
+                    .withMirrors(
+                            new KafkaMirrorMaker2MirrorSpecBuilder()
+                                    .withSourceCluster("source")
+                                    .withTargetCluster("target")
+                                    .withNewSourceConnector()
+                                        .withTasksMax(1)
+                                        .withConfig(Map.of("replication.factor", -1))
+                                        .withNewListOffsets()
+                                            .withNewConfigMapReference()
+                                                .withName(CONFIGMAP_NAME)
+                                            .endConfigMapReference()
+                                        .endListOffsets()
+                                    .endSourceConnector()
+                                    .build()
+                    )
+                .endSpec()
+                .build()).create();
+
+        KafkaConnectApi connectApi = mockConnectApi("RUNNING");
+
+        Checkpoint async = context.checkpoint();
+        createMirrorMaker2Cluster(context, connectApi, false)
+                .compose(i -> {
+                    LOGGER.info("Annotating KafkaMirrorMaker2 to list offsets");
+                    Crds.kafkaMirrorMaker2Operation(client).inNamespace(namespace).withName(CLUSTER_NAME).edit(spec -> new KafkaMirrorMaker2Builder(spec)
+                            .editMetadata()
+                            .addToAnnotations(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.list.toString())
+                            .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR, connectorName)
+                            .endMetadata()
+                            .build());
+                    return kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, namespace, CLUSTER_NAME));
+                })
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    //Assert annotations removed
+                    KafkaMirrorMaker2 kafkaMirrorMaker2 = Crds.kafkaMirrorMaker2Operation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertThat(kafkaMirrorMaker2.getMetadata().getAnnotations(), not(hasKey(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS)));
+                    assertThat(kafkaMirrorMaker2.getMetadata().getAnnotations(), not(hasKey(Annotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR)));
+
+                    //Assert configmap exists
+                    ConfigMap configMap = client.configMaps().inNamespace(namespace).withName(CONFIGMAP_NAME).get();
+                    assertNotNull(configMap);
+
+                    //Assert owner reference
+                    List<OwnerReference> ownerReferences = configMap.getMetadata().getOwnerReferences();
+                    assertThat(ownerReferences, hasSize(1));
+                    assertThat(ownerReferences.get(0).getName(), is(CLUSTER_NAME));
+                    assertThat(ownerReferences.get(0).getKind(), is(KafkaMirrorMaker2.RESOURCE_KIND));
+
+                    //Assert ConfigMap data
+                    Map<String, String> data = configMap.getData();
+                    assertThat(data, aMapWithSize(1));
+                    assertThat(data, hasEntry("source--target.MirrorSourceConnector.json", LIST_OFFSETS_JSON));
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testAlterOffsets(VertxTestContext context) {
+        String connectorName = "source->target.MirrorSourceConnector";
+        Crds.kafkaMirrorMaker2Operation(client).resource(new KafkaMirrorMaker2Builder()
+                .withNewMetadata()
+                    .withName(CLUSTER_NAME)
+                    .withNamespace(namespace)
+                    .withLabels(Map.of("foo", "bar"))
+                .endMetadata()
+                    .withNewSpec()
+                    .withReplicas(REPLICAS)
+                    .withConnectCluster("target")
+                    .withClusters(new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("source").withBootstrapServers("source:9092").build(),
+                            new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("target").withBootstrapServers("target:9092").build())
+                    .withMirrors(
+                            new KafkaMirrorMaker2MirrorSpecBuilder()
+                                    .withSourceCluster("source")
+                                    .withTargetCluster("target")
+                                    .withNewSourceConnector()
+                                        .withTasksMax(1)
+                                        .withConfig(Map.of("replication.factor", -1))
+                                        .withState(ConnectorState.STOPPED)
+                                        .withNewAlterOffsets()
+                                            .withNewConfigMapReference()
+                                                .withName(CONFIGMAP_NAME)
+                                            .endConfigMapReference()
+                                        .endAlterOffsets()
+                                    .endSourceConnector()
+                                    .build()
+                    )
+                .endSpec()
+                .build()).create();
+
+        KafkaConnectApi connectApi = mockConnectApi("STOPPED");
+
+        //Create ConfigMap
+        ConfigMap configMapResource = new ConfigMapBuilder()
+                .withNewMetadata()
+                .withName(CONFIGMAP_NAME)
+                .endMetadata()
+                .withData(Map.of("source--target.MirrorSourceConnector.json", ALTER_OFFSETS_JSON))
+                .build();
+        client.configMaps()
+                .inNamespace(namespace)
+                .resource(configMapResource)
+                .create();
+
+        Checkpoint async = context.checkpoint();
+
+        createMirrorMaker2Cluster(context, connectApi, false)
+                .compose(i -> {
+                    LOGGER.info("Annotating KafkaMirrorMaker2 to alter offsets");
+                    Crds.kafkaMirrorMaker2Operation(client).inNamespace(namespace).withName(CLUSTER_NAME).edit(spec -> new KafkaMirrorMaker2Builder(spec)
+                            .editMetadata()
+                            .addToAnnotations(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.alter.toString())
+                            .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR, connectorName)
+                            .endMetadata()
+                            .build());
+                    return kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, namespace, CLUSTER_NAME));
+                })
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    //Assert annotations removed
+                    KafkaMirrorMaker2 kafkaMirrorMaker2 = Crds.kafkaMirrorMaker2Operation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertThat(kafkaMirrorMaker2.getMetadata().getAnnotations(), not(hasKey(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS)));
+                    assertThat(kafkaMirrorMaker2.getMetadata().getAnnotations(), not(hasKey(Annotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR)));
+
+                    //Assert offsets altered
+                    assertThat(connectorOffsets, is(ALTER_OFFSETS_JSON));
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testResetOffsets(VertxTestContext context) {
+        String connectorName = "source->target.MirrorSourceConnector";
+        Crds.kafkaMirrorMaker2Operation(client).resource(new KafkaMirrorMaker2Builder()
+                .withNewMetadata()
+                    .withName(CLUSTER_NAME)
+                    .withNamespace(namespace)
+                    .withLabels(Map.of("foo", "bar"))
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(REPLICAS)
+                    .withConnectCluster("target")
+                    .withClusters(new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("source").withBootstrapServers("source:9092").build(),
+                            new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("target").withBootstrapServers("target:9092").build())
+                    .withMirrors(
+                            new KafkaMirrorMaker2MirrorSpecBuilder()
+                                    .withSourceCluster("source")
+                                    .withTargetCluster("target")
+                                    .withNewSourceConnector()
+                                        .withTasksMax(1)
+                                        .withConfig(Map.of("replication.factor", -1))
+                                        .withState(ConnectorState.STOPPED)
+                                    .endSourceConnector()
+                                    .build()
+                    )
+                .endSpec()
+                .build()).create();
+
+        KafkaConnectApi connectApi = mockConnectApi("STOPPED");
+
+        Checkpoint async = context.checkpoint();
+
+        createMirrorMaker2Cluster(context, connectApi, false)
+                .compose(i -> {
+                    LOGGER.info("Annotating KafkaMirrorMaker2 to reset offsets");
+                    Crds.kafkaMirrorMaker2Operation(client).inNamespace(namespace).withName(CLUSTER_NAME).edit(spec -> new KafkaMirrorMaker2Builder(spec)
+                            .editMetadata()
+                            .addToAnnotations(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.reset.toString())
+                            .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR, connectorName)
+                            .endMetadata()
+                            .build());
+                    return kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, namespace, CLUSTER_NAME));
+                })
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    //Assert annotations removed
+                    KafkaMirrorMaker2 kafkaMirrorMaker2 = Crds.kafkaMirrorMaker2Operation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertThat(kafkaMirrorMaker2.getMetadata().getAnnotations(), not(hasKey(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS)));
+                    assertThat(kafkaMirrorMaker2.getMetadata().getAnnotations(), not(hasKey(Annotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR)));
+
+                    //Assert offsets reset
+                    assertThat(connectorOffsets, is(RESET_OFFSETS_JSON));
                     async.flag();
                 })));
     }

@@ -27,6 +27,7 @@ import io.strimzi.api.kafka.model.connector.AutoRestartStatus;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorBuilder;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorList;
+import io.strimzi.api.kafka.model.connector.KafkaConnectorOffsetsAnnotation;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorStatus;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -68,6 +69,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_RESTART_TASK;
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART;
 
 /**
@@ -745,6 +747,50 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                         return Future.succeededFuture(null);
                     }
                 });
+    }
+
+    // Methods for working with connector offsets
+
+    /**
+     * Returns the value of strimzi.io/connector-offsets annotation on the provided KafkaConnector.
+     *
+     * @param resource          KafkaConnector resource instance to check
+     * @param connectorName     Name of the connector being reconciled (not used for Kafka Connect, used only for Mirror Maker 2)
+     *
+     * @return  The value of the strimzi.io/connector-offsets annotation on the provided KafkaConnector.
+     */
+    @SuppressWarnings({ "rawtypes" })
+    @Override
+    protected KafkaConnectorOffsetsAnnotation getConnectorOffsetsAnnotation(CustomResource resource, String connectorName) {
+        String annotation = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.none.toString());
+        return KafkaConnectorOffsetsAnnotation.valueOf(annotation);
+    }
+
+    /**
+     * Patches the custom resource to remove the connector-offsets annotation
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param resource          KafkaConnector resource from which the annotation should be removed
+     *
+     * @return  Future that indicates the operation completion
+     */
+    @SuppressWarnings({ "rawtypes" })
+    @Override
+    protected Future<Void> removeConnectorOffsetsAnnotation(Reconciliation reconciliation, CustomResource resource) {
+        return removeAnnotation(reconciliation, (KafkaConnector) resource, ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
+    }
+
+    /**
+     * Returns the key to use for either writing connector offsets to a ConfigMap or fetching connector offsets
+     * from a ConfigMap.
+     *
+     * @param connectorName Name of the connector that is being managed (not used for Kafka Connect, used only for Mirror Maker 2).
+     *
+     * @return The String to use when interacting with ConfigMap resources.
+     */
+    @Override
+    protected String getConnectorOffsetsConfigMapEntryKey(String connectorName) {
+        return "offsets.json";
     }
 
     // Static utility methods and classes

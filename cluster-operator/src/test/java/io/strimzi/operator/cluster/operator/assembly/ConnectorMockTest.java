@@ -4,7 +4,10 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.StatusDetails;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -27,6 +30,7 @@ import io.strimzi.api.kafka.model.connect.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorBuilder;
+import io.strimzi.api.kafka.model.connector.KafkaConnectorOffsetsAnnotation;
 import io.strimzi.api.kafka.model.kafka.Status;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -82,7 +86,10 @@ import static io.strimzi.test.TestUtils.waitFor;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -102,6 +109,18 @@ import static org.mockito.Mockito.when;
 public class ConnectorMockTest {
     private static final Logger LOGGER = LogManager.getLogger(ConnectorMockTest.class.getName());
 
+    private static final String LIST_OFFSETS_JSON = "{\"offsets\": [{" +
+            "\"partition\": {\"kafka_topic\": \"my-topic\",\"kafka_partition\": 2}," +
+            "\"offset\": {\"kafka_offset\": 4}}]}";
+
+    private static final String ALTER_OFFSETS_JSON = "{\"offsets\": [{" +
+            "\"partition\": {\"kafka_topic\": \"my-topic\",\"kafka_partition\": 2}," +
+            "\"offset\": {\"kafka_offset\": 2}}]}";
+
+    private static final String RESET_OFFSETS_JSON = "{\"offsets\": [{" +
+            "\"partition\": {\"kafka_topic\": \"my-topic\",\"kafka_partition\": 2}," +
+            "\"offset\": {\"kafka_offset\": 2}}]}";
+
     private static KubernetesClient client;
     private static MockKube3 mockKube;
 
@@ -115,6 +134,7 @@ public class ConnectorMockTest {
     private HashMap<String, ConnectorStatus> connectors;
     private KafkaConnectAssemblyOperator kafkaConnectOperator;
     private MetricsProvider metricsProvider;
+    private String connectorOffsets;
 
     String key(String host, String connectorName) {
         return host + "##" + connectorName;
@@ -220,10 +240,11 @@ public class ConnectorMockTest {
         vertx.close();
     }
 
-    @SuppressWarnings({"checkstyle:JavaNCSS", "checkstyle:NPathComplexity"})
+    @SuppressWarnings({"checkstyle:JavaNCSS", "checkstyle:NPathComplexity", "checkstyle:MethodLength"})
     private void setupMockConnectAPI() {
         api = mock(KafkaConnectApi.class);
         connectors = new HashMap<>();
+        connectorOffsets = LIST_OFFSETS_JSON;
 
         when(api.list(any(), any(), anyInt())).thenAnswer(i -> {
             String host = i.getArgument(1);
@@ -361,6 +382,16 @@ public class ConnectorMockTest {
                 return Future.failedFuture(new ConnectRestException("GET", String.format("/connectors/%s/topics", connectorName), 404, "Not Found", ""));
             }
             return Future.succeededFuture(List.of("my-topic"));
+        });
+
+        when(api.getConnectorOffsets(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> Future.succeededFuture(connectorOffsets));
+        when(api.alterConnectorOffsets(any(), any(), anyInt(), anyString(), anyString())).thenAnswer(invocation -> {
+            connectorOffsets = invocation.getArgument(4);
+            return Future.succeededFuture();
+        });
+        when(api.resetConnectorOffsets(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> {
+            connectorOffsets = RESET_OFFSETS_JSON;
+            return Future.succeededFuture();
         });
     }
 
@@ -522,6 +553,18 @@ public class ConnectorMockTest {
                 .withName(connectorName);
         waitForStatus(resource, connectorName,
                 ConnectorMockTest.<KafkaConnector>statusIsForCurrentGeneration().and(notReady(reason, message)));
+    }
+
+    public ConfigMap waitForConfigMap(String configMapName) {
+        try {
+            return client.configMaps().withName(configMapName).waitUntilReady(5, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            if (!(e instanceof KubernetesClientTimeoutException)) {
+                throw new RuntimeException(e);
+            }
+            fail("ConfigMap " + configMapName + " never reported ready");
+            return null;
+        }
     }
 
     private KafkaConnectorBuilder defaultKafkaConnectorBuilder() {
@@ -2312,6 +2355,199 @@ public class ConnectorMockTest {
                 async.flag();
             })));
         })));
+    }
+
+
+    /** Create connect, create connector, list offsets */
+    @Test
+    public void testConnectorListOffsets() {
+        String connectName = "cluster";
+        String connectorName = "connector";
+        String listOffsetsCM = "list-offsets-cm";
+
+        // Create KafkaConnect cluster and wait till it's ready
+        KafkaConnect connect = new KafkaConnectBuilder()
+                .withNewMetadata()
+                    .withNamespace(namespace)
+                    .withName(connectName)
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(1)
+                    .withBootstrapServers("my-kafka:9092")
+                .endSpec()
+                .build();
+        Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(connect).create();
+        waitForConnectReady(connectName);
+
+        // Create KafkaConnector and wait till it's ready
+        KafkaConnector connector = new KafkaConnectorBuilder()
+                .withNewMetadata()
+                    .withName(connectorName)
+                    .withNamespace(namespace)
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
+                .endMetadata()
+                .withNewSpec()
+                    .withTasksMax(1)
+                    .withClassName("Dummy")
+                    .withNewListOffsets()
+                        .withNewConfigMapReference()
+                            .withName(listOffsetsCM)
+                        .endConfigMapReference()
+                    .endListOffsets()
+                .endSpec()
+                .build();
+        Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
+        waitForConnectorReady(connectorName);
+        waitForConnectorState(connectorName, "RUNNING");
+        assertThat(connectors.keySet(), is(Collections.singleton(key("cluster-connect-api.testconnectorlistoffsets.svc", connectorName))));
+
+        //Annotate KafkaConnector with strimzi.io/connector-offsets=list
+        Crds.kafkaConnectorOperation(client).inNamespace(namespace).withName(connectorName).edit(spec -> new KafkaConnectorBuilder(spec)
+                .editMetadata()
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.list.toString())
+                .endMetadata()
+                .build());
+
+        //Wait for ConfigMap to be created and annotation removed
+        ConfigMap configMap = waitForConfigMap(listOffsetsCM);
+        waitForRemovedAnnotation(connectorName, Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
+
+        //Assert owner reference
+        List<OwnerReference> ownerReferences = configMap.getMetadata().getOwnerReferences();
+        assertThat(ownerReferences, hasSize(1));
+        assertThat(ownerReferences.get(0).getName(), is(connectorName));
+        assertThat(ownerReferences.get(0).getKind(), is(KafkaConnector.RESOURCE_KIND));
+
+        //Assert ConfigMap data
+        Map<String, String> data = configMap.getData();
+        assertThat(data, aMapWithSize(1));
+        assertThat(data, hasEntry("offsets.json", LIST_OFFSETS_JSON));
+    }
+
+
+    /** Create connect, create connector, create configmap, alter offsets */
+    @Test
+    public void testConnectorAlterOffsets() {
+        String connectName = "cluster";
+        String connectorName = "connector";
+        String alterOffsetsCM = "alter-offsets-cm";
+
+        // Create KafkaConnect cluster and wait till it's ready
+        KafkaConnect connect = new KafkaConnectBuilder()
+                .withNewMetadata()
+                    .withNamespace(namespace)
+                    .withName(connectName)
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(1)
+                    .withBootstrapServers("my-kafka:9092")
+                .endSpec()
+                .build();
+        Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(connect).create();
+        waitForConnectReady(connectName);
+
+        // Create KafkaConnector and wait till it's ready
+        KafkaConnector connector = new KafkaConnectorBuilder()
+                .withNewMetadata()
+                    .withName(connectorName)
+                    .withNamespace(namespace)
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
+                .endMetadata()
+                .withNewSpec()
+                    .withState(ConnectorState.STOPPED)
+                    .withTasksMax(1)
+                    .withClassName("Dummy")
+                    .withNewAlterOffsets()
+                        .withNewConfigMapReference()
+                            .withName(alterOffsetsCM)
+                        .endConfigMapReference()
+                    .endAlterOffsets()
+                .endSpec()
+                .build();
+        Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
+        waitForConnectorReady(connectorName);
+        waitForConnectorState(connectorName, "STOPPED");
+        assertThat(connectors.keySet(), is(Collections.singleton(key("cluster-connect-api.testconnectoralteroffsets.svc", connectorName))));
+
+        //Create ConfigMap
+        ConfigMap configMapResource = new ConfigMapBuilder()
+                .withNewMetadata()
+                    .withName(alterOffsetsCM)
+                .endMetadata()
+                .withData(Map.of("offsets.json", ALTER_OFFSETS_JSON))
+                .build();
+        client.configMaps()
+                .inNamespace(namespace)
+                .resource(configMapResource)
+                .create();
+
+        //Annotate KafkaConnector with strimzi.io/connector-offsets=alter
+        Crds.kafkaConnectorOperation(client).inNamespace(namespace).withName(connectorName).edit(spec -> new KafkaConnectorBuilder(spec)
+                .editMetadata()
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.alter.toString())
+                .endMetadata()
+                .build());
+
+        //Wait for annotation to be removed
+        waitForRemovedAnnotation(connectorName, Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
+
+        //Assert offsets altered
+        assertThat(connectorOffsets, is(ALTER_OFFSETS_JSON));
+    }
+
+    /** Create connect, create connector, reset offsets */
+    @Test
+    public void testConnectorResetOffsets() {
+        String connectName = "cluster";
+        String connectorName = "connector";
+
+        // Create KafkaConnect cluster and wait till it's ready
+        KafkaConnect connect = new KafkaConnectBuilder()
+                .withNewMetadata()
+                    .withNamespace(namespace)
+                    .withName(connectName)
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(1)
+                    .withBootstrapServers("my-kafka:9092")
+                .endSpec()
+                .build();
+        Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(connect).create();
+        waitForConnectReady(connectName);
+
+        // Create KafkaConnector and wait till it's ready
+        KafkaConnector connector = new KafkaConnectorBuilder()
+                .withNewMetadata()
+                    .withName(connectorName)
+                    .withNamespace(namespace)
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
+                .endMetadata()
+                .withNewSpec()
+                    .withState(ConnectorState.STOPPED)
+                    .withTasksMax(1)
+                    .withClassName("Dummy")
+                .endSpec()
+                .build();
+        Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
+        waitForConnectorReady(connectorName);
+        waitForConnectorState(connectorName, "STOPPED");
+        assertThat(connectors.keySet(), is(Collections.singleton(key("cluster-connect-api.testconnectorresetoffsets.svc", connectorName))));
+
+        //Annotate KafkaConnector with strimzi.io/connector-offsets=reset
+        Crds.kafkaConnectorOperation(client).inNamespace(namespace).withName(connectorName).edit(spec -> new KafkaConnectorBuilder(spec)
+                .editMetadata()
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.reset.toString())
+                .endMetadata()
+                .build());
+
+        //Wait for annotation to be removed
+        waitForRemovedAnnotation(connectorName, Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
+
+        //Assert offsets reset
+        assertThat(connectorOffsets, is(RESET_OFFSETS_JSON));
     }
 
     // Utility record used during tests
