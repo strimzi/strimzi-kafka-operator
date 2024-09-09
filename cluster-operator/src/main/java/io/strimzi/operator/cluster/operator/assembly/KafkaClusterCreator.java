@@ -59,7 +59,7 @@ public class KafkaClusterCreator {
     private boolean scaleDownCheckFailed = false;
     private boolean usedToBeBrokersCheckFailed = false;
     private final List<Condition> warningConditions = new ArrayList<>();
-    private Set<Integer> toBeRemovedNodes;
+    private Set<Integer> scalingDownBlockedNodes;
 
     /**
      * Constructor
@@ -89,11 +89,11 @@ public class KafkaClusterCreator {
     }
 
     /**
-     * @return the nodes to be removed which have to be considered for an auto-rebalancing on scale down,
+     * @return the nodes blocked for scaling down to be considered for an auto-rebalancing,
      * before they are actually removed from the cluster
      */
-    public Set<Integer> toBeRemovedNodes() {
-        return toBeRemovedNodes;
+    public Set<Integer> scalingDownBlockedNodes() {
+        return scalingDownBlockedNodes;
     }
 
     /**
@@ -123,8 +123,8 @@ public class KafkaClusterCreator {
                 .compose(kafka -> brokerRemovalCheck(kafkaCr, kafka))
                 .compose(kafka -> {
                     if (checkFailed() && tryToFixProblems)   {
-                        // saving removed nodes, because of a scaling down, before they are reverted back
-                        this.toBeRemovedNodes = new LinkedHashSet<>(kafka.removedNodes());
+                        // saving scaling down blocked nodes, before they are reverted back
+                        this.scalingDownBlockedNodes = new LinkedHashSet<>(kafka.removedNodes());
                         // We have a failure, and should try to fix issues
                         // Once we fix it, we call this method again, but this time with tryToFixProblems set to false
                         return revertScaleDown(kafka, kafkaCr, nodePools)
