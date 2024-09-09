@@ -720,7 +720,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                     kafkaBrokerStorage = kafkaCluster.getStorageByPoolName();
                                     kafkaBrokerResources = kafkaCluster.getBrokerResourceRequirementsByPoolName();
                                     scalingDownBlockedNodes = kafkaClusterCreator.scalingDownBlockedNodes();
-                                    scalingUpAddedNodes = kafkaCluster.addedNodes();
+                                    scalingUpAddedNodes = kafkaCluster.addedBrokerNodes();
 
                                     return Future.succeededFuture(kafkaReconciler(nodePools, kafkaCluster));
                                 });

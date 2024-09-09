@@ -454,15 +454,17 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
-     * Generates list of Kafka node IDs that are going to be added to the Kafka cluster.
+     * Generates list of Kafka node IDs that are going to be added to the Kafka cluster as brokers.
      *
-     * @return  Set of Kafka node IDs which are going to be added
+     * @return  Set of Kafka node IDs which are going to be added as brokers.
      */
-    public Set<Integer> addedNodes() {
+    public Set<Integer> addedBrokerNodes() {
         Set<Integer> nodes = new LinkedHashSet<>();
 
         for (KafkaPool pool : nodePools)    {
-            nodes.addAll(pool.scaleUpNodes());
+            if (pool.isBroker()) {
+                nodes.addAll(pool.scaleUpNodes());
+            }
         }
 
         return nodes;
