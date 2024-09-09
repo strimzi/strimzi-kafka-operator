@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
+import io.strimzi.crdgenerator.annotations.OneOf;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -28,14 +29,13 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({"secretKeyRef", "configMapKeyRef"})
+@OneOf({@OneOf.Alternative(@OneOf.Alternative.Property("secretKeyRef")), @OneOf.Alternative(@OneOf.Alternative.Property("configMapKeyRef"))})
 @EqualsAndHashCode
 @ToString
 public class ExternalConfigurationEnvVarSource implements UnknownPropertyPreserving {
     private SecretKeySelector secretKeyRef;
     private ConfigMapKeySelector configMapKeyRef;
     private Map<String, Object> additionalProperties;
-
-    // TODO: We should make it possible to generate a CRD configuring that exactly one of secretKeyRef and configMapKeyRef has to be defined.
 
     @Description("Reference to a key in a Secret.")
     @KubeLink(group = "core", version = "v1", kind = "secretkeyselector")
