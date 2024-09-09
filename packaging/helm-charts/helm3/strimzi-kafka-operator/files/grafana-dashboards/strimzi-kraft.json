@@ -1111,7 +1111,13 @@
       },
       "id": 122,
       "options": {
-        "showHeader": true
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Pod Name"
+          }
+        ]
       },
       "pluginVersion": "7.4.5",
       "targets": [
