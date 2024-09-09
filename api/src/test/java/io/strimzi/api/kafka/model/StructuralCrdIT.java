@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.strimzi.api.annotations.ApiVersion;
 import io.strimzi.api.annotations.VersionRange;
+import io.strimzi.test.CrdUtils;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,10 +60,10 @@ public class StructuralCrdIT extends AbstractCrdIT {
 
     private void assertApiVersionsAreStructural(String crdName, String crdPath, VersionRange<ApiVersion> shouldBeStructural) {
         try {
-            TestUtils.createCrd(client, crdName, crdPath);
+            CrdUtils.createCrd(client, crdName, crdPath);
             assertApiVersionsAreStructuralInApiextensionsV1(crdName, shouldBeStructural);
         } finally {
-            TestUtils.deleteCrd(client, crdName);
+            CrdUtils.deleteCrd(client, crdName);
         }
     }
 

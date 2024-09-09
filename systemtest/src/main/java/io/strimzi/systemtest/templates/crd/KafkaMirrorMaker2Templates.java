@@ -16,8 +16,8 @@ import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpecBuild
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.storage.TestStorage;
+import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
-import io.strimzi.test.TestUtils;
 
 public class KafkaMirrorMaker2Templates {
 
@@ -66,7 +66,7 @@ public class KafkaMirrorMaker2Templates {
     }
 
     public static ConfigMap mirrorMaker2MetricsConfigMap(String namespaceName, String kafkaMirrorMaker2Name) {
-        return new ConfigMapBuilder(TestUtils.configMapFromYaml(TestConstants.PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG, "mirror-maker-2-metrics"))
+        return new ConfigMapBuilder(FileUtils.extractConfigMapFromYAMLWithResources(TestConstants.PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG, "mirror-maker-2-metrics"))
             .editOrNewMetadata()
                 .withNamespace(namespaceName)
                 .withName(getConfigMapName(kafkaMirrorMaker2Name))

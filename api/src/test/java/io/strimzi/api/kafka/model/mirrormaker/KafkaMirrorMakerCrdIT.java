@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.AbstractCrdIT;
+import io.strimzi.test.CrdUtils;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -84,14 +85,14 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
     @BeforeAll
     void setupEnvironment() {
         client = new KubernetesClientBuilder().withConfig(new ConfigBuilder().withNamespace(NAMESPACE).build()).build();
-        TestUtils.createCrd(client, KafkaMirrorMaker.CRD_NAME, TestUtils.CRD_KAFKA_MIRROR_MAKER);
+        CrdUtils.createCrd(client, KafkaMirrorMaker.CRD_NAME, CrdUtils.CRD_KAFKA_MIRROR_MAKER);
         TestUtils.createNamespace(client, NAMESPACE);
     }
 
     @SuppressWarnings("deprecation") // Kafka Mirror Maker is deprecated
     @AfterAll
     void teardownEnvironment() {
-        TestUtils.deleteCrd(client, KafkaMirrorMaker.CRD_NAME);
+        CrdUtils.deleteCrd(client, KafkaMirrorMaker.CRD_NAME);
         TestUtils.deleteNamespace(client, NAMESPACE);
         client.close();
     }

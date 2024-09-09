@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2List;
-import io.strimzi.test.TestUtils;
+import io.strimzi.test.CrdUtils;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
@@ -35,7 +35,7 @@ public class KafkaMirrorMaker2CrdOperatorIT extends AbstractCustomResourceOperat
 
     @Override
     protected String getCrd() {
-        return TestUtils.CRD_KAFKA_MIRROR_MAKER_2;
+        return CrdUtils.CRD_KAFKA_MIRROR_MAKER_2;
     }
 
     @Override

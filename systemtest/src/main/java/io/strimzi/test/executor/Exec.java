@@ -45,49 +45,64 @@ public class Exec {
     private static final int MAXIMUM_EXEC_LOG_CHARACTER_SIZE = Integer.parseInt(System.getenv().getOrDefault("STRIMZI_EXEC_MAX_LOG_OUTPUT_CHARACTERS", "20000"));
     private static final Object LOCK = new Object();
 
-    public Process process;
+    private Process process;
     private String stdOut;
     private String stdErr;
     private StreamGobbler stdOutReader;
     private StreamGobbler stdErrReader;
     private Path logPath;
-    private boolean appendLineSeparator;
+    private final boolean appendLineSeparator;
 
+    /**
+     * Constructor
+     */
     public Exec() {
         this.appendLineSeparator = true;
     }
 
+    /**
+     * Constructor
+     *
+     * @param logPath   Path where the log should be stored
+     */
     public Exec(Path logPath) {
         this.appendLineSeparator = true;
         this.logPath = logPath;
     }
 
+    /**
+     * Constructor
+     *
+     * @param appendLineSeparator   Indicates whether line separator should be appended or not
+     */
     public Exec(boolean appendLineSeparator) {
         this.appendLineSeparator = appendLineSeparator;
     }
 
     /**
-     * Getter for stdOutput
-     *
-     * @return string stdOut
+     * @return  Standard output of the command
      */
     public String out() {
         return stdOut;
     }
 
     /**
-     * Getter for stdErrorOutput
-     *
-     * @return string stdErr
+     * @return  Error output of the command
      */
     public String err() {
         return stdErr;
     }
 
+    /**
+     * @return  Indicates whether the command is running or not
+     */
     public boolean isRunning() {
         return process.isAlive();
     }
 
+    /**
+     * @return  The return code of the command or -1 if it is still running
+     */
     public int getRetCode() {
         LOGGER.info("Process: {}", process);
         if (isRunning()) {
@@ -97,12 +112,12 @@ public class Exec {
         }
     }
 
-
     /**
      * Method executes external command
      *
-     * @param command arguments for command
-     * @return execution results
+     * @param command   The command and its arguments
+     *
+     * @return Result of the execution
      */
     public static ExecResult exec(String... command) {
         return exec(Arrays.asList(command));
@@ -111,8 +126,10 @@ public class Exec {
     /**
      * Method executes external command
      *
-     * @param command arguments for command
-     * @return execution results
+     * @param level     Output log level
+     * @param command   The command and its arguments
+     *
+     * @return Result of the execution
      */
     public static ExecResult exec(Level level, String... command) {
         List<String> commands = new ArrayList<>(Arrays.asList(command));
@@ -122,8 +139,9 @@ public class Exec {
     /**
      * Method executes external command
      *
-     * @param command arguments for command
-     * @return execution results
+     * @param command   The list with command and its arguments
+     *
+     * @return Result of the execution
      */
     public static ExecResult exec(List<String> command) {
         return exec(null, command, 0, Level.DEBUG);
@@ -132,8 +150,10 @@ public class Exec {
     /**
      * Method executes external command
      *
-     * @param command arguments for command
-     * @return execution results
+     * @param input     The input that will be passed to the command
+     * @param command   The list with command and its arguments
+     *
+     * @return Result of the execution
      */
     public static ExecResult exec(String input, List<String> command) {
         return exec(input, command, 0, Level.DEBUG);
@@ -141,10 +161,13 @@ public class Exec {
 
     /**
      * Method executes external command
-     * @param command arguments for command
-     * @param timeout timeout for execution
-     * @param logLevel log output level
-     * @return execution results
+     *
+     * @param input     The input that will be passed to the command
+     * @param command   The list with command and its arguments
+     * @param timeout   Timeout for the execution after which it will be killed
+     * @param logLevel  Output log level
+     *
+     * @return Result of the execution
      */
     public static ExecResult exec(String input, List<String> command, int timeout, Level logLevel) {
         return exec(input, command, timeout, logLevel, true);
@@ -152,11 +175,14 @@ public class Exec {
 
     /**
      * Method executes external command
-     * @param command arguments for command
-     * @param timeout timeout for execution
-     * @param logLevel log output level
-     * @param throwErrors look for errors in output and throws exception if true
-     * @return execution results
+     *
+     * @param input         The input that will be passed to the command
+     * @param command       The list with command and its arguments
+     * @param timeout       Timeout for the execution after which it will be killed
+     * @param logLevel      Output log level
+     * @param throwErrors   Enabled the check for errors which will throw an exception if some error is found
+     *
+     * @return Result of the execution
      */
     public static ExecResult exec(String input, List<String> command, int timeout, Level logLevel, boolean throwErrors) {
         int ret = 1;
@@ -237,12 +263,15 @@ public class Exec {
     /**
      * Method executes external command
      *
-     * @param commands arguments for command
-     * @param timeoutMs  timeout in ms for kill
-     * @return returns ecode of execution
-     * @throws IOException When writing/closing the OutputStreams or starting the process
-     * @throws InterruptedException In the waitFor method, if the wait is interrupted
-     * @throws ExecutionException When getting the output from std
+     * @param input     The input that will be passed to the command
+     * @param commands  The list with command and its arguments
+     * @param timeoutMs Timeout for the command, after which it will be killed
+     *
+     * @return returns Return code of the execution
+     *
+     * @throws IOException              Is thrown when some IO operation fails
+     * @throws InterruptedException     Is thrown when the execution is interrupted
+     * @throws ExecutionException       Is thrown when the execution fails
      */
     public int execute(String input, List<String> commands, long timeoutMs) throws IOException, InterruptedException, ExecutionException {
         LOGGER.trace("Running command - " + join(" ", commands.toArray(new String[0])));
@@ -291,7 +320,7 @@ public class Exec {
     }
 
     /**
-     * Method kills process
+     * Stops the command execution
      */
     public void stop() {
         process.destroyForcibly();
@@ -300,9 +329,7 @@ public class Exec {
     }
 
     /**
-     * Get standard output of execution
-     *
-     * @return future string output
+     * @return Future with the standard output of the execution
      */
     private Future<String> readStdOutput() {
         stdOutReader = new StreamGobbler(process.getInputStream());
@@ -310,9 +337,7 @@ public class Exec {
     }
 
     /**
-     * Get standard error output of execution
-     *
-     * @return future string error output
+     * @return Future with the error output of the execution
      */
     private Future<String> readStdError() {
         stdErrReader = new StreamGobbler(process.getErrorStream());
@@ -335,9 +360,11 @@ public class Exec {
     }
 
     /**
-     * Check if command is executable
-     * @param cmd command
-     * @return true.false
+     * Check if a command is executable
+     *
+     * @param cmd   The command that should be checked
+     *
+     * @return Returns true if the command can be executed. False otherwise.
      */
     public static boolean isExecutableOnPath(String cmd) {
         var osName = System.getProperty("os.name");
@@ -355,7 +382,9 @@ public class Exec {
 
     /**
      * This method check the size of executor output log and cut it if it's too long.
-     * @param log executor log
+     *
+     * @param log The log of the executor
+     *
      * @return updated log if size is too big
      */
     public static String cutExecutorLog(String log) {

@@ -36,7 +36,6 @@ import static io.strimzi.operator.cluster.model.EntityTopicOperator.CRUISE_CONTR
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.TOPIC_OPERATOR_PASSWORD_KEY;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.TOPIC_OPERATOR_USERNAME;
 import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties.TOPIC_OPERATOR_USERNAME_KEY;
-import static io.strimzi.test.TestUtils.map;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -250,7 +249,7 @@ public class EntityTopicOperatorTest {
         assertThat(container.getPorts().get(0).getContainerPort(), is(EntityTopicOperator.HEALTHCHECK_PORT));
         assertThat(container.getPorts().get(0).getName(), is(EntityTopicOperator.HEALTHCHECK_PORT_NAME));
         assertThat(container.getPorts().get(0).getProtocol(), is("TCP"));
-        assertThat(EntityOperatorTest.volumeMounts(container.getVolumeMounts()), is(map(
+        assertThat(EntityOperatorTest.volumeMounts(container.getVolumeMounts()), is(Map.of(
                 EntityTopicOperator.TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH,
                 "entity-topic-operator-metrics-and-logging", "/opt/topic-operator/custom-config/",
                 EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT,
@@ -318,7 +317,7 @@ public class EntityTopicOperatorTest {
         assertThat(entityTopicOperator.getEnvVars(), is(expectedEnvVars));
 
         Container container = entityTopicOperator.createContainer(null);
-        assertThat(EntityOperatorTest.volumeMounts(container.getVolumeMounts()), is(map(
+        assertThat(EntityOperatorTest.volumeMounts(container.getVolumeMounts()), is(Map.of(
             EntityTopicOperator.TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH,
             "entity-topic-operator-metrics-and-logging", "/opt/topic-operator/custom-config/",
             EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT,

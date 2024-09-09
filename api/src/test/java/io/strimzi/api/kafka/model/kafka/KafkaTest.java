@@ -12,7 +12,7 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerAddressBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatusBuilder;
-import io.strimzi.test.TestUtils;
+import io.strimzi.test.ReadWriteUtils;
 import org.junit.jupiter.api.Test;
 
 import java.net.URISyntaxException;
@@ -80,7 +80,7 @@ public class KafkaTest extends AbstractCrdTest<Kafka> {
                 .build();
 
         String path = Objects.requireNonNull(this.getClass().getResource("Kafka-ca-ints.yaml")).toURI().getPath();
-        assertThat(TestUtils.toYamlString(kafka), is(TestUtils.getFileAsString(path)));
+        assertThat(ReadWriteUtils.writeObjectToYamlString(kafka), is(ReadWriteUtils.readFile(path)));
     }
 
     @Test
@@ -121,12 +121,12 @@ public class KafkaTest extends AbstractCrdTest<Kafka> {
                 .build();
 
         String path = Objects.requireNonNull(this.getClass().getResource("Kafka-new-listener-serialization.yaml")).toURI().getPath();
-        assertThat(TestUtils.toYamlString(kafka), is(TestUtils.getFileAsString(path)));
+        assertThat(ReadWriteUtils.writeObjectToYamlString(kafka), is(ReadWriteUtils.readFile(path)));
     }
 
     @Test
     public void testListeners()    {
-        Kafka model = TestUtils.fromYaml("Kafka" + ".yaml", Kafka.class);
+        Kafka model = ReadWriteUtils.readObjectFromYamlFileInResources("Kafka" + ".yaml", Kafka.class);
 
         assertThat(model.getSpec().getKafka().getListeners(), is(notNullValue()));
         assertThat(model.getSpec().getKafka().getListeners().size(), is(2));
@@ -188,12 +188,12 @@ public class KafkaTest extends AbstractCrdTest<Kafka> {
                 .build();
 
         String path = Objects.requireNonNull(this.getClass().getResource("Kafka-listener-name-and-status.yaml")).toURI().getPath();
-        assertThat(TestUtils.toYamlString(kafka), is(TestUtils.getFileAsString(path)));
+        assertThat(ReadWriteUtils.writeObjectToYamlString(kafka), is(ReadWriteUtils.readFile(path)));
     }
 
     @Test
     public void testListenersTypeAndName()    {
-        Kafka model = TestUtils.fromYaml("Kafka-listener-name-and-status" + ".yaml", Kafka.class);
+        Kafka model = ReadWriteUtils.readObjectFromYamlFileInResources("Kafka-listener-name-and-status" + ".yaml", Kafka.class);
 
         assertThat(model.getStatus().getListeners(), is(notNullValue()));
         assertThat(model.getStatus().getListeners().size(), is(2));

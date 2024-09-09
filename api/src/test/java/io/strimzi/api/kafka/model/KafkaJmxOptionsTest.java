@@ -6,7 +6,7 @@ package io.strimzi.api.kafka.model;
 
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxAuthenticationPassword;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptions;
-import io.strimzi.test.TestUtils;
+import io.strimzi.test.ReadWriteUtils;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
@@ -20,7 +20,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class KafkaJmxOptionsTest {
     @Test
     public void testAuthentication() {
-        KafkaJmxOptions opts = TestUtils.fromYamlString(
+        KafkaJmxOptions opts = ReadWriteUtils.readObjectFromYamlString(
                 "authentication:\n" +
                 "  type: password",
                 KafkaJmxOptions.class);
@@ -31,7 +31,7 @@ public class KafkaJmxOptionsTest {
 
     @Test
     public void testNoJmxOpts() {
-        KafkaJmxOptions opts = TestUtils.fromYamlString("{}", KafkaJmxOptions.class);
+        KafkaJmxOptions opts = ReadWriteUtils.readObjectFromYamlString("{}", KafkaJmxOptions.class);
 
         assertThat(opts.getAuthentication(),  is(nullValue()));
         assertThat(opts.getAdditionalProperties(),  is(Collections.emptyMap()));

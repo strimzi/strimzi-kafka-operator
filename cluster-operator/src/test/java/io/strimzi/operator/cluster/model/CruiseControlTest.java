@@ -564,17 +564,17 @@ public class CruiseControlTest {
     @SuppressWarnings("MethodLength")
     @ParallelTest
     public void testTemplate() {
-        Map<String, String> depLabels = TestUtils.map("l1", "v1", "l2", "v2");
-        Map<String, String> depAnnotations = TestUtils.map("a1", "v1", "a2", "v2");
+        Map<String, String> depLabels = TestUtils.modifiableMap("l1", "v1", "l2", "v2");
+        Map<String, String> depAnnotations = Map.of("a1", "v1", "a2", "v2");
 
-        Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
-        Map<String, String> podAnnotations = TestUtils.map("a3", "v3", "a4", "v4");
+        Map<String, String> podLabels = TestUtils.modifiableMap("l3", "v3", "l4", "v4");
+        Map<String, String> podAnnotations = Map.of("a3", "v3", "a4", "v4");
 
-        Map<String, String> svcLabels = TestUtils.map("l5", "v5", "l6", "v6");
-        Map<String, String> svcAnnotations = TestUtils.map("a5", "v5", "a6", "v6");
+        Map<String, String> svcLabels = TestUtils.modifiableMap("l5", "v5", "l6", "v6");
+        Map<String, String> svcAnnotations = Map.of("a5", "v5", "a6", "v6");
 
-        Map<String, String> saLabels = TestUtils.map("l7", "v7", "l8", "v8");
-        Map<String, String> saAnnotations = TestUtils.map("a7", "v7", "a8", "v8");
+        Map<String, String> saLabels = Map.of("l7", "v7", "l8", "v8");
+        Map<String, String> saAnnotations = Map.of("a7", "v7", "a8", "v8");
 
         Affinity affinity = new AffinityBuilder()
                 .withNewNodeAffinity()
@@ -1183,7 +1183,7 @@ public class CruiseControlTest {
     }
 
     private Map<String, String> expectedLabels(String name) {
-        return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME,
+        return TestUtils.modifiableMap(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME,
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND,
                 Labels.STRIMZI_NAME_LABEL, name,

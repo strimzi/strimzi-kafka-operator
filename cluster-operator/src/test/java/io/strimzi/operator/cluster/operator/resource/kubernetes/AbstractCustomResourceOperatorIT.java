@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ConditionBuilder;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.test.CrdUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -80,14 +81,14 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
         LOGGER.info("Created namespace");
 
         LOGGER.info("Creating CRD");
-        TestUtils.createCrd(client, getCrdName(), getCrd());
+        CrdUtils.createCrd(client, getCrdName(), getCrd());
         LOGGER.info("Created CRD");
     }
 
     @AfterAll
     public void after() {
         LOGGER.info("Deleting CRD");
-        TestUtils.deleteCrd(client, getCrdName());
+        CrdUtils.deleteCrd(client, getCrdName());
         TestUtils.deleteNamespace(client, getNamespace());
 
         client.close();

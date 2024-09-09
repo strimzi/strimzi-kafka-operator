@@ -50,6 +50,7 @@ import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider;
+import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
@@ -104,7 +105,7 @@ public class KafkaMirrorMakerClusterTest {
     private final KafkaMirrorMakerProducerSpec producer = new KafkaMirrorMakerProducerSpecBuilder()
             .withBootstrapServers(producerBootstrapServers)
             .withAbortOnSendFailure(abortOnSendFailure)
-            .withConfig((Map<String, Object>) TestUtils.fromYamlString(producerConfigurationJson, Map.class))
+            .withConfig((Map<String, Object>) ReadWriteUtils.readObjectFromYamlString(producerConfigurationJson, Map.class))
             .build();
 
     private final KafkaMirrorMakerConsumerSpec consumer = new KafkaMirrorMakerConsumerSpecBuilder()
@@ -112,7 +113,7 @@ public class KafkaMirrorMakerClusterTest {
             .withGroupId(groupId)
             .withNumStreams(numStreams)
             .withOffsetCommitInterval(offsetCommitInterval)
-            .withConfig((Map<String, Object>) TestUtils.fromYamlString(consumerConfigurationJson, Map.class))
+            .withConfig((Map<String, Object>) ReadWriteUtils.readObjectFromYamlString(consumerConfigurationJson, Map.class))
             .build();
 
     private final KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(ResourceUtils.createEmptyKafkaMirrorMaker(namespace, cluster))
@@ -144,7 +145,7 @@ public class KafkaMirrorMakerClusterTest {
     }
 
     private Map<String, String> expectedLabels(String name)    {
-        return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
+        return Map.of(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND,
                 Labels.STRIMZI_NAME_LABEL, name,
@@ -563,21 +564,21 @@ public class KafkaMirrorMakerClusterTest {
 
     @ParallelTest
     public void testTemplate() {
-        Map<String, String> depLabels = TestUtils.map("l1", "v1", "l2", "v2",
+        Map<String, String> depLabels = Map.of("l1", "v1", "l2", "v2",
                 Labels.KUBERNETES_PART_OF_LABEL, "custom-part",
                 Labels.KUBERNETES_MANAGED_BY_LABEL, "custom-managed-by");
         Map<String, String> expectedDepLabels = new HashMap<>(depLabels);
         expectedDepLabels.remove(Labels.KUBERNETES_MANAGED_BY_LABEL);
-        Map<String, String> depAnots = TestUtils.map("a1", "v1", "a2", "v2");
+        Map<String, String> depAnots = Map.of("a1", "v1", "a2", "v2");
 
-        Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
-        Map<String, String> podAnots = TestUtils.map("a3", "v3", "a4", "v4");
+        Map<String, String> podLabels = Map.of("l3", "v3", "l4", "v4");
+        Map<String, String> podAnots = Map.of("a3", "v3", "a4", "v4");
 
-        Map<String, String> pdbLabels = TestUtils.map("l5", "v5", "l6", "v6");
-        Map<String, String> pdbAnots = TestUtils.map("a5", "v5", "a6", "v6");
+        Map<String, String> pdbLabels = Map.of("l5", "v5", "l6", "v6");
+        Map<String, String> pdbAnots = Map.of("a5", "v5", "a6", "v6");
 
-        Map<String, String> saLabels = TestUtils.map("l7", "v7", "l8", "v8");
-        Map<String, String> saAnots = TestUtils.map("a7", "v7", "a8", "v8");
+        Map<String, String> saLabels = Map.of("l7", "v7", "l8", "v8");
+        Map<String, String> saAnots = Map.of("a7", "v7", "a8", "v8");
 
         HostAlias hostAlias1 = new HostAliasBuilder()
                 .withHostnames("my-host-1", "my-host-2")

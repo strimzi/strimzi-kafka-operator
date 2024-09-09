@@ -37,6 +37,7 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.test.CrdUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
@@ -87,10 +88,10 @@ public class StrimziPodSetControllerIT {
         LOGGER.info("Created namespace");
 
         LOGGER.info("Creating CRDs");
-        TestUtils.createCrd(client, Kafka.CRD_NAME, TestUtils.CRD_KAFKA);
-        TestUtils.createCrd(client, KafkaConnect.CRD_NAME, TestUtils.CRD_KAFKA_CONNECT);
-        TestUtils.createCrd(client, KafkaMirrorMaker2.CRD_NAME, TestUtils.CRD_KAFKA_MIRROR_MAKER_2);
-        TestUtils.createCrd(client, StrimziPodSet.CRD_NAME, TestUtils.CRD_STRIMZI_POD_SET);
+        CrdUtils.createCrd(client, Kafka.CRD_NAME, CrdUtils.CRD_KAFKA);
+        CrdUtils.createCrd(client, KafkaConnect.CRD_NAME, CrdUtils.CRD_KAFKA_CONNECT);
+        CrdUtils.createCrd(client, KafkaMirrorMaker2.CRD_NAME, CrdUtils.CRD_KAFKA_MIRROR_MAKER_2);
+        CrdUtils.createCrd(client, StrimziPodSet.CRD_NAME, CrdUtils.CRD_STRIMZI_POD_SET);
         LOGGER.info("Created CRDs");
 
         vertx = Vertx.vertx();
@@ -113,10 +114,10 @@ public class StrimziPodSetControllerIT {
         kafkaOp().inNamespace(NAMESPACE).withName(KAFKA_NAME).delete();
         kafkaOp().inNamespace(NAMESPACE).withName(OTHER_KAFKA_NAME).delete();
 
-        TestUtils.deleteCrd(client, Kafka.CRD_NAME);
-        TestUtils.deleteCrd(client, KafkaConnect.CRD_NAME);
-        TestUtils.deleteCrd(client, KafkaMirrorMaker2.CRD_NAME);
-        TestUtils.deleteCrd(client, StrimziPodSet.CRD_NAME);
+        CrdUtils.deleteCrd(client, Kafka.CRD_NAME);
+        CrdUtils.deleteCrd(client, KafkaConnect.CRD_NAME);
+        CrdUtils.deleteCrd(client, KafkaMirrorMaker2.CRD_NAME);
+        CrdUtils.deleteCrd(client, StrimziPodSet.CRD_NAME);
 
         TestUtils.deleteNamespace(client, NAMESPACE);
 

@@ -9,7 +9,7 @@ import io.strimzi.api.kafka.model.common.InlineLogging;
 import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerList;
-import io.strimzi.test.TestUtils;
+import io.strimzi.test.CrdUtils;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
@@ -36,7 +36,7 @@ public class KafkaMirrorMakerCrdOperatorIT extends AbstractCustomResourceOperato
 
     @Override
     protected String getCrd() {
-        return TestUtils.CRD_KAFKA_MIRROR_MAKER;
+        return CrdUtils.CRD_KAFKA_MIRROR_MAKER;
     }
 
     @Override

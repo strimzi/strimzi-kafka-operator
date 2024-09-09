@@ -22,6 +22,7 @@ import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsProvider;
 import io.strimzi.operator.topic.model.ReconcilableTopic;
 import io.strimzi.operator.topic.model.Results;
+import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -61,15 +62,15 @@ public class CruiseControlHandlerTest {
             new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
         
         serverPort = TestUtils.getFreePort();
-        File tlsKeyFile = TestUtils.tempFile(CruiseControlHandlerTest.class.getSimpleName(), ".key");
-        tlsCrtFile = TestUtils.tempFile(CruiseControlHandlerTest.class.getSimpleName(), ".crt");
+        File tlsKeyFile = ReadWriteUtils.tempFile(CruiseControlHandlerTest.class.getSimpleName(), ".key");
+        tlsCrtFile = ReadWriteUtils.tempFile(CruiseControlHandlerTest.class.getSimpleName(), ".crt");
         new MockCertManager().generateSelfSignedCert(tlsKeyFile, tlsCrtFile,
             new Subject.Builder().withCommonName("Trusted Test CA").build(), 365);
-        apiUserFile = TestUtils.tempFile(CruiseControlHandlerTest.class.getSimpleName(), ".username");
+        apiUserFile = ReadWriteUtils.tempFile(CruiseControlHandlerTest.class.getSimpleName(), ".username");
         try (PrintWriter out = new PrintWriter(apiUserFile.getAbsolutePath())) {
             out.print("topic-operator-admin");
         }
-        apiPassFile = TestUtils.tempFile(CruiseControlHandlerTest.class.getSimpleName(), ".password");
+        apiPassFile = ReadWriteUtils.tempFile(CruiseControlHandlerTest.class.getSimpleName(), ".password");
         try (PrintWriter out = new PrintWriter(apiPassFile.getAbsolutePath())) {
             out.print("changeit");
         }

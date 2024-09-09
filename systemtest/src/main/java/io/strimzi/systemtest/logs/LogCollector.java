@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-import static io.strimzi.test.TestUtils.writeFile;
+import static io.strimzi.test.ReadWriteUtils.writeFile;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 /**

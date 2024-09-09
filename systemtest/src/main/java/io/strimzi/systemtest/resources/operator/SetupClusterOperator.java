@@ -39,6 +39,7 @@ import io.strimzi.systemtest.resources.operator.specific.OlmResource;
 import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.OlmUtils;
+import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -579,7 +580,7 @@ public class SetupClusterOperator {
 
                 switch (resourceEntry.getKey()) {
                     case TestConstants.ROLE:
-                        RoleBuilder roleBuilder = new RoleBuilder(TestUtils.configFromYaml(yamlPath, Role.class))
+                        RoleBuilder roleBuilder = new RoleBuilder(ReadWriteUtils.readObjectFromYamlFilepath(yamlPath, Role.class))
                             .editMetadata()
                                 .withName(resourceName)
                             .endMetadata()
@@ -587,10 +588,10 @@ public class SetupClusterOperator {
                                 .withResourceNames(leaseEnvVar.getValue())
                             .endRule();
 
-                        tmpFileContent = TestUtils.toYamlString(roleBuilder.build());
+                        tmpFileContent = ReadWriteUtils.writeObjectToYamlString(roleBuilder.build());
                         break;
                     case TestConstants.CLUSTER_ROLE:
-                        ClusterRoleBuilder clusterRoleBuilder = new ClusterRoleBuilder(TestUtils.configFromYaml(yamlPath, ClusterRole.class))
+                        ClusterRoleBuilder clusterRoleBuilder = new ClusterRoleBuilder(ReadWriteUtils.readObjectFromYamlFilepath(yamlPath, ClusterRole.class))
                             .editMetadata()
                                 .withName(resourceName)
                             .endMetadata()
@@ -599,10 +600,10 @@ public class SetupClusterOperator {
                                 .withResourceNames(leaseEnvVar.getValue())
                             .endRule();
 
-                        tmpFileContent = TestUtils.toYamlString(clusterRoleBuilder.build());
+                        tmpFileContent = ReadWriteUtils.writeObjectToYamlString(clusterRoleBuilder.build());
                         break;
                     case TestConstants.ROLE_BINDING:
-                        RoleBindingBuilder roleBindingBuilder = new RoleBindingBuilder(TestUtils.configFromYaml(yamlPath, RoleBinding.class))
+                        RoleBindingBuilder roleBindingBuilder = new RoleBindingBuilder(ReadWriteUtils.readObjectFromYamlFilepath(yamlPath, RoleBinding.class))
                             .editMetadata()
                                 .withName(resourceName)
                             .endMetadata()
@@ -610,13 +611,13 @@ public class SetupClusterOperator {
                                 .withName(resourceName)
                             .endRoleRef();
 
-                        tmpFileContent = TestUtils.toYamlString(roleBindingBuilder.build());
+                        tmpFileContent = ReadWriteUtils.writeObjectToYamlString(roleBindingBuilder.build());
                         break;
                     default:
                         return yamlPath;
                 }
 
-                TestUtils.writeFile(tmpFile.toPath(), tmpFileContent);
+                ReadWriteUtils.writeFile(tmpFile.toPath(), tmpFileContent);
                 return tmpFile.getAbsolutePath();
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -649,7 +650,7 @@ public class SetupClusterOperator {
             switch (resourceType) {
                 case TestConstants.ROLE:
                     if (!this.isRolesAndBindingsManagedByAnUser()) {
-                        Role role = TestUtils.configFromYaml(createFile, Role.class);
+                        Role role = ReadWriteUtils.readObjectFromYamlFilepath(createFile, Role.class);
                         ResourceManager.getInstance().createResourceWithWait(new RoleBuilder(role)
                             .editMetadata()
                                 .withNamespace(namespace)
@@ -659,12 +660,12 @@ public class SetupClusterOperator {
                     break;
                 case TestConstants.CLUSTER_ROLE:
                     if (!this.isRolesAndBindingsManagedByAnUser()) {
-                        ClusterRole clusterRole = TestUtils.configFromYaml(changeLeaseNameInResourceIfNeeded(createFile.getAbsolutePath()), ClusterRole.class);
+                        ClusterRole clusterRole = ReadWriteUtils.readObjectFromYamlFilepath(changeLeaseNameInResourceIfNeeded(createFile.getAbsolutePath()), ClusterRole.class);
                         ResourceManager.getInstance().createResourceWithWait(clusterRole);
                     }
                     break;
                 case TestConstants.SERVICE_ACCOUNT:
-                    ServiceAccount serviceAccount = TestUtils.configFromYaml(createFile, ServiceAccount.class);
+                    ServiceAccount serviceAccount = ReadWriteUtils.readObjectFromYamlFilepath(createFile, ServiceAccount.class);
                     ResourceManager.getInstance().createResourceWithWait(new ServiceAccountBuilder(serviceAccount)
                         .editMetadata()
                             .withNamespace(namespace)
@@ -672,7 +673,7 @@ public class SetupClusterOperator {
                         .build());
                     break;
                 case TestConstants.CONFIG_MAP:
-                    ConfigMap configMap = TestUtils.configFromYaml(createFile, ConfigMap.class);
+                    ConfigMap configMap = ReadWriteUtils.readObjectFromYamlFilepath(createFile, ConfigMap.class);
                     ResourceManager.getInstance().createResourceWithWait(new ConfigMapBuilder(configMap)
                         .editMetadata()
                             .withNamespace(namespace)
@@ -692,7 +693,7 @@ public class SetupClusterOperator {
                             .build());
                     break;
                 case TestConstants.CUSTOM_RESOURCE_DEFINITION_SHORT:
-                    CustomResourceDefinition customResourceDefinition = TestUtils.configFromYaml(createFile, CustomResourceDefinition.class);
+                    CustomResourceDefinition customResourceDefinition = ReadWriteUtils.readObjectFromYamlFilepath(createFile, CustomResourceDefinition.class);
                     ResourceManager.getInstance().createResourceWithWait(customResourceDefinition);
                     break;
                 default:
@@ -714,7 +715,7 @@ public class SetupClusterOperator {
                 fileNameArr[1] = "Role";
                 final String changeFileName = Arrays.stream(fileNameArr).map(item -> "-" + item).collect(Collectors.joining()).substring(1);
                 File tmpFile = Files.createTempFile(changeFileName.replace(".yaml", ""), ".yaml").toFile();
-                TestUtils.writeFile(tmpFile.toPath(), TestUtils.readFile(oldFile).replace("ClusterRole", "Role"));
+                ReadWriteUtils.writeFile(tmpFile.toPath(), ReadWriteUtils.readFile(oldFile).replace("ClusterRole", "Role"));
                 LOGGER.info("Replaced ClusterRole for Role in {}", oldFile.getAbsolutePath());
 
                 return tmpFile;

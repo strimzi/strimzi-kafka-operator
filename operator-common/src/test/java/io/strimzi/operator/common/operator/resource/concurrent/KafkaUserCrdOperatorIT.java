@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.api.kafka.model.user.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.user.KafkaUserList;
-import io.strimzi.test.TestUtils;
+import io.strimzi.test.CrdUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -33,7 +33,7 @@ public class KafkaUserCrdOperatorIT extends AbstractCustomResourceOperatorIT<Kub
 
     @Override
     protected String getCrd() {
-        return TestUtils.CRD_KAFKA_USER;
+        return CrdUtils.CRD_KAFKA_USER;
     }
 
     @Override

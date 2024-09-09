@@ -64,10 +64,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static io.strimzi.operator.cluster.model.jmx.JmxModel.JMX_PORT;
 import static io.strimzi.operator.cluster.model.jmx.JmxModel.JMX_PORT_NAME;
-import static io.strimzi.test.TestUtils.set;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
@@ -405,13 +405,13 @@ public class ZookeeperClusterTest {
     @ParallelTest
     public void testGenerateBrokerSecret() throws CertificateParsingException {
         Secret secret = generateCertificatesSecret();
-        assertThat(secret.getData().keySet(), is(set(
+        assertThat(secret.getData().keySet(), is(Set.of(
                 "foo-zookeeper-0.crt",  "foo-zookeeper-0.key",
                 "foo-zookeeper-1.crt", "foo-zookeeper-1.key",
                 "foo-zookeeper-2.crt", "foo-zookeeper-2.key")));
         X509Certificate cert = Ca.cert(secret, "foo-zookeeper-0.crt");
         assertThat(cert.getSubjectX500Principal().getName(), is("CN=foo-zookeeper,O=io.strimzi"));
-        assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(set(
+        assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(Set.of(
                 asList(2, "foo-zookeeper-0"),
                 asList(2, "foo-zookeeper-0.foo-zookeeper-nodes.test.svc"),
                 asList(2, "foo-zookeeper-0.foo-zookeeper-nodes.test.svc.cluster.local"),
@@ -427,17 +427,17 @@ public class ZookeeperClusterTest {
 
     @ParallelTest
     public void testTemplate() {
-        Map<String, String> svcLabels = TestUtils.map("l5", "v5", "l6", "v6");
-        Map<String, String> svcAnnotations = TestUtils.map("a5", "v5", "a6", "v6");
+        Map<String, String> svcLabels = Map.of("l5", "v5", "l6", "v6");
+        Map<String, String> svcAnnotations = Map.of("a5", "v5", "a6", "v6");
 
-        Map<String, String> hSvcLabels = TestUtils.map("l7", "v7", "l8", "v8");
-        Map<String, String> hSvcAnnotations = TestUtils.map("a7", "v7", "a8", "v8");
+        Map<String, String> hSvcLabels = Map.of("l7", "v7", "l8", "v8");
+        Map<String, String> hSvcAnnotations = Map.of("a7", "v7", "a8", "v8");
 
-        Map<String, String> pdbLabels = TestUtils.map("l9", "v9", "l10", "v10");
-        Map<String, String> pdbAnnotations = TestUtils.map("a9", "v9", "a10", "v10");
+        Map<String, String> pdbLabels = Map.of("l9", "v9", "l10", "v10");
+        Map<String, String> pdbAnnotations = Map.of("a9", "v9", "a10", "v10");
 
-        Map<String, String> saLabels = TestUtils.map("l11", "v11", "l12", "v12");
-        Map<String, String> saAnnotations = TestUtils.map("a11", "v11", "a12", "v12");
+        Map<String, String> saLabels = Map.of("l11", "v11", "l12", "v12");
+        Map<String, String> saAnnotations = Map.of("a11", "v11", "a12", "v12");
 
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -1009,8 +1009,8 @@ public class ZookeeperClusterTest {
 
     @ParallelTest
     public void testCustomizedPodDisruptionBudget()   {
-        Map<String, String> pdbLabels = TestUtils.map("l1", "v1", "l2", "v2");
-        Map<String, String> pdbAnnos = TestUtils.map("a1", "v1", "a2", "v2");
+        Map<String, String> pdbLabels = Map.of("l1", "v1", "l2", "v2");
+        Map<String, String> pdbAnnos = Map.of("a1", "v1", "a2", "v2");
 
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()

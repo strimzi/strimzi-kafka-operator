@@ -28,7 +28,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.platform.KubernetesVersion;
-import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube3.MockKube3;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -49,6 +48,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonMap;
@@ -166,7 +166,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                 .withNewMetadata()
                     .withName(CLUSTER_NAME)
                     .withNamespace(namespace)
-                    .withLabels(TestUtils.map("foo", "bar"))
+                    .withLabels(Map.of("foo", "bar"))
                 .endMetadata()
                 .withNewSpec()
                     .withReplicas(REPLICAS)
@@ -197,7 +197,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                 .withNewMetadata()
                     .withName(CLUSTER_NAME)
                     .withNamespace(namespace)
-                    .withLabels(TestUtils.map("foo", "bar"))
+                    .withLabels(Map.of("foo", "bar"))
                     .withAnnotations(singletonMap("strimzi.io/pause-reconciliation", "true"))
                 .endMetadata()
                 .withNewSpec()

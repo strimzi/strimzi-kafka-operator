@@ -322,7 +322,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockCmOps.get(kbNamespace, KafkaBridgeResources.metricsAndLogConfigMapName(kbName))).thenReturn(metricsCm);
 
         // Mock CM patch
-        Set<String> metricsCms = TestUtils.set();
+        Set<String> metricsCms = TestUtils.modifiableSet();
         doAnswer(invocation -> {
             metricsCms.add(invocation.getArgument(1));
             return Future.succeededFuture();

@@ -47,7 +47,7 @@ import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.platform.KubernetesVersion;
-import io.strimzi.test.TestUtils;
+import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.mockkube3.MockKube3;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -78,9 +78,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -187,7 +185,7 @@ public class ConnectorMockTest {
 
         setupMockConnectAPI();
 
-        ClusterOperatorConfig config = ClusterOperatorConfig.buildFromMap(map(
+        ClusterOperatorConfig config = ClusterOperatorConfig.buildFromMap(Map.of(
             ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString(),
             ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString(),
             ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString(),
@@ -268,10 +266,10 @@ public class ConnectorMockTest {
             if (connectorStatus == null) {
                 return Future.failedFuture(new ConnectRestException("GET", String.format("/connectors/%s", connectorName), 404, "Not Found", ""));
             }
-            return Future.succeededFuture(TestUtils.map(
+            return Future.succeededFuture(Map.of(
                     "name", connectorName,
                     "config", connectorStatus.config,
-                    "tasks", emptyMap()));
+                    "tasks", Map.of()));
         });
         when(api.createOrUpdatePutRequest(any(), any(), anyInt(), anyString(), any())).thenAnswer(invocation -> {
             LOGGER.info((String) invocation.getArgument(1) + invocation.getArgument(2) + invocation.getArgument(3) + invocation.getArgument(4));
@@ -466,7 +464,7 @@ public class ConnectorMockTest {
             Map<String, Object> connector = s.getStatus().getConnectorStatus();
             if (connector != null) {
                 @SuppressWarnings({ "rawtypes" })
-                Object connectorState = ((Map) connector.getOrDefault("connector", emptyMap())).get("state");
+                Object connectorState = ((Map) connector.getOrDefault("connector", Map.of())).get("state");
                 return connectorState instanceof String
                     && state.equals(connectorState);
             } else {
@@ -1380,7 +1378,7 @@ public class ConnectorMockTest {
                 "    level: INFO\n" +
                 "    topics: timer-topic";
 
-        KafkaConnector kcr = TestUtils.fromYamlString(yaml, KafkaConnector.class);
+        KafkaConnector kcr = ReadWriteUtils.readObjectFromYamlString(yaml, KafkaConnector.class);
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(kcr).create();
 
         waitForConnectorReady(connectorName);

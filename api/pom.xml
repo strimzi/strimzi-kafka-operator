@@ -63,11 +63,6 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-yaml</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>io.sundr</groupId>
             <artifactId>builder-annotations</artifactId>
             <scope>provided</scope>

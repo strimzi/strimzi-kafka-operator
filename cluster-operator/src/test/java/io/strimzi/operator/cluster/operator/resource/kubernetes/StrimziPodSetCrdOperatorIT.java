@@ -16,7 +16,7 @@ import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetList;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.test.TestUtils;
+import io.strimzi.test.CrdUtils;
 import io.vertx.core.Promise;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.Timeout;
@@ -55,7 +55,7 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
 
     @Override
     protected String getCrd() {
-        return TestUtils.CRD_STRIMZI_POD_SET;
+        return CrdUtils.CRD_STRIMZI_POD_SET;
     }
 
     @Override

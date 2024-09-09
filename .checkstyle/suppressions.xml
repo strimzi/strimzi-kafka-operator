@@ -39,7 +39,7 @@
     <!-- The api module is currently not ready or Javadoc checks-->
     <suppress checks="(JavadocMethod|JavadocType|JavadocVariable|MissingJavadocType|MissingJavadocMethod)" files="api[/\\]src[/\\]main[/\\]java[/\\]io[/\\]strimzi[/\\].*"/>
 
-    <!-- The test module is currently not ready or Javadoc checks-->
-    <suppress checks="(JavadocMethod|JavadocType|JavadocVariable|MissingJavadocType|MissingJavadocMethod)" files="test[/\\]src[/\\]main[/\\]java[/\\]io[/\\]strimzi[/\\].*"/>
+    <!-- The systemtest module is currently not ready or Javadoc checks-->
+    <suppress checks="(JavadocMethod|JavadocType|JavadocVariable|MissingJavadocType|MissingJavadocMethod)" files="systemtest[/\\]src[/\\]main[/\\]java[/\\]io[/\\]strimzi[/\\].*"/>
 
 </suppressions>

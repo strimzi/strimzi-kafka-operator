@@ -5,11 +5,10 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.KubernetesResource;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionSpec;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
@@ -24,7 +23,6 @@ import java.util.Stack;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.fail;
-
 
 /**
  * The purpose of this test is to check that all the resources in the
@@ -57,8 +55,7 @@ public class ExamplesTest {
 
     private void validate(File f) {
         try {
-            ObjectMapper mapper = new YAMLMapper();
-            final String content = TestUtils.readFile(f);
+            final String content = ReadWriteUtils.readFile(f);
             validate(content);
         } catch (Exception | AssertionError e) {
             throw new AssertionError("Invalid example yaml in " + f.getPath() + ": " + e.getMessage(), e);

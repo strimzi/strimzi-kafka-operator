@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.utils.specific;
 
-import io.strimzi.test.TestUtils;
+import io.strimzi.test.ReadWriteUtils;
 import io.vertx.core.http.HttpMethod;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -76,6 +76,6 @@ public class BridgeUtils {
      */
     public static String getBridgeVersion() {
         InputStream bridgeVersionInputStream = BridgeUtils.class.getResourceAsStream("/bridge.version");
-        return TestUtils.readResource(bridgeVersionInputStream).replace("\n", "");
+        return ReadWriteUtils.readInputStream(bridgeVersionInputStream).replace("\n", "");
     }
 }

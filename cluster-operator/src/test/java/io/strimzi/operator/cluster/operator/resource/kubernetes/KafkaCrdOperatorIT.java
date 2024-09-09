@@ -10,7 +10,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaList;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
-import io.strimzi.test.TestUtils;
+import io.strimzi.test.CrdUtils;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
@@ -37,7 +37,7 @@ public class KafkaCrdOperatorIT extends AbstractCustomResourceOperatorIT<Kuberne
 
     @Override
     protected String getCrd() {
-        return TestUtils.CRD_KAFKA;
+        return CrdUtils.CRD_KAFKA;
     }
 
     @Override

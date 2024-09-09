@@ -8,7 +8,6 @@ import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.OrderedProperties;
-import io.strimzi.test.TestUtils;
 import io.strimzi.test.container.StrimziKafkaCluster;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -159,7 +158,7 @@ public class KafkaConnectApiIT {
             })))
             .compose(status -> client.getConnectorConfig(Reconciliation.DUMMY_RECONCILIATION, new BackOff(10), "localhost", port, "test"))
             .onComplete(context.succeeding(config -> context.verify(() -> {
-                assertThat(config, is(TestUtils.map("connector.class", "FileStreamSource",
+                assertThat(config, is(Map.of("connector.class", "FileStreamSource",
                         "file", "/dev/null",
                         "tasks.max", "1",
                         "name", "test",

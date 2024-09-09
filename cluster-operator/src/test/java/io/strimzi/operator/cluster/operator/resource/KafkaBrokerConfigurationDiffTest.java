@@ -9,7 +9,7 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.test.TestUtils;
+import io.strimzi.test.ReadWriteUtils;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
@@ -53,7 +53,7 @@ public class KafkaBrokerConfigurationDiffTest {
 
     private String getDesiredConfiguration(List<ConfigEntry> additional) {
         try (InputStream is = getClass().getClassLoader().getResourceAsStream("desired-kafka-broker.conf")) {
-            String desiredConfigString = TestUtils.readResource(is);
+            String desiredConfigString = ReadWriteUtils.readInputStream(is);
 
             for (ConfigEntry ce : additional) {
                 desiredConfigString += "\n" + ce.name() + "=" + ce.value();
@@ -71,7 +71,7 @@ public class KafkaBrokerConfigurationDiffTest {
 
         try (InputStream is = getClass().getClassLoader().getResourceAsStream("current-kafka-broker.conf")) {
 
-            List<String> configList = Arrays.asList(TestUtils.readResource(is).split(System.getProperty("line.separator")));
+            List<String> configList = Arrays.asList(ReadWriteUtils.readInputStream(is).split(System.getProperty("line.separator")));
             configList.forEach(entry -> {
                 String[] split = entry.split("=");
                 String val = split.length == 1 ? "" : split[1];
