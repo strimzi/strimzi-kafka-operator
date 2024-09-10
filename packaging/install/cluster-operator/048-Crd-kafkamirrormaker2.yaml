@@ -2357,6 +2357,15 @@ spec:
                                 optional:
                                   type: boolean
                               description: Reference to a key in a ConfigMap.
+                          oneOf:
+                          - properties:
+                              secretKeyRef: {}
+                            required:
+                            - secretKeyRef
+                          - properties:
+                              configMapKeyRef: {}
+                            required:
+                            - configMapKeyRef
                           description: Value of the environment variable which will be passed to the Kafka Connect pods. It can be passed either as a reference to Secret or ConfigMap field. The field has to specify exactly one Secret or ConfigMap.
                       required:
                       - name
@@ -2412,6 +2421,15 @@ spec:
                             optional:
                               type: boolean
                           description: Reference to a key in a ConfigMap. Exactly one Secret or ConfigMap has to be specified.
+                      oneOf:
+                      - properties:
+                          secret: {}
+                        required:
+                        - secret
+                      - properties:
+                          configMap: {}
+                        required:
+                        - configMap
                       required:
                       - name
                     description: Makes data from a Secret or ConfigMap available in the Kafka Connect pods as volumes.
