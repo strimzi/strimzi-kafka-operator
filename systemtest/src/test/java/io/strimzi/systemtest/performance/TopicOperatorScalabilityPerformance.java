@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.performance.utils.TopicOperatorPerformanceUtils;
@@ -23,7 +23,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
-import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +30,7 @@ import java.util.Map;
 import static io.strimzi.systemtest.TestConstants.SCALABILITY;
 
 @Tag(SCALABILITY)
-public class TopicOperatorScalabilityPerformance extends TopicOperatorPerformance {
+public class TopicOperatorScalabilityPerformance extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorScalabilityPerformance.class);
 
@@ -68,17 +67,17 @@ public class TopicOperatorScalabilityPerformance extends TopicOperatorPerformanc
                 performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_IN_PROCESS_TYPE, "TOPIC-CONCURRENT");
 
                 performanceAttributes.put(PerformanceConstants.TOPIC_OPERATOR_OUT_SUCCESSFUL_KAFKA_TOPICS_CREATED_AND_MODIFIED_AND_DELETED, reconciliationTimeMs);
-                try {
-                    this.topicOperatorPerformanceReporter.logPerformanceData(this.suiteTestStorage, performanceAttributes, REPORT_DIRECTORY + "/" + PerformanceConstants.TOPIC_OPERATOR_FIXED_SIZE_OF_EVENTS_USE_CASE, ACTUAL_TIME, Environment.PERFORMANCE_DIR);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
             }
         });
     }
 
     @BeforeAll
     void setUp() {
+        this.clusterOperator = this.clusterOperator
+                .defaultInstallation()
+                .createInstallation()
+                .runInstallation();
+
         suiteTestStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
 
         resourceManager.createResourceWithWait(
