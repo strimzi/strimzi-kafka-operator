@@ -322,11 +322,18 @@ public class KafkaAutoRebalancingReconciler {
 
                                 // TODO: evaluate race condition between stop and delete (does CC stopped rebalance before we delete)
                                 return stopKafkaRebalance(kafkaRebalance)
-                                        .compose(v -> deleteKafkaRebalance(kafkaRebalance))
+                                        // getting the patched version of the KafkaRebalance (stopped by annotation) for the next deletion operation (which patches again to remove finalizer)
+                                        .compose(v -> getKafkaRebalance(kafkaCr.getMetadata().getNamespace(), kafkaCr.getMetadata().getName(), KafkaRebalanceMode.ADD_BROKERS))
+                                        .compose(stoppedKafkaRebalance -> deleteKafkaRebalance(stoppedKafkaRebalance))
                                         .compose(v -> createKafkaRebalance(kafkaCr.getMetadata().getNamespace(), kafkaCr.getMetadata().getName(), KafkaRebalanceMode.REMOVE_BROKERS, scalingNodes.blocked().stream().toList()))
                                         .compose(created -> {
                                             if (created) {
-                                                updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleDown, scalingNodes);
+                                                // if nodes blocked for scaling down are the same of the nodes that were added for scale up,
+                                                // after scaling down them, we don't need to continue the auto-rebalancing for scale up anymore
+                                                // (nodes are not there anymore!) so not queueing added nodes in the status
+                                                updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleDown,
+                                                        !scalingNodes.blocked().equals(scalingNodes.added()) ? scalingNodes :
+                                                        new ScalingNodes(scalingNodes.blocked(), Set.of()));
                                             } else {
                                                 updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.Idle, EMPTY_SCALING_NODES);
                                             }
@@ -381,41 +388,27 @@ public class KafkaAutoRebalancingReconciler {
         LOGGER.infoCr(reconciliation, "scalingDownBlockedNodes = {}", scalingDownBlockedNodes);
         LOGGER.infoCr(reconciliation, "scalingUpAddedNodes = {}", scalingUpAddedNodes);
 
-        if (kafkaAutoRebalanceStatus.getModes() == null) {
-            if (isScalingDownBlockedNodes()) {
-                newScalingDownBlockedNodes.addAll(scalingDownBlockedNodes);
-            }
-            if (isScalingUpAddedNodes()) {
-                newScalingUpAddedNodes.addAll(scalingUpAddedNodes);
-            }
-        } else {
-            for (KafkaAutoRebalanceModeBrokers modeBrokers : kafkaAutoRebalanceStatus.getModes()) {
-                switch (modeBrokers.getMode()) {
-                    case REMOVE_BROKERS:
-                        // TODO: TBD
-                        // if not empty -> update the Kafka.status.autoRebalance.modes[remove-brokers].brokers by using the full content
-                        //                 from the scalingDownBlockedNodes list which always contains the nodes involved in a scale down operation
-                        // if empty -> no further action and stay with the current Kafka.status.autoRebalance.modes[remove-brokers].brokers list
-                        if (isScalingDownBlockedNodes()) {
-                            newScalingDownBlockedNodes.addAll(scalingDownBlockedNodes);
-                        } else {
-                            newScalingDownBlockedNodes.addAll(modeBrokers.getBrokers());
-                        }
-                        break;
-                    case ADD_BROKERS:
-                        // TODO: TBD
-                        // if not empty -> update the Kafka.status.autoRebalance.modes[add-brokers].brokers by producing a consistent list
-                        //                 with its current content and what is in the scalingUpAddedNodes list
-                        // if empty -> no further action and stay with the current Kafka.status.autoRebalance.modes[add-brokers].brokers list
-                        if (isScalingUpAddedNodes()) {
-                            newScalingUpAddedNodes.addAll(scalingUpAddedNodes);
-                        }
-                        newScalingUpAddedNodes.addAll(modeBrokers.getBrokers());
-                        break;
-                    default:
-                        throw new RuntimeException("Unexpected mode " + modeBrokers.getMode());
-                }
-            }
+        // TODO: TBD
+        // if not empty -> update the Kafka.status.autoRebalance.modes[remove-brokers].brokers by using the full content
+        //                 from the scalingDownBlockedNodes list which always contains the nodes involved in a scale down operation
+        // if empty -> no further action and stay with the current Kafka.status.autoRebalance.modes[remove-brokers].brokers list
+        if (isScalingDownBlockedNodes()) {
+            newScalingDownBlockedNodes.addAll(scalingDownBlockedNodes);
+        } else if (kafkaAutoRebalanceStatus.getModes() != null) {
+            kafkaAutoRebalanceStatus.getModes().stream().filter(m -> m.getMode().equals(KafkaRebalanceMode.REMOVE_BROKERS)).findFirst()
+                    .ifPresent(m -> newScalingDownBlockedNodes.addAll(m.getBrokers()));
+        }
+
+        // TODO: TBD
+        // if not empty -> update the Kafka.status.autoRebalance.modes[add-brokers].brokers by producing a consistent list
+        //                 with its current content and what is in the scalingUpAddedNodes list
+        // if empty -> no further action and stay with the current Kafka.status.autoRebalance.modes[add-brokers].brokers list
+        if (isScalingUpAddedNodes()) {
+            newScalingUpAddedNodes.addAll(scalingUpAddedNodes);
+        }
+        if (kafkaAutoRebalanceStatus.getModes() != null) {
+            kafkaAutoRebalanceStatus.getModes().stream().filter(m -> m.getMode().equals(KafkaRebalanceMode.ADD_BROKERS)).findFirst()
+                    .ifPresent(m -> newScalingUpAddedNodes.addAll(m.getBrokers()));
         }
         LOGGER.infoCr(reconciliation, "newScalingDownBlockedNodes = {}", newScalingDownBlockedNodes);
         LOGGER.infoCr(reconciliation, "newScalingUpAddedNodes = {}", newScalingUpAddedNodes);
