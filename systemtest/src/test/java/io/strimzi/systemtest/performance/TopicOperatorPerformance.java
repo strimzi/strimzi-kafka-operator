@@ -93,10 +93,8 @@ public class TopicOperatorPerformance extends AbstractST {
         // note: for single-node >= 30GB, >= 8CPUs -> each test takes ~45 minutes
         return Stream.of(
                 // without clients
-//                Arguments.of("100", "10", false),     // Lower batch size with short linger time for comparison
                 Arguments.of("100", "100", false),    // Lower batch size with longer linger time for extended comparison
-//                // with clients
-//                Arguments.of("100", "10", true)     // Lower batch size with short linger time for comparison
+                // with clients
                 Arguments.of("100", "100", true)     // Lower batch size with longer linger time for extended comparison
         );
     }
@@ -292,7 +290,6 @@ public class TopicOperatorPerformance extends AbstractST {
     private static Stream<Arguments> provideConfigurationsForBobDataStreamingUseCase() {
         return Stream.of(
             Arguments.of("250", "1000", false) // Medium batch size with 1 second linger time, optimized for infrequent changes
-//            Arguments.of("500", "1000", false)  // Slightly larger batch size with 1 second linger time, considering memory usage efficiency
         );
     }
 
