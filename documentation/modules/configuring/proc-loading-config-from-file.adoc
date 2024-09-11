@@ -103,7 +103,7 @@ spec:
   config:
     database.hostname: 192.168.99.1
     database.port: "3306"
-    database.user: "${file:/mnt//mysecret/connector.properties:dbUsername}"
+    database.user: "${file:/mnt/mysecret/connector.properties:dbUsername}"
     database.password: "${file:/mnt/mysecret/connector.properties:dbPassword}"
     database.server.id: "184054"
     #...
