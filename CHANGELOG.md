@@ -5,6 +5,7 @@
 * Add the "Unmanaged" KafkaTopic status update.
 * The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate moves to beta stage and is enabled by default.
   If needed, `ContinueReconciliationOnManualRollingUpdateFailure` can be disabled in the feature gates configuration in the Cluster Operator.
+* Add support for managing connector offsets via KafkaConnector and KafkaMirrorMaker2 custom resources.
 
 ### Changes, deprecations and removals
 
