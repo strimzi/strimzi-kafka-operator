@@ -12,6 +12,8 @@
   Kubernetes 1.23 and 1.24 are not supported anymore.
 * When finalizers are enabled (default), the Topic Operator will no longer restore finalizers on unmanaged `KafkaTopic` resources if they are removed, aligning the behavior with paused topics, where finalizers are also not restored.
   This change matches user expectations.
+* The External Configuration Volumes (`.spec.externalConfiguration.volumes`) in `KafkaConnect` and `KafkaMirrorMaker2` resources are deprecated and will be removed in the future.
+  Please use the additional volumes and volume mounts in Pod and container templates instead to mount additional Secrets or ConfigMaps.
 
 ## 0.43.0
 

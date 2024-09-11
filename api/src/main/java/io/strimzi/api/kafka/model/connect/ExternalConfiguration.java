@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.connect;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -47,6 +48,9 @@ public class ExternalConfiguration implements UnknownPropertyPreserving {
 
     @Description("Makes data from a Secret or ConfigMap available in the Kafka Connect pods as volumes.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    @Deprecated
+    @DeprecatedProperty(description = "The External Configuration Volumes are deprecated and will be removed in the future. " +
+            "Please use the additional volumes and volume mounts in Pod and container templates instead to mount additional Secrets or ConfigMaps.")
     public List<ExternalConfigurationVolumeSource> getVolumes() {
         return volumes;
     }

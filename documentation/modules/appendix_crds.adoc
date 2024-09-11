@@ -2754,7 +2754,7 @@ include::../api/io.strimzi.api.kafka.model.connect.ExternalConfiguration.adoc[le
 |Makes data from a Secret or ConfigMap available in the Kafka Connect pods as environment variables.
 |volumes
 |xref:type-ExternalConfigurationVolumeSource-{context}[`ExternalConfigurationVolumeSource`] array
-|Makes data from a Secret or ConfigMap available in the Kafka Connect pods as volumes.
+|**The `volumes` property has been deprecated.** The External Configuration Volumes are deprecated and will be removed in the future. Please use the additional volumes and volume mounts in Pod and container templates instead to mount additional Secrets or ConfigMaps. Makes data from a Secret or ConfigMap available in the Kafka Connect pods as volumes.
 |====
 
 [id='type-ExternalConfigurationEnv-{context}']
@@ -2793,6 +2793,9 @@ Used in: xref:type-ExternalConfigurationEnv-{context}[`ExternalConfigurationEnv`
 
 [id='type-ExternalConfigurationVolumeSource-{context}']
 = `ExternalConfigurationVolumeSource` schema reference
+
+*The type `ExternalConfigurationVolumeSource` has been deprecated.*
+Please use xref:type-AdditionalVolume-{context}[`AdditionalVolume`] instead.
 
 Used in: xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 
