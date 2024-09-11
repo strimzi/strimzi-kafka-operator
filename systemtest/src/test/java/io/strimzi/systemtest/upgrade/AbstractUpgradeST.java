@@ -24,6 +24,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -64,6 +65,8 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import static io.strimzi.systemtest.Environment.TEST_SUITE_NAMESPACE;
+import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
 import static io.strimzi.systemtest.TestConstants.DEFAULT_SINK_FILE_PATH;
 import static io.strimzi.systemtest.TestConstants.PATH_TO_KAFKA_TOPIC_CONFIG;
 import static io.strimzi.systemtest.TestConstants.PATH_TO_PACKAGING;
@@ -725,5 +728,24 @@ public class AbstractUpgradeST extends AbstractST {
         // delete all topics created in test
         cmdKubeClient(componentsNamespaceName).deleteAllByResource(KafkaTopic.RESOURCE_KIND);
         KafkaTopicUtils.waitForTopicWithPrefixDeletion(componentsNamespaceName, topicName);
+    }
+
+    /**
+     * Sets up the namespaces required for the file-based Strimzi upgrade test.
+     * This method creates and prepares the necessary namespaces if operator is installed from example files
+     */
+    protected void fileBasedStrimziUpgradeTestNamespacesSetup() {
+        NamespaceManager.getInstance().createNamespaceAndPrepare(CO_NAMESPACE);
+        NamespaceManager.getInstance().createNamespaceAndPrepare(TEST_SUITE_NAMESPACE);
+    }
+
+    /**
+     * Cleans resources installed to namespaces from example files and namespaces themselves.
+     */
+    protected void fileBasedStrimziUpgradeTestNamespacesTeardown() {
+        cleanUpKafkaTopics(TEST_SUITE_NAMESPACE);
+        deleteInstalledYamls(CO_NAMESPACE, TEST_SUITE_NAMESPACE, coDir);
+        NamespaceManager.getInstance().deleteNamespaceWithWait(CO_NAMESPACE);
+        NamespaceManager.getInstance().deleteNamespaceWithWait(TEST_SUITE_NAMESPACE);
     }
 }
