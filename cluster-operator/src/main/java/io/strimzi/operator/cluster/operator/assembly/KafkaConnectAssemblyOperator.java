@@ -68,8 +68,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS;
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_RESTART_TASK;
-import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART;
 
 /**
@@ -717,7 +717,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .endMetadata()
                 .build();
         return connectorOperator.patchAsync(reconciliation, patchedKafkaConnector)
-                .compose(ignored -> Future.succeededFuture());
+                .mapEmpty();
     }
 
     /**
@@ -752,16 +752,17 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     // Methods for working with connector offsets
 
     /**
-     * Returns the value of strimzi.io/connector-offsets annotation on the provided KafkaConnector.
+     * Returns the operation to perform for connector offsets of the provided custom resource.
+     * For KafkaConnector returns the value of strimzi.io/connector-offsets annotation on the provided KafkaConnector.
      *
      * @param resource          KafkaConnector resource instance to check
      * @param connectorName     Name of the connector being reconciled (not used for Kafka Connect, used only for Mirror Maker 2)
      *
-     * @return  The value of the strimzi.io/connector-offsets annotation on the provided KafkaConnector.
+     * @return  The operation to perform for connector offsets of the provided KafkaConnector.
      */
     @SuppressWarnings({ "rawtypes" })
     @Override
-    protected KafkaConnectorOffsetsAnnotation getConnectorOffsetsAnnotation(CustomResource resource, String connectorName) {
+    protected KafkaConnectorOffsetsAnnotation getConnectorOffsetsOperation(CustomResource resource, String connectorName) {
         String annotation = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.none.toString());
         return KafkaConnectorOffsetsAnnotation.valueOf(annotation);
     }
@@ -776,7 +777,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      */
     @SuppressWarnings({ "rawtypes" })
     @Override
-    protected Future<Void> removeConnectorOffsetsAnnotation(Reconciliation reconciliation, CustomResource resource) {
+    protected Future<Void> removeConnectorOffsetsAnnotations(Reconciliation reconciliation, CustomResource resource) {
         return removeAnnotation(reconciliation, (KafkaConnector) resource, ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
     }
 

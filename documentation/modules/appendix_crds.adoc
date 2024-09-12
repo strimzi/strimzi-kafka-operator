@@ -4022,12 +4022,12 @@ Used in: xref:type-KafkaConnectorSpec-{context}[`KafkaConnectorSpec`], xref:type
 |====
 |Property |Property type |Description
 |toConfigMap
-|xref:type-ResourceReference-{context}[`ResourceReference`]
+|xref:type-LocalObjectReference-{context}[`LocalObjectReference`]
 |Reference to the ConfigMap where the list of offsets will be written to.
 |====
 
-[id='type-ResourceReference-{context}']
-= `ResourceReference` schema reference
+[id='type-LocalObjectReference-{context}']
+= `LocalObjectReference` schema reference
 
 Used in: xref:type-AlterOffsets-{context}[`AlterOffsets`], xref:type-ListOffsets-{context}[`ListOffsets`]
 
@@ -4037,7 +4037,7 @@ Used in: xref:type-AlterOffsets-{context}[`AlterOffsets`], xref:type-ListOffsets
 |Property |Property type |Description
 |name
 |string
-|Name of the resource.
+|
 |====
 
 [id='type-AlterOffsets-{context}']
@@ -4050,7 +4050,7 @@ Used in: xref:type-KafkaConnectorSpec-{context}[`KafkaConnectorSpec`], xref:type
 |====
 |Property |Property type |Description
 |fromConfigMap
-|xref:type-ResourceReference-{context}[`ResourceReference`]
+|xref:type-LocalObjectReference-{context}[`LocalObjectReference`]
 |Reference to the ConfigMap where the new offsets are stored.
 |====
 

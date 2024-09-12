@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
+import io.strimzi.api.ResourceAnnotations;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.connector.AlterOffsets;
@@ -29,7 +30,6 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Future;
@@ -450,8 +450,8 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                     assertThat(configMapData, hasEntry(getConfigmapEntryName(connector), OFFSETS_JSON));
 
                     verify(supplier.mirrorMaker2Operator, times(1)).patchAsync(any(), kafkaMirrorMaker2ArgumentCaptor.capture());
-                    assertThat(kafkaMirrorMaker2ArgumentCaptor.getValue().getMetadata().getAnnotations(), not(hasKey(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS)));
-                    assertThat(kafkaMirrorMaker2ArgumentCaptor.getValue().getMetadata().getAnnotations(), not(hasKey(Annotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR)));
+                    assertThat(kafkaMirrorMaker2ArgumentCaptor.getValue().getMetadata().getAnnotations(), not(hasKey(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS)));
+                    assertThat(kafkaMirrorMaker2ArgumentCaptor.getValue().getMetadata().getAnnotations(), not(hasKey(ResourceAnnotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR)));
 
                     context.completeNow();
                 })));
@@ -520,8 +520,8 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                     assertThat(configMapData, hasEntry("data1", "value1"));
 
                     verify(supplier.mirrorMaker2Operator, times(1)).patchAsync(any(), kafkaMirrorMaker2ArgumentCaptor.capture());
-                    assertThat(kafkaMirrorMaker2ArgumentCaptor.getValue().getMetadata().getAnnotations(), not(hasKey(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS)));
-                    assertThat(kafkaMirrorMaker2ArgumentCaptor.getValue().getMetadata().getAnnotations(), not(hasKey(Annotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR)));
+                    assertThat(kafkaMirrorMaker2ArgumentCaptor.getValue().getMetadata().getAnnotations(), not(hasKey(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS)));
+                    assertThat(kafkaMirrorMaker2ArgumentCaptor.getValue().getMetadata().getAnnotations(), not(hasKey(ResourceAnnotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR)));
 
                     context.completeNow();
                 })));
@@ -913,8 +913,8 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
 
                     ArgumentCaptor<KafkaMirrorMaker2> kafkaMirrorMaker2ArgumentCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
                     verify(supplier.mirrorMaker2Operator, times(1)).patchAsync(any(), kafkaMirrorMaker2ArgumentCaptor.capture());
-                    assertThat(kafkaMirrorMaker2ArgumentCaptor.getValue().getMetadata().getAnnotations(), not(hasKey(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS)));
-                    assertThat(kafkaMirrorMaker2ArgumentCaptor.getValue().getMetadata().getAnnotations(), not(hasKey(Annotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR)));
+                    assertThat(kafkaMirrorMaker2ArgumentCaptor.getValue().getMetadata().getAnnotations(), not(hasKey(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS)));
+                    assertThat(kafkaMirrorMaker2ArgumentCaptor.getValue().getMetadata().getAnnotations(), not(hasKey(ResourceAnnotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR)));
 
                     context.completeNow();
                 })));
@@ -1096,8 +1096,8 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
 
                     ArgumentCaptor<KafkaMirrorMaker2> kafkaMirrorMaker2ArgumentCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
                     verify(supplier.mirrorMaker2Operator, times(1)).patchAsync(any(), kafkaMirrorMaker2ArgumentCaptor.capture());
-                    assertThat(kafkaMirrorMaker2ArgumentCaptor.getValue().getMetadata().getAnnotations(), not(hasKey(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS)));
-                    assertThat(kafkaMirrorMaker2ArgumentCaptor.getValue().getMetadata().getAnnotations(), not(hasKey(Annotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR)));
+                    assertThat(kafkaMirrorMaker2ArgumentCaptor.getValue().getMetadata().getAnnotations(), not(hasKey(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS)));
+                    assertThat(kafkaMirrorMaker2ArgumentCaptor.getValue().getMetadata().getAnnotations(), not(hasKey(ResourceAnnotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR)));
 
                     context.completeNow();
                 })));
@@ -1142,10 +1142,10 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
     private KafkaMirrorMaker2 kafkaMirrorMaker2WithAnnotations(KafkaConnectorOffsetsAnnotation offsetsAnnotation, String mirrorMakerConnector) {
         Map<String, String> annotations = new HashMap<>(2);
         if (offsetsAnnotation != null) {
-            annotations.put(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, offsetsAnnotation.toString());
+            annotations.put(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, offsetsAnnotation.toString());
         }
         if (mirrorMakerConnector != null) {
-            annotations.put(Annotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR, mirrorMakerConnector);
+            annotations.put(ResourceAnnotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR, mirrorMakerConnector);
         }
         return kafkaMirrorMaker2Builder()
                 .editMetadata()
@@ -1156,14 +1156,12 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
 
     private KafkaMirrorMaker2 listOffsetsKafkaMirrorMaker2(String mirrorMakerConnector) {
         Map<String, String> annotations = new HashMap<>(2);
-        annotations.put(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.list.toString());
+        annotations.put(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.list.toString());
         if (mirrorMakerConnector != null) {
-            annotations.put(Annotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR, mirrorMakerConnector);
+            annotations.put(ResourceAnnotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR, mirrorMakerConnector);
         }
         ListOffsets listOffsets = new ListOffsetsBuilder()
-                .withNewConfigMapReference()
-                    .withName(CONFIGMAP_NAME)
-                .endConfigMapReference()
+                .withNewToConfigMap(CONFIGMAP_NAME)
                 .build();
         return kafkaMirrorMaker2Builder()
                 .editMetadata()
@@ -1188,14 +1186,12 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
 
     private KafkaMirrorMaker2 alterOffsetsKafkaMirrorMaker2(String mirrorMakerConnector) {
         Map<String, String> annotations = new HashMap<>(2);
-        annotations.put(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.alter.toString());
+        annotations.put(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.alter.toString());
         if (mirrorMakerConnector != null) {
-            annotations.put(Annotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR, mirrorMakerConnector);
+            annotations.put(ResourceAnnotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR, mirrorMakerConnector);
         }
         AlterOffsets alterOffsets = new AlterOffsetsBuilder()
-                .withNewConfigMapReference()
-                    .withName(CONFIGMAP_NAME)
-                .endConfigMapReference()
+                .withNewFromConfigMap(CONFIGMAP_NAME)
                 .build();
         return kafkaMirrorMaker2Builder()
                 .editMetadata()

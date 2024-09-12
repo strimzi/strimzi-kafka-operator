@@ -80,16 +80,6 @@ public class Annotations extends ResourceAnnotations {
      */
     public static final String ANNO_DEP_KUBE_IO_REVISION = "deployment.kubernetes.io/revision";
 
-    /**
-     * Annotation for connector offsets
-     */
-    public static final String ANNO_STRIMZI_IO_CONNECTOR_OFFSETS = STRIMZI_DOMAIN + "connector-offsets";
-
-    /**
-     * Annotation for identifying MirrorMaker2 connector when managing connector offsets
-     */
-    public static final String ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR = STRIMZI_DOMAIN + "mirrormaker-connector";
-
 
     /**
      * List of predicates that allows existing load balancer service annotations to be retained while reconciling the resources.

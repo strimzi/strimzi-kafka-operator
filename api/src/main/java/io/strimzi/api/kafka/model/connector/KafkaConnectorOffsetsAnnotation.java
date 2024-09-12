@@ -22,9 +22,5 @@ public enum KafkaConnectorOffsetsAnnotation {
      * Used to trigger resetting offsets.
      * This value should only be used when the KafkaConnector is in the {@code stopped} state.
      */
-    reset,
-    /**
-     * Any other unsupported/unknown annotation value.
-     */
-    unknown
+    reset
 }

@@ -20,6 +20,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.search.RequiredSearch;
 import io.netty.channel.ConnectTimeoutException;
+import io.strimzi.api.ResourceAnnotations;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ConnectorState;
@@ -2391,9 +2392,7 @@ public class ConnectorMockTest {
                     .withTasksMax(1)
                     .withClassName("Dummy")
                     .withNewListOffsets()
-                        .withNewConfigMapReference()
-                            .withName(listOffsetsCM)
-                        .endConfigMapReference()
+                        .withNewToConfigMap(listOffsetsCM)
                     .endListOffsets()
                 .endSpec()
                 .build();
@@ -2405,13 +2404,13 @@ public class ConnectorMockTest {
         //Annotate KafkaConnector with strimzi.io/connector-offsets=list
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).withName(connectorName).edit(spec -> new KafkaConnectorBuilder(spec)
                 .editMetadata()
-                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.list.toString())
+                .addToAnnotations(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.list.toString())
                 .endMetadata()
                 .build());
 
         //Wait for ConfigMap to be created and annotation removed
         ConfigMap configMap = waitForConfigMap(listOffsetsCM);
-        waitForRemovedAnnotation(connectorName, Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
+        waitForRemovedAnnotation(connectorName, ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
 
         //Assert owner reference
         List<OwnerReference> ownerReferences = configMap.getMetadata().getOwnerReferences();
@@ -2460,9 +2459,7 @@ public class ConnectorMockTest {
                     .withTasksMax(1)
                     .withClassName("Dummy")
                     .withNewAlterOffsets()
-                        .withNewConfigMapReference()
-                            .withName(alterOffsetsCM)
-                        .endConfigMapReference()
+                        .withNewFromConfigMap(alterOffsetsCM)
                     .endAlterOffsets()
                 .endSpec()
                 .build();
@@ -2486,12 +2483,12 @@ public class ConnectorMockTest {
         //Annotate KafkaConnector with strimzi.io/connector-offsets=alter
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).withName(connectorName).edit(spec -> new KafkaConnectorBuilder(spec)
                 .editMetadata()
-                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.alter.toString())
+                .addToAnnotations(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.alter.toString())
                 .endMetadata()
                 .build());
 
         //Wait for annotation to be removed
-        waitForRemovedAnnotation(connectorName, Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
+        waitForRemovedAnnotation(connectorName, ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
 
         //Assert offsets altered
         assertThat(connectorOffsets, is(ALTER_OFFSETS_JSON));
@@ -2539,12 +2536,12 @@ public class ConnectorMockTest {
         //Annotate KafkaConnector with strimzi.io/connector-offsets=reset
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).withName(connectorName).edit(spec -> new KafkaConnectorBuilder(spec)
                 .editMetadata()
-                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.reset.toString())
+                .addToAnnotations(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.reset.toString())
                 .endMetadata()
                 .build());
 
         //Wait for annotation to be removed
-        waitForRemovedAnnotation(connectorName, Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
+        waitForRemovedAnnotation(connectorName, ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
 
         //Assert offsets reset
         assertThat(connectorOffsets, is(RESET_OFFSETS_JSON));

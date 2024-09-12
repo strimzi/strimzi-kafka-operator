@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.api.ResourceAnnotations;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ConnectorState;
@@ -28,7 +29,6 @@ import io.strimzi.operator.cluster.operator.resource.DefaultZooKeeperAdminProvid
 import io.strimzi.operator.cluster.operator.resource.DefaultZookeeperScalerProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
@@ -331,9 +331,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                                         .withTasksMax(1)
                                         .withConfig(Map.of("replication.factor", -1))
                                         .withNewListOffsets()
-                                            .withNewConfigMapReference()
-                                                .withName(CONFIGMAP_NAME)
-                                            .endConfigMapReference()
+                                            .withNewToConfigMap(CONFIGMAP_NAME)
                                         .endListOffsets()
                                     .endSourceConnector()
                                     .build()
@@ -349,8 +347,8 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                     LOGGER.info("Annotating KafkaMirrorMaker2 to list offsets");
                     Crds.kafkaMirrorMaker2Operation(client).inNamespace(namespace).withName(CLUSTER_NAME).edit(spec -> new KafkaMirrorMaker2Builder(spec)
                             .editMetadata()
-                            .addToAnnotations(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.list.toString())
-                            .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR, connectorName)
+                            .addToAnnotations(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.list.toString())
+                            .addToAnnotations(ResourceAnnotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR, connectorName)
                             .endMetadata()
                             .build());
                     return kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, namespace, CLUSTER_NAME));
@@ -358,8 +356,8 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     //Assert annotations removed
                     KafkaMirrorMaker2 kafkaMirrorMaker2 = Crds.kafkaMirrorMaker2Operation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
-                    assertThat(kafkaMirrorMaker2.getMetadata().getAnnotations(), not(hasKey(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS)));
-                    assertThat(kafkaMirrorMaker2.getMetadata().getAnnotations(), not(hasKey(Annotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR)));
+                    assertThat(kafkaMirrorMaker2.getMetadata().getAnnotations(), not(hasKey(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS)));
+                    assertThat(kafkaMirrorMaker2.getMetadata().getAnnotations(), not(hasKey(ResourceAnnotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR)));
 
                     //Assert configmap exists
                     ConfigMap configMap = client.configMaps().inNamespace(namespace).withName(CONFIGMAP_NAME).get();
@@ -402,9 +400,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                                         .withConfig(Map.of("replication.factor", -1))
                                         .withState(ConnectorState.STOPPED)
                                         .withNewAlterOffsets()
-                                            .withNewConfigMapReference()
-                                                .withName(CONFIGMAP_NAME)
-                                            .endConfigMapReference()
+                                            .withNewFromConfigMap(CONFIGMAP_NAME)
                                         .endAlterOffsets()
                                     .endSourceConnector()
                                     .build()
@@ -433,8 +429,8 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                     LOGGER.info("Annotating KafkaMirrorMaker2 to alter offsets");
                     Crds.kafkaMirrorMaker2Operation(client).inNamespace(namespace).withName(CLUSTER_NAME).edit(spec -> new KafkaMirrorMaker2Builder(spec)
                             .editMetadata()
-                            .addToAnnotations(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.alter.toString())
-                            .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR, connectorName)
+                            .addToAnnotations(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.alter.toString())
+                            .addToAnnotations(ResourceAnnotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR, connectorName)
                             .endMetadata()
                             .build());
                     return kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, namespace, CLUSTER_NAME));
@@ -442,8 +438,8 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     //Assert annotations removed
                     KafkaMirrorMaker2 kafkaMirrorMaker2 = Crds.kafkaMirrorMaker2Operation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
-                    assertThat(kafkaMirrorMaker2.getMetadata().getAnnotations(), not(hasKey(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS)));
-                    assertThat(kafkaMirrorMaker2.getMetadata().getAnnotations(), not(hasKey(Annotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR)));
+                    assertThat(kafkaMirrorMaker2.getMetadata().getAnnotations(), not(hasKey(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS)));
+                    assertThat(kafkaMirrorMaker2.getMetadata().getAnnotations(), not(hasKey(ResourceAnnotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR)));
 
                     //Assert offsets altered
                     assertThat(connectorOffsets, is(ALTER_OFFSETS_JSON));
@@ -488,8 +484,8 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                     LOGGER.info("Annotating KafkaMirrorMaker2 to reset offsets");
                     Crds.kafkaMirrorMaker2Operation(client).inNamespace(namespace).withName(CLUSTER_NAME).edit(spec -> new KafkaMirrorMaker2Builder(spec)
                             .editMetadata()
-                            .addToAnnotations(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.reset.toString())
-                            .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR, connectorName)
+                            .addToAnnotations(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.reset.toString())
+                            .addToAnnotations(ResourceAnnotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR, connectorName)
                             .endMetadata()
                             .build());
                     return kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, namespace, CLUSTER_NAME));
@@ -497,8 +493,8 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     //Assert annotations removed
                     KafkaMirrorMaker2 kafkaMirrorMaker2 = Crds.kafkaMirrorMaker2Operation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
-                    assertThat(kafkaMirrorMaker2.getMetadata().getAnnotations(), not(hasKey(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS)));
-                    assertThat(kafkaMirrorMaker2.getMetadata().getAnnotations(), not(hasKey(Annotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR)));
+                    assertThat(kafkaMirrorMaker2.getMetadata().getAnnotations(), not(hasKey(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS)));
+                    assertThat(kafkaMirrorMaker2.getMetadata().getAnnotations(), not(hasKey(ResourceAnnotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR)));
 
                     //Assert offsets reset
                     assertThat(connectorOffsets, is(RESET_OFFSETS_JSON));

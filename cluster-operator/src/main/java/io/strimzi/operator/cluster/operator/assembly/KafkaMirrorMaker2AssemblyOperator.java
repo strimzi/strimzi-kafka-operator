@@ -33,6 +33,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.StatusUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -50,8 +51,8 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
-import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS;
-import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR;
+import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS;
+import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN;
@@ -432,7 +433,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 .endMetadata()
                 .build();
         return resourceOperator.patchAsync(reconciliation, patchedKafkaMirrorMaker2)
-                .compose(ignored -> Future.succeededFuture());
+                .mapEmpty();
     }
 
     /**
@@ -449,11 +450,11 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         Map<String, String> annotationsToRemove = annotationKeys.stream().collect(Collectors.toMap(key -> key, key -> ""));
         KafkaMirrorMaker2 patchedKafkaMirrorMaker2 = new KafkaMirrorMaker2Builder(resource)
                 .editMetadata()
-                .removeFromAnnotations(annotationsToRemove)
+                    .removeFromAnnotations(annotationsToRemove)
                 .endMetadata()
                 .build();
         return resourceOperator.patchAsync(reconciliation, patchedKafkaMirrorMaker2)
-                .compose(ignored -> Future.succeededFuture());
+                .mapEmpty();
     }
 
     /**
@@ -489,28 +490,28 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     // Methods for working with connector offsets
 
     /**
-     * Returns the value of strimzi.io/connector-offsets annotation on the provided KafkaMirrorMaker2.
-     * For KafkaMirrorMaker2 also verifies the strimzi.io/mirrormaker-connector annotation is present on the
-     * resource and references the connector being reconciled.
+     * Returns the operation to perform for connector offsets of the provided custom resource.
+     * For KafkaMirrorMaker2 returns the value of strimzi.io/connector-offsets annotation on the provided KafkaMirrorMaker2.
+     * Also verifies the strimzi.io/mirrormaker-connector annotation is present on the resource and references the connector being reconciled.
      * If both annotations are present, but the mirrormaker-connector annotation references a different connector,
      * the value 'none' is returned.
      *
      * @param resource          KafkaMirrorMaker2 resource instance to check
      * @param connectorName     Name of the connector being reconciled
      *
-     * @return  The value of the strimzi.io/connector-offsets annotation on the provided KafkaMirrorMaker2 for the connector being reconciled.
-     * @throws IllegalStateException if one of strimzi.io/connector-offsets or strimzi.io/mirrormaker-connector is missing
+     * @return  The operation to perform for connector offsets of the connector being reconciled as part of the provided KafkaMirrorMaker2.
+     * @throws InvalidResourceException if one of strimzi.io/connector-offsets or strimzi.io/mirrormaker-connector is missing.
      */
     @SuppressWarnings({ "rawtypes" })
     @Override
-    protected KafkaConnectorOffsetsAnnotation getConnectorOffsetsAnnotation(CustomResource resource, String connectorName) {
+    protected KafkaConnectorOffsetsAnnotation getConnectorOffsetsOperation(CustomResource resource, String connectorName) {
         boolean offsetsAnnotationPresent = Annotations.hasAnnotation(resource, ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
         boolean connectorAnnotationPresent = Annotations.hasAnnotation(resource, ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR);
         if (offsetsAnnotationPresent && !connectorAnnotationPresent) {
-            throw new IllegalStateException(String.format("KafkaMirrorMaker2 resource %s/%s is missing annotation strimzi.io/mirrormaker-connector", resource.getMetadata().getNamespace(), resource.getMetadata().getName()));
+            throw new InvalidResourceException(String.format("KafkaMirrorMaker2 resource %s/%s is missing annotation strimzi.io/mirrormaker-connector", resource.getMetadata().getNamespace(), resource.getMetadata().getName()));
         }
         if (!offsetsAnnotationPresent && connectorAnnotationPresent) {
-            throw new IllegalStateException(String.format("KafkaMirrorMaker2 resource %s/%s is missing annotation strimzi.io/connector-offsets", resource.getMetadata().getNamespace(), resource.getMetadata().getName()));
+            throw new InvalidResourceException(String.format("KafkaMirrorMaker2 resource %s/%s is missing annotation strimzi.io/connector-offsets", resource.getMetadata().getNamespace(), resource.getMetadata().getName()));
         }
         String annotation = connectorName.equals(Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR, "")) ?
                 Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.none.toString()) :
@@ -528,7 +529,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      */
     @SuppressWarnings({ "rawtypes" })
     @Override
-    protected Future<Void> removeConnectorOffsetsAnnotation(Reconciliation reconciliation, CustomResource resource) {
+    protected Future<Void> removeConnectorOffsetsAnnotations(Reconciliation reconciliation, CustomResource resource) {
         return removeAnnotations(reconciliation, (KafkaMirrorMaker2) resource, List.of(ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR));
     }
 

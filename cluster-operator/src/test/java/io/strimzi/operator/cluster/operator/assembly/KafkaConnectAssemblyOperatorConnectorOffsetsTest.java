@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
+import io.strimzi.api.ResourceAnnotations;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
@@ -17,7 +18,6 @@ import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Future;
@@ -285,7 +285,7 @@ public class KafkaConnectAssemblyOperatorConnectorOffsetsTest {
                     assertThat(configMapData, hasEntry("offsets.json", OFFSETS_JSON));
 
                     verify(supplier.kafkaConnectorOperator, times(1)).patchAsync(any(), kafkaConnectorArgumentCaptor.capture());
-                    assertThat(kafkaConnectorArgumentCaptor.getValue().getMetadata().getAnnotations(), not(hasKey(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS)));
+                    assertThat(kafkaConnectorArgumentCaptor.getValue().getMetadata().getAnnotations(), not(hasKey(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS)));
 
                     context.completeNow();
                 })));
@@ -345,7 +345,7 @@ public class KafkaConnectAssemblyOperatorConnectorOffsetsTest {
                     assertThat(configMapData, hasEntry("data1", "value1"));
 
                     verify(supplier.kafkaConnectorOperator, times(1)).patchAsync(any(), kafkaConnectorArgumentCaptor.capture());
-                    assertThat(kafkaConnectorArgumentCaptor.getValue().getMetadata().getAnnotations(), not(hasKey(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS)));
+                    assertThat(kafkaConnectorArgumentCaptor.getValue().getMetadata().getAnnotations(), not(hasKey(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS)));
 
                     context.completeNow();
                 })));
@@ -629,7 +629,7 @@ public class KafkaConnectAssemblyOperatorConnectorOffsetsTest {
                     ArgumentCaptor<KafkaConnector> kafkaConnectorArgumentCaptor = ArgumentCaptor.forClass(KafkaConnector.class);
                     verify(supplier.kafkaConnectorOperator, times(1)).patchAsync(any(), kafkaConnectorArgumentCaptor.capture());
                     KafkaConnector kafkaConnector = kafkaConnectorArgumentCaptor.getValue();
-                    assertThat(kafkaConnector.getMetadata().getAnnotations(), not(hasKey(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS)));
+                    assertThat(kafkaConnector.getMetadata().getAnnotations(), not(hasKey(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS)));
 
                     context.completeNow();
                 })));
@@ -745,7 +745,7 @@ public class KafkaConnectAssemblyOperatorConnectorOffsetsTest {
                     ArgumentCaptor<KafkaConnector> kafkaConnectorArgumentCaptor = ArgumentCaptor.forClass(KafkaConnector.class);
                     verify(supplier.kafkaConnectorOperator, times(1)).patchAsync(any(), kafkaConnectorArgumentCaptor.capture());
                     KafkaConnector kafkaConnector = kafkaConnectorArgumentCaptor.getValue();
-                    assertThat(kafkaConnector.getMetadata().getAnnotations(), not(hasKey(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS)));
+                    assertThat(kafkaConnector.getMetadata().getAnnotations(), not(hasKey(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS)));
 
 
                     context.completeNow();
@@ -772,7 +772,7 @@ public class KafkaConnectAssemblyOperatorConnectorOffsetsTest {
     private KafkaConnector kafkaConnectorWithAnnotation(KafkaConnectorOffsetsAnnotation offsetsAnnotation) {
         return kafkaConnector()
                 .editMetadata()
-                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, offsetsAnnotation.toString()))
+                    .withAnnotations(Map.of(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, offsetsAnnotation.toString()))
                 .endMetadata()
                 .build();
     }
@@ -781,13 +781,11 @@ public class KafkaConnectAssemblyOperatorConnectorOffsetsTest {
         return kafkaConnector()
                 .editMetadata()
                     .withLabels(Map.of("connector-label", "custom"))
-                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.list.toString()))
+                    .withAnnotations(Map.of(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.list.toString()))
                 .endMetadata()
                 .editSpec()
                     .withNewListOffsets()
-                        .withNewConfigMapReference()
-                            .withName(CONFIGMAP_NAME)
-                        .endConfigMapReference()
+                        .withNewToConfigMap(CONFIGMAP_NAME)
                     .endListOffsets()
                 .endSpec()
                 .build();
@@ -796,13 +794,11 @@ public class KafkaConnectAssemblyOperatorConnectorOffsetsTest {
     private KafkaConnector alterOffsetsKafkaConnector() {
         return kafkaConnector()
                 .editMetadata()
-                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.alter.toString()))
+                    .withAnnotations(Map.of(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.alter.toString()))
                 .endMetadata()
                 .editSpec()
                     .withNewAlterOffsets()
-                        .withNewConfigMapReference()
-                            .withName(CONFIGMAP_NAME)
-                        .endConfigMapReference()
+                        .withNewFromConfigMap(CONFIGMAP_NAME)
                     .endAlterOffsets()
                 .endSpec()
                 .build();

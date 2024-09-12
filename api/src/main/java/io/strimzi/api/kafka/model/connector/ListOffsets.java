@@ -7,8 +7,8 @@ package io.strimzi.api.kafka.model.connector;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.strimzi.api.kafka.model.common.Constants;
-import io.strimzi.api.kafka.model.common.ResourceReference;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
@@ -30,17 +30,17 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class ListOffsets implements UnknownPropertyPreserving {
-    private ResourceReference configMapReference;
+    private LocalObjectReference toConfigMap;
     private Map<String, Object> additionalProperties;
 
     @Description("Reference to the ConfigMap where the list of offsets will be written to.")
-    @JsonProperty(value = "toConfigMap", required = true)
-    public ResourceReference getConfigMapReference() {
-        return configMapReference;
+    @JsonProperty(required = true)
+    public LocalObjectReference getToConfigMap() {
+        return toConfigMap;
     }
 
-    public void setConfigMapReference(ResourceReference configMapReference) {
-        this.configMapReference = configMapReference;
+    public void setToConfigMap(LocalObjectReference toConfigMap) {
+        this.toConfigMap = toConfigMap;
     }
     @Override
     public Map<String, Object> getAdditionalProperties() {

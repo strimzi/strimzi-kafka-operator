@@ -14,7 +14,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -39,33 +38,12 @@ public class ConfigMapUtils {
             OwnerReference ownerReference,
             Map<String, String> data
     ) {
-        return createConfigMap(name, namespace, labels, List.of(ownerReference), data);
-    }
-
-    /**
-     * Creates a Config Map
-     *
-     * @param name              Name of the Config Map
-     * @param namespace         Namespace of the Config Map
-     * @param labels            Labels of the Config Map
-     * @param ownerReferences   OwnerReference list of the Config Map
-     * @param data              Data which will be stored in the Config Map
-     *
-     * @return  New Config Map
-     */
-    public static ConfigMap createConfigMap(
-            String name,
-            String namespace,
-            Labels labels,
-            List<OwnerReference> ownerReferences,
-            Map<String, String> data
-    ) {
         return new ConfigMapBuilder()
                 .withNewMetadata()
                     .withName(name)
                     .withNamespace(namespace)
                     .withLabels(labels.toMap())
-                    .withOwnerReferences(ownerReferences)
+                    .withOwnerReferences(ownerReference)
                 .endMetadata()
                 .withData(data)
                 .build();
