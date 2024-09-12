@@ -606,6 +606,28 @@ public class KafkaAutoRebalancingMockTest {
     }
 
     @Test
+    public void testNoAutoRebalancingWithoutCruiseControlAutoRebalance(VertxTestContext context) {
+        // remove the autorebalance in the Cruise Control definition, to test the auto-rebalancing reconciler behaviour
+        Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).edit(
+                k -> new KafkaBuilder(k)
+                        .editSpec()
+                            .withNewCruiseControl()
+                            .endCruiseControl()
+                        .endSpec()
+                        .build()
+        );
+
+        Checkpoint reconciliation = context.checkpoint();
+        operator.reconcile(new Reconciliation("initial-reconciliation", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    // just checking that on Kafka cluster creation with no Cruise Control, the auto-rebalancing doesn't run
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertThat(k.getStatus().getAutoRebalance(), is(nullValue()));
+                    reconciliation.flag();
+                })));
+    }
+
+    @Test
     public void testAutoRebalancingMissingKafkaRebalanceTemplate(VertxTestContext context) {
         Checkpoint reconciliation = context.checkpoint();
         // 1st reconcile, Kafka cluster creation

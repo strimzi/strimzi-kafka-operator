@@ -59,7 +59,7 @@ public class KafkaClusterCreator {
     private boolean scaleDownCheckFailed = false;
     private boolean usedToBeBrokersCheckFailed = false;
     private final List<Condition> warningConditions = new ArrayList<>();
-    private Set<Integer> scalingDownBlockedNodes;
+    private Set<Integer> scalingDownBlockedNodes = new LinkedHashSet<>();
 
     /**
      * Constructor
@@ -124,7 +124,7 @@ public class KafkaClusterCreator {
                 .compose(kafka -> {
                     if (checkFailed() && tryToFixProblems)   {
                         // saving scaling down blocked nodes, before they are reverted back
-                        this.scalingDownBlockedNodes = new LinkedHashSet<>(kafka.removedNodes());
+                        this.scalingDownBlockedNodes.addAll(kafka.removedNodes());
                         // We have a failure, and should try to fix issues
                         // Once we fix it, we call this method again, but this time with tryToFixProblems set to false
                         return revertScaleDown(kafka, kafkaCr, nodePools)
