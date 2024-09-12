@@ -93,10 +93,8 @@ spec:
 <2> `DirectoryConfigProvider` provides values from files in a directory. The parameter uses the alias from `config.providers`, taking the form `config.providers.${alias}.class`.
 <3> The name of the volume containing the secret.
 <4> The name of the secret.
-<5> The name of the volume that will be mounted.
-Has to be the same as the name of the volume in the volumes list in <3>.
-<6> The path where the Secret will be mounted.
-Has to start with `/mnt/`.
+<5> The name of the mounted volume, which must match the volume name in the `volumes` list.
+<6> The path where the secret is mounted, which must start with `/mnt/`.
 
 . Create or update the resource to enable the provider.
 +
