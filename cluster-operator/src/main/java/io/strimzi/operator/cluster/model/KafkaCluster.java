@@ -462,7 +462,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         Set<Integer> nodes = new LinkedHashSet<>();
 
         for (KafkaPool pool : nodePools)    {
-            if (pool.isBroker() && !pool.currentNodes().isEmpty()) {
+            if (pool.isBroker()) {
                 nodes.addAll(pool.scaleUpNodes());
             }
         }

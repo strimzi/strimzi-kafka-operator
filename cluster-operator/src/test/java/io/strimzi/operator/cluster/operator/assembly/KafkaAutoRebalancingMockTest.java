@@ -153,7 +153,7 @@ public class KafkaAutoRebalancingMockTest {
                     .withName("controllers")
                     .withNamespace(namespace)
                     .withLabels(Map.of(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME))
-                    .withAnnotations(Map.of(ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[10-20]"))
+                    .withAnnotations(Map.of(ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[10-19]"))
                 .endMetadata()
                 .withNewSpec()
                     .withReplicas(3)
@@ -994,6 +994,74 @@ public class KafkaAutoRebalancingMockTest {
                     patchKafkaRebalanceState(kr, KafkaRebalanceState.Ready);
                 })))
                 // 8th reconcile, handling auto-rebalancing with KafkaRebalance in Ready state
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertThat(k.getStatus().getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
+                    assertThat(k.getStatus().getAutoRebalance().getModes(), is(nullValue()));
+
+                    KafkaRebalance kr = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(KafkaRebalanceUtils.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaRebalanceMode.ADD_BROKERS)).get();
+                    assertThat(kr, is(nullValue()));
+
+                    reconciliation.flag();
+                })));
+    }
+
+    @Test
+    public void testAutoRebalancingScaleUpPoolAdded(VertxTestContext context) {
+        KafkaRebalance kafkaRebalanceTemplate = buildKafkaRebalanceTemplate("my-add-remove-brokers-rebalancing-template", List.of("CpuCapacityGoal"));
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kafkaRebalanceTemplate).create();
+
+        // preparing a new brokers pool to be used for scaling up the cluster
+        KafkaNodePool newBrokers = new KafkaNodePoolBuilder()
+                .withNewMetadata()
+                    .withName("new-brokers")
+                    .withNamespace(namespace)
+                    .withLabels(Map.of(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME))
+                    .withAnnotations(Map.of(ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[20-29]"))
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(2)
+                    .withNewEphemeralStorage()
+                    .endEphemeralStorage()
+                    .withRoles(ProcessRoles.BROKER)
+                .endSpec()
+                .build();
+
+        Checkpoint reconciliation = context.checkpoint();
+        // 1st reconcile, Kafka cluster creation
+        operator.reconcile(new Reconciliation("initial-reconciliation", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertThat(k.getStatus().getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
+
+                    // scaling up the brokers by adding a node pool
+                    Crds.kafkaNodePoolOperation(client).inNamespace(namespace).resource(newBrokers).create();
+                })))
+                // 2nd reconcile, getting the scaling up
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertKafkaAutoRebalanceStatus(k, KafkaAutoRebalanceState.RebalanceOnScaleUp, KafkaRebalanceMode.ADD_BROKERS, List.of(20, 21));
+
+                    KafkaRebalance kr = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(KafkaRebalanceUtils.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaRebalanceMode.ADD_BROKERS)).get();
+                    assertKafkaRebalanceStatus(kr, KafkaRebalanceMode.ADD_BROKERS, List.of(20, 21), List.of("CpuCapacityGoal"));
+
+                    // simulate the auto-rebalancing KafkaRebalance custom resource got by the rebalance operator transitions to Rebalancing state
+                    // (shortening by skipping New, PendingProposal, ProposalReady to have less reconciliation during the test)
+                    patchKafkaRebalanceState(kr, KafkaRebalanceState.Rebalancing);
+                })))
+                // 3rd reconcile, handling auto-rebalancing with KafkaRebalance in Rebalancing state
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertKafkaAutoRebalanceStatus(k, KafkaAutoRebalanceState.RebalanceOnScaleUp, KafkaRebalanceMode.ADD_BROKERS, List.of(20, 21));
+
+                    KafkaRebalance kr = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(KafkaRebalanceUtils.autoRebalancingKafkaRebalanceResourceName(CLUSTER_NAME, KafkaRebalanceMode.ADD_BROKERS)).get();
+                    // simulate the auto-rebalancing KafkaRebalance custom resource got by the rebalance operator transitions to Ready state
+                    patchKafkaRebalanceState(kr, KafkaRebalanceState.Ready);
+                })))
+                // 4th reconcile, handling auto-rebalancing with KafkaRebalance in Ready state
                 .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
