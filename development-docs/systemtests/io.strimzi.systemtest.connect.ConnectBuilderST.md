@@ -90,7 +90,7 @@
 | 5. | Configure Kafka Connector | Kafka Connector is configured and created with wait |
 | 6. | Verify Kafka Connector class name | Connector class name matches expected ECHO_SINK_CLASS_NAME |
 | 7. | Create Kafka Clients and send messages | Kafka Clients created and messages sent and verified |
-| 8. | Check logs for received message in connector pod | Logs contain the expected received message |
+| 8. | Check logs for received message | Logs contain the expected received message |
 
 **Labels:**
 
