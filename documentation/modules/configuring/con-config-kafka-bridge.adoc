@@ -27,43 +27,43 @@ spec:
   replicas: 3 # <1>
   # Kafka bootstrap servers (required)
   bootstrapServers: _<cluster_name>_-cluster-kafka-bootstrap:9092 # <2>
-  # TLS configuration (optional)
-  tls: # <3>
-    trustedCertificates:
-      - secretName: my-cluster-cluster-cert
-        pattern: "*.crt"
-      - secretName: my-cluster-cluster-cert
-        certificate: ca2.crt
-  # Authentication (optional)
-  authentication: # <4>
-    type: tls
-    certificateAndKey:
-      secretName: my-secret
-      certificate: public.crt
-      key: private.key
   # HTTP configuration (required)
-  http: # <5>
+  http: # <3>
     port: 8080
     # CORS configuration (optional)
-    cors: # <6>
+    cors: # <4>
       allowedOrigins: "https://strimzi.io"
       allowedMethods: "GET,POST,PUT,DELETE,OPTIONS,PATCH"
-  # Consumer configuration (optional)
-  consumer: # <7>
-    config:
-      auto.offset.reset: earliest
-  # Producer configuration (optional)
-  producer: # <8>
-    config:
-      delivery.timeout.ms: 300000
   # Resources requests and limits (recommended)
-  resources: # <9>
+  resources: # <5>
     requests:
       cpu: "1"
       memory: 2Gi
     limits:
       cpu: "2"
       memory: 2Gi
+  # TLS configuration (optional)
+  tls: # <6>
+    trustedCertificates:
+      - secretName: my-cluster-cluster-cert
+        pattern: "*.crt"
+      - secretName: my-cluster-cluster-cert
+        certificate: ca2.crt
+  # Authentication (optional)
+  authentication: # <7>
+    type: tls
+    certificateAndKey:
+      secretName: my-secret
+      certificate: public.crt
+      key: private.key
+  # Consumer configuration (optional)
+  consumer: # <8>
+    config:
+      auto.offset.reset: earliest
+  # Producer configuration (optional)
+  producer: # <9>
+    config:
+      delivery.timeout.ms: 300000
   # Logging configuration (optional)
   logging: # <10>
     type: inline
@@ -112,14 +112,14 @@ spec:
 ----
 <1> The number of replica nodes.
 <2> Bootstrap address for connection to the target Kafka cluster. The address takes the format `<cluster_name>-kafka-bootstrap:<port_number>`. The Kafka cluster doesn't need to be managed by Strimzi or deployed to a Kubernetes cluster.
-<3> TLS configuration for encrypted connections to the Kafka cluster, with trusted certificates stored in X.509 format within the specified secrets.
-<4> Authentication for the Kafka Bridge cluster, specified as mTLS, token-based OAuth, SASL-based SCRAM-SHA-256/SCRAM-SHA-512, or PLAIN.
+<3> HTTP access to Kafka brokers.
+<4> CORS access specifying selected resources and access methods. Additional HTTP headers in requests describe the origins that are permitted access to the Kafka cluster.
+<5> Requests for reservation of supported resources, currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
+<6> TLS configuration for encrypted connections to the Kafka cluster, with trusted certificates stored in X.509 format within the specified secrets.
+<7> Authentication for the Kafka Bridge cluster, specified as mTLS, token-based OAuth, SASL-based SCRAM-SHA-256/SCRAM-SHA-512, or PLAIN.
 By default, the Kafka Bridge connects to Kafka brokers without authentication.
-<5> HTTP access to Kafka brokers.
-<6> CORS access specifying selected resources and access methods. Additional HTTP headers in requests describe the origins that are permitted access to the Kafka cluster.
-<7> Consumer configuration options.
-<8> Producer configuration options.
-<9> Requests for reservation of supported resources, currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
+<8> Consumer configuration options.
+<9> Producer configuration options.
 <10> Specified Kafka Bridge loggers and log levels added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom Log4j configuration must be placed under the `log4j.properties` or `log4j2.properties` key in the ConfigMap. For the Kafka Bridge loggers, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
 <11> JVM configuration options to optimize performance for the Virtual Machine (VM) running the Kafka Bridge.
 <12> Healthchecks to know when to restart a container (liveness) and when a container can accept traffic (readiness).

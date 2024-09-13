@@ -36,38 +36,10 @@ metadata:
   name: my-cluster
 # Deployment specifications
 spec:
+  # Kafka configuration (required)
   kafka:
     # Replicas (required)
     replicas: 3
-    # Kafka version (recommended)
-    version: {DefaultKafkaVersion}
-    # Logging configuration (optional)
-    logging:
-      type: inline
-      loggers:
-        kafka.root.logger.level: INFO
-    # Resources requests and limits (recommended)
-    resources:
-      requests:
-        memory: 64Gi
-        cpu: "8"
-      limits:
-        memory: 64Gi
-        cpu: "12"
-    # Readiness probe (optional)
-    readinessProbe:
-      initialDelaySeconds: 15
-      timeoutSeconds: 5
-    # Liveness probe (optional)
-    livenessProbe:
-      initialDelaySeconds: 15
-      timeoutSeconds: 5
-    # JVM options (optional)
-    jvmOptions:
-      -Xms: 8192m
-      -Xmx: 8192m
-    # Custom image (optional)
-    image: my-org/my-image:latest
     # Listener configuration (required)
     listeners:
       - name: plain
@@ -91,9 +63,12 @@ spec:
             secretName: my-secret
             certificate: my-certificate.crt
             key: my-key.key
-    # Authorization (optional)
-    authorization:
-      type: simple
+    # Storage configuration (required)
+    storage:
+      type: persistent-claim
+      size: 10000Gi
+    # Kafka version (recommended)
+    version: {DefaultKafkaVersion}
     # Kafka configuration (recommended)
     config:
       auto.create.topics.enable: "false"
@@ -103,10 +78,36 @@ spec:
       default.replication.factor: 3
       min.insync.replicas: 2
       inter.broker.protocol.version: "{DefaultInterBrokerVersion}"
-    # Storage configuration (required)
-    storage:
-      type: persistent-claim
-      size: 10000Gi
+    # Resources requests and limits (recommended)
+    resources:
+      requests:
+        memory: 64Gi
+        cpu: "8"
+      limits:
+        memory: 64Gi
+        cpu: "12"
+    # Logging configuration (optional)
+    logging:
+      type: inline
+      loggers:
+        kafka.root.logger.level: INFO
+    # Readiness probe (optional)
+    readinessProbe:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    # Liveness probe (optional)
+    livenessProbe:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    # JVM options (optional)
+    jvmOptions:
+      -Xms: 8192m
+      -Xmx: 8192m
+    # Custom image (optional)
+    image: my-org/my-image:latest
+    # Authorization (optional)
+    authorization:
+      type: simple
     # Rack awareness (optional)
     rack:
       topologyKey: topology.kubernetes.io/zone
@@ -122,11 +123,10 @@ spec:
   zookeeper: # <1>
     # Replicas (required)
     replicas: 3 # <2>
-    # Logging configuration (optional)
-    logging: # <3>
-      type: inline
-      loggers:
-        zookeeper.root.logger: INFO
+    # Storage configuration (required)
+    storage: # <3>
+      type: persistent-claim
+      size: 1000Gi
     # Resources requests and limits (recommended)
     resources: # <4>
       requests:
@@ -135,14 +135,15 @@ spec:
       limits:
         memory: 8Gi
         cpu: "2"
+    # Logging configuration (optional)
+    logging: # <5>
+      type: inline
+      loggers:
+        zookeeper.root.logger: INFO
     # JVM options (optional)
-    jvmOptions: # <5>
+    jvmOptions: # <6>
       -Xms: 4096m
       -Xmx: 4096m
-    # Storage configuration (required)
-    storage: # <6>
-      type: persistent-claim
-      size: 1000Gi
     # Metrics configuration (optional)
     metricsConfig: # <7>
       type: jmxPrometheusExporter
@@ -154,13 +155,6 @@ spec:
   # Entity operator (recommended)
   entityOperator:
     topicOperator:
-      watchedNamespace: my-topic-namespace
-      reconciliationIntervalSeconds: 60
-      # Logging configuration (optional)
-      logging:
-        type: inline
-        loggers:
-          rootLogger.level: INFO
       # Resources requests and limits (recommended)
       resources:
         requests:
@@ -169,14 +163,14 @@ spec:
         limits:
           memory: 512Mi
           cpu: "1"
+      # Logging configuration (optional)
+      logging:
+        type: inline
+        loggers:
+          rootLogger.level: INFO
+      watchedNamespace: my-topic-namespace
+      reconciliationIntervalSeconds: 60
     userOperator:
-      watchedNamespace: my-topic-namespace
-      reconciliationIntervalSeconds: 60
-      # Logging configuration (optional)
-      logging:
-        type: inline
-        loggers:
-          rootLogger.level: INFO
       # Resources requests and limits (recommended)
       resources:
         requests:
@@ -185,6 +179,13 @@ spec:
         limits:
           memory: 512Mi
           cpu: "1"
+      # Logging configuration (optional)
+      logging:
+        type: inline
+        loggers:
+          rootLogger.level: INFO
+      watchedNamespace: my-topic-namespace
+      reconciliationIntervalSeconds: 60
   # Kafka Exporter (optional)
   kafkaExporter:
     # ...
@@ -196,9 +197,9 @@ spec:
 <2> The number of ZooKeeper nodes. ZooKeeper clusters or ensembles usually run with an odd number of nodes, typically three, five, or seven. The majority of nodes must be available in order to maintain an effective quorum.
 If the ZooKeeper cluster loses its quorum, it will stop responding to clients and the Kafka brokers will stop working.
 Having a stable and highly available ZooKeeper cluster is crucial for Strimzi.
-<3> ZooKeeper loggers and log levels.
+<3> Storage size for persistent volumes may be increased and additional volumes may be added to JBOD storage.
 <4> Requests for reservation of supported resources, currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
-<5> JVM configuration options to optimize performance for the Virtual Machine (VM) running ZooKeeper.
-<6> Storage size for persistent volumes may be increased and additional volumes may be added to JBOD storage.
+<5> ZooKeeper loggers and log levels.
+<6> JVM configuration options to optimize performance for the Virtual Machine (VM) running ZooKeeper.
 <7> Prometheus metrics enabled. In this example, metrics are configured for the Prometheus JMX Exporter (the default metrics exporter).
 <8> Rules for exporting metrics in Prometheus format to a Grafana dashboard through the Prometheus JMX Exporter, which are enabled by referencing a ConfigMap containing configuration for the Prometheus JMX exporter. You can enable metrics without further configuration using a reference to a ConfigMap containing an empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
