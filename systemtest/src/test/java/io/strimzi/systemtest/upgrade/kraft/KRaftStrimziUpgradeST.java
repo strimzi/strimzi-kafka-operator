@@ -178,11 +178,11 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
 
     @BeforeEach
     void setupEnvironment() {
-        fileBasedStrimziUpgradeTestNamespacesSetup();
+        setUpStrimziUpgradeTestNamespaces();
     }
 
     @AfterEach
     void afterEach() {
-        fileBasedStrimziUpgradeTestNamespacesTeardown();
+        cleanUpStrimziUpgradeTestNamespaces();
     }
 }

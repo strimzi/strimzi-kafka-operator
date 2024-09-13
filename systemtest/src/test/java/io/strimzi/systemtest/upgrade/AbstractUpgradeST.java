@@ -734,7 +734,7 @@ public class AbstractUpgradeST extends AbstractST {
      * Sets up the namespaces required for the file-based Strimzi upgrade test.
      * This method creates and prepares the necessary namespaces if operator is installed from example files
      */
-    protected void fileBasedStrimziUpgradeTestNamespacesSetup() {
+    protected void setUpStrimziUpgradeTestNamespaces() {
         NamespaceManager.getInstance().createNamespaceAndPrepare(CO_NAMESPACE);
         NamespaceManager.getInstance().createNamespaceAndPrepare(TEST_SUITE_NAMESPACE);
     }
@@ -742,7 +742,7 @@ public class AbstractUpgradeST extends AbstractST {
     /**
      * Cleans resources installed to namespaces from example files and namespaces themselves.
      */
-    protected void fileBasedStrimziUpgradeTestNamespacesTeardown() {
+    protected void cleanUpStrimziUpgradeTestNamespaces() {
         cleanUpKafkaTopics(TEST_SUITE_NAMESPACE);
         deleteInstalledYamls(CO_NAMESPACE, TEST_SUITE_NAMESPACE, coDir);
         NamespaceManager.getInstance().deleteNamespaceWithWait(CO_NAMESPACE);

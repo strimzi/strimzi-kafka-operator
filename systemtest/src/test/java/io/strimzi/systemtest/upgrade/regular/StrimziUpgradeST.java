@@ -163,11 +163,11 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
 
     @BeforeEach
     void setupEnvironment() {
-        fileBasedStrimziUpgradeTestNamespacesSetup();
+        setUpStrimziUpgradeTestNamespaces();
     }
 
     @AfterEach
     void afterEach() {
-        fileBasedStrimziUpgradeTestNamespacesTeardown();
+        cleanUpStrimziUpgradeTestNamespaces();
     }
 }
