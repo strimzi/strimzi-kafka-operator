@@ -53,9 +53,9 @@ This is because an OAuth listener appends its own principle builder to the Kafka
 
 Custom principal builders must support peer certificates for authentication, as Strimzi uses these to manage the Kafka cluster.
 
-ifdef::Downloading[]
+ifdef::Section[]
 A custom OAuth principal builder might be identical or very similar to the Strimzi https://github.com/strimzi/strimzi-kafka-oauth/blob/main/oauth-server/src/main/java/io/strimzi/kafka/oauth/server/OAuthKafkaPrincipalBuilder.java[OAuth principal builder].
-endif::Downloading[]
+endif::Section[]
 
 NOTE: link:https://github.com/apache/kafka/blob/trunk/clients/src/main/java/org/apache/kafka/common/security/authenticator/DefaultKafkaPrincipalBuilder.java#L73-L79[Kafka's default principal builder class] supports the building of principals based on the names of peer certificates.
 The custom principal builder should provide a principal of type `user` using the name of the SSL peer certificate.

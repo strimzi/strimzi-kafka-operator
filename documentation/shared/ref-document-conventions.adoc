@@ -3,15 +3,13 @@
 // assembly-overview.adoc
 
 [id='document-conventions-{context}']
-= Document Conventions
-
-.User-replaced values
+= Document conventions
 
 User-replaced values, also known as _replaceables_, are shown in with angle brackets (< >).
 Underscores ( _ ) are used for multi-word values.
 If the value refers to code or commands, `monospace` is also used.
 
-For example, the following code shows that `_<my_namespace>_` must be replaced by the correct namespace name:
+For example, the following code shows that `<my_namespace>` must be replaced by the correct namespace name:
 
 [source, subs="+quotes"]
 ----

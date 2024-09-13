@@ -7,7 +7,7 @@
 
 To deploy Strimzi, you will need the following:
 
-ifdef::Downloading[]
+ifdef::Section[]
 * A Kubernetes {KubernetesVersion} cluster.
 +
 * The `kubectl` command-line tool is installed and configured to connect to the running cluster.
@@ -26,22 +26,22 @@ In almost all cases the example `kubectl` commands used in this guide can be don
 In other words, instead of using:
 
 [source,shell,subs=+quotes]
-kubectl apply -f _your-file_
+kubectl apply -f <your_file>
 
 when using OpenShift you can use:
 
 [source,shell,subs=+quotes]
-oc apply -f _your-file_
+oc apply -f <your_file>
 
 NOTE: As an exception to this general rule, `oc` uses `oc adm` subcommands for _cluster management_ functionality,
 whereas `kubectl` does not make this distinction.
 For example, the `oc` equivalent of `kubectl taint` is `oc adm taint`.
 
-endif::Downloading[]
-ifndef::Downloading[]
+endif::Section[]
+ifndef::Section[]
 * An OpenShift {OpenShiftVersion} cluster.
 +
 Strimzi is based on {StrimziVersion}.
 
 * The `oc` command-line tool is installed and configured to connect to the running cluster.
-endif::Downloading[]
+endif::Section[]
