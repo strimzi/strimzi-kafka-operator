@@ -29,6 +29,10 @@ import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolStatus;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolStatusBuilder;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
+import io.strimzi.api.kafka.model.rebalance.KafkaAutoRebalanceModeBrokersBuilder;
+import io.strimzi.api.kafka.model.rebalance.KafkaAutoRebalanceStatus;
+import io.strimzi.api.kafka.model.rebalance.KafkaAutoRebalanceStatusBuilder;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.CertUtils;
@@ -168,6 +172,8 @@ public class KafkaReconciler {
 
     private final KafkaMetadataStateManager kafkaMetadataStateManager;
 
+    private final KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus;
+
     /**
      * Constructs the Kafka reconciler
      *
@@ -215,6 +221,7 @@ public class KafkaReconciler {
         this.imagePullSecrets = config.getImagePullSecrets();
         this.previousNodeIds = kafkaCr.getStatus() != null ? kafkaCr.getStatus().getRegisteredNodeIds() : null;
         this.isPodDisruptionBudgetGeneration = config.isPodDisruptionBudgetGeneration();
+        this.kafkaAutoRebalanceStatus = kafkaCr.getStatus() != null ? kafkaCr.getStatus().getAutoRebalance() : null;
 
         this.stsOperator = supplier.stsOperations;
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
@@ -254,6 +261,7 @@ public class KafkaReconciler {
                 .compose(i -> initClientAuthenticationCertificates())
                 .compose(i -> manualPodCleaning())
                 .compose(i -> networkPolicy())
+                .compose(i -> updateKafkaAutoRebalanceStatus(kafkaStatus))
                 .compose(i -> manualRollingUpdate())
                 .compose(i -> pvcs(kafkaStatus))
                 .compose(i -> serviceAccount())
@@ -283,6 +291,71 @@ public class KafkaReconciler {
                 .compose(i -> updateKafkaVersion(kafkaStatus))
                 .compose(i -> updateKafkaMetadataMigrationState())
                 .compose(i -> updateKafkaMetadataState(kafkaStatus));
+    }
+
+    private Future<Void> updateKafkaAutoRebalanceStatus(KafkaStatus kafkaStatus) {
+        // we are going to save a consistent list of added notes (between the ones already in the status and the newly added ones)
+        // into the KafkaStatus autorebalance instance to be passed to the auto-rebalancing reconciler.
+        // It's needed in case nodes are scaled up but reconciliation fails and on the next one the operator has to know what to rebalance
+
+        if (kafkaAutoRebalanceStatus == null) {
+            // no already stored added nodes, adding only the new ones from current reconciliation
+            if (!kafka.addedBrokerNodes().isEmpty()) {
+                kafkaStatus.setAutoRebalance(
+                        new KafkaAutoRebalanceStatusBuilder()
+                                .withModes(
+                                        new KafkaAutoRebalanceModeBrokersBuilder()
+                                                .withMode(KafkaRebalanceMode.ADD_BROKERS)
+                                                .withBrokers(kafka.addedBrokerNodes().stream().toList())
+                                                .build()
+                                )
+                                .build());
+            }
+        } else {
+            KafkaAutoRebalanceStatusBuilder builder = new KafkaAutoRebalanceStatusBuilder(kafkaAutoRebalanceStatus);
+            // no already stored added nodes, adding only the new ones from current reconciliation
+            if (kafkaAutoRebalanceStatus.getModes() == null) {
+                if (!kafka.addedBrokerNodes().isEmpty()) {
+                    builder.withModes(
+                            new KafkaAutoRebalanceModeBrokersBuilder()
+                                    .withMode(KafkaRebalanceMode.ADD_BROKERS)
+                                    .withBrokers(kafka.addedBrokerNodes().stream().toList())
+                                    .build()
+                    );
+                }
+                kafkaStatus.setAutoRebalance(builder.build());
+            } else {
+                // going to create a consistent list between:
+                // the added nodes already stored in the status
+                // the newly added nodes within the current reconciliation
+                Set<Integer> newAddedBrokers = new LinkedHashSet<>();
+                boolean addBrokersModeExists = kafkaAutoRebalanceStatus.getModes().stream()
+                        .filter(m -> m.getMode().equals(KafkaRebalanceMode.ADD_BROKERS))
+                        .findFirst()
+                        .map(mode -> {
+                            newAddedBrokers.addAll(mode.getBrokers());
+                            return true;
+                        })
+                        .orElse(false);
+
+                if (!kafka.addedBrokerNodes().isEmpty()) {
+                    newAddedBrokers.addAll(kafka.addedBrokerNodes());
+                }
+                if (addBrokersModeExists) {
+                    builder.editMatchingMode(m -> m.getMode().equals(KafkaRebalanceMode.ADD_BROKERS))
+                            .withBrokers(newAddedBrokers.stream().toList())
+                            .endMode();
+                } else {
+                    builder.addNewMode()
+                            .withMode(KafkaRebalanceMode.ADD_BROKERS)
+                            .withBrokers(newAddedBrokers.stream().toList())
+                            .endMode();
+                }
+                kafkaStatus.setAutoRebalance(builder.build());
+            }
+        }
+
+        return Future.succeededFuture();
     }
 
     /**

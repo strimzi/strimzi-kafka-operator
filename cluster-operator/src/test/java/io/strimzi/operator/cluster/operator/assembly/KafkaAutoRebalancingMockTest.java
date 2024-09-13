@@ -600,7 +600,7 @@ public class KafkaAutoRebalancingMockTest {
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // just checking that on Kafka cluster creation with no Cruise Control, the auto-rebalancing doesn't run
                     Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
-                    assertThat(k.getStatus().getAutoRebalance(), is(nullValue()));
+                    assertThat(k.getStatus().getAutoRebalance().getState(), is(nullValue()));
                     reconciliation.flag();
                 })));
     }
@@ -622,7 +622,7 @@ public class KafkaAutoRebalancingMockTest {
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // just checking that on Kafka cluster creation with no Cruise Control, the auto-rebalancing doesn't run
                     Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
-                    assertThat(k.getStatus().getAutoRebalance(), is(nullValue()));
+                    assertThat(k.getStatus().getAutoRebalance().getState(), is(nullValue()));
                     reconciliation.flag();
                 })));
     }
