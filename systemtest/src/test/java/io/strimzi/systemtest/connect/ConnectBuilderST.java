@@ -546,7 +546,7 @@ class ConnectBuilderST extends AbstractST {
         steps = {
             @Step(value = "Create a test storage object", expected = "Test storage object is created"),
             @Step(value = "Generate image name for the test case", expected = "Image name is generated successfully"),
-            @Step(value = "Create Kafka topic and Kafka Connect resources", expected = "Resources are created and available"),
+            @Step(value = "Create Kafka topic and Kafka Connect resources with the configuration for plugin using mvn coordinates", expected = "Resources are created and available"),
             @Step(value = "Configure Kafka Connector and deploy it", expected = "Connector is deployed with correct configuration"),
             @Step(value = "Create Kafka consumer and start consuming messages", expected = "Consumer starts consuming messages successfully"),
             @Step(value = "Verify that consumer receives messages", expected = "Consumer receives the expected messages")

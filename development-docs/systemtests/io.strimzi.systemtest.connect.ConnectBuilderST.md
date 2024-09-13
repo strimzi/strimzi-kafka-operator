@@ -60,7 +60,7 @@
 | - | - | - |
 | 1. | Create a test storage object | Test storage object is created |
 | 2. | Generate image name for the test case | Image name is generated successfully |
-| 3. | Create Kafka topic and Kafka Connect resources | Resources are created and available |
+| 3. | Create Kafka topic and Kafka Connect resources with the configuration for plugin using mvn coordinates | Resources are created and available |
 | 4. | Configure Kafka Connector and deploy it | Connector is deployed with correct configuration |
 | 5. | Create Kafka consumer and start consuming messages | Consumer starts consuming messages successfully |
 | 6. | Verify that consumer receives messages | Consumer receives the expected messages |
