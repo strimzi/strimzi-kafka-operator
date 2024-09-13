@@ -95,9 +95,9 @@ sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginMo
   oauth.token.endpoint.uri="<token_endpoint_url>" \ # <4>
   oauth.client.id="<client_id>" \ # <5>
   oauth.client.secret="<client_secret>" \ # <6> 
-  oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \ <7>
-  oauth.ssl.truststore.password="$STOREPASS" \ <8>
-  oauth.ssl.truststore.type="PKCS12" \ <9>
+  oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \ # <7>
+  oauth.ssl.truststore.password="$STOREPASS" \ # <8>
+  oauth.ssl.truststore.type="PKCS12" \ # <9>
   oauth.scope="<scope>" \ # <10> 
   oauth.audience="<audience>" ; # <11>
 sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler  
@@ -138,7 +138,7 @@ sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginMo
 sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
 ----
 <1> Path to the client assertion file used for authenticating the client. This file is a private key file as an alternative to the client secret.
-Alternatively, use `oauth.client.assertion` option to specify the client assertion value in clear text.
+Alternatively, use the `oauth.client.assertion` option to specify the client assertion value in clear text.
 <2> (Optional) Sometimes you may need to specify the client assertion type. In not specified, the default value is `urn:ietf:params:oauth:client-assertion-type:jwt-bearer`.
 
 [id='con-oauth-authentication-password-grants-{context}']

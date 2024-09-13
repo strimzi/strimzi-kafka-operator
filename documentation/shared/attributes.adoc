@@ -169,13 +169,7 @@
 :KafkaBridgeApiVersion: kafka.strimzi.io/v1beta2
 
 // Section enablers
-:InstallationAppendix:
-:Metrics:
-:Downloading:
 :Section:
-
-//EXCLUSIVE TO STRIMZI
-:sectlinks:
 
 // Helm Chart - deploy cluster operator
 :ChartReleaseCoordinate: strimzi/strimzi-kafka-operator

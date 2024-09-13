@@ -8,10 +8,10 @@
 [role="_abstract"]
 Further enhance your deployment by incorporating additional supported configuration.
 Example configuration files are provided with the downloadable release artifacts from the {ReleaseDownload}.
-ifdef::Downloading[]
+ifdef::Section[]
 You can also access the example files directly from the
 link:https://github.com/strimzi/strimzi-kafka-operator/tree/{GithubVersion}/examples/[`examples` directory^].
-endif::Downloading[]
+endif::Section[]
 
 The example files include only the essential properties and values for custom resources by default. 
 You can download and apply the examples using the `kubectl` command-line tool.

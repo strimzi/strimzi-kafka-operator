@@ -9,14 +9,14 @@
 Having xref:deploy-tasks-prereqs_{context}[prepared your environment for a deployment of Strimzi], you can deploy Strimzi to a Kubernetes cluster.
 Use the installation files provided with the release artifacts.
 
-ifdef::Downloading[]
+ifdef::Section[]
 You can deploy Strimzi {ProductVersion} on Kubernetes {KubernetesVersion}.
-endif::Downloading[]
+endif::Section[]
 
-ifndef::Downloading[]
+ifndef::Section[]
 Strimzi is based on {StrimziVersion}.
 You can deploy Strimzi {ProductVersion} on OpenShift {OpenShiftVersion}.
-endif::Downloading[]
+endif::Section[]
 
 The steps to deploy Strimzi using the installation files are as follows:
 

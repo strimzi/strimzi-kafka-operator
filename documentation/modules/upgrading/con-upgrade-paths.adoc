@@ -13,7 +13,7 @@ An incremental upgrade involves upgrading Strimzi from the previous minor versio
 
 Multi-version upgrade::
 A multi-version upgrade involves upgrading an older version of Strimzi to version {ProductVersion} within a single upgrade, skipping one or more intermediate versions. 
-For example, upgrading directly from Strimzi 0.30.0 to Strimzi {ProductVersion} is possible. 
+Upgrading from any earlier Strimzi version to the latest version is possible. 
 
 [id='con-upgrade-paths-kafka-versions-{context}']
 == Support for Kafka versions when upgrading
