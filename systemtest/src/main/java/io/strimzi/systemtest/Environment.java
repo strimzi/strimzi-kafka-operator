@@ -184,6 +184,7 @@ public class Environment {
      * Env var for specify base image for building Kafka with tiered storage in system tests
      */
     public static final String KAFKA_TIERED_STORAGE_BASE_IMAGE_ENV = "KAFKA_TIERED_STORAGE_BASE_IMAGE";
+    public static final String KANIKO_IMAGE_ENV = "KANIKO_IMAGE";
 
     /**
      * Defaults
@@ -218,6 +219,7 @@ public class Environment {
     public static final String IP_FAMILY_DUAL_STACK = "dual";
 
     public static final String KAFKA_TIERED_STORAGE_BASE_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + STRIMZI_ORG_DEFAULT + "/kafka:latest-kafka-" + ST_KAFKA_VERSION_DEFAULT;
+    public static final String KANIKO_IMAGE_DEFAULT = "gcr.io/kaniko-project/executor:latest";
 
     /**
      * Set values
@@ -275,6 +277,7 @@ public class Environment {
     public static final String IP_FAMILY = getOrDefault(IP_FAMILY_ENV, IP_FAMILY_DEFAULT);
 
     public static final String KAFKA_TIERED_STORAGE_BASE_IMAGE = getOrDefault(KAFKA_TIERED_STORAGE_BASE_IMAGE_ENV, KAFKA_TIERED_STORAGE_BASE_IMAGE_DEFAULT);
+    public static final String KANIKO_IMAGE = getOrDefault(KANIKO_IMAGE_ENV, KANIKO_IMAGE_DEFAULT);
 
     private Environment() { }
 
