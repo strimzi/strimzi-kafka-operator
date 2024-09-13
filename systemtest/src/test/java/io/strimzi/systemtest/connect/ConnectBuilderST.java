@@ -84,9 +84,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @MicroShiftNotSupported
 @SuiteDoc(
     description = @Desc("Testing Kafka Connect build and plugin management."),
-    beforeTestSteps = {
-        @Step(value = "Initialize TestStorage and perform the setup", expected = "TestStorage is initialized and setup is completed with Kafka cluster resources in place")
-    },
     labels = {
         @Label(value = "connect"),
     }
@@ -162,6 +159,7 @@ class ConnectBuilderST extends AbstractST {
         steps = {
             @Step(value = "Initialize TestStorage and get test image name", expected = "TestStorage instance is created and the image name for the test case is retrieved"),
             @Step(value = "Create a Plugin with wrong checksum and build Kafka Connect resource with it", expected = "Kafka Connect resource is created but the build fails due to wrong checksum"),
+            @Step(value = "Deploy Scraper pod with specific configurations", expected = "Kafka Scraper pod are successfully deployed"),
             @Step(value = "Wait for Kafka Connect status to indicate build failure", expected = "Kafka Connect status contains message about build failure"),
             @Step(value = "Deploy network policies for Kafka Connect", expected = "Network policies are successfully deployed for Kafka Connect"),
             @Step(value = "Replace the plugin checksum with the correct one and update Kafka Connect resource", expected = "Kafka Connect resource is updated with the correct checksum"),
@@ -367,11 +365,10 @@ class ConnectBuilderST extends AbstractST {
         steps = {
             @Step(value = "Create TestStorage instance", expected = "Instance of TestStorage is created"),
             @Step(value = "Generate random topic name and create Kafka topic", expected = "Kafka topic is successfully created"),
-            @Step(value = "Deploy Kafka Connect and Scraper pod with specific configurations", expected = "Kafka Connect and Scraper pod are successfully deployed"),
             @Step(value = "Deploy network policies for KafkaConnect", expected = "Network policies are successfully deployed"),
-            @Step(value = "Create and validate EchoSink KafkaConnector", expected = "EchoSink KafkaConnector is successfully created and validated"),
+            @Step(value = "Create EchoSink KafkaConnector", expected = "EchoSink KafkaConnector is successfully created and validated"),
             @Step(value = "Add a second plugin to Kafka Connect and perform rolling update", expected = "Second plugin is added and rolling update is performed"),
-            @Step(value = "Create and validate Camel-HTTP-Sink KafkaConnector", expected = "Camel-HTTP-Sink KafkaConnector is successfully created and validated"),
+            @Step(value = "Create Camel-HTTP-Sink KafkaConnector", expected = "Camel-HTTP-Sink KafkaConnector is successfully created and validated"),
             @Step(value = "Verify that both connectors and plugins are present in Kafka Connect", expected = "Both connectors and plugins are verified successfully")
         },
         labels = {
@@ -475,7 +472,7 @@ class ConnectBuilderST extends AbstractST {
     @TestDoc(
         description = @Desc("Test verifying Kafka Connect plugin behavior with and without file names for different plugin types."),
         steps = {
-            @Step(value = "Initialize test storage and create namespace and topic", expected = "Namespace and topic are created successfully"),
+            @Step(value = "Initialize test storage and topic", expected = "Namespace and topic are created successfully"),
             @Step(value = "Create and set up Kafka Connect with specified plugin and build configurations", expected = "Kafka Connect is deployed and configured correctly"),
             @Step(value = "Take a snapshot of current Kafka Connect pods and verify plugin file name", expected = "Plugin file name matches the expected file name"),
             @Step(value = "Modify Kafka Connect to use a plugin without a file name and trigger a rolling update", expected = "Kafka Connect plugin is updated without the file name successfully"),
