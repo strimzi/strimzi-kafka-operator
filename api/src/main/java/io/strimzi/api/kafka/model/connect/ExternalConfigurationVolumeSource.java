@@ -9,8 +9,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
+import io.strimzi.api.annotations.DeprecatedType;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
+import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.OneOf;
@@ -31,6 +33,8 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({"name", "secret", "configMap"})
 @OneOf({@OneOf.Alternative(@OneOf.Alternative.Property("secret")), @OneOf.Alternative(@OneOf.Alternative.Property("configMap"))})
+@Deprecated
+@DeprecatedType(replacedWithType = AdditionalVolume.class)
 @EqualsAndHashCode
 @ToString
 public class ExternalConfigurationVolumeSource implements UnknownPropertyPreserving {

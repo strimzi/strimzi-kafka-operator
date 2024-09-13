@@ -7,12 +7,12 @@
 
 [role="_abstract"]
 Use the `FileConfigProvider` to provide configuration properties from a file within a directory.
-Files can be config maps or secrets.
+Files can be stored in config maps or secrets.
 
 In this procedure, a file provides configuration properties for a connector.
 A database name and password are specified as properties of a secret.
 The secret is mounted to the Kafka Connect pod as a volume. 
-Volumes are mounted on the path `/opt/kafka/external-configuration/<volume-name>`.
+Volumes are mounted on the path `/mnt/<volume-name>`.
 
 .Prerequisites
 
@@ -42,7 +42,7 @@ stringData:
 +
 --
 * Enable the `FileConfigProvider`
-* Specify the file using the `externalConfiguration` property.
+* Specify the additional volume using the `template` property.
 --
 +
 .Example Kafka Connect configuration to use an external property file
@@ -58,17 +58,24 @@ spec:
     config.providers: file # <1>
     config.providers.file.class: org.apache.kafka.common.config.provider.FileConfigProvider # <2>
   #...
-  externalConfiguration:
-    volumes:
-      - name: connector-config # <3>
-        secret:
-          secretName: mysecret # <4>
+  template:
+    pod:
+      volumes:
+        - name: connector-config-volume # <3>
+          secret:
+            secretName: mysecret # <4>
+    kafkaContainer:
+      volumeMounts:
+        - name: connector-config-volume # <5>
+          mountPath: /mnt/mysecret # <6>
 ----
 <1> The alias for the configuration provider is used to define other configuration parameters.
 <2> `FileConfigProvider` provides values from properties files.
 The parameter uses the alias from `config.providers`, taking the form `config.providers.${alias}.class`.
 <3> The name of the volume containing the secret.
 <4> The name of the secret.
+<5> The name of the mounted volume, which must match the volume name in the `volumes` list.
+<6> The path where the secret is mounted, which must start with `/mnt/`.
 
 . Create or update the resource to enable the provider.
 +
@@ -94,8 +101,8 @@ spec:
   config:
     database.hostname: 192.168.99.1
     database.port: "3306"
-    database.user: "${file:/opt/kafka/external-configuration/connector-config/mysecret:dbUsername}"
-    database.password: "${file:/opt/kafka/external-configuration/connector-config/mysecret:dbPassword}"
+    database.user: "${file:/mnt/mysecret/connector.properties:dbUsername}"
+    database.password: "${file:/mnt/mysecret/connector.properties:dbPassword}"
     database.server.id: "184054"
     #...
 ----

@@ -133,6 +133,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
 
     protected String bootstrapServers;
     protected List<ExternalConfigurationEnv> externalEnvs = Collections.emptyList();
+
+    @SuppressWarnings("deprecation") // External Configuration volumes are deprecated
     protected List<ExternalConfigurationVolumeSource> externalVolumes = Collections.emptyList();
     protected Tracing tracing;
     protected JmxModel jmx;
@@ -384,6 +386,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         return volumeList;
     }
 
+    @SuppressWarnings("deprecation") // External Configuration volumes are deprecated
     private List<Volume> getExternalConfigurationVolumes(boolean isOpenShift)  {
         int mode = 0444;
         if (isOpenShift) {
@@ -454,6 +457,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         return volumeMountList;
     }
 
+    @SuppressWarnings("deprecation") // External Configuration volumes are deprecated
     private List<VolumeMount> getExternalConfigurationVolumeMounts()    {
         List<VolumeMount> volumeMountList = new ArrayList<>(0);
 

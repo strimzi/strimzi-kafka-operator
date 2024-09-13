@@ -11,8 +11,8 @@ Files can be config maps or secrets.
 
 In this procedure, a secret provides the TLS keystore and truststore user credentials for a connector.
 The credentials are in separate files.
-The secrets are mounted into the Kafka Connect pod as volumes. 
-Volumes are mounted on the path `/opt/kafka/external-configuration/<volume-name>`.
+The secrets are mounted into the Kafka Connect pod as volumes.
+Volumes are mounted on the path `/mnt/<volume-name>`.
 
 .Prerequisites
 
@@ -49,7 +49,7 @@ The `<cluster_name>-cluster-ca-cert` secret generated when deploying the Kafka c
 +
 --
 * Enable the `DirectoryConfigProvider`
-* Specify the files using the `externalConfiguration` property.
+* Specify the additional volume using the `template` property.
 --
 +
 .Example Kafka Connect configuration to use external property files
@@ -65,6 +65,21 @@ spec:
     config.providers: directory # <1>
     config.providers.directory.class: org.apache.kafka.common.config.provider.DirectoryConfigProvider # <2>
   #...
+  template:
+    pod:
+      volumes:
+        - name: my-user-volume # <3>
+          secret:
+            secretName: my-user # <4>
+        - name: cluster-ca-volume
+          secret:
+            secretName: my-cluster-cluster-ca-cert
+    kafkaContainer:
+      volumeMounts:
+        - name: my-user-volume # <5>
+          mountPath: /mnt/my-user # <6>
+        - name: cluster-ca-volume
+          mountPath: /mnt/cluster-ca
   externalConfiguration:
     volumes: # <3>
       - name: cluster-ca # <4>
@@ -76,9 +91,10 @@ spec:
 ----
 <1> The alias for the configuration provider is used to define other configuration parameters.
 <2> `DirectoryConfigProvider` provides values from files in a directory. The parameter uses the alias from `config.providers`, taking the form `config.providers.${alias}.class`.
-<3> The names of the volumes containing the secrets. 
-<4> The name of the secret for the cluster CA certificate to supply truststore configuration.
-<5> The name of the secret for the user to supply keystore configuration.
+<3> The name of the volume containing the secret.
+<4> The name of the secret.
+<5> The name of the mounted volume, which must match the volume name in the `volumes` list.
+<6> The path where the secret is mounted, which must start with `/mnt/`.
 
 . Create or update the resource to enable the provider.
 +
@@ -105,10 +121,10 @@ spec:
     # ...
     database.history.producer.security.protocol: SSL
     database.history.producer.ssl.truststore.type: PEM
-    database.history.producer.ssl.truststore.certificates: "${directory:/opt/kafka/external-configuration/cluster-ca:ca.crt}"
+    database.history.producer.ssl.truststore.certificates: "${directory:/mtn/cluster-ca:ca.crt}"
     database.history.producer.ssl.keystore.type: PEM
-    database.history.producer.ssl.keystore.certificate.chain: "${directory:/opt/kafka/external-configuration/my-user:user.crt}"
-    database.history.producer.ssl.keystore.key: "${directory:/opt/kafka/external-configuration/my-user:user.key}"
+    database.history.producer.ssl.keystore.certificate.chain: "${directory:/mnt/my-user:user.crt}"
+    database.history.producer.ssl.keystore.key: "${directory:/mnt/my-user:user.key}"
     #...
 ----
 +

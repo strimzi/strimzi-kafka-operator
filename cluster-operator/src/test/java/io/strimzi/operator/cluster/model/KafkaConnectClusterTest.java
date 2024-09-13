@@ -980,6 +980,7 @@ public class KafkaConnectClusterTest {
     }
 
     @ParallelTest
+    @SuppressWarnings("deprecation") // External Configuration volumes are deprecated
     public void testExternalConfigurationSecretVolumes() {
         ExternalConfigurationVolumeSource volume = new ExternalConfigurationVolumeSourceBuilder()
                 .withName("my-volume")
@@ -1013,6 +1014,7 @@ public class KafkaConnectClusterTest {
     }
 
     @ParallelTest
+    @SuppressWarnings("deprecation") // External Configuration volumes are deprecated
     public void testExternalConfigurationSecretVolumesWithDots() {
         ExternalConfigurationVolumeSource volume = new ExternalConfigurationVolumeSourceBuilder()
                 .withName("my.volume")
@@ -1046,6 +1048,7 @@ public class KafkaConnectClusterTest {
     }
 
     @ParallelTest
+    @SuppressWarnings("deprecation") // External Configuration volumes are deprecated
     public void testExternalConfigurationConfigVolumes() {
         ExternalConfigurationVolumeSource volume = new ExternalConfigurationVolumeSourceBuilder()
                 .withName("my-volume")
@@ -1079,6 +1082,7 @@ public class KafkaConnectClusterTest {
     }
 
     @ParallelTest
+    @SuppressWarnings("deprecation") // External Configuration volumes are deprecated
     public void testExternalConfigurationConfigVolumesWithDots() {
         ExternalConfigurationVolumeSource volume = new ExternalConfigurationVolumeSourceBuilder()
                 .withName("my.volume")
@@ -1112,6 +1116,7 @@ public class KafkaConnectClusterTest {
     }
 
     @ParallelTest
+    @SuppressWarnings("deprecation") // External Configuration volumes are deprecated
     public void testExternalConfigurationInvalidVolumes() {
         ExternalConfigurationVolumeSource volume = new ExternalConfigurationVolumeSourceBuilder()
                 .withName("my-volume")
@@ -1142,6 +1147,7 @@ public class KafkaConnectClusterTest {
     }
 
     @ParallelTest
+    @SuppressWarnings("deprecation") // External Configuration volumes are deprecated
     public void testNoExternalConfigurationVolumes() {
         ExternalConfigurationVolumeSource volume = new ExternalConfigurationVolumeSourceBuilder()
                 .withName("my-volume")
