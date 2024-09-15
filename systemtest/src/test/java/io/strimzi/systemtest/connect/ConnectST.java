@@ -15,6 +15,11 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.ConnectorState;
 import io.strimzi.api.kafka.model.common.PasswordSecretSourceBuilder;
@@ -106,11 +111,35 @@ import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 @Tag(CONNECT)
 @Tag(CONNECT_COMPONENTS)
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
+@SuiteDoc(
+    description = @Desc("Verifies the deployment, manual rolling update, and undeployment of Kafka Connect components."),
+    beforeTestSteps = {
+        @Step(value = "Deploy scraper Pod for accessing all other Pods", expected = "Scraper Pod is deployed")
+    },
+    labels = {
+        @Label(value = "connect")
+    }
+)
 class ConnectST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ConnectST.class);
 
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Verifies the deployment, manual rolling update, and undeployment of Kafka Connect components."),
+        steps = {
+            @Step(value = "Initialize Test Storage", expected = "Test storage instance is created with required context"),
+            @Step(value = "Define expected configurations", expected = "Configurations are loaded from properties file"),
+            @Step(value = "Create and wait for resources", expected = "Kafka resources, including NodePools and KafkaConnect instances, are created and become ready"),
+            @Step(value = "Annotate for manual rolling update", expected = "KafkaConnect components are annotated for a manual rolling update"),
+            @Step(value = "Perform and wait for rolling update", expected = "KafkaConnect components roll and new pods are deployed"),
+            @Step(value = "Kafka Connect pod", expected = "Pod configurations and annotations are verified"),
+            @Step(value = "Kafka Connectors", expected = "Various Kafka Connect resource labels and configurations are verified to ensure correct deployment")
+        },
+        labels = {
+            @Label(value = "connect")
+        }
+    )
     void testDeployRollUndeploy() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -155,27 +184,21 @@ class ConnectST extends AbstractST {
         VerificationUtils.verifyServiceAccountsLabels(testStorage.getNamespaceName(), testStorage.getClusterName());
     }
 
-    /**
-     * @description This test case verifies pausing, stopping and running of connector via 'spec.pause' or 'spec.state' specification.
-     *
-     * @steps
-     *  1. - Deploy prerequisites for running FileSink KafkaConnector, that is KafkaTopic, Kafka cluster, KafkaConnect, and FileSink KafkaConnector.
-     *     - All resources are deployed and ready.
-     *  2. - Pause and run connector by modifying 'spec.pause' property of Connector, while also producing messages when connector pauses.
-     *     - Connector is paused and resumed as expected, after connector is resumed, produced messages are present in destination file, indicating connector resumed correctly.
-     *  3. - Stop and run connector by modifying 'spec.state' property of Connector (with priority over now set 'spec.pause=false'), while also producing messages when connector stops.
-     *     - Connector stops and resumes as expected, after resuming, produced messages are present in destination file, indicating connector resumed correctly.
-     *  4. - Pause and run connector by modifying 'spec.state' property of Connector (with priority over now set 'spec.pause=false'), while also producing messages when connector pauses.
-     *     - Connector pauses and resumes as expected, after resuming, produced messages are present in destination file, indicating connector resumed correctly.
-     *
-     * @usecase
-     *  - kafka-connect
-     *  - kafka-connector
-     *  - connector-state
-     */
     @ParallelNamespaceTest
     @Tag(SANITY)
     @Tag(SMOKE)
+    @TestDoc(
+        description = @Desc("This test case verifies pausing, stopping and running of connector via 'spec.pause' or 'spec.state' specification."),
+        steps = {
+            @Step(value = "Deploy prerequisites for running FileSink KafkaConnector, that is KafkaTopic, Kafka cluster, KafkaConnect, and FileSink KafkaConnector.", expected = "All resources are deployed and ready."),
+            @Step(value = "Pause and run connector by modifying 'spec.pause' property of Connector, while also producing messages when connector pauses.", expected = "Connector is paused and resumed as expected, after connector is resumed, produced messages are present in destination file, indicating connector resumed correctly."),
+            @Step(value = "Stop and run connector by modifying 'spec.state' property of Connector (with priority over now set 'spec.pause=false'), while also producing messages when connector stops.", expected = "Connector stops and resumes as expected, after resuming, produced messages are present in destination file, indicating connector resumed correctly."),
+            @Step(value = "Pause and run connector by modifying 'spec.state' property of Connector (with priority over now set 'spec.pause=false'), while also producing messages when connector pauses.", expected = "Connector pauses and resumes as expected, after resuming, produced messages are present in destination file, indicating connector resumed correctly.")
+        },
+        labels = {
+            @Label(value = "connect")
+        }
+    )
     void testKafkaConnectAndConnectorStateWithFileSinkPlugin() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -232,6 +255,24 @@ class ConnectST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Test verifying Kafka Connect functionalities with Plain and SCRAM-SHA authentication."),
+        steps = {
+            @Step(value = "Create object instance of TestStorage", expected = "Instance of TestStorage is created"),
+            @Step(value = "Create NodePools using resourceManager based on the configuration", expected = "NodePools for broker and controller are created or not based on configuration"),
+            @Step(value = "Deploy Kafka with SCRAM-SHA-512 listener", expected = "Kafka is deployed with the specified listener authentication"),
+            @Step(value = "Create KafkaUser with SCRAM-SHA authentication", expected = "KafkaUser is created using SCRAM-SHA authentication with the given credentials"),
+            @Step(value = "Create KafkaTopic", expected = "KafkaTopic is created"),
+            @Step(value = "Deploy KafkaConnect with SCRAM-SHA-512 authentication", expected = "KafkaConnect instance is deployed and connected to Kafka"),
+            @Step(value = "Deploy required resources for NetworkPolicy, KafkaConnect, and ScraperPod", expected = "Resources are successfully deployed with NetworkPolicy applied"),
+            @Step(value = "Create FileStreamSink connector", expected = "FileStreamSink connector is created successfully"),
+            @Step(value = "Create Kafka client with SCRAM-SHA-PLAIN authentication and send messages", expected = "Messages are produced and consumed successfully using Kafka client with SCRAM-SHA-PLAIN authentication"),
+            @Step(value = "Verify messages in KafkaConnect file sink", expected = "FileSink contains the expected number of messages")
+        },
+        labels = {
+            @Label(value = "connect")
+        }
+    )
     void testKafkaConnectWithPlainAndScramShaAuthentication() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -306,6 +347,23 @@ class ConnectST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(CONNECTOR_OPERATOR)
+    @TestDoc(
+        description = @Desc("Test the functionality of Kafka Connect with a File Sink Plugin in a parallel namespace setup."),
+        steps = {
+            @Step(value = "Create and configure test storage", expected = "Test storage is set up with necessary configurations."),
+            @Step(value = "Create NodePools using resourceManager based on the configuration", expected = "NodePools for broker and controller are created or not based on configuration"),
+            @Step(value = "Create and wait for the broker and controller pools", expected = "Broker and controller pools are created and running."),
+            @Step(value = "Deploy and configure Kafka Connect with File Sink Plugin", expected = "Kafka Connect with File Sink Plugin is deployed and configured."),
+            @Step(value = "Deploy Network Policies for Kafka Connect", expected = "Network Policies are successfully deployed for Kafka Connect."),
+            @Step(value = "Create and wait for Kafka Connector", expected = "Kafka Connector is created and running."),
+            @Step(value = "Deploy and configure scraper pod", expected = "Scraper pod is deployed and configured."),
+            @Step(value = "Deploy and configure Kafka clients", expected = "Kafka clients are deployed and configured."),
+            @Step(value = "Execute assertions to verify the Kafka Connector configuration and status", expected = "Assertions confirm the Kafka Connector is successfully deployed, has the correct configuration, and is running.")
+        },
+        labels = {
+            @Label(value = "connect")
+        }
+    )
     void testKafkaConnectAndConnectorFileSinkPlugin() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -354,8 +412,21 @@ class ConnectST extends AbstractST {
         assertThat(output, containsString("\"topic\":\"" + testStorage.getTopicName() + "\""));
     }
 
-
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Test ensuring the JVM options and resource requests/limits are correctly applied to Kafka Connect components."),
+        steps = {
+            @Step(value = "Create TestStorage instance", expected = "TestStorage instance is created"),
+            @Step(value = "Create NodePools using resourceManager based on the configuration", expected = "NodePools for broker and controller are created or not based on configuration"),
+            @Step(value = "Create broker and controller node pools", expected = "Node pools are created and ready"),
+            @Step(value = "Create Kafka cluster", expected = "Kafka cluster is created and operational"),
+            @Step(value = "Setup JVM options and resource requirements for Kafka Connect", expected = "Kafka Connect is configured with specified JVM options and resources"),
+            @Step(value = "Verify JVM options and resource requirements", expected = "JVM options and resource requests/limits are correctly applied to the Kafka Connect pod")
+        },
+        labels = {
+            @Label(value = "connect")
+        }
+    )
     void testJvmAndResources() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -395,6 +466,23 @@ class ConnectST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(COMPONENT_SCALING)
+    @TestDoc(
+        description = @Desc("Test verifying the scaling up and down functionality of Kafka Connect in a Kubernetes environment."),
+        steps = {
+            @Step(value = "Create TestStorage object instance", expected = "Instance of TestStorage is created"),
+            @Step(value = "Create NodePools using resourceManager based on the configuration", expected = "NodePools for broker and controller are created or not based on configuration"),
+            @Step(value = "Create resources for KafkaNodePools and KafkaCluster", expected = "Resources are created and ready"),
+            @Step(value = "Deploy Kafka Connect with file plugin", expected = "Kafka Connect is deployed with 1 initial replica"),
+            @Step(value = "Verify the initial replica count", expected = "Initial replica count is verified to be 1"),
+            @Step(value = "Scale Kafka Connect up to a higher number of replicas", expected = "Kafka Connect is scaled up successfully"),
+            @Step(value = "Verify the new replica count after scaling up", expected = "New replica count is verified to be the scaled up count"),
+            @Step(value = "Scale Kafka Connect down to the initial number of replicas", expected = "Kafka Connect is scaled down successfully"),
+            @Step(value = "Verify the replica count after scaling down", expected = "Replica count is verified to be the initial count")
+        },
+        labels = {
+            @Label(value = "connect")
+        }
+    )
     void testKafkaConnectScaleUpScaleDown() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -430,6 +518,25 @@ class ConnectST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("This test verifies that Kafka Connect works with TLS and TLS client authentication."),
+        steps = {
+            @Step(value = "Create test storage instance", expected = "Test storage instance is created"),
+            @Step(value = "Create NodePools using resourceManager based on the configuration", expected = "NodePools for broker and controller are created or not based on configuration"),
+            @Step(value = "Create resources for Kafka broker and Kafka Connect components", expected = "Resources are created and ready"),
+            @Step(value = "Configure Kafka broker with TLS listener and client authentication", expected = "Kafka broker is configured correctly"),
+            @Step(value = "Deploy Kafka user with TLS authentication", expected = "Kafka user is deployed with TLS authentication"),
+            @Step(value = "Deploy Kafka topic", expected = "Kafka topic is deployed"),
+            @Step(value = "Configure and deploy Kafka Connect with TLS and TLS client authentication", expected = "Kafka Connect is configured and deployed correctly"),
+            @Step(value = "Deploy Network Policies for Kafka Connect", expected = "Network Policies are deployed"),
+            @Step(value = "Create FileStreamSink KafkaConnector via scraper pod", expected = "KafkaConnector is created correctly"),
+            @Step(value = "Deploy TLS clients and produce/consume messages", expected = "Messages are produced and consumed successfully"),
+            @Step(value = "Verify messages in Kafka Connect FileSink", expected = "Messages are verified in Kafka Connect FileSink")
+        },
+        labels = {
+            @Label(value = "connect")
+        }
+    )
     void testSecretsWithKafkaConnectWithTlsAndTlsClientAuthentication() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -503,6 +610,26 @@ class ConnectST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Test validating Kafka Connect with TLS and SCRAM-SHA authentication along with associated resources setup and verification."),
+        steps = {
+            @Step(value = "Initialize test storage", expected = "Instances created successfully"),
+            @Step(value = "Create Kafka node pools (broker and controller)", expected = "Node pools created and ready"),
+            @Step(value = "Deploy Kafka cluster with TLS and SCRAM-SHA-512 authentication", expected = "Kafka cluster deployed with listeners configured"),
+            @Step(value = "Create Kafka user with SCRAM-SHA-512", expected = "User created successfully"),
+            @Step(value = "Deploy Kafka topic", expected = "Topic created successfully"),
+            @Step(value = "Deploy Kafka Connect with TLS and SCRAM-SHA-512 authentication", expected = "Kafka Connect deployed with plugins and configuration"),
+            @Step(value = "Deploy scraper pod for testing Kafka Connect", expected = "Scraper pod deployed successfully"),
+            @Step(value = "Deploy NetworkPolicies for Kafka Connect", expected = "NetworkPolicies applied successfully"),
+            @Step(value = "Create and configure FileStreamSink KafkaConnector", expected = "FileStreamSink KafkaConnector created and configured"),
+            @Step(value = "Create Kafka clients for SCRAM-SHA-512 over TLS", expected = "Kafka clients (producer and consumer) created successfully"),
+            @Step(value = "Wait for client operations to succeed", expected = "Message production and consumption verified"),
+            @Step(value = "Verify messages in Kafka Connect file sink", expected = "Messages found in the specified file path")
+        },
+        labels = {
+            @Label(value = "connect")
+        }
+    )
     void testSecretsWithKafkaConnectWithTlsAndScramShaAuthentication() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -575,6 +702,25 @@ class ConnectST extends AbstractST {
 
     @ParallelNamespaceTest
     @MicroShiftNotSupported("The test is using Connect Build feature that is not available on MicroShift")
+    @TestDoc(
+        description = @Desc("Test the automatic restart functionality of Kafka Connect tasks when they fail."),
+        steps = {
+            @Step(value = "Create test storage instance", expected = "Test storage instance is created"),
+            @Step(value = "Create node pool resources", expected = "Node pool resources are created and waited for readiness"),
+            @Step(value = "Create Kafka cluster", expected = "Kafka cluster is created and waited for readiness"),
+            @Step(value = "Deploy EchoSink Kafka Connector with autor restart enabled", expected = "Kafka Connector is created with auto-restart enabled"),
+            @Step(value = "Send first batch of messages", expected = "First batch of messages is sent to the topic"),
+            @Step(value = "Ensure connection success for the first batch", expected = "Successfully produce the first batch of messages"),
+            @Step(value = "Send second batch of messages", expected = "Second batch of messages is sent to the topic"),
+            @Step(value = "Ensure connection success for the second batch", expected = "Successfully produce the second batch of messages"),
+            @Step(value = "Verify task failure and auto-restart", expected = "Connector task fails and is automatically restarted"),
+            @Step(value = "Wait for task to reach running state", expected = "Connector task returns to running state after recovery"),
+            @Step(value = "Verify auto-restart count reset", expected = "Auto-restart count is reset to zero after task stability")
+        },
+        labels = {
+            @Label(value = "connect")
+        }
+    )
     void testConnectorTaskAutoRestart() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -667,6 +813,19 @@ class ConnectST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Test that verifies custom and updated environment variables and readiness/liveness probes for Kafka Connect."),
+        steps = {
+            @Step(value = "Create and configure Kafka Connect with initial values", expected = "Kafka Connect is created and configured with initial environment variables and readiness/liveness probes"),
+            @Step(value = "Create NodePools using resourceManager based on the configuration", expected = "NodePools for broker and controller are created or not based on configuration"),
+            @Step(value = "Verify initial configuration and environment variables", expected = "Initial configuration and environment variables are as expected"),
+            @Step(value = "Update Kafka Connect configuration and environment variables", expected = "Kafka Connect configuration and environment variables are updated"),
+            @Step(value = "Verify updated configuration and environment variables", expected = "Updated configuration and environment variables are as expected")
+        },
+        labels = {
+            @Label(value = "connect")
+        }
+    )
     void testCustomAndUpdatedValues() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String usedVariable = "KAFKA_CONNECT_CONFIGURATION";
@@ -768,6 +927,22 @@ class ConnectST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(CONNECTOR_OPERATOR)
     @Tag(ACCEPTANCE)
+    @TestDoc(
+        description = @Desc("Test validating multi-node Kafka Connect cluster creation, connector deployment, and message processing."),
+        steps = {
+            @Step(value = "Initialize test storage and determine connect cluster name", expected = "Test storage and cluster name properly initialized"),
+            @Step(value = "Create broker and controller node pools", expected = "Broker and controller node pools created successfully"),
+            @Step(value = "Deploy Kafka cluster in ephemeral mode", expected = "Kafka cluster deployed successfully"),
+            @Step(value = "Create Kafka Connect cluster with default image", expected = "Kafka Connect cluster created with appropriate configuration"),
+            @Step(value = "Create and configure Kafka Connector", expected = "Kafka Connector deployed and configured with correct settings"),
+            @Step(value = "Verify the status of the Kafka Connector", expected = "Kafka Connector status retrieved and worker node identified"),
+            @Step(value = "Deploy Kafka clients for producer and consumer", expected = "Kafka producer and consumer clients deployed"),
+            @Step(value = "Verify that Kafka Connect writes messages to the specified file sink", expected = "Messages successfully written to the file sink by Kafka Connect")
+        },
+        labels = {
+            @Label(value = "connect")
+        }
+    )
     void testMultiNodeKafkaConnectWithConnectorCreation() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -822,6 +997,20 @@ class ConnectST extends AbstractST {
 
     @Tag(CONNECTOR_OPERATOR)
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Test verifying Kafka connect TLS authentication with a username containing unusual characters."),
+        steps = {
+            @Step(value = "Set up a name of username containing dots and 64 characters", expected = ""),
+            @Step(value = "Create NodePools using resourceManager based on the configuration", expected = "NodePools for broker and controller are created or not based on configuration"),
+            @Step(value = "Create Kafka broker, controller, topic, and Kafka user with the specified username", expected = "Resources are created with the expected configurations"),
+            @Step(value = "Setup Kafka Connect with the created Kafka instance and TLS authentication", expected = "Kafka Connect is set up with the expected configurations"),
+            @Step(value = "Check if the user can produce messages to Kafka", expected = "Messages are produced successfully"),
+            @Step(value = "Verify that Kafka Connect can consume messages", expected = "Messages are consumed successfully by Kafka Connect")
+        },
+        labels = {
+            @Label(value = "connect")
+        }
+    )
     void testConnectTlsAuthWithWeirdUserName() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -898,6 +1087,23 @@ class ConnectST extends AbstractST {
 
     @Tag(CONNECTOR_OPERATOR)
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Test verifying that Kafka Connect can authenticate with SCRAM-SHA-512 using a username with special characters and length exceeding typical constraints."),
+        steps = {
+            @Step(value = "Create resource with Node Pools", expected = "Node Pools created successfully"),
+            @Step(value = "Create NodePools using resourceManager based on the configuration", expected = "NodePools for broker and controller are created or not based on configuration"),
+            @Step(value = "Deploy Kafka cluster with SCRAM-SHA-512 authentication", expected = "Kafka cluster deployed with specified authentications"),
+            @Step(value = "Create Kafka Topic", expected = "Topic created successfully"),
+            @Step(value = "Create Kafka SCRAM-SHA-512 user with a weird username", expected = "User created successfully with SCRAM-SHA-512 credentials"),
+            @Step(value = "Deploy Kafka Connect with SCRAM-SHA-512 authentication", expected = "Kafka Connect instance deployed and configured with user credentials"),
+            @Step(value = "Deploy Kafka Connector", expected = "Kafka Connector deployed and configured successfully"),
+            @Step(value = "Send messages using the configured client", expected = "Messages sent successfully"),
+            @Step(value = "Verify that connector receives messages", expected = "Messages consumed by the connector and written to the specified sink")
+        },
+        labels = {
+            @Label(value = "connect")
+        }
+    )
     void testConnectScramShaAuthWithWeirdUserName() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -974,6 +1180,22 @@ class ConnectST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(COMPONENT_SCALING)
+    @TestDoc(
+        description = @Desc("Test to validate scaling KafkaConnect without a connector to zero replicas."),
+        steps = {
+            @Step(value = "Initialize TestStorage and create namespace", expected = "Namespace and storage initialized"),
+            @Step(value = "Create broker and controller node pools", expected = "Node pools created with 3 replicas."),
+            @Step(value = "Create ephemeral Kafka cluster", expected = "Kafka cluster created with 3 replicas."),
+            @Step(value = "Create KafkaConnect resource with 2 replicas", expected = "KafkaConnect resource created with 2 replicas."),
+            @Step(value = "Verify that KafkaConnect has 2 pods", expected = "2 KafkaConnect pods are running."),
+            @Step(value = "Scale down KafkaConnect to zero replicas", expected = "KafkaConnect scaled to zero replicas."),
+            @Step(value = "Wait for KafkaConnect to be ready", expected = "KafkaConnect is ready with 0 replicas."),
+            @Step(value = "Verify that KafkaConnect has 0 pods", expected = "No KafkaConnect pods are running and status is ready.")
+        },
+        labels = {
+            @Label(value = "connect")
+        }
+    )
     void testScaleConnectWithoutConnectorToZero() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -1006,6 +1228,24 @@ class ConnectST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(CONNECTOR_OPERATOR)
     @Tag(COMPONENT_SCALING)
+    @TestDoc(
+        description = @Desc("Test scaling Kafka Connect with a connector to zero replicas."),
+        steps = {
+            @Step(value = "Create TestStorage instance", expected = "TestStorage instance is created with context"),
+            @Step(value = "Create broker and controller node pools", expected = "Broker and Controller node pools are created"),
+            @Step(value = "Create ephemeral Kafka cluster", expected = "Kafka cluster with 3 replicas is created"),
+            @Step(value = "Create Kafka Connect with file plugin", expected = "Kafka Connect is created with 2 replicas and file plugin"),
+            @Step(value = "Create Kafka Connector", expected = "Kafka Connector is created with necessary configurations"),
+            @Step(value = "Check Kafka Connect pods", expected = "There are 2 Kafka Connect pods"),
+            @Step(value = "Scale down Kafka Connect to zero", expected = "Kafka Connect is scaled down to 0 replicas"),
+            @Step(value = "Wait for Kafka Connect to be ready", expected = "Kafka Connect readiness is verified"),
+            @Step(value = "Wait for Kafka Connector to not be ready", expected = "Kafka Connector readiness is verified"),
+            @Step(value = "Verify conditions", expected = "Pod size is 0, Kafka Connect is ready, Kafka Connector is not ready due to zero replicas")
+        },
+        labels = {
+            @Label(value = "connect")
+        }
+    )
     void testScaleConnectWithConnectorToZero() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -1056,6 +1296,21 @@ class ConnectST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(CONNECTOR_OPERATOR)
     @Tag(COMPONENT_SCALING)
+    @TestDoc(
+        description = @Desc("This test verifies the scaling functionality of Kafka Connect and Kafka Connector subresources."),
+        steps = {
+            @Step(value = "Initialize the test storage and create broker and controller pools", expected = "Broker and controller pools are created successfully"),
+            @Step(value = "Create NodePools using resourceManager based on the configuration", expected = "NodePools for broker and controller are created or not based on configuration"),
+            @Step(value = "Deploy Kafka, Kafka Connect and Kafka Connector resources", expected = "Kafka, Kafka Connect and Kafka Connector resources are deployed successfully"),
+            @Step(value = "Scale Kafka Connect subresource", expected = "Kafka Connect subresource is scaled successfully"),
+            @Step(value = "Verify Kafka Connect subresource scaling", expected = "Kafka Connect replicas and observed generation are as expected"),
+            @Step(value = "Scale Kafka Connector subresource", expected = "Kafka Connector subresource task max is set correctly"),
+            @Step(value = "Verify Kafka Connector subresource scaling", expected = "Kafka Connector task max in spec, status and Connect Pods API are as expected")
+        },
+        labels = {
+            @Label(value = "connect")
+        }
+    )
     void testScaleConnectAndConnectorSubresource() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -1127,6 +1382,20 @@ class ConnectST extends AbstractST {
 
     @ParallelNamespaceTest
     @SuppressWarnings({"checkstyle:MethodLength"})
+    @TestDoc(
+        description = @Desc("This test verifies that Secrets and ConfigMaps can be mounted as volumes and environment variables in Kafka Connect."),
+        steps = {
+            @Step(value = "Create Secrets and ConfigMaps", expected = "Secrets and ConfigMaps are created successfully."),
+            @Step(value = "Create Kafka environment", expected = "Kafka broker, Kafka Connect, and other resources are deployed successfully."),
+            @Step(value = "Create NodePools using resourceManager based on the configuration", expected = "NodePools for broker and controller are created or not based on configuration"),
+            @Step(value = "Bind Secrets and ConfigMaps to Kafka Connect", expected = "Secrets and ConfigMaps are bound to Kafka Connect as volumes and environment variables."),
+            @Step(value = "Verify environment variables", expected = "Kafka Connect environment variables contain expected values from Secrets and ConfigMaps."),
+            @Step(value = "Verify mounted volumes", expected = "Kafka Connect mounted volumes contain expected values from Secrets and ConfigMaps.")
+        },
+        labels = {
+            @Label(value = "connect")
+        }
+    )
     void testMountingSecretAndConfigMapAsVolumesAndEnvVars() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -1294,6 +1563,20 @@ class ConnectST extends AbstractST {
 
     @ParallelNamespaceTest
     // changing the password in Secret should cause the RU of connect pod
+    @TestDoc(
+        description = @Desc("Verifies Kafka Connect functionality when SCRAM-SHA authentication password is changed and the component is rolled."),
+        steps = {
+            @Step(value = "Create NodePools using resourceManager based on the configuration", expected = "NodePools for broker and controller are created or not based on configuration"),
+            @Step(value = "Create Kafka cluster with SCRAM-SHA authentication", expected = "Kafka cluster is created with SCRAM-SHA authentication enabled"),
+            @Step(value = "Create a Kafka user with SCRAM-SHA authentication", expected = "Kafka user with SCRAM-SHA authentication is created"),
+            @Step(value = "Deploy Kafka Connect with the created user credentials", expected = "Kafka Connect is deployed successfully"),
+            @Step(value = "Update the SCRAM-SHA user password and reconfigure Kafka Connect", expected = "Kafka Connect is reconfigured with the new password"),
+            @Step(value = "Verify Kafka Connect continues to function after rolling update", expected = "Kafka Connect remains functional and REST API is available")
+        },
+        labels = {
+            @Label(value = "connect")
+        }
+    )
     void testKafkaConnectWithScramShaAuthenticationRolledAfterPasswordChanged() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 

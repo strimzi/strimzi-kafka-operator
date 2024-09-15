@@ -7,6 +7,11 @@ package io.strimzi.systemtest.connect;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.ImageStreamBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
@@ -77,6 +82,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag(CONNECT_COMPONENTS)
 @Tag(CONNECT)
 @MicroShiftNotSupported
+@SuiteDoc(
+    description = @Desc("Testing Kafka Connect build and plugin management."),
+    labels = {
+        @Label(value = "connect"),
+    }
+)
 class ConnectBuilderST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ConnectBuilderST.class);
@@ -143,6 +154,23 @@ class ConnectBuilderST extends AbstractST {
         .build();
 
     @ParallelTest
+    @TestDoc(
+        description = @Desc("Test that ensures Kafka Connect build fails with wrong artifact checksum and recovers with correct checksum."),
+        steps = {
+            @Step(value = "Initialize TestStorage and get test image name", expected = "TestStorage instance is created and the image name for the test case is retrieved"),
+            @Step(value = "Create a Plugin with wrong checksum and build Kafka Connect resource with it", expected = "Kafka Connect resource is created but the build fails due to wrong checksum"),
+            @Step(value = "Deploy Scraper pod with specific configurations", expected = "Kafka Scraper pod are successfully deployed"),
+            @Step(value = "Wait for Kafka Connect status to indicate build failure", expected = "Kafka Connect status contains message about build failure"),
+            @Step(value = "Deploy network policies for Kafka Connect", expected = "Network policies are successfully deployed for Kafka Connect"),
+            @Step(value = "Replace the plugin checksum with the correct one and update Kafka Connect resource", expected = "Kafka Connect resource is updated with the correct checksum"),
+            @Step(value = "Wait for Kafka Connect to be ready", expected = "Kafka Connect becomes ready"),
+            @Step(value = "Verify that EchoSink KafkaConnector is available in Kafka Connect API", expected = "EchoSink KafkaConnector is returned by Kafka Connect API"),
+            @Step(value = "Verify that EchoSink KafkaConnector is listed in Kafka Connect resource status", expected = "EchoSink KafkaConnector is listed in the status of Kafka Connect resource")
+        },
+        labels = {
+            @Label(value = "connect")
+        }
+    )
     void testBuildFailsWithWrongChecksumOfArtifact() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -213,6 +241,22 @@ class ConnectBuilderST extends AbstractST {
     }
 
     @ParallelTest
+    @TestDoc(
+        description = @Desc("Test for building Kafka Connect image with combined jar, tar.gz, and zip plugins, and validating message send-receive functionality."),
+        steps = {
+            @Step(value = "Create TestStorage object", expected = "TestStorage instance is created with context"),
+            @Step(value = "Get image name for test case", expected = "Image name is successfully retrieved"),
+            @Step(value = "Create Kafka Topic resources", expected = "Kafka Topic resources are created with wait"),
+            @Step(value = "Create Kafka Connect resources", expected = "Kafka Connect resources are created with wait"),
+            @Step(value = "Configure Kafka Connector", expected = "Kafka Connector is configured and created with wait"),
+            @Step(value = "Verify Kafka Connector class name", expected = "Connector class name matches expected ECHO_SINK_CLASS_NAME"),
+            @Step(value = "Create Kafka Clients and send messages", expected = "Kafka Clients created and messages sent and verified"),
+            @Step(value = "Check logs for received message", expected = "Logs contain the expected received message")
+        },
+        labels = {
+            @Label(value = "connect")
+        }
+    )
     void testBuildWithJarTgzAndZip() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -264,6 +308,18 @@ class ConnectBuilderST extends AbstractST {
 
     @OpenShiftOnly
     @ParallelTest
+    @TestDoc(
+        description = @Desc("Test verifying the successful push of a KafkaConnect build into an OpenShift ImageStream."),
+        steps = {
+            @Step(value = "Initialize test storage", expected = "Test storage is initialized with the test context"),
+            @Step(value = "Create ImageStream", expected = "ImageStream is created in the specified namespace"),
+            @Step(value = "Deploy KafkaConnect with the image stream output", expected = "KafkaConnect is deployed with the expected build configuration"),
+            @Step(value = "Verify KafkaConnect build artifacts and status", expected = "KafkaConnect has two plugins, uses the image stream output and is in the 'Ready' state")
+        },
+        labels = {
+            @Label(value = "connect")
+        }
+    )
     void testPushIntoImageStream() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -304,6 +360,21 @@ class ConnectBuilderST extends AbstractST {
     }
 
     @ParallelTest
+    @TestDoc(
+        description = @Desc("Test updating and validating Kafka Connect with another plugin."),
+        steps = {
+            @Step(value = "Create TestStorage instance", expected = "Instance of TestStorage is created"),
+            @Step(value = "Generate random topic name and create Kafka topic", expected = "Kafka topic is successfully created"),
+            @Step(value = "Deploy network policies for KafkaConnect", expected = "Network policies are successfully deployed"),
+            @Step(value = "Create EchoSink KafkaConnector", expected = "EchoSink KafkaConnector is successfully created and validated"),
+            @Step(value = "Add a second plugin to Kafka Connect and perform rolling update", expected = "Second plugin is added and rolling update is performed"),
+            @Step(value = "Create Camel-HTTP-Sink KafkaConnector", expected = "Camel-HTTP-Sink KafkaConnector is successfully created and validated"),
+            @Step(value = "Verify that both connectors and plugins are present in Kafka Connect", expected = "Both connectors and plugins are verified successfully")
+        },
+        labels = {
+            @Label(value = "connect")
+        }
+    )
     void testUpdateConnectWithAnotherPlugin() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -398,6 +469,19 @@ class ConnectBuilderST extends AbstractST {
     }
 
     @ParallelTest
+    @TestDoc(
+        description = @Desc("Test verifying Kafka Connect plugin behavior with and without file names for different plugin types."),
+        steps = {
+            @Step(value = "Initialize test storage and topic", expected = "Namespace and topic are created successfully"),
+            @Step(value = "Create and set up Kafka Connect with specified plugin and build configurations", expected = "Kafka Connect is deployed and configured correctly"),
+            @Step(value = "Take a snapshot of current Kafka Connect pods and verify plugin file name", expected = "Plugin file name matches the expected file name"),
+            @Step(value = "Modify Kafka Connect to use a plugin without a file name and trigger a rolling update", expected = "Kafka Connect plugin is updated without the file name successfully"),
+            @Step(value = "Verify plugin file name after update using the plugin's hash", expected = "Plugin file name is different from the previous name and matches the hash")
+        },
+        labels = {
+            @Label(value = "connect")
+        }
+    )
     void testBuildOtherPluginTypeWithAndWithoutFileName() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -457,6 +541,20 @@ class ConnectBuilderST extends AbstractST {
     @Tag(ACCEPTANCE)
     @KindNotSupported("using kind we encounter (error building image: deleting file system after stage 0: unlinkat //product_uuid: device or resource busy)")
     @ParallelTest
+    @TestDoc(
+        description = @Desc("Test building a plugin using Maven coordinates artifacts."),
+        steps = {
+            @Step(value = "Create a test storage object", expected = "Test storage object is created"),
+            @Step(value = "Generate image name for the test case", expected = "Image name is generated successfully"),
+            @Step(value = "Create Kafka topic and Kafka Connect resources with the configuration for plugin using mvn coordinates", expected = "Resources are created and available"),
+            @Step(value = "Configure Kafka Connector and deploy it", expected = "Connector is deployed with correct configuration"),
+            @Step(value = "Create Kafka consumer and start consuming messages", expected = "Consumer starts consuming messages successfully"),
+            @Step(value = "Verify that consumer receives messages", expected = "Consumer receives the expected messages")
+        },
+        labels = {
+            @Label(value = "connect")
+        }
+    )
     void testBuildPluginUsingMavenCoordinatesArtifacts() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
