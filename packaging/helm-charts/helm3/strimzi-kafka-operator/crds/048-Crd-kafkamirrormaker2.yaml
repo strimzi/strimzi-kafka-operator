@@ -345,9 +345,6 @@ spec:
                                 properties:
                                   name:
                                     type: string
-                                    description: Name of the resource.
-                                required:
-                                  - name
                                 description: Reference to the ConfigMap where the list of offsets will be written to.
                             required:
                               - toConfigMap
@@ -360,9 +357,6 @@ spec:
                                 properties:
                                   name:
                                     type: string
-                                    description: Name of the resource.
-                                required:
-                                  - name
                                 description: Reference to the ConfigMap where the new offsets are stored.
                             required:
                               - fromConfigMap
@@ -407,9 +401,6 @@ spec:
                                 properties:
                                   name:
                                     type: string
-                                    description: Name of the resource.
-                                required:
-                                  - name
                                 description: Reference to the ConfigMap where the list of offsets will be written to.
                             required:
                               - toConfigMap
@@ -422,9 +413,6 @@ spec:
                                 properties:
                                   name:
                                     type: string
-                                    description: Name of the resource.
-                                required:
-                                  - name
                                 description: Reference to the ConfigMap where the new offsets are stored.
                             required:
                               - fromConfigMap
@@ -469,9 +457,6 @@ spec:
                                 properties:
                                   name:
                                     type: string
-                                    description: Name of the resource.
-                                required:
-                                  - name
                                 description: Reference to the ConfigMap where the list of offsets will be written to.
                             required:
                               - toConfigMap
@@ -484,9 +469,6 @@ spec:
                                 properties:
                                   name:
                                     type: string
-                                    description: Name of the resource.
-                                required:
-                                  - name
                                 description: Reference to the ConfigMap where the new offsets are stored.
                             required:
                               - fromConfigMap

@@ -665,7 +665,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @return Future with conditions which completes when the connector offset list action is complete
      */
     @SuppressWarnings({ "rawtypes" })
-    Future<List<Condition>> listConnectorOffsets(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, KafkaConnectorSpec connectorSpec, List<Condition> conditions) {
+    private Future<List<Condition>> listConnectorOffsets(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, KafkaConnectorSpec connectorSpec, List<Condition> conditions) {
         Optional<ListOffsets> listOffsetsConfig = Optional.ofNullable(connectorSpec.getListOffsets());
         if (listOffsetsConfig.isEmpty()) {
             String message = String.format("Failed to list the connector offsets due to missing property listOffsets in %s CR.", resource.getKind());

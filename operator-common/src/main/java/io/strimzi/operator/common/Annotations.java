@@ -80,7 +80,6 @@ public class Annotations extends ResourceAnnotations {
      */
     public static final String ANNO_DEP_KUBE_IO_REVISION = "deployment.kubernetes.io/revision";
 
-
     /**
      * List of predicates that allows existing load balancer service annotations to be retained while reconciling the resources.
      */

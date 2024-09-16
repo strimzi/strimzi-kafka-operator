@@ -203,8 +203,6 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
         return created.future();
     }
 
-
-
     private KafkaConnectApi mockConnectApi(String state)    {
         connectorOffsets = LIST_OFFSETS_JSON;
         Map<String, Object> status = Map.of("connector", Map.of("state", state));
