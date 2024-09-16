@@ -591,7 +591,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         }
     }
 
-    protected static void validateIntConfigProperty(String propertyName, KafkaClusterSpec kafkaClusterSpec, long numberOfBrokers) {
+    private static void validateIntConfigProperty(String propertyName, KafkaClusterSpec kafkaClusterSpec, long numberOfBrokers) {
         String orLess = numberOfBrokers > 1 ? " or less" : "";
         if (kafkaClusterSpec.getConfig() != null && kafkaClusterSpec.getConfig().get(propertyName) != null) {
             try {
@@ -672,7 +672,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return  JSON with discovery annotation
      */
-    /*test*/ Map<String, String> getInternalDiscoveryAnnotation() {
+    private Map<String, String> getInternalDiscoveryAnnotation() {
         JsonArray anno = new JsonArray();
 
         for (GenericKafkaListener listener : listeners) {
@@ -1231,7 +1231,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return  List of container ports
      */
-    /* test */ List<ContainerPort> getContainerPortList(KafkaPool pool) {
+    private List<ContainerPort> getContainerPortList(KafkaPool pool) {
         List<ContainerPort> ports = new ArrayList<>(listeners.size() + 3);
 
         ports.add(ContainerUtils.createContainerPort(KAFKA_AGENT_PORT_NAME, KAFKA_AGENT_PORT));
@@ -1313,7 +1313,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return List of non-data volumes used by the ZooKeeper pods
      */
-    /* test */ List<Volume> getNonDataVolumes(boolean isOpenShift, String podName, PodTemplate templatePod) {
+    private List<Volume> getNonDataVolumes(boolean isOpenShift, String podName, PodTemplate templatePod) {
         List<Volume> volumeList = new ArrayList<>();
 
         if (rack != null || isExposedWithNodePort()) {
@@ -1459,7 +1459,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return  Combined affinity
      */
-    protected Affinity getMergedAffinity(KafkaPool pool) {
+    private Affinity getMergedAffinity(KafkaPool pool) {
         Affinity userAffinity = pool.templatePod != null && pool.templatePod.getAffinity() != null ? pool.templatePod.getAffinity() : new Affinity();
         AffinityBuilder builder = new AffinityBuilder(userAffinity);
         if (rack != null) {
@@ -1484,7 +1484,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         return builder.build();
     }
 
-    protected List<EnvVar> getInitContainerEnvVars(KafkaPool pool) {
+    private List<EnvVar> getInitContainerEnvVars(KafkaPool pool) {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(ContainerUtils.createEnvVarFromFieldRef(ENV_VAR_KAFKA_INIT_NODE_NAME, "spec.nodeName"));
 
@@ -1504,7 +1504,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         return varList;
     }
 
-    /* test */ Container createInitContainer(ImagePullPolicy imagePullPolicy, KafkaPool pool) {
+    private Container createInitContainer(ImagePullPolicy imagePullPolicy, KafkaPool pool) {
         if (rack != null || !ListenersUtils.nodePortListeners(listeners).isEmpty()) {
             return ContainerUtils.createContainer(
                     INIT_NAME,
@@ -1532,7 +1532,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return  Kafka container
      */
-    /* test */ Container createContainer(ImagePullPolicy imagePullPolicy, KafkaPool pool) {
+    private Container createContainer(ImagePullPolicy imagePullPolicy, KafkaPool pool) {
         return ContainerUtils.createContainer(
                 KAFKA_NAME,
                 image,
@@ -1555,7 +1555,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return  List of environment variables
      */
-    protected List<EnvVar> getEnvVars(KafkaPool pool) {
+    private  List<EnvVar> getEnvVars(KafkaPool pool) {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_METRICS_ENABLED, String.valueOf(metrics.isEnabled())));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(pool.gcLoggingEnabled)));
@@ -1706,24 +1706,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      */
     private boolean isExposedWithNodePort() {
         return ListenersUtils.hasNodePortListener(listeners);
-    }
-
-    /**
-     * Returns true when the Kafka cluster is exposed to the outside of Kubernetes using Ingress
-     *
-     * @return true when the Kafka cluster is exposed using Kubernetes Ingress.
-     */
-    /* test */ boolean isExposedWithIngress() {
-        return ListenersUtils.hasIngressListener(listeners);
-    }
-
-    /**
-     * Returns true when the Kafka cluster is exposed to the outside of Kubernetes using ClusterIP services
-     *
-     * @return true when the Kafka cluster is exposed using Kubernetes Ingress with TCP mode.
-     */
-    /* test */ boolean isExposedWithClusterIP() {
-        return ListenersUtils.hasClusterIPListener(listeners);
     }
 
     /**

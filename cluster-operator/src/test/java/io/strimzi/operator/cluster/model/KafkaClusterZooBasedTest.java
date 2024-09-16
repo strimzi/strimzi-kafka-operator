@@ -94,7 +94,6 @@ import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.InvalidResourceException;
@@ -106,6 +105,8 @@ import io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import org.hamcrest.CoreMatchers;
 
 import java.io.IOException;
@@ -117,6 +118,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -290,8 +292,14 @@ public class KafkaClusterZooBasedTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
 
-        assertThat(kc.getEnvVars(pools.get(0)).get(3).getName(), is("STRIMZI_JAVA_SYSTEM_PROPERTIES"));
-        assertThat(kc.getEnvVars(pools.get(0)).get(3).getValue(), is("-Djavax.net.debug=verbose -Dsomething.else=42"));
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
+        assertThat(podSets.size(), is(1));
+
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            final Optional<EnvVar> envVarValue = pod.getSpec().getContainers().stream().findAny().orElseThrow().getEnv().stream().filter(env -> env.getName().equals("STRIMZI_JAVA_SYSTEM_PROPERTIES")).findAny();
+            assertThat(envVarValue.isPresent(), is(true));
+            assertThat(envVarValue.get().getValue(), is("-Djavax.net.debug=verbose -Dsomething.else=42"));
+        }));
     }
 
     @ParallelTest
@@ -307,12 +315,15 @@ public class KafkaClusterZooBasedTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
 
-        // Check container
-        assertThat(kc.createContainer(null, pools.get(0)).getImage(), is("my-image:my-tag"));
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            // Check container
+            assertThat(pod.getSpec().getContainers().stream().findAny().orElseThrow().getImage(), is("my-image:my-tag"));
 
-        // Check Init container
-        assertThat(kc.createInitContainer(null, pools.get(0)).getImage(), is("my-init-image:my-init-tag"));
+            // Check Init container
+            assertThat(pod.getSpec().getInitContainers().stream().findAny().orElseThrow().getImage(), is("my-init-image:my-init-tag"));
+        }));
     }
 
     @ParallelTest
@@ -339,19 +350,23 @@ public class KafkaClusterZooBasedTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
 
-        // Check container
-        Container cont = kc.createContainer(null, pools.get(0));
-        assertThat(cont.getLivenessProbe().getInitialDelaySeconds(), is(1));
-        assertThat(cont.getLivenessProbe().getPeriodSeconds(), is(2));
-        assertThat(cont.getLivenessProbe().getTimeoutSeconds(), is(3));
-        assertThat(cont.getLivenessProbe().getSuccessThreshold(), is(4));
-        assertThat(cont.getLivenessProbe().getFailureThreshold(), is(5));
-        assertThat(cont.getReadinessProbe().getInitialDelaySeconds(), is(6));
-        assertThat(cont.getReadinessProbe().getPeriodSeconds(), is(7));
-        assertThat(cont.getReadinessProbe().getTimeoutSeconds(), is(8));
-        assertThat(cont.getReadinessProbe().getSuccessThreshold(), is(9));
-        assertThat(cont.getReadinessProbe().getFailureThreshold(), is(10));
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            // Check container
+            Container cont = pod.getSpec().getContainers().stream().findAny().orElseThrow();
+
+            assertThat(cont.getLivenessProbe().getInitialDelaySeconds(), is(1));
+            assertThat(cont.getLivenessProbe().getPeriodSeconds(), is(2));
+            assertThat(cont.getLivenessProbe().getTimeoutSeconds(), is(3));
+            assertThat(cont.getLivenessProbe().getSuccessThreshold(), is(4));
+            assertThat(cont.getLivenessProbe().getFailureThreshold(), is(5));
+            assertThat(cont.getReadinessProbe().getInitialDelaySeconds(), is(6));
+            assertThat(cont.getReadinessProbe().getPeriodSeconds(), is(7));
+            assertThat(cont.getReadinessProbe().getTimeoutSeconds(), is(8));
+            assertThat(cont.getReadinessProbe().getSuccessThreshold(), is(9));
+            assertThat(cont.getReadinessProbe().getFailureThreshold(), is(10));
+        }));
     }
 
     @ParallelTest
@@ -415,19 +430,22 @@ public class KafkaClusterZooBasedTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
 
-        Container cont = kc.createInitContainer(null, pools.get(0));
-        assertThat(cont.getName(), is(KafkaCluster.INIT_NAME));
-        assertThat(cont.getSecurityContext(), is(securityContext));
-        assertThat(cont.getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar1.getValue()));
-        assertThat(cont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar2.getValue()));
-        assertThat(cont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            Container cont = pod.getSpec().getInitContainers().stream().findAny().orElseThrow();
+            assertThat(cont.getName(), is(KafkaCluster.INIT_NAME));
+            assertThat(cont.getSecurityContext(), is(securityContext));
+            assertThat(cont.getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar1.getValue()));
+            assertThat(cont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar2.getValue()));
+            assertThat(cont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
 
-        assertThat(cont.getVolumeMounts().size(), is(2));
-        assertThat(cont.getVolumeMounts().get(0).getName(), is("rack-volume"));
-        assertThat(cont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
-        assertThat(cont.getVolumeMounts().get(1).getName(), is("secret-volume-name"));
-        assertThat(cont.getVolumeMounts().get(1).getMountPath(), is("/mnt/secret-volume"));
+            assertThat(cont.getVolumeMounts().size(), is(2));
+            assertThat(cont.getVolumeMounts().get(0).getName(), is("rack-volume"));
+            assertThat(cont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
+            assertThat(cont.getVolumeMounts().get(1).getName(), is("secret-volume-name"));
+            assertThat(cont.getVolumeMounts().get(1).getMountPath(), is("/mnt/secret-volume"));
+        }));
     }
 
     @ParallelTest
@@ -449,8 +467,19 @@ public class KafkaClusterZooBasedTest {
         assertThat(clusterIp.getSpec().getIpFamilyPolicy(), is(nullValue()));
         assertThat(clusterIp.getSpec().getIpFamilies(), is(nullValue()));
         assertThat(clusterIp.getSpec().getPublishNotReadyAddresses(), is(nullValue()));
-
-        assertThat(clusterIp.getMetadata().getAnnotations(), is(Util.mergeLabelsOrAnnotations(KC.getInternalDiscoveryAnnotation())));
+        
+        assertThat(clusterIp.getMetadata().getAnnotations(), hasKey("strimzi.io/discovery"));        
+        JsonArray annotation = new JsonArray(clusterIp.getMetadata().getAnnotations().get("strimzi.io/discovery"));
+        JsonObject listener1 = annotation.getJsonObject(0);
+        assertThat(listener1.getString("port"), is("9092"));
+        assertThat(listener1.getString("tls"), is("false"));
+        assertThat(listener1.getString("protocol"), is("kafka"));
+        assertThat(listener1.getString("auth"), is("none"));
+        JsonObject listener2 = annotation.getJsonObject(1);
+        assertThat(listener2.getString("port"), is("9093"));
+        assertThat(listener2.getString("tls"), is("true"));
+        assertThat(listener2.getString("protocol"), is("kafka"));
+        assertThat(listener2.getString("auth"), is("none"));
 
         assertThat(clusterIp.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(true));
         assertThat(clusterIp.getMetadata().getLabels().get(Labels.STRIMZI_DISCOVERY_LABEL), is("true"));
@@ -547,9 +576,13 @@ public class KafkaClusterZooBasedTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
 
-        ContainerPort jmxContainerPort = ContainerUtils.createContainerPort(JMX_PORT_NAME, JMX_PORT);
-        assertThat(kc.createContainer(ImagePullPolicy.IFNOTPRESENT, pools.get(0)).getPorts().contains(jmxContainerPort), is(true));
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            Container cont = pod.getSpec().getContainers().stream().findAny().orElseThrow();
+            ContainerPort jmxPort = cont.getPorts().stream().filter(port -> JMX_PORT_NAME.equals(port.getName())).findFirst().orElseThrow();
+            assertThat(jmxPort.getContainerPort(), is(JMX_PORT));
+        }));
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
@@ -1110,12 +1143,14 @@ public class KafkaClusterZooBasedTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
 
-        Container cont = kc.createContainer(null, pools.get(0));
-
-        // Env Vars
-        assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
-        assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            Container cont = pod.getSpec().getContainers().stream().findAny().orElseThrow();
+            // Env Vars
+            assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
+            assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
+        }));
     }
 
     @ParallelTest
@@ -1161,24 +1196,27 @@ public class KafkaClusterZooBasedTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
 
-        Container cont = kc.createContainer(null, pools.get(0));
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            Container cont = pod.getSpec().getContainers().stream().findAny().orElseThrow();
 
-        // Env Vars
-        assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
-        assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
+            // Env Vars
+            assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
+            assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
 
-        // Volume mounts
-        assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-plain-9092-first-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-plain-9092-certs/first-certificate"));
-        assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-plain-9092-second-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-plain-9092-certs/second-certificate"));
+            // Volume mounts
+            assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-plain-9092-first-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-plain-9092-certs/first-certificate"));
+            assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-plain-9092-second-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-plain-9092-certs/second-certificate"));
 
-        // Volumes
-        List<Volume> volumes = kc.getNonDataVolumes(false, kafkaAssembly.getMetadata().getName() + "-1", null);
-        assertThat(volumes.stream().filter(vol -> "oauth-plain-9092-first-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
-        assertThat(volumes.stream().filter(vol -> "oauth-plain-9092-second-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
+            // Volumes
+            List<Volume> volumes = pod.getSpec().getVolumes();
+            assertThat(volumes.stream().filter(vol -> "oauth-plain-9092-first-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
+            assertThat(volumes.stream().filter(vol -> "oauth-plain-9092-second-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
 
-        // Environment variable
-        assertThat(cont.getEnv().stream().filter(e -> "STRIMZI_PLAIN_9092_OAUTH_TRUSTED_CERTS".equals(e.getName())).findFirst().orElseThrow().getValue(), is("first-certificate/ca.crt;second-certificate/tls.crt;first-certificate/ca2.crt"));
+            // Environment variable
+            assertThat(cont.getEnv().stream().filter(e -> "STRIMZI_PLAIN_9092_OAUTH_TRUSTED_CERTS".equals(e.getName())).findFirst().orElseThrow().getValue(), is("first-certificate/ca.crt;second-certificate/tls.crt;first-certificate/ca2.crt"));
+        }));
     }
 
     @ParallelTest
@@ -1260,45 +1298,49 @@ public class KafkaClusterZooBasedTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
 
-        Container cont = kc.createContainer(null, pools.get(0));
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            Container cont = pod.getSpec().getContainers().stream().findAny().orElseThrow();
+            
+            // Test Env Vars
+            assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
+            assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
 
-        // Test Env Vars
-        assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
-        assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
+            assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_TLS_9093_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
+            assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_TLS_9093_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
 
-        assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_TLS_9093_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
-        assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_TLS_9093_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
+            assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_EXTERNAL_9094_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
+            assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_EXTERNAL_9094_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
 
-        assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_EXTERNAL_9094_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
-        assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_EXTERNAL_9094_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
+            // Volume mounts
+            assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-plain-9092-first-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-plain-9092-certs/first-certificate"));
+            assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-plain-9092-second-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-plain-9092-certs/second-certificate"));
 
-        // Volume mounts
-        assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-plain-9092-first-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-plain-9092-certs/first-certificate"));
-        assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-plain-9092-second-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-plain-9092-certs/second-certificate"));
+            assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-tls-9093-first-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-tls-9093-certs/first-certificate"));
+            assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-tls-9093-second-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-tls-9093-certs/second-certificate"));
 
-        assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-tls-9093-first-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-tls-9093-certs/first-certificate"));
-        assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-tls-9093-second-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-tls-9093-certs/second-certificate"));
+            assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-external-9094-first-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-external-9094-certs/first-certificate"));
+            assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-external-9094-second-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-external-9094-certs/second-certificate"));
 
-        assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-external-9094-first-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-external-9094-certs/first-certificate"));
-        assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-external-9094-second-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-external-9094-certs/second-certificate"));
+            // Volumes
+            List<Volume> volumes = pod.getSpec().getVolumes();
 
-        // Volumes
-        List<Volume> volumes = kc.getNonDataVolumes(false, kafkaAssembly.getMetadata().getName() + "-1", null);
+            assertThat(volumes.stream().filter(vol -> "oauth-plain-9092-first-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
+            assertThat(volumes.stream().filter(vol -> "oauth-plain-9092-second-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
 
-        assertThat(volumes.stream().filter(vol -> "oauth-plain-9092-first-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
-        assertThat(volumes.stream().filter(vol -> "oauth-plain-9092-second-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
+            assertThat(volumes.stream().filter(vol -> "oauth-tls-9093-first-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
+            assertThat(volumes.stream().filter(vol -> "oauth-tls-9093-second-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
 
-        assertThat(volumes.stream().filter(vol -> "oauth-tls-9093-first-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
-        assertThat(volumes.stream().filter(vol -> "oauth-tls-9093-second-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
+            assertThat(volumes.stream().filter(vol -> "oauth-external-9094-first-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
+            assertThat(volumes.stream().filter(vol -> "oauth-external-9094-second-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
 
-        assertThat(volumes.stream().filter(vol -> "oauth-external-9094-first-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
-        assertThat(volumes.stream().filter(vol -> "oauth-external-9094-second-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
+            // Environment variable
+            assertThat(cont.getEnv().stream().filter(e -> "STRIMZI_PLAIN_9092_OAUTH_TRUSTED_CERTS".equals(e.getName())).findFirst().orElseThrow().getValue(), is("first-certificate/ca.crt;second-certificate/tls.crt;first-certificate/ca2.crt"));
+            assertThat(cont.getEnv().stream().filter(e -> "STRIMZI_TLS_9093_OAUTH_TRUSTED_CERTS".equals(e.getName())).findFirst().orElseThrow().getValue(), is("first-certificate/ca.crt;second-certificate/tls.crt;first-certificate/ca2.crt"));
+            assertThat(cont.getEnv().stream().filter(e -> "STRIMZI_EXTERNAL_9094_OAUTH_TRUSTED_CERTS".equals(e.getName())).findFirst().orElseThrow().getValue(), is("first-certificate/ca.crt;second-certificate/tls.crt;first-certificate/ca2.crt"));
 
-        // Environment variable
-        assertThat(cont.getEnv().stream().filter(e -> "STRIMZI_PLAIN_9092_OAUTH_TRUSTED_CERTS".equals(e.getName())).findFirst().orElseThrow().getValue(), is("first-certificate/ca.crt;second-certificate/tls.crt;first-certificate/ca2.crt"));
-        assertThat(cont.getEnv().stream().filter(e -> "STRIMZI_TLS_9093_OAUTH_TRUSTED_CERTS".equals(e.getName())).findFirst().orElseThrow().getValue(), is("first-certificate/ca.crt;second-certificate/tls.crt;first-certificate/ca2.crt"));
-        assertThat(cont.getEnv().stream().filter(e -> "STRIMZI_EXTERNAL_9094_OAUTH_TRUSTED_CERTS".equals(e.getName())).findFirst().orElseThrow().getValue(), is("first-certificate/ca.crt;second-certificate/tls.crt;first-certificate/ca2.crt"));
+        }));
     }
 
     @ParallelTest
@@ -1322,22 +1364,25 @@ public class KafkaClusterZooBasedTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
 
-        // Volume mounts
-        Container cont = kc.createContainer(null, pools.get(0));
-        assertThat(cont.getVolumeMounts().stream().filter(mount -> "custom-listener-plain-9092-0".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT + "/custom-listener-plain-9092/test"));
-        assertThat(cont.getVolumeMounts().stream().filter(mount -> "custom-listener-plain-9092-1".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT + "/custom-listener-plain-9092/test2"));
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            // Volume mounts
+            Container container = pod.getSpec().getContainers().stream().findAny().orElseThrow();
+            assertThat(container.getVolumeMounts().stream().filter(mount -> "custom-listener-plain-9092-0".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT + "/custom-listener-plain-9092/test"));
+            assertThat(container.getVolumeMounts().stream().filter(mount -> "custom-listener-plain-9092-1".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT + "/custom-listener-plain-9092/test2"));
 
-        // Volumes
-        List<Volume> volumes = kc.getNonDataVolumes(false, kafkaAssembly.getMetadata().getName() + "-1", null);
+            // Volumes
+            List<Volume> volumes = pod.getSpec().getVolumes();
 
-        assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().size(), is(1));
-        assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getKey(), is("foo"));
-        assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getPath(), is("foo"));
+            assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().size(), is(1));
+            assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getKey(), is("foo"));
+            assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getPath(), is("foo"));
 
-        assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().size(), is(1));
-        assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getKey(), is("bar"));
-        assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getPath(), is("bar"));
+            assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().size(), is(1));
+            assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getKey(), is("bar"));
+            assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getPath(), is("bar"));
+        }));
     }
 
     @ParallelTest
@@ -1367,23 +1412,26 @@ public class KafkaClusterZooBasedTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
 
-        List<Volume> volumes = kc.getNonDataVolumes(false, kafkaAssembly.getMetadata().getName() + "-1", null);
-        Volume vol = volumes.stream().filter(v -> "custom-external-9094-certs".equals(v.getName())).findFirst().orElse(null);
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            List<Volume> volumes = pod.getSpec().getVolumes();
+            Volume vol = volumes.stream().filter(v -> "custom-external-9094-certs".equals(v.getName())).findFirst().orElse(null);
 
-        assertThat(vol, is(notNullValue()));
-        assertThat(vol.getSecret().getSecretName(), is(secret));
-        assertThat(vol.getSecret().getItems().get(0).getKey(), is(key));
-        assertThat(vol.getSecret().getItems().get(0).getPath(), is("tls.key"));
-        assertThat(vol.getSecret().getItems().get(1).getKey(), is(cert));
-        assertThat(vol.getSecret().getItems().get(1).getPath(), is("tls.crt"));
+            assertThat(vol, is(notNullValue()));
+            assertThat(vol.getSecret().getSecretName(), is(secret));
+            assertThat(vol.getSecret().getItems().get(0).getKey(), is(key));
+            assertThat(vol.getSecret().getItems().get(0).getPath(), is("tls.key"));
+            assertThat(vol.getSecret().getItems().get(1).getKey(), is(cert));
+            assertThat(vol.getSecret().getItems().get(1).getPath(), is("tls.crt"));
 
-        Container cont = kc.createContainer(null, pools.get(0));
-        VolumeMount mount = cont.getVolumeMounts().stream().filter(v -> "custom-external-9094-certs".equals(v.getName())).findFirst().orElse(null);
+            Container cont = pod.getSpec().getContainers().stream().findAny().orElseThrow();
+            VolumeMount mount = cont.getVolumeMounts().stream().filter(v -> "custom-external-9094-certs".equals(v.getName())).findFirst().orElse(null);
 
-        assertThat(mount, is(notNullValue()));
-        assertThat(mount.getName(), is("custom-external-9094-certs"));
-        assertThat(mount.getMountPath(), is("/opt/kafka/certificates/custom-external-9094-certs"));
+            assertThat(mount, is(notNullValue()));
+            assertThat(mount.getName(), is("custom-external-9094-certs"));
+            assertThat(mount.getMountPath(), is("/opt/kafka/certificates/custom-external-9094-certs"));
+        }));
     }
 
     @ParallelTest
@@ -1413,23 +1461,26 @@ public class KafkaClusterZooBasedTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
 
-        List<Volume> volumes = kc.getNonDataVolumes(false, kafkaAssembly.getMetadata().getName() + "-1", null);
-        Volume vol = volumes.stream().filter(v -> "custom-tls-9093-certs".equals(v.getName())).findFirst().orElse(null);
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            List<Volume> volumes = pod.getSpec().getVolumes();
+            Volume vol = volumes.stream().filter(v -> "custom-tls-9093-certs".equals(v.getName())).findFirst().orElse(null);
 
-        assertThat(vol, is(notNullValue()));
-        assertThat(vol.getSecret().getSecretName(), is(secret));
-        assertThat(vol.getSecret().getItems().get(0).getKey(), is(key));
-        assertThat(vol.getSecret().getItems().get(0).getPath(), is("tls.key"));
-        assertThat(vol.getSecret().getItems().get(1).getKey(), is(cert));
-        assertThat(vol.getSecret().getItems().get(1).getPath(), is("tls.crt"));
+            assertThat(vol, is(notNullValue()));
+            assertThat(vol.getSecret().getSecretName(), is(secret));
+            assertThat(vol.getSecret().getItems().get(0).getKey(), is(key));
+            assertThat(vol.getSecret().getItems().get(0).getPath(), is("tls.key"));
+            assertThat(vol.getSecret().getItems().get(1).getKey(), is(cert));
+            assertThat(vol.getSecret().getItems().get(1).getPath(), is("tls.crt"));
 
-        Container cont = kc.createContainer(null, pools.get(0));
-        VolumeMount mount = cont.getVolumeMounts().stream().filter(v -> "custom-tls-9093-certs".equals(v.getName())).findFirst().orElse(null);
+            Container cont = pod.getSpec().getContainers().stream().findAny().orElseThrow();
+            VolumeMount mount = cont.getVolumeMounts().stream().filter(v -> "custom-tls-9093-certs".equals(v.getName())).findFirst().orElse(null);
 
-        assertThat(mount, is(notNullValue()));
-        assertThat(mount.getName(), is("custom-tls-9093-certs"));
-        assertThat(mount.getMountPath(), is("/opt/kafka/certificates/custom-tls-9093-certs"));
+            assertThat(mount, is(notNullValue()));
+            assertThat(mount.getName(), is("custom-tls-9093-certs"));
+            assertThat(mount.getMountPath(), is("/opt/kafka/certificates/custom-tls-9093-certs"));
+        }));
     }
 
     @ParallelTest
@@ -1481,19 +1532,22 @@ public class KafkaClusterZooBasedTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
 
-        // Volume mounts
-        Container cont = kc.createContainer(null, pools.get(0));
-        assertThat(cont.getVolumeMounts().stream().filter(mount -> "authz-keycloak-first-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-keycloak-certs/first-certificate"));
-        assertThat(cont.getVolumeMounts().stream().filter(mount -> "authz-keycloak-second-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-keycloak-certs/second-certificate"));
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            // Volume mounts
+            Container cont = pod.getSpec().getContainers().stream().findAny().orElseThrow();
+            assertThat(cont.getVolumeMounts().stream().filter(mount -> "authz-keycloak-first-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-keycloak-certs/first-certificate"));
+            assertThat(cont.getVolumeMounts().stream().filter(mount -> "authz-keycloak-second-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-keycloak-certs/second-certificate"));
 
-        // Volumes
-        List<Volume> volumes = kc.getNonDataVolumes(false, kafkaAssembly.getMetadata().getName() + "-1", null);
-        assertThat(volumes.stream().filter(vol -> "authz-keycloak-first-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
-        assertThat(volumes.stream().filter(vol -> "authz-keycloak-second-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
+            // Volumes
+            List<Volume> volumes = pod.getSpec().getVolumes();
+            assertThat(volumes.stream().filter(vol -> "authz-keycloak-first-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
+            assertThat(volumes.stream().filter(vol -> "authz-keycloak-second-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
 
-        // Environment variable
-        assertThat(cont.getEnv().stream().filter(e -> "STRIMZI_KEYCLOAK_AUTHZ_TRUSTED_CERTS".equals(e.getName())).findFirst().orElseThrow().getValue(), is("first-certificate/ca.crt;second-certificate/tls.crt"));
+            // Environment variable
+            assertThat(cont.getEnv().stream().filter(e -> "STRIMZI_KEYCLOAK_AUTHZ_TRUSTED_CERTS".equals(e.getName())).findFirst().orElseThrow().getValue(), is("first-certificate/ca.crt;second-certificate/tls.crt"));
+        }));
     }
 
     @ParallelTest
@@ -1563,8 +1617,11 @@ public class KafkaClusterZooBasedTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
 
         // Check port
-        List<ContainerPort> ports = kc.getContainerPortList(pools.get(0));
-        assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            List<ContainerPort> ports = pod.getSpec().getContainers().stream().findAny().orElseThrow().getPorts();
+            assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
+        }));
 
         // Check external bootstrap service
         Service ext = kc.generateExternalBootstrapServices().get(0);
@@ -1751,9 +1808,12 @@ public class KafkaClusterZooBasedTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
 
         // Check port
-        List<ContainerPort> ports = kc.getContainerPortList(pools.get(0));
-        assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
-
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            List<ContainerPort> ports = pod.getSpec().getContainers().stream().findAny().orElseThrow().getPorts();
+            assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
+        }));
+        
         // Check external bootstrap service
         Service ext = kc.generateExternalBootstrapServices().get(0);
         assertThat(ext.getMetadata().getName(), is(KafkaResources.externalBootstrapServiceName(CLUSTER)));
@@ -2153,9 +2213,12 @@ public class KafkaClusterZooBasedTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
 
         // Check port
-        List<ContainerPort> ports = kc.getContainerPortList(pools.get(0));
-        assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
-
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            List<ContainerPort> ports = pod.getSpec().getContainers().stream().findAny().orElseThrow().getPorts();
+            assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
+        }));
+        
         // Check external bootstrap service
         Service ext = kc.generateExternalBootstrapServices().get(0);
         assertThat(ext.getMetadata().getName(), is(KafkaResources.externalBootstrapServiceName(CLUSTER)));
@@ -2206,12 +2269,14 @@ public class KafkaClusterZooBasedTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
 
-        // Check Init container
-        Container initCont = kc.createInitContainer(null, pools.get(0));
-        assertThat(initCont, is(notNullValue()));
-        assertThat(initCont.getEnv().stream().filter(env -> KafkaCluster.ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse(""), is("TRUE"));
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            // Check Init container
+            Container initCont = pod.getSpec().getInitContainers().stream().findAny().orElseThrow();
+            assertThat(initCont, is(notNullValue()));
+            assertThat(initCont.getEnv().stream().filter(env -> KafkaCluster.ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse(""), is("TRUE"));
+        }));
     }
 
     @ParallelTest
@@ -2243,9 +2308,12 @@ public class KafkaClusterZooBasedTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
 
         // Check port
-        List<ContainerPort> ports = kc.getContainerPortList(pools.get(0));
-        assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
-
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            List<ContainerPort> ports = pod.getSpec().getContainers().stream().findAny().orElseThrow().getPorts();
+            assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
+        }));
+        
         // Check external bootstrap service
         Service ext = kc.generateExternalBootstrapServices().get(0);
         assertThat(ext.getMetadata().getName(), is(KafkaResources.externalBootstrapServiceName(CLUSTER)));
@@ -3075,12 +3143,15 @@ public class KafkaClusterZooBasedTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
 
-        assertThat(kc.isExposedWithIngress(), is(true));
+        assertThat(kc.getListeners().stream().findFirst().orElseThrow().getType(), is(KafkaListenerType.INGRESS));
 
         // Check port
-        List<ContainerPort> ports = kc.getContainerPortList(pools.get(0));
-        assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
-
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            List<ContainerPort> ports = pod.getSpec().getContainers().stream().findAny().orElseThrow().getPorts();
+            assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
+        }));
+        
         // Check external bootstrap service
         Service ext = kc.generateExternalBootstrapServices().get(0);
         assertThat(ext.getMetadata().getName(), is(KafkaResources.externalBootstrapServiceName(CLUSTER)));
@@ -3280,11 +3351,14 @@ public class KafkaClusterZooBasedTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
 
-        assertThat(kc.isExposedWithClusterIP(), is(true));
+        assertThat(kc.getListeners().stream().findFirst().orElseThrow().getType(), is(KafkaListenerType.CLUSTER_IP));
 
         // Check port
-        List<ContainerPort> ports = kc.getContainerPortList(pools.get(0));
-        assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            List<ContainerPort> ports = pod.getSpec().getContainers().stream().findAny().orElseThrow().getPorts();
+            assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
+        }));
 
         // Check external bootstrap service
         Service ext = kc.generateExternalBootstrapServices().get(0);
@@ -3439,7 +3513,8 @@ public class KafkaClusterZooBasedTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> KafkaCluster.validateIntConfigProperty(propertyName, kafkaAssembly.getSpec().getKafka(), REPLICAS));
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER));
         assertThat(ex.getMessage(), is("Kafka configuration option '" + propertyName + "' should be set to " + REPLICAS + " or less because this cluster has only " + REPLICAS + " Kafka broker(s)."));
     }
 
@@ -3452,7 +3527,8 @@ public class KafkaClusterZooBasedTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        KafkaCluster.validateIntConfigProperty("offsets.topic.replication.factor", kafkaAssembly.getSpec().getKafka(), REPLICAS);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
+        KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);       
     }
 
     @ParallelTest
@@ -3689,10 +3765,13 @@ public class KafkaClusterZooBasedTest {
             .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
 
-        ResourceRequirements initContainersResources = kc.createInitContainer(ImagePullPolicy.IFNOTPRESENT, pools.get(0)).getResources();
-        assertThat(initContainersResources.getRequests(), is(requirements));
-        assertThat(initContainersResources.getLimits(), is(limits));
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            ResourceRequirements initContainersResources = pod.getSpec().getInitContainers().stream().findAny().orElseThrow().getResources();
+            assertThat(initContainersResources.getRequests(), is(requirements));
+            assertThat(initContainersResources.getLimits(), is(limits));
+        }));
     }
 
     @ParallelTest
@@ -3760,7 +3839,7 @@ public class KafkaClusterZooBasedTest {
             return KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, pools, versions, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
         }, getClass().getSimpleName() + ".withAffinityWithoutRack");
 
-        resourceTester.assertDesiredModel(".yaml", model -> model.getMergedAffinity(pool.get()));
+        resourceTester.assertDesiredModel(".yaml", model -> PodSetUtils.podSetToPods(model.generatePodSets(true, null, null, brokerId -> new HashMap<>()).stream().findFirst().orElseThrow()).stream().findFirst().orElseThrow().getSpec().getAffinity());
     }
 
     @ParallelTest
@@ -3773,7 +3852,8 @@ public class KafkaClusterZooBasedTest {
             return KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, pools, versions, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
         }, getClass().getSimpleName() + ".withRackWithoutAffinity");
 
-        resourceTester.assertDesiredModel(".yaml", model -> model.getMergedAffinity(pool.get()));
+        resourceTester.assertDesiredModel(".yaml", model -> PodSetUtils.podSetToPods(model.generatePodSets(true, null, null, brokerId -> new HashMap<>()).stream().findFirst().orElseThrow()).stream().findFirst().orElseThrow().getSpec().getAffinity());
+
     }
 
     @ParallelTest
@@ -3786,7 +3866,7 @@ public class KafkaClusterZooBasedTest {
             return KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, pools, versions, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
         }, getClass().getSimpleName() + ".withRackAndAffinityWithMoreTerms");
 
-        resourceTester.assertDesiredModel(".yaml", model -> model.getMergedAffinity(pool.get()));
+        resourceTester.assertDesiredModel(".yaml", model -> PodSetUtils.podSetToPods(model.generatePodSets(true, null, null, brokerId -> new HashMap<>()).stream().findFirst().orElseThrow()).stream().findFirst().orElseThrow().getSpec().getAffinity());
     }
 
     @ParallelTest
@@ -3799,7 +3879,7 @@ public class KafkaClusterZooBasedTest {
             return KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, pools, versions, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
         }, getClass().getSimpleName() + ".withRackAndAffinity");
 
-        resourceTester.assertDesiredModel(".yaml", model -> model.getMergedAffinity(pool.get()));
+        resourceTester.assertDesiredModel(".yaml", model -> PodSetUtils.podSetToPods(model.generatePodSets(true, null, null, brokerId -> new HashMap<>()).stream().findFirst().orElseThrow()).stream().findFirst().orElseThrow().getSpec().getAffinity());
     }
 
     @ParallelTest
@@ -3993,21 +4073,24 @@ public class KafkaClusterZooBasedTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
 
-        // Volume mounts
-        Container cont = kc.createContainer(null, pools.get(0));
-        assertThat(cont.getVolumeMounts().stream().filter(mount -> "authz-opa-first-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-opa-certs/first-certificate"));
-        assertThat(cont.getVolumeMounts().stream().filter(mount -> "authz-opa-second-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-opa-certs/second-certificate"));
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            // Volume mounts
+            Container cont = pod.getSpec().getContainers().stream().findAny().orElseThrow();
+            assertThat(cont.getVolumeMounts().stream().filter(mount -> "authz-opa-first-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-opa-certs/first-certificate"));
+            assertThat(cont.getVolumeMounts().stream().filter(mount -> "authz-opa-second-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-opa-certs/second-certificate"));
 
-        // Volumes
-        List<Volume> volumes = kc.getNonDataVolumes(false, kafkaAssembly.getMetadata().getName() + "-1", null);
-        assertThat(volumes.stream().filter(vol -> "authz-opa-first-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
-        assertThat(volumes.stream().filter(vol -> "authz-opa-second-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
+            // Volumes
+            List<Volume> volumes = pod.getSpec().getVolumes();
+            assertThat(volumes.stream().filter(vol -> "authz-opa-first-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
+            assertThat(volumes.stream().filter(vol -> "authz-opa-second-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
 
-        // Environment variable
-        assertThat(cont.getEnv().stream().filter(e -> "STRIMZI_OPA_AUTHZ_TRUSTED_CERTS".equals(e.getName())).findFirst().orElseThrow().getValue(), is("first-certificate/ca.crt;second-certificate/tls.crt"));
+            // Environment variable
+            assertThat(cont.getEnv().stream().filter(e -> "STRIMZI_OPA_AUTHZ_TRUSTED_CERTS".equals(e.getName())).findFirst().orElseThrow().getValue(), is("first-certificate/ca.crt;second-certificate/tls.crt"));
+        }));
     }
-    
+
     @ParallelTest
     public void testPublishNotReadyAddressesFromListener() {
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
