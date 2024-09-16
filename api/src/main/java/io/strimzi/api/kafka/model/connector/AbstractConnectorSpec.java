@@ -148,7 +148,7 @@ public abstract class AbstractConnectorSpec extends Spec {
     }
 
     /**
-     * Configures the behaviour when listing connector offsets.
+     * Sets the configuration for listing connector offsets.
      * @param listOffsets The listOffsets configuration.
      */
     public void setListOffsets(ListOffsets listOffsets) {
@@ -165,7 +165,7 @@ public abstract class AbstractConnectorSpec extends Spec {
     }
 
     /**
-     * Configures the behaviour when altering connector offsets.
+     * Sets the configuration for altering connector offsets.
      * @param alterOffsets The alterOffsets configuration.
      */
     public void setAlterOffsets(AlterOffsets alterOffsets) {

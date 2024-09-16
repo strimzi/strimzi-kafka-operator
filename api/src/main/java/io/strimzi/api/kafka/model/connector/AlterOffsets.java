@@ -42,6 +42,7 @@ public class AlterOffsets implements UnknownPropertyPreserving {
     public void setFromConfigMap(LocalObjectReference fromConfigMap) {
         this.fromConfigMap = fromConfigMap;
     }
+
     @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties != null ? this.additionalProperties : Map.of();

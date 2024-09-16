@@ -22,7 +22,6 @@ import io.strimzi.api.kafka.model.connector.AlterOffsets;
 import io.strimzi.api.kafka.model.connector.AutoRestartStatus;
 import io.strimzi.api.kafka.model.connector.AutoRestartStatusBuilder;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
-import io.strimzi.api.kafka.model.connector.KafkaConnectorOffsetsAnnotation;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorSpec;
 import io.strimzi.api.kafka.model.connector.ListOffsets;
 import io.strimzi.api.kafka.model.kafka.Status;
@@ -39,6 +38,7 @@ import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
+import io.strimzi.operator.cluster.operator.resource.KafkaConnectorOffsetsAnnotation;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ClusterRoleBindingOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
@@ -840,7 +840,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                     if (!(path instanceof String state)) {
                         return Future.failedFuture("JSON response lacked $.connector.state");
                     }
-                    if (!"STOPPED".equals(state)) {
+                    if (!ConnectorState.STOPPED.equals(ConnectorState.forValue(state))) {
                         return Future.failedFuture("Connector is not in STOPPED state");
                     }
                     return Future.succeededFuture();
