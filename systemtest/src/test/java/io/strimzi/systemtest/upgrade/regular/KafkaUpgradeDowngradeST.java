@@ -7,6 +7,8 @@ package io.strimzi.systemtest.upgrade.regular;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -26,9 +28,12 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.systemtest.Environment.TEST_SUITE_NAMESPACE;
+import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
 import static io.strimzi.systemtest.TestConstants.UPGRADE;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -154,8 +159,16 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
 
     @BeforeAll
     void setupEnvironment() {
-        clusterOperator.defaultInstallation().createInstallation().runInstallation();
+        clusterOperator
+            .defaultInstallation()
+                .withNamespace(CO_NAMESPACE)
+                .withWatchingNamespaces(TEST_SUITE_NAMESPACE)
+                // necessary as each isolated test removes TEST_SUITE_NAMESPACE and this suite handles creation of new one on its own.
+                .withBindingsNamespaces(Arrays.asList(TestConstants.CO_NAMESPACE, Environment.TEST_SUITE_NAMESPACE))
+            .createInstallation()
+            .runInstallation();
     }
+
 
     @SuppressWarnings({"checkstyle:MethodLength"})
     void runVersionChange(TestStorage testStorage, TestKafkaVersion initialVersion, TestKafkaVersion newVersion, String initLogMsgFormat, String initInterBrokerProtocol, int kafkaReplicas, int zkReplicas) {

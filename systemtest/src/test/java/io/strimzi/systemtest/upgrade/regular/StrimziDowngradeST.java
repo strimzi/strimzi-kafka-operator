@@ -6,7 +6,6 @@ package io.strimzi.systemtest.upgrade.regular;
 
 import io.strimzi.systemtest.annotations.KindIPv6NotSupported;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
-import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.upgrade.AbstractUpgradeST;
@@ -23,7 +22,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 
-import static io.strimzi.systemtest.Environment.TEST_SUITE_NAMESPACE;
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
 import static io.strimzi.systemtest.TestConstants.UPGRADE;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -58,15 +56,11 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
 
     @BeforeEach
     void setupEnvironment() {
-        NamespaceManager.getInstance().createNamespaceAndPrepare(CO_NAMESPACE);
-        NamespaceManager.getInstance().createNamespaceAndPrepare(TEST_SUITE_NAMESPACE);
+        setUpStrimziUpgradeTestNamespaces();
     }
 
     @AfterEach
     void afterEach() {
-        cleanUpKafkaTopics(TEST_SUITE_NAMESPACE);
-        deleteInstalledYamls(CO_NAMESPACE, TEST_SUITE_NAMESPACE, coDir);
-        NamespaceManager.getInstance().deleteNamespaceWithWait(CO_NAMESPACE);
-        NamespaceManager.getInstance().deleteNamespaceWithWait(TEST_SUITE_NAMESPACE);
+        cleanUpStrimziUpgradeTestNamespaces();
     }
 }

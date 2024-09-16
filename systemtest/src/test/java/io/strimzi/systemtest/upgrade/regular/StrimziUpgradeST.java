@@ -8,7 +8,6 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KindIPv6NotSupported;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
-import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.upgrade.AbstractUpgradeST;
@@ -164,15 +163,11 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
 
     @BeforeEach
     void setupEnvironment() {
-        NamespaceManager.getInstance().createNamespaceAndPrepare(CO_NAMESPACE);
-        NamespaceManager.getInstance().createNamespaceAndPrepare(TEST_SUITE_NAMESPACE);
+        setUpStrimziUpgradeTestNamespaces();
     }
 
     @AfterEach
     void afterEach() {
-        cleanUpKafkaTopics(TEST_SUITE_NAMESPACE);
-        deleteInstalledYamls(CO_NAMESPACE, TEST_SUITE_NAMESPACE, coDir);
-        NamespaceManager.getInstance().deleteNamespaceWithWait(CO_NAMESPACE);
-        NamespaceManager.getInstance().deleteNamespaceWithWait(TEST_SUITE_NAMESPACE);
+        cleanUpStrimziUpgradeTestNamespaces();
     }
 }
