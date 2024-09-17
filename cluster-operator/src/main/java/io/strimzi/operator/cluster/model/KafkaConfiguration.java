@@ -122,6 +122,7 @@ public class KafkaConfiguration extends AbstractConfiguration {
             "node.id",
             "num.io.threads",
             "num.network.threads",
+            "num.partitions",
             "offsets.topic.replication.factor",
             "principal.builder.class",
             "process.roles",
