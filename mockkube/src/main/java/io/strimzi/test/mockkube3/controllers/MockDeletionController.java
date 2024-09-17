@@ -63,6 +63,7 @@ public class MockDeletionController extends AbstractMockController {
      */
     @Override
     @SuppressFBWarnings({"SIC_INNER_SHOULD_BE_STATIC_ANON"}) // Just a test util, no need to complicate the code bay factoring the anonymous watcher class out
+    @SuppressWarnings({"checkstyle:methodlength"})
     public void start(KubernetesClient client) {
         watches.add(client.services().inAnyNamespace().watch(new Watcher<>() {
             @Override
