@@ -1498,18 +1498,27 @@ public class KafkaClusterListenersTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
         List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> new HashMap<>());
         
-        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+        podSets.forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
             // Check Init container
-            Container initCont = pod.getSpec().getInitContainers().stream().findAny().orElseThrow();
+            Container initCont = pod.getSpec().getInitContainers().stream().findAny().orElse(null);
+            Container cont = pod.getSpec().getContainers().stream().findAny().orElseThrow();
 
             if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
-                assertThat(initCont, is(notNullValue()));
-                assertThat(initCont.getEnv().stream().filter(env -> KafkaCluster.ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse(null), is(nullValue()));
+                assertThat(initCont, is(nullValue()));
+
+                assertThat(pod.getSpec().getVolumes().stream().map(Volume::getName)
+                        .filter(KafkaCluster.INIT_VOLUME_NAME::equals).findFirst().orElse(null), is(nullValue()));
+                assertThat(cont.getVolumeMounts().stream().map(VolumeMount::getName)
+                        .filter(KafkaCluster.INIT_VOLUME_NAME::equals).findFirst().orElse(null), is(nullValue()));
             } else {
                 assertThat(initCont, is(notNullValue()));
                 assertThat(initCont.getEnv().stream().filter(env -> KafkaCluster.ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS.equals(env.getName()))
                         .map(EnvVar::getValue).findFirst().orElse(null), is("TRUE"));
+
+                assertThat(pod.getSpec().getVolumes().stream().map(Volume::getName)
+                        .filter(KafkaCluster.INIT_VOLUME_NAME::equals).findFirst().orElse(null), is(notNullValue()));
+                assertThat(cont.getVolumeMounts().stream().map(VolumeMount::getName)
+                        .filter(KafkaCluster.INIT_VOLUME_NAME::equals).findFirst().orElse(null), is(notNullValue()));
             }
         }));
     }

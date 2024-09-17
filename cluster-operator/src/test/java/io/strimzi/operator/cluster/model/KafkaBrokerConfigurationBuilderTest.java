@@ -238,14 +238,32 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @ParallelTest
-    public void testRackAndBrokerId()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
+    public void testRackIdInKRaftBrokers()  {
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.KRAFT)
                 .withRackId(new Rack("failure-domain.kubernetes.io/zone"))
                 .build();
 
-        assertThat(configuration, isEquivalent("broker.id=2",
-                "node.id=2",
+        assertThat(configuration, isEquivalent("node.id=2",
                 "broker.rack=${STRIMZI_RACK_ID}"));
+    }
+
+    @ParallelTest
+    public void testRackIdInKRaftMixedNode()  {
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, new NodeRef("my-cluster-kafka-1", 1, "kafka", true, true), KafkaMetadataConfigurationState.KRAFT)
+                .withRackId(new Rack("failure-domain.kubernetes.io/zone"))
+                .build();
+
+        assertThat(configuration, isEquivalent("node.id=1",
+                "broker.rack=${STRIMZI_RACK_ID}"));
+    }
+
+    @ParallelTest
+    public void testRackIdInKRaftControllers()  {
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, new NodeRef("my-cluster-controllers-1", 1, "controllers", true, false), KafkaMetadataConfigurationState.KRAFT)
+                .withRackId(new Rack("failure-domain.kubernetes.io/zone"))
+                .build();
+
+        assertThat(configuration, isEquivalent("node.id=1"));
     }
 
     @ParallelTest

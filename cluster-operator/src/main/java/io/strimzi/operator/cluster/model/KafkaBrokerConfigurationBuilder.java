@@ -158,14 +158,14 @@ public class KafkaBrokerConfigurationBuilder {
 
     /**
      * Adds the template for the {@code rack.id}. The rack ID will be set in the container based on the value of the
-     * {@code STRIMZI_RACK_ID} env var. It is set only if user enabled the rack awareness-
+     * {@code STRIMZI_RACK_ID} env var. It is set only for broker nodes and only if user enabled the rack awareness.
      *
      * @param rack The Rack Awareness configuration from the Kafka CR
      *
      * @return Returns the builder instance
      */
     public KafkaBrokerConfigurationBuilder withRackId(Rack rack)   {
-        if (rack != null) {
+        if (node.broker() && rack != null) {
             printSectionHeader("Rack ID");
             writer.println("broker.rack=" + PLACEHOLDER_RACK_ID);
             writer.println();
