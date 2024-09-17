@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.nodepools.NodeIdAssignment;
 import io.strimzi.operator.common.Reconciliation;
@@ -252,39 +253,38 @@ public class KafkaClusterMigrationTest {
                     null,
                     SHARED_ENV_PROVIDER
             );
-
-            // controllers
-            List<ContainerPort> ports = kc.getContainerPortList(KAFKA_POOL_CONTROLLERS);
-
-            if (state.isZooKeeperToPostMigration()) {
-                assertThat(ports.size(), is(4));
-                // Agent and control plane ports are always set
-                assertThat(ports.get(0).getContainerPort(), is(8443));
-                assertThat(ports.get(1).getContainerPort(), is(9090));
-                // replication and clients only up to post-migration to contact brokers
-                assertThat(ports.get(2).getContainerPort(), is(9091));
-                assertThat(ports.get(3).getContainerPort(), is(9092));
-            } else {
-                assertThat(ports.size(), is(2));
-                // Agent and control plane ports are always set
-                assertThat(ports.get(0).getContainerPort(), is(8443));
-                assertThat(ports.get(1).getContainerPort(), is(9090));
-            }
-
-            // brokers
-            ports = kc.getContainerPortList(KAFKA_POOL_BROKERS);
-            if (state.isZooKeeperToMigration()) {
-                assertThat(ports.size(), is(4));
-                assertThat(ports.get(0).getContainerPort(), is(8443));
-                assertThat(ports.get(1).getContainerPort(), is(9090)); // control plane port exposed up to migration when it's still ZooKeeper in the configuration
-                assertThat(ports.get(2).getContainerPort(), is(9091));
-                assertThat(ports.get(3).getContainerPort(), is(9092));
-            } else {
-                assertThat(ports.size(), is(3));
-                assertThat(ports.get(0).getContainerPort(), is(8443));
-                assertThat(ports.get(1).getContainerPort(), is(9091));
-                assertThat(ports.get(2).getContainerPort(), is(9092));
-            }
+            
+            List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
+            
+            podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+                List<ContainerPort> ports = pod.getSpec().getContainers().get(0).getPorts();
+                if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
+                    // controllers
+                    // Agent and control plane ports are always set
+                    assertThat(ports.contains(ContainerUtils.createContainerPort("tcp-kafkaagent", 8443)), is(true));
+                    assertThat(ports.contains(ContainerUtils.createContainerPort("tcp-ctrlplane", 9090)), is(true));
+                    if (state.isZooKeeperToPostMigration()) {
+                        assertThat(pod.getSpec().getContainers().get(0).getPorts().size(), is(4));
+                        // replication and clients only up to post-migration to contact brokers
+                        assertThat(ports.contains(ContainerUtils.createContainerPort("tcp-replication", 9091)), is(true));
+                        assertThat(ports.contains(ContainerUtils.createContainerPort("tcp-clients", 9092)), is(true));
+                    } else {
+                        assertThat(ports.size(), is(2));
+                    }
+                } else {
+                    // brokers
+                    assertThat(ports.contains(ContainerUtils.createContainerPort("tcp-kafkaagent", 8443)), is(true));
+                    assertThat(ports.contains(ContainerUtils.createContainerPort("tcp-replication", 9091)), is(true));
+                    assertThat(ports.contains(ContainerUtils.createContainerPort("tcp-clients", 9092)), is(true));
+                    if (state.isZooKeeperToMigration()) {
+                        assertThat(ports.size(), is(4));
+                        // control plane port exposed up to migration when it's still ZooKeeper in the configuration
+                        assertThat(ports.contains(ContainerUtils.createContainerPort("tcp-ctrlplane", 9090)), is(true));
+                    } else {
+                        assertThat(ports.size(), is(3));
+                    }
+                }
+            }));
         }
     }
 
