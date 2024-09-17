@@ -116,24 +116,24 @@ An affirmative policy means that at least one policy must be satisfied for a cli
 
 . In the Keycloak Admin Console, go to *Groups*, *Users*, *Roles* and *Clients* to view the realm configuration.
 +
-Groups:: `Groups` are used to create user groups and set user permissions. Groups are sets of users with a name assigned. They are used to compartmentalize users into geographical, organizational or departmental units.
-Groups can be linked to an LDAP identity provider. You can make a user a member of a group through a custom LDAP server admin user interface, for example, to grant permissions on Kafka resources.
+Groups:: `Groups` organize users and set permissions. 
+Groups can be linked to an LDAP identity provider and used to compartmentalize users, such as by region or department. 
+Users can be added to groups through a custom LDAP interface to manage permissions for Kafka resources.
+For more information on using KeyCloak's LDAP provider, see the the guide to {keycloak-admin-guide}.
 
-Users:: `Users` are used to create users. For this example, `alice` and `bob` are defined. `alice` is a member of the `ClusterManager` group and `bob` is a member of `ClusterManager-my-cluster` group.
-Users can be stored in an LDAP identity provider.
+Users:: `Users` define individual users. 
+In this example, `alice` (in the `ClusterManager` group) and `bob` (in `ClusterManager-my-cluster`) are created. 
+Users can also be stored in an LDAP identity provider.
 
-Roles:: `Roles` mark users or clients as having certain permissions.
-Roles are a concept analogous to groups. They are usually used to _tag_ users with organizational roles and have the requisite permissions.
-Roles cannot be stored in an LDAP identity provider.
-If LDAP is a requirement, you can use groups instead, and add Keycloak roles to the groups so that when users are assigned a group they also get a corresponding role.
+Roles:: `Roles` assign specific permissions to users or clients. 
+Roles function like tags to give users certain rights. 
+While roles cannot be stored in LDAP, you can add Keycloak roles to groups to combine both roles and permissions.
 
-Clients:: `Clients` can have specific configurations. For this example, `kafka`, `kafka-cli`, `team-a-client`, and `team-b-client` clients are configured.
+Clients:: `Clients` define configurations for Kafka interactions.
 +
-* The `kafka` client is used by Kafka brokers to perform the necessary OAuth 2.0 communication for access token validation.
-This client also contains the authorization services resource definitions, policies, and authorization scopes used to perform authorization on the Kafka brokers.
-The authorization configuration is defined in the `kafka` client from the *Authorization* tab, which becomes visible when *Authorization Enabled* is switched on from the *Settings* tab.
-* The `kafka-cli` client is a public client that is used by the Kafka command line tools when authenticating with username and password to obtain an access token or a refresh token.
-* The `team-a-client` and `team-b-client` clients are confidential clients representing services with partial access to certain Kafka topics.
+* The `kafka` client handles OAuth 2.0 token validation for brokers and contains authorization policies (which require authorization to be enabled).
+* The `kafka-cli` client is used by command line tools to obtain access or refresh tokens.
+* `team-a-client` and `team-b-client` represent services with partial access to specific Kafka topics.
 
 . In the Keycloak Admin Console, go to *Authorization* > *Permissions* to see the granted permissions that use the resources and policies defined for the realm.
 +

@@ -2,16 +2,10 @@
 = Kafka and Keycloak authorization models
 
 [role="_abstract"]
-Kafka and Keycloak Authorization Services use different authorization models.
-
-* Kafka's authorization model uses _resource types_ and _operations_ to describe ACLs for the _user_
-* The Keycloak Authorization Services model has four concepts for defining and granting permissions: 
-** _resources_ 
-** _authorization scopes_
-** _policies_
-** _permissions_
+Kafka and Keycloak use different authorization models.
 
 .Kafka authorization model
+Kafka's authorization model uses _resource types_ and _operations_ to describe ACLs for a user.
 When a Kafka client performs an action on a broker, the broker uses the configured `KeycloakAuthorizer` to check the client's permissions, based on the action and resource type.
 
 Each resource type has a set of available permissions for operations.
@@ -19,21 +13,13 @@ For example, the `Topic` resource type has `Create` and `Write` permissions amon
 
 Refer to the https://kafka.apache.org/documentation/#security_authz_primitives[Kafka authorization model] in the Kafka documentation for the full list of resources and permissions. 
 
-.Keycloak Authorization Services model
+.Keycloak authorization model
 
-The Keycloak Authorization Services model defines authorized actions. 
+Keycloak's authorization services model has four concepts for defining and granting permissions: 
 
-Resources:: Resources are matched with permitted actions.
-A resource might be an individual topic, for example, or all topics with names starting with the same prefix.
-A resource definition is associated with a set of available authorization scopes, which represent a set of all actions available on the resource.
-Often, only a subset of these actions is actually permitted.
+* Resources 
+* Scopes
+* Policies
+* Permissions
 
-Authorization scopes:: An authorization scope is a set of all the available actions on a specific resource definition.
-When you define a new resource, you add scopes from the set of all scopes.
-
-Policies:: A policy is an authorization rule that uses criteria to match against a list of accounts.
-Policies can match:
-* _Service accounts_ based on client ID or roles
-* _User accounts_ based on username, groups, or roles.
-
-Permissions:: A permission grants a subset of authorization scopes on a specific resource definition to a set of users.
+For information on these concepts, see the guide to {keycloak-authorization-services}.
