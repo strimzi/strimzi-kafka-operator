@@ -679,12 +679,13 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 .compose(offsets -> generateListOffsetsConfigMap(configMapName, connectorName, resource, offsets))
                 .compose(configMap -> configMapOperations.reconcile(reconciliation, resource.getMetadata().getNamespace(), configMapName, configMap))
                 .compose(v -> removeConnectorOffsetsAnnotations(reconciliation, resource))
-                .compose(v -> Future.succeededFuture(conditions), throwable -> {
+                .map(v -> conditions)
+                .otherwise(throwable -> {
                     // Don't fail reconciliation on error from listing offsets - add a warning and repeat list on next reconcile
                     String message = "Encountered error listing connector offsets. " + throwable.getMessage();
                     LOGGER.warnCr(reconciliation, message);
                     conditions.add(StatusUtils.buildWarningCondition("ListOffsets", message));
-                    return Future.succeededFuture(conditions);
+                    return conditions;
                 });
     }
 
@@ -766,12 +767,13 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 .compose(v -> getOffsetsForAlterRequest(configMapNamespace, configMapName, getConnectorOffsetsConfigMapEntryKey(connectorName)))
                 .compose(offsets -> apiClient.alterConnectorOffsets(reconciliation, host, port, connectorName, offsets))
                 .compose(v -> removeConnectorOffsetsAnnotations(reconciliation, resource))
-                .compose(v -> Future.succeededFuture(conditions), throwable -> {
+                .map(v -> conditions)
+                .otherwise(throwable -> {
                     // Don't fail reconciliation on error from altering offsets - add a warning and repeat alter on next reconcile
                     String message = "Encountered error altering connector offsets. " + throwable.getMessage();
                     LOGGER.warnCr(reconciliation, message);
                     conditions.add(StatusUtils.buildWarningCondition("AlterOffsets", message));
-                    return Future.succeededFuture(conditions);
+                    return conditions;
                 });
     }
 
@@ -823,12 +825,13 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return verifyConnectorStopped(reconciliation, host, apiClient, connectorName)
                 .compose(v -> apiClient.resetConnectorOffsets(reconciliation, host, port, connectorName))
                 .compose(v -> removeConnectorOffsetsAnnotations(reconciliation, resource))
-                .compose(v -> Future.succeededFuture(conditions), throwable -> {
+                .map(v -> conditions)
+                .otherwise(throwable -> {
                     // Don't fail reconciliation on error from resetting offsets - add a warning and repeat reset on next reconcile
                     String message = "Encountered error resetting connector offsets. " + throwable.getMessage();
                     LOGGER.warnCr(reconciliation, message);
                     conditions.add(StatusUtils.buildWarningCondition("ResetOffsets", message));
-                    return Future.succeededFuture(conditions);
+                    return conditions;
                 });
     }
 
