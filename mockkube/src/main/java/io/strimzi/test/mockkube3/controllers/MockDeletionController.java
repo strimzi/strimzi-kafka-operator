@@ -197,19 +197,26 @@ public class MockDeletionController extends AbstractMockController {
             }
         }));
 
-        watches.add(Crds.kafkaRebalanceOperation(client).inAnyNamespace().watch(new Watcher<>() {
-            @Override
-            public void eventReceived(Action action, KafkaRebalance kafkaRebalance) {
-                if (action == Action.MODIFIED) {
-                    removeFinalizersIfNeeded(Crds.kafkaRebalanceOperation(client), kafkaRebalance);
+        try {
+            watches.add(Crds.kafkaRebalanceOperation(client).inAnyNamespace().watch(new Watcher<>() {
+                @Override
+                public void eventReceived(Action action, KafkaRebalance kafkaRebalance) {
+                    if (action == Action.MODIFIED) {
+                        removeFinalizersIfNeeded(Crds.kafkaRebalanceOperation(client), kafkaRebalance);
+                    }
                 }
-            }
 
-            @Override
-            public void onClose(WatcherException e) {
-                LOGGER.error("Mock KafkaRebalance deletion watch closed", e);
+                @Override
+                public void onClose(WatcherException e) {
+                    LOGGER.error("Mock KafkaRebalance deletion watch closed", e);
+                }
+            }));
+        } catch (KubernetesClientException e)   {
+            if (404 != e.getCode()) {
+                // 404 error might happen if the KafkaRebalance CRD is missing. In that cae, we just ignore the exception. Otherwise. we rethrow it.
+                throw e;
             }
-        }));
+        }
     }
 
     private <T extends HasMetadata, R extends Resource<T>, L> void removeFinalizersIfNeeded(MixedOperation<T, L, R> op, T resource)    {
