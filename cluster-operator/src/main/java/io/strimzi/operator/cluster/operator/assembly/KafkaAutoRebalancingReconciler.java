@@ -347,15 +347,26 @@ public class KafkaAutoRebalancingReconciler {
                                 }
                             }
                         case NotReady:
-                            // the rebalancing scale up failed, transition to Idle and also removing the corresponding mode and brokers list from the status.
-                            // The operator also deletes the "actual" KafkaRebalance custom resource.
-                            return deleteKafkaRebalance(kafkaRebalance)
-                                    .compose(v -> {
-                                        kafkaAutoRebalanceStatus.setState(KafkaAutoRebalanceState.Idle);
-                                        kafkaAutoRebalanceStatus.setLastTransitionTime(StatusUtils.iso8601Now());
-                                        kafkaAutoRebalanceStatus.setModes(null);
-                                        return Future.succeededFuture();
-                                    });
+                            // If NotReady but there is a new scale-up request, it could be Cruise Control not rolled yet and we can refresh to retry
+                            if (!scalingNodes.added().equals(kafkaRebalance.getSpec().getBrokers().stream().collect(Collectors.toSet()))) {
+                                // If different, update the corresponding KafkaRebalance in order to take into account the updated brokers list
+                                // and refresh it by applying the strimzi.io/rebalance: refresh annotation. Stay in RebalanceOnScaleUp.
+                                return refreshKafkaRebalance(kafkaRebalance, scalingNodes.added().stream().toList())
+                                        .compose(v -> {
+                                            updateStatus(kafkaAutoRebalanceStatus, KafkaAutoRebalanceState.RebalanceOnScaleUp, scalingNodes);
+                                            return Future.succeededFuture();
+                                        });
+                            } else {
+                                // the rebalancing scale up failed, transition to Idle and also removing the corresponding mode and brokers list from the status.
+                                // The operator also deletes the "actual" KafkaRebalance custom resource.
+                                return deleteKafkaRebalance(kafkaRebalance)
+                                        .compose(v -> {
+                                            kafkaAutoRebalanceStatus.setState(KafkaAutoRebalanceState.Idle);
+                                            kafkaAutoRebalanceStatus.setLastTransitionTime(StatusUtils.iso8601Now());
+                                            kafkaAutoRebalanceStatus.setModes(null);
+                                            return Future.succeededFuture();
+                                        });
+                            }
                         default:
                             return Future.failedFuture(new RuntimeException("Unexpected state " + kafkaRebalanceState));
                     }
