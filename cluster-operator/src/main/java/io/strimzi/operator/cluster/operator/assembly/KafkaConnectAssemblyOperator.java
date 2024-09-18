@@ -35,7 +35,6 @@ import io.strimzi.operator.cluster.model.KafkaConnectBuild;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectorOffsetsAnnotation;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
-import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
@@ -247,33 +246,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 });
 
         return createOrUpdatePromise.future();
-    }
-
-    private Future<Void> controllerResources(Reconciliation reconciliation,
-                                             KafkaConnectCluster connect,
-                                             AtomicReference<Deployment> deploymentReference,
-                                             AtomicReference<StrimziPodSet> podSetReference)   {
-        return Future
-                .join(deploymentOperations.getAsync(reconciliation.namespace(), connect.getComponentName()), podSetOperations.getAsync(reconciliation.namespace(), connect.getComponentName()))
-                .compose(res -> {
-                    deploymentReference.set(res.resultAt(0));
-                    podSetReference.set(res.resultAt(1));
-
-                    return Future.succeededFuture();
-                });
-    }
-
-    private Future<Void> reconcilePodSet(Reconciliation reconciliation,
-                                         KafkaConnectCluster connect,
-                                         Map<String, String> podAnnotations,
-                                         Map<String, String> podSetAnnotations,
-                                         String customContainerImage)  {
-        return podSetOperations.reconcile(reconciliation, reconciliation.namespace(), connect.getComponentName(), connect.generatePodSet(connect.getReplicas(), podSetAnnotations, podAnnotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, customContainerImage))
-                .compose(reconciliationResult -> {
-                    KafkaConnectRoller roller = new KafkaConnectRoller(reconciliation, connect, operationTimeoutMs, podOperations);
-                    return roller.maybeRoll(PodSetUtils.podNames(reconciliationResult.resource()), pod -> KafkaConnectRoller.needsRollingRestart(reconciliationResult.resource(), pod));
-                })
-                .compose(i -> podSetOperations.readiness(reconciliation, reconciliation.namespace(), connect.getComponentName(), 1_000, operationTimeoutMs));
     }
 
     @Override

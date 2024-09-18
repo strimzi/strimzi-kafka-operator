@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -26,6 +27,7 @@ import io.strimzi.api.kafka.model.connector.KafkaConnectorSpec;
 import io.strimzi.api.kafka.model.connector.ListOffsets;
 import io.strimzi.api.kafka.model.kafka.Status;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.ConfigMapUtils;
@@ -74,6 +76,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -174,6 +177,30 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     }
 
     /**
+     * Gets the Deployment and StrimziPodSet for the Connect cluster
+     *
+     * @param reconciliation        The reconciliation
+     * @param connect               KafkaConnectCluster object
+     * @param deploymentReference   Deployment reference
+     * @param podSetReference       StrimziPodSet reference
+     *
+     * @return                      Future for tracking the asynchronous result of getting the resources
+     */
+    protected Future<Void> controllerResources(Reconciliation reconciliation,
+                                             KafkaConnectCluster connect,
+                                             AtomicReference<Deployment> deploymentReference,
+                                             AtomicReference<StrimziPodSet> podSetReference)   {
+        return Future
+                .join(deploymentOperations.getAsync(reconciliation.namespace(), connect.getComponentName()), podSetOperations.getAsync(reconciliation.namespace(), connect.getComponentName()))
+                .compose(res -> {
+                    deploymentReference.set(res.resultAt(0));
+                    podSetReference.set(res.resultAt(1));
+
+                    return Future.succeededFuture();
+                });
+    }
+
+    /**
      * Reconciles the ServiceAccount for the Connect cluster.
      *
      * @param reconciliation       The reconciliation
@@ -255,6 +282,30 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     protected Future<ConfigMap> generateMetricsAndLoggingConfigMap(Reconciliation reconciliation, KafkaConnectCluster kafkaConnectCluster) {
         return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperations, kafkaConnectCluster.logging(), kafkaConnectCluster.metrics())
                 .compose(metricsAndLoggingCm -> Future.succeededFuture(kafkaConnectCluster.generateMetricsAndLogConfigMap(metricsAndLoggingCm)));
+    }
+
+    /**
+     * Reconciles the StrimziPodSet for the Connect cluster
+     *
+     * @param reconciliation        The reconciliation
+     * @param connect               KafkaConnectCluster object
+     * @param podAnnotations        Pod annotations
+     * @param podSetAnnotations     StrimziPodSet annotations
+     * @param customContainerImage  Custom container image
+     *
+     * @return Future for tracking the asynchronous result of reconciling the StrimziPodSet
+     */
+    protected Future<Void> reconcilePodSet(Reconciliation reconciliation,
+                                         KafkaConnectCluster connect,
+                                         Map<String, String> podAnnotations,
+                                         Map<String, String> podSetAnnotations,
+                                         String customContainerImage)  {
+        return podSetOperations.reconcile(reconciliation, reconciliation.namespace(), connect.getComponentName(), connect.generatePodSet(connect.getReplicas(), podSetAnnotations, podAnnotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, customContainerImage))
+                .compose(reconciliationResult -> {
+                    KafkaConnectRoller roller = new KafkaConnectRoller(reconciliation, connect, operationTimeoutMs, podOperations);
+                    return roller.maybeRoll(PodSetUtils.podNames(reconciliationResult.resource()), pod -> KafkaConnectRoller.needsRollingRestart(reconciliationResult.resource(), pod));
+                })
+                .compose(i -> podSetOperations.readiness(reconciliation, reconciliation.namespace(), connect.getComponentName(), 1_000, operationTimeoutMs));
     }
 
     /**
@@ -414,7 +465,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                     return Future.succeededFuture(conditions);
                 }
             }
-            return future.compose(ignored -> Future.succeededFuture(conditions));
+            return future.map(ignored -> conditions);
         }
     }
 
