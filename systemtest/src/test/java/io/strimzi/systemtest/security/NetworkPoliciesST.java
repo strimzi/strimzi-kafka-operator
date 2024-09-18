@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
 import io.skodjob.testframe.MetricsCollector;
+import io.skodjob.testframe.metrics.Gauge;
 import io.skodjob.testframe.metrics.Metric;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
@@ -234,8 +235,14 @@ public class NetworkPoliciesST extends AbstractST {
         for (Map.Entry<String, List<Metric>> entry : metricsCollector.getCollectedData().entrySet()) {
             assertThat("Value from collected metric should be non-empty", !entry.getValue().isEmpty());
             MetricsUtils.assertContainsMetric(entry.getValue(), "kafka_consumergroup_current_offset");
-            MetricsUtils.assertContainsMetric(entry.getValue(), "kafka_topic_partitions{topic=\"" + topicNameAccessedTls + "\"} 1");
-            MetricsUtils.assertContainsMetric(entry.getValue(), "kafka_topic_partitions{topic=\"" + topicNameAccessedPlain + "\"} 1");
+
+            List<Metric> topicPartitionsMetrics = entry.getValue().stream().filter(metrics -> metrics.getName().contains("kafka_topic_partitions")).toList();
+
+            Gauge topicAccessedTlsMetric = (Gauge) topicPartitionsMetrics.stream().filter(metric -> metric.getLabels().get("topic").equals(topicNameAccessedTls)).findFirst().get();
+            Gauge topicAccessedPlainMetric = (Gauge) topicPartitionsMetrics.stream().filter(metric -> metric.getLabels().get("topic").equals(topicNameAccessedPlain)).findFirst().get();
+
+            assertThat(topicAccessedTlsMetric.getValue(), is(1.0));
+            assertThat(topicAccessedPlainMetric.getValue(), is(1.0));
         }
 
         checkNetworkPoliciesInNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName());
