@@ -34,12 +34,17 @@ import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.test.mockkube3.MockKube3;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.DescribeTopicsResult;
+import org.apache.kafka.clients.admin.TopicDescription;
+import org.apache.kafka.common.KafkaFuture;
+import org.apache.kafka.common.Node;
+import org.apache.kafka.common.TopicPartitionInfo;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -47,13 +52,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+import java.util.function.Function;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS;
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_REBALANCE;
@@ -62,7 +69,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -73,6 +79,7 @@ public class KafkaAutoRebalancingMockTest {
     private static final PlatformFeaturesAvailability PFA = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
     private static final MockCertManager CERT_MANAGER = new MockCertManager();
     private static final PasswordGenerator PASSWORD_GENERATOR = new PasswordGenerator(10, "a", "a");
+    private static final Function<Integer, Node> NODE = id -> new Node(id, Node.noNode().host(), Node.noNode().port());
 
     private static Vertx vertx;
     private static WorkerExecutor sharedWorkerExecutor;
@@ -82,6 +89,7 @@ public class KafkaAutoRebalancingMockTest {
     private ResourceOperatorSupplier supplier;
     private StrimziPodSetController podSetController;
     private KafkaAssemblyOperator operator;
+    private Admin admin;
 
     @BeforeAll
     public static void beforeAll() {
@@ -182,8 +190,11 @@ public class KafkaAutoRebalancingMockTest {
         Crds.kafkaNodePoolOperation(client).inNamespace(namespace).resource(brokers).create();
         Crds.kafkaOperation(client).inNamespace(namespace).resource(cluster).create();
 
-        supplier = new ResourceOperatorSupplier(vertx, client, null, ResourceUtils.adminClientProvider(), null,
-                ResourceUtils.kafkaAgentClientProvider(), ResourceUtils.metricsProvider(), null, PFA, 2_000, mock(BrokersInUseCheck.class));
+        // getting the default admin client to mock it when needed for blocked nodes (on scale down)
+        admin = ResourceUtils.adminClient();
+
+        supplier = new ResourceOperatorSupplier(vertx, client, null, ResourceUtils.adminClientProvider(admin), null,
+                ResourceUtils.kafkaAgentClientProvider(), ResourceUtils.metricsProvider(), null, PFA, 2_000);
 
         podSetController = new StrimziPodSetController(namespace, Labels.EMPTY, supplier.kafkaOperator, supplier.connectOperator, supplier.mirrorMaker2Operator, supplier.strimziPodSetOperator, supplier.podOperations, supplier.metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));
         podSetController.start();
@@ -203,9 +214,8 @@ public class KafkaAutoRebalancingMockTest {
 
     @Test
     public void testAutoRebalancingScaleDown(VertxTestContext context) {
-        // getting the mocked BrokersInUseCheck class to mock broker scale down operation for check failure
-        BrokersInUseCheck operations = supplier.brokersInUseCheck;
-        when(operations.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(3, 4)));
+        // mocking admin client to return specific blocked nodes
+        hostPartitionsOnBrokers(List.of(3, 4));
 
         KafkaRebalance kafkaRebalanceTemplate = buildKafkaRebalanceTemplate("my-add-remove-brokers-rebalancing-template", List.of("CpuCapacityGoal"));
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kafkaRebalanceTemplate).create();
@@ -311,9 +321,8 @@ public class KafkaAutoRebalancingMockTest {
 
     @Test
     public void testAutoRebalancingDoubleScaleDown(VertxTestContext context) {
-        // getting the mocked BrokersInUseCheck class to mock broker scale down operation for check failure
-        BrokersInUseCheck operations = supplier.brokersInUseCheck;
-        when(operations.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(3, 4)));
+        // mocking admin client to return specific blocked nodes
+        hostPartitionsOnBrokers(List.of(3, 4));
 
         KafkaRebalance kafkaRebalanceTemplate = buildKafkaRebalanceTemplate("my-add-remove-brokers-rebalancing-template", List.of("CpuCapacityGoal"));
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kafkaRebalanceTemplate).create();
@@ -467,9 +476,8 @@ public class KafkaAutoRebalancingMockTest {
 
     @Test
     public void testAutoRebalancingScaleUpScaleDown(VertxTestContext context) {
-        // getting the mocked BrokersInUseCheck class to mock broker scale down operation for check failure
-        BrokersInUseCheck operations = supplier.brokersInUseCheck;
-        when(operations.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(5, 6)));
+        // mocking admin client to return specific blocked nodes
+        hostPartitionsOnBrokers(List.of(5, 6));
 
         KafkaRebalance kafkaRebalanceTemplate = buildKafkaRebalanceTemplate("my-add-remove-brokers-rebalancing-template", List.of("CpuCapacityGoal"));
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kafkaRebalanceTemplate).create();
@@ -742,9 +750,8 @@ public class KafkaAutoRebalancingMockTest {
                         .build()
         );
 
-        // getting the mocked BrokersInUseCheck class to mock broker scale down operation for check failure
-        BrokersInUseCheck operations = supplier.brokersInUseCheck;
-        when(operations.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1, 2)));
+        // mocking admin client to return specific blocked nodes
+        hostPartitionsOnBrokers(List.of(1, 2));
 
         KafkaRebalance kafkaRebalanceTemplate = buildKafkaRebalanceTemplate("my-add-remove-brokers-rebalancing-template", List.of("CpuCapacityGoal"));
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kafkaRebalanceTemplate).create();
@@ -806,9 +813,8 @@ public class KafkaAutoRebalancingMockTest {
                         .build()
         );
 
-        // getting the mocked BrokersInUseCheck class to mock broker scale down operation for check failure
-        BrokersInUseCheck operations = supplier.brokersInUseCheck;
-        when(operations.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(3, 4)));
+        // mocking admin client to return specific blocked nodes
+        hostPartitionsOnBrokers(List.of(3, 4));
 
         KafkaRebalance kafkaRebalanceTemplate = buildKafkaRebalanceTemplate("my-add-remove-brokers-rebalancing-template", List.of("CpuCapacityGoal"));
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kafkaRebalanceTemplate).create();
@@ -894,9 +900,8 @@ public class KafkaAutoRebalancingMockTest {
                         .build()
         );
 
-        // getting the mocked BrokersInUseCheck class to mock broker scale down operation for check failure
-        BrokersInUseCheck operations = supplier.brokersInUseCheck;
-        when(operations.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(3, 4)));
+        // mocking admin client to return specific blocked nodes
+        hostPartitionsOnBrokers(List.of(3, 4));
 
         KafkaRebalance kafkaRebalanceTemplate = buildKafkaRebalanceTemplate("my-add-remove-brokers-rebalancing-template", List.of("CpuCapacityGoal"));
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kafkaRebalanceTemplate).create();
@@ -964,7 +969,7 @@ public class KafkaAutoRebalancingMockTest {
                     patchKafkaRebalanceState(kr, KafkaRebalanceState.Ready);
 
                     // the brokers can be scaled down, so allowing the check passing (empty blocked brokers)
-                    when(supplier.brokersInUseCheck.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of()));
+                    hostPartitionsOnBrokers(List.of());
                 })))
                 // 6th reconcile, handling auto-rebalancing with KafkaRebalance in Ready state
                 .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
@@ -1132,5 +1137,25 @@ public class KafkaAutoRebalancingMockTest {
                     .withGoals(goals)
                 .endSpec()
                 .build();
+    }
+
+    private void hostPartitionsOnBrokers(List<Integer> blockedNodes) {
+        // mocking the describeTopics to make provided nodes "busy" by hosting partitions so they cannot be scaled down
+
+        Map<String, TopicDescription> topics = new HashMap<>();
+        for (int nodeId : blockedNodes) {
+            topics.put("my-topic-" + nodeId,
+                    new TopicDescription(
+                            "my-topic-" + nodeId,
+                            false,
+                            List.of(new TopicPartitionInfo(0, NODE.apply(nodeId), List.of(NODE.apply(nodeId)), List.of(NODE.apply(nodeId))))
+                    ));
+        }
+        DescribeTopicsResult dtr = mock(DescribeTopicsResult.class);
+        when(dtr.allTopicNames()).thenReturn(KafkaFuture.completedFuture(topics));
+
+        @SuppressWarnings(value = "unchecked")
+        ArgumentCaptor<Collection<String>> topicListCaptor = ArgumentCaptor.forClass(Collection.class);
+        when(admin.describeTopics(topicListCaptor.capture())).thenReturn(dtr);
     }
 }

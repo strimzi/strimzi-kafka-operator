@@ -43,7 +43,6 @@ import io.strimzi.operator.cluster.model.KafkaMetadataConfigurationState;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.cluster.model.RestartReason;
-import io.strimzi.operator.cluster.operator.assembly.BrokersInUseCheck;
 import io.strimzi.operator.cluster.operator.assembly.CaReconciler;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaClusterCreator;
@@ -221,8 +220,7 @@ public class KubernetesRestartEventsMockTest {
                 ResourceUtils.metricsProvider(),
                 null,
                 PFA,
-                60_000,
-                new BrokersInUseCheck());
+                60_000);
 
         podSetController = new StrimziPodSetController(namespace, Labels.EMPTY, supplier.kafkaOperator, supplier.connectOperator, supplier.mirrorMaker2Operator, supplier.strimziPodSetOperator, supplier.podOperations, supplier.metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));
         podSetController.start();
@@ -659,8 +657,7 @@ public class KubernetesRestartEventsMockTest {
                 ResourceUtils.metricsProvider(),
                 null,
                 PFA,
-                60_000,
-                new BrokersInUseCheck());
+                60_000);
     }
 
     private Admin withChangedBrokerConf(Admin preMockedAdminClient) {

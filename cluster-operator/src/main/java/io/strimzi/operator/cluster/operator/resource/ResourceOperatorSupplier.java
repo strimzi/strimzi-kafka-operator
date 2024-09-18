@@ -275,8 +275,7 @@ public class ResourceOperatorSupplier {
                 new DefaultZooKeeperAdminProvider(),
                 pfa,
                 operationTimeoutMs,
-                new KubernetesRestartEventPublisher(client, operatorName),
-                new BrokersInUseCheck()
+                new KubernetesRestartEventPublisher(client, operatorName)
         );
     }
 
@@ -293,7 +292,6 @@ public class ResourceOperatorSupplier {
      * @param zkAdminProvider           ZooKeeper Admin client provider
      * @param pfa                       Platform Availability Features
      * @param operationTimeoutMs        Operation timeout in milliseconds
-     * @param brokersInUseCheck         Instance for checking if brokers are in use
      */
     public ResourceOperatorSupplier(Vertx vertx,
                                     KubernetesClient client,
@@ -304,8 +302,7 @@ public class ResourceOperatorSupplier {
                                     MetricsProvider metricsProvider,
                                     ZooKeeperAdminProvider zkAdminProvider,
                                     PlatformFeaturesAvailability pfa,
-                                    long operationTimeoutMs,
-                                    BrokersInUseCheck brokersInUseCheck) {
+                                    long operationTimeoutMs) {
         this(vertx,
                 client,
                 zlf,
@@ -316,8 +313,7 @@ public class ResourceOperatorSupplier {
                 zkAdminProvider,
                 pfa,
                 operationTimeoutMs,
-                new KubernetesRestartEventPublisher(client, "operatorName"),
-                brokersInUseCheck
+                new KubernetesRestartEventPublisher(client, "operatorName")
         );
     }
 
@@ -331,8 +327,7 @@ public class ResourceOperatorSupplier {
                                      ZooKeeperAdminProvider zkAdminProvider,
                                      PlatformFeaturesAvailability pfa,
                                      long operationTimeoutMs,
-                                     KubernetesRestartEventPublisher restartEventPublisher,
-                                     BrokersInUseCheck brokersInUseCheck) {
+                                     KubernetesRestartEventPublisher restartEventPublisher) {
         this(new ServiceOperator(vertx, client),
                 pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 pfa.hasImages() ? new ImageStreamOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
@@ -370,7 +365,7 @@ public class ResourceOperatorSupplier {
                 zkAdminProvider,
                 restartEventPublisher,
                 new DefaultSharedEnvironmentProvider(),
-                brokersInUseCheck);
+                new BrokersInUseCheck());
     }
 
     /**

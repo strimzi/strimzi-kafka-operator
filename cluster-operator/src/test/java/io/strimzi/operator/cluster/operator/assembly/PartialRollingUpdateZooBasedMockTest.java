@@ -179,8 +179,7 @@ public class PartialRollingUpdateZooBasedMockTest {
                 ResourceUtils.metricsProvider(),
                 ResourceUtils.zooKeeperAdminProvider(),
                 pfa,
-                60_000L,
-                new BrokersInUseCheck());
+                60_000L);
     }
 
     private void updatePodAnnotation(String podName, String annotation, String generation)  {

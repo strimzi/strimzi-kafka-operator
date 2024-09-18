@@ -315,44 +315,45 @@ public class KafkaReconciler {
                                 .build());
             }
             return Future.succeededFuture();
-        }
+        } else {
+            KafkaAutoRebalanceStatusBuilder builder = new KafkaAutoRebalanceStatusBuilder(kafkaAutoRebalanceStatus);
+            // no already stored added nodes, adding only the new ones from current reconciliation
+            if (kafkaAutoRebalanceStatus.getModes() == null) {
+                if (!addedBrokers.isEmpty()) {
+                    builder.withModes(
+                            new KafkaAutoRebalanceModeBrokersBuilder()
+                                    .withMode(KafkaRebalanceMode.ADD_BROKERS)
+                                    .withBrokers(kafka.addedBrokerNodes().stream().toList())
+                                    .build()
+                    );
+                }
+                kafkaStatus.setAutoRebalance(builder.build());
+                return Future.succeededFuture();
+            } else {
+                // going to create a consistent list between:
+                // the added nodes already stored in the status
+                // the newly added nodes within the current reconciliation
 
-        KafkaAutoRebalanceStatusBuilder builder = new KafkaAutoRebalanceStatusBuilder(kafkaAutoRebalanceStatus);
-        // no already stored added nodes, adding only the new ones from current reconciliation
-        if (kafkaAutoRebalanceStatus.getModes() == null) {
-            if (!addedBrokers.isEmpty()) {
-                builder.withModes(
-                        new KafkaAutoRebalanceModeBrokersBuilder()
-                                .withMode(KafkaRebalanceMode.ADD_BROKERS)
-                                .withBrokers(kafka.addedBrokerNodes().stream().toList())
-                                .build()
-                );
+                // Merge the already stored brokers with new ones if the mode exists, or create a new mode
+                Optional<KafkaAutoRebalanceModeBrokers> existingAddBrokersMode = kafkaAutoRebalanceStatus.getModes().stream()
+                        .filter(mode -> mode.getMode().equals(KafkaRebalanceMode.ADD_BROKERS))
+                        .findFirst();
+
+                if (existingAddBrokersMode.isPresent()) {
+                    addedBrokers.addAll(existingAddBrokersMode.get().getBrokers());
+                    builder.editMatchingMode(m -> m.getMode().equals(KafkaRebalanceMode.ADD_BROKERS))
+                            .withBrokers(addedBrokers.stream().toList())
+                            .endMode();
+                } else if (!addedBrokers.isEmpty()) {
+                    builder.addNewMode()
+                            .withMode(KafkaRebalanceMode.ADD_BROKERS)
+                            .withBrokers(addedBrokers.stream().toList())
+                            .endMode();
+                }
+                kafkaStatus.setAutoRebalance(builder.build());
+                return Future.succeededFuture();
             }
-            kafkaStatus.setAutoRebalance(builder.build());
-            return Future.succeededFuture();
         }
-        // going to create a consistent list between:
-        // the added nodes already stored in the status
-        // the newly added nodes within the current reconciliation
-
-        // Merge the already stored brokers with new ones if the mode exists, or create a new mode
-        Optional<KafkaAutoRebalanceModeBrokers> existingAddBrokersMode = kafkaAutoRebalanceStatus.getModes().stream()
-                .filter(mode -> mode.getMode().equals(KafkaRebalanceMode.ADD_BROKERS))
-                .findFirst();
-
-        if (existingAddBrokersMode.isPresent()) {
-            addedBrokers.addAll(existingAddBrokersMode.get().getBrokers());
-            builder.editMatchingMode(m -> m.getMode().equals(KafkaRebalanceMode.ADD_BROKERS))
-                        .withBrokers(addedBrokers.stream().toList())
-                    .endMode();
-        } else if (!addedBrokers.isEmpty()) {
-            builder.addNewMode()
-                        .withMode(KafkaRebalanceMode.ADD_BROKERS)
-                        .withBrokers(addedBrokers.stream().toList())
-                    .endMode();
-        }
-        kafkaStatus.setAutoRebalance(builder.build());
-        return Future.succeededFuture();
     }
 
     /**
