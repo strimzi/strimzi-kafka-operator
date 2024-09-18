@@ -48,7 +48,7 @@ public class JmxUtils {
         return cmdKubeClient().namespace(namespaceName).execInPod(podName, cmd).out().trim();
     }
 
-    public static void downloadJmxTermToPod(String namespace, String podName) {
+    public static void downloadJmxTermToPod(String namespaceName, String podName) {
         String[] cmd = new String[] {
             "curl",
             "-L",
@@ -57,25 +57,25 @@ public class JmxUtils {
             "/tmp/jmxterm.jar"
         };
 
-        cmdKubeClient().namespace(namespace).execInPod(podName, cmd);
+        cmdKubeClient().namespace(namespaceName).execInPod(podName, cmd);
     }
 
-    public static String collectJmxMetricsWithWait(String namespace, String serviceName, String secretName, String podName, String commands) {
-        Secret jmxSecret = kubeClient(namespace).getSecret(secretName);
+    public static String collectJmxMetricsWithWait(String namespaceName, String serviceName, String secretName, String podName, String commands) {
+        Secret jmxSecret = kubeClient(namespaceName).getSecret(secretName);
 
-        LOGGER.info("Getting username and password for Service: {}/{} and Secret: {}/{}", namespace, serviceName, namespace, secretName);
+        LOGGER.info("Getting username and password for Service: {}/{} and Secret: {}/{}", namespaceName, serviceName, namespaceName, secretName);
         String userName = Util.decodeFromBase64(jmxSecret.getData().get("jmx-username"), StandardCharsets.UTF_8);
         String password = Util.decodeFromBase64(jmxSecret.getData().get("jmx-password"), StandardCharsets.UTF_8);
 
-        LOGGER.info("Creating script file for Service: {}/{}", namespace, serviceName);
-        createScriptForJMXTermInPod(namespace, podName, serviceName, userName, password, commands);
+        LOGGER.info("Creating script file for Service: {}/{}", namespaceName, serviceName);
+        createScriptForJMXTermInPod(namespaceName, podName, serviceName, userName, password, commands);
 
         String[] result = {""};
 
-        LOGGER.info("Waiting for JMX metrics to be present for Service: {}/{}", namespace, serviceName);
+        LOGGER.info("Waiting for JMX metrics to be present for Service: {}/{}", namespaceName, serviceName);
         TestUtils.waitFor("JMX metrics to be present for Service: " + serviceName, TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> {
-                result[0] = getResultOfJMXTermExec(namespace, podName, serviceName);
+                result[0] = getResultOfJMXTermExec(namespaceName, podName, serviceName);
                 return !result[0].isEmpty();
             }
         );

@@ -157,8 +157,8 @@ public class KafkaTopicUtils {
     }
 
     public static boolean waitForKafkaTopicStatus(String namespaceName, String topicName, Enum<?> conditionType, ConditionStatus conditionStatus) {
-        return ResourceManager.waitForResourceStatus(KafkaTopicResource.kafkaTopicClient(), KafkaTopic.RESOURCE_KIND,
-            namespaceName, topicName, conditionType, conditionStatus, ResourceOperation.getTimeoutForResourceReadiness(KafkaTopic.RESOURCE_KIND));
+        return ResourceManager.waitForResourceStatus(namespaceName, KafkaTopicResource.kafkaTopicClient(), KafkaTopic.RESOURCE_KIND,
+            topicName, conditionType, conditionStatus, ResourceOperation.getTimeoutForResourceReadiness(KafkaTopic.RESOURCE_KIND));
     }
 
     public static boolean waitForKafkaTopicReady(String namespaceName, String topicName) {
@@ -287,7 +287,7 @@ public class KafkaTopicUtils {
     public static void setFinalizersInAllTopicsToNull(String namespaceName) {
         LOGGER.info("Setting finalizers in all KafkaTopics in Namespace: {} to null", namespaceName);
         KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).list().getItems().forEach(kafkaTopic ->
-            KafkaTopicResource.replaceTopicResourceInSpecificNamespace(kafkaTopic.getMetadata().getName(), kt -> kt.getMetadata().setFinalizers(null), namespaceName)
+            KafkaTopicResource.replaceTopicResourceInSpecificNamespace(namespaceName, kafkaTopic.getMetadata().getName(), kt -> kt.getMetadata().setFinalizers(null))
         );
     }
 

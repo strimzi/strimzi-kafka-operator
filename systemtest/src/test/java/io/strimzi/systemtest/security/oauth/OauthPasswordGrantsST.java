@@ -91,10 +91,10 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), oauthClusterName).build());
         resourceManager.createResourceWithWait(oauthExampleClients.producerStrimziOauthPlain());
-        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, testStorage.getProducerName(), testStorage.getMessageCount());
 
         resourceManager.createResourceWithWait(oauthExampleClients.consumerStrimziOauthPlain());
-        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, testStorage.getConsumerName(), testStorage.getMessageCount());
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -195,7 +195,7 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
                 resourceManager.createResourceWithWait(kafkaOauthClientJob.consumerStrimziOauthPlain());
 
                 try {
-                    ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+                    ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, OAUTH_CONSUMER_NAME, testStorage.getMessageCount());
                     return  true;
                 } catch (WaitException e) {
                     e.printStackTrace();
@@ -223,10 +223,10 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), oauthClusterName).build());
         resourceManager.createResourceWithWait(oauthExampleClients.producerStrimziOauthPlain());
-        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, testStorage.getProducerName(), testStorage.getMessageCount());
 
         resourceManager.createResourceWithWait(oauthExampleClients.consumerStrimziOauthPlain());
-        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, testStorage.getConsumerName(), testStorage.getMessageCount());
 
         String kafkaSourceClusterName = oauthClusterName;
 
@@ -335,7 +335,7 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
                 resourceManager.createResourceWithWait(kafkaOauthClientJob.consumerStrimziOauthPlain());
 
                 try {
-                    ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+                    ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, testStorage.getConsumerName(), testStorage.getMessageCount());
                     return  true;
                 } catch (WaitException e) {
                     e.printStackTrace();
@@ -364,10 +364,10 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), oauthClusterName).build());
         resourceManager.createResourceWithWait(oauthExampleClients.producerStrimziOauthPlain());
-        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, testStorage.getProducerName(), testStorage.getMessageCount());
 
         resourceManager.createResourceWithWait(oauthExampleClients.consumerStrimziOauthPlain());
-        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, testStorage.getConsumerName(), testStorage.getMessageCount());
 
         KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), oauthClusterName, 1)
             .editOrNewSpec()
@@ -435,10 +435,10 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
             .build();
 
         resourceManager.createResourceWithWait(oauthExampleClients.producerStrimziOauthPlain());
-        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, testStorage.getProducerName(), testStorage.getMessageCount());
 
         resourceManager.createResourceWithWait(oauthExampleClients.consumerStrimziOauthPlain());
-        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, testStorage.getConsumerName(), testStorage.getMessageCount());
 
         resourceManager.createResourceWithWait(KafkaBridgeTemplates.kafkaBridge(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, KafkaResources.plainBootstrapAddress(oauthClusterName), 1)
             .editSpec()
@@ -473,7 +473,7 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
             .build();
 
         resourceManager.createResourceWithWait(kafkaBridgeClientJob.producerStrimziBridge());
-        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, producerName, testStorage.getMessageCount());
     }
 
     @BeforeAll

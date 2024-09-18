@@ -92,7 +92,7 @@ public class DrainCleanerST extends AbstractST {
         evictPodWithName(kafkaPodName);
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getBrokerSelector(), replicas, kafkaPod);
 
-        ClientUtils.waitForClientsSuccess(testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), TestConstants.DRAIN_CLEANER_NAMESPACE, 200);
+        ClientUtils.waitForClientsSuccess(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getContinuousConsumerName(), testStorage.getContinuousProducerName(), 200);
     }
 
     private void evictPodWithName(String podName) {

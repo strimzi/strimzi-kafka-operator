@@ -179,10 +179,10 @@ class RecoveryST extends AbstractST {
             .build();
 
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaNodePoolResource.getBrokerPoolName(sharedClusterName), knp ->
-                knp.getSpec().setResources(resourceReq), Environment.TEST_SUITE_NAMESPACE);
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getBrokerPoolName(sharedClusterName),
+                knp -> knp.getSpec().setResources(resourceReq));
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(sharedClusterName, k -> k.getSpec().getKafka().setResources(resourceReq), Environment.TEST_SUITE_NAMESPACE);
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, sharedClusterName, k -> k.getSpec().getKafka().setResources(resourceReq));
         }
 
         PodUtils.waitForPendingPod(Environment.TEST_SUITE_NAMESPACE, kafkaSsName);
@@ -192,10 +192,10 @@ class RecoveryST extends AbstractST {
         resourceReq.setRequests(requests);
 
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaNodePoolResource.getBrokerPoolName(sharedClusterName), knp ->
-                knp.getSpec().setResources(resourceReq), Environment.TEST_SUITE_NAMESPACE);
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getBrokerPoolName(sharedClusterName),
+                knp -> knp.getSpec().setResources(resourceReq));
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(sharedClusterName, k -> k.getSpec().getKafka().setResources(resourceReq), Environment.TEST_SUITE_NAMESPACE);
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, sharedClusterName, k -> k.getSpec().getKafka().setResources(resourceReq));
         }
 
         RollingUpdateUtils.waitForComponentAndPodsReady(Environment.TEST_SUITE_NAMESPACE, brokerSelector, KAFKA_REPLICAS);

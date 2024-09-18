@@ -128,7 +128,7 @@ public class CustomCaST extends AbstractST {
         final KafkaClients kafkaBasicClientJob = ClientUtils.getInstantTlsClients(testStorage);
         resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
         resourceManager.createResourceWithWait(kafkaBasicClientJob.producerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         // Get new certificate secret and assert old value is still present
         clusterCaCertificateSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()));
@@ -200,7 +200,7 @@ public class CustomCaST extends AbstractST {
         final KafkaClients kafkaBasicClientJob = ClientUtils.getInstantTlsClients(testStorage);
         resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage).build());
         resourceManager.createResourceWithWait(kafkaBasicClientJob.producerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     /**
@@ -338,7 +338,7 @@ public class CustomCaST extends AbstractST {
 
         // Pause Kafka reconciliation
         LOGGER.info("Pause the reconciliation of the Kafka custom resource ({})", StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName()));
-        KafkaUtils.annotateKafka(testStorage.getClusterName(), testStorage.getNamespaceName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
+        KafkaUtils.annotateKafka(testStorage.getNamespaceName(), testStorage.getClusterName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
 
         // To test trigger of renewal of CA with short validity dates, both new dates need to be set
         // Otherwise we apply completely new CA using retained old certificate to change manually
@@ -349,11 +349,11 @@ public class CustomCaST extends AbstractST {
         newClusterCA.setValidityDays(newValidityDays);
         newClusterCA.setGenerateCertificateAuthority(false);
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().setClusterCa(newClusterCA), testStorage.getNamespaceName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().setClusterCa(newClusterCA));
 
         // Resume Kafka reconciliation
         LOGGER.info("Resume the reconciliation of the Kafka custom resource ({})", StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName()));
-        KafkaUtils.removeAnnotation(testStorage.getClusterName(), testStorage.getNamespaceName(), Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION);
+        KafkaUtils.removeAnnotation(testStorage.getNamespaceName(), testStorage.getClusterName(), Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION);
 
         // On the next reconciliation, the Cluster Operator performs a `rolling update`:
         //   a) ZooKeeper
@@ -445,7 +445,7 @@ public class CustomCaST extends AbstractST {
 
         // Pause Kafka reconciliation
         LOGGER.info("Pause the reconciliation of the Kafka custom resource ({})", StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName()));
-        KafkaUtils.annotateKafka(testStorage.getClusterName(), testStorage.getNamespaceName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
+        KafkaUtils.annotateKafka(testStorage.getNamespaceName(), testStorage.getClusterName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
 
         LOGGER.info("Change of Kafka validity and renewal days - reconciliation should start");
         final CertificateAuthority newClientsCA = new CertificateAuthority();
@@ -453,11 +453,11 @@ public class CustomCaST extends AbstractST {
         newClientsCA.setValidityDays(newValidityDays);
         newClientsCA.setGenerateCertificateAuthority(false);
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().setClientsCa(newClientsCA), testStorage.getNamespaceName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().setClientsCa(newClientsCA));
 
         // Resume Kafka reconciliation
         LOGGER.info("Resume the reconciliation of the Kafka custom resource ({})", StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName()));
-        KafkaUtils.removeAnnotation(testStorage.getClusterName(), testStorage.getNamespaceName(), Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION);
+        KafkaUtils.removeAnnotation(testStorage.getNamespaceName(), testStorage.getClusterName(), Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION);
 
         // Wait for reconciliation and verify certs have been updated
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1, entityPods);
@@ -500,7 +500,7 @@ public class CustomCaST extends AbstractST {
     private void manuallyRenewCa(TestStorage testStorage, SystemTestCertHolder oldCa, SystemTestCertHolder newCa) {
         // Pause Kafka reconciliation
         LOGGER.info("Pause the reconciliation of the Kafka custom resource ({})", StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName()));
-        KafkaUtils.annotateKafka(testStorage.getClusterName(), testStorage.getNamespaceName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
+        KafkaUtils.annotateKafka(testStorage.getNamespaceName(), testStorage.getClusterName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
 
         String certSecretName = "";
         String keySecretName = "";
@@ -537,7 +537,7 @@ public class CustomCaST extends AbstractST {
 
         // Resume Kafka reconciliation
         LOGGER.info("Resume the reconciliation of the Kafka custom resource ({})", StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName()));
-        KafkaUtils.removeAnnotation(testStorage.getClusterName(), testStorage.getNamespaceName(), Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION);
+        KafkaUtils.removeAnnotation(testStorage.getNamespaceName(), testStorage.getClusterName(), Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION);
     }
 
     private void checkCustomCaCorrectness(final SystemTestCertHolder caHolder, final X509Certificate certificate) {

@@ -181,8 +181,8 @@ public class TieredStorageST extends AbstractST {
 
         // Delete data
         KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
-            testStorage.getTopicName(),
-            topic -> topic.getSpec().getConfig().put("retention.ms", 10000), testStorage.getNamespaceName());
+            testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().getConfig().put("retention.ms", 10000)
+        );
 
         MinioUtils.waitForNoDataInMinio(suiteStorage.getNamespaceName(), BUCKET_NAME);
     }
@@ -194,7 +194,7 @@ public class TieredStorageST extends AbstractST {
         NamespaceManager.getInstance().createNamespaceAndPrepare(suiteStorage.getNamespaceName());
         cluster.setNamespace(suiteStorage.getNamespaceName());
 
-        ImageBuild.buildImage(IMAGE_NAME, suiteStorage.getNamespaceName(), TIERED_STORAGE_DOCKERFILE, BUILT_IMAGE_TAG, Environment.KAFKA_TIERED_STORAGE_BASE_IMAGE);
+        ImageBuild.buildImage(suiteStorage.getNamespaceName(), IMAGE_NAME, TIERED_STORAGE_DOCKERFILE, BUILT_IMAGE_TAG, Environment.KAFKA_TIERED_STORAGE_BASE_IMAGE);
 
         SetupMinio.deployMinio(suiteStorage.getNamespaceName());
         SetupMinio.createBucket(suiteStorage.getNamespaceName(), BUCKET_NAME);

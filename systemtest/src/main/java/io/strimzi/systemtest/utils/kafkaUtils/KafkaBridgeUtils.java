@@ -23,7 +23,7 @@ public class KafkaBridgeUtils {
      */
     public static boolean waitForKafkaBridgeStatus(String namespaceName, String clusterName, Enum<?> state) {
         KafkaBridge kafkaBridge = kafkaBridgeClient().inNamespace(namespaceName).withName(clusterName).get();
-        return ResourceManager.waitForResourceStatus(kafkaBridgeClient(), kafkaBridge.getKind(), namespaceName,
+        return ResourceManager.waitForResourceStatus(namespaceName, kafkaBridgeClient(), kafkaBridge.getKind(),
             kafkaBridge.getMetadata().getName(), state, ResourceOperation.getTimeoutForResourceReadiness(kafkaBridge.getKind()));
     }
 

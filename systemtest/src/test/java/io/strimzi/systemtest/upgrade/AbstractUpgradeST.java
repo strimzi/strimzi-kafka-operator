@@ -472,7 +472,7 @@ public class AbstractUpgradeST extends AbstractST {
             // ##############################
             // Validate that continuous clients finished successfully
             // ##############################
-            ClientUtils.waitForClientsSuccess(producerName, consumerName, componentsNamespaceNames, upgradeData.getContinuousClientsMessages());
+            ClientUtils.waitForClientsSuccess(componentsNamespaceNames, consumerName, producerName, upgradeData.getContinuousClientsMessages());
             // ##############################
         }
     }

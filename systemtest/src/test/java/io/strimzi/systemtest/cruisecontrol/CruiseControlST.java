@@ -172,12 +172,12 @@ public class CruiseControlST extends AbstractST {
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
         // CruiseControl spec is now enabled
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             // Get default CC spec with tune options and set it to existing Kafka
             Kafka kafkaUpdated = KafkaTemplates.kafkaWithCruiseControlTunedForFastModelGeneration(testStorage.getNamespaceName(), testStorage.getClusterName(), 3, 3).build();
             kafka.getSpec().setCruiseControl(kafkaUpdated.getSpec().getCruiseControl());
             kafka.getSpec().setKafka(kafkaUpdated.getSpec().getKafka());
-        }, testStorage.getNamespaceName());
+        });
 
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
 
@@ -211,7 +211,7 @@ public class CruiseControlST extends AbstractST {
         KafkaRebalanceUtils.annotateKafkaRebalanceResource(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceAnnotation.approve);
 
         // updating the KafkaRebalance resource by configuring replication throttle
-        KafkaRebalanceResource.replaceKafkaRebalanceResourceInSpecificNamespace(testStorage.getClusterName(), kafkaRebalance -> kafkaRebalance.getSpec().setReplicationThrottle(100000), testStorage.getNamespaceName());
+        KafkaRebalanceResource.replaceKafkaRebalanceResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaRebalance -> kafkaRebalance.getSpec().setReplicationThrottle(100000));
 
         // the resource moved to `ProposalReady` state
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceState.ProposalReady);
@@ -234,7 +234,7 @@ public class CruiseControlST extends AbstractST {
         );
         resourceManager.createResourceWithoutWait(KafkaTemplates.kafkaWithCruiseControl(testStorage.getNamespaceName(), testStorage.getClusterName(), 1, 1).build());
 
-        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getClusterName(), testStorage.getNamespaceName(), errMessage, Duration.ofMinutes(6).toMillis());
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getNamespaceName(), testStorage.getClusterName(), errMessage, Duration.ofMinutes(6).toMillis());
 
         KafkaStatus kafkaStatus = KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
 
@@ -245,10 +245,10 @@ public class CruiseControlST extends AbstractST {
         int scaleTo = 3;
 
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getBrokerPoolName(), knp ->
-                knp.getSpec().setReplicas(scaleTo), testStorage.getNamespaceName());
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(),
+                knp -> knp.getSpec().setReplicas(scaleTo));
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setReplicas(3), testStorage.getNamespaceName());
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setReplicas(3));
         }
         KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
@@ -326,10 +326,10 @@ public class CruiseControlST extends AbstractST {
         Map<String, Object> ccConfigMap = new HashMap<>();
         ccConfigMap.put(replicaMovementStrategies, newReplicaMovementStrategies);
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             LOGGER.info("Set non-default CruiseControl replicaMovementStrategies to KafkaRebalance resource");
             kafka.getSpec().getCruiseControl().setConfig(ccConfigMap);
-        }, testStorage.getNamespaceName());
+        });
 
         LOGGER.info("Verifying that CC Pod is rolling, because of change size of disk");
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName()), 1, kafkaRebalanceSnapshot);
@@ -410,10 +410,10 @@ public class CruiseControlST extends AbstractST {
 
         LOGGER.info("Scaling Kafka up to {}", scaleTo);
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getBrokerPoolName(), knp ->
-                knp.getSpec().setReplicas(scaleTo), testStorage.getNamespaceName());
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp ->
+                knp.getSpec().setReplicas(scaleTo));
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setReplicas(scaleTo), testStorage.getNamespaceName());
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setReplicas(scaleTo));
         }
 
         RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), scaleTo);
@@ -460,10 +460,10 @@ public class CruiseControlST extends AbstractST {
         LOGGER.info("Scaling Kafka down to {}", initialReplicas);
 
         if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getBrokerPoolName(), knp ->
-                knp.getSpec().setReplicas(initialReplicas), testStorage.getNamespaceName());
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp ->
+                knp.getSpec().setReplicas(initialReplicas));
         } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setReplicas(initialReplicas), testStorage.getNamespaceName());
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setReplicas(initialReplicas));
         }
 
         RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), initialReplicas);

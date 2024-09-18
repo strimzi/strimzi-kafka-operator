@@ -90,8 +90,8 @@ public class PodSetST extends AbstractST {
 
         LOGGER.info("Changing {} to 'true', so only SPS will be reconciled", Environment.STRIMZI_POD_SET_RECONCILIATION_ONLY_ENV);
 
-        DeploymentResource.replaceDeployment(clusterOperator.getClusterOperatorName(),
-            coDep -> coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars), clusterOperator.getDeploymentNamespace());
+        DeploymentResource.replaceDeployment(clusterOperator.getDeploymentNamespace(), coDep -> coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars), clusterOperator.getClusterOperatorName()
+        );
 
         DeploymentUtils.waitTillDepHasRolled(clusterOperator.getDeploymentNamespace(), clusterOperator.getClusterOperatorName(), 1, coPod);
 
@@ -99,10 +99,10 @@ public class PodSetST extends AbstractST {
 
         LOGGER.info("Changing Kafka resource configuration, the Pods should not be rolled");
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
-            kafka -> {
-                kafka.getSpec().getKafka().setReadinessProbe(new ProbeBuilder().withTimeoutSeconds(probeTimeoutSeconds).build());
-            }, testStorage.getNamespaceName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+            kafka.getSpec().getKafka().setReadinessProbe(new ProbeBuilder().withTimeoutSeconds(probeTimeoutSeconds).build());
+        }
+        );
 
         RollingUpdateUtils.waitForNoKafkaAndZKRollingUpdate(testStorage.getNamespaceName(), testStorage.getClusterName(), brokerPods);
 
@@ -115,8 +115,8 @@ public class PodSetST extends AbstractST {
         LOGGER.info("Removing {} env from CO", Environment.STRIMZI_POD_SET_RECONCILIATION_ONLY_ENV);
 
         envVars.remove(reconciliationEnv);
-        DeploymentResource.replaceDeployment(clusterOperator.getClusterOperatorName(),
-            coDep -> coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars), clusterOperator.getDeploymentNamespace());
+        DeploymentResource.replaceDeployment(clusterOperator.getDeploymentNamespace(), coDep -> coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars), clusterOperator.getClusterOperatorName()
+        );
 
         DeploymentUtils.waitTillDepHasRolled(clusterOperator.getDeploymentNamespace(), clusterOperator.getClusterOperatorName(), 1, coPod);
 

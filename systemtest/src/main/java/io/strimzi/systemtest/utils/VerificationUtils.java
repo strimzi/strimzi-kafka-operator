@@ -56,18 +56,19 @@ public class VerificationUtils {
 
     /**
      * Verifies expected and current resources requests inside selected pods container
-     * @param namespace Namespace name where is container is located
-     * @param podName Name of pod where container is located
+     *
+     * @param namespaceName Namespace name where is container is located
+     * @param podName       Name of pod where container is located
      * @param containerName The container where verifying is expected
-     * @param memoryLimit expected value for allowed memory resource limitation
-     * @param cpuLimit expected value for allowed CPU resource limitation
+     * @param memoryLimit   expected value for allowed memory resource limitation
+     * @param cpuLimit      expected value for allowed CPU resource limitation
      * @param memoryRequest expected value for requested memory size
-     * @param cpuRequest expected value for requested CPU in CPU units
+     * @param cpuRequest    expected value for requested CPU in CPU units
      */
-    public static void assertPodResourceRequests(String namespace, String podName, String containerName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
-        Pod po = kubeClient().getPod(namespace, podName);
-        assertThat("Not found an expected Pod  " + namespace + "/" + podName + " but found " +
-            kubeClient().listPods(namespace).stream().map(p -> p.getMetadata().getName()).toList(), po, is(notNullValue()));
+    public static void assertPodResourceRequests(String namespaceName, String podName, String containerName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
+        Pod po = kubeClient().getPod(namespaceName, podName);
+        assertThat("Not found an expected Pod  " + namespaceName + "/" + podName + " but found " +
+            kubeClient().listPods(namespaceName).stream().map(p -> p.getMetadata().getName()).toList(), po, is(notNullValue()));
 
         Optional<Container> optional = po.getSpec().getContainers().stream().filter(c -> c.getName().equals(containerName)).findFirst();
         assertThat("Not found an expected container " + containerName, optional.isPresent(), is(true));
@@ -346,12 +347,12 @@ public class VerificationUtils {
      * Verifies that the Docker images used by the Kafka cluster in the specified namespaces are correct
      * based on the configured versions and deployment configurations.
      *
-     * @param clusterName The name of the Kafka cluster
      * @param kafkaNamespaceName The namespace where Kafka is deployed
-     * @param controllerPods The number of Kafka pods in the cluster
-     * @param rackAwareEnabled Indicates whether rack-aware configuration is enabled
+     * @param clusterName        The name of the Kafka cluster
+     * @param controllerPods     The number of Kafka pods in the cluster
+     * @param rackAwareEnabled   Indicates whether rack-aware configuration is enabled
      */
-    public static void verifyClusterOperatorKafkaDockerImages(String clusterName, String clusterOperatorNamespaceName, String kafkaNamespaceName, int controllerPods, boolean rackAwareEnabled) {
+    public static void verifyClusterOperatorKafkaDockerImages(String clusterOperatorNamespaceName, String kafkaNamespaceName, String clusterName, int controllerPods, boolean rackAwareEnabled) {
         LOGGER.info("Verifying docker image names");
         //Verifying docker image for cluster-operator
 
@@ -422,11 +423,11 @@ public class VerificationUtils {
      * Verifies the Docker images used by MirrorMaker2 in the specified namespace
      * based on the configured versions and deployment configurations.
      *
-     * @param clusterName The name of the Kafka MirrorMaker 2 cluster
      * @param clusterOperatorNamespace The namespace where the Cluster Operator is deployed
-     * @param mirrorMakerNamespace The namespace where the Kafka MirrorMaker 2 instance is deployed
+     * @param mirrorMakerNamespace     The namespace where the Kafka MirrorMaker 2 instance is deployed
+     * @param clusterName              The name of the Kafka MirrorMaker 2 cluster
      */
-    public static void verifyClusterOperatorMM2DockerImage(String clusterName, String clusterOperatorNamespace, String mirrorMakerNamespace) {
+    public static void verifyClusterOperatorMM2DockerImage(String clusterOperatorNamespace, String mirrorMakerNamespace, String clusterName) {
         LOGGER.info("Verifying docker image of MM2 in CO");
         // we must use INFRA_NAMESPACE because there is CO deployed
         Map<String, String> imgFromDeplConf = VerificationUtils.getClusterOperatorDeploymentImages(clusterOperatorNamespace);

@@ -194,7 +194,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
             kafkaClients.producerTlsStrimzi(PRIMARY_KAFKA_NAME),
             kafkaClients.consumerTlsStrimzi(PRIMARY_KAFKA_NAME)
         );
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     /**

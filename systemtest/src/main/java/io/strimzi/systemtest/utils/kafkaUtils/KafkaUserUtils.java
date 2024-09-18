@@ -204,7 +204,7 @@ public class KafkaUserUtils {
 
         ResourceManager.getInstance().createResourceWithWait(userDefinedSecret);
 
-        KafkaUserResource.replaceUserResourceInSpecificNamespace(kafkaUserResourceName, ku -> {
+        KafkaUserResource.replaceUserResourceInSpecificNamespace(ns, kafkaUserResourceName, ku -> {
 
             ku.getSpec().setAuthentication(
                 new KafkaUserScramSha512ClientAuthenticationBuilder()
@@ -217,7 +217,7 @@ public class KafkaUserUtils {
                     )
                     .build()
             );
-        }, ns);
+        });
 
         waitForKafkaUserReady(ns, kafkaUserResourceName);
     }

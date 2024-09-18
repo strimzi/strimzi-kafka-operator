@@ -401,11 +401,11 @@ public class Environment {
         return hostname;
     }
 
-    public static String getImageOutputRegistry(String namespace, String imageName, String tag) {
+    public static String getImageOutputRegistry(String namespaceName, String imageName, String tag) {
         if (!Environment.CONNECT_BUILD_IMAGE_PATH.isEmpty()) {
             return Environment.CONNECT_BUILD_IMAGE_PATH + ":" + tag;
         } else {
-            return getImageOutputRegistry() + "/" + namespace + "/" + imageName + ":" + tag;
+            return getImageOutputRegistry() + "/" + namespaceName + "/" + imageName + ":" + tag;
         }
     }
 

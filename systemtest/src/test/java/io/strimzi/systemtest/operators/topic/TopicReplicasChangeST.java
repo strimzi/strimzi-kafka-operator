@@ -116,8 +116,8 @@ public class TopicReplicasChangeST extends AbstractST {
         long topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
         KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
-                testStorage.getTopicName(),
-                topic -> topic.getSpec().setReplicas(newTopicReplicationFactor), sharedTestStorage.getNamespaceName());
+            sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().setReplicas(newTopicReplicationFactor)
+        );
 
         // then KafkaTopic replicaChange status should disappear after task is completed by CC
         KafkaTopicUtils.waitForReplicaChangeStatusNotPresent(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
@@ -161,8 +161,8 @@ public class TopicReplicasChangeST extends AbstractST {
         long topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
         KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
-                testStorage.getTopicName(),
-                topic -> topic.getSpec().setReplicas(increasedTopicReplicationFactor), testStorage.getNamespaceName());
+            testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().setReplicas(increasedTopicReplicationFactor)
+        );
 
         KafkaTopicUtils.waitUntilReplicaChangeResolved(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
@@ -175,8 +175,8 @@ public class TopicReplicasChangeST extends AbstractST {
         topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
         KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
-                testStorage.getTopicName(),
-                topic -> topic.getSpec().setReplicas(startingTopicReplicationFactor), testStorage.getNamespaceName());
+            testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().setReplicas(startingTopicReplicationFactor)
+        );
 
         //  replicaChange state should be in ongoing, because UTO does a POST request to CC
         KafkaTopicUtils.waitUntilReplicaChangeOngoing(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
@@ -222,8 +222,8 @@ public class TopicReplicasChangeST extends AbstractST {
         long topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
         KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
-                testStorage.getTopicName(),
-                topic -> topic.getSpec().setReplicas(wrongTopicReplicationFactor), testStorage.getNamespaceName());
+            testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().setReplicas(wrongTopicReplicationFactor)
+        );
 
         KafkaTopicUtils.waitTopicHasRolled(sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), topicObservationGeneration);
 
@@ -238,8 +238,8 @@ public class TopicReplicasChangeST extends AbstractST {
         topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
         KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
-                testStorage.getTopicName(),
-                topic -> topic.getSpec().setReplicas(startingTopicReplicationFactor), testStorage.getNamespaceName());
+            testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().setReplicas(startingTopicReplicationFactor)
+        );
 
         // then KafkaTopic replicaChange status should disappear after task is completed by CC
         // replicationChange not present because there is no need to call POST request via UTO to CC because we already have KT 3 replicas
@@ -284,8 +284,8 @@ public class TopicReplicasChangeST extends AbstractST {
         long topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
         KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
-                testStorage.getTopicName(),
-                topic -> topic.getSpec().setReplicas(increasedTopicReplicationFactor), testStorage.getNamespaceName());
+            testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().setReplicas(increasedTopicReplicationFactor)
+        );
 
         KafkaTopicUtils.waitUntilReplicaChangeResolved(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
@@ -351,8 +351,8 @@ public class TopicReplicasChangeST extends AbstractST {
         long topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
         KafkaTopicResource.replaceTopicResourceInSpecificNamespace(
-                testStorage.getTopicName(),
-                topic -> topic.getSpec().setReplicas(decreasedTopicReplicationFactor), testStorage.getNamespaceName());
+            testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().setReplicas(decreasedTopicReplicationFactor)
+        );
 
         KafkaTopicUtils.waitUntilReplicaChangeResolved(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 

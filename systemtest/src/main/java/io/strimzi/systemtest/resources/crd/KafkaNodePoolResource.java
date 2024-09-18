@@ -72,8 +72,8 @@ public class KafkaNodePoolResource implements ResourceType<KafkaNodePool> {
         return Crds.kafkaNodePoolOperation(kubeClient().getClient());
     }
 
-    public static void replaceKafkaNodePoolResourceInSpecificNamespace(String resourceName, Consumer<KafkaNodePool> editor, String namespaceName) {
-        ResourceManager.replaceCrdResource(KafkaNodePool.class, KafkaNodePoolList.class, resourceName, editor, namespaceName);
+    public static void replaceKafkaNodePoolResourceInSpecificNamespace(String namespaceName, String resourceName, Consumer<KafkaNodePool> editor) {
+        ResourceManager.replaceCrdResource(namespaceName, KafkaNodePool.class, KafkaNodePoolList.class, resourceName, editor);
     }
 
     public static LabelSelector getLabelSelector(String clusterName, String poolName, ProcessRoles processRole) {

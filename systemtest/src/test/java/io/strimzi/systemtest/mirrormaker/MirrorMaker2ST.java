@@ -154,7 +154,7 @@ class MirrorMaker2ST extends AbstractST {
         assertThat(kafkaPodJson, hasJsonPath(StUtils.globalVariableJsonPathBuilder(0, "KAFKA_CONNECT_BOOTSTRAP_SERVERS"),
                 hasItem(KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()))));
         assertThat(StUtils.getPropertiesFromJson(0, kafkaPodJson, "KAFKA_CONNECT_CONFIGURATION"), is(expectedConfig));
-        VerificationUtils.verifyClusterOperatorMM2DockerImage(testStorage.getClusterName(), clusterOperator.getDeploymentNamespace(), testStorage.getNamespaceName());
+        VerificationUtils.verifyClusterOperatorMM2DockerImage(clusterOperator.getDeploymentNamespace(), testStorage.getNamespaceName(), testStorage.getClusterName());
 
         VerificationUtils.verifyPodsLabels(testStorage.getNamespaceName(), KafkaMirrorMaker2Resources.componentName(testStorage.getClusterName()), testStorage.getMM2Selector());
         VerificationUtils.verifyServiceLabels(testStorage.getNamespaceName(), KafkaMirrorMaker2Resources.serviceName(testStorage.getClusterName()), testStorage.getMM2Selector());
@@ -195,7 +195,7 @@ class MirrorMaker2ST extends AbstractST {
         assertThat(mirroredTopic.partitionCount(), is(3));
 
         // Replace source topic resource with new data and check that mm2 update target topic as well
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getTopicName(), kt -> kt.getSpec().setPartitions(8), testStorage.getNamespaceName());
+        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getTopicName(), kt -> kt.getSpec().setPartitions(8));
         AdminClientUtils.waitForTopicPartitionInKafka(targetClusterAdminClient, testStorage.getMirroredSourceTopicName(), 8);
     }
 
@@ -516,7 +516,7 @@ class MirrorMaker2ST extends AbstractST {
         LOGGER.info("-------> Scaling KafkaMirrorMaker2 down <-------");
 
         LOGGER.info("Scaling MirrorMaker2 to zero");
-        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getClusterName(), mm2 -> mm2.getSpec().setReplicas(0), testStorage.getNamespaceName());
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), mm2 -> mm2.getSpec().setReplicas(0));
 
         PodUtils.waitForPodsReady(testStorage.getNamespaceName(), testStorage.getMM2Selector(), 0, true, () -> { });
 
@@ -815,49 +815,49 @@ class MirrorMaker2ST extends AbstractST {
             initialInternalClientSourceJob.producerStrimzi(),
             initialInternalClientSourceJob.consumerStrimzi());
 
-        ClientUtils.waitForClientsSuccess(sourceProducerName, sourceConsumerName, testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), sourceConsumerName, sourceProducerName, testStorage.getMessageCount());
 
         LOGGER.info("Send {} messages to Source cluster", testStorage.getMessageCount());
         KafkaClients internalClientSourceJob = new KafkaClientsBuilder(initialInternalClientSourceJob).withMessage("Producer B").build();
 
         resourceManager.createResourceWithWait(
             internalClientSourceJob.producerStrimzi());
-        ClientUtils.waitForClientSuccess(sourceProducerName, testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), sourceProducerName, testStorage.getMessageCount());
 
         LOGGER.info("Receive {} messages from mirrored Topic on target cluster", testStorage.getMessageCount());
         resourceManager.createResourceWithWait(
             initialInternalClientTargetJob.consumerStrimzi());
-        ClientUtils.waitForClientSuccess(targetConsumerName, testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), targetConsumerName, testStorage.getMessageCount());
 
         LOGGER.info("Send 50 messages to Source cluster");
         internalClientSourceJob = new KafkaClientsBuilder(internalClientSourceJob).withMessageCount(50).withMessage("Producer C").build();
         resourceManager.createResourceWithWait(
             internalClientSourceJob.producerStrimzi());
-        ClientUtils.waitForClientSuccess(sourceProducerName, testStorage.getNamespaceName(), 50);
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), sourceProducerName, 50);
 
         LOGGER.info("Receive 10 messages from source cluster");
         internalClientSourceJob = new KafkaClientsBuilder(internalClientSourceJob).withMessageCount(10).withAdditionalConfig("max.poll.records=10").build();
         resourceManager.createResourceWithWait(
             internalClientSourceJob.consumerStrimzi());
-        ClientUtils.waitForClientSuccess(sourceConsumerName, testStorage.getNamespaceName(), 10);
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), sourceConsumerName, 10);
 
         LOGGER.info("Receive 40 messages from mirrored Topic on target cluster");
         KafkaClients internalClientTargetJob = new KafkaClientsBuilder(initialInternalClientTargetJob).withMessageCount(40).build();
         resourceManager.createResourceWithWait(
             internalClientTargetJob.consumerStrimzi());
-        ClientUtils.waitForClientSuccess(targetConsumerName, testStorage.getNamespaceName(), 40);
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), targetConsumerName, 40);
 
         LOGGER.info("There should be no more messages to read. Try to consume at least 1 message. " +
                 "This client Job should fail on timeout.");
         resourceManager.createResourceWithWait(
             initialInternalClientTargetJob.consumerStrimzi());
-        assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(targetConsumerName, testStorage.getNamespaceName(), 1));
+        assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(testStorage.getNamespaceName(), targetConsumerName, 1));
 
         LOGGER.info("As it's Active-Active MirrorMaker2 mode, there should be no more messages to read from Source cluster" +
                 " topic. This client Job should fail on timeout.");
         resourceManager.createResourceWithWait(
             initialInternalClientSourceJob.consumerStrimzi());
-        assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(sourceConsumerName, testStorage.getNamespaceName(), 1));
+        assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(testStorage.getNamespaceName(), sourceConsumerName, 1));
     }
 
     @ParallelNamespaceTest
@@ -896,9 +896,9 @@ class MirrorMaker2ST extends AbstractST {
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2StatusMessage(testStorage.getNamespaceName(), testStorage.getClusterName(), errorMessage);
 
         LOGGER.info("Modify originally wrong bootstrap service name configuration in KafkaMirrorMaker2: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
-        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getClusterName(), mm2 ->
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), mm2 ->
             mm2.getSpec().getClusters().stream().filter(mm2ClusterSpec -> mm2ClusterSpec.getAlias().equals(testStorage.getSourceClusterName()))
-                .findFirst().get().setBootstrapServers(KafkaUtils.namespacedPlainBootstrapAddress(testStorage.getSourceClusterName(), testStorage.getNamespaceName())), testStorage.getNamespaceName());
+                .findFirst().get().setBootstrapServers(KafkaUtils.namespacedPlainBootstrapAddress(testStorage.getNamespaceName(), testStorage.getSourceClusterName())));
 
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(testStorage.getNamespaceName(), testStorage.getClusterName());
 
@@ -906,8 +906,8 @@ class MirrorMaker2ST extends AbstractST {
         assertFalse(kmm2Status.getConditions().stream().anyMatch(condition -> condition.getMessage() != null && condition.getMessage().contains(errorMessage)));
 
         LOGGER.info("Pausing KafkaMirrorMaker2: {}/{} source connector", testStorage.getNamespaceName(), testStorage.getClusterName());
-        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getClusterName(), mm2 ->
-            mm2.getSpec().getMirrors().get(0).getSourceConnector().setState(ConnectorState.PAUSED), testStorage.getNamespaceName()
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            mm2 -> mm2.getSpec().getMirrors().get(0).getSourceConnector().setState(ConnectorState.PAUSED)
         );
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getSourceClusterName(), 3).build());
@@ -920,8 +920,8 @@ class MirrorMaker2ST extends AbstractST {
         ClientUtils.waitForInstantConsumerClientTimeout(testStorage);
 
         LOGGER.info("Re-running KafkaMirrorMaker2: {}/{} source connector", testStorage.getNamespaceName(), testStorage.getClusterName());
-        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getClusterName(), mm2 ->
-            mm2.getSpec().getMirrors().get(0).getSourceConnector().setState(ConnectorState.RUNNING), testStorage.getNamespaceName()
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            mm2 -> mm2.getSpec().getMirrors().get(0).getSourceConnector().setState(ConnectorState.RUNNING)
         );
 
         LOGGER.info("Consumer in target cluster and Topic should receive {} messages", testStorage.getMessageCount());
@@ -1223,7 +1223,7 @@ class MirrorMaker2ST extends AbstractST {
         LOGGER.info("Consuming messages in target cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getTargetClusterName());
         resourceManager.createResourceWithWait(targetClients.consumerTlsStrimzi(testStorage.getTargetClusterName()));
         // Extend the timeout for clients to be sure that all messages are synced by MM2
-        JobUtils.waitForJobSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), TestConstants.GLOBAL_TIMEOUT_LONG);
+        JobUtils.waitForJobSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), TestConstants.GLOBAL_TIMEOUT_LONG);
         JobUtils.deleteJobsWithWait(testStorage.getNamespaceName(), testStorage.getConsumerName());
 
         LOGGER.info("Renew Cluster CA secret for Source clusters via annotation");
@@ -1255,7 +1255,7 @@ class MirrorMaker2ST extends AbstractST {
         LOGGER.info("Consuming messages in target cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getTargetClusterName());
         resourceManager.createResourceWithWait(targetClients.consumerTlsStrimzi(testStorage.getTargetClusterName()));
         // Extend the timeout for clients to be sure that all messages are synced by MM2
-        JobUtils.waitForJobSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), TestConstants.GLOBAL_TIMEOUT_LONG);
+        JobUtils.waitForJobSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), TestConstants.GLOBAL_TIMEOUT_LONG);
         JobUtils.deleteJobsWithWait(testStorage.getNamespaceName(), testStorage.getConsumerName());
     }
 

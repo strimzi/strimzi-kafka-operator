@@ -119,8 +119,8 @@ public class StrimziPodSetUtils {
 
     public static void annotateStrimziPodSet(String namespaceName, String resourceName, Map<String, String> annotations) {
         LOGGER.info("Annotating StrimziPodSet {}/{} with annotations: {}", namespaceName, resourceName, annotations);
-        StrimziPodSetResource.replaceStrimziPodSetInSpecificNamespace(resourceName,
-            strimziPodSet -> strimziPodSet.getMetadata().setAnnotations(annotations), namespaceName);
+        StrimziPodSetResource.replaceStrimziPodSetInSpecificNamespace(namespaceName, resourceName, strimziPodSet -> strimziPodSet.getMetadata().setAnnotations(annotations)
+        );
     }
 
     public static Map<String, String> getAnnotationsOfStrimziPodSet(String namespaceName, String resourceName) {

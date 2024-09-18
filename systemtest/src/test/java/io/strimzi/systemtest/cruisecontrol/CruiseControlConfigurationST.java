@@ -79,10 +79,10 @@ public class CruiseControlConfigurationST extends AbstractST {
 
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             LOGGER.info("Removing CruiseControl from Kafka");
             kafka.getSpec().setCruiseControl(null);
-        }, testStorage.getNamespaceName());
+        });
 
         brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), defaultBrokerReplicaCount, brokerPods);
 
@@ -107,10 +107,10 @@ public class CruiseControlConfigurationST extends AbstractST {
         LOGGER.info("Cruise Control Topics will not be deleted and will stay in the Kafka cluster");
         CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(adminClient, defaultBrokerReplicaCount);
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             LOGGER.info("Adding CruiseControl to the classic Kafka");
             kafka.getSpec().setCruiseControl(new CruiseControlSpec());
-        }, testStorage.getNamespaceName());
+        });
 
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), defaultBrokerReplicaCount, brokerPods);
 
@@ -142,12 +142,12 @@ public class CruiseControlConfigurationST extends AbstractST {
                 put(CruiseControlConfigurationParameters.REPLICATION_THROTTLE.getValue(), -1);
             }};
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             LOGGER.info("Changing CruiseControl performance tuning options");
             kafka.getSpec().setCruiseControl(new CruiseControlSpecBuilder()
                     .addToConfig(performanceTuningOpts)
                     .build());
-        }, testStorage.getNamespaceName());
+        });
 
         LOGGER.info("Verifying that CC Pod is rolling, after changing options");
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName()), 1, cruiseControlSnapShot);

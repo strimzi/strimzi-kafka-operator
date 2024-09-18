@@ -133,7 +133,7 @@ public class SetupKeycloak {
         String passwordEncoded = keycloakSecret.getData().get("password");
         String password = Util.decodeFromBase64(passwordEncoded, StandardCharsets.UTF_8);
 
-        return new KeycloakInstance(username, password, namespaceName);
+        return new KeycloakInstance(namespaceName, password, username);
     }
 
     private static void importRealms(String keycloakNamespace, KeycloakInstance keycloakInstance) {

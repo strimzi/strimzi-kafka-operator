@@ -158,7 +158,7 @@ public class OauthScopeST extends OauthAbstractST {
 
         resourceManager.createResourceWithWait(oauthInternalClientChecksJob.producerStrimzi());
         // client should succeed because we set to `clientScope=test` and also Kafka has `scope=test`
-        ClientUtils.waitForClientSuccess(producerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, producerName, testStorage.getMessageCount());
     }
 
     @IsolatedTest("Modification of shared Kafka cluster")
@@ -182,7 +182,7 @@ public class OauthScopeST extends OauthAbstractST {
         Map<String, String> brokerPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, brokerSelector);
 
         // re-configuring Kafka listener to have client scope assigned to null
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(oauthClusterName, kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafka -> {
             List<GenericKafkaListener> scopeListeners = kafka.getSpec().getKafka().getListeners()
                 .stream()
                 .filter(listener -> listener.getName().equals(scopeListener))
@@ -190,7 +190,7 @@ public class OauthScopeST extends OauthAbstractST {
 
             ((KafkaListenerAuthenticationOAuth) scopeListeners.get(0).getAuth()).setClientScope(null);
             kafka.getSpec().getKafka().getListeners().set(0, scopeListeners.get(0));
-        }, Environment.TEST_SUITE_NAMESPACE);
+        });
 
         brokerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Environment.TEST_SUITE_NAMESPACE, brokerSelector, 3, brokerPods);
 
@@ -201,12 +201,12 @@ public class OauthScopeST extends OauthAbstractST {
         // client should fail because the listener requires scope: 'test' in JWT token but was (the listener) temporarily
         // configured without clientScope resulting in a JWT token without the scope claim when using the clientId and
         // secret passed via SASL/PLAIN to obtain an access token in client's name.
-        ClientUtils.waitForClientTimeout(producerName, Environment.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientTimeout(Environment.TEST_SUITE_NAMESPACE, producerName, testStorage.getMessageCount());
         JobUtils.deleteJobWithWait(Environment.TEST_SUITE_NAMESPACE, producerName);
 
         // rollback previous configuration
         // re-configuring Kafka listener to have client scope assigned to 'test'
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(oauthClusterName, kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafka -> {
             List<GenericKafkaListener> scopeListeners = kafka.getSpec().getKafka().getListeners()
                 .stream()
                 .filter(listener -> listener.getName().equals(scopeListener))
@@ -214,7 +214,7 @@ public class OauthScopeST extends OauthAbstractST {
 
             ((KafkaListenerAuthenticationOAuth) scopeListeners.get(0).getAuth()).setClientScope("test");
             kafka.getSpec().getKafka().getListeners().set(0, scopeListeners.get(0));
-        }, Environment.TEST_SUITE_NAMESPACE);
+        });
 
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Environment.TEST_SUITE_NAMESPACE, brokerSelector, 3, brokerPods);
     }
