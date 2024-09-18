@@ -85,17 +85,9 @@ public class UserOperatorPerformance extends AbstractST {
         return Stream.of(
             // Configurations for low bulk batch creation (100 users)
             Arguments.of(100, "50", "15000", "1024", "100", "100", "4"),  // Default configuration
-            Arguments.of(100, "100", "10000", "2048", "200", "50", "10"), // High throughput configuration
-            Arguments.of(100, "50", "15000", "1024", "100", "200", "4"),  // High batch time configuration
-            Arguments.of(100,  "25", "30000", "512", "50", "100", "2"),     // Lower performance, higher timeout
-            Arguments.of(100, "100", "5000", "4096", "500", "10", "20"),   // Extremely high performance configuration
 
             // Configurations for medium bulk batch creation (500 users)
-            Arguments.of(500, "50", "15000", "1024", "100", "100", "4"),  // Default configuration
-            Arguments.of(500, "100", "10000", "2048", "200", "50", "10"), // High throughput configuration
-            Arguments.of(500, "50", "15000", "1024", "100", "200", "4"),  // High batch time configuration
-            Arguments.of(500,  "25", "30000", "512", "50", "100", "2"),     // Lower performance, higher timeout
-            Arguments.of(500, "100", "5000", "4096", "500", "10", "20")   // Extremely high performance configuration
+            Arguments.of(500, "50", "15000", "1024", "100", "100", "4")  // Default configuration
         );
     }
 

@@ -27,8 +27,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.systemtest.TestConstants.PERFORMANCE;
 import static io.strimzi.systemtest.TestConstants.SCALABILITY;
 
+@Tag(PERFORMANCE)
 @Tag(SCALABILITY)
 public class TopicOperatorScalabilityPerformance extends AbstractST {
 
