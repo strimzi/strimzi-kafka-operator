@@ -643,6 +643,130 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
             }));
     }
 
+    @Override
+    public Future<String> getConnectorOffsets(Reconciliation reconciliation, String host, int port, String connectorName) {
+        String path = String.format("/connectors/%s/offsets", connectorName);
+        LOGGER.debugCr(reconciliation, "Making GET request to {}", path);
+        return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
+                httpClient.request(HttpMethod.GET, port, host, path, request -> {
+                    if (request.succeeded()) {
+                        request.result().setFollowRedirects(true)
+                                .putHeader("Accept", "application/json")
+                                .putHeader("Content-Type", "application/json");
+                    } else {
+                        result.tryFail(request.cause());
+                    }
+                    if (request.succeeded()) {
+                        request.result().send(response -> {
+                            if (response.succeeded()) {
+                                if (response.result().statusCode() == 200) {
+                                    response.result().bodyHandler(buffer -> {
+                                        try {
+                                            Object offsets = mapper.readValue(buffer.getBytes(), Object.class);
+                                            String prettyPrintedOffsets = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(offsets);
+                                            LOGGER.debugCr(reconciliation, "Got {} response to GET request to {}: {}", response.result().statusCode(), path, offsets);
+                                            result.complete(prettyPrintedOffsets);
+                                        } catch (IOException e) {
+                                            LOGGER.warnCr(reconciliation, "Failed to parse connector offsets", e);
+                                            result.fail(new ConnectRestException(response.result(), "Failed to parse connector offsets", e));
+                                        }
+                                    });
+                                } else {
+                                    result.fail(new ConnectRestException(response.result(), "Unexpected status code"));
+                                }
+                            } else {
+                                result.fail(response.cause());
+                            }
+                        });
+                    } else {
+                        result.tryFail(request.cause());
+                    }
+                }));
+    }
+
+    @Override
+    public Future<Void> alterConnectorOffsets(Reconciliation reconciliation, String host, int port, String connectorName, String newOffsets) {
+        String path = String.format("/connectors/%s/offsets", connectorName);
+        LOGGER.debugCr(reconciliation, "Making PATCH request to {}", path);
+        return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
+                httpClient.request(HttpMethod.PATCH, port, host, path, request -> {
+                    if (request.succeeded()) {
+                        request.result().setFollowRedirects(true)
+                                .putHeader("Accept", "application/json")
+                                .putHeader("Content-Type", "application/json")
+                                .putHeader("Content-Length", Integer.toString(newOffsets.length()))
+                                .write(newOffsets);
+                    } else {
+                        result.tryFail(request.cause());
+                    }
+                    if (request.succeeded()) {
+                        request.result().send(response -> {
+                            if (response.succeeded()) {
+                                if (response.result().statusCode() == 200) {
+                                    response.result().bodyHandler(buffer -> {
+                                        try {
+                                            Map<String, String> body = mapper.readValue(buffer.getBytes(), MAP_OF_STRINGS);
+                                            String message = body.get("message");
+                                            LOGGER.debugCr(reconciliation, "Got {} response to PATCH request to {}: {}", response.result().statusCode(), path, message);
+                                            result.complete();
+                                        } catch (IOException e) {
+                                            LOGGER.warnCr(reconciliation, "Failed to parse connector offsets alter response", e);
+                                            result.fail(new ConnectRestException(response.result(), "Failed to parse connector offsets alter response", e));
+                                        }
+                                    });
+                                } else {
+                                    result.fail(new ConnectRestException(response.result(), "Unexpected status code"));
+                                }
+                            } else {
+                                result.fail(response.cause());
+                            }
+                        });
+                    } else {
+                        result.tryFail(request.cause());
+                    }
+                }));
+    }
+
+    @Override
+    public Future<Void> resetConnectorOffsets(Reconciliation reconciliation, String host, int port, String connectorName) {
+        String path = String.format("/connectors/%s/offsets", connectorName);
+        LOGGER.debugCr(reconciliation, "Making DELETE request to {}", path);
+        return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
+                httpClient.request(HttpMethod.DELETE, port, host, path, request -> {
+                    if (request.succeeded()) {
+                        request.result().setFollowRedirects(true)
+                                .putHeader("Accept", "application/json");
+                    } else {
+                        result.tryFail(request.cause());
+                    }
+                    if (request.succeeded()) {
+                        request.result().send(response -> {
+                            if (response.succeeded()) {
+                                if (response.result().statusCode() == 200) {
+                                    response.result().bodyHandler(buffer -> {
+                                        try {
+                                            Map<String, String> body = mapper.readValue(buffer.getBytes(), MAP_OF_STRINGS);
+                                            String message = body.get("message");
+                                            LOGGER.debugCr(reconciliation, "Got {} response to DELETE request to {}: {}", response.result().statusCode(), path, message);
+                                            result.complete();
+                                        } catch (IOException e) {
+                                            LOGGER.warnCr(reconciliation, "Failed to parse connector offsets reset response", e);
+                                            result.fail(new ConnectRestException(response.result(), "Failed to parse connector offsets reset response", e));
+                                        }
+                                    });
+                                } else {
+                                    result.fail(new ConnectRestException(response.result(), "Unexpected status code"));
+                                }
+                            } else {
+                                result.fail(response.cause());
+                            }
+                        });
+                    } else {
+                        result.tryFail(request.cause());
+                    }
+                }));
+    }
+
     /* test */ static String tryToExtractErrorMessage(Reconciliation reconciliation, Buffer buffer)    {
         try {
             return buffer.toJsonObject().getString("message");

@@ -336,6 +336,30 @@ spec:
                               type: integer
                               description: "The maximum number of connector restarts that the operator will try. If the connector remains in a failed state after reaching this limit, it must be restarted manually by the user. Defaults to an unlimited number of restarts."
                           description: Automatic restart of connector and tasks configuration.
+                        listOffsets:
+                          type: object
+                          properties:
+                            toConfigMap:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                              description: Reference to the ConfigMap where the list of offsets will be written to.
+                          required:
+                          - toConfigMap
+                          description: Configuration for listing offsets.
+                        alterOffsets:
+                          type: object
+                          properties:
+                            fromConfigMap:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                              description: Reference to the ConfigMap where the new offsets are stored.
+                          required:
+                          - fromConfigMap
+                          description: Configuration for altering offsets.
                       description: The specification of the Kafka MirrorMaker 2 source connector.
                     heartbeatConnector:
                       type: object
@@ -368,6 +392,30 @@ spec:
                               type: integer
                               description: "The maximum number of connector restarts that the operator will try. If the connector remains in a failed state after reaching this limit, it must be restarted manually by the user. Defaults to an unlimited number of restarts."
                           description: Automatic restart of connector and tasks configuration.
+                        listOffsets:
+                          type: object
+                          properties:
+                            toConfigMap:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                              description: Reference to the ConfigMap where the list of offsets will be written to.
+                          required:
+                          - toConfigMap
+                          description: Configuration for listing offsets.
+                        alterOffsets:
+                          type: object
+                          properties:
+                            fromConfigMap:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                              description: Reference to the ConfigMap where the new offsets are stored.
+                          required:
+                          - fromConfigMap
+                          description: Configuration for altering offsets.
                       description: The specification of the Kafka MirrorMaker 2 heartbeat connector.
                     checkpointConnector:
                       type: object
@@ -400,6 +448,30 @@ spec:
                               type: integer
                               description: "The maximum number of connector restarts that the operator will try. If the connector remains in a failed state after reaching this limit, it must be restarted manually by the user. Defaults to an unlimited number of restarts."
                           description: Automatic restart of connector and tasks configuration.
+                        listOffsets:
+                          type: object
+                          properties:
+                            toConfigMap:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                              description: Reference to the ConfigMap where the list of offsets will be written to.
+                          required:
+                          - toConfigMap
+                          description: Configuration for listing offsets.
+                        alterOffsets:
+                          type: object
+                          properties:
+                            fromConfigMap:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                              description: Reference to the ConfigMap where the new offsets are stored.
+                          required:
+                          - fromConfigMap
+                          description: Configuration for altering offsets.
                       description: The specification of the Kafka MirrorMaker 2 checkpoint connector.
                     topicsPattern:
                       type: string

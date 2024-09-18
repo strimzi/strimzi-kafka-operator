@@ -4,9 +4,11 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -16,18 +18,23 @@ import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.ConnectorState;
 import io.strimzi.api.kafka.model.connect.AbstractKafkaConnectSpec;
 import io.strimzi.api.kafka.model.connect.KafkaConnectStatus;
+import io.strimzi.api.kafka.model.connector.AlterOffsets;
 import io.strimzi.api.kafka.model.connector.AutoRestartStatus;
 import io.strimzi.api.kafka.model.connector.AutoRestartStatusBuilder;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorSpec;
+import io.strimzi.api.kafka.model.connector.ListOffsets;
 import io.strimzi.api.kafka.model.kafka.Status;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.model.ConfigMapUtils;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectorConfiguration;
+import io.strimzi.operator.cluster.model.KafkaConnectorOffsetsAnnotation;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
@@ -48,6 +55,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.model.StatusDiff;
@@ -59,7 +67,9 @@ import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -293,6 +303,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                     LOGGER.debugCr(reconciliation, "Connector {} exists and has desired config, {}=={}", connectorName, desiredConfig.asOrderedProperties().asMap(), currentConfig);
                     return apiClient.status(reconciliation, host, port, connectorName)
                         .compose(status -> updateState(reconciliation, host, apiClient, connectorName, connectorSpec, status, new ArrayList<>()))
+                        .compose(conditions -> manageConnectorOffsets(reconciliation, host, apiClient, connectorName, resource, connectorSpec, conditions))
                         .compose(conditions -> maybeRestartConnector(reconciliation, host, apiClient, connectorName, resource, conditions))
                         .compose(conditions -> maybeRestartConnectorTask(reconciliation, host, apiClient, connectorName, resource, conditions))
                         .compose(conditions ->
@@ -593,6 +604,253 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
     }
 
+    /**
+     * Maybe list, alter or reset the connector offsets.
+     * The action is based on the {@code strimzi.io/connector-offsets} annotation:
+     *   * {@code list} writes the offsets to a ConfigMap
+     *   * {@code alter} alters the offsets based on a ConfigMap
+     *   * {@code reset} resets the offsets
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param host              Kafka Connect host
+     * @param apiClient         Kafka Connect REST API client
+     * @param connectorName     Name of the connector
+     * @param resource          The resource that defines the connector
+     * @param connectorSpec     Spec of the connector
+     * @param conditions        Status conditions of the resource
+     *
+     * @return Future with conditions which completes when the connector offset management is complete
+     */
+    @SuppressWarnings({ "rawtypes" })
+    /* test */ Future<List<Condition>> manageConnectorOffsets(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, KafkaConnectorSpec connectorSpec, List<Condition> conditions) {
+        KafkaConnectorOffsetsAnnotation annotation;
+        try {
+            annotation = getConnectorOffsetsOperation(resource, connectorName);
+        } catch (InvalidResourceException e) {
+            String message = "Encountered error getting connector offsets annotation. " + e.getMessage();
+            LOGGER.warnCr(reconciliation, message);
+            conditions.add(StatusUtils.buildWarningCondition("ManageOffsets", message));
+            return Future.succeededFuture(conditions);
+        }
+
+        switch (annotation) {
+            case list -> {
+                return listConnectorOffsets(reconciliation, host, apiClient, connectorName, resource, connectorSpec, conditions);
+            }
+            case alter -> {
+                return alterConnectorOffsets(reconciliation, host, apiClient, connectorName, resource, connectorSpec, conditions);
+            }
+            case reset -> {
+                return resetConnectorOffsets(reconciliation, host, apiClient, connectorName, resource, conditions);
+            }
+            default -> {
+                return Future.succeededFuture(conditions);
+            }
+        }
+    }
+
+    /**
+     * Fetches the connector offsets and writes them to a ConfigMap.
+     * This operation requires the listOffsets property to be set on
+     * the Custom Resource giving the name of the ConfigMap to use.
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param host              Kafka Connect host
+     * @param apiClient         Kafka Connect REST API client
+     * @param connectorName     Name of the connector
+     * @param resource          The resource that defines the connector
+     * @param connectorSpec     Spec of the connector
+     * @param conditions        Status conditions of the resource
+     *
+     * @return Future with conditions which completes when the connector offset list action is complete
+     */
+    @SuppressWarnings({ "rawtypes" })
+    private Future<List<Condition>> listConnectorOffsets(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, KafkaConnectorSpec connectorSpec, List<Condition> conditions) {
+        Optional<ListOffsets> listOffsetsConfig = Optional.ofNullable(connectorSpec.getListOffsets());
+        if (listOffsetsConfig.isEmpty()) {
+            String message = String.format("Failed to list the connector offsets due to missing property listOffsets in %s CR.", resource.getKind());
+            LOGGER.warnCr(reconciliation, message);
+            conditions.add(StatusUtils.buildWarningCondition("ListOffsets", message));
+            return Future.succeededFuture(conditions);
+        }
+
+        String configMapName = listOffsetsConfig.get().getToConfigMap().getName();
+        return apiClient.getConnectorOffsets(reconciliation, host, port, connectorName)
+                .compose(offsets -> generateListOffsetsConfigMap(configMapName, connectorName, resource, offsets))
+                .compose(configMap -> configMapOperations.reconcile(reconciliation, resource.getMetadata().getNamespace(), configMapName, configMap))
+                .compose(v -> removeConnectorOffsetsAnnotations(reconciliation, resource))
+                .map(v -> conditions)
+                .otherwise(throwable -> {
+                    // Don't fail reconciliation on error from listing offsets - add a warning and repeat list on next reconcile
+                    String message = "Encountered error listing connector offsets. " + throwable.getMessage();
+                    LOGGER.warnCr(reconciliation, message);
+                    conditions.add(StatusUtils.buildWarningCondition("ListOffsets", message));
+                    return conditions;
+                });
+    }
+
+    /**
+     * Generates a connector offsets ConfigMap with the provided data.
+     * If there is already an existing ConfigMap it includes only overwrites the specific data entry, adds Strimzi labels,
+     * and (if there is no existing owner reference) adds an owner reference to the resource.
+     *
+     * @param configMapName Name of the ConfigMap to generate
+     * @param connectorName Name of the connector
+     * @param resource      The resource that defines the connector
+     * @param offsets       Offsets to put in the ConfigMap
+     *
+     * @return The generated ConfigMap
+     */
+    @SuppressWarnings({ "rawtypes" })
+    private Future<ConfigMap> generateListOffsetsConfigMap(String configMapName, String connectorName, CustomResource resource, String offsets) {
+        Map<String, String> offsetsData = new HashMap<>(1);
+        offsetsData.put(getConnectorOffsetsConfigMapEntryKey(connectorName), offsets);
+        String configMapNamespace = resource.getMetadata().getNamespace();
+        return configMapOperations.getAsync(configMapNamespace, configMapName)
+                .compose(existingConfigMap -> {
+                    if (existingConfigMap == null) {
+                        return Future.succeededFuture(ConfigMapUtils.createConfigMap(
+                                configMapName,
+                                configMapNamespace,
+                                Labels.fromMap(resource.getMetadata().getLabels()),
+                                ModelUtils.createOwnerReference(resource, false),
+                                offsetsData
+                        ));
+                    }
+
+                    Map<String, String> labels = existingConfigMap.getMetadata().getLabels();
+                    labels.putAll(resource.getMetadata().getLabels());
+                    ObjectMeta objectMeta = existingConfigMap.getMetadata();
+                    objectMeta.setLabels(labels);
+                    existingConfigMap.setMetadata(objectMeta);
+
+                    if (existingConfigMap.getMetadata().getOwnerReferences().isEmpty()) {
+                        existingConfigMap.addOwnerReference(ModelUtils.createOwnerReference(resource, false));
+                    }
+
+                    Map<String, String> data = existingConfigMap.getData();
+                    data.putAll(offsetsData);
+                    existingConfigMap.setData(data);
+                    return Future.succeededFuture(existingConfigMap);
+                });
+    }
+
+    /**
+     * Alters the connector offsets.
+     * This operation requires:
+     *   * the alterOffsets property to be set on the Custom Resource giving the name of the ConfigMap to use
+     *   * the operator to be in a STOPPED state
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param host              Kafka Connect host
+     * @param apiClient         Kafka Connect REST API client
+     * @param connectorName     Name of the connector
+     * @param resource          The resource that defines the connector
+     * @param connectorSpec     Spec of the connector
+     * @param conditions        Status conditions of the resource
+     *
+     * @return Future with conditions which completes when the connector offset alter action is complete
+     */
+    @SuppressWarnings({ "rawtypes" })
+    private Future<List<Condition>> alterConnectorOffsets(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, KafkaConnectorSpec connectorSpec, List<Condition> conditions) {
+        Optional<AlterOffsets> alterOffsetsConfig = Optional.ofNullable(connectorSpec.getAlterOffsets());
+        if (alterOffsetsConfig.isEmpty()) {
+            String message = String.format("Failed to alter the connector offsets due to missing property alterOffsets in %s CR.", resource.getKind());
+            LOGGER.warnCr(reconciliation, message);
+            conditions.add(StatusUtils.buildWarningCondition("AlterOffsets", message));
+            return Future.succeededFuture(conditions);
+        }
+
+        String configMapNamespace = resource.getMetadata().getNamespace();
+        String configMapName = alterOffsetsConfig.get().getFromConfigMap().getName();
+        return verifyConnectorStopped(reconciliation, host, apiClient, connectorName)
+                .compose(v -> getOffsetsForAlterRequest(configMapNamespace, configMapName, getConnectorOffsetsConfigMapEntryKey(connectorName)))
+                .compose(offsets -> apiClient.alterConnectorOffsets(reconciliation, host, port, connectorName, offsets))
+                .compose(v -> removeConnectorOffsetsAnnotations(reconciliation, resource))
+                .map(v -> conditions)
+                .otherwise(throwable -> {
+                    // Don't fail reconciliation on error from altering offsets - add a warning and repeat alter on next reconcile
+                    String message = "Encountered error altering connector offsets. " + throwable.getMessage();
+                    LOGGER.warnCr(reconciliation, message);
+                    conditions.add(StatusUtils.buildWarningCondition("AlterOffsets", message));
+                    return conditions;
+                });
+    }
+
+    /**
+     * Asynchronously fetches the ConfigMap of the given name and namespace and reads the offsets JSON
+     * from the data entry with the given key.
+     *
+     * @param configMapNamespace    Namespace containing the alter ConfigMap
+     * @param configMapName         Name of the alter ConfigMap
+     * @param configMapKeyName      Data entry key in the ConfigMap that contains the offsets
+     *
+     * @return Future with a String representation of the new offsets to use in the alter Connect API call.
+     */
+    private Future<String> getOffsetsForAlterRequest(String configMapNamespace, String configMapName, String configMapKeyName) {
+        return configMapOperations.getAsync(configMapNamespace, configMapName)
+                .compose(configMap -> {
+                    if (configMap == null) {
+                        return Future.failedFuture(String.format("Encountered error fetching offsets to use in alter operation. ConfigMap %s/%s does not exist.", configMapNamespace, configMapName));
+                    }
+                    if (configMap.getData().get(configMapKeyName) == null) {
+                        return Future.failedFuture(String.format("Encountered error fetching offsets to use in alter operation. Data field %s is missing.", configMapKeyName));
+                    }
+
+                    try {
+                        String offsets = configMap.getData().get(configMapKeyName);
+                        new ObjectMapper().readValue(offsets, Object.class);
+                        return Future.succeededFuture(offsets);
+                    } catch (IOException e) {
+                        return Future.failedFuture(String.format("Failed to parse contents of %s as JSON: %s", configMapKeyName, e.getMessage()));
+                    }
+                });
+    }
+
+    /**
+     * Resets the connector offsets.
+     * This operation requires the operator to be in a STOPPED state.
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param host              Kafka Connect host
+     * @param apiClient         Kafka Connect REST API client
+     * @param connectorName     Name of the connector
+     * @param resource          The resource that defines the connector
+     * @param conditions        Status conditions of the resource
+     *
+     * @return Future with conditions which completes when the connector offsets have been reset and the relevant annotations removed from the resource.
+     */
+    @SuppressWarnings({ "rawtypes" })
+    private Future<List<Condition>> resetConnectorOffsets(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, List<Condition> conditions) {
+        return verifyConnectorStopped(reconciliation, host, apiClient, connectorName)
+                .compose(v -> apiClient.resetConnectorOffsets(reconciliation, host, port, connectorName))
+                .compose(v -> removeConnectorOffsetsAnnotations(reconciliation, resource))
+                .map(v -> conditions)
+                .otherwise(throwable -> {
+                    // Don't fail reconciliation on error from resetting offsets - add a warning and repeat reset on next reconcile
+                    String message = "Encountered error resetting connector offsets. " + throwable.getMessage();
+                    LOGGER.warnCr(reconciliation, message);
+                    conditions.add(StatusUtils.buildWarningCondition("ResetOffsets", message));
+                    return conditions;
+                });
+    }
+
+    private Future<Void> verifyConnectorStopped(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName) {
+        return apiClient.status(reconciliation, host, port, connectorName)
+                .compose(status -> {
+                    @SuppressWarnings({ "rawtypes" })
+                    Object path = ((Map) status.getOrDefault("connector", emptyMap())).get("state");
+                    if (!(path instanceof String state)) {
+                        return Future.failedFuture("JSON response lacked $.connector.state");
+                    }
+                    if (!ConnectorState.STOPPED.equals(ConnectorState.forValue(state))) {
+                        return Future.failedFuture("Connector is not in STOPPED state");
+                    }
+                    return Future.succeededFuture();
+                });
+
+    }
+
     private Future<ConnectorStatusAndConditions> updateConnectorTopics(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, ConnectorStatusAndConditions status) {
         return apiClient.getConnectorTopics(reconciliation, host, port, connectorName)
             .compose(updateConnectorStatusAndConditions(status));
@@ -671,6 +929,41 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      */
     @SuppressWarnings({ "rawtypes" })
     abstract Future<AutoRestartStatus> previousAutoRestartStatus(Reconciliation reconciliation, String connectorName, CustomResource resource);
+
+    // Methods for working with connector offsets
+
+    /**
+     * Returns the operation to perform for connector offsets of the provided custom resource.
+     * The returned operation is based on one or more annotations on the resource.
+     *
+     * @param resource          Custom resource (a KafkaConnector or KafkaMirrorMaker2) instance to check
+     * @param connectorName     Name of the connector being reconciled
+     *
+     * @return  The operation to perform for connector offsets of the provided custom resource.
+     */
+    @SuppressWarnings({ "rawtypes" })
+    abstract KafkaConnectorOffsetsAnnotation getConnectorOffsetsOperation(CustomResource resource, String connectorName);
+
+    /**
+     * Patches the custom resource to remove the connector-offsets annotation
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param resource          Custom resource from which the annotation should be removed
+     *
+     * @return  Future that indicates the operation completion
+     */
+    @SuppressWarnings({ "rawtypes" })
+    abstract Future<Void> removeConnectorOffsetsAnnotations(Reconciliation reconciliation, CustomResource resource);
+
+    /**
+     * Returns the key to use for either writing connector offsets to a ConfigMap or fetching connector offsets
+     * from a ConfigMap.
+     *
+     * @param connectorName Name of the connector that is being managed.
+     *
+     * @return The String to use when interacting with ConfigMap resources.
+     */
+    abstract String getConnectorOffsetsConfigMapEntryKey(String connectorName);
 
     // Static utility methods and classes
 

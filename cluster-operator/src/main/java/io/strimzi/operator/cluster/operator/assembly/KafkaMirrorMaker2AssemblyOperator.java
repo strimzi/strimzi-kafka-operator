@@ -23,6 +23,7 @@ import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
+import io.strimzi.operator.cluster.model.KafkaConnectorOffsetsAnnotation;
 import io.strimzi.operator.cluster.model.KafkaMirrorMaker2Cluster;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.VertxUtil;
@@ -32,6 +33,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.StatusUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -49,6 +51,8 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
+import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS;
+import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN;
@@ -429,7 +433,28 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 .endMetadata()
                 .build();
         return resourceOperator.patchAsync(reconciliation, patchedKafkaMirrorMaker2)
-                .compose(ignored -> Future.succeededFuture());
+                .mapEmpty();
+    }
+
+    /**
+     * Patches the KafkaMirrorMaker2 CR to remove the supplied annotations.
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param resource          KafkaMirrorMaker2 resource from which the annotations should be removed
+     * @param annotationKeys     List of Annotations that should be removed
+     *
+     * @return  Future that indicates the operation completion
+     */
+    private Future<Void> removeAnnotations(Reconciliation reconciliation, KafkaMirrorMaker2 resource, List<String> annotationKeys) {
+        LOGGER.debugCr(reconciliation, "Removing annotations {}", annotationKeys);
+        Map<String, String> annotationsToRemove = annotationKeys.stream().collect(Collectors.toMap(key -> key, key -> ""));
+        KafkaMirrorMaker2 patchedKafkaMirrorMaker2 = new KafkaMirrorMaker2Builder(resource)
+                .editMetadata()
+                    .removeFromAnnotations(annotationsToRemove)
+                .endMetadata()
+                .build();
+        return resourceOperator.patchAsync(reconciliation, patchedKafkaMirrorMaker2)
+                .mapEmpty();
     }
 
     /**
@@ -460,6 +485,65 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             LOGGER.warnCr(reconciliation, "The Kafka Mirror Maker 2 resource is missing or has a wrong type.", reconciliation.namespace(), reconciliation.name());
             return Future.succeededFuture(null);
         }
+    }
+
+    // Methods for working with connector offsets
+
+    /**
+     * Returns the operation to perform for connector offsets of the provided custom resource.
+     * For KafkaMirrorMaker2 returns the value of strimzi.io/connector-offsets annotation on the provided KafkaMirrorMaker2.
+     * Also verifies the strimzi.io/mirrormaker-connector annotation is present on the resource and references the connector being reconciled.
+     * If both annotations are present, but the mirrormaker-connector annotation references a different connector,
+     * the value 'none' is returned.
+     *
+     * @param resource          KafkaMirrorMaker2 resource instance to check
+     * @param connectorName     Name of the connector being reconciled
+     *
+     * @return  The operation to perform for connector offsets of the connector being reconciled as part of the provided KafkaMirrorMaker2.
+     * @throws InvalidResourceException if one of strimzi.io/connector-offsets or strimzi.io/mirrormaker-connector is missing.
+     */
+    @SuppressWarnings({ "rawtypes" })
+    @Override
+    protected KafkaConnectorOffsetsAnnotation getConnectorOffsetsOperation(CustomResource resource, String connectorName) {
+        boolean offsetsAnnotationPresent = Annotations.hasAnnotation(resource, ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
+        boolean connectorAnnotationPresent = Annotations.hasAnnotation(resource, ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR);
+        if (offsetsAnnotationPresent && !connectorAnnotationPresent) {
+            throw new InvalidResourceException(String.format("KafkaMirrorMaker2 resource %s/%s is missing annotation strimzi.io/mirrormaker-connector", resource.getMetadata().getNamespace(), resource.getMetadata().getName()));
+        }
+        if (!offsetsAnnotationPresent && connectorAnnotationPresent) {
+            throw new InvalidResourceException(String.format("KafkaMirrorMaker2 resource %s/%s is missing annotation strimzi.io/connector-offsets", resource.getMetadata().getNamespace(), resource.getMetadata().getName()));
+        }
+        String annotation = connectorName.equals(Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR, "")) ?
+                Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.none.toString()) :
+                KafkaConnectorOffsetsAnnotation.none.toString();
+        return KafkaConnectorOffsetsAnnotation.valueOf(annotation);
+    }
+
+    /**
+     * Patches the custom resource to remove the connector-offsets annotation
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param resource          KafkaMirrorMaker2 resource from which the annotation should be removed
+     *
+     * @return  Future that indicates the operation completion
+     */
+    @SuppressWarnings({ "rawtypes" })
+    @Override
+    protected Future<Void> removeConnectorOffsetsAnnotations(Reconciliation reconciliation, CustomResource resource) {
+        return removeAnnotations(reconciliation, (KafkaMirrorMaker2) resource, List.of(ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR));
+    }
+
+    /**
+     * Returns the key to use for either writing connector offsets to a ConfigMap or fetching connector offsets
+     * from a ConfigMap.
+     *
+     * @param connectorName Name of the connector that is being managed.
+     *
+     * @return The String to use when interacting with ConfigMap resources.
+     */
+    @Override
+    protected String getConnectorOffsetsConfigMapEntryKey(String connectorName) {
+        return connectorName.replace("->", "--") + ".json";
     }
 
     // Static utility methods and classes

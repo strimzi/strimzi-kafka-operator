@@ -75,6 +75,16 @@ public class ResourceAnnotations {
     public static final String ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN_TASK = "task";
 
     /**
+     * Annotation for connector offsets
+     */
+    public static final String ANNO_STRIMZI_IO_CONNECTOR_OFFSETS = STRIMZI_DOMAIN + "connector-offsets";
+
+    /**
+     * Annotation for identifying MirrorMaker2 connector when managing connector offsets
+     */
+    public static final String ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR = STRIMZI_DOMAIN + "mirrormaker-connector";
+
+    /**
      * Annotation for configuring the ranges of node IDs which should be used for
      * given node pool
      */
