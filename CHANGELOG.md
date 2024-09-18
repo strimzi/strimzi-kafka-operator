@@ -6,6 +6,7 @@
 * The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate moves to beta stage and is enabled by default.
   If needed, `ContinueReconciliationOnManualRollingUpdateFailure` can be disabled in the feature gates configuration in the Cluster Operator.
 * Add support for managing connector offsets via KafkaConnector and KafkaMirrorMaker2 custom resources.
+* Add support for templating `host` and `advertisedHost` fields in listener configuration
 
 ### Changes, deprecations and removals
 

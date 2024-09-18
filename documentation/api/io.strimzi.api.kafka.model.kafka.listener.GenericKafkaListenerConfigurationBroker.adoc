@@ -34,3 +34,23 @@ listeners:
         advertisedPort: 12342
 # ...
 ----
+
+Instead of specifying the `advertisedHost` field for every broker, you can also use an `advertisedHostTemplate` to generate them automatically.
+The `advertisedHostTemplate` supports the following variables:
+
+* The `{nodeId}` variable will be replaced with the ID of the Kafka node to which the template is applied.
+* The `{nodePodName}` variable will be replaced with the Kubernetes pod name for the Kafka node where the template is applied.
+
+.Example of an external `route` listener configured with overrides for advertised addresses using the `advertisedHostTemplate` field.
+[source,yaml,subs="attributes+"]
+----
+listeners:
+  #...
+  - name: external1
+    port: 9094
+    type: route
+    tls: true
+    configuration:
+      advertisedHostTemplate: example.hostname.{nodeId}
+# ...
+----

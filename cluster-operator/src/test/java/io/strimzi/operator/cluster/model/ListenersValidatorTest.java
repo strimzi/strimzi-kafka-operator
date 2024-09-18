@@ -238,6 +238,8 @@ public class ListenersValidatorTest {
                     .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
                     .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
                     .withPublishNotReadyAddresses(true)
+                    .withHostTemplate("my-host-{nodeId}")
+                    .withAdvertisedHostTemplate("my-advertised-host-{nodeId}")
                     .withNewBootstrap()
                         .withAlternativeNames(List.of("my-name-1", "my-name-2"))
                         .withLoadBalancerIP("130.211.204.1")
@@ -277,6 +279,7 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure loadBalancerSourceRanges because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure finalizers because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure preferredAddressType because it is not NodePort based listener",
+                "listener " + name + " cannot configure hostTemplate because it is not Route or Ingress based listener",
                 "listener " + name + " cannot configure bootstrap.host because it is not Route or Ingress based listener",
                 "listener " + name + " cannot configure bootstrap.loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure bootstrap.nodePort because it is not NodePort based listener",
@@ -313,6 +316,8 @@ public class ListenersValidatorTest {
                     .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
                     .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
                     .withPublishNotReadyAddresses(true)
+                    .withHostTemplate("my-host-{nodeId}")
+                    .withAdvertisedHostTemplate("my-advertised-host-{nodeId}")
                     .withNewBootstrap()
                         .withAlternativeNames(List.of("my-name-1", "my-name-2"))
                         .withLoadBalancerIP("130.211.204.1")
@@ -346,6 +351,7 @@ public class ListenersValidatorTest {
         List<String> expectedErrors = List.of(
                 "listener " + name + " cannot configure useServiceDnsDomain because it is not internal or cluster-ip listener",
                 "listener " + name + " cannot configure preferredAddressType because it is not NodePort based listener",
+                "listener " + name + " cannot configure hostTemplate because it is not Route or Ingress based listener",
                 "listener " + name + " cannot configure bootstrap.host because it is not Route or Ingress based listener",
                 "listener " + name + " cannot configure brokers[].host because it is not Route or Ingress based listener"
         );
@@ -391,6 +397,8 @@ public class ListenersValidatorTest {
                     .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
                     .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
                     .withPublishNotReadyAddresses(true)
+                    .withHostTemplate("my-host-{nodeId}")
+                    .withAdvertisedHostTemplate("my-advertised-host-{nodeId}")
                     .withNewBootstrap()
                         .withAlternativeNames(List.of("my-name-1", "my-name-2"))
                         .withLoadBalancerIP("130.211.204.1")
@@ -426,6 +434,7 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure useServiceDnsDomain because it is not internal or cluster-ip listener",
                 "listener " + name + " cannot configure loadBalancerSourceRanges because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure finalizers because it is not LoadBalancer based listener",
+                "listener " + name + " cannot configure hostTemplate because it is not Route or Ingress based listener",
                 "listener " + name + " cannot configure bootstrap.host because it is not Route or Ingress based listener",
                 "listener " + name + " cannot configure bootstrap.loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure brokers[].host because it is not Route or Ingress based listener",
@@ -474,6 +483,8 @@ public class ListenersValidatorTest {
                     .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
                     .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
                     .withPublishNotReadyAddresses(true)
+                    .withHostTemplate("my-host-{nodeId}")
+                    .withAdvertisedHostTemplate("my-advertised-host-{nodeId}")
                     .withNewBootstrap()
                         .withAlternativeNames(List.of("my-name-1", "my-name-2"))
                         .withLoadBalancerIP("130.211.204.1")
@@ -575,6 +586,8 @@ public class ListenersValidatorTest {
                     .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
                     .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
                     .withPublishNotReadyAddresses(true)
+                    .withHostTemplate("my-host-{nodeId}")
+                    .withAdvertisedHostTemplate("my-advertised-host-{nodeId}")
                     .withNewBootstrap()
                         .withAlternativeNames(List.of("my-name-1", "my-name-2"))
                         .withLoadBalancerIP("130.211.204.1")
@@ -639,6 +652,13 @@ public class ListenersValidatorTest {
                 "listener ingress is missing a broker configuration with host names which is required for Ingress based listeners"));
 
         listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
+                        .withHostTemplate("my-host-{nodeIf}")
+                        .withBrokers((List<GenericKafkaListenerConfigurationBroker>) null)
+                        .build());
+
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a bootstrap host name which is required for Ingress based listeners"));
+
+        listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
                 .withBootstrap(new GenericKafkaListenerConfigurationBootstrapBuilder()
                                 .build())
                 .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
@@ -664,6 +684,30 @@ public class ListenersValidatorTest {
                 .build());
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a broker host name for broker with ID 0 which is required for Ingress based listeners"));
+
+        // Valid configurations
+        listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
+                .withHostTemplate("my-host-{nodeIf}")
+                .withBootstrap(new GenericKafkaListenerConfigurationBootstrapBuilder()
+                        .withHost("bootstrap-host")
+                        .build())
+                .withBrokers((List<GenericKafkaListenerConfigurationBroker>) null)
+                .build());
+
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, List.of(listener)), hasSize(0));
+
+        listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
+                .withHostTemplate("my-host-{nodeIf}")
+                .withBootstrap(new GenericKafkaListenerConfigurationBootstrapBuilder()
+                        .withHost("bootstrap-host")
+                        .build())
+                .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                                .withBroker(1)
+                                .withHost("host-1")
+                                .build())
+                .build());
+
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, List.of(listener)), hasSize(0));
 
         listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
                 .withBootstrap(new GenericKafkaListenerConfigurationBootstrapBuilder()
@@ -766,7 +810,8 @@ public class ListenersValidatorTest {
                 .withType(KafkaListenerType.CLUSTER_IP)
                 .withTls(false)
                 .withNewConfiguration()
-                .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                    .withAdvertisedHostTemplate("my-advertised-host-{nodeId}")
+                    .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
                                 .withBroker(0)
                                 .withAdvertisedHost("my-host")
                                 .withAdvertisedPort(12345)
@@ -794,40 +839,42 @@ public class ListenersValidatorTest {
                 .withType(KafkaListenerType.CLUSTER_IP)
                 .withTls(true)
                 .withNewConfiguration()
-                .withControllerClass("my-ingress")
-                .withUseServiceDnsDomain(true)
-                .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
-                .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
-                .withIpFamilies(IpFamily.IPV4, IpFamily.IPV6)
-                .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
-                .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
-                .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
-                .withPublishNotReadyAddresses(true)
-                .withNewBootstrap()
-                .withAlternativeNames(List.of("my-name-1", "my-name-2"))
-                .withLoadBalancerIP("130.211.204.1")
-                .withNodePort(32189)
-                .withHost("my-host")
-                .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
-                .endBootstrap()
-                .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
-                                .withBroker(0)
-                                .withAdvertisedHost("advertised-host")
-                                .withAdvertisedPort(9092)
-                                .withLoadBalancerIP("130.211.204.1")
-                                .withNodePort(32189)
-                                .withHost("my-host")
-                                .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
-                                .build(),
-                        new GenericKafkaListenerConfigurationBrokerBuilder()
-                                .withBroker(1)
-                                .withAdvertisedHost("advertised-host")
-                                .withAdvertisedPort(9092)
-                                .withLoadBalancerIP("130.211.204.1")
-                                .withNodePort(32189)
-                                .withHost("my-host")
-                                .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
-                                .build())
+                    .withControllerClass("my-ingress")
+                    .withUseServiceDnsDomain(true)
+                    .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
+                    .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
+                    .withIpFamilies(IpFamily.IPV4, IpFamily.IPV6)
+                    .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
+                    .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
+                    .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
+                    .withPublishNotReadyAddresses(true)
+                    .withHostTemplate("my-host-{nodeId}")
+                    .withAdvertisedHostTemplate("my-advertised-host-{nodeId}")
+                    .withNewBootstrap()
+                        .withAlternativeNames(List.of("my-name-1", "my-name-2"))
+                        .withLoadBalancerIP("130.211.204.1")
+                        .withNodePort(32189)
+                        .withHost("my-host")
+                        .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                    .endBootstrap()
+                    .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                                    .withBroker(0)
+                                    .withAdvertisedHost("advertised-host")
+                                    .withAdvertisedPort(9092)
+                                    .withLoadBalancerIP("130.211.204.1")
+                                    .withNodePort(32189)
+                                    .withHost("my-host")
+                                    .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                                    .build(),
+                            new GenericKafkaListenerConfigurationBrokerBuilder()
+                                    .withBroker(1)
+                                    .withAdvertisedHost("advertised-host")
+                                    .withAdvertisedPort(9092)
+                                    .withLoadBalancerIP("130.211.204.1")
+                                    .withNodePort(32189)
+                                    .withHost("my-host")
+                                    .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                                    .build())
                 .endConfiguration()
                 .build();
 
@@ -838,6 +885,7 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure loadBalancerSourceRanges because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure finalizers because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure preferredAddressType because it is not NodePort based listener",
+                "listener " + name + " cannot configure hostTemplate because it is not Route or Ingress based listener",
                 "listener " + name + " cannot configure bootstrap.loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure bootstrap.nodePort because it is not NodePort based listener",
                 "listener " + name + " cannot configure brokers[].loadBalancerIP because it is not LoadBalancer based listener",
@@ -1144,14 +1192,15 @@ public class ListenersValidatorTest {
                 .withType(KafkaListenerType.LOADBALANCER)
                 .withTls(true)
                 .withNewConfiguration()
-                .withBootstrap(new GenericKafkaListenerConfigurationBootstrapBuilder()
-                        .withExternalIPs(Arrays.asList("10.0.0.1"))
-                        .build())
-                .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
-                        .withBroker(0)
-                        .withAdvertisedHost("advertised-host")
-                        .withExternalIPs(Arrays.asList("10.0.0.2"))
-                        .build())
+                    .withAdvertisedHostTemplate("my-advertised-host-{nodeId}")
+                    .withBootstrap(new GenericKafkaListenerConfigurationBootstrapBuilder()
+                            .withExternalIPs(Arrays.asList("10.0.0.1"))
+                            .build())
+                    .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                            .withBroker(0)
+                            .withAdvertisedHost("advertised-host")
+                            .withExternalIPs(Arrays.asList("10.0.0.2"))
+                            .build())
                 .endConfiguration()
                 .build();
         

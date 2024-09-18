@@ -1087,7 +1087,7 @@ public class KafkaReconciler {
                             Set<ListenerAddress> statusAddresses = new HashSet<>(brokerNodes.size());
 
                             for (Map.Entry<Integer, Node> entry : brokerNodes.entrySet())   {
-                                String advertisedHost = ListenersUtils.brokerAdvertisedHost(listener, entry.getKey());
+                                String advertisedHost = ListenersUtils.brokerAdvertisedHost(listener, kafka.nodePoolForNodeId(entry.getKey()).nodeRef(entry.getKey()));
                                 ListenerAddress address;
 
                                 if (advertisedHost != null)    {

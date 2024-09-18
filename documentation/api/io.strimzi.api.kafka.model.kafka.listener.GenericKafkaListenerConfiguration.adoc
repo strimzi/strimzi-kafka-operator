@@ -182,6 +182,37 @@ listeners:
 # ...
 ----
 
+Instead of specifying the `host` field for every broker, you can also use an `hostTemplate` to generate them automatically.
+The `hostTemplate` supports the following variables:
+
+* The `{nodeId}` variable will be replaced with the ID of the Kafka node to which the template is applied.
+* The `{nodePodName}` variable will be replaced with the Kubernetes pod name for the Kafka node where the template is applied.
+
+The `hostTemplate` field is applied only to the per-broker `host` fields.
+The bootstrap `host` field has to be always specified.
+
+.Example `ingress` listener with the `hostTemplate`
+[source,yaml,subs="+attributes"]
+----
+#...
+spec:
+  kafka:
+    #...
+    listeners:
+      #...
+      - name: external2
+        port: 9095
+        type: ingress
+        tls: true
+        authentication:
+          type: tls
+        configuration:
+          hostTemplate: broker-{nodeId}.myingress.com
+          bootstrap:
+            host: bootstrap.myingress.com
+  #...
+----
+
 [id='property-listener-config-nodeport-{context}']
 = Overriding assigned node ports
 

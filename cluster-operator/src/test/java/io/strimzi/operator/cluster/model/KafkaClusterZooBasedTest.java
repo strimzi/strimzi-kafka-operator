@@ -2462,7 +2462,7 @@ public class KafkaClusterZooBasedTest {
 
         assertThat(ListenersUtils.bootstrapNodePort(kc.getListeners().get(0)), is(32001));
         assertThat(ListenersUtils.brokerNodePort(kc.getListeners().get(0), 0), is(32101));
-        assertThat(ListenersUtils.brokerAdvertisedHost(kc.getListeners().get(0), 0), is("advertised.host"));
+        assertThat(ListenersUtils.brokerAdvertisedHost(kc.getListeners().get(0), new NodeRef("foo-kafka-0", 0, "kafka", false, true)), is("advertised.host"));
     }
 
     @ParallelTest
@@ -2884,13 +2884,13 @@ public class KafkaClusterZooBasedTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
 
         assertThat(ListenersUtils.brokerAdvertisedPort(kc.getListeners().get(0), 0), is(10000));
-        assertThat(ListenersUtils.brokerAdvertisedHost(kc.getListeners().get(0), 0), is("my-host-0.cz"));
+        assertThat(ListenersUtils.brokerAdvertisedHost(kc.getListeners().get(0), new NodeRef("foo-kafka-0", 0, "kafka", false, true)), is("my-host-0.cz"));
 
         assertThat(ListenersUtils.brokerAdvertisedPort(kc.getListeners().get(0), 1), is(10001));
-        assertThat(ListenersUtils.brokerAdvertisedHost(kc.getListeners().get(0), 1), is("my-host-1.cz"));
+        assertThat(ListenersUtils.brokerAdvertisedHost(kc.getListeners().get(0), new NodeRef("foo-kafka-1", 1, "kafka", false, true)), is("my-host-1.cz"));
 
         assertThat(ListenersUtils.brokerAdvertisedPort(kc.getListeners().get(0), 2), is(10002));
-        assertThat(ListenersUtils.brokerAdvertisedHost(kc.getListeners().get(0), 2), is("my-host-2.cz"));
+        assertThat(ListenersUtils.brokerAdvertisedHost(kc.getListeners().get(0), new NodeRef("foo-kafka-2", 2, "kafka", false, true)), is("my-host-2.cz"));
     }
 
     @ParallelTest
@@ -2912,13 +2912,13 @@ public class KafkaClusterZooBasedTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
 
         assertThat(ListenersUtils.brokerAdvertisedPort(kc.getListeners().get(0), 0), is(nullValue()));
-        assertThat(ListenersUtils.brokerAdvertisedHost(kc.getListeners().get(0), 0), is(nullValue()));
+        assertThat(ListenersUtils.brokerAdvertisedHost(kc.getListeners().get(0), new NodeRef("foo-kafka-0", 0, "kafka", false, true)), is(nullValue()));
 
         assertThat(ListenersUtils.brokerAdvertisedPort(kc.getListeners().get(0), 1), is(nullValue()));
-        assertThat(ListenersUtils.brokerAdvertisedHost(kc.getListeners().get(0), 1), is(nullValue()));
+        assertThat(ListenersUtils.brokerAdvertisedHost(kc.getListeners().get(0), new NodeRef("foo-kafka-1", 1, "kafka", false, true)), is(nullValue()));
 
         assertThat(ListenersUtils.brokerAdvertisedPort(kc.getListeners().get(0), 2), is(nullValue()));
-        assertThat(ListenersUtils.brokerAdvertisedHost(kc.getListeners().get(0), 2), is(nullValue()));
+        assertThat(ListenersUtils.brokerAdvertisedHost(kc.getListeners().get(0), new NodeRef("foo-kafka-2", 2, "kafka", false, true)), is(nullValue()));
     }
 
     @ParallelTest

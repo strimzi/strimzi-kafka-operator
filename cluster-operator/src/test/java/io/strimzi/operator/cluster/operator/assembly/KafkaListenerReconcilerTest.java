@@ -122,6 +122,8 @@ public class KafkaListenerReconcilerTest {
                 .endSpec()
                 .build();
 
+    // TODO: test advertised hostnames
+
     @Test
     public void testClusterIpWithoutTLS(VertxTestContext context) {
         Kafka kafka = new KafkaBuilder(KAFKA)
@@ -279,11 +281,6 @@ public class KafkaListenerReconcilerTest {
                 .withAdvertisedHost("my-address-0")
                 .build();
 
-        GenericKafkaListenerConfigurationBroker broker1 = new GenericKafkaListenerConfigurationBrokerBuilder()
-                .withBroker(11)
-                .withAdvertisedHost("my-address-1")
-                .build();
-
         GenericKafkaListenerConfigurationBroker broker2 = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withBroker(12)
                 .withAdvertisedHost("my-address-2")
@@ -299,7 +296,7 @@ public class KafkaListenerReconcilerTest {
                                 .withType(KafkaListenerType.CLUSTER_IP)
                                 .withNewConfiguration()
                                     .withCreateBootstrapService(true)
-                                    .withBrokers(broker0, broker1, broker2)
+                                    .withBrokers(broker0, broker2)
                                 .endConfiguration()
                                 .build())
                     .endKafka()
@@ -346,11 +343,11 @@ public class KafkaListenerReconcilerTest {
                     assertThat(res.bootstrapDnsNames.size(), is(4));
                     assertThat(res.bootstrapDnsNames, hasItems("my-kafka-kafka-external-bootstrap", "my-kafka-kafka-external-bootstrap.test", "my-kafka-kafka-external-bootstrap.test.svc", "my-kafka-kafka-external-bootstrap.test.svc.cluster.local"));
                     Set<String> allBrokersDnsNames = res.brokerDnsNames.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
-                    assertThat(allBrokersDnsNames.size(), is(6));
-                    assertThat(allBrokersDnsNames, hasItems("my-address-0", "my-address-1", "my-address-2", "my-kafka-brokers-11.test.svc", "my-kafka-brokers-12.test.svc", "my-kafka-brokers-10.test.svc"));
+                    assertThat(allBrokersDnsNames.size(), is(5));
+                    assertThat(allBrokersDnsNames, hasItems("my-address-0", "my-address-2", "my-kafka-brokers-11.test.svc", "my-kafka-brokers-12.test.svc", "my-kafka-brokers-10.test.svc"));
                     Set<String> allBrokersAdvertisedHostNames = res.advertisedHostnames.values().stream().flatMap(s -> s.values().stream()).collect(Collectors.toSet());
                     assertThat(allBrokersAdvertisedHostNames.size(), is(3));
-                    assertThat(allBrokersAdvertisedHostNames, hasItems("my-address-0", "my-address-1", "my-address-2"));
+                    assertThat(allBrokersAdvertisedHostNames, hasItems("my-address-0", "my-kafka-brokers-11.test.svc", "my-address-2"));
                     assertThat(res.advertisedPorts.size(), is(3));
                     assertThat(res.advertisedPorts.values().stream().flatMap(s -> s.values().stream()).collect(Collectors.toSet()), hasItems("9094"));
                     // Check creation of services

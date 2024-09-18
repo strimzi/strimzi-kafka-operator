@@ -11,7 +11,6 @@ import io.fabric8.openshift.api.model.Route;
 import io.strimzi.api.kafka.model.common.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
-import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBroker;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerAddressBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatusBuilder;
@@ -184,17 +183,18 @@ public class KafkaListenersReconciler {
 
     /**
      * Utility method which helps to register the advertised hostnames for a specific listener of a specific broker.
-     * The broker hostname passed to this method is based on the infrastructure (Service, Load Balancer, etc.).
-     * This method in addition checks for any overrides and uses them if configured.
+     * It decides between the user-customized advertised hostname and the actual broker address. If both are not null,
+     * the customized advertised hostname is used.
      *
-     * @param brokerId          ID of the broker to which this hostname belongs
-     * @param listener          The Listener for which is this hostname used
-     * @param brokerHostname    The hostname which might be used for the broker when no overrides are configured
+     * @param nodeId                ID of the broker to which this hostname belongs
+     * @param listener              The Listener for which is this hostname used
+     * @param advertisedHostname    User customized advertised hostname
+     * @param brokerHostname        The hostname which might be used for the broker when no overrides are configured
      */
-    private void registerAdvertisedHostname(int brokerId, GenericKafkaListener listener, String brokerHostname)   {
+    private void registerAdvertisedHostname(int nodeId, GenericKafkaListener listener, String advertisedHostname, String brokerHostname)   {
         result.advertisedHostnames
-                .computeIfAbsent(brokerId, id -> new HashMap<>())
-                .put(ListenersUtils.envVarIdentifier(listener), ListenersUtils.advertisedHostnameFromOverrideOrParameter(listener, brokerId, brokerHostname));
+                .computeIfAbsent(nodeId, id -> new HashMap<>())
+                .put(ListenersUtils.envVarIdentifier(listener), advertisedHostname != null ? advertisedHostname : brokerHostname);
     }
 
     /**
@@ -284,13 +284,13 @@ public class KafkaListenersReconciler {
                     brokerAddress = DnsNameGenerator.podDnsNameWithoutClusterDomain(reconciliation.namespace(), KafkaResources.brokersServiceName(reconciliation.name()), node.podName());
                 }
 
-                String userConfiguredAdvertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, node.nodeId());
+                String userConfiguredAdvertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, node);
                 if (userConfiguredAdvertisedHostname != null && listener.isTls()) {
                     // If user configured a custom advertised hostname, add it to the SAN names used in the certificate
                     result.brokerDnsNames.computeIfAbsent(node.nodeId(), k -> new HashSet<>(1)).add(userConfiguredAdvertisedHostname);
                 }
 
-                registerAdvertisedHostname(node.nodeId(), listener, brokerAddress);
+                registerAdvertisedHostname(node.nodeId(), listener, userConfiguredAdvertisedHostname, brokerAddress);
                 registerAdvertisedPort(node.nodeId(), listener, listener.getPort());
             }
         }
@@ -330,16 +330,17 @@ public class KafkaListenersReconciler {
             for (NodeRef node : kafka.brokerNodes()) {
                 String brokerServiceName = ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener);
                 String brokerAddress = getInternalServiceHostname(reconciliation.namespace(), brokerServiceName, useServiceDnsDomain);
+                String userConfiguredAdvertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, node);
+
                 if (listener.isTls()) {
                     result.brokerDnsNames.computeIfAbsent(node.nodeId(), k -> new HashSet<>(2)).add(brokerAddress);
 
-                    String userConfiguredAdvertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, node.nodeId());
                     if (userConfiguredAdvertisedHostname != null) {
                         result.brokerDnsNames.get(node.nodeId()).add(userConfiguredAdvertisedHostname);
                     }
                 }
 
-                registerAdvertisedHostname(node.nodeId(), listener, brokerAddress);
+                registerAdvertisedHostname(node.nodeId(), listener, userConfiguredAdvertisedHostname, brokerAddress);
                 registerAdvertisedPort(node.nodeId(), listener, listener.getPort());
             }
         }
@@ -418,12 +419,12 @@ public class KafkaListenersReconciler {
                                 }
                                 result.brokerDnsNames.computeIfAbsent(node.nodeId(), k -> new HashSet<>(2)).add(brokerAddress);
 
-                                String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, node.nodeId());
+                                String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, node);
                                 if (advertisedHostname != null) {
-                                    result.brokerDnsNames.get(node.nodeId()).add(ListenersUtils.brokerAdvertisedHost(listener, node.nodeId()));
+                                    result.brokerDnsNames.get(node.nodeId()).add(advertisedHostname);
                                 }
 
-                                registerAdvertisedHostname(node.nodeId(), listener, brokerAddress);
+                                registerAdvertisedHostname(node.nodeId(), listener, advertisedHostname, brokerAddress);
                                 registerAdvertisedPort(node.nodeId(), listener, listener.getPort());
 
                                 return Future.succeededFuture();
@@ -504,13 +505,13 @@ public class KafkaListenersReconciler {
 
                                         registerAdvertisedPort(node.nodeId(), listener, externalBrokerNodePort);
 
-                                        String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, node.nodeId());
+                                        String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, node);
 
                                         if (advertisedHostname != null) {
                                             result.brokerDnsNames.computeIfAbsent(node.nodeId(), k -> new HashSet<>(1)).add(advertisedHostname);
                                         }
 
-                                        registerAdvertisedHostname(node.nodeId(), listener, nodePortAddressEnvVar(listener));
+                                        registerAdvertisedHostname(node.nodeId(), listener, advertisedHostname, nodePortAddressEnvVar(listener));
 
                                         return Future.succeededFuture();
                                     });
@@ -596,12 +597,12 @@ public class KafkaListenersReconciler {
 
                                         result.brokerDnsNames.computeIfAbsent(node.nodeId(), k -> new HashSet<>(2)).add(brokerAddress);
 
-                                        String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, node.nodeId());
+                                        String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, node);
                                         if (advertisedHostname != null) {
-                                            result.brokerDnsNames.get(node.nodeId()).add(ListenersUtils.brokerAdvertisedHost(listener, node.nodeId()));
+                                            result.brokerDnsNames.get(node.nodeId()).add(advertisedHostname);
                                         }
 
-                                        registerAdvertisedHostname(node.nodeId(), listener, brokerAddress);
+                                        registerAdvertisedHostname(node.nodeId(), listener, advertisedHostname, brokerAddress);
                                         registerAdvertisedPort(node.nodeId(), listener, KafkaCluster.ROUTE_PORT);
 
                                         return Future.succeededFuture();
@@ -668,22 +669,17 @@ public class KafkaListenersReconciler {
                     })
                     .compose(res -> {
                         for (NodeRef node : kafka.brokerNodes()) {
-                            //final int finalBrokerId = brokerId;
-                            String brokerAddress = listener.getConfiguration().getBrokers().stream()
-                                    .filter(broker -> broker.getBroker() == node.nodeId())
-                                    .map(GenericKafkaListenerConfigurationBroker::getHost)
-                                    .findAny()
-                                    .orElse(null);
+                            String brokerAddress = ListenersUtils.brokerHost(listener, node);
                             LOGGER.debugCr(reconciliation, "Using address {} for Ingress {}", brokerAddress, ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener));
 
                             result.brokerDnsNames.computeIfAbsent(node.nodeId(), k -> new HashSet<>(2)).add(brokerAddress);
 
-                            String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, node.nodeId());
+                            String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, node);
                             if (advertisedHostname != null) {
-                                result.brokerDnsNames.get(node.nodeId()).add(ListenersUtils.brokerAdvertisedHost(listener, node.nodeId()));
+                                result.brokerDnsNames.get(node.nodeId()).add(advertisedHostname);
                             }
 
-                            registerAdvertisedHostname(node.nodeId(), listener, brokerAddress);
+                            registerAdvertisedHostname(node.nodeId(), listener, advertisedHostname, brokerAddress);
                             registerAdvertisedPort(node.nodeId(), listener, KafkaCluster.INGRESS_PORT);
                         }
 

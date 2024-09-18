@@ -503,6 +503,12 @@ This property is used to select the preferred address type, which is checked fir
 |publishNotReadyAddresses
 |boolean
 |Configures whether the service endpoints are considered "ready" even if the Pods themselves are not. Defaults to `false`. This field can not be used with `internal` listeners.
+|hostTemplate
+|string
+|Configures the template for generating the host names of the individual brokers. Valid placeholders that you can use in the template are `{nodeId}` and `{nodePodName}`.
+|advertisedHostTemplate
+|string
+|Configures the template for generating the advertisedHost names of the individual brokers. Valid placeholders that you can use in the template are `{nodeId}` and `{nodePodName}`.
 |====
 
 [id='type-CertAndKeySecretSource-{context}']
