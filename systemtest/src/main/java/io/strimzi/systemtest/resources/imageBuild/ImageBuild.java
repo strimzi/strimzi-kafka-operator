@@ -32,9 +32,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+import static io.strimzi.systemtest.Environment.KANIKO_IMAGE;
+
 public class ImageBuild {
     private static final Logger LOGGER = LogManager.getLogger(ImageBuild.class);
-    private static final String KANIKO_IMAGE = "gcr.io/kaniko-project/executor:latest";
 
     /**
      * Build a specific image from passed Dockerfile and push it into internal registry.
