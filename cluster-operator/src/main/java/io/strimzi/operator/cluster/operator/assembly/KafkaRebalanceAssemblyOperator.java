@@ -988,7 +988,7 @@ public class KafkaRebalanceAssemblyOperator
 
         KafkaRebalanceAnnotation rebalanceAnnotation = rebalanceAnnotation(kafkaRebalance);
         if (rebalanceAnnotation == KafkaRebalanceAnnotation.template) {
-            LOGGER.infoCr(reconciliation, "KafkaRebalance {} is a template configuration. Skipping it.", kafkaRebalance.getMetadata().getName());
+            LOGGER.traceCr(reconciliation, "KafkaRebalance {} is a template configuration. Skipping it.", kafkaRebalance.getMetadata().getName());
             return Future.succeededFuture();
         }
 

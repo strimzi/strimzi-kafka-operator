@@ -19,7 +19,6 @@ import io.strimzi.api.kafka.model.common.Probe;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
 import io.strimzi.api.kafka.model.kafka.entityoperator.TlsSidecar;
-import io.strimzi.api.kafka.model.rebalance.KafkaAutoRebalanceConfiguration;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;

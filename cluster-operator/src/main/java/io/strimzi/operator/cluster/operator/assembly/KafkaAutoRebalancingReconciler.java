@@ -7,12 +7,12 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
-import io.strimzi.api.kafka.model.rebalance.KafkaAutoRebalanceConfiguration;
-import io.strimzi.api.kafka.model.rebalance.KafkaAutoRebalanceModeBrokers;
-import io.strimzi.api.kafka.model.rebalance.KafkaAutoRebalanceModeBrokersBuilder;
-import io.strimzi.api.kafka.model.rebalance.KafkaAutoRebalanceState;
-import io.strimzi.api.kafka.model.rebalance.KafkaAutoRebalanceStatus;
-import io.strimzi.api.kafka.model.rebalance.KafkaAutoRebalanceStatusBuilder;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceConfiguration;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceModeBrokers;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceModeBrokersBuilder;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceState;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatus;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatusBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceBuilder;
@@ -94,7 +94,7 @@ public class KafkaAutoRebalancingReconciler {
 
         if (kafkaAutoRebalanceStatus != null) {
             LOGGER.infoCr(reconciliation, "Loaded auto-rebalance state from the Kafka CR [{}]", kafkaAutoRebalanceStatus.getState());
-            ScalingNodes scalingNodes = getBlockedAddedNodes(kafkaStatus.getAutoRebalance());
+            ScalingNodes scalingNodes = getScalingNodes(kafkaStatus.getAutoRebalance());
             return computeNextStatus(kafkaAutoRebalanceStatus, scalingNodes)
                     .onComplete(v -> kafkaStatus.setAutoRebalance(kafkaAutoRebalanceStatus));
         } else {
@@ -241,7 +241,7 @@ public class KafkaAutoRebalancingReconciler {
                         default:
                             return Future.failedFuture(new RuntimeException("Unexpected state " + kafkaRebalanceState));
                     }
-                }, exception -> Future.failedFuture(exception));
+                });
     }
 
     private Future<Void> onRebalanceOnScaleUp(KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus, ScalingNodes scalingNodes) {
@@ -370,10 +370,10 @@ public class KafkaAutoRebalancingReconciler {
                         default:
                             return Future.failedFuture(new RuntimeException("Unexpected state " + kafkaRebalanceState));
                     }
-                }, exception -> Future.failedFuture(exception));
+                });
     }
 
-    private ScalingNodes getBlockedAddedNodes(final KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus) {
+    private ScalingNodes getScalingNodes(final KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus) {
         // if not empty -> update the Kafka.status.autoRebalance.modes[remove-brokers].brokers by using the full content
         //                 from the scalingDownBlockedNodes list which always contains the nodes involved in a scale down operation
         // if empty -> no further action and stay with the current Kafka.status.autoRebalance.modes[remove-brokers].brokers list

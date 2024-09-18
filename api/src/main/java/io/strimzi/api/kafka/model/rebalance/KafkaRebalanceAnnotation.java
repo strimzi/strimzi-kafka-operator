@@ -25,10 +25,11 @@ public enum KafkaRebalanceAnnotation {
      */
     refresh,
     /**
-     * Used to represent a KafkaRebalance custom resource as a configuration template.
+     * Used to represent a KafkaRebalance custom resource that represents a configuration template.
      * This is used for auto-rebalancing on scaling to define the configuration template to be used for a specific
      * rebalancing mode, as add-brokers or remove-brokers.
-     * When this annotation is applied, it doesn't trigger any actual autorebalance but it is just ignored.
+     * When this annotation is applied to a KafkaRebalance custom resource, it doesn't trigger any actual auto-rebalance,
+     * instead the resource is just ignored.
      */
     template,
     /**

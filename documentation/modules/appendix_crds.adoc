@@ -2366,7 +2366,12 @@ Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`]
 |Property |Property type |Description
 |state
 |string (one of [RebalanceOnScaleUp, Idle, RebalanceOnScaleDown])
-|The current state of the auto-rebalancing operation. Possible values are:Idle as the initial state when an autor-rebalancing is requested or as final state when it completes or fails; RebalanceOnScaleDown if a rebalancing related to a scale down operation is running; RebalanceOnScaleUp if a rebalancing related to a scale up operation is running;.
+|The current state of the auto-rebalancing operation. Possible values are: 
+
+* Idle as the initial state when an auto-rebalancing is requested or as final state when it completes or fails.
+* RebalanceOnScaleDown if a rebalancing related to a scale down operation is running.
+* RebalanceOnScaleUp if a rebalancing related to a scale up operation is running.
+
 |lastTransitionTime
 |string
 |The timestamp of the latest auto-rebalancing state update.

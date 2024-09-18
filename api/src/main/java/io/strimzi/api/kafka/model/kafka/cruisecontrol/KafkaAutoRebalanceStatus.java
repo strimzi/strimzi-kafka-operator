@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.api.kafka.model.rebalance;
+package io.strimzi.api.kafka.model.kafka.cruisecontrol;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -35,10 +35,10 @@ public class KafkaAutoRebalanceStatus implements UnknownPropertyPreserving {
     private List<KafkaAutoRebalanceModeBrokers> modes;
     private Map<String, Object> additionalProperties;
 
-    @Description("The current state of the auto-rebalancing operation. Possible values are:" +
-            "Idle as the initial state when an autor-rebalancing is requested or as final state when it completes or fails; " +
-            "RebalanceOnScaleDown if a rebalancing related to a scale down operation is running; " +
-            "RebalanceOnScaleUp if a rebalancing related to a scale up operation is running;")
+    @Description("The current state of the auto-rebalancing operation. Possible values are: \n\n" +
+            "* Idle as the initial state when an auto-rebalancing is requested or as final state when it completes or fails.\n" +
+            "* RebalanceOnScaleDown if a rebalancing related to a scale down operation is running.\n" +
+            "* RebalanceOnScaleUp if a rebalancing related to a scale up operation is running.\n")
     public KafkaAutoRebalanceState getState() {
         return state;
     }

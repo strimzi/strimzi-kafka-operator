@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.api.kafka.model.rebalance;
+package io.strimzi.api.kafka.model.kafka.cruisecontrol;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
