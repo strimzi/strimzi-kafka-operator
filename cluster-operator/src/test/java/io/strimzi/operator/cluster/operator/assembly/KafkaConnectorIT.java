@@ -68,7 +68,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.oneOf;
 
 @ExtendWith(VertxExtension.class)
-@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
 public class KafkaConnectorIT {
     private static StrimziKafkaCluster cluster;
     private static Vertx vertx;
