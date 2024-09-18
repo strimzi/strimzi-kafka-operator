@@ -123,6 +123,7 @@ import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasKey;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -440,7 +441,9 @@ public class KafkaClusterTest {
             assertThat(pod.getSpec().getContainers().stream().findAny().orElseThrow().getImage(), is("my-image:my-tag"));
 
             // Check Init container
-            assertThat(pod.getSpec().getInitContainers().stream().findAny().orElseThrow().getImage(), is("my-init-image:my-init-tag"));
+            if (!pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
+                assertThat(pod.getSpec().getInitContainers().stream().findAny().orElseThrow().getImage(), is("my-init-image:my-init-tag"));
+            }
         }));
     }
 
@@ -551,19 +554,24 @@ public class KafkaClusterTest {
         List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
 
         podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
-            Container cont = pod.getSpec().getInitContainers().stream().findAny().orElseThrow();
+            Container initCont = pod.getSpec().getInitContainers().stream().findAny().orElse(null);
 
-            assertThat(cont.getName(), is(KafkaCluster.INIT_NAME));
-            assertThat(cont.getSecurityContext(), is(securityContext));
-            assertThat(cont.getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar1.getValue()));
-            assertThat(cont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar2.getValue()));
-            assertThat(cont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
+            if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
+                assertThat(initCont, is(nullValue()));
+            } else {
+                assertThat(initCont, is(notNullValue()));
+                assertThat(initCont.getName(), is(KafkaCluster.INIT_NAME));
+                assertThat(initCont.getSecurityContext(), is(securityContext));
+                assertThat(initCont.getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar1.getValue()));
+                assertThat(initCont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar2.getValue()));
+                assertThat(initCont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
 
-            assertThat(cont.getVolumeMounts().size(), is(2));
-            assertThat(cont.getVolumeMounts().get(0).getName(), is("rack-volume"));
-            assertThat(cont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
-            assertThat(cont.getVolumeMounts().get(1).getName(), is("secret-volume-name"));
-            assertThat(cont.getVolumeMounts().get(1).getMountPath(), is("/mnt/secret-volume"));
+                assertThat(initCont.getVolumeMounts().size(), is(2));
+                assertThat(initCont.getVolumeMounts().get(0).getName(), is("rack-volume"));
+                assertThat(initCont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
+                assertThat(initCont.getVolumeMounts().get(1).getName(), is("secret-volume-name"));
+                assertThat(initCont.getVolumeMounts().get(1).getMountPath(), is("/mnt/secret-volume"));
+            }
         }));
     }
 
@@ -653,41 +661,34 @@ public class KafkaClusterTest {
         List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
 
         podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
-            Container cont = pod.getSpec().getInitContainers().stream().findAny().orElseThrow();
+            Container initCont = pod.getSpec().getInitContainers().stream().findAny().orElse(null);
+
             if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
-                assertThat(cont.getName(), is(KafkaCluster.INIT_NAME));
-                assertThat(cont.getSecurityContext(), is(securityContext));
-                assertThat(cont.getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar1.getValue()));
-                assertThat(cont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar2.getValue()));
-                assertThat(cont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
-
-                assertThat(cont.getVolumeMounts().size(), is(2));
-                assertThat(cont.getVolumeMounts().get(0).getName(), is("rack-volume"));
-                assertThat(cont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
-                assertThat(cont.getVolumeMounts().get(1).getName(), is("secret-volume-name"));
-                assertThat(cont.getVolumeMounts().get(1).getMountPath(), is("/mnt/secret-volume"));
+                assertThat(initCont, is(nullValue()));
             } else if (pod.getMetadata().getName().startsWith(CLUSTER + "-mixed")) {
-                assertThat(cont.getName(), is(KafkaCluster.INIT_NAME));
-                assertThat(cont.getSecurityContext(), is(securityContext));
-                assertThat(cont.getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElse(null), is(nullValue()));
-                assertThat(cont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar2.getValue()));
-                assertThat(cont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
+                assertThat(initCont, is(notNullValue()));
+                assertThat(initCont.getName(), is(KafkaCluster.INIT_NAME));
+                assertThat(initCont.getSecurityContext(), is(securityContext));
+                assertThat(initCont.getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElse(null), is(nullValue()));
+                assertThat(initCont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar2.getValue()));
+                assertThat(initCont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
 
-                assertThat(cont.getVolumeMounts().size(), is(1));
-                assertThat(cont.getVolumeMounts().get(0).getName(), is("rack-volume"));
-                assertThat(cont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
+                assertThat(initCont.getVolumeMounts().size(), is(1));
+                assertThat(initCont.getVolumeMounts().get(0).getName(), is("rack-volume"));
+                assertThat(initCont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
             } else {
-                assertThat(cont.getName(), is(KafkaCluster.INIT_NAME));
-                assertThat(cont.getSecurityContext(), is(Matchers.nullValue()));
-                assertThat(cont.getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar1.getValue()));
-                assertThat(cont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElse(null), is(nullValue()));
-                assertThat(cont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
+                assertThat(initCont, is(notNullValue()));
+                assertThat(initCont.getName(), is(KafkaCluster.INIT_NAME));
+                assertThat(initCont.getSecurityContext(), is(Matchers.nullValue()));
+                assertThat(initCont.getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar1.getValue()));
+                assertThat(initCont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElse(null), is(nullValue()));
+                assertThat(initCont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
 
-                assertThat(cont.getVolumeMounts().size(), is(2));
-                assertThat(cont.getVolumeMounts().get(0).getName(), is("rack-volume"));
-                assertThat(cont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
-                assertThat(cont.getVolumeMounts().get(1).getName(), is("secret-volume-name"));
-                assertThat(cont.getVolumeMounts().get(1).getMountPath(), is("/mnt/secret-volume"));
+                assertThat(initCont.getVolumeMounts().size(), is(2));
+                assertThat(initCont.getVolumeMounts().get(0).getName(), is("rack-volume"));
+                assertThat(initCont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
+                assertThat(initCont.getVolumeMounts().get(1).getName(), is("secret-volume-name"));
+                assertThat(initCont.getVolumeMounts().get(1).getMountPath(), is("/mnt/secret-volume"));
             }
         }));
     }
@@ -782,41 +783,34 @@ public class KafkaClusterTest {
         List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
 
         podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
-            Container cont = pod.getSpec().getInitContainers().stream().findAny().orElseThrow();
+            Container initCont = pod.getSpec().getInitContainers().stream().findAny().orElse(null);
+
             if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
-                assertThat(cont.getName(), is(KafkaCluster.INIT_NAME));
-                assertThat(cont.getSecurityContext(), is(securityContext));
-                assertThat(cont.getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar1.getValue()));
-                assertThat(cont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar2.getValue()));
-                assertThat(cont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
-
-                assertThat(cont.getVolumeMounts().size(), is(2));
-                assertThat(cont.getVolumeMounts().get(0).getName(), is("rack-volume"));
-                assertThat(cont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
-                assertThat(cont.getVolumeMounts().get(1).getName(), is("secret-volume-name"));
-                assertThat(cont.getVolumeMounts().get(1).getMountPath(), is("/mnt/secret-volume"));
+                assertThat(initCont, is(nullValue()));
             } else if (pod.getMetadata().getName().startsWith(CLUSTER + "-mixed")) {
-                assertThat(cont.getName(), is(KafkaCluster.INIT_NAME));
-                assertThat(cont.getSecurityContext(), is(securityContext));
-                assertThat(cont.getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElse(null), is(nullValue()));
-                assertThat(cont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar2.getValue()));
-                assertThat(cont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
+                assertThat(initCont, is(notNullValue()));
+                assertThat(initCont.getName(), is(KafkaCluster.INIT_NAME));
+                assertThat(initCont.getSecurityContext(), is(securityContext));
+                assertThat(initCont.getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElse(null), is(nullValue()));
+                assertThat(initCont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar2.getValue()));
+                assertThat(initCont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
 
-                assertThat(cont.getVolumeMounts().size(), is(1));
-                assertThat(cont.getVolumeMounts().get(0).getName(), is("rack-volume"));
-                assertThat(cont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
+                assertThat(initCont.getVolumeMounts().size(), is(1));
+                assertThat(initCont.getVolumeMounts().get(0).getName(), is("rack-volume"));
+                assertThat(initCont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
             } else {
-                assertThat(cont.getName(), is(KafkaCluster.INIT_NAME));
-                assertThat(cont.getSecurityContext(), is(Matchers.nullValue()));
-                assertThat(cont.getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar1.getValue()));
-                assertThat(cont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElse(null), is(nullValue()));
-                assertThat(cont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
+                assertThat(initCont, is(notNullValue()));
+                assertThat(initCont.getName(), is(KafkaCluster.INIT_NAME));
+                assertThat(initCont.getSecurityContext(), is(Matchers.nullValue()));
+                assertThat(initCont.getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar1.getValue()));
+                assertThat(initCont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElse(null), is(nullValue()));
+                assertThat(initCont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
 
-                assertThat(cont.getVolumeMounts().size(), is(2));
-                assertThat(cont.getVolumeMounts().get(0).getName(), is("rack-volume"));
-                assertThat(cont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
-                assertThat(cont.getVolumeMounts().get(1).getName(), is("secret-volume-name"));
-                assertThat(cont.getVolumeMounts().get(1).getMountPath(), is("/mnt/secret-volume"));
+                assertThat(initCont.getVolumeMounts().size(), is(2));
+                assertThat(initCont.getVolumeMounts().get(0).getName(), is("rack-volume"));
+                assertThat(initCont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
+                assertThat(initCont.getVolumeMounts().get(1).getName(), is("secret-volume-name"));
+                assertThat(initCont.getVolumeMounts().get(1).getMountPath(), is("/mnt/secret-volume"));
             }
         }));
     }
@@ -2291,14 +2285,10 @@ public class KafkaClusterTest {
         List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
 
         podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
-            List<EnvVar> envVars = pod.getSpec().getInitContainers().stream().findAny().orElseThrow().getEnv();
             if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
-                assertThat(envVars.size(), is(2));
-                assertThat(envVars.get(0).getName(), is("NODE_NAME"));
-                assertThat(envVars.get(0).getValueFrom(), is(notNullValue()));
-                assertThat(envVars.get(1).getName(), is("RACK_TOPOLOGY_KEY"));
-                assertThat(envVars.get(1).getValue(), is("my-topology-key"));
+                assertThat(pod.getSpec().getInitContainers(), is(empty()));
             } else {
+                List<EnvVar> envVars = pod.getSpec().getInitContainers().stream().findAny().orElseThrow().getEnv();
                 assertThat(envVars.size(), is(3));
                 assertThat(envVars.get(0).getName(), is("NODE_NAME"));
                 assertThat(envVars.get(0).getValueFrom(), is(notNullValue()));
@@ -2340,9 +2330,11 @@ public class KafkaClusterTest {
         List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
         
         podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
-            ResourceRequirements initContainersResources = pod.getSpec().getInitContainers().stream().findAny().orElseThrow().getResources();
-            assertThat(initContainersResources.getRequests(), is(requirements));
-            assertThat(initContainersResources.getLimits(), is(limits));
+            if (!pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
+                ResourceRequirements initContainersResources = pod.getSpec().getInitContainers().stream().findAny().orElseThrow().getResources();
+                assertThat(initContainersResources.getRequests(), is(requirements));
+                assertThat(initContainersResources.getLimits(), is(limits));
+            }
         }));
     }
 
@@ -2395,12 +2387,10 @@ public class KafkaClusterTest {
         List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
 
         podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
-            ResourceRequirements initContainersResources = pod.getSpec().getInitContainers().stream().findAny().orElseThrow().getResources();
-
             if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
-                assertThat(initContainersResources.getRequests(), is(poolRequirements));
-                assertThat(initContainersResources.getLimits(), is(poolLimits));
+                assertThat(pod.getSpec().getInitContainers(), is(empty()));
             } else {
+                ResourceRequirements initContainersResources = pod.getSpec().getInitContainers().get(0).getResources();
                 assertThat(initContainersResources.getRequests(), is(requirements));
                 assertThat(initContainersResources.getLimits(), is(limits));
             }
@@ -2431,24 +2421,26 @@ public class KafkaClusterTest {
                 .endKafka()
             .endSpec()
             .build();
-        KafkaNodePool controllers = new KafkaNodePoolBuilder(POOL_CONTROLLERS)
+        KafkaNodePool mixed = new KafkaNodePoolBuilder(POOL_MIXED)
                 .editSpec()
                     .withResources(poolResourceReq)
                 .endSpec()
                 .build();
 
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(controllers, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, mixed, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
         List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
 
         podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
-            ResourceRequirements initContainersResources = pod.getSpec().getInitContainers().stream().findAny().orElseThrow().getResources();
+            Container initCont = pod.getSpec().getInitContainers().stream().findAny().orElse(null);
 
             if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
-                assertThat(initContainersResources.getRequests(), is(poolRequirements));
-                assertThat(initContainersResources.getLimits(), is(poolLimits));
+                assertThat(initCont, is(nullValue()));
+            } else if (pod.getMetadata().getName().startsWith(CLUSTER + "-mixed")) {
+                assertThat(initCont.getResources().getRequests(), is(poolRequirements));
+                assertThat(initCont.getResources().getLimits(), is(poolLimits));
             } else {
-                assertThat(initContainersResources, is(nullValue()));
+                assertThat(initCont.getResources(), is(nullValue()));
             }
         }));
     }

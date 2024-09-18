@@ -1180,7 +1180,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                             getMergedAffinity(pool),
                             ContainerUtils.listOrNull(createInitContainer(imagePullPolicy, pool)),
                             List.of(createContainer(imagePullPolicy, pool)),
-                            getPodSetVolumes(node.podName(), pool.storage, pool.templatePod, isOpenShift),
+                            getPodSetVolumes(node, pool.storage, pool.templatePod, isOpenShift),
                             imagePullSecrets,
                             securityProvider.kafkaPodSecurityContext(new PodSecurityProviderContextImpl(pool.storage, pool.templatePod))
                     )
@@ -1305,18 +1305,17 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * maps.
      *
      * @param isOpenShift Indicates whether we are on OpenShift or not
-     * @param podName     The name of the Pod for which are these volumes generated. The Pod name
-     *                    identifies which ConfigMap should be used when perBrokerConfiguration is set to
-     *                    true. When perBrokerConfiguration is set to false, the Pod name is not used and
-     *                    can be set to null.
+     * @param node        The node for which are these volumes generated. It is used to identify which ConfigMap should
+     *                    be used or whether init container volumes should be used.
      * @param templatePod Template with custom pod configurations
      *
      * @return List of non-data volumes used by the ZooKeeper pods
      */
-    private List<Volume> getNonDataVolumes(boolean isOpenShift, String podName, PodTemplate templatePod) {
+    private List<Volume> getNonDataVolumes(boolean isOpenShift, NodeRef node, PodTemplate templatePod) {
         List<Volume> volumeList = new ArrayList<>();
 
-        if (rack != null || isExposedWithNodePort()) {
+        if (node.broker()
+                && (rack != null || isExposedWithNodePort())) {
             volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "1Mi", "Memory"));
         }
 
@@ -1324,7 +1323,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         volumeList.add(VolumeUtils.createSecretVolume(CLUSTER_CA_CERTS_VOLUME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createSecretVolume(BROKER_CERTS_VOLUME, KafkaResources.kafkaSecretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaResources.clientsCaCertificateSecretName(cluster), isOpenShift));
-        volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, podName));
+        volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, node.podName()));
         volumeList.add(VolumeUtils.createEmptyDirVolume("ready-files", "1Ki", "Memory"));
 
         TemplateUtils.addAdditionalVolumes(templatePod, volumeList);
@@ -1375,18 +1374,18 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * Generates a list of volumes used by PodSets. For StrimziPodSet, it needs to include also all persistent claim
      * volumes which StatefulSet would generate on its own.
      *
-     * @param podName       Name of the pod used to name the volumes
+     * @param node          Node for which the volumes should be generated
      * @param storage       Storage for which the volumes should be generated
      * @param templatePod   Pod template with pod customizations
      * @param isOpenShift   Flag whether we are on OpenShift or not
      *
      * @return              List of volumes to be included in the StrimziPodSet pod
      */
-    private List<Volume> getPodSetVolumes(String podName, Storage storage, PodTemplate templatePod, boolean isOpenShift) {
+    private List<Volume> getPodSetVolumes(NodeRef node, Storage storage, PodTemplate templatePod, boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>();
 
-        volumeList.addAll(VolumeUtils.createPodSetVolumes(podName, storage, false));
-        volumeList.addAll(getNonDataVolumes(isOpenShift, podName, templatePod));
+        volumeList.addAll(VolumeUtils.createPodSetVolumes(node.podName(), storage, false));
+        volumeList.addAll(getNonDataVolumes(isOpenShift, node, templatePod));
 
         return volumeList;
     }
@@ -1394,12 +1393,13 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     /**
      * Generates the volume mounts for a Kafka container
      *
-     * @param storage   Storage configuration for which the volume mounts should be generated
-     * @param containerTemplate The container template that contains additional volume mounts to include in the returned list
+     * @param storage               Storage configuration for which the volume mounts should be generated
+     * @param containerTemplate     The container template that contains additional volume mounts to include in the returned list
+     * @param isBroker              Indicates whether the pool for which the volume mounts are generated  has a broker role or not
      *
      * @return  List of volume mounts
      */
-    private List<VolumeMount> getVolumeMounts(Storage storage, ContainerTemplate containerTemplate) {
+    private List<VolumeMount> getVolumeMounts(Storage storage, ContainerTemplate containerTemplate, boolean isBroker) {
         List<VolumeMount> volumeMountList = new ArrayList<>(VolumeUtils.createVolumeMounts(storage, false));
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
@@ -1408,7 +1408,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         volumeMountList.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount("ready-files", "/var/opt/kafka"));
 
-        if (rack != null || isExposedWithNodePort()) {
+        if (isBroker
+                && (rack != null || isExposedWithNodePort())) {
             volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
         }
 
@@ -1464,6 +1465,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         AffinityBuilder builder = new AffinityBuilder(userAffinity);
         if (rack != null) {
             // If there's a rack config, we need to add a podAntiAffinity to spread the brokers among the racks
+            // We add the affinity even for controller only nodes as we prefer them to be spread even if they don't directly use rack awareness
             builder = builder
                     .editOrNewPodAntiAffinity()
                         .addNewPreferredDuringSchedulingIgnoredDuringExecution()
@@ -1505,7 +1507,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     private Container createInitContainer(ImagePullPolicy imagePullPolicy, KafkaPool pool) {
-        if (rack != null || !ListenersUtils.nodePortListeners(listeners).isEmpty()) {
+        if (pool.isBroker()
+                && (rack != null || !ListenersUtils.nodePortListeners(listeners).isEmpty())) {
             return ContainerUtils.createContainer(
                     INIT_NAME,
                     initImage,
@@ -1541,7 +1544,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 pool.resources,
                 getEnvVars(pool),
                 getContainerPortList(pool),
-                getVolumeMounts(pool.storage, pool.templateContainer),
+                getVolumeMounts(pool.storage, pool.templateContainer, pool.isBroker()),
                 ProbeUtils.defaultBuilder(livenessProbeOptions).withNewExec().withCommand("/opt/kafka/kafka_liveness.sh").endExec().build(),
                 ProbeUtils.defaultBuilder(readinessProbeOptions).withNewExec().withCommand("/opt/kafka/kafka_readiness.sh").endExec().build(),
                 imagePullPolicy
