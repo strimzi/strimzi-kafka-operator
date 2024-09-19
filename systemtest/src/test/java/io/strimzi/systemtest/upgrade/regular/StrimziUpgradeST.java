@@ -30,6 +30,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 
 import static io.strimzi.systemtest.Environment.TEST_SUITE_NAMESPACE;
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
@@ -109,10 +110,11 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
     @IsolatedTest
     void testUpgradeAcrossVersionsWithUnsupportedKafkaVersion() throws IOException {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        UpgradeKafkaVersion upgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(acrossUpgradeData.getFromKafkaVersionsUrl(), acrossUpgradeData.getStartingKafkaVersion());
+        Optional<UpgradeKafkaVersion> upgradeKafkaVersion = UpgradeKafkaVersion.getKafkaVersionSupportedBeforeUnsupportedAfterUpgrade(acrossUpgradeData.getFromKafkaVersionsUrl());
+        assumeTrue(upgradeKafkaVersion.isPresent(), "Supported Kafka versions after upgrade contains all supported Kafka versions before upgrade so test is skipped");
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(CO_NAMESPACE, testStorage, acrossUpgradeData, upgradeKafkaVersion);
+        setupEnvAndUpgradeClusterOperator(CO_NAMESPACE, testStorage, acrossUpgradeData, upgradeKafkaVersion.get());
 
         // Make snapshots of all Pods
         makeComponentsSnapshots(TEST_SUITE_NAMESPACE);
