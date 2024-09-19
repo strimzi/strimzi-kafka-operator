@@ -5,6 +5,11 @@
 package io.strimzi.systemtest.cruisecontrol;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
@@ -51,11 +56,36 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
+@SuiteDoc(
+    description = @Desc("Deploy and subsequently remove CruiseControl from Kafka cluster to verify system stability and correctness of configuration management."),
+    beforeTestSteps = {
+        @Step(value = "Set up the Cluster Operator", expected = "Cluster Operator is installed and running")
+    },
+    labels = {
+        @Label(value = "cruise-control")
+    }
+)
 public class CruiseControlConfigurationST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(CruiseControlConfigurationST.class);
 
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Deploy and subsequently remove CruiseControl from Kafka cluster to verify system stability and correctness of configuration management."),
+        steps = {
+            @Step(value = "Create broker and controller node pools", expected = "Node pools are created and configured"),
+            @Step(value = "Deploy Kafka with CruiseControl", expected = "Kafka cluster with CruiseControl is deployed"),
+            @Step(value = "Take a snapshot of broker pods", expected = "Snapshot of the current broker pods is taken"),
+            @Step(value = "Remove CruiseControl from Kafka", expected = "CruiseControl is removed from Kafka and configuration is updated"),
+            @Step(value = "Verify CruiseControl is removed", expected = "No CruiseControl related pods or configurations are found"),
+            @Step(value = "Create Admin client to verify CruiseControl topics", expected = "Admin client is created and CruiseControl topics are verified to exist"),
+            @Step(value = "Re-add CruiseControl to Kafka", expected = "CruiseControl is added back to Kafka"),
+            @Step(value = "Verify CruiseControl and related configurations", expected = "CruiseControl and its configurations are verified to be present")
+        },
+        labels = {
+            @Label(value = "cruise-control"),
+        }
+    )
     void testDeployAndUnDeployCruiseControl() throws IOException {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         // number of brokers to be created and also number of default replica count for each topic created
@@ -122,6 +152,21 @@ public class CruiseControlConfigurationST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Test verifying configuration update for Cruise Control and ensuring Kafka Pods did not roll unnecessarily."),
+        steps = {
+            @Step(value = "Create and wait for resources with node pools.", expected = "Resources are created successfully."),
+            @Step(value = "Create and wait for Kafka with Cruise Control.", expected = "Kafka and Cruise Control are deployed successfully."),
+            @Step(value = "Take initial snapshots of Kafka and Cruise Control deployments.", expected = "Snapshots of current deployments are stored."),
+            @Step(value = "Update Cruise Control configuration with new performance tuning options.", expected = "Configuration update initiated."),
+            @Step(value = "Verify Cruise Control Pod rolls after configuration change.", expected = "Cruise Control Pod restarts to apply new configurations."),
+            @Step(value = "Verify Kafka Pods did not roll after configuration change.", expected = "Kafka Pods remain unchanged."),
+            @Step(value = "Verify new configurations are applied to Cruise Control in Kafka CR.", expected = "New configurations are correctly applied.")
+        },
+        labels = {
+            @Label(value = "cruise-control"),
+        }
+    )
     void testConfigurationUpdate() throws IOException {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
