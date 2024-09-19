@@ -22,11 +22,12 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create test storage and resource manager | Test storage and resource manager are initialized |
-| 2. | Set up Kafka brokers and Cruise Control with necessary configurations | Resources are created with the desired configurations |
-| 3. | Validate Cruise Control pod's memory resource limits and JVM options | Memory limits and JVM options are correctly set on the Cruise Control pod |
-| 4. | Create a Kafka topic and an AdminClient | Kafka topic and AdminClient are successfully created |
-| 5. | Verify Cruise Control topics are present | Cruise Control topics are found present in the configuration |
+| 1. | Create test storage | Test storage is initialized |
+| 2. | Create and wait for resources with node pools. | Resources are created successfully. |
+| 3. | Set up Kafka brokers and Cruise Control with necessary configurations | Resources are created with the desired configurations |
+| 4. | Validate Cruise Control pod's memory resource limits and JVM options | Memory limits and JVM options are correctly set on the Cruise Control pod |
+| 5. | Create a Kafka topic and an AdminClient | Kafka topic and AdminClient are successfully created |
+| 6. | Verify Cruise Control topics are present | Cruise Control topics are found present in the configuration |
 
 **Labels:**
 
@@ -191,10 +192,11 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Initialize test storage and set up the error message | Test storage initialized and error message set |
-| 2. | Deploy single-node Kafka with Cruise Control | Kafka and Cruise Control deployment initiated |
-| 3. | Verify that the Kafka status contains the error message related to single-node configuration | Error message confirmed in Kafka status |
-| 4. | Increase the Kafka nodes to 3 | Kafka node count increased to 3 |
-| 5. | Check that the Kafka status no longer contains the single-node error message | Error message resolved |
+| 2. | Create and wait for resources with node pools. | Resources are created successfully. |
+| 3. | Deploy single-node Kafka with Cruise Control | Kafka and Cruise Control deployment initiated |
+| 4. | Verify that the Kafka status contains the error message related to single-node configuration | Error message confirmed in Kafka status |
+| 5. | Increase the Kafka nodes to 3 | Kafka node count increased to 3 |
+| 6. | Check that the Kafka status no longer contains the single-node error message | Error message resolved |
 
 **Labels:**
 

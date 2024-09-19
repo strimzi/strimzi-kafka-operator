@@ -1,6 +1,6 @@
 # CruiseControlApiST
 
-**Description:** This test case verifies that Cruise Control's basic API requests function correctly with security features disabled.
+**Description:** This test suite verifies that Cruise Control's basic API requests function correctly
 
 **Before tests execution steps:**
 
@@ -42,10 +42,11 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Initialize the test storage. | Test storage object is created. |
-| 2. | Disable Cruise Control security and SSL in configuration. | Configuration map is set with security and SSL disabled. |
-| 3. | Create required Kafka and Cruise Control resources with disabled security. | Kafka and Cruise Control resources are deployed without enabling security. |
-| 4. | Call the Cruise Control state endpoint using HTTP without credentials. | Cruise Control state response is received with HTTP status code 200. |
-| 5. | Verify the Cruise Control state response. | Response indicates Cruise Control is RUNNING with NO_TASK_IN_PROGRESS. |
+| 2. | Create NodePools for the Kafka cluster | NodePools are created |
+| 3. | Disable Cruise Control security and SSL in configuration. | Configuration map is set with security and SSL disabled. |
+| 4. | Create required Kafka and Cruise Control resources with disabled security. | Kafka and Cruise Control resources are deployed without enabling security. |
+| 5. | Call the Cruise Control state endpoint using HTTP without credentials. | Cruise Control state response is received with HTTP status code 200. |
+| 6. | Verify the Cruise Control state response. | Response indicates Cruise Control is RUNNING with NO_TASK_IN_PROGRESS. |
 
 **Labels:**
 
