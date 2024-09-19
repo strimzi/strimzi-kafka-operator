@@ -264,7 +264,7 @@ public class MockCruiseControl {
                 .respond(
                         response()
                                 .withBody(pendingJson)
-                                .withHeaders(header("User-Task-ID", REBALANCE_NO_GOALS_RESPONSE_UTID))
+                                .withHeaders(header("User-Task-ID", REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID))
                                 .withStatusCode(202)
                                 .withDelay(TimeUnit.SECONDS, responseDelay));
 
