@@ -42,11 +42,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static io.strimzi.systemtest.TestConstants.PERFORMANCE;
 import static io.strimzi.systemtest.performance.PerformanceConstants.CAPACITY;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
-@Tag(PERFORMANCE)
 public class UserOperatorPerformance extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(UserOperatorPerformance.class);

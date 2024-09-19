@@ -43,11 +43,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static io.strimzi.systemtest.TestConstants.PERFORMANCE;
 import static io.strimzi.systemtest.performance.PerformanceConstants.CAPACITY;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
-@Tag(PERFORMANCE)
 public class TopicOperatorPerformance extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorPerformance.class);
