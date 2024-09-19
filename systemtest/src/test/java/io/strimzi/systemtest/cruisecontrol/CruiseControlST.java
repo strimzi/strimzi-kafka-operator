@@ -96,7 +96,8 @@ public class CruiseControlST extends AbstractST {
     @TestDoc(
         description = @Desc("Test verifying the automatic creation and configuration of Cruise Control topics with resources."),
         steps = {
-            @Step(value = "Create test storage and resource manager", expected = "Test storage and resource manager are initialized"),
+            @Step(value = "Create test storage", expected = "Test storage is initialized"),
+            @Step(value = "Create and wait for resources with node pools.", expected = "Resources are created successfully."),
             @Step(value = "Set up Kafka brokers and Cruise Control with necessary configurations", expected = "Resources are created with the desired configurations"),
             @Step(value = "Validate Cruise Control pod's memory resource limits and JVM options", expected = "Memory limits and JVM options are correctly set on the Cruise Control pod"),
             @Step(value = "Create a Kafka topic and an AdminClient", expected = "Kafka topic and AdminClient are successfully created"),
@@ -295,6 +296,7 @@ public class CruiseControlST extends AbstractST {
         description = @Desc("Test verifying that Cruise Control cannot be deployed with a Kafka cluster that has only one broker and ensuring that increasing the broker count resolves the configuration error."),
         steps = {
             @Step(value = "Initialize test storage and set up the error message", expected = "Test storage initialized and error message set"),
+            @Step(value = "Create and wait for resources with node pools.", expected = "Resources are created successfully."),
             @Step(value = "Deploy single-node Kafka with Cruise Control", expected = "Kafka and Cruise Control deployment initiated"),
             @Step(value = "Verify that the Kafka status contains the error message related to single-node configuration", expected = "Error message confirmed in Kafka status"),
             @Step(value = "Increase the Kafka nodes to 3", expected = "Kafka node count increased to 3"),

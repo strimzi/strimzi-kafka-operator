@@ -37,7 +37,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
 @SuiteDoc(
-    description = @Desc("This test case verifies that Cruise Control's basic API requests function correctly with security features disabled."),
+    description = @Desc("This test suite verifies that Cruise Control's basic API requests function correctly"),
     beforeTestSteps = {
         @Step(value = "Deploy the cluster operator", expected = "Cluster operator is deployed")
     },
@@ -55,6 +55,7 @@ public class CruiseControlApiST extends AbstractST {
         description = @Desc("Test that verifies Cruise Control's basic API requests function correctly with security features disabled."),
         steps = {
             @Step(value = "Initialize the test storage.", expected = "Test storage object is created."),
+            @Step(value = "Create NodePools for the Kafka cluster", expected = "NodePools are created"),
             @Step(value = "Disable Cruise Control security and SSL in configuration.", expected = "Configuration map is set with security and SSL disabled."),
             @Step(value = "Create required Kafka and Cruise Control resources with disabled security.", expected = "Kafka and Cruise Control resources are deployed without enabling security."),
             @Step(value = "Call the Cruise Control state endpoint using HTTP without credentials.", expected = "Cruise Control state response is received with HTTP status code 200."),

@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
 @SuiteDoc(
-    description = @Desc("Deploy and subsequently remove CruiseControl from Kafka cluster to verify system stability and correctness of configuration management."),
+    description = @Desc("This test suite, verify configuration of the CruiseControl component."),
     beforeTestSteps = {
         @Step(value = "Set up the Cluster Operator", expected = "Cluster Operator is installed and running")
     },
@@ -73,6 +73,7 @@ public class CruiseControlConfigurationST extends AbstractST {
     @TestDoc(
         description = @Desc("Deploy and subsequently remove CruiseControl from Kafka cluster to verify system stability and correctness of configuration management."),
         steps = {
+            @Step(value = "Initialize the test storage.", expected = "Test storage object is created."),
             @Step(value = "Create broker and controller node pools", expected = "Node pools are created and configured"),
             @Step(value = "Deploy Kafka with CruiseControl", expected = "Kafka cluster with CruiseControl is deployed"),
             @Step(value = "Take a snapshot of broker pods", expected = "Snapshot of the current broker pods is taken"),
@@ -155,6 +156,7 @@ public class CruiseControlConfigurationST extends AbstractST {
     @TestDoc(
         description = @Desc("Test verifying configuration update for Cruise Control and ensuring Kafka Pods did not roll unnecessarily."),
         steps = {
+            @Step(value = "Initialize the test storage.", expected = "Test storage object is created."),
             @Step(value = "Create and wait for resources with node pools.", expected = "Resources are created successfully."),
             @Step(value = "Create and wait for Kafka with Cruise Control.", expected = "Kafka and Cruise Control are deployed successfully."),
             @Step(value = "Take initial snapshots of Kafka and Cruise Control deployments.", expected = "Snapshots of current deployments are stored."),
