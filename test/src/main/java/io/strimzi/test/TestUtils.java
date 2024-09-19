@@ -145,26 +145,6 @@ public final class TestUtils {
     }
 
     /**
-     * Indents the input string with for empty spaces at the beginning of each line.
-     *
-     * TODO: This is used only in system tests and should be moved there.
-     *
-     * @param input     Input string that should be indented
-     *
-     * @return  Indented string
-     */
-    public static String indent(String input) {
-        StringBuilder sb = new StringBuilder();
-        String[] lines = input.split("[\n\r]");
-
-        for (String line : lines) {
-            sb.append("    ").append(line).append(System.lineSeparator());
-        }
-
-        return sb.toString();
-    }
-
-    /**
      * Creates a modifiable set wit the desired elements. Use {@code Set.of()} if immutable set is sufficient.
      *
      * @param elements  The elements that will be added to the Set
@@ -219,58 +199,6 @@ public final class TestUtils {
         assertThat(or.getUid(), is(owner.getMetadata().getUid()));
         assertThat(or.getBlockOwnerDeletion(), is(false));
         assertThat(or.getController(), is(false));
-    }
-
-    /**
-     * Changes the {@code subject} of the RoleBinding in the given YAML resource to be the
-     * {@code strimzi-cluster-operator} {@code ServiceAccount} in the given namespace.
-     *
-     * TODO: This is used only in system tests and should be moved there.
-     *
-     * @param roleBindingFile   The RoleBinding YAML file to load and change
-     * @param namespace         Namespace of the service account which should be the subject of this RoleBinding
-     *
-     * @return Modified RoleBinding resource YAML
-     */
-    public static String changeRoleBindingSubject(File roleBindingFile, String namespace) {
-        YAMLMapper mapper = new YAMLMapper();
-        try {
-            JsonNode node = mapper.readTree(roleBindingFile);
-            ArrayNode subjects = (ArrayNode) node.get("subjects");
-            ObjectNode subject = (ObjectNode) subjects.get(0);
-            subject.put("kind", "ServiceAccount")
-                    .put("name", "strimzi-cluster-operator")
-                    .put("namespace", namespace);
-            return mapper.writeValueAsString(node);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * Parse the image map String into a Map.
-     *
-     * TODO: This is used only in system tests and should be moved there.
-     *
-     * @param imageMapString    String with the image map (contains key-value pairs separated by new lines in a single string)
-     *
-     * @return  Map with the parsed images
-     */
-    public static Map<String, String> parseImageMap(String imageMapString) {
-        if (imageMapString != null) {
-            StringTokenizer tok = new StringTokenizer(imageMapString, ", \t\n\r");
-            HashMap<String, String> map = new HashMap<>();
-            while (tok.hasMoreTokens()) {
-                String versionImage = tok.nextToken();
-                int endIndex = versionImage.indexOf('=');
-                String version = versionImage.substring(0, endIndex);
-                String image = versionImage.substring(endIndex + 1);
-                map.put(version.trim(), image.trim());
-            }
-            return Collections.unmodifiableMap(map);
-        } else {
-            return Collections.emptyMap();
-        }
     }
 
     /**
