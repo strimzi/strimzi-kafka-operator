@@ -79,7 +79,7 @@ function add_docker_hub_credentials_to_kubernetes {
     then
       set +ex
 
-      docker exec $1 bash -c "echo '$(cat $HOME/.docker/config.json)'| sudo tee -a /var/lib/kubelet/config.json > /dev/null && sudo systemctl restart kubelet"
+      docker exec $1 bash -c "echo '$(cat $HOME/.docker/config.json)'| tee -a /var/lib/kubelet/config.json > /dev/null && systemctl restart kubelet"
 
       set -ex
     fi
