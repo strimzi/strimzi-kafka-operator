@@ -292,6 +292,7 @@ jobs:
       test:
         tmt:
           name: regression-operands
+
   - job: tests
     trigger: release
     identifier: "performance"
@@ -299,7 +300,7 @@ jobs:
       - centos-stream-9-x86_64
       - centos-stream-9-aarch64
     skip_build: true
-    manual_trigger: true
+    manual_trigger: false
     env:
         IP_FAMILY: ipv4
         RELEASE: true
