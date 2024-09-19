@@ -192,7 +192,7 @@ jobs:
           name: performance
   - job: tests
     trigger: pull_request
-    identifier: "performance-capacity"
+    identifier: "capacity"
     targets:
       - centos-stream-9-x86_64
       - centos-stream-9-aarch64
@@ -200,14 +200,14 @@ jobs:
     manual_trigger: true
     env: { IP_FAMILY: ipv4 }
     labels:
-      - performance-capacity
+      - capacity
     tf_extra_params:
       settings:
         pipeline:
           timeout: 1440
       test:
         tmt:
-          name: performance-capacity
+          name: capacity
 
   ##############################################################################################
   ####################################     Releases    #########################################

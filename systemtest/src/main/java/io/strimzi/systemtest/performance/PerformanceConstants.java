@@ -186,6 +186,6 @@ public interface PerformanceConstants {
     /**
      * Performance specific related tags
      */
-    String PERFORMANCE_CAPACITY = "performance-capacity";
+    String CAPACITY = "capacity";
 
 }

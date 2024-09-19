@@ -44,7 +44,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.TestConstants.PERFORMANCE;
-import static io.strimzi.systemtest.performance.PerformanceConstants.PERFORMANCE_CAPACITY;
+import static io.strimzi.systemtest.performance.PerformanceConstants.CAPACITY;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 @Tag(PERFORMANCE)
@@ -83,7 +83,7 @@ public class TopicOperatorPerformance extends AbstractST {
         );
     }
 
-    @Tag(PERFORMANCE_CAPACITY)
+    @Tag(CAPACITY)
     @ParameterizedTest
     @MethodSource("provideConfigurationsForCapacity")
     void testCapacity(String maxBatchSize, String maxBatchLingerMs) throws IOException {

@@ -43,7 +43,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.TestConstants.PERFORMANCE;
-import static io.strimzi.systemtest.performance.PerformanceConstants.PERFORMANCE_CAPACITY;
+import static io.strimzi.systemtest.performance.PerformanceConstants.CAPACITY;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 @Tag(PERFORMANCE)
@@ -96,7 +96,7 @@ public class UserOperatorPerformance extends AbstractST {
         );
     }
 
-    @Tag(PERFORMANCE_CAPACITY)
+    @Tag(CAPACITY)
     @ParameterizedTest
     @MethodSource("provideConfigurationsForCapacity")
     void testCapacity(String controllerThreadPoolSize, String cacheRefreshIntervalMs, String batchQueueSize,
