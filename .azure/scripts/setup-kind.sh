@@ -15,6 +15,8 @@ DEFAULT_CLUSTER_CPU=$(awk '$1~/cpu[0-9]/{usage=($2+$4)*100/($2+$4+$5); print $1"
 CLUSTER_MEMORY=${CLUSTER_MEMORY:-$DEFAULT_CLUSTER_MEMORY}
 CLUSTER_CPU=${CLUSTER_CPU:-$DEFAULT_CLUSTER_CPU}
 
+KIND_CLUSTER_NAME="kind-cluster"
+
 echo "[INFO] CLUSTER_MEMORY: ${CLUSTER_MEMORY}"
 echo "[INFO] CLUSTER_CPU: ${CLUSTER_CPU}"
 
@@ -153,7 +155,7 @@ if [[ "$IP_FAMILY" = "ipv4" || "$IP_FAMILY" = "dual" ]]; then
     - role: worker
     - role: worker
     - role: worker
-    name: kind-cluster
+    name: $KIND_CLUSTER_NAME
     containerdConfigPatches:
     - |-
      [plugins."io.containerd.grpc.v1.cri".registry]
@@ -180,7 +182,7 @@ EOF
     # See https://kind.sigs.k8s.io/docs/user/local-registry/
     REGISTRY_DIR="/etc/containerd/certs.d/${hostname}:${reg_port}"
 
-    for node in $(kind get nodes --name kind-cluster); do
+    for node in $(kind get nodes --name "${KIND_CLUSTER_NAME}"); do
         echo "Executing command in node:${node}"
         docker exec "${node}" mkdir -p "${REGISTRY_DIR}"
         cat <<EOF | docker exec -i "${node}" cp /dev/stdin "${REGISTRY_DIR}/hosts.toml"
@@ -216,7 +218,7 @@ elif [[ "$IP_FAMILY" = "ipv6" ]]; then
     - role: worker
     - role: worker
     - role: worker
-    name: kind-cluster
+    name: $KIND_CLUSTER_NAME
     containerdConfigPatches:
     - |-
       [plugins."io.containerd.grpc.v1.cri".registry.mirrors."myregistry.local:5001"]
@@ -235,7 +237,7 @@ EOF
 
     # note: kind get nodes (default name `kind` and with specifying new name we have to use --name <cluster-name>
     # See https://kind.sigs.k8s.io/docs/user/local-registry/
-    for node in $(kind get nodes --name kind-cluster); do
+    for node in $(kind get nodes --name "${KIND_CLUSTER_NAME}"); do
         echo "Executing command in node:${node}"
         cat <<EOF | docker exec -i "${node}" cp /dev/stdin "/etc/hosts"
 ${ula_fixed_ipv6}::1    ${registry_dns}
@@ -249,7 +251,7 @@ if [ "$(docker inspect -f='{{json .NetworkSettings.Networks.kind}}' "${reg_name}
   docker network connect "kind" "${reg_name}"
 fi
 
-add_docker_hub_credentials_to_kubernetes "kind"
+add_docker_hub_credentials_to_kubernetes "${KIND_CLUSTER_NAME}-control-plane"
 
 create_cluster_role_binding_admin
 label_node
