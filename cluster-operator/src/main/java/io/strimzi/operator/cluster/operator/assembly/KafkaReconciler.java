@@ -122,6 +122,7 @@ public class KafkaReconciler {
     private final ImagePullPolicy imagePullPolicy;
     private final List<LocalObjectReference> imagePullSecrets;
     private final List<Integer> previousNodeIds;
+    private final boolean isPodDisruptionBudgetGeneration;
 
     // Objects used during the reconciliation
     /* test */ final Reconciliation reconciliation;
@@ -213,6 +214,7 @@ public class KafkaReconciler {
         this.imagePullPolicy = config.getImagePullPolicy();
         this.imagePullSecrets = config.getImagePullSecrets();
         this.previousNodeIds = kafkaCr.getStatus() != null ? kafkaCr.getStatus().getRegisteredNodeIds() : null;
+        this.isPodDisruptionBudgetGeneration = config.isPodDisruptionBudgetGeneration();
 
         this.stsOperator = supplier.stsOperations;
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
@@ -765,9 +767,13 @@ public class KafkaReconciler {
      * @return  Completes when the PDB was successfully created or updated
      */
     protected Future<Void> podDisruptionBudget() {
-        return podDisruptionBudgetOperator
+        if (isPodDisruptionBudgetGeneration) {
+            return podDisruptionBudgetOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaComponentName(reconciliation.name()), kafka.generatePodDisruptionBudget())
-                    .map((Void) null);
+                    .mapEmpty();
+        } else {
+            return Future.succeededFuture();
+        }
     }
 
     /**

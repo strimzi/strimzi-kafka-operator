@@ -101,6 +101,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
     private final boolean isNetworkPolicyGeneration;
     private final boolean continueOnManualRUFailure;
+    private final boolean isPodDisruptionBudgetGeneration;
 
     protected final Function<Vertx, KafkaConnectApi> connectClientProvider;
     protected final ImagePullPolicy imagePullPolicy;
@@ -164,6 +165,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         this.sharedEnvironmentProvider = supplier.sharedEnvironmentProvider;
         this.port = port;
         this.continueOnManualRUFailure = config.featureGates().continueOnManualRUFailureEnabled();
+        this.isPodDisruptionBudgetGeneration = config.isPodDisruptionBudgetGeneration();
     }
 
     @Override
@@ -299,13 +301,31 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                          KafkaConnectCluster connect,
                                          Map<String, String> podAnnotations,
                                          Map<String, String> podSetAnnotations,
-                                         String customContainerImage)  {
+                                         String customContainerImage) {
         return podSetOperations.reconcile(reconciliation, reconciliation.namespace(), connect.getComponentName(), connect.generatePodSet(connect.getReplicas(), podSetAnnotations, podAnnotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, customContainerImage))
                 .compose(reconciliationResult -> {
                     KafkaConnectRoller roller = new KafkaConnectRoller(reconciliation, connect, operationTimeoutMs, podOperations);
                     return roller.maybeRoll(PodSetUtils.podNames(reconciliationResult.resource()), pod -> KafkaConnectRoller.needsRollingRestart(reconciliationResult.resource(), pod));
                 })
                 .compose(i -> podSetOperations.readiness(reconciliation, reconciliation.namespace(), connect.getComponentName(), 1_000, operationTimeoutMs));
+    }
+
+    /**
+     * Reconciles the PodDisruptionBudget for the Connect cluster.
+     *
+     * @param reconciliation       The reconciliation
+     * @param namespace            Namespace of the Connect cluster
+     * @param connect              KafkaConnectCluster object
+     *
+     * @return                     Future for tracking the asynchronous result of reconciling the PodDisruptionBudget
+     */
+    protected Future<Void> connectPodDisruptionBudget(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
+        if (isPodDisruptionBudgetGeneration) {
+            return podDisruptionBudgetOperator.reconcile(reconciliation, namespace, connect.getComponentName(), connect.generatePodDisruptionBudget())
+                    .mapEmpty();
+        } else {
+            return Future.succeededFuture();
+        }
     }
 
     /**
