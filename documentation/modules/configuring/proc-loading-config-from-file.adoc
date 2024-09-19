@@ -64,7 +64,7 @@ spec:
         - name: connector-config-volume # <3>
           secret:
             secretName: mysecret # <4>
-    kafkaContainer:
+    connectContainer:
       volumeMounts:
         - name: connector-config-volume # <5>
           mountPath: /mnt/mysecret # <6>
