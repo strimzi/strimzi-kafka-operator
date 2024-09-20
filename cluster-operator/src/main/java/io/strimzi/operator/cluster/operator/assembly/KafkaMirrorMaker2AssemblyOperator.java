@@ -25,7 +25,6 @@ import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectorOffsetsAnnotation;
 import io.strimzi.operator.cluster.model.KafkaMirrorMaker2Cluster;
-import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
@@ -163,7 +162,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                                 podOperations
                         )
                         .migrateFromDeploymentToStrimziPodSets(deployment.get(), podSet.get()))
-                .compose(i -> reconcilePodSet(reconciliation, mirrorMaker2Cluster, podAnnotations))
+                .compose(i -> reconcilePodSet(reconciliation, mirrorMaker2Cluster, podAnnotations, null, null))
                 .compose(i -> hasZeroReplicas ? Future.succeededFuture() : reconcileConnectLoggers(reconciliation, KafkaMirrorMaker2Resources.qualifiedServiceName(reconciliation.name(), namespace), desiredLogging.get(), mirrorMaker2Cluster.defaultLogConfig()))
                 .compose(i -> hasZeroReplicas ? Future.succeededFuture() : reconcileConnectors(reconciliation, kafkaMirrorMaker2, mirrorMaker2Cluster, kafkaMirrorMaker2Status))
                 .map((Void) null)
@@ -188,31 +187,6 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 });
 
         return createOrUpdatePromise.future();
-    }
-
-    private Future<Void> controllerResources(Reconciliation reconciliation,
-                                             KafkaMirrorMaker2Cluster mirrorMaker2Cluster,
-                                             AtomicReference<Deployment> deploymentReference,
-                                             AtomicReference<StrimziPodSet> podSetReference)   {
-        return Future
-                .join(deploymentOperations.getAsync(reconciliation.namespace(), mirrorMaker2Cluster.getComponentName()), podSetOperations.getAsync(reconciliation.namespace(), mirrorMaker2Cluster.getComponentName()))
-                .compose(res -> {
-                    deploymentReference.set(res.resultAt(0));
-                    podSetReference.set(res.resultAt(1));
-
-                    return Future.succeededFuture();
-                });
-    }
-
-    private Future<Void> reconcilePodSet(Reconciliation reconciliation,
-                                         KafkaConnectCluster connect,
-                                         Map<String, String> podAnnotations)  {
-        return podSetOperations.reconcile(reconciliation, reconciliation.namespace(), connect.getComponentName(), connect.generatePodSet(connect.getReplicas(), null, podAnnotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, null))
-                .compose(reconciliationResult -> {
-                    KafkaConnectRoller roller = new KafkaConnectRoller(reconciliation, connect, operationTimeoutMs, podOperations);
-                    return roller.maybeRoll(PodSetUtils.podNames(reconciliationResult.resource()), pod -> KafkaConnectRoller.needsRollingRestart(reconciliationResult.resource(), pod));
-                })
-                .compose(i -> podSetOperations.readiness(reconciliation, reconciliation.namespace(), connect.getComponentName(), 1_000, operationTimeoutMs));
     }
 
     @Override
@@ -269,7 +243,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             currentConnectors.removeAll(desiredConnectors.stream().map(c -> c.getMetadata().getName()).collect(Collectors.toSet()));
 
             Future<Void> deletionFuture = deleteConnectors(reconciliation, host, apiClient, currentConnectors);
-            Future<Void> createOrUpdateFuture = reconcileConnectors(reconciliation, host, apiClient, kafkaMirrorMaker2, desiredConnectors, mirrorMaker2Status);
+            Future<Void> createOrUpdateFuture = createOrUpdateConnectors(reconciliation, host, apiClient, kafkaMirrorMaker2, desiredConnectors, mirrorMaker2Status);
 
             return Future.join(deletionFuture, createOrUpdateFuture).map((Void) null);
         });
@@ -285,11 +259,11 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 .map((Void) null);
     }
 
-    private Future<Void> reconcileConnectors(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, KafkaMirrorMaker2 mirrorMaker2, List<KafkaConnector> connectors, KafkaMirrorMaker2Status mirrorMaker2Status) {
+    private Future<Void> createOrUpdateConnectors(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, KafkaMirrorMaker2 mirrorMaker2, List<KafkaConnector> connectors, KafkaMirrorMaker2Status mirrorMaker2Status) {
         return Future.join(connectors.stream()
                         .map(connector -> {
                             LOGGER.debugCr(reconciliation, "Creating / updating connector {}", connector.getMetadata().getName());
-                            return reconcileMirrorMaker2Connector(reconciliation, mirrorMaker2, apiClient, host, connector.getMetadata().getName(), connector.getSpec(), mirrorMaker2Status);
+                            return createOrUpdateMirrorMaker2Connector(reconciliation, mirrorMaker2, apiClient, host, connector.getMetadata().getName(), connector.getSpec(), mirrorMaker2Status);
                         })
                         .collect(Collectors.toList()))
                 .compose(i -> {
@@ -305,10 +279,10 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                         return Future.succeededFuture();
                     }
                 })
-                .map((Void) null);
+                .mapEmpty();
     }
 
-    private Future<Void> reconcileMirrorMaker2Connector(Reconciliation reconciliation, KafkaMirrorMaker2 mirrorMaker2, KafkaConnectApi apiClient, String host, String connectorName, KafkaConnectorSpec connectorSpec, KafkaMirrorMaker2Status mirrorMaker2Status) {
+    private Future<Void> createOrUpdateMirrorMaker2Connector(Reconciliation reconciliation, KafkaMirrorMaker2 mirrorMaker2, KafkaConnectApi apiClient, String host, String connectorName, KafkaConnectorSpec connectorSpec, KafkaMirrorMaker2Status mirrorMaker2Status) {
         return maybeCreateOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec, mirrorMaker2)
                 .onComplete(result -> {
                     if (result.succeeded()) {
@@ -324,7 +298,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                     } else {
                         maybeUpdateMirrorMaker2Status(reconciliation, mirrorMaker2, result.cause());
                     }
-                }).compose(ignored -> Future.succeededFuture());
+                }).mapEmpty();
     }
 
     private Future<Void> maybeUpdateMirrorMaker2Status(Reconciliation reconciliation, KafkaMirrorMaker2 mirrorMaker2, Throwable error) {
