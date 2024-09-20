@@ -181,7 +181,7 @@
 
 ## testCruiseControlWithSingleNodeKafka
 
-**Description:** Test verifying that Cruise Control cannot be deployed with a Kafka cluster that has only one broker and ensuring that increasing the broker count resolves the configuration error.
+**Description:** Test verifying that Cruise Control cannot be deployed with a Kafka cluster that has only one broker and ensure that increasing the broker count resolves the configuration error.
 
 **Steps:**
 
