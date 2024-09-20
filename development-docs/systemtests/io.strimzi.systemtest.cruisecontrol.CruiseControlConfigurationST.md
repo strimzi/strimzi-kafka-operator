@@ -44,7 +44,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Create broker and controller KafkaNodePools. | Both KafkaNodePools are successfully created |
-| 2. | Deploy Kafka with CruiseControl | Kafka cluster with CruiseControl is deployed |
+| 2. | Deploy Kafka with Cruise Control | Kafka cluster with Cruise Control is deployed |
 | 3. | Take a snapshot of broker pods | Snapshot of the current broker pods is taken |
 | 4. | Remove CruiseControl from Kafka | CruiseControl is removed from Kafka and configuration is updated |
 | 5. | Verify CruiseControl is removed | No CruiseControl related pods or configurations are found |
