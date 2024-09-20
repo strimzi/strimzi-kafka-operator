@@ -9,16 +9,7 @@ KIND_VERSION=${KIND_VERSION:-"v0.23.0"}
 KIND_NODE_IMAGE=${KIND_NODE_IMAGE:-"kindest/node:v1.25.16@sha256:5da57dfc290ac3599e775e63b8b6c49c0c85d3fec771cd7d55b45fae14b38d3b"}
 COPY_DOCKER_LOGIN=${COPY_DOCKER_LOGIN:-"false"}
 
-DEFAULT_CLUSTER_MEMORY=$(free -m | grep "Mem" | awk '{print $2}')
-DEFAULT_CLUSTER_CPU=$(awk '$1~/cpu[0-9]/{usage=($2+$4)*100/($2+$4+$5); print $1": "usage"%"}' /proc/stat | wc -l)
-
-CLUSTER_MEMORY=${CLUSTER_MEMORY:-$DEFAULT_CLUSTER_MEMORY}
-CLUSTER_CPU=${CLUSTER_CPU:-$DEFAULT_CLUSTER_CPU}
-
 KIND_CLUSTER_NAME="kind-cluster"
-
-echo "[INFO] CLUSTER_MEMORY: ${CLUSTER_MEMORY}"
-echo "[INFO] CLUSTER_CPU: ${CLUSTER_CPU}"
 
 # note that IPv6 is only supported on kind (i.e., minikube does not support it). Also we assume that when you set this flag
 # to true then you meet requirements (i.) net.ipv6.conf.all.disable_ipv6 = 0 (ii. you have installed CNI supporting IPv6)
