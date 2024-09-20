@@ -78,7 +78,7 @@
 
 ## testCruiseControlIntraBrokerBalancing
 
-**Description:** Test ensuring the intra-broker disk balancing with Cruise Control works as expected.
+**Description:** Test to check the intra-broker disk balancing with Cruise Control works as expected.
 
 **Steps:**
 
