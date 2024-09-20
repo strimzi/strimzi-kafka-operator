@@ -158,18 +158,6 @@ public class CruiseControlST extends AbstractST {
     }
 
     @IsolatedTest
-    @TestDoc(
-        description = @Desc("Test the Cruise Control functionality when API security is disabled."),
-        steps = {
-            @Step(value = "Create broker and controller KafkaNodePools", expected = "Both KafkaNodePools are successfully created"),
-            @Step(value = "Create a Kafka cluster with Cruise Control having API security disabled", expected = "Kafka cluster with Cruise Control and no API security is deployed"),
-            @Step(value = "Create a Kafka Rebalance resource", expected = "Kafka Rebalance resource is successfully created"),
-            @Step(value = "Wait for the Kafka Rebalance custom resource state to become ProposalReady", expected = "Kafka Rebalance custom resource state is ProposalReady")
-        },
-        labels = {
-            @Label(value = "cruise-control"),
-        }
-    )
     void testCruiseControlWithApiSecurityDisabled() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 

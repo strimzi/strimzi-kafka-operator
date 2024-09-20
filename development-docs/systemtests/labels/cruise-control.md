@@ -20,6 +20,5 @@ Ensuring the correctness of Cruise Control behavior under different configuratio
 - [testCruiseControlIntraBrokerBalancing](../io.strimzi.systemtest.cruisecontrol.CruiseControlST.md)
 - [testDeployAndUnDeployCruiseControl](../io.strimzi.systemtest.cruisecontrol.CruiseControlConfigurationST.md)
 - [testCruiseControlReplicaMovementStrategy](../io.strimzi.systemtest.cruisecontrol.CruiseControlST.md)
-- [testCruiseControlWithApiSecurityDisabled](../io.strimzi.systemtest.cruisecontrol.CruiseControlST.md)
 - [testCruiseControlBasicAPIRequestsWithSecurityDisabled](../io.strimzi.systemtest.cruisecontrol.CruiseControlApiST.md)
 - [testCruiseControlTopicExclusion](../io.strimzi.systemtest.cruisecontrol.CruiseControlST.md)

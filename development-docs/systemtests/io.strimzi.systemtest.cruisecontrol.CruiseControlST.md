@@ -139,24 +139,6 @@
 * [cruise-control](labels/cruise-control.md)
 
 
-## testCruiseControlWithApiSecurityDisabled
-
-**Description:** Test the Cruise Control functionality when API security is disabled.
-
-**Steps:**
-
-| Step | Action | Result |
-| - | - | - |
-| 1. | Create broker and controller KafkaNodePools | Both KafkaNodePools are successfully created |
-| 2. | Create a Kafka cluster with Cruise Control having API security disabled | Kafka cluster with Cruise Control and no API security is deployed |
-| 3. | Create a Kafka Rebalance resource | Kafka Rebalance resource is successfully created |
-| 4. | Wait for the Kafka Rebalance custom resource state to become ProposalReady | Kafka Rebalance custom resource state is ProposalReady |
-
-**Labels:**
-
-* [cruise-control](labels/cruise-control.md)
-
-
 ## testCruiseControlWithRebalanceResourceAndRefreshAnnotation
 
 **Description:** Using Kafka cluster within a single namespace to test Cruise Control with rebalance resource and refresh annotation.
