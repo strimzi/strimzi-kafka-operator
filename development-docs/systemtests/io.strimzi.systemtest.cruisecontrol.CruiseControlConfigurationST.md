@@ -1,6 +1,6 @@
 # CruiseControlConfigurationST
 
-**Description:** This test suite, verify configuration of the CruiseControl component.
+**Description:** This test suite verifies configuration of the Cruise Control component.
 
 **Before tests execution steps:**
 
