@@ -77,18 +77,17 @@ function add_docker_hub_credentials_to_kubernetes {
     # Add Docker hub credentials to Minikube
     if [ "$COPY_DOCKER_LOGIN" = "true" ]
     then
-      set +ex
-
       for node in $(kind get nodes --name "${KIND_CLUSTER_NAME}"); do
-        # the -oname format is kind/name (so node/name) we just want name
-        node_name=${node#node/}
-        # copy the config to where kubelet will look
-        docker cp "$HOME/.docker/config.json" "${node_name}:/var/lib/kubelet/config.json"
-        # restart kubelet to pick up the config
-        docker exec "${node_name}" systemctl restart kubelet.service
+        if [[ "$node" != *"external-load-balancer"* ]];
+        then
+          # the -oname format is kind/name (so node/name) we just want name
+          node_name=${node#node/}
+          # copy the config to where kubelet will look
+          docker cp "$HOME/.docker/config.json" "${node_name}:/var/lib/kubelet/config.json"
+          # restart kubelet to pick up the config
+          docker exec "${node_name}" systemctl restart kubelet.service
+        fi
       done
-
-      set -ex
     fi
 }
 
