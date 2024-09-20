@@ -517,13 +517,13 @@ public class CruiseControlST extends AbstractST {
         description = @Desc("Testing the behavior of Cruise Control during both scaling up and down of Kafka brokers using node pools."),
         steps = {
             @Step(value = "Create broker and controller KafkaNodePools", expected = "Both KafkaNodePools are successfully created"),
-            @Step(value = "Create initial Kafka cluster setup with Cruise Control and topic", expected = "Kafka cluster, topic, and scraper pod are created successfully."),
-            @Step(value = "Scale Kafka up to a higher number of brokers", expected = "Kafka brokers are scaled up to the specified number of replicas."),
-            @Step(value = "Create a KafkaRebalance resource with add_brokers mode", expected = "KafkaRebalance proposal is ready and processed for adding brokers."),
-            @Step(value = "Check the topic's replicas on the new brokers", expected = "Topic has replicas on one of the newly added brokers."),
-            @Step(value = "Create a KafkaRebalance resource with remove_brokers mode", expected = "KafkaRebalance proposal is ready and processed for removing brokers."),
-            @Step(value = "Check the topic's replicas only on initial brokers", expected = "Topic replicas are only on the initial set of brokers."),
-            @Step(value = "Scale Kafka down to the initial number of brokers", expected = "Kafka brokers are scaled down to the original number of replicas.")
+            @Step(value = "Create initial Kafka cluster setup with Cruise Control and topic", expected = "Kafka cluster, topic, and scraper pod are created successfully"),
+            @Step(value = "Scale Kafka up to a higher number of brokers", expected = "Kafka brokers are scaled up to the specified number of replicas"),
+            @Step(value = "Create a KafkaRebalance resource with add_brokers mode", expected = "KafkaRebalance proposal is ready and processed for adding brokers"),
+            @Step(value = "Check the topic's replicas on the new brokers", expected = "Topic has replicas on one of the newly added brokers"),
+            @Step(value = "Create a KafkaRebalance resource with remove_brokers mode", expected = "KafkaRebalance proposal is ready and processed for removing brokers"),
+            @Step(value = "Check the topic's replicas only on initial brokers", expected = "Topic replicas are only on the initial set of brokers"),
+            @Step(value = "Scale Kafka down to the initial number of brokers", expected = "Kafka brokers are scaled down to the original number of replicas")
         },
         labels = {
             @Label(value = "cruise-control"),
@@ -620,9 +620,9 @@ public class CruiseControlST extends AbstractST {
         description = @Desc("Test the Kafka Rebalance auto-approval mechanism."),
         steps = {
             @Step(value = "Create broker and controller KafkaNodePools", expected = "Both KafkaNodePools are successfully created"),
-            @Step(value = "Deploy Kafka cluster with Cruise Control.", expected = "Kafka cluster with Cruise Control is deployed."),
-            @Step(value = "Create KafkaRebalance resource with auto-approval enabled.", expected = "KafkaRebalance resource with auto-approval is created."),
-            @Step(value = "Perform re-balancing process with auto-approval.", expected = "Re-balancing process completes successfully with auto-approval.")
+            @Step(value = "Deploy Kafka cluster with Cruise Control", expected = "Kafka cluster with Cruise Control is deployed"),
+            @Step(value = "Create KafkaRebalance resource with auto-approval enabled", expected = "KafkaRebalance resource with auto-approval is created"),
+            @Step(value = "Perform re-balancing process with auto-approval", expected = "Re-balancing process completes successfully with auto-approval")
         },
         labels = {
             @Label(value = "cruise-control"),

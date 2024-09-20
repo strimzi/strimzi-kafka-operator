@@ -63,13 +63,13 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Create broker and controller KafkaNodePools | Both KafkaNodePools are successfully created |
-| 2. | Create initial Kafka cluster setup with Cruise Control and topic | Kafka cluster, topic, and scraper pod are created successfully. |
-| 3. | Scale Kafka up to a higher number of brokers | Kafka brokers are scaled up to the specified number of replicas. |
-| 4. | Create a KafkaRebalance resource with add_brokers mode | KafkaRebalance proposal is ready and processed for adding brokers. |
-| 5. | Check the topic's replicas on the new brokers | Topic has replicas on one of the newly added brokers. |
-| 6. | Create a KafkaRebalance resource with remove_brokers mode | KafkaRebalance proposal is ready and processed for removing brokers. |
-| 7. | Check the topic's replicas only on initial brokers | Topic replicas are only on the initial set of brokers. |
-| 8. | Scale Kafka down to the initial number of brokers | Kafka brokers are scaled down to the original number of replicas. |
+| 2. | Create initial Kafka cluster setup with Cruise Control and topic | Kafka cluster, topic, and scraper pod are created successfully |
+| 3. | Scale Kafka up to a higher number of brokers | Kafka brokers are scaled up to the specified number of replicas |
+| 4. | Create a KafkaRebalance resource with add_brokers mode | KafkaRebalance proposal is ready and processed for adding brokers |
+| 5. | Check the topic's replicas on the new brokers | Topic has replicas on one of the newly added brokers |
+| 6. | Create a KafkaRebalance resource with remove_brokers mode | KafkaRebalance proposal is ready and processed for removing brokers |
+| 7. | Check the topic's replicas only on initial brokers | Topic replicas are only on the initial set of brokers |
+| 8. | Scale Kafka down to the initial number of brokers | Kafka brokers are scaled down to the original number of replicas |
 
 **Labels:**
 
@@ -208,9 +208,9 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Create broker and controller KafkaNodePools | Both KafkaNodePools are successfully created |
-| 2. | Deploy Kafka cluster with Cruise Control. | Kafka cluster with Cruise Control is deployed. |
-| 3. | Create KafkaRebalance resource with auto-approval enabled. | KafkaRebalance resource with auto-approval is created. |
-| 4. | Perform re-balancing process with auto-approval. | Re-balancing process completes successfully with auto-approval. |
+| 2. | Deploy Kafka cluster with Cruise Control | Kafka cluster with Cruise Control is deployed |
+| 3. | Create KafkaRebalance resource with auto-approval enabled | KafkaRebalance resource with auto-approval is created |
+| 4. | Perform re-balancing process with auto-approval | Re-balancing process completes successfully with auto-approval |
 
 **Labels:**
 
