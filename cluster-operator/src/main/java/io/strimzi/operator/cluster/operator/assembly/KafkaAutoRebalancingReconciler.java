@@ -84,12 +84,6 @@ public class KafkaAutoRebalancingReconciler {
      * @return  Future which completes when the reconciliation completes
      */
     public Future<Void> reconcile(KafkaStatus kafkaStatus) {
-        // Cruise Control is not defined in the Kafka custom resource or no autorebalance enabled, so nothing to reconcile
-        if (kafkaCr.getSpec().getCruiseControl() == null || kafkaCr.getSpec().getCruiseControl().getAutoRebalance() == null) {
-            LOGGER.infoCr(reconciliation, "Cruise Control or inner autorebalance field not defined in the Kafka custom resource, no auto-rebalancing to reconcile");
-            return Future.succeededFuture();
-        }
-
         KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus = kafkaCr.getStatus() != null ? kafkaCr.getStatus().getAutoRebalance() : null;
 
         if (kafkaAutoRebalanceStatus != null) {

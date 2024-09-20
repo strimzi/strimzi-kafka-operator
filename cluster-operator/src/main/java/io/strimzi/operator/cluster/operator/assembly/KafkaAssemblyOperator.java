@@ -280,7 +280,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.reconcileEntityOperator(clock))
                 .compose(state -> state.reconcileCruiseControl(clock))
                 .compose(state -> state.reconcileKafkaExporter(clock))
-                .compose(state -> state.reconcileKafkaAutoRebalancing())
+                .compose(state -> reconcileState.isAutoRebalancingEnabled() ? state.reconcileKafkaAutoRebalancing() : Future.succeededFuture(state))
 
                 // Finish the reconciliation
                 .map((Void) null)
@@ -850,6 +850,18 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return entityOperatorReconciler()
                     .reconcile(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, clock)
                     .map(this);
+        }
+
+        /**
+         * @return true if the autorebalance is enabled within the Cruise Control configuration, false otherwise
+         */
+        boolean isAutoRebalancingEnabled() {
+            // Cruise Control is not defined in the Kafka custom resource or no autorebalance enabled, so nothing to reconcile
+            if (kafkaAssembly.getSpec().getCruiseControl() == null || kafkaAssembly.getSpec().getCruiseControl().getAutoRebalance() == null) {
+                LOGGER.debugCr(reconciliation, "Cruise Control or inner autorebalance field not defined in the Kafka custom resource, no auto-rebalancing to reconcile");
+                return false;
+            }
+            return true;
         }
     }
 

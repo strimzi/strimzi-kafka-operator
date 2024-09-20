@@ -2041,7 +2041,7 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 [id='type-LocalObjectReference-{context}']
 = `LocalObjectReference` schema reference
 
-Used in: xref:type-KafkaAutoRebalanceConfiguration-{context}[`KafkaAutoRebalanceConfiguration`]
+Used in: xref:type-AlterOffsets-{context}[`AlterOffsets`], xref:type-KafkaAutoRebalanceConfiguration-{context}[`KafkaAutoRebalanceConfiguration`], xref:type-ListOffsets-{context}[`ListOffsets`]
 
 
 [cols="2,2,3a",options="header"]
@@ -4139,20 +4139,6 @@ Used in: xref:type-KafkaConnectorSpec-{context}[`KafkaConnectorSpec`], xref:type
 |toConfigMap
 |xref:type-LocalObjectReference-{context}[`LocalObjectReference`]
 |Reference to the ConfigMap where the list of offsets will be written to.
-|====
-
-[id='type-LocalObjectReference-{context}']
-= `LocalObjectReference` schema reference
-
-Used in: xref:type-AlterOffsets-{context}[`AlterOffsets`], xref:type-ListOffsets-{context}[`ListOffsets`]
-
-
-[cols="2,2,3a",options="header"]
-|====
-|Property |Property type |Description
-|name
-|string
-|
 |====
 
 [id='type-AlterOffsets-{context}']
