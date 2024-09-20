@@ -37,7 +37,7 @@
 
 ## testDeployAndUnDeployCruiseControl
 
-**Description:** Deploy and subsequently remove CruiseControl from Kafka cluster to verify system stability and correctness of configuration management.
+**Description:** Deploy and subsequently remove Cruise Control from Kafka cluster to verify system stability and correctness of configuration management.
 
 **Steps:**
 
