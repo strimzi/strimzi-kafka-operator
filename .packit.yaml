@@ -202,9 +202,6 @@ jobs:
     labels:
       - capacity
     tf_extra_params:
-      settings:
-        pipeline:
-          timeout: 1440
       test:
         tmt:
           name: capacity
@@ -308,9 +305,6 @@ jobs:
       - performance
       - performance-common
     tf_extra_params:
-      settings:
-        pipeline:
-          timeout: 1440
       test:
         tmt:
           name: performance
