@@ -79,7 +79,14 @@ function add_docker_hub_credentials_to_kubernetes {
     then
       set +ex
 
-      docker exec $1 bash -c "echo '$(cat $HOME/.docker/config.json)'| tee -a /var/lib/kubelet/config.json > /dev/null && systemctl restart kubelet"
+      for node in $(kind get nodes --name "${KIND_CLUSTER_NAME}"); do
+        # the -oname format is kind/name (so node/name) we just want name
+        node_name=${node#node/}
+        # copy the config to where kubelet will look
+        docker cp "$HOME/.docker/config.json" "${node_name}:/var/lib/kubelet/config.json"
+        # restart kubelet to pick up the config
+        docker exec "${node_name}" systemctl restart kubelet.service
+      done
 
       set -ex
     fi
@@ -251,7 +258,7 @@ if [ "$(docker inspect -f='{{json .NetworkSettings.Networks.kind}}' "${reg_name}
   docker network connect "kind" "${reg_name}"
 fi
 
-add_docker_hub_credentials_to_kubernetes "${KIND_CLUSTER_NAME}-control-plane"
+add_docker_hub_credentials_to_kubernetes
 
 create_cluster_role_binding_admin
 label_node
