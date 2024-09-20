@@ -35,7 +35,7 @@
 
 ## testCruiseControlChangesFromRebalancingtoProposalReadyWhenSpecUpdated
 
-**Description:** Test that ensures Cruise Control transitions from Rebalancing to ProposalReady state when the KafkaRebalance spec is updated.
+**Description:** Test  to check Cruise Control transitions from Rebalancing to ProposalReady state when the KafkaRebalance spec is updated.
 
 **Steps:**
 
