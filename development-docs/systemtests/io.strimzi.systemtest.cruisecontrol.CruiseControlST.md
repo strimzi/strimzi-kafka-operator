@@ -141,7 +141,7 @@
 
 ## testCruiseControlWithApiSecurityDisabled
 
-**Description:** Test the Cruise Control functionality when API security is disabled.
+**Description:** Test that Cruise Control works when API security is disabled.
 
 **Steps:**
 
