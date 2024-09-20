@@ -133,7 +133,8 @@ which is `9095` in the following example.
 You must specify the hostname used by the bootstrap service using xref:type-GenericKafkaListenerConfigurationBootstrap-reference[`GenericKafkaListenerConfigurationBootstrap`] property.
 And you must also specify the hostnames used by the per-broker services
 using xref:type-GenericKafkaListenerConfigurationBroker-reference[`GenericKafkaListenerConfigurationBroker`]
-and xref:type-GenericKafkaListenerConfiguration-reference[`hostTemplate`] properties.
+or xref:type-GenericKafkaListenerConfiguration-reference[`hostTemplate`] properties.
+With the `hostTemplate` property, you don't need to specify the configuration for every broker.
 +
 .Example `ingress` listener configuration
 [source,yaml,subs="+attributes"]

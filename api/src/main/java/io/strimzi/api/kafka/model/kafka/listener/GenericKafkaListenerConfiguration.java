@@ -259,7 +259,7 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
         this.publishNotReadyAddresses = publishNotReadyAddresses;
     }
 
-    @Description("Configures the template for generating the host names of the individual brokers. " +
+    @Description("Configures the template for generating the hostnames of the individual brokers. " +
             "Valid placeholders that you can use in the template are `{nodeId}` and `{nodePodName}`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getHostTemplate() {
@@ -270,7 +270,7 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
         this.hostTemplate = hostTemplate;
     }
 
-    @Description("Configures the template for generating the advertisedHost names of the individual brokers. " +
+    @Description("Configures the template for generating the advertised hostnames of the individual brokers. " +
             "Valid placeholders that you can use in the template are `{nodeId}` and `{nodePodName}`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getAdvertisedHostTemplate() {

@@ -642,21 +642,21 @@ public class ListenersValidatorTest {
                 .withTls(true)
                 .build();
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a configuration with host names which is required for Ingress based listeners"));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a configuration with host properties which are required for Ingress based listeners"));
 
         listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
                 .withBrokers((List<GenericKafkaListenerConfigurationBroker>) null)
                 .build());
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a bootstrap host name which is required for Ingress based listeners",
-                "listener ingress is missing a broker configuration with host names which is required for Ingress based listeners"));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a bootstrap host property which is required for Ingress based listeners",
+                "listener ingress is missing a broker configuration with host properties which are required for Ingress based listeners"));
 
         listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
                         .withHostTemplate("my-host-{nodeIf}")
                         .withBrokers((List<GenericKafkaListenerConfigurationBroker>) null)
                         .build());
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a bootstrap host name which is required for Ingress based listeners"));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a bootstrap host property which is required for Ingress based listeners"));
 
         listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
                 .withBootstrap(new GenericKafkaListenerConfigurationBootstrapBuilder()
@@ -669,9 +669,9 @@ public class ListenersValidatorTest {
                                 .build())
                 .build());
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a bootstrap host name which is required for Ingress based listeners",
-                "listener ingress is missing a broker host name for broker with ID 0 which is required for Ingress based listeners",
-                "listener ingress is missing a broker host name for broker with ID 1 which is required for Ingress based listeners"));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a bootstrap host property which is required for Ingress based listeners",
+                "listener ingress is missing a broker host property for broker with ID 0 which is required for Ingress based listeners",
+                "listener ingress is missing a broker host property for broker with ID 1 which is required for Ingress based listeners"));
 
         listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
                 .withBootstrap(new GenericKafkaListenerConfigurationBootstrapBuilder()
@@ -683,7 +683,7 @@ public class ListenersValidatorTest {
                                 .build())
                 .build());
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a broker host name for broker with ID 0 which is required for Ingress based listeners"));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a broker host property for broker with ID 0 which is required for Ingress based listeners"));
 
         // Valid configurations
         listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
@@ -735,14 +735,14 @@ public class ListenersValidatorTest {
                 .withTls(true)
                 .build();
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, NODE_POOL_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a configuration with host names which is required for Ingress based listeners"));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, NODE_POOL_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a configuration with host properties which are required for Ingress based listeners"));
 
         listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
                 .withBrokers((List<GenericKafkaListenerConfigurationBroker>) null)
                 .build());
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, NODE_POOL_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a bootstrap host name which is required for Ingress based listeners",
-                "listener ingress is missing a broker configuration with host names which is required for Ingress based listeners"));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, NODE_POOL_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a bootstrap host property which is required for Ingress based listeners",
+                "listener ingress is missing a broker configuration with host properties which are required for Ingress based listeners"));
 
         listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
                 .withBootstrap(new GenericKafkaListenerConfigurationBootstrapBuilder()
@@ -758,10 +758,10 @@ public class ListenersValidatorTest {
                                 .build())
                 .build());
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, NODE_POOL_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a bootstrap host name which is required for Ingress based listeners",
-                "listener ingress is missing a broker host name for broker with ID 1000 which is required for Ingress based listeners",
-                "listener ingress is missing a broker host name for broker with ID 2000 which is required for Ingress based listeners",
-                "listener ingress is missing a broker host name for broker with ID 2001 which is required for Ingress based listeners"));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, NODE_POOL_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a bootstrap host property which is required for Ingress based listeners",
+                "listener ingress is missing a broker host property for broker with ID 1000 which is required for Ingress based listeners",
+                "listener ingress is missing a broker host property for broker with ID 2000 which is required for Ingress based listeners",
+                "listener ingress is missing a broker host property for broker with ID 2001 which is required for Ingress based listeners"));
 
         listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
                 .withBootstrap(new GenericKafkaListenerConfigurationBootstrapBuilder()
@@ -777,7 +777,7 @@ public class ListenersValidatorTest {
                                 .build())
                 .build());
 
-        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, NODE_POOL_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a broker host name for broker with ID 2000 which is required for Ingress based listeners"));
+        assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, NODE_POOL_NODES, List.of(listener)), containsInAnyOrder("listener ingress is missing a broker host property for broker with ID 2000 which is required for Ingress based listeners"));
 
         listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
                 .withBootstrap(new GenericKafkaListenerConfigurationBootstrapBuilder()

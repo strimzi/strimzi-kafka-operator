@@ -170,7 +170,7 @@ public class ListenersValidator {
 
             if (conf.getBootstrap() == null
                     || conf.getBootstrap().getHost() == null)   {
-                errors.add("listener " + listener.getName() + " is missing a bootstrap host name which is required for Ingress based listeners");
+                errors.add("listener " + listener.getName() + " is missing a bootstrap host property which is required for Ingress based listeners");
             }
 
             if (conf.getHostTemplate() != null) {
@@ -180,14 +180,14 @@ public class ListenersValidator {
                     GenericKafkaListenerConfigurationBroker broker = conf.getBrokers().stream().filter(b -> b.getBroker() == node.nodeId()).findFirst().orElse(null);
 
                     if (broker == null || broker.getHost() == null) {
-                        errors.add("listener " + listener.getName() + " is missing a broker host name for broker with ID " + node.nodeId() + " which is required for Ingress based listeners");
+                        errors.add("listener " + listener.getName() + " is missing a broker host property for broker with ID " + node.nodeId() + " which is required for Ingress based listeners");
                     }
                 }
             } else {
-                errors.add("listener " + listener.getName() + " is missing a broker configuration with host names which is required for Ingress based listeners");
+                errors.add("listener " + listener.getName() + " is missing a broker configuration with host properties which are required for Ingress based listeners");
             }
         } else {
-            errors.add("listener " + listener.getName() + " is missing a configuration with host names which is required for Ingress based listeners");
+            errors.add("listener " + listener.getName() + " is missing a configuration with host properties which are required for Ingress based listeners");
         }
     }
 
