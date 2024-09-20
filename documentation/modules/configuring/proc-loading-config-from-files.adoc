@@ -74,7 +74,7 @@ spec:
         - name: cluster-ca-volume
           secret:
             secretName: my-cluster-cluster-ca-cert
-    kafkaContainer:
+    connectContainer:
       volumeMounts:
         - name: my-user-volume # <5>
           mountPath: /mnt/my-user # <6>
