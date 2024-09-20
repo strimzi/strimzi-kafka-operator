@@ -6,7 +6,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Cluster Operator with default installation | Cluster Operator is deployed and running |
+| 1. | Deploy cluster operator with default installation | Cluster operator is deployed and running |
 
 **Labels:**
 
@@ -22,7 +22,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create broker and controller KafkaNodePools. | Both KafkaNodePools are successfully created |
+| 1. | Create broker and controller KafkaNodePools | Both KafkaNodePools are successfully created |
 | 2. | Set up Kafka brokers and Cruise Control with necessary configurations | Resources are created with the desired configurations |
 | 3. | Validate Cruise Control pod's memory resource limits and JVM options | Memory limits and JVM options are correctly set on the Cruise Control pod |
 | 4. | Create a Kafka topic and an AdminClient | Kafka topic and AdminClient are successfully created |
@@ -35,13 +35,13 @@
 
 ## testCruiseControlChangesFromRebalancingtoProposalReadyWhenSpecUpdated
 
-**Description:** Test  to check Cruise Control transitions from Rebalancing to ProposalReady state when the KafkaRebalance spec is updated.
+**Description:** Test that ensures Cruise Control transitions from Rebalancing to ProposalReady state when the KafkaRebalance spec is updated.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create broker and controller KafkaNodePools. | Both KafkaNodePools are successfully created |
+| 1. | Create broker and controller KafkaNodePools | Both KafkaNodePools are successfully created |
 | 2. | Create Kafka cluster with Cruise Control | Kafka cluster with Cruise Control is created and running |
 | 3. | Create KafkaRebalance resource | KafkaRebalance resource is created and running |
 | 4. | Wait until KafkaRebalance is in ProposalReady state | KafkaRebalance reaches ProposalReady state |
@@ -62,7 +62,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create broker and controller KafkaNodePools. | Both KafkaNodePools are successfully created |
+| 1. | Create broker and controller KafkaNodePools | Both KafkaNodePools are successfully created |
 | 2. | Create initial Kafka cluster setup with Cruise Control and topic | Kafka cluster, topic, and scraper pod are created successfully. |
 | 3. | Scale Kafka up to a higher number of brokers | Kafka brokers are scaled up to the specified number of replicas. |
 | 4. | Create a KafkaRebalance resource with add_brokers mode | KafkaRebalance proposal is ready and processed for adding brokers. |
@@ -78,7 +78,7 @@
 
 ## testCruiseControlIntraBrokerBalancing
 
-**Description:** Test to check the intra-broker disk balancing with Cruise Control works as expected.
+**Description:** Test ensuring the intra-broker disk balancing with Cruise Control works as expected.
 
 **Steps:**
 
@@ -88,7 +88,7 @@
 | 2. | Create Kafka broker and controller pools using the initialized storage | Kafka broker and controller pools are created and available |
 | 3. | Deploy Kafka with Cruise Control enabled | Kafka deployment with Cruise Control is successfully created |
 | 4. | Create Kafka Rebalance resource with disk rebalancing configured | Kafka Rebalance resource is created and configured for disk balancing |
-| 5. | Wait for the Kafka Rebalance to reach the 'ProposalReady' state | Kafka Rebalance resource reaches the 'ProposalReady' state |
+| 5. | Wait for the Kafka Rebalance to reach the ProposalReady state | Kafka Rebalance resource reaches the ProposalReady state |
 | 6. | Check the status of the Kafka Rebalance for intra-broker disk balancing | The 'provisionStatus' in the optimization result is 'UNDECIDED' |
 
 **Labels:**
@@ -104,7 +104,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create broker and controller KafkaNodePools. | Both KafkaNodePools are successfully created |
+| 1. | Create broker and controller KafkaNodePools | Both KafkaNodePools are successfully created |
 | 2. | Create Kafka and Cruise Control resources | Kafka and Cruise Control resources are created and deployed |
 | 3. | Verify default Cruise Control replica movement strategy | Default replica movement strategy is verified in the configuration |
 | 4. | Update Cruise Control configuration with non-default replica movement strategies | Cruise Control configuration is updated with new strategies |
@@ -125,7 +125,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Set topic names | Topic names are set |
-| 2. | Create broker and controller KafkaNodePools. | Both KafkaNodePools are successfully created |
+| 2. | Create broker and controller KafkaNodePools | Both KafkaNodePools are successfully created |
 | 3. | Deploy Kafka with Cruise Control enabled | Kafka cluster with Cruise Control is deployed |
 | 4. | Create topics to be excluded and included | Topics 'excluded-topic-1', 'excluded-topic-2', and 'included-topic' are created |
 | 5. | Create KafkaRebalance resource excluding specific topics | KafkaRebalance resource is created with 'excluded-.*' topics pattern |
@@ -141,13 +141,13 @@
 
 ## testCruiseControlWithApiSecurityDisabled
 
-**Description:** Test that Cruise Control works when API security is disabled.
+**Description:** Test the Cruise Control functionality when API security is disabled.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create broker and controller KafkaNodePools. | Both KafkaNodePools are successfully created |
+| 1. | Create broker and controller KafkaNodePools | Both KafkaNodePools are successfully created |
 | 2. | Create a Kafka cluster with Cruise Control having API security disabled | Kafka cluster with Cruise Control and no API security is deployed |
 | 3. | Create a Kafka Rebalance resource | Kafka Rebalance resource is successfully created |
 | 4. | Wait for the Kafka Rebalance custom resource state to become ProposalReady | Kafka Rebalance custom resource state is ProposalReady |
@@ -165,7 +165,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create broker and controller KafkaNodePools. | Both KafkaNodePools are successfully created |
+| 1. | Create broker and controller KafkaNodePools | Both KafkaNodePools are successfully created |
 | 2. | Create Kafka cluster | Kafka cluster with ephemeral storage is created and available |
 | 3. | Deploy Kafka Rebalance resource | Kafka Rebalance resource is deployed and in NotReady state |
 | 4. | Enable Cruise Control with tuned spec | Cruise Control is enabled and configured |
@@ -181,14 +181,14 @@
 
 ## testCruiseControlWithSingleNodeKafka
 
-**Description:** Test verifying that Cruise Control cannot be deployed with a Kafka cluster that has only one broker and ensure that increasing the broker count resolves the configuration error.
+**Description:** Test verifying that Cruise Control cannot be deployed with a Kafka cluster that has only one broker and ensuring that increasing the broker count resolves the configuration error.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
 | 1. | Set up the error message | Error message is set |
-| 2. | Create broker and controller KafkaNodePools. | Both KafkaNodePools are successfully created |
+| 2. | Create broker and controller KafkaNodePools | Both KafkaNodePools are successfully created |
 | 3. | Deploy single-node Kafka with Cruise Control | Kafka and Cruise Control deployment initiated |
 | 4. | Verify that the Kafka status contains the error message related to single-node configuration | Error message confirmed in Kafka status |
 | 5. | Increase the Kafka nodes to 3 | Kafka node count increased to 3 |
@@ -207,7 +207,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create broker and controller KafkaNodePools. | Both KafkaNodePools are successfully created |
+| 1. | Create broker and controller KafkaNodePools | Both KafkaNodePools are successfully created |
 | 2. | Deploy Kafka cluster with Cruise Control. | Kafka cluster with Cruise Control is deployed. |
 | 3. | Create KafkaRebalance resource with auto-approval enabled. | KafkaRebalance resource with auto-approval is created. |
 | 4. | Perform re-balancing process with auto-approval. | Re-balancing process completes successfully with auto-approval. |
