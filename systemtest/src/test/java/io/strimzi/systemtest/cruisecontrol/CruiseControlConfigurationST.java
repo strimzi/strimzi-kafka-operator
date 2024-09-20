@@ -73,8 +73,7 @@ public class CruiseControlConfigurationST extends AbstractST {
     @TestDoc(
         description = @Desc("Deploy and subsequently remove CruiseControl from Kafka cluster to verify system stability and correctness of configuration management."),
         steps = {
-            @Step(value = "Initialize the test storage.", expected = "Test storage object is created."),
-            @Step(value = "Create broker and controller node pools", expected = "Node pools are created and configured"),
+            @Step(value = "Create broker and controller KafkaNodePools.", expected = "Both KafkaNodePools are successfully created"),
             @Step(value = "Deploy Kafka with CruiseControl", expected = "Kafka cluster with CruiseControl is deployed"),
             @Step(value = "Take a snapshot of broker pods", expected = "Snapshot of the current broker pods is taken"),
             @Step(value = "Remove CruiseControl from Kafka", expected = "CruiseControl is removed from Kafka and configuration is updated"),
@@ -156,8 +155,7 @@ public class CruiseControlConfigurationST extends AbstractST {
     @TestDoc(
         description = @Desc("Test verifying configuration update for Cruise Control and ensuring Kafka Pods did not roll unnecessarily."),
         steps = {
-            @Step(value = "Initialize the test storage.", expected = "Test storage object is created."),
-            @Step(value = "Create and wait for resources with node pools.", expected = "Resources are created successfully."),
+            @Step(value = "Create broker and controller KafkaNodePools.", expected = "Both KafkaNodePools are successfully created"),
             @Step(value = "Create and wait for Kafka with Cruise Control.", expected = "Kafka and Cruise Control are deployed successfully."),
             @Step(value = "Take initial snapshots of Kafka and Cruise Control deployments.", expected = "Snapshots of current deployments are stored."),
             @Step(value = "Update Cruise Control configuration with new performance tuning options.", expected = "Configuration update initiated."),

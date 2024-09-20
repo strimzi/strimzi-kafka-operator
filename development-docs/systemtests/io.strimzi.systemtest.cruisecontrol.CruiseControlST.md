@@ -1,6 +1,6 @@
 # CruiseControlST
 
-**Description:** Verify the behavior and correct functionality of Cruise Control in various scenarios using Kafka.
+**Description:** This test suite validates the functionality and behavior of Cruise Control across multiple Kafka scenarios. It ensures correct operation under various configurations and conditions.
 
 **Before tests execution steps:**
 
@@ -22,12 +22,11 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create test storage | Test storage is initialized |
-| 2. | Create and wait for resources with node pools. | Resources are created successfully. |
-| 3. | Set up Kafka brokers and Cruise Control with necessary configurations | Resources are created with the desired configurations |
-| 4. | Validate Cruise Control pod's memory resource limits and JVM options | Memory limits and JVM options are correctly set on the Cruise Control pod |
-| 5. | Create a Kafka topic and an AdminClient | Kafka topic and AdminClient are successfully created |
-| 6. | Verify Cruise Control topics are present | Cruise Control topics are found present in the configuration |
+| 1. | Create broker and controller KafkaNodePools. | Both KafkaNodePools are successfully created |
+| 2. | Set up Kafka brokers and Cruise Control with necessary configurations | Resources are created with the desired configurations |
+| 3. | Validate Cruise Control pod's memory resource limits and JVM options | Memory limits and JVM options are correctly set on the Cruise Control pod |
+| 4. | Create a Kafka topic and an AdminClient | Kafka topic and AdminClient are successfully created |
+| 5. | Verify Cruise Control topics are present | Cruise Control topics are found present in the configuration |
 
 **Labels:**
 
@@ -42,14 +41,13 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create test storage instance | TestStorage instance is created |
-| 2. | Create broker and controller node pools | Node pools are successfully created |
-| 3. | Create Kafka cluster with Cruise Control | Kafka cluster with Cruise Control is created and running |
-| 4. | Create KafkaRebalance resource | KafkaRebalance resource is created and running |
-| 5. | Wait until KafkaRebalance is in ProposalReady state | KafkaRebalance reaches ProposalReady state |
-| 6. | Annotate KafkaRebalance with 'approve' | KafkaRebalance is annotated with approval |
-| 7. | Update KafkaRebalance spec to configure replication throttle | KafkaRebalance resource's spec is updated |
-| 8. | Wait until KafkaRebalance returns to ProposalReady state | KafkaRebalance re-enters ProposalReady state following the update |
+| 1. | Create broker and controller KafkaNodePools. | Both KafkaNodePools are successfully created |
+| 2. | Create Kafka cluster with Cruise Control | Kafka cluster with Cruise Control is created and running |
+| 3. | Create KafkaRebalance resource | KafkaRebalance resource is created and running |
+| 4. | Wait until KafkaRebalance is in ProposalReady state | KafkaRebalance reaches ProposalReady state |
+| 5. | Annotate KafkaRebalance with 'approve' | KafkaRebalance is annotated with approval |
+| 6. | Update KafkaRebalance spec to configure replication throttle | KafkaRebalance resource's spec is updated |
+| 7. | Wait until KafkaRebalance returns to ProposalReady state | KafkaRebalance re-enters ProposalReady state following the update |
 
 **Labels:**
 
@@ -64,7 +62,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Initialize test storage | Test storage is set up with relevant settings and Kubernetes namespace. |
+| 1. | Create broker and controller KafkaNodePools. | Both KafkaNodePools are successfully created |
 | 2. | Create initial Kafka cluster setup with Cruise Control and topic | Kafka cluster, topic, and scraper pod are created successfully. |
 | 3. | Scale Kafka up to a higher number of brokers | Kafka brokers are scaled up to the specified number of replicas. |
 | 4. | Create a KafkaRebalance resource with add_brokers mode | KafkaRebalance proposal is ready and processed for adding brokers. |
@@ -86,7 +84,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Initialize the test storage and JBOD storage configuration | Test storage and JBOD storage with specific disk sizes are initialized |
+| 1. | Initialize JBOD storage configuration | JBOD storage with specific disk sizes are initialized |
 | 2. | Create Kafka broker and controller pools using the initialized storage | Kafka broker and controller pools are created and available |
 | 3. | Deploy Kafka with Cruise Control enabled | Kafka deployment with Cruise Control is successfully created |
 | 4. | Create Kafka Rebalance resource with disk rebalancing configured | Kafka Rebalance resource is created and configured for disk balancing |
@@ -106,7 +104,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Initialize TestStorage and relevant resource configurations | TestStorage and Kafka cluster configurations are initialized |
+| 1. | Create broker and controller KafkaNodePools. | Both KafkaNodePools are successfully created |
 | 2. | Create Kafka and Cruise Control resources | Kafka and Cruise Control resources are created and deployed |
 | 3. | Verify default Cruise Control replica movement strategy | Default replica movement strategy is verified in the configuration |
 | 4. | Update Cruise Control configuration with non-default replica movement strategies | Cruise Control configuration is updated with new strategies |
@@ -126,8 +124,8 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Initialize TestStorage and set topic names | TestStorage instance is initialized and topic names are set |
-| 2. | Create resource with Node Pools for Kafka brokers and controllers | Resources for Kafka brokers and controllers are created and ready |
+| 1. | Set topic names | Topic names are set |
+| 2. | Create broker and controller KafkaNodePools. | Both KafkaNodePools are successfully created |
 | 3. | Deploy Kafka with Cruise Control enabled | Kafka cluster with Cruise Control is deployed |
 | 4. | Create topics to be excluded and included | Topics 'excluded-topic-1', 'excluded-topic-2', and 'included-topic' are created |
 | 5. | Create KafkaRebalance resource excluding specific topics | KafkaRebalance resource is created with 'excluded-.*' topics pattern |
@@ -149,11 +147,10 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Initialize test storage and resource manager objects | Test storage and resource manager objects are created |
-| 2. | Create Kafka Node Pools with 3 brokers each | Kafka Node Pools are successfully created and ready |
-| 3. | Create a Kafka cluster with Cruise Control having API security disabled | Kafka cluster with Cruise Control and no API security is deployed |
-| 4. | Create a Kafka Rebalance resource | Kafka Rebalance resource is successfully created |
-| 5. | Wait for the Kafka Rebalance custom resource state to become ProposalReady | Kafka Rebalance custom resource state is ProposalReady |
+| 1. | Create broker and controller KafkaNodePools. | Both KafkaNodePools are successfully created |
+| 2. | Create a Kafka cluster with Cruise Control having API security disabled | Kafka cluster with Cruise Control and no API security is deployed |
+| 3. | Create a Kafka Rebalance resource | Kafka Rebalance resource is successfully created |
+| 4. | Wait for the Kafka Rebalance custom resource state to become ProposalReady | Kafka Rebalance custom resource state is ProposalReady |
 
 **Labels:**
 
@@ -162,21 +159,20 @@
 
 ## testCruiseControlWithRebalanceResourceAndRefreshAnnotation
 
-**Description:** Using multiple Kafka clusters within a single namespace to test Cruise Control with rebalance resource and refresh annotation.
+**Description:** Using Kafka cluster within a single namespace to test Cruise Control with rebalance resource and refresh annotation.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create test storage from the test context | Test storage is initialized |
-| 2. | Create broker and controller node pools | Resources for broker and controller node pools are created and available |
-| 3. | Create Kafka cluster | Kafka cluster with ephemeral storage is created and available |
-| 4. | Deploy Kafka Rebalance resource | Kafka Rebalance resource is deployed and in NotReady state |
-| 5. | Enable Cruise Control with tuned spec | Cruise Control is enabled and configured |
-| 6. | Perform rolling update on broker pods | All broker pods have rolled successfully |
-| 7. | Execute rebalance process | Rebalancing process executed successfully |
-| 8. | Annotate Kafka Rebalance resource with 'refresh' | Kafka Rebalance resource is annotated with 'refresh' and reaches ProposalReady state |
-| 9. | Execute rebalance process again | Rebalancing process re-executed successfully |
+| 1. | Create broker and controller KafkaNodePools. | Both KafkaNodePools are successfully created |
+| 2. | Create Kafka cluster | Kafka cluster with ephemeral storage is created and available |
+| 3. | Deploy Kafka Rebalance resource | Kafka Rebalance resource is deployed and in NotReady state |
+| 4. | Enable Cruise Control with tuned spec | Cruise Control is enabled and configured |
+| 5. | Perform rolling update on broker pods | All broker pods have rolled successfully |
+| 6. | Execute rebalance process | Rebalancing process executed successfully |
+| 7. | Annotate Kafka Rebalance resource with 'refresh' | Kafka Rebalance resource is annotated with 'refresh' and reaches ProposalReady state |
+| 8. | Execute rebalance process again | Rebalancing process re-executed successfully |
 
 **Labels:**
 
@@ -191,8 +187,8 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Initialize test storage and set up the error message | Test storage initialized and error message set |
-| 2. | Create and wait for resources with node pools. | Resources are created successfully. |
+| 1. | Set up the error message | Error message is set |
+| 2. | Create broker and controller KafkaNodePools. | Both KafkaNodePools are successfully created |
 | 3. | Deploy single-node Kafka with Cruise Control | Kafka and Cruise Control deployment initiated |
 | 4. | Verify that the Kafka status contains the error message related to single-node configuration | Error message confirmed in Kafka status |
 | 5. | Increase the Kafka nodes to 3 | Kafka node count increased to 3 |
@@ -211,11 +207,10 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Initialize test storage and resource manager. | Test storage and resource manager initialized. |
-| 2. | Create Kafka broker and controller node pools. | Kafka broker and controller node pools are created. |
-| 3. | Deploy Kafka cluster with Cruise Control. | Kafka cluster with Cruise Control is deployed. |
-| 4. | Create KafkaRebalance resource with auto-approval enabled. | KafkaRebalance resource with auto-approval is created. |
-| 5. | Perform re-balancing process with auto-approval. | Re-balancing process completes successfully with auto-approval. |
+| 1. | Create broker and controller KafkaNodePools. | Both KafkaNodePools are successfully created |
+| 2. | Deploy Kafka cluster with Cruise Control. | Kafka cluster with Cruise Control is deployed. |
+| 3. | Create KafkaRebalance resource with auto-approval enabled. | KafkaRebalance resource with auto-approval is created. |
+| 4. | Perform re-balancing process with auto-approval. | Re-balancing process completes successfully with auto-approval. |
 
 **Labels:**
 
