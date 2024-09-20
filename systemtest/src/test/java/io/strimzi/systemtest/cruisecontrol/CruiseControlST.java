@@ -201,7 +201,7 @@ public class CruiseControlST extends AbstractST {
             @Step(value = "Create broker and controller KafkaNodePools", expected = "Both KafkaNodePools are successfully created"),
             @Step(value = "Create Kafka cluster", expected = "Kafka cluster with ephemeral storage is created and available"),
             @Step(value = "Deploy Kafka Rebalance resource", expected = "Kafka Rebalance resource is deployed and in NotReady state"),
-            @Step(value = "Enable Cruise Control with tuned spec", expected = "Cruise Control is enabled and configured"),
+            @Step(value = "Enable Cruise Control with optimized configuration", expected = "Cruise Control is enabled and configured"),
             @Step(value = "Perform rolling update on broker pods", expected = "All broker pods have rolled successfully"),
             @Step(value = "Execute rebalance process", expected = "Rebalancing process executed successfully"),
             @Step(value = "Annotate Kafka Rebalance resource with 'refresh'", expected = "Kafka Rebalance resource is annotated with 'refresh' and reaches ProposalReady state"),

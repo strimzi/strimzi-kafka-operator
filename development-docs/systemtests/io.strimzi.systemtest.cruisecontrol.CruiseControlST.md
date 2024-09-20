@@ -168,7 +168,7 @@
 | 1. | Create broker and controller KafkaNodePools | Both KafkaNodePools are successfully created |
 | 2. | Create Kafka cluster | Kafka cluster with ephemeral storage is created and available |
 | 3. | Deploy Kafka Rebalance resource | Kafka Rebalance resource is deployed and in NotReady state |
-| 4. | Enable Cruise Control with tuned spec | Cruise Control is enabled and configured |
+| 4. | Enable Cruise Control with optimized configuration | Cruise Control is enabled and configured |
 | 5. | Perform rolling update on broker pods | All broker pods have rolled successfully |
 | 6. | Execute rebalance process | Rebalancing process executed successfully |
 | 7. | Annotate Kafka Rebalance resource with 'refresh' | Kafka Rebalance resource is annotated with 'refresh' and reaches ProposalReady state |
