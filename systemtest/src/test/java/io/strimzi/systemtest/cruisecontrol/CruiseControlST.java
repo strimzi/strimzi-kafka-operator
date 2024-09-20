@@ -97,7 +97,7 @@ public class CruiseControlST extends AbstractST {
     @TestDoc(
         description = @Desc("Test verifying the automatic creation and configuration of Cruise Control topics with resources."),
         steps = {
-            @Step(value = "Create broker and controller KafkaNodePools.", expected = "Both KafkaNodePools are successfully created"),
+            @Step(value = "Create broker and controller KafkaNodePools", expected = "Both KafkaNodePools are successfully created"),
             @Step(value = "Set up Kafka brokers and Cruise Control with necessary configurations", expected = "Resources are created with the desired configurations"),
             @Step(value = "Validate Cruise Control pod's memory resource limits and JVM options", expected = "Memory limits and JVM options are correctly set on the Cruise Control pod"),
             @Step(value = "Create a Kafka topic and an AdminClient", expected = "Kafka topic and AdminClient are successfully created"),
@@ -161,7 +161,7 @@ public class CruiseControlST extends AbstractST {
     @TestDoc(
         description = @Desc("Test the Cruise Control functionality when API security is disabled."),
         steps = {
-            @Step(value = "Create broker and controller KafkaNodePools.", expected = "Both KafkaNodePools are successfully created"),
+            @Step(value = "Create broker and controller KafkaNodePools", expected = "Both KafkaNodePools are successfully created"),
             @Step(value = "Create a Kafka cluster with Cruise Control having API security disabled", expected = "Kafka cluster with Cruise Control and no API security is deployed"),
             @Step(value = "Create a Kafka Rebalance resource", expected = "Kafka Rebalance resource is successfully created"),
             @Step(value = "Wait for the Kafka Rebalance custom resource state to become ProposalReady", expected = "Kafka Rebalance custom resource state is ProposalReady")
@@ -198,7 +198,7 @@ public class CruiseControlST extends AbstractST {
     @TestDoc(
         description = @Desc("Using Kafka cluster within a single namespace to test Cruise Control with rebalance resource and refresh annotation."),
         steps = {
-            @Step(value = "Create broker and controller KafkaNodePools.", expected = "Both KafkaNodePools are successfully created"),
+            @Step(value = "Create broker and controller KafkaNodePools", expected = "Both KafkaNodePools are successfully created"),
             @Step(value = "Create Kafka cluster", expected = "Kafka cluster with ephemeral storage is created and available"),
             @Step(value = "Deploy Kafka Rebalance resource", expected = "Kafka Rebalance resource is deployed and in NotReady state"),
             @Step(value = "Enable Cruise Control with tuned spec", expected = "Cruise Control is enabled and configured"),
@@ -251,7 +251,7 @@ public class CruiseControlST extends AbstractST {
     @TestDoc(
         description = @Desc("Test that ensures Cruise Control transitions from Rebalancing to ProposalReady state when the KafkaRebalance spec is updated."),
         steps = {
-            @Step(value = "Create broker and controller KafkaNodePools.", expected = "Both KafkaNodePools are successfully created"),
+            @Step(value = "Create broker and controller KafkaNodePools", expected = "Both KafkaNodePools are successfully created"),
             @Step(value = "Create Kafka cluster with Cruise Control", expected = "Kafka cluster with Cruise Control is created and running"),
             @Step(value = "Create KafkaRebalance resource", expected = "KafkaRebalance resource is created and running"),
             @Step(value = "Wait until KafkaRebalance is in ProposalReady state", expected = "KafkaRebalance reaches ProposalReady state"),
@@ -293,7 +293,7 @@ public class CruiseControlST extends AbstractST {
         description = @Desc("Test verifying that Cruise Control cannot be deployed with a Kafka cluster that has only one broker and ensuring that increasing the broker count resolves the configuration error."),
         steps = {
             @Step(value = "Set up the error message", expected = "Error message is set"),
-            @Step(value = "Create broker and controller KafkaNodePools.", expected = "Both KafkaNodePools are successfully created"),
+            @Step(value = "Create broker and controller KafkaNodePools", expected = "Both KafkaNodePools are successfully created"),
             @Step(value = "Deploy single-node Kafka with Cruise Control", expected = "Kafka and Cruise Control deployment initiated"),
             @Step(value = "Verify that the Kafka status contains the error message related to single-node configuration", expected = "Error message confirmed in Kafka status"),
             @Step(value = "Increase the Kafka nodes to 3", expected = "Kafka node count increased to 3"),
@@ -346,7 +346,7 @@ public class CruiseControlST extends AbstractST {
         description = @Desc("Verify that Kafka Cruise Control excludes specified topics and includes others."),
         steps = {
             @Step(value = "Set topic names", expected = "Topic names are set"),
-            @Step(value = "Create broker and controller KafkaNodePools.", expected = "Both KafkaNodePools are successfully created"),
+            @Step(value = "Create broker and controller KafkaNodePools", expected = "Both KafkaNodePools are successfully created"),
             @Step(value = "Deploy Kafka with Cruise Control enabled", expected = "Kafka cluster with Cruise Control is deployed"),
             @Step(value = "Create topics to be excluded and included", expected = "Topics 'excluded-topic-1', 'excluded-topic-2', and 'included-topic' are created"),
             @Step(value = "Create KafkaRebalance resource excluding specific topics", expected = "KafkaRebalance resource is created with 'excluded-.*' topics pattern"),
@@ -399,7 +399,7 @@ public class CruiseControlST extends AbstractST {
     @TestDoc(
         description = @Desc("Test that verifies the configuration and application of custom Cruise Control replica movement strategies."),
         steps = {
-            @Step(value = "Create broker and controller KafkaNodePools.", expected = "Both KafkaNodePools are successfully created"),
+            @Step(value = "Create broker and controller KafkaNodePools", expected = "Both KafkaNodePools are successfully created"),
             @Step(value = "Create Kafka and Cruise Control resources", expected = "Kafka and Cruise Control resources are created and deployed"),
             @Step(value = "Verify default Cruise Control replica movement strategy", expected = "Default replica movement strategy is verified in the configuration"),
             @Step(value = "Update Cruise Control configuration with non-default replica movement strategies", expected = "Cruise Control configuration is updated with new strategies"),
@@ -463,7 +463,7 @@ public class CruiseControlST extends AbstractST {
             @Step(value = "Create Kafka broker and controller pools using the initialized storage", expected = "Kafka broker and controller pools are created and available"),
             @Step(value = "Deploy Kafka with Cruise Control enabled", expected = "Kafka deployment with Cruise Control is successfully created"),
             @Step(value = "Create Kafka Rebalance resource with disk rebalancing configured", expected = "Kafka Rebalance resource is created and configured for disk balancing"),
-            @Step(value = "Wait for the Kafka Rebalance to reach the 'ProposalReady' state", expected = "Kafka Rebalance resource reaches the 'ProposalReady' state"),
+            @Step(value = "Wait for the Kafka Rebalance to reach the ProposalReady state", expected = "Kafka Rebalance resource reaches the ProposalReady state"),
             @Step(value = "Check the status of the Kafka Rebalance for intra-broker disk balancing", expected = "The 'provisionStatus' in the optimization result is 'UNDECIDED'")
         },
         labels = {
@@ -516,7 +516,7 @@ public class CruiseControlST extends AbstractST {
     @TestDoc(
         description = @Desc("Testing the behavior of Cruise Control during both scaling up and down of Kafka brokers using node pools."),
         steps = {
-            @Step(value = "Create broker and controller KafkaNodePools.", expected = "Both KafkaNodePools are successfully created"),
+            @Step(value = "Create broker and controller KafkaNodePools", expected = "Both KafkaNodePools are successfully created"),
             @Step(value = "Create initial Kafka cluster setup with Cruise Control and topic", expected = "Kafka cluster, topic, and scraper pod are created successfully."),
             @Step(value = "Scale Kafka up to a higher number of brokers", expected = "Kafka brokers are scaled up to the specified number of replicas."),
             @Step(value = "Create a KafkaRebalance resource with add_brokers mode", expected = "KafkaRebalance proposal is ready and processed for adding brokers."),
@@ -619,7 +619,7 @@ public class CruiseControlST extends AbstractST {
     @TestDoc(
         description = @Desc("Test the Kafka Rebalance auto-approval mechanism."),
         steps = {
-            @Step(value = "Create broker and controller KafkaNodePools.", expected = "Both KafkaNodePools are successfully created"),
+            @Step(value = "Create broker and controller KafkaNodePools", expected = "Both KafkaNodePools are successfully created"),
             @Step(value = "Deploy Kafka cluster with Cruise Control.", expected = "Kafka cluster with Cruise Control is deployed."),
             @Step(value = "Create KafkaRebalance resource with auto-approval enabled.", expected = "KafkaRebalance resource with auto-approval is created."),
             @Step(value = "Perform re-balancing process with auto-approval.", expected = "Re-balancing process completes successfully with auto-approval.")

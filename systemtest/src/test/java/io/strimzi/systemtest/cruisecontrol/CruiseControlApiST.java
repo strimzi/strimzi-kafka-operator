@@ -54,11 +54,11 @@ public class CruiseControlApiST extends AbstractST {
     @TestDoc(
         description = @Desc("Test that verifies Cruise Control's basic API requests function correctly with security features disabled."),
         steps = {
-            @Step(value = "Create broker and controller KafkaNodePools.", expected = "Both KafkaNodePools are successfully created"),
-            @Step(value = "Disable Cruise Control security and SSL in configuration.", expected = "Configuration map is set with security and SSL disabled."),
-            @Step(value = "Create required Kafka and Cruise Control resources with disabled security.", expected = "Kafka and Cruise Control resources are deployed without enabling security."),
-            @Step(value = "Call the Cruise Control state endpoint using HTTP without credentials.", expected = "Cruise Control state response is received with HTTP status code 200."),
-            @Step(value = "Verify the Cruise Control state response.", expected = "Response indicates Cruise Control is RUNNING with NO_TASK_IN_PROGRESS.")
+            @Step(value = "Create broker and controller KafkaNodePools", expected = "Both KafkaNodePools are successfully created"),
+            @Step(value = "Disable Cruise Control security and SSL in configuration", expected = "Configuration map is set with security and SSL disabled"),
+            @Step(value = "Create required Kafka and Cruise Control resources with disabled security", expected = "Kafka and Cruise Control resources are deployed without enabling security"),
+            @Step(value = "Call the Cruise Control state endpoint using HTTP without credentials", expected = "Cruise Control state response is received with HTTP status code 200"),
+            @Step(value = "Verify the Cruise Control state response", expected = "Response indicates Cruise Control is RUNNING with NO_TASK_IN_PROGRESS")
         },
         labels = {
             @Label(value = "cruise-control"),
@@ -99,12 +99,12 @@ public class CruiseControlApiST extends AbstractST {
 
     @ParallelNamespaceTest
     @TestDoc(
-        description = @Desc("This test case verifies the creation and usage of CruiseControl's API users."),
+        description = @Desc("This test case verifies the creation and usage of Cruise Control's API users."),
         steps = {
-            @Step(value = "Create broker and controller KafkaNodePools.", expected = "Both KafkaNodePools are successfully created"),
+            @Step(value = "Create broker and controller KafkaNodePools", expected = "Both KafkaNodePools are successfully created"),
             @Step(value = "Create Secret containing the `arnost: heslo, USER` in the `.key` field", expected = "Secret is correctly created"),
-            @Step(value = "Deploy Kafka with CruiseControl containing configuration for the CC API users, with reference to the Secret (and its `.key` value) created in previous step", expected = "Kafka cluster with CruiseControl are deployed, the CC API users configuration is applied"),
-            @Step(value = "Do request to CruiseControl's API, specifically to `/state` endpoint with `arnost:heslo` user", expected = "Request is successful and response contains information about state of the CruiseControl")
+            @Step(value = "Deploy Kafka with Cruise Control containing configuration for the CC API users, with reference to the Secret (and its `.key` value) created in previous step", expected = "Kafka cluster with Cruise Control are deployed, the CC API users configuration is applied"),
+            @Step(value = "Do request to Cruise Control's API, specifically to `/state` endpoint with `arnost:heslo` user", expected = "Request is successful and response contains information about state of the Cruise Control")
         },
         labels = {
             @Label(value = "cruise-control"),
