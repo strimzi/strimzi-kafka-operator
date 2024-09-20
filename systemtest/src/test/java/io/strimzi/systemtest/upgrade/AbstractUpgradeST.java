@@ -310,9 +310,9 @@ public class AbstractUpgradeST extends AbstractST {
 
         Arrays.stream(Objects.requireNonNull(root.listFiles())).sorted().forEach(f -> {
             if (watchedNsRoleBindingFilePrefixes.stream().anyMatch((rbFilePrefix) -> f.getName().startsWith(rbFilePrefix))) {
-                cmdKubeClient(componentsNamespaceName).replaceContent(TestUtils.changeRoleBindingSubject(f, clusterOperatorNamespaceName));
+                cmdKubeClient(componentsNamespaceName).replaceContent(StUtils.changeRoleBindingSubject(f, clusterOperatorNamespaceName));
             } else if (f.getName().matches(".*RoleBinding.*")) {
-                cmdKubeClient(clusterOperatorNamespaceName).replaceContent(TestUtils.changeRoleBindingSubject(f, clusterOperatorNamespaceName));
+                cmdKubeClient(clusterOperatorNamespaceName).replaceContent(StUtils.changeRoleBindingSubject(f, clusterOperatorNamespaceName));
             } else if (f.getName().matches(".*Deployment.*")) {
                 cmdKubeClient(clusterOperatorNamespaceName).replaceContent(StUtils.changeDeploymentConfiguration(componentsNamespaceName, f, strimziFeatureGatesValue));
             } else {
@@ -345,9 +345,9 @@ public class AbstractUpgradeST extends AbstractST {
             Arrays.stream(Objects.requireNonNull(root.listFiles())).sorted().forEach(f -> {
                 try {
                     if (watchedNsRoleBindingFilePrefixes.stream().anyMatch((rbFilePrefix) -> f.getName().startsWith(rbFilePrefix))) {
-                        cmdKubeClient(componentsNamespaceName).deleteContent(TestUtils.changeRoleBindingSubject(f, clusterOperatorNamespaceName));
+                        cmdKubeClient(componentsNamespaceName).deleteContent(StUtils.changeRoleBindingSubject(f, clusterOperatorNamespaceName));
                     } else if (f.getName().matches(".*RoleBinding.*")) {
-                        cmdKubeClient(clusterOperatorNamespaceName).deleteContent(TestUtils.changeRoleBindingSubject(f, clusterOperatorNamespaceName));
+                        cmdKubeClient(clusterOperatorNamespaceName).deleteContent(StUtils.changeRoleBindingSubject(f, clusterOperatorNamespaceName));
                     } else {
                         cmdKubeClient(clusterOperatorNamespaceName).delete(f);
                     }

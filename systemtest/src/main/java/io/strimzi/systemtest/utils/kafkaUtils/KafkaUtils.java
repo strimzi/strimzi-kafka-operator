@@ -60,7 +60,7 @@ import static io.strimzi.api.kafka.model.kafka.KafkaResources.kafkaComponentName
 import static io.strimzi.api.kafka.model.kafka.KafkaResources.zookeeperComponentName;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
-import static io.strimzi.test.TestUtils.indent;
+import static io.strimzi.systemtest.utils.StUtils.indent;
 import static io.strimzi.test.TestUtils.waitFor;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;

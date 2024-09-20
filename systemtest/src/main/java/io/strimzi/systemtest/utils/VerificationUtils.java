@@ -25,7 +25,6 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
-import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -365,14 +364,14 @@ public class VerificationUtils {
             //Verifying docker image for zookeeper pods
             for (int i = 0; i < controllerPods; i++) {
                 String imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, KafkaResources.zookeeperPodName(clusterName, i), "zookeeper");
-                assertThat("ZooKeeper Pod: " + i + " uses wrong image", imgFromPod, containsString(TestUtils.parseImageMap(imgFromDeplConf.get(TestConstants.KAFKA_IMAGE_MAP)).get(kafkaVersion)));
+                assertThat("ZooKeeper Pod: " + i + " uses wrong image", imgFromPod, containsString(StUtils.parseImageMap(imgFromDeplConf.get(TestConstants.KAFKA_IMAGE_MAP)).get(kafkaVersion)));
             }
         }
 
         //Verifying docker image for kafka pods
         brokerPods.forEach(brokerPod -> {
             String imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, brokerPod, "kafka");
-            assertThat("Kafka Pod: " + brokerPod + " uses wrong image", imgFromPod, containsString(TestUtils.parseImageMap(imgFromDeplConf.get(TestConstants.KAFKA_IMAGE_MAP)).get(kafkaVersion)));
+            assertThat("Kafka Pod: " + brokerPod + " uses wrong image", imgFromPod, containsString(StUtils.parseImageMap(imgFromDeplConf.get(TestConstants.KAFKA_IMAGE_MAP)).get(kafkaVersion)));
 
             if (rackAwareEnabled) {
                 String initContainerImage = PodUtils.getInitContainerImageName(brokerPod);
@@ -415,7 +414,7 @@ public class VerificationUtils {
             connectVersion = Environment.ST_KAFKA_VERSION;
         }
 
-        assertThat(TestUtils.parseImageMap(imgFromDeplConf.get(TestConstants.KAFKA_CONNECT_IMAGE_MAP)).get(connectVersion), is(connectImageName));
+        assertThat(StUtils.parseImageMap(imgFromDeplConf.get(TestConstants.KAFKA_CONNECT_IMAGE_MAP)).get(connectVersion), is(connectImageName));
         LOGGER.info("Docker image name of KafkaConnect verified");
     }
 
@@ -440,7 +439,7 @@ public class VerificationUtils {
             mirrormaker2Version = Environment.ST_KAFKA_VERSION;
         }
 
-        assertThat(TestUtils.parseImageMap(imgFromDeplConf.get(TestConstants.KAFKA_MIRROR_MAKER_2_IMAGE_MAP)).get(mirrormaker2Version), is(mirrormaker2ImageName));
+        assertThat(StUtils.parseImageMap(imgFromDeplConf.get(TestConstants.KAFKA_MIRROR_MAKER_2_IMAGE_MAP)).get(mirrormaker2Version), is(mirrormaker2ImageName));
         LOGGER.info("Docker image name of MM2 verified");
     }
 
