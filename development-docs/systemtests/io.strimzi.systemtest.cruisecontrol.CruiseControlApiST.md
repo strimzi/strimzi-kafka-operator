@@ -25,7 +25,7 @@
 | 1. | Create broker and controller KafkaNodePools. | Both KafkaNodePools are successfully created |
 | 2. | Create Secret containing the `arnost: heslo, USER` in the `.key` field | Secret is correctly created |
 | 3. | Deploy Kafka with Cruise Control containing configuration for the CC API users, with reference to the Secret (and its `.key` value) created in previous step | Kafka cluster with Cruise Control is deployed, the CC API users configuration is applied |
-| 4. | Do request to CruiseControl's API, specifically to `/state` endpoint with `arnost:heslo` user | Request is successful and response contains information about state of the CruiseControl |
+| 4. | Do request to Cruise Control's API, specifically to `/state` endpoint with `arnost:heslo` user| Request is successful and response contains information about state of the Cruise Control |
 
 **Labels:**
 
