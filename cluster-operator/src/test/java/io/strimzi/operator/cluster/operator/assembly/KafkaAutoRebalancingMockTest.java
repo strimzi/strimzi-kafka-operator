@@ -10,8 +10,8 @@ import io.strimzi.api.kafka.model.common.ConditionBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceConfigurationBuilder;
-import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceModeBrokers;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceState;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatusBrokers;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
@@ -1105,7 +1105,7 @@ public class KafkaAutoRebalancingMockTest {
 
     private void assertKafkaAutoRebalanceStatus(Kafka kafka, KafkaAutoRebalanceState state, KafkaRebalanceMode mode, List<Integer> brokers) {
         assertThat(kafka.getStatus().getAutoRebalance().getState(), is(state));
-        Optional<KafkaAutoRebalanceModeBrokers> addModeBrokers = kafka.getStatus().getAutoRebalance().getModes().stream().filter(m -> m.getMode().equals(mode)).findFirst();
+        Optional<KafkaAutoRebalanceStatusBrokers> addModeBrokers = kafka.getStatus().getAutoRebalance().getModes().stream().filter(m -> m.getMode().equals(mode)).findFirst();
         assertThat(addModeBrokers.isPresent(), is(true));
         assertThat(addModeBrokers.get().getBrokers().size(), is(brokers.size()));
         assertThat(addModeBrokers.get().getBrokers().containsAll(brokers), is(true));

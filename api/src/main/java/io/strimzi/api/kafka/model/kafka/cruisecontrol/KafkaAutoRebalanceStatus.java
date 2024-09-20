@@ -32,7 +32,7 @@ public class KafkaAutoRebalanceStatus implements UnknownPropertyPreserving {
 
     private KafkaAutoRebalanceState state;
     private String lastTransitionTime;
-    private List<KafkaAutoRebalanceModeBrokers> modes;
+    private List<KafkaAutoRebalanceStatusBrokers> modes;
     private Map<String, Object> additionalProperties;
 
     @Description("The current state of the auto-rebalancing operation. Possible values are: \n\n" +
@@ -60,11 +60,11 @@ public class KafkaAutoRebalanceStatus implements UnknownPropertyPreserving {
             "For each mode entry, which could be for add-brokers or remove-brokers, it contains either:" +
             "- the brokers' IDs relevant to the current ongoing auto-rebalance, or" +
             "- the brokers' IDs relevant to a queued auto-rebalance (if a previous auto-rebalance is still in progress)")
-    public List<KafkaAutoRebalanceModeBrokers> getModes() {
+    public List<KafkaAutoRebalanceStatusBrokers> getModes() {
         return modes;
     }
 
-    public void setModes(List<KafkaAutoRebalanceModeBrokers> modes) {
+    public void setModes(List<KafkaAutoRebalanceStatusBrokers> modes) {
         this.modes = modes;
     }
 

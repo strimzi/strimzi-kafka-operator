@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Represents a mode related to an auto-rebalancing operation operation in progress or queued,
+ * Represents a mode related to an auto-rebalancing operation in progress or queued,
  * together with the list of brokers' IDs involved in the rebalancing itself
  */
 @Buildable(
@@ -30,7 +30,7 @@ import java.util.Map;
 @JsonPropertyOrder({"mode", "brokers"})
 @EqualsAndHashCode
 @ToString
-public class KafkaAutoRebalanceModeBrokers implements UnknownPropertyPreserving {
+public class KafkaAutoRebalanceStatusBrokers implements UnknownPropertyPreserving {
 
     private KafkaRebalanceMode mode;
     private List<Integer> brokers;

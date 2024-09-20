@@ -342,13 +342,4 @@ public class KafkaPool extends AbstractModel {
     public Set<Integer> usedToBeBrokerNodes() {
         return idAssignment.usedToBeBroker();
     }
-
-    /**
-     * Generates set of Kafka node IDs currently used in the Kafka cluster.
-     *
-     * @return  Set of Kafka node IDs currently used in the Kafka cluster
-     */
-    public Set<Integer> currentNodes() {
-        return idAssignment.current();
-    }
 }

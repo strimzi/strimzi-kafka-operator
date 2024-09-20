@@ -2376,12 +2376,12 @@ Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`]
 |string
 |The timestamp of the latest auto-rebalancing state update.
 |modes
-|xref:type-KafkaAutoRebalanceModeBrokers-{context}[`KafkaAutoRebalanceModeBrokers`] array
+|xref:type-KafkaAutoRebalanceStatusBrokers-{context}[`KafkaAutoRebalanceStatusBrokers`] array
 |List of the modes for which there is an auto-rebalancing operation already running or queued. For each mode entry, which could be for add-brokers or remove-brokers, it contains either:- the brokers' IDs relevant to the current ongoing auto-rebalance, or- the brokers' IDs relevant to a queued auto-rebalance (if a previous auto-rebalance is still in progress).
 |====
 
-[id='type-KafkaAutoRebalanceModeBrokers-{context}']
-= `KafkaAutoRebalanceModeBrokers` schema reference
+[id='type-KafkaAutoRebalanceStatusBrokers-{context}']
+= `KafkaAutoRebalanceStatusBrokers` schema reference
 
 Used in: xref:type-KafkaAutoRebalanceStatus-{context}[`KafkaAutoRebalanceStatus`]
 

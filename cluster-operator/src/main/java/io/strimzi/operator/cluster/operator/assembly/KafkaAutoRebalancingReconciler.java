@@ -8,10 +8,10 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceConfiguration;
-import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceModeBrokers;
-import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceModeBrokersBuilder;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceState;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatus;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatusBrokers;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatusBrokersBuilder;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatusBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;
@@ -498,12 +498,12 @@ public class KafkaAutoRebalancingReconciler {
 
     private void updateStatus(KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus, KafkaAutoRebalanceState state, ScalingNodes scalingNodes) {
         // just clear the modes field when there are no added nodes or blocked ones
-        List<KafkaAutoRebalanceModeBrokers> modes = null;
+        List<KafkaAutoRebalanceStatusBrokers> modes = null;
         if (!scalingNodes.blocked().isEmpty() || !scalingNodes.added().isEmpty()) {
             modes = new ArrayList<>(2);
             if (!scalingNodes.blocked().isEmpty()) {
                 modes.add(
-                        new KafkaAutoRebalanceModeBrokersBuilder()
+                        new KafkaAutoRebalanceStatusBrokersBuilder()
                                 .withMode(KafkaRebalanceMode.REMOVE_BROKERS)
                                 .withBrokers(scalingNodes.blocked().stream().toList())
                                 .build()
@@ -511,7 +511,7 @@ public class KafkaAutoRebalancingReconciler {
             }
             if (!scalingNodes.added().isEmpty()) {
                 modes.add(
-                        new KafkaAutoRebalanceModeBrokersBuilder()
+                        new KafkaAutoRebalanceStatusBrokersBuilder()
                                 .withMode(KafkaRebalanceMode.ADD_BROKERS)
                                 .withBrokers(scalingNodes.added().stream().toList())
                                 .build()

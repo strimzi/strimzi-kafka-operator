@@ -32,7 +32,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,7 +59,7 @@ public class KafkaClusterCreator {
     private boolean scaleDownCheckFailed = false;
     private boolean usedToBeBrokersCheckFailed = false;
     private final List<Condition> warningConditions = new ArrayList<>();
-    private Set<Integer> scalingDownBlockedNodes = new LinkedHashSet<>();
+    private final Set<Integer> scalingDownBlockedNodes = new HashSet<>();
 
     /**
      * Constructor
