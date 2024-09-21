@@ -21,20 +21,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Stream;
-
-import static java.lang.String.format;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Class with various utility methods for reading and writing files and objects
@@ -288,31 +281,5 @@ public final class ReadWriteUtils {
         }
         file.deleteOnExit();
         return file;
-    }
-
-    /**
-     * Get JSON content as string from resource file.
-     *
-     * TODO: Does the special handling here really matter? Can't we just use redFileFromResources?
-     *
-     * @param resourcePath Resource path.
-     *
-     * @return JSON content as string.
-     */
-    public static String readSingleLineJsonStringFromResourceFile(String resourcePath) {
-        try {
-            URI resourceURI = Objects.requireNonNull(TestUtils.class.getClassLoader().getResource(resourcePath)).toURI();
-            try (Stream<String> lines = Files.lines(Paths.get(resourceURI), UTF_8)) {
-                Optional<String> content = lines.reduce((x, y) -> x + y);
-
-                if (content.isEmpty()) {
-                    throw new IOException(format("File %s from resources was empty", resourcePath));
-                }
-
-                return content.get();
-            }
-        } catch (Throwable t) {
-            throw new RuntimeException(t);
-        }
     }
 }
