@@ -1169,8 +1169,8 @@ public class KafkaRebalanceAssemblyOperator
      * If the annotation is not set it returns {@code RebalanceAnnotation.none} while if it's a not valid value, it
      * returns {@code RebalanceAnnotation.unknown}.
      *
-     * @param kafkaRebalance KafkaRebalance resource instance from which getting the value of the strimzio.io/rebalance annotation
-     * @return the {@code RebalanceAnnotation} enum value for the raw String value of the strimzio.io/rebalance annotation
+     * @param kafkaRebalance KafkaRebalance resource instance from which getting the value of the strimzi.io/rebalance annotation
+     * @return the {@code RebalanceAnnotation} enum value for the raw String value of the strimzi.io/rebalance annotation
      */
     /* test */ KafkaRebalanceAnnotation rebalanceAnnotation(KafkaRebalance kafkaRebalance) {
         String rebalanceAnnotationValue = rawRebalanceAnnotation(kafkaRebalance);
@@ -1191,11 +1191,11 @@ public class KafkaRebalanceAssemblyOperator
     }
 
     /**
-     * Return the raw String value of the strimzio.io/rebalance annotation, if exists, on the provided
+     * Return the raw String value of the strimzi.io/rebalance annotation, if exists, on the provided
      * KafkaRebalance resource instance otherwise return null
      *
-     * @param kafkaRebalance KafkaRebalance resource instance from which getting the value of the strimzio.io/rebalance annotation
-     * @return the value for the strimzio.io/rebalance annotation on the provided KafkaRebalance resource instance
+     * @param kafkaRebalance KafkaRebalance resource instance from which getting the value of the strimzi.io/rebalance annotation
+     * @return the value for the strimzi.io/rebalance annotation on the provided KafkaRebalance resource instance
      */
     private String rawRebalanceAnnotation(KafkaRebalance kafkaRebalance) {
         return hasRebalanceAnnotation(kafkaRebalance) ?
@@ -1225,10 +1225,10 @@ public class KafkaRebalanceAssemblyOperator
     }
 
     /**
-     * Return true if the provided KafkaRebalance resource instance has the strimzio.io/rebalance annotation
+     * Return true if the provided KafkaRebalance resource instance has the strimzi.io/rebalance annotation
      *
      * @param kafkaRebalance KafkaRebalance resource instance to check
-     * @return if the provided KafkaRebalance resource instance has the strimzio.io/rebalance annotation
+     * @return if the provided KafkaRebalance resource instance has the strimzi.io/rebalance annotation
      */
     private boolean hasRebalanceAnnotation(KafkaRebalance kafkaRebalance) {
         return kafkaRebalance.getMetadata().getAnnotations() != null &&
