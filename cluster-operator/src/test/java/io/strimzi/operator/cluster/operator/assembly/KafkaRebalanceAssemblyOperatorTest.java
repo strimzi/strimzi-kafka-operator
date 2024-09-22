@@ -1665,7 +1665,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
      */
     @Test
     public void testRebalanceTemplate(VertxTestContext context) {
-        KafkaRebalance kr = new KafkaRebalanceBuilder(createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false))
+        KafkaRebalance kr = new KafkaRebalanceBuilder(createKafkaRebalance(namespace, null, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false))
                 .editMetadata()
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.template.toString())
                 .endMetadata()
