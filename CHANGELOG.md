@@ -7,6 +7,7 @@
   If needed, `ContinueReconciliationOnManualRollingUpdateFailure` can be disabled in the feature gates configuration in the Cluster Operator.
 * Add support for managing connector offsets via KafkaConnector and KafkaMirrorMaker2 custom resources.
 * Add support for templating `host` and `advertisedHost` fields in listener configuration
+* Allow configuration of environment variables based on Config Map or Secret for every container in the container template sections
 
 ### Changes, deprecations and removals
 
@@ -14,8 +15,8 @@
   Kubernetes 1.23 and 1.24 are not supported anymore.
 * When finalizers are enabled (default), the Topic Operator will no longer restore finalizers on unmanaged `KafkaTopic` resources if they are removed, aligning the behavior with paused topics, where finalizers are also not restored.
   This change matches user expectations.
-* The External Configuration Volumes (`.spec.externalConfiguration.volumes`) in `KafkaConnect` and `KafkaMirrorMaker2` resources are deprecated and will be removed in the future.
-  Please use the additional volumes and volume mounts in Pod and container templates instead to mount additional Secrets or ConfigMaps.
+* The External Configuration (`.spec.externalConfiguration`) in `KafkaConnect` and `KafkaMirrorMaker2` resources is deprecated and will be removed in the future.
+  Please use the environment variables, additional volumes and volume mounts in Pod and container templates instead.
 
 ## 0.43.0
 

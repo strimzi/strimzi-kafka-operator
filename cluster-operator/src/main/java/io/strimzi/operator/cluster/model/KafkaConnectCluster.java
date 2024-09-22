@@ -132,6 +132,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     protected String loggingAndMetricsConfigMapName;
 
     protected String bootstrapServers;
+    @SuppressWarnings("deprecation") // External Configuration environment variables are deprecated
     protected List<ExternalConfigurationEnv> externalEnvs = Collections.emptyList();
 
     @SuppressWarnings("deprecation") // External Configuration volumes are deprecated
@@ -653,6 +654,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         }
     }
 
+    @SuppressWarnings("deprecation") // External Configuration environment variables are deprecated
     private List<EnvVar> getExternalConfigurationEnvVars()   {
         List<EnvVar> varList = new ArrayList<>();
 

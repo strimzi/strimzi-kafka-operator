@@ -40,7 +40,7 @@ data:
 +
 --
 * Enable the `EnvVarConfigProvider`
-* Specify the environment variables using the `externalConfiguration` property.
+* Specify the environment variables using the `template` property.
 --
 +
 .Example Kafka Connect configuration to use external environment variables
@@ -59,18 +59,19 @@ spec:
     config.providers: env # <1>
     config.providers.env.class: org.apache.kafka.common.config.provider.EnvVarConfigProvider # <2>
   # ...
-  externalConfiguration:
-    env:
-      - name: AWS_ACCESS_KEY_ID # <3>
-        valueFrom:
-          secretKeyRef:
-            name: aws-creds # <4>
-            key: awsAccessKey # <5>
-      - name: AWS_SECRET_ACCESS_KEY
-        valueFrom:
-          secretKeyRef:
-            name: aws-creds
-            key: awsSecretAccessKey          
+  template:
+    connectContainer:
+      env:
+        - name: AWS_ACCESS_KEY_ID # <3>
+          valueFrom:
+            secretKeyRef:
+              name: aws-creds # <4>
+              key: awsAccessKey # <5>
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aws-creds
+              key: awsSecretAccessKey
   # ...
 ----
 <1> The alias for the configuration provider is used to define other configuration parameters.

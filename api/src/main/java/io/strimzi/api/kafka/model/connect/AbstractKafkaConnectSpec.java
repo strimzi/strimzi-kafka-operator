@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.HasConfigurableLogging;
 import io.strimzi.api.kafka.model.common.HasConfigurableMetrics;
@@ -39,6 +40,7 @@ import lombok.ToString;
     "template", "externalConfiguration" })
 @EqualsAndHashCode(doNotUseGetters = true, callSuper = true)
 @ToString(callSuper = true)
+@SuppressWarnings("deprecation") // External Configuration is deprecated
 public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfigurableMetrics, HasConfigurableLogging, HasJmxOptions, HasLivenessProbe, HasReadinessProbe {
     private Logging logging;
     private int replicas = 3;
@@ -188,6 +190,9 @@ public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfig
 
     @Description("Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Deprecated
+    @DeprecatedProperty(description = "The external configuration is deprecated and will be removed in the future. " +
+            "Please use the template section instead to configure additional environment variables or volumes.")
     public ExternalConfiguration getExternalConfiguration() {
         return externalConfiguration;
     }

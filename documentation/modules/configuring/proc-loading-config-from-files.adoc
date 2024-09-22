@@ -80,14 +80,6 @@ spec:
           mountPath: /mnt/my-user # <6>
         - name: cluster-ca-volume
           mountPath: /mnt/cluster-ca
-  externalConfiguration:
-    volumes: # <3>
-      - name: cluster-ca # <4>
-        secret:
-          secretName: my-cluster-cluster-ca-cert # <5>
-      - name: my-user
-        secret:
-          secretName: my-user # <6>
 ----
 <1> The alias for the configuration provider is used to define other configuration parameters.
 <2> `DirectoryConfigProvider` provides values from files in a directory. The parameter uses the alias from `config.providers`, taking the form `config.providers.${alias}.class`.

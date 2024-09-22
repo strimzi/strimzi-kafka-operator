@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model.connect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.annotations.DeprecatedProperty;
+import io.strimzi.api.annotations.DeprecatedType;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -29,6 +30,8 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({ "env", "volumes" })
+@Deprecated
+@DeprecatedType(replacedWithType = KafkaConnectTemplate.class)
 @EqualsAndHashCode
 @ToString
 public class ExternalConfiguration implements UnknownPropertyPreserving {
@@ -38,6 +41,9 @@ public class ExternalConfiguration implements UnknownPropertyPreserving {
 
     @Description("Makes data from a Secret or ConfigMap available in the Kafka Connect pods as environment variables.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    @Deprecated
+    @DeprecatedProperty(description = "The external configuration environment variables are deprecated and will be removed in the future. " +
+            "Please use the environment variables in container template instead.")
     public List<ExternalConfigurationEnv> getEnv() {
         return env;
     }
