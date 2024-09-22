@@ -44,8 +44,6 @@ apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaRebalance
 metadata:
   name: my-add-brokers-rebalancing-template
-  labels:
-    strimzi.io/cluster: my-cluster
   annotations:
     strimzi.io/rebalance: template
 # no goals specified, using the default goals from the Cruise Control configuration
@@ -55,8 +53,6 @@ apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaRebalance
 metadata:
   name: my-remove-brokers-rebalancing-template
-  labels:
-    strimzi.io/cluster: my-cluster
   annotations:
     strimzi.io/rebalance: template
 # no goals specified, using the default goals from the Cruise Control configuration
