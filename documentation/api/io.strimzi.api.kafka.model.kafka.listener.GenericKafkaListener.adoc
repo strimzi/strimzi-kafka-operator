@@ -130,9 +130,11 @@ Kafka clients can use these `Ingress` resources to connect to Kafka on port 443.
 The client connects on port 443, the default controller port, but traffic is then routed to the port you configure,
 which is `9095` in the following example.
 +
-You must specify the hostnames used by the bootstrap and per-broker services
-using xref:type-GenericKafkaListenerConfigurationBootstrap-reference[`GenericKafkaListenerConfigurationBootstrap`]
-and xref:type-GenericKafkaListenerConfigurationBroker-reference[`GenericKafkaListenerConfigurationBroker`] properties.
+You must specify the hostname used by the bootstrap service using xref:type-GenericKafkaListenerConfigurationBootstrap-reference[`GenericKafkaListenerConfigurationBootstrap`] property.
+And you must also specify the hostnames used by the per-broker services
+using xref:type-GenericKafkaListenerConfigurationBroker-reference[`GenericKafkaListenerConfigurationBroker`]
+or xref:type-GenericKafkaListenerConfiguration-reference[`hostTemplate`] properties.
+With the `hostTemplate` property, you don't need to specify the configuration for every broker.
 +
 .Example `ingress` listener configuration
 [source,yaml,subs="+attributes"]
@@ -150,15 +152,9 @@ spec:
         authentication:
           type: tls
         configuration:
+          hostTemplate: broker-{nodeId}.myingress.com
           bootstrap:
             host: bootstrap.myingress.com
-          brokers:
-          - broker: 0
-            host: broker-0.myingress.com
-          - broker: 1
-            host: broker-1.myingress.com
-          - broker: 2
-            host: broker-2.myingress.com
   #...
 ----
 +

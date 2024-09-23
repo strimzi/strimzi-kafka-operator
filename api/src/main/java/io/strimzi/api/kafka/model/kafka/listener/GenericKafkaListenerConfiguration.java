@@ -30,7 +30,8 @@ import java.util.Map;
 @DescriptionFile
 @JsonPropertyOrder({"brokerCertChainAndKey", "class", "preferredAddressType", "externalTrafficPolicy",
     "loadBalancerSourceRanges", "bootstrap", "brokers", "ipFamilyPolicy", "ipFamilies", "createBootstrapService",
-    "finalizers", "useServiceDnsDomain", "maxConnections", "maxConnectionCreationRate", "preferredNodePortAddressType", "publishNotReadyAddresses"})
+    "finalizers", "useServiceDnsDomain", "maxConnections", "maxConnectionCreationRate", "preferredNodePortAddressType",
+    "publishNotReadyAddresses", "hostTemplate", "advertisedHostTemplate"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,
@@ -54,6 +55,8 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
     private List<IpFamily> ipFamilies;
     private Boolean createBootstrapService = true;
     private Boolean publishNotReadyAddresses;
+    private String hostTemplate;
+    private String advertisedHostTemplate;
     private Map<String, Object> additionalProperties;
 
     @Description("Reference to the `Secret` which holds the certificate and private key pair which will be used for this listener. " +
@@ -254,6 +257,28 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
 
     public void setPublishNotReadyAddresses(Boolean publishNotReadyAddresses) {
         this.publishNotReadyAddresses = publishNotReadyAddresses;
+    }
+
+    @Description("Configures the template for generating the hostnames of the individual brokers. " +
+            "Valid placeholders that you can use in the template are `{nodeId}` and `{nodePodName}`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getHostTemplate() {
+        return hostTemplate;
+    }
+
+    public void setHostTemplate(String hostTemplate) {
+        this.hostTemplate = hostTemplate;
+    }
+
+    @Description("Configures the template for generating the advertised hostnames of the individual brokers. " +
+            "Valid placeholders that you can use in the template are `{nodeId}` and `{nodePodName}`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getAdvertisedHostTemplate() {
+        return advertisedHostTemplate;
+    }
+
+    public void setAdvertisedHostTemplate(String advertisedHostTemplate) {
+        this.advertisedHostTemplate = advertisedHostTemplate;
     }
 
     @Override

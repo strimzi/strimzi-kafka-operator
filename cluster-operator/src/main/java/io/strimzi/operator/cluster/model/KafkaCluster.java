@@ -951,7 +951,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                                 .endSpec()
                                 .build();
 
-                        String host = ListenersUtils.brokerHost(listener, node.nodeId());
+                        String host = ListenersUtils.brokerHost(listener, node);
                         if (host != null) {
                             route.getSpec().setHost(host);
                         }
@@ -1040,7 +1040,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 if (pool.isBroker()) {
                     for (NodeRef node : pool.nodes()) {
                         String ingressName = ListenersUtils.backwardsCompatiblePerBrokerServiceName(pool.componentName, node.nodeId(), listener);
-                        String host = ListenersUtils.brokerHost(listener, node.nodeId());
+                        String host = ListenersUtils.brokerHost(listener, node);
                         String ingressClass = ListenersUtils.controllerClass(listener);
 
                         HTTPIngressPath path = new HTTPIngressPathBuilder()
