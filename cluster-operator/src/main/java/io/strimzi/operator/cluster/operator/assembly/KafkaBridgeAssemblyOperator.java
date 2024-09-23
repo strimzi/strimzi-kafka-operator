@@ -48,6 +48,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
 
     private final DeploymentOperator deploymentOperations;
     private final SharedEnvironmentProvider sharedEnvironmentProvider;
+    private final boolean isPodDisruptionBudgetGeneration;
 
     /**
      * @param vertx The Vertx instance
@@ -64,6 +65,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         super(vertx, pfa, KafkaBridge.RESOURCE_KIND, certManager, passwordGenerator, supplier.kafkaBridgeOperator, supplier, config);
         this.deploymentOperations = supplier.deploymentOperations;
         this.sharedEnvironmentProvider = supplier.sharedEnvironmentProvider;
+        this.isPodDisruptionBudgetGeneration = config.isPodDisruptionBudgetGeneration();
     }
 
     @Override

@@ -83,11 +83,11 @@ public class ZooKeeperReconciler {
     private final String operatorNamespace;
     private final Labels operatorNamespaceLabels;
     private final boolean isNetworkPolicyGeneration;
+    private final boolean isPodDisruptionBudgetGeneration;
     private final PlatformFeaturesAvailability pfa;
     private final int adminSessionTimeoutMs;
     private final ImagePullPolicy imagePullPolicy;
     private final List<LocalObjectReference> imagePullSecrets;
-    private final boolean isPodDisruptionBudgetGeneration;
 
     private final StatefulSetOperator stsOperator;
     private final StrimziPodSetOperator strimziPodSetOperator;

@@ -63,7 +63,6 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     protected final List<LocalObjectReference> imagePullSecrets;
     protected final KafkaVersion.Lookup versions;
     protected long operationTimeoutMs;
-    protected final boolean isPodDisruptionBudgetGeneration;
 
     /**
      * @param vertx The Vertx instance
@@ -94,7 +93,6 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         this.imagePullSecrets = config.getImagePullSecrets();
         this.versions = config.versions();
         this.operationTimeoutMs = config.getOperationTimeoutMs();
-        this.isPodDisruptionBudgetGeneration = config.isPodDisruptionBudgetGeneration();
     }
 
     protected Future<Boolean> delete(Reconciliation reconciliation) {

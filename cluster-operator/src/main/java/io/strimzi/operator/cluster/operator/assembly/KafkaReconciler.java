@@ -114,6 +114,7 @@ public class KafkaReconciler {
     // Various settings
     private final long operationTimeoutMs;
     private final boolean isNetworkPolicyGeneration;
+    private final boolean isPodDisruptionBudgetGeneration;
     private final boolean isKafkaNodePoolsEnabled;
     private final List<String> maintenanceWindows;
     private final String operatorNamespace;
@@ -122,7 +123,6 @@ public class KafkaReconciler {
     private final ImagePullPolicy imagePullPolicy;
     private final List<LocalObjectReference> imagePullSecrets;
     private final List<Integer> previousNodeIds;
-    private final boolean isPodDisruptionBudgetGeneration;
 
     // Objects used during the reconciliation
     /* test */ final Reconciliation reconciliation;
