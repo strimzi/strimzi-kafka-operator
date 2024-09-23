@@ -6,8 +6,9 @@
 * The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate moves to beta stage and is enabled by default.
   If needed, `ContinueReconciliationOnManualRollingUpdateFailure` can be disabled in the feature gates configuration in the Cluster Operator.
 * Add support for managing connector offsets via KafkaConnector and KafkaMirrorMaker2 custom resources.
-* Add support for templating `host` and `advertisedHost` fields in listener configuration
-* Allow configuration of environment variables based on Config Map or Secret for every container in the container template sections
+* Add support for templating `host` and `advertisedHost` fields in listener configuration.
+* Allow configuration of environment variables based on Config Map or Secret for every container in the container template sections.
+* Add support for disabling the generation of PodDisruptionBudget resources by the Cluster Operator.
 
 ### Changes, deprecations and removals
 
