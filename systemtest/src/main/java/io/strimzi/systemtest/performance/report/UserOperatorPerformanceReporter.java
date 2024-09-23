@@ -65,7 +65,7 @@ public class UserOperatorPerformanceReporter extends BasePerformanceReporter {
         final Path userOperatorUseCasePathDir = performanceLogDir.resolve(directoryName);
 
         // Log the resolved path for debugging purposes
-        LOGGER.info("Resolved performance log directory: {} for use case '{}'. KafkaUsers: {}, ThreadPool: {}, CacheInterval: {}, BatchQueue: {}, BatchBlock: {}, BatchTime: {}, UserOpsThreadPool: {}",
+        LOGGER.info("Resolved performance log directory: {} for use case '{}'.\nKafkaUsers: {},\nThreadPool: {},\nCacheInterval: {},\nBatchQueue: {},\nBatchBlock: {},\nBatchTime: {},\nUserOpsThreadPool: {}",
             userOperatorUseCasePathDir, useCaseName, numberOfKafkaUsersToCreate, threadPoolSize, cacheRefreshInterval, batchQueueSize, batchBlockSize, batchBlockTime, userOperationsThreadPoolSize);
 
         return userOperatorUseCasePathDir;

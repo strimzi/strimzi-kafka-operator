@@ -448,4 +448,56 @@ public class KafkaTopicUtils {
 
         LOGGER.info("Replica change resolved for KafkaTopic: {}/{}", namespaceName, topicName);
     }
+
+    /**
+     * Deletes Kafka topics within a specified range based on their names.
+     * Assumes topic names are structured to include a numerical suffix indicating their batch.
+     *
+     * @param namespace     the Kubernetes namespace
+     * @param prefix        the common prefix of the Kafka topic names
+     * @param start         the starting index of topics to delete
+     * @param end           the ending index of topics to delete
+     */
+    public static void deleteKafkaTopicsInRange(String namespace, String prefix, int start, int end) {
+        List<KafkaTopic> topicsToDelete = getAllKafkaTopicsWithPrefix(namespace, prefix, start, end);
+
+        topicsToDelete.forEach(topic ->
+            ResourceManager.cmdKubeClient().namespace(namespace).deleteByName(KafkaTopic.RESOURCE_SINGULAR, topic.getMetadata().getName())
+        );
+
+        LOGGER.info("Deleted Kafka topics from {} to {} in namespace {} with prefix {}", start, end, namespace, prefix);
+    }
+
+    public static List<KafkaTopic> getAllKafkaTopicsWithPrefix(String namespace, String prefix, int start, int end) {
+        return KafkaTopicResource.kafkaTopicClient().inNamespace(namespace).list().getItems()
+            .stream()
+            .filter(topic -> {
+                String name = topic.getMetadata().getName();
+                if (!name.startsWith(prefix)) return false;
+                // Extract index from the topic name
+                String indexPart = name.substring(prefix.length());
+                try {
+                    int index = Integer.parseInt(indexPart);
+                    return index >= start && index < end;
+                } catch (NumberFormatException e) {
+                    LOGGER.error("Failed to parse index from Kafka topic name: {}", name, e);
+                    return false;
+                }
+            }).toList();
+    }
+
+    public static void waitForTopicWithPrefixDeletion(String namespaceName, String topicPrefix, int start, int end) {
+        TestUtils.waitFor("deletion of all topics with prefix: " + topicPrefix + " from " + start + " to " + end,
+            TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
+            () -> {
+                try {
+                    final int numberOfTopicsToDelete = getAllKafkaTopicsWithPrefix(namespaceName, topicPrefix, start, end).size();
+                    LOGGER.info("Remaining KafkaTopic's to delete from {} to {}: {} !", start, end, numberOfTopicsToDelete);
+                    return numberOfTopicsToDelete == 0;
+                } catch (Exception e) {
+                    LOGGER.error("Error while checking for topic deletion: ", e);
+                    return e.getMessage().contains("Not Found") || e.getMessage().contains("the server doesn't have a resource type");
+                }
+            });
+    }
 }

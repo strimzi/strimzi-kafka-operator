@@ -28,8 +28,7 @@ plan defines selectors for [tests](./tests) which should be executed.
 * regression-operands
 * sanity
 * performance
-* performance-capacity
-* performance-topic-operator-capacity
+* capacity
 
 ## Usage
 
@@ -84,26 +83,25 @@ Run selected jobs by label
 Packit jobs has plenty of available labels that you can use in trigger command.
 The jobs are grouped based on specific use-case.
 
-| Group           | Labels                              | Description                                                                                   |
-|-----------------|-------------------------------------|-----------------------------------------------------------------------------------------------|
-| acceptance      | acceptance                          | Acceptance tests                                                                              |
-| acceptance_ipv6 | acceptance_ipv6                     | Acceptance tests with IPv6 configuration for Kube cluster                                     |
-|                 | ipv6                                |                                                                                               |
-| acceptance_dual | acceptance_dual                     | Acceptance tests with dual (IPv4 + IPv6) configuration for Kube cluster                       |
-|                 | dual                                |                                                                                               |
-| upgrade         | upgrade                             | Upgrade tests                                                                                 |
-| sanity          | sanity                              | Sanity tests (plan with 1h execution time)                                                    |
-| smoke           | smoke                               | Smoke tests (just one test)                                                                   |
-| regression      | regression                          | Regression tests (all regression related labels, operators + operands + brokers-and-security) |
-|                 | operands                            | Tests related to operands                                                                     |
-|                 | regression-operands                 |                                                                                               |
-|                 | brokers-and-security                | Tests related to Kafka Brokers and Security (specific test classes)                           |
-|                 | regression-brokers-and-security     |                                                                                               |
-|                 | bas                                 |                                                                                               |
-|                 | operators                           | Tests more related to operators                                                               |
-|                 | regression-operators                |                                                                                               |
-| performance     | performance                         | Performance tests (all performance related labels)                                            |
-|                 | performance-common                  | Common performance tests                                                                      |
-|                 | performance-capacity                | Capacity tests for operators                                                                  |
-|                 | performance-topic-operator-capacity | Capacity tests for Topic Operator only                                                        |
+| Group           | Labels                          | Description                                                                                   |
+|-----------------|---------------------------------|-----------------------------------------------------------------------------------------------|
+| acceptance      | acceptance                      | Acceptance tests                                                                              |
+| acceptance_ipv6 | acceptance_ipv6                 | Acceptance tests with IPv6 configuration for Kube cluster                                     |
+|                 | ipv6                            |                                                                                               |
+| acceptance_dual | acceptance_dual                 | Acceptance tests with dual (IPv4 + IPv6) configuration for Kube cluster                       |
+|                 | dual                            |                                                                                               |
+| upgrade         | upgrade                         | Upgrade tests                                                                                 |
+| sanity          | sanity                          | Sanity tests (plan with 1h execution time)                                                    |
+| smoke           | smoke                           | Smoke tests (just one test)                                                                   |
+| regression      | regression                      | Regression tests (all regression related labels, operators + operands + brokers-and-security) |
+|                 | operands                        | Tests related to operands                                                                     |
+|                 | regression-operands             |                                                                                               |
+|                 | brokers-and-security            | Tests related to Kafka Brokers and Security (specific test classes)                           |
+|                 | regression-brokers-and-security |                                                                                               |
+|                 | bas                             |                                                                                               |
+|                 | operators                       | Tests more related to operators                                                               |
+|                 | regression-operators            |                                                                                               |
+| performance     | performance                     | Performance tests (all performance related labels)                                            |
+|                 | performance-common              | Common performance tests                                                                      |
+|                 | capacity                        | Capacity tests for operators                                                                  |
 

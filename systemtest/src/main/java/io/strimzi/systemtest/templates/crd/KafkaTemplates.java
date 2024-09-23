@@ -145,6 +145,10 @@ public class KafkaTemplates {
                                 .withNewConfigMapKeyRef(ZOOKEEPER_METRICS_CONFIG_REF_KEY, configMapName, false)
                             .endValueFrom()
                         .endJmxPrometheusExporterMetricsConfig()
+                        .withNewPersistentClaimStorage()
+                            .withSize("1Gi")
+                            .withDeleteClaim(true)
+                        .endPersistentClaimStorage()
                     .endZookeeper()
                 .endSpec();
         }

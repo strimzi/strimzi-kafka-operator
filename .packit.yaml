@@ -192,7 +192,7 @@ jobs:
           name: performance
   - job: tests
     trigger: pull_request
-    identifier: "performance-capacity"
+    identifier: "capacity"
     targets:
       - centos-stream-9-x86_64
       - centos-stream-9-aarch64
@@ -200,34 +200,11 @@ jobs:
     manual_trigger: true
     env: { IP_FAMILY: ipv4 }
     labels:
-      - performance
-      - performance-capacity
+      - capacity
     tf_extra_params:
-      settings:
-        pipeline:
-          timeout: 1440
       test:
         tmt:
-          name: performance-capacity
-  - job: tests
-    trigger: pull_request
-    identifier: "performance-topic-operator-capacity"
-    targets:
-      - centos-stream-9-x86_64
-      - centos-stream-9-aarch64
-    skip_build: true
-    manual_trigger: true
-    env: { IP_FAMILY: ipv4 }
-    labels:
-      - performance
-      - performance-topic-operator-capacity
-    tf_extra_params:
-      settings:
-        pipeline:
-          timeout: 1440
-      test:
-        tmt:
-          name: performance-topic-operator-capacity
+          name: capacity
 
   ##############################################################################################
   ####################################     Releases    #########################################
@@ -312,3 +289,22 @@ jobs:
       test:
         tmt:
           name: regression-operands
+
+  - job: tests
+    trigger: release
+    identifier: "performance"
+    targets:
+      - centos-stream-9-x86_64
+      - centos-stream-9-aarch64
+    skip_build: true
+    manual_trigger: false
+    env:
+        IP_FAMILY: ipv4
+        RELEASE: true
+    labels:
+      - performance
+      - performance-common
+    tf_extra_params:
+      test:
+        tmt:
+          name: performance
