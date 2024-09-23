@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Tag;
 
 import java.io.IOException;
 
-import static io.strimzi.systemtest.Tags.REGRESSION;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 @Tag(REGRESSION)

@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import static io.strimzi.systemtest.Tags.KAFKA_SMOKE;
+import static io.strimzi.systemtest.TestTags.KAFKA_SMOKE;
 
 @Tag(KAFKA_SMOKE)
 public class KafkaVersionsST extends AbstractST {

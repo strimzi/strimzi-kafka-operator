@@ -42,7 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static io.strimzi.systemtest.Tags.CAPACITY;
+import static io.strimzi.systemtest.TestTags.CAPACITY;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 public class UserOperatorPerformance extends AbstractST {

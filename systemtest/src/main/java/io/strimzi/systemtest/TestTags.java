@@ -9,7 +9,7 @@ package io.strimzi.systemtest;
  * tests based on their purpose, stability, and environment, enabling selective execution of tests
  * for scenarios like regression, scalability, upgrades, and performance.
  */
-public interface Tags {
+public interface TestTags {
 
     /**
      * Feature gate related constants

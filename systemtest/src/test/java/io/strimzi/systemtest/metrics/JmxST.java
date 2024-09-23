@@ -34,10 +34,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 
-import static io.strimzi.systemtest.Tags.CONNECT;
-import static io.strimzi.systemtest.Tags.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.Tags.REGRESSION;
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
+import static io.strimzi.systemtest.TestTags.CONNECT;
+import static io.strimzi.systemtest.TestTags.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;

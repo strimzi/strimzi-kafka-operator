@@ -27,9 +27,9 @@ import org.junit.jupiter.api.Tag;
 
 import java.util.Arrays;
 
-import static io.strimzi.systemtest.Tags.CONNECT;
-import static io.strimzi.systemtest.Tags.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.Tags.REGRESSION;
+import static io.strimzi.systemtest.TestTags.CONNECT;
+import static io.strimzi.systemtest.TestTags.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;

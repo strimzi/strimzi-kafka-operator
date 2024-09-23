@@ -32,8 +32,8 @@ import java.io.IOException;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Environment.TEST_SUITE_NAMESPACE;
-import static io.strimzi.systemtest.Tags.UPGRADE;
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
+import static io.strimzi.systemtest.TestTags.UPGRADE;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;

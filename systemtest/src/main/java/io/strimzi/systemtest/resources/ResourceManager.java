@@ -26,8 +26,8 @@ import io.strimzi.api.kafka.model.kafka.Status;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.Tags;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.TestTags;
 import io.strimzi.systemtest.enums.ConditionStatus;
 import io.strimzi.systemtest.enums.DeploymentTypes;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
@@ -626,6 +626,6 @@ public class ResourceManager {
      * @return          The appropriate logging level (DEBUG or INFO) for the current test context.
      */
     public Level determineLogLevel() {
-        return ResourceManager.getTestContext().getTags().contains(Tags.PERFORMANCE) ? Level.DEBUG : Level.INFO;
+        return ResourceManager.getTestContext().getTags().contains(TestTags.PERFORMANCE) ? Level.DEBUG : Level.INFO;
     }
 }

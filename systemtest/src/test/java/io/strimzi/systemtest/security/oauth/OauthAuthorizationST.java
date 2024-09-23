@@ -55,8 +55,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.Tags.OAUTH;
-import static io.strimzi.systemtest.Tags.REGRESSION;
+import static io.strimzi.systemtest.TestTags.OAUTH;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(OAUTH)

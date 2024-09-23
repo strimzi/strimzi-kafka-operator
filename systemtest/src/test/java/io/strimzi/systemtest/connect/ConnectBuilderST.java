@@ -62,11 +62,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-import static io.strimzi.systemtest.Tags.ACCEPTANCE;
-import static io.strimzi.systemtest.Tags.CONNECT;
-import static io.strimzi.systemtest.Tags.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.Tags.REGRESSION;
-import static io.strimzi.systemtest.Tags.SANITY;
+import static io.strimzi.systemtest.TestTags.ACCEPTANCE;
+import static io.strimzi.systemtest.TestTags.CONNECT;
+import static io.strimzi.systemtest.TestTags.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
+import static io.strimzi.systemtest.TestTags.SANITY;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
