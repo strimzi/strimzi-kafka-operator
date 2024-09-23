@@ -1,0 +1,11 @@
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='disable-pod-disruption-budget-generation_{context}']
+= Disabling pod disruption budget generation
+
+Strimzi generates pod disruption budget resources for Kafka, Kafka Connect worker, MirrorMaker2 worker, and Kafka Bridge worker nodes.
+
+If you want to use custom pod disruption budget resources, you can set the `STRIMZI_POD_DISRUPTION_BUDGET_GENERATION` environment variable to `false` in the Cluster Operator configuration.
+For more information, see xref:ref-operator-cluster-{context}[].

@@ -80,6 +80,12 @@ env:
     value: label1=value1,label2=value2
 ----
 
+`STRIMZI_POD_DISRUPTION_BUDGET_GENERATION`::  Optional, default `true`.
+Pod disruption budget for resources.
+A pod disruption budget with the `maxUnavailable` value set to zero prevents Kubernetes from evicting pods automatically.
++
+Set this environment variable to `false` to disable pod disruption budget generation. You might do this, for example, if you want to manage the pod disruption budgets yourself, or if you have a development environment where availability is not important.
+
 `STRIMZI_LABELS_EXCLUSION_PATTERN`:: Optional, default regex pattern is `(^app.kubernetes.io/(?!part-of).*|^kustomize.toolkit.fluxcd.io.*)`.
 The regex exclusion pattern used to filter labels propagation from the main custom resource to its subresources.
 The labels exclusion filter is not applied to labels in template sections such as `spec.kafka.template.pod.metadata.labels`.
