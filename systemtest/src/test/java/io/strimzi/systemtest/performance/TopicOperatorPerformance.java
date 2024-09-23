@@ -165,6 +165,9 @@ public class TopicOperatorPerformance extends AbstractST {
 
             // we will create incrementally topics
             final int batchSize = 100;
+            final int topicPartitions = 12;
+            final int topicReplicas = 3;
+            final int minInSyncReplicas = 2;
 
             while (true) { // Endless loop
                 int start = successfulCreations;
@@ -173,7 +176,7 @@ public class TopicOperatorPerformance extends AbstractST {
                 try {
                     // Create topics
                     KafkaTopicScalabilityUtils.createTopicsViaK8s(testStorage.getNamespaceName(), testStorage.getClusterName(),
-                        testStorage.getTopicName(), start, end, 12, 3, 2);
+                        testStorage.getTopicName(), start, end, topicPartitions, topicReplicas, minInSyncReplicas);
                     KafkaTopicScalabilityUtils.waitForTopicStatus(testStorage.getNamespaceName(), testStorage.getTopicName(),
                         start, end, CustomResourceStatus.Ready, ConditionStatus.True);
 

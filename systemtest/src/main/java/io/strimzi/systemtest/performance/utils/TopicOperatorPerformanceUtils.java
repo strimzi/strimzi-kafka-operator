@@ -15,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -221,7 +222,7 @@ public class TopicOperatorPerformanceUtils {
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
         LOGGER.info("All topic lifecycles completed.");
 
-        long allTasksTimeMs = (System.nanoTime() - startTime) / 1_000_000;
+        long allTasksTimeMs = Duration.ofNanos(System.nanoTime() - startTime).toMillis();
 
         if (warmUpTasksToProcess != 0) {
             // boundary between tests => less likelihood that tests would influence each other
