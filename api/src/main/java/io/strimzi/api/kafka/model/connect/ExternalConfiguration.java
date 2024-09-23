@@ -43,7 +43,7 @@ public class ExternalConfiguration implements UnknownPropertyPreserving {
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     @Deprecated
     @DeprecatedProperty(description = "The external configuration environment variables are deprecated and will be removed in the future. " +
-            "Please use the environment variables in container template instead.")
+            "Please use the environment variables in a container template instead.")
     public List<ExternalConfigurationEnv> getEnv() {
         return env;
     }

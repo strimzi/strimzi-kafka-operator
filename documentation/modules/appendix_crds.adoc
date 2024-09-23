@@ -1374,7 +1374,7 @@ Used in: xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |The environment variable value.
 |valueFrom
 |xref:type-ContainerEnvVarSource-{context}[`ContainerEnvVarSource`]
-|Reference to Secret or ConfigMap field to which will be the environment variable set.
+|Reference to secret or config map property to which will be the environment variable is set.
 |====
 
 [id='type-ContainerEnvVarSource-{context}']
@@ -1388,10 +1388,10 @@ Used in: xref:type-ContainerEnvVar-{context}[`ContainerEnvVar`]
 |Property |Property type |Description
 |secretKeyRef
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#secretkeyselector-v1-core[SecretKeySelector]
-|Reference to a key in a Secret.
+|Reference to a key in a secret.
 |configMapKeyRef
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#configmapkeyselector-v1-core[ConfigMapKeySelector]
-|Reference to a key in a ConfigMap.
+|Reference to a key in a config map.
 |====
 
 [id='type-TieredStorageCustom-{context}']
@@ -2780,7 +2780,7 @@ include::../api/io.strimzi.api.kafka.model.connect.ExternalConfiguration.adoc[le
 |Property |Property type |Description
 |env
 |xref:type-ExternalConfigurationEnv-{context}[`ExternalConfigurationEnv`] array
-|**The `env` property has been deprecated.** The external configuration environment variables are deprecated and will be removed in the future. Please use the environment variables in container template instead. Makes data from a Secret or ConfigMap available in the Kafka Connect pods as environment variables.
+|**The `env` property has been deprecated.** The external configuration environment variables are deprecated and will be removed in the future. Please use the environment variables in a container template instead. Makes data from a Secret or ConfigMap available in the Kafka Connect pods as environment variables.
 |volumes
 |xref:type-ExternalConfigurationVolumeSource-{context}[`ExternalConfigurationVolumeSource`] array
 |**The `volumes` property has been deprecated.** The external configuration volumes are deprecated and will be removed in the future. Please use the additional volumes and volume mounts in pod and container templates instead to mount additional secrets or config maps. Makes data from a Secret or ConfigMap available in the Kafka Connect pods as volumes.

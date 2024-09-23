@@ -1323,7 +1323,7 @@ spec:
                                       type: string
                                     optional:
                                       type: boolean
-                                  description: Reference to a key in a Secret.
+                                  description: Reference to a key in a secret.
                                 configMapKeyRef:
                                   type: object
                                   properties:
@@ -1333,7 +1333,7 @@ spec:
                                       type: string
                                     optional:
                                       type: boolean
-                                  description: Reference to a key in a ConfigMap.
+                                  description: Reference to a key in a config map.
                               oneOf:
                               - properties:
                                   secretKeyRef: {}
@@ -1343,7 +1343,7 @@ spec:
                                   configMapKeyRef: {}
                                 required:
                                 - configMapKeyRef
-                              description: Reference to Secret or ConfigMap field to which will be the environment variable set.
+                              description: Reference to secret or config map property to which will be the environment variable is set.
                           oneOf:
                           - properties:
                               value: {}

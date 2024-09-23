@@ -37,7 +37,7 @@ public class ContainerEnvVarSource implements UnknownPropertyPreserving {
     private ConfigMapKeySelector configMapKeyRef;
     private Map<String, Object> additionalProperties;
 
-    @Description("Reference to a key in a Secret.")
+    @Description("Reference to a key in a secret.")
     @KubeLink(group = "core", version = "v1", kind = "secretkeyselector")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public SecretKeySelector getSecretKeyRef() {
@@ -48,7 +48,7 @@ public class ContainerEnvVarSource implements UnknownPropertyPreserving {
         this.secretKeyRef = secretKeyRef;
     }
 
-    @Description("Reference to a key in a ConfigMap.")
+    @Description("Reference to a key in a config map.")
     @KubeLink(group = "core", version = "v1", kind = "configmapkeyselector")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public ConfigMapKeySelector getConfigMapKeyRef() {

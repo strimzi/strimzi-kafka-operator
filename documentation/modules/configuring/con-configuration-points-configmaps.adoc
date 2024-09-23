@@ -39,7 +39,7 @@ logging:
 
 To use a ConfigMap for metrics configuration, you add a reference to the `metricsConfig` configuration of the component in the same way.
 
-`template` properties make data from a ConfigMap (or Secret) mounted to a pod available as environment variables or volumes.
+`template` properties allow data from a `ConfigMap` or `Secret` to be mounted in a pod as environment variables or volumes.
 You can use external configuration data for the connectors used by Kafka Connect.
 The data might be related to an external data source, providing the values needed for the connector to communicate with that data source.
 

@@ -179,5 +179,5 @@ By default, Kafka Connect connects to Kafka brokers using a plain text connectio
 <16> ADVANCED OPTION: Container image configuration, which is recommended only in special situations.
 <17> SPECIALIZED OPTION: Rack awareness configuration for the deployment. This is a specialized option intended for a deployment within the same location, not across regions. Use this option if you want connectors to consume from the closest replica rather than the leader replica. In certain cases, consuming from the closest replica can improve network utilization or reduce costs . The `topologyKey` must match a node label containing the rack ID. The example used in this configuration specifies a zone using the standard `{K8sZoneLabel}` label. To consume from the closest replica, enable the `RackAwareReplicaSelector`  in the Kafka broker configuration.
 <18> Template customization. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
-<19> Environment variables are set for distributed tracing or to pass credentials to connectors.
+<19> Environment variables are set for distributed tracing and to pass credentials to connectors.
 <20> Distributed tracing is enabled by using OpenTelemetry.

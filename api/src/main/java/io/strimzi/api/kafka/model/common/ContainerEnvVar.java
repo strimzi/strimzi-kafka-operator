@@ -2,7 +2,6 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-
 package io.strimzi.api.kafka.model.common;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -53,7 +52,7 @@ public class ContainerEnvVar implements UnknownPropertyPreserving {
         this.value = value;
     }
 
-    @Description("Reference to Secret or ConfigMap field to which will be the environment variable set.")
+    @Description("Reference to secret or config map property to which will be the environment variable is set.")
     public ContainerEnvVarSource getValueFrom() {
         return valueFrom;
     }
