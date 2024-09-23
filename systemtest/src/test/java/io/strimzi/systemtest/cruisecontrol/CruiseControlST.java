@@ -58,10 +58,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
-import static io.strimzi.systemtest.TestConstants.CRUISE_CONTROL;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
-import static io.strimzi.systemtest.TestConstants.SANITY;
+import static io.strimzi.systemtest.Tags.ACCEPTANCE;
+import static io.strimzi.systemtest.Tags.CRUISE_CONTROL;
+import static io.strimzi.systemtest.Tags.REGRESSION;
+import static io.strimzi.systemtest.Tags.SANITY;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;

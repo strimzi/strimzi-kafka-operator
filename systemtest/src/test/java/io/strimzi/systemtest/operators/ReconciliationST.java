@@ -47,10 +47,10 @@ import org.junit.jupiter.api.Tag;
 import java.util.Collections;
 import java.util.Map;
 
-import static io.strimzi.systemtest.TestConstants.CONNECT;
-import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.TestConstants.CRUISE_CONTROL;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.Tags.CONNECT;
+import static io.strimzi.systemtest.Tags.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.Tags.CRUISE_CONTROL;
+import static io.strimzi.systemtest.Tags.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 @Tag(REGRESSION)

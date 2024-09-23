@@ -66,12 +66,12 @@ import java.util.Map;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-import static io.strimzi.systemtest.TestConstants.BRIDGE;
-import static io.strimzi.systemtest.TestConstants.CONNECT;
-import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER2;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
-import static io.strimzi.systemtest.TestConstants.ROLLING_UPDATE;
+import static io.strimzi.systemtest.Tags.BRIDGE;
+import static io.strimzi.systemtest.Tags.CONNECT;
+import static io.strimzi.systemtest.Tags.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.Tags.MIRROR_MAKER2;
+import static io.strimzi.systemtest.Tags.REGRESSION;
+import static io.strimzi.systemtest.Tags.ROLLING_UPDATE;
 import static io.strimzi.systemtest.TestConstants.STRIMZI_DEPLOYMENT_NAME;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;

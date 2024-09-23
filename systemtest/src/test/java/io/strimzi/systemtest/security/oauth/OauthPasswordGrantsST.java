@@ -51,14 +51,14 @@ import org.junit.jupiter.api.Tag;
 
 import java.time.Duration;
 
-import static io.strimzi.systemtest.TestConstants.BRIDGE;
-import static io.strimzi.systemtest.TestConstants.CONNECT;
-import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.Tags.BRIDGE;
+import static io.strimzi.systemtest.Tags.CONNECT;
+import static io.strimzi.systemtest.Tags.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.Tags.MIRROR_MAKER;
+import static io.strimzi.systemtest.Tags.MIRROR_MAKER2;
+import static io.strimzi.systemtest.Tags.OAUTH;
+import static io.strimzi.systemtest.Tags.REGRESSION;
 import static io.strimzi.systemtest.TestConstants.HTTP_BRIDGE_DEFAULT_PORT;
-import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER;
-import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER2;
-import static io.strimzi.systemtest.TestConstants.OAUTH;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 @Tag(OAUTH)

@@ -34,8 +34,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static io.strimzi.systemtest.TestConstants.DYNAMIC_CONFIGURATION;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.Tags.DYNAMIC_CONFIGURATION;
+import static io.strimzi.systemtest.Tags.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;

@@ -63,10 +63,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
-import static io.strimzi.systemtest.TestConstants.COMPONENT_SCALING;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
-import static io.strimzi.systemtest.TestConstants.ROLLING_UPDATE;
+import static io.strimzi.systemtest.Tags.ACCEPTANCE;
+import static io.strimzi.systemtest.Tags.COMPONENT_SCALING;
+import static io.strimzi.systemtest.Tags.REGRESSION;
+import static io.strimzi.systemtest.Tags.ROLLING_UPDATE;
 import static io.strimzi.systemtest.k8s.Events.Killing;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;

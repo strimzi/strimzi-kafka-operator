@@ -37,8 +37,8 @@ import org.junit.jupiter.api.Tag;
 import java.io.IOException;
 import java.util.Collections;
 
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
-import static io.strimzi.systemtest.TestConstants.TIERED_STORAGE;
+import static io.strimzi.systemtest.Tags.REGRESSION;
+import static io.strimzi.systemtest.Tags.TIERED_STORAGE;
 
 /**
  * @description This test suite covers scenarios for Tiered Storage integration implemented within Strimzi.

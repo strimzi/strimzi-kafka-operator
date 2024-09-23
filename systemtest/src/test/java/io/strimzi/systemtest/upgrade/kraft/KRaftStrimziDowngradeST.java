@@ -21,8 +21,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 
+import static io.strimzi.systemtest.Tags.KRAFT_UPGRADE;
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
-import static io.strimzi.systemtest.TestConstants.KRAFT_UPGRADE;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**

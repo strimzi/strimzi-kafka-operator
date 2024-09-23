@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Tag;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.Tags.REGRESSION;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 /**

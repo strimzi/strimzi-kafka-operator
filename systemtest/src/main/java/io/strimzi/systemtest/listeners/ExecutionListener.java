@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.listeners;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.Tags;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -62,14 +62,14 @@ public class ExecutionListener implements TestExecutionListener {
 
         // name of suites or tags which indicates need of creation of shared namespace test-suite-namespace
         final Set<String> identifiersRequiringSharedNamespace = Set.of(
-            TestConstants.PARALLEL_TEST,
-            TestConstants.ISOLATED_TEST,
-            TestConstants.DYNAMIC_CONFIGURATION, // Dynamic configuration also because in DynamicConfSharedST we use @TestFactory
-            TestConstants.TRACING,  // Tracing, because we deploy Jaeger operator inside additional namespace
-            TestConstants.KAFKA_SMOKE, // KafkaVersionsST, MigrationST because here we use @ParameterizedTest
-            TestConstants.MIGRATION,
-            TestConstants.UPGRADE,
-            TestConstants.KRAFT_UPGRADE
+            Tags.PARALLEL_TEST,
+            Tags.ISOLATED_TEST,
+            Tags.DYNAMIC_CONFIGURATION, // Dynamic configuration also because in DynamicConfSharedST we use @TestFactory
+            Tags.TRACING,  // Tracing, because we deploy Jaeger operator inside additional namespace
+            Tags.KAFKA_SMOKE, // KafkaVersionsST, MigrationST because here we use @ParameterizedTest
+            Tags.MIGRATION,
+            Tags.UPGRADE,
+            Tags.KRAFT_UPGRADE
         );
 
         for (TestIdentifier testIdentifier : testCases) {

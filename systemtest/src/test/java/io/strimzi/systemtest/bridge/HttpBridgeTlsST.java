@@ -23,6 +23,7 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.Tags;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
@@ -43,9 +44,9 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
-import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
-import static io.strimzi.systemtest.TestConstants.BRIDGE;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.Tags.ACCEPTANCE;
+import static io.strimzi.systemtest.Tags.BRIDGE;
+import static io.strimzi.systemtest.Tags.REGRESSION;
 
 @Tag(REGRESSION)
 @Tag(BRIDGE)
@@ -198,8 +199,8 @@ class HttpBridgeTlsST extends AbstractST {
 
     private void testWeirdUsername(String weirdUserName, KafkaListenerAuthentication auth,
                                    KafkaBridgeSpec spec, TestStorage testStorage) {
-        String bridgeProducerName = testStorage.getProducerName() + "-" + TestConstants.BRIDGE;
-        String bridgeConsumerName = testStorage.getConsumerName() + "-" + TestConstants.BRIDGE;
+        String bridgeProducerName = testStorage.getProducerName() + "-" + Tags.BRIDGE;
+        String bridgeConsumerName = testStorage.getConsumerName() + "-" + Tags.BRIDGE;
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(

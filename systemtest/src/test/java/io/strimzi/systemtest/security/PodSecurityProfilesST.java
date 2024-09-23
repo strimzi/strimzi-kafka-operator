@@ -47,8 +47,8 @@ import org.junit.jupiter.api.Tag;
 import java.util.Collections;
 import java.util.List;
 
-import static io.strimzi.systemtest.TestConstants.POD_SECURITY_PROFILES_RESTRICTED;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.Tags.POD_SECURITY_PROFILES_RESTRICTED;
+import static io.strimzi.systemtest.Tags.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 

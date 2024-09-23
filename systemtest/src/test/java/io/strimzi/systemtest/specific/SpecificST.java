@@ -35,8 +35,8 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
-import static io.strimzi.systemtest.TestConstants.SPECIFIC;
+import static io.strimzi.systemtest.Tags.REGRESSION;
+import static io.strimzi.systemtest.Tags.SPECIFIC;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 

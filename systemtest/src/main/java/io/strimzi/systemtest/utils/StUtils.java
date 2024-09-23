@@ -20,6 +20,7 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.common.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.ContainerEnvVarBuilder;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.Tags;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.SkipDefaultNetworkPolicyCreation;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -382,7 +383,7 @@ public class StUtils {
      * otherwise false
      */
     public static boolean isParallelTest(Object annotationHolder) {
-        return CONTAINS_ANNOTATION.apply(TestConstants.PARALLEL_TEST, annotationHolder);
+        return CONTAINS_ANNOTATION.apply(Tags.PARALLEL_TEST, annotationHolder);
     }
 
     /**
@@ -392,7 +393,7 @@ public class StUtils {
      * otherwise false
      */
     public static boolean isIsolatedTest(Object annotationHolder) {
-        return CONTAINS_ANNOTATION.apply(TestConstants.ISOLATED_TEST, annotationHolder);
+        return CONTAINS_ANNOTATION.apply(Tags.ISOLATED_TEST, annotationHolder);
     }
 
     /**
@@ -402,7 +403,7 @@ public class StUtils {
      * otherwise false
      */
     public static boolean isParallelNamespaceTest(Object annotationHolder) {
-        return CONTAINS_ANNOTATION.apply(TestConstants.PARALLEL_NAMESPACE, annotationHolder);
+        return CONTAINS_ANNOTATION.apply(Tags.PARALLEL_NAMESPACE, annotationHolder);
     }
 
     /**

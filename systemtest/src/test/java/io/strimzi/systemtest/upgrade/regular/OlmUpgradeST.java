@@ -35,8 +35,8 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 
+import static io.strimzi.systemtest.Tags.OLM_UPGRADE;
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
-import static io.strimzi.systemtest.TestConstants.OLM_UPGRADE;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;

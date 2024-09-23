@@ -66,11 +66,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
-import static io.strimzi.systemtest.TestConstants.COMPONENT_SCALING;
-import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER2;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.Tags.ACCEPTANCE;
+import static io.strimzi.systemtest.Tags.COMPONENT_SCALING;
+import static io.strimzi.systemtest.Tags.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.Tags.MIRROR_MAKER2;
+import static io.strimzi.systemtest.Tags.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;

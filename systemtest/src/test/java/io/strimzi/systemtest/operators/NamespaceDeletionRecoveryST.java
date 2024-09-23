@@ -38,7 +38,7 @@ import org.junit.jupiter.api.Tag;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.TestConstants.RECOVERY;
+import static io.strimzi.systemtest.Tags.RECOVERY;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 /**

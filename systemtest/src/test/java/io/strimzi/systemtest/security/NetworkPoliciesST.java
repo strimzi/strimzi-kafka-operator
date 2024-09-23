@@ -50,9 +50,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.TestConstants.CRUISE_CONTROL;
-import static io.strimzi.systemtest.TestConstants.NETWORKPOLICIES_SUPPORTED;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.Tags.CRUISE_CONTROL;
+import static io.strimzi.systemtest.Tags.NETWORKPOLICIES_SUPPORTED;
+import static io.strimzi.systemtest.Tags.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;

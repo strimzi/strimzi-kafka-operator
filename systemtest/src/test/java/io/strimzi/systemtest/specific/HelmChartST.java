@@ -21,8 +21,8 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
-import static io.strimzi.systemtest.TestConstants.HELM;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.Tags.HELM;
+import static io.strimzi.systemtest.Tags.REGRESSION;
 
 @Tag(HELM)
 @Tag(REGRESSION)

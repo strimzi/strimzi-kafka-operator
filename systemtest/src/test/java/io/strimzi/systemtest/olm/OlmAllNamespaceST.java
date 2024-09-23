@@ -12,12 +12,12 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static io.strimzi.systemtest.TestConstants.BRIDGE;
-import static io.strimzi.systemtest.TestConstants.CONNECT;
-import static io.strimzi.systemtest.TestConstants.CRUISE_CONTROL;
-import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER;
-import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER2;
-import static io.strimzi.systemtest.TestConstants.OLM;
+import static io.strimzi.systemtest.Tags.BRIDGE;
+import static io.strimzi.systemtest.Tags.CONNECT;
+import static io.strimzi.systemtest.Tags.CRUISE_CONTROL;
+import static io.strimzi.systemtest.Tags.MIRROR_MAKER;
+import static io.strimzi.systemtest.Tags.MIRROR_MAKER2;
+import static io.strimzi.systemtest.Tags.OLM;
 import static io.strimzi.systemtest.TestConstants.WATCH_ALL_NAMESPACES;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)

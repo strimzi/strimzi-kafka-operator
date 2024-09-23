@@ -22,8 +22,8 @@ import org.junit.jupiter.api.Tag;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.strimzi.systemtest.TestConstants.CRUISE_CONTROL;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.Tags.CRUISE_CONTROL;
+import static io.strimzi.systemtest.Tags.REGRESSION;
 import static io.strimzi.systemtest.utils.specific.CruiseControlUtils.CRUISE_CONTROL_DEFAULT_PORT;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
