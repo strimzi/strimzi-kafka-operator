@@ -1222,7 +1222,7 @@ spec:
                                   configMapKeyRef: {}
                                 required:
                                 - configMapKeyRef
-                              description: Reference to secret or config map property to which will be the environment variable is set.
+                              description: Reference to the secret or config map property to which the environment variable is set.
                           oneOf:
                           - properties:
                               value: {}
@@ -1365,7 +1365,7 @@ spec:
                                   configMapKeyRef: {}
                                 required:
                                 - configMapKeyRef
-                              description: Reference to secret or config map property to which will be the environment variable is set.
+                              description: Reference to the secret or config map property to which the environment variable is set.
                           oneOf:
                           - properties:
                               value: {}
@@ -2149,7 +2149,7 @@ spec:
                                   configMapKeyRef: {}
                                 required:
                                 - configMapKeyRef
-                              description: Reference to secret or config map property to which will be the environment variable is set.
+                              description: Reference to the secret or config map property to which the environment variable is set.
                           oneOf:
                           - properties:
                               value: {}

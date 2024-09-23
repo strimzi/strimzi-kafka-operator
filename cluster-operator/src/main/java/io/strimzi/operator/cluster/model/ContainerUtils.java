@@ -16,7 +16,7 @@ import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.VolumeMount;
-import io.strimzi.api.kafka.model.common.ContainerEnvVar;
+import io.strimzi.api.kafka.model.common.template.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -203,7 +203,7 @@ public class ContainerUtils {
     }
 
     /**
-     * Adds the supplied list of user configured container environment variables {@see io.strimzi.api.kafka.model.common.ContainerEnvVar} to the
+     * Adds the supplied list of user configured container environment variables {@see io.strimzi.api.kafka.model.common.template.ContainerEnvVar} to the
      * supplied list of fabric8 environment variables {@see io.fabric8.kubernetes.api.model.EnvVar},
      * checking first if the environment variable key has already been set in the existing list and then converts them.
      * <p>

@@ -7,7 +7,7 @@ package io.strimzi.systemtest.kafka.listeners;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Service;
-import io.strimzi.api.kafka.model.common.ContainerEnvVarBuilder;
+import io.strimzi.api.kafka.model.common.template.ContainerEnvVarBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
