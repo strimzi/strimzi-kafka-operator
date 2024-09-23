@@ -41,5 +41,5 @@ For instance, a source connector with `tasksMax: 2` might split the import of so
 
 include::../../shared/snip-example-source-connector-config.adoc[]
 
-To include external connector configurations, such as user access credentials stored in a secret, use the `externalConfiguration` property of the `KafkaConnect` resource. 
+To include external connector configurations, such as user access credentials stored in a secret, use the `template` property of the `KafkaConnect` resource.
 You can also load values using xref:assembly-loading-config-with-providers-str[configuration providers]. 

@@ -213,19 +213,6 @@ spec:
   # Tracing configuration (optional)
   tracing:
     type: opentelemetry # <43>
-  # External configuration (optional)
-  externalConfiguration: # <44>
-    env:
-      - name: AWS_ACCESS_KEY_ID
-        valueFrom:
-          secretKeyRef:
-            name: aws-creds
-            key: awsAccessKey
-      - name: AWS_SECRET_ACCESS_KEY
-        valueFrom:
-          secretKeyRef:
-            name: aws-creds
-            key: awsSecretAccessKey
 ----
 <1> The number of replica nodes for the workers that run tasks.
 <2> Kafka cluster alias for Kafka Connect, which must specify the *target* Kafka cluster. The Kafka cluster is used by Kafka Connect for its internal topics.
@@ -271,5 +258,3 @@ Standard Apache Kafka configuration may be provided, restricted to those propert
 <41> Template customization. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
 <42> Environment variables are set for distributed tracing.
 <43> Distributed tracing is enabled by using OpenTelemetry.
-<44> External configuration for a Kubernetes Secret mounted to Kafka MirrorMaker as an environment variable.
-You can also use configuration provider plugins to load configuration values from external sources.

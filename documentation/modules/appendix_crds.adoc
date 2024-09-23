@@ -1372,6 +1372,26 @@ Used in: xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |value
 |string
 |The environment variable value.
+|valueFrom
+|xref:type-ContainerEnvVarSource-{context}[`ContainerEnvVarSource`]
+|Reference to secret or config map property to which will be the environment variable is set.
+|====
+
+[id='type-ContainerEnvVarSource-{context}']
+= `ContainerEnvVarSource` schema reference
+
+Used in: xref:type-ContainerEnvVar-{context}[`ContainerEnvVar`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|secretKeyRef
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#secretkeyselector-v1-core[SecretKeySelector]
+|Reference to a key in a secret.
+|configMapKeyRef
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#configmapkeyselector-v1-core[ConfigMapKeySelector]
+|Reference to a key in a config map.
 |====
 
 [id='type-TieredStorageCustom-{context}']
@@ -2384,7 +2404,7 @@ include::../api/io.strimzi.api.kafka.model.connect.KafkaConnectSpec.adoc[levelof
 |Template for Kafka Connect and Kafka MirrorMaker 2 resources. The template allows users to specify how the `Pods`, `Service`, and other services are generated.
 |externalConfiguration
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
-|Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
+|**The `externalConfiguration` property has been deprecated.** The external configuration is deprecated and will be removed in the future. Please use the template section instead to configure additional environment variables or volumes. Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
 |build
 |xref:type-Build-{context}[`Build`]
 |Configures how the Connect container image should be built. Optional.
@@ -2742,6 +2762,9 @@ Used in: xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
 [id='type-ExternalConfiguration-{context}']
 = `ExternalConfiguration` schema reference
 
+*The type `ExternalConfiguration` has been deprecated.*
+Please use xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`] instead.
+
 Used in: xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
 xref:type-ExternalConfiguration-schema-{context}[Full list of `ExternalConfiguration` schema properties]
@@ -2757,7 +2780,7 @@ include::../api/io.strimzi.api.kafka.model.connect.ExternalConfiguration.adoc[le
 |Property |Property type |Description
 |env
 |xref:type-ExternalConfigurationEnv-{context}[`ExternalConfigurationEnv`] array
-|Makes data from a Secret or ConfigMap available in the Kafka Connect pods as environment variables.
+|**The `env` property has been deprecated.** The external configuration environment variables are deprecated and will be removed in the future. Please use the environment variables in a container template instead. Makes data from a Secret or ConfigMap available in the Kafka Connect pods as environment variables.
 |volumes
 |xref:type-ExternalConfigurationVolumeSource-{context}[`ExternalConfigurationVolumeSource`] array
 |**The `volumes` property has been deprecated.** The external configuration volumes are deprecated and will be removed in the future. Please use the additional volumes and volume mounts in pod and container templates instead to mount additional secrets or config maps. Makes data from a Secret or ConfigMap available in the Kafka Connect pods as volumes.
@@ -2765,6 +2788,9 @@ include::../api/io.strimzi.api.kafka.model.connect.ExternalConfiguration.adoc[le
 
 [id='type-ExternalConfigurationEnv-{context}']
 = `ExternalConfigurationEnv` schema reference
+
+*The type `ExternalConfigurationEnv` has been deprecated.*
+Please use xref:type-ContainerEnvVar-{context}[`ContainerEnvVar`] instead.
 
 Used in: xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 
@@ -4189,7 +4215,7 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |Template for Kafka Connect and Kafka MirrorMaker 2 resources. The template allows users to specify how the `Pods`, `Service`, and other services are generated.
 |externalConfiguration
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
-|Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
+|**The `externalConfiguration` property has been deprecated.** The external configuration is deprecated and will be removed in the future. Please use the template section instead to configure additional environment variables or volumes. Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
 |====
 
 [id='type-KafkaMirrorMaker2ClusterSpec-{context}']

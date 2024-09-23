@@ -1311,6 +1311,48 @@ spec:
                             value:
                               type: string
                               description: The environment variable value.
+                            valueFrom:
+                              type: object
+                              properties:
+                                secretKeyRef:
+                                  type: object
+                                  properties:
+                                    key:
+                                      type: string
+                                    name:
+                                      type: string
+                                    optional:
+                                      type: boolean
+                                  description: Reference to a key in a secret.
+                                configMapKeyRef:
+                                  type: object
+                                  properties:
+                                    key:
+                                      type: string
+                                    name:
+                                      type: string
+                                    optional:
+                                      type: boolean
+                                  description: Reference to a key in a config map.
+                              oneOf:
+                              - properties:
+                                  secretKeyRef: {}
+                                required:
+                                - secretKeyRef
+                              - properties:
+                                  configMapKeyRef: {}
+                                required:
+                                - configMapKeyRef
+                              description: Reference to secret or config map property to which will be the environment variable is set.
+                          oneOf:
+                          - properties:
+                              value: {}
+                            required:
+                            - value
+                          - properties:
+                              valueFrom: {}
+                            required:
+                            - valueFrom
                         description: Environment variables which should be applied to the container.
                       securityContext:
                         type: object

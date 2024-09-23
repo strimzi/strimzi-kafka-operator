@@ -93,26 +93,13 @@ spec:
           - type: jar
             url: <url_to_download_connector_2_artifact>
             sha512sum: <SHA-512_checksum_of_connector_2_artifact>
-  # External configuration (optional)
-  externalConfiguration: # <12>
-    env:
-      - name: AWS_ACCESS_KEY_ID
-        valueFrom:
-          secretKeyRef:
-            name: aws-creds
-            key: awsAccessKey
-      - name: AWS_SECRET_ACCESS_KEY
-        valueFrom:
-          secretKeyRef:
-            name: aws-creds
-            key: awsSecretAccessKey
   # Logging configuration (optional)
-  logging: # <13>
+  logging: # <12>
     type: inline
     loggers:
       log4j.rootLogger: INFO
   # Readiness probe (optional)
-  readinessProbe: # <14>
+  readinessProbe: # <13>
     initialDelaySeconds: 15
     timeoutSeconds: 5
   # Liveness probe (optional)
@@ -120,23 +107,23 @@ spec:
     initialDelaySeconds: 15
     timeoutSeconds: 5
   # Metrics configuration (optional)
-  metricsConfig: # <15>
+  metricsConfig: # <14>
     type: jmxPrometheusExporter
     valueFrom:
       configMapKeyRef:
         name: my-config-map
         key: my-key
   # JVM options (optional)
-  jvmOptions: # <16>
+  jvmOptions: # <15>
     "-Xmx": "1g"
     "-Xms": "1g"
   # Custom image (optional)
-  image: my-org/my-image:latest # <17>
+  image: my-org/my-image:latest # <16>
   # Rack awareness (optional)
   rack:
-    topologyKey: topology.kubernetes.io/zone # <18>
-  # Pod template (optional)
-  template: # <19>
+    topologyKey: topology.kubernetes.io/zone # <17>
+  # Pod and container template (optional)
+  template: # <18>
     pod:
       affinity:
         podAntiAffinity:
@@ -149,15 +136,25 @@ spec:
                       - postgresql
                       - mongodb
               topologyKey: "kubernetes.io/hostname"
-    connectContainer: # <20>
+    connectContainer: # <19>
       env:
         - name: OTEL_SERVICE_NAME
           value: my-otel-service
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
           value: "http://otlp-host:4317"
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: aws-creds
+              key: awsAccessKey
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aws-creds
+              key: awsSecretAccessKey
   # Tracing configuration (optional)
   tracing:
-    type: opentelemetry # <21>
+    type: opentelemetry # <20>
 ----
 <1> Use `KafkaConnect`.
 <2> Enables the use of `KafkaConnector` resources to start, stop, and manage connector instances.
@@ -175,14 +172,12 @@ By default, Kafka Connect connects to Kafka brokers using a plain text connectio
 <9> Build configuration properties for building a container image with connector plugins automatically.
 <10> (Required) Configuration of the container registry where new images are pushed.
 <11> (Required) List of connector plugins and their artifacts to add to the new container image. Each plugin must be configured with at least one `artifact`.
-<12> External configuration for connectors using environment variables, as shown here, or volumes.
-You can also use configuration provider plugins to load configuration values from external sources.
-<13> Specified Kafka Connect loggers and log levels added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom Log4j configuration must be placed under the `log4j.properties` or `log4j2.properties` key in the ConfigMap. For the Kafka Connect `log4j.rootLogger` logger, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
-<14> Healthchecks to know when to restart a container (liveness) and when a container can accept traffic (readiness).
-<15> Prometheus metrics, which are enabled by referencing a ConfigMap containing configuration for the Prometheus JMX exporter in this example. You can enable metrics without further configuration using a reference to a ConfigMap containing an empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
-<16> JVM configuration options to optimize performance for the Virtual Machine (VM) running Kafka Connect.
-<17> ADVANCED OPTION: Container image configuration, which is recommended only in special situations.
-<18> SPECIALIZED OPTION: Rack awareness configuration for the deployment. This is a specialized option intended for a deployment within the same location, not across regions. Use this option if you want connectors to consume from the closest replica rather than the leader replica. In certain cases, consuming from the closest replica can improve network utilization or reduce costs . The `topologyKey` must match a node label containing the rack ID. The example used in this configuration specifies a zone using the standard `{K8sZoneLabel}` label. To consume from the closest replica, enable the `RackAwareReplicaSelector`  in the Kafka broker configuration.
-<19> Template customization. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
-<20> Environment variables are set for distributed tracing.
-<21> Distributed tracing is enabled by using OpenTelemetry.
+<12> Specified Kafka Connect loggers and log levels added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom Log4j configuration must be placed under the `log4j.properties` or `log4j2.properties` key in the ConfigMap. For the Kafka Connect `log4j.rootLogger` logger, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
+<13> Healthchecks to know when to restart a container (liveness) and when a container can accept traffic (readiness).
+<14> Prometheus metrics, which are enabled by referencing a ConfigMap containing configuration for the Prometheus JMX exporter in this example. You can enable metrics without further configuration using a reference to a ConfigMap containing an empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
+<15> JVM configuration options to optimize performance for the Virtual Machine (VM) running Kafka Connect.
+<16> ADVANCED OPTION: Container image configuration, which is recommended only in special situations.
+<17> SPECIALIZED OPTION: Rack awareness configuration for the deployment. This is a specialized option intended for a deployment within the same location, not across regions. Use this option if you want connectors to consume from the closest replica rather than the leader replica. In certain cases, consuming from the closest replica can improve network utilization or reduce costs . The `topologyKey` must match a node label containing the rack ID. The example used in this configuration specifies a zone using the standard `{K8sZoneLabel}` label. To consume from the closest replica, enable the `RackAwareReplicaSelector`  in the Kafka broker configuration.
+<18> Template customization. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
+<19> Environment variables are set for distributed tracing and to pass credentials to connectors.
+<20> Distributed tracing is enabled by using OpenTelemetry.

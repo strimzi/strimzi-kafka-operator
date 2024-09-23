@@ -19,16 +19,19 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.common.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Shared methods for working with Containers
  */
 public class ContainerUtils {
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ContainerUtils.class);
+
     /**
      * Creates a container
      *
@@ -199,7 +202,6 @@ public class ContainerUtils {
                 .build();
     }
 
-
     /**
      * Adds the supplied list of user configured container environment variables {@see io.strimzi.api.kafka.model.common.ContainerEnvVar} to the
      * supplied list of fabric8 environment variables {@see io.fabric8.kubernetes.api.model.EnvVar},
@@ -215,17 +217,20 @@ public class ContainerUtils {
     public static void addContainerEnvsToExistingEnvs(Reconciliation reconciliation, List<EnvVar> existingEnvs, ContainerTemplate template) {
         if (template != null && template.getEnv() != null) {
             // Create set of env var names to test if any user defined template env vars will conflict with those set above
-            Set<String> predefinedEnvs = new HashSet<>();
-            for (EnvVar envVar : existingEnvs) {
-                predefinedEnvs.add(envVar.getName());
-            }
+            Set<String> alreadyUsedEnvNames = existingEnvs.stream().map(EnvVar::getName).collect(Collectors.toSet());
 
             // Set custom env vars from the user defined template
             for (ContainerEnvVar containerEnvVar : template.getEnv()) {
-                if (predefinedEnvs.contains(containerEnvVar.getName())) {
-                    AbstractModel.LOGGER.warnCr(reconciliation, "User defined container template environment variable {} is already in use and will be ignored",  containerEnvVar.getName());
-                } else {
+                if (alreadyUsedEnvNames.contains(containerEnvVar.getName())) {
+                    LOGGER.warnCr(reconciliation, "User defined container template environment variable {} is already in use and will be ignored",  containerEnvVar.getName());
+                } else if (containerEnvVar.getValue() != null) {
                     existingEnvs.add(createEnvVar(containerEnvVar.getName(), containerEnvVar.getValue()));
+                } else if (containerEnvVar.getValueFrom() != null && containerEnvVar.getValueFrom().getSecretKeyRef() != null) {
+                    existingEnvs.add(new EnvVarBuilder().withName(containerEnvVar.getName()).withNewValueFrom().withSecretKeyRef(containerEnvVar.getValueFrom().getSecretKeyRef()).endValueFrom().build());
+                } else if (containerEnvVar.getValueFrom() != null && containerEnvVar.getValueFrom().getConfigMapKeyRef() != null) {
+                    existingEnvs.add(new EnvVarBuilder().withName(containerEnvVar.getName()).withNewValueFrom().withConfigMapKeyRef(containerEnvVar.getValueFrom().getConfigMapKeyRef()).endValueFrom().build());
+                } else {
+                    LOGGER.warnCr(reconciliation, "User defined container template environment variable {} doesn't have any value defined and will be ignored",  containerEnvVar.getName());
                 }
             }
         }

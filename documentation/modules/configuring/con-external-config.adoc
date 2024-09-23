@@ -49,7 +49,7 @@ You can supply connector configuration for Kafka Connect or MirrorMaker 2 in thi
 
 * Mount config maps or secrets into the Kafka Connect pod as environment variables or volumes
 * Enable `EnvVarConfigProvider`, `FileConfigProvider`, or `DirectoryConfigProvider` in the Kafka Connect or MirrorMaker 2 configuration
-* Pass connector configuration using the `externalConfiguration` property in the `spec` of the `KafkaConnect` or `KafkaMirrorMaker2` resource
+* Pass connector configuration using the `template` property in the `spec` of the `KafkaConnect` or `KafkaMirrorMaker2` resource
 
 Using providers help prevent the passing of restricted information through the Kafka Connect REST interface.
 You can use this approach in the following scenarios:
@@ -63,4 +63,4 @@ NOTE: A restart is required when using a new `Secret` or `ConfigMap` for a conne
 [role="_additional-resources"]
 .Additional resources
 
-link:{BookURLConfiguring}#type-ExternalConfiguration-reference[`ExternalConfiguration` schema reference^]
+link:{BookURLConfiguring}#type-KafkaConnectTemplate-reference[`KafkaConnectTemplate` schema reference^]

@@ -176,9 +176,9 @@ public class ContainerUtilsTest {
     }
 
     @Test
-    public void testAddContainerToEnvVarsWithTemplate() {
+    public void testAddContainerToEnvVarsWithoutValue() {
         ContainerTemplate template = new ContainerTemplateBuilder()
-                .withEnv(new ContainerEnvVarBuilder().withName("VAR_2").withValue("value2").build())
+                .withEnv(new ContainerEnvVarBuilder().withName("VAR_2").build())
                 .build();
 
         List<EnvVar> vars = new ArrayList<>();
@@ -186,11 +186,38 @@ public class ContainerUtilsTest {
 
         ContainerUtils.addContainerEnvsToExistingEnvs(Reconciliation.DUMMY_RECONCILIATION, vars, template);
 
-        assertThat(vars.size(), is(2));
+        assertThat(vars.size(), is(1));
+        assertThat(vars.get(0).getName(), is("VAR_1"));
+        assertThat(vars.get(0).getValue(), is("value1"));
+    }
+
+    @Test
+    public void testAddContainerToEnvVarsWithTemplate() {
+        ContainerTemplate template = new ContainerTemplateBuilder()
+                .withEnv(new ContainerEnvVarBuilder().withName("VAR_2").withValue("value2").build(),
+                        new ContainerEnvVarBuilder().withName("VAR_3").withNewValueFrom().withNewSecretKeyRef("my-secret-key", "my-secret", false).endValueFrom().build(),
+                        new ContainerEnvVarBuilder().withName("VAR_4").withNewValueFrom().withNewConfigMapKeyRef("my-cm-key", "my-cm", false).endValueFrom().build())
+                .build();
+
+        List<EnvVar> vars = new ArrayList<>();
+        vars.add(new EnvVarBuilder().withName("VAR_1").withValue("value1").build());
+
+        ContainerUtils.addContainerEnvsToExistingEnvs(Reconciliation.DUMMY_RECONCILIATION, vars, template);
+
+        assertThat(vars.size(), is(4));
         assertThat(vars.get(0).getName(), is("VAR_1"));
         assertThat(vars.get(0).getValue(), is("value1"));
         assertThat(vars.get(1).getName(), is("VAR_2"));
         assertThat(vars.get(1).getValue(), is("value2"));
+        assertThat(vars.get(1).getValueFrom(), is(nullValue()));
+        assertThat(vars.get(2).getName(), is("VAR_3"));
+        assertThat(vars.get(2).getValue(), is(nullValue()));
+        assertThat(vars.get(2).getValueFrom().getSecretKeyRef().getName(), is("my-secret"));
+        assertThat(vars.get(2).getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
+        assertThat(vars.get(3).getName(), is("VAR_4"));
+        assertThat(vars.get(3).getValue(), is(nullValue()));
+        assertThat(vars.get(3).getValueFrom().getConfigMapKeyRef().getName(), is("my-cm"));
+        assertThat(vars.get(3).getValueFrom().getConfigMapKeyRef().getKey(), is("my-cm-key"));
     }
 
     @Test

@@ -7,7 +7,9 @@ package io.strimzi.api.kafka.model.connect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.annotations.DeprecatedType;
 import io.strimzi.api.kafka.model.common.Constants;
+import io.strimzi.api.kafka.model.common.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
@@ -26,6 +28,8 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({"name", "valueFrom"})
+@Deprecated
+@DeprecatedType(replacedWithType = ContainerEnvVar.class)
 @EqualsAndHashCode
 @ToString
 public class ExternalConfigurationEnv implements UnknownPropertyPreserving {

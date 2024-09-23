@@ -2,12 +2,13 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-
 package io.strimzi.api.kafka.model.common;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.kafka.model.common.template.ContainerEnvVarSource;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.OneOf;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -23,12 +24,14 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({"name", "value"})
+@JsonPropertyOrder({"name", "value", "valueFrom"})
+@OneOf({@OneOf.Alternative(@OneOf.Alternative.Property("value")), @OneOf.Alternative(@OneOf.Alternative.Property("valueFrom"))})
 @EqualsAndHashCode
 @ToString
 public class ContainerEnvVar implements UnknownPropertyPreserving {
     private String name;
     private String value;
+    private ContainerEnvVarSource valueFrom;
     private Map<String, Object> additionalProperties;
 
     @Description("The environment variable key.")
@@ -47,6 +50,15 @@ public class ContainerEnvVar implements UnknownPropertyPreserving {
 
     public void setValue(String value) {
         this.value = value;
+    }
+
+    @Description("Reference to secret or config map property to which will be the environment variable is set.")
+    public ContainerEnvVarSource getValueFrom() {
+        return valueFrom;
+    }
+
+    public void setValueFrom(ContainerEnvVarSource valueFrom) {
+        this.valueFrom = valueFrom;
     }
 
     @Override
