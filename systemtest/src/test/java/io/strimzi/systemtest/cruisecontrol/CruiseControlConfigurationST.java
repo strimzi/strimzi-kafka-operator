@@ -47,8 +47,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 
-import static io.strimzi.systemtest.TestConstants.CRUISE_CONTROL;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestTags.CRUISE_CONTROL;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;

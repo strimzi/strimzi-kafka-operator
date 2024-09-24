@@ -35,12 +35,10 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
-import static io.strimzi.systemtest.TestConstants.SPECIFIC;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
-@Tag(SPECIFIC)
 @Tag(REGRESSION)
 public class SpecificST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(SpecificST.class);

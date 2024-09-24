@@ -54,9 +54,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.TestConstants.BRIDGE;
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestTags.BRIDGE;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;

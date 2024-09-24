@@ -44,9 +44,9 @@ import org.junit.jupiter.api.Tag;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.strimzi.systemtest.TestConstants.CONNECT;
-import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER2;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestTags.CONNECT;
+import static io.strimzi.systemtest.TestTags.MIRROR_MAKER2;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;

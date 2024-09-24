@@ -60,16 +60,16 @@ import org.junit.jupiter.api.Tag;
 
 import java.time.Duration;
 
-import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
-import static io.strimzi.systemtest.TestConstants.BRIDGE;
-import static io.strimzi.systemtest.TestConstants.CONNECT;
-import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.TestConstants.HTTP_BRIDGE_DEFAULT_PORT;
-import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER;
-import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER2;
-import static io.strimzi.systemtest.TestConstants.NODEPORT_SUPPORTED;
-import static io.strimzi.systemtest.TestConstants.OAUTH;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestTags.ACCEPTANCE;
+import static io.strimzi.systemtest.TestTags.BRIDGE;
+import static io.strimzi.systemtest.TestTags.CONNECT;
+import static io.strimzi.systemtest.TestTags.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.TestTags.MIRROR_MAKER;
+import static io.strimzi.systemtest.TestTags.MIRROR_MAKER2;
+import static io.strimzi.systemtest.TestTags.NODEPORT_SUPPORTED;
+import static io.strimzi.systemtest.TestTags.OAUTH;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;

@@ -51,9 +51,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.TestConstants.COMPONENT_SCALING;
-import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestTags.COMPONENT_SCALING;
+import static io.strimzi.systemtest.TestTags.MIRROR_MAKER;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;

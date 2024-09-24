@@ -59,7 +59,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static io.strimzi.systemtest.TestConstants.MIGRATION;
+import static io.strimzi.systemtest.TestTags.MIGRATION;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static org.hamcrest.CoreMatchers.is;

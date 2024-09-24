@@ -56,8 +56,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
-import static io.strimzi.systemtest.TestConstants.ROLLING_UPDATE;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
+import static io.strimzi.systemtest.TestTags.ROLLING_UPDATE;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.containsString;

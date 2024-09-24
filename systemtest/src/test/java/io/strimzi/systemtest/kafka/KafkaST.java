@@ -88,11 +88,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.TestConstants.BRIDGE;
-import static io.strimzi.systemtest.TestConstants.CONNECT;
-import static io.strimzi.systemtest.TestConstants.CRUISE_CONTROL;
-import static io.strimzi.systemtest.TestConstants.LOADBALANCER_SUPPORTED;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestTags.BRIDGE;
+import static io.strimzi.systemtest.TestTags.CONNECT;
+import static io.strimzi.systemtest.TestTags.CRUISE_CONTROL;
+import static io.strimzi.systemtest.TestTags.LOADBALANCER_SUPPORTED;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;

@@ -39,12 +39,12 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
-import static io.strimzi.systemtest.TestConstants.EXTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.TestConstants.LOADBALANCER_SUPPORTED;
-import static io.strimzi.systemtest.TestConstants.NODEPORT_SUPPORTED;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
-import static io.strimzi.systemtest.TestConstants.ROUTE;
+import static io.strimzi.systemtest.TestTags.ACCEPTANCE;
+import static io.strimzi.systemtest.TestTags.EXTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.TestTags.LOADBALANCER_SUPPORTED;
+import static io.strimzi.systemtest.TestTags.NODEPORT_SUPPORTED;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
+import static io.strimzi.systemtest.TestTags.ROUTE;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)

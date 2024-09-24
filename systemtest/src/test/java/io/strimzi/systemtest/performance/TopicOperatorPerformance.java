@@ -43,7 +43,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static io.strimzi.systemtest.performance.PerformanceConstants.CAPACITY;
+import static io.strimzi.systemtest.TestTags.CAPACITY;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class TopicOperatorPerformance extends AbstractST {

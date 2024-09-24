@@ -44,10 +44,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.TestConstants.CONNECT;
-import static io.strimzi.systemtest.TestConstants.CONNECTOR_OPERATOR;
-import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER2;
+import static io.strimzi.systemtest.TestTags.CONNECT;
+import static io.strimzi.systemtest.TestTags.CONNECTOR_OPERATOR;
+import static io.strimzi.systemtest.TestTags.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.TestTags.MIRROR_MAKER2;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;

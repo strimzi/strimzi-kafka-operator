@@ -34,7 +34,7 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.Environment.TEST_SUITE_NAMESPACE;
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
-import static io.strimzi.systemtest.TestConstants.UPGRADE;
+import static io.strimzi.systemtest.TestTags.UPGRADE;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;

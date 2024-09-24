@@ -39,8 +39,8 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
-import static io.strimzi.systemtest.TestConstants.BRIDGE;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestTags.BRIDGE;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
 
 @Tag(BRIDGE)
 @Tag(REGRESSION)

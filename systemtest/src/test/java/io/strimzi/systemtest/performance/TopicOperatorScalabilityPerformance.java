@@ -27,8 +27,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.TestConstants.PERFORMANCE;
-import static io.strimzi.systemtest.TestConstants.SCALABILITY;
+import static io.strimzi.systemtest.TestTags.PERFORMANCE;
+import static io.strimzi.systemtest.TestTags.SCALABILITY;
 
 @Tag(PERFORMANCE)
 @Tag(SCALABILITY)

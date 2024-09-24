@@ -50,8 +50,8 @@ import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 
-import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestTags.ACCEPTANCE;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;

@@ -43,11 +43,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.TestConstants.DYNAMIC_CONFIGURATION;
-import static io.strimzi.systemtest.TestConstants.EXTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.TestConstants.NODEPORT_SUPPORTED;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
-import static io.strimzi.systemtest.TestConstants.ROLLING_UPDATE;
+import static io.strimzi.systemtest.TestTags.DYNAMIC_CONFIGURATION;
+import static io.strimzi.systemtest.TestTags.EXTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.TestTags.NODEPORT_SUPPORTED;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
+import static io.strimzi.systemtest.TestTags.ROLLING_UPDATE;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;

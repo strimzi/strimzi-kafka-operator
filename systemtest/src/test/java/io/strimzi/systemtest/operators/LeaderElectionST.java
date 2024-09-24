@@ -25,7 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collections;
 
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;

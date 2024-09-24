@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Tag;
 
 import java.util.Arrays;
 
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
