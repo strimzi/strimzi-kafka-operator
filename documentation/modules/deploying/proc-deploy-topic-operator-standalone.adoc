@@ -22,6 +22,7 @@ In this way, you can use Topic Operators with multiple Kafka clusters.
 
 .Prerequisites
 
+* The standalone Topic Operator deployment files, which are included in the Strimzi xref:downloads-{context}[deployment files].
 * You are running a Kafka cluster for the Topic Operator to connect to.
 +
 As long as the standalone Topic Operator is correctly configured for connection,

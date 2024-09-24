@@ -44,6 +44,7 @@
 
 // Source and download links
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub releases page^]
+:ReleaseFile: strimzi-{ProductVersion}.*
 :supported-configurations: https://strimzi.io/downloads/
 
 //Monitoring links

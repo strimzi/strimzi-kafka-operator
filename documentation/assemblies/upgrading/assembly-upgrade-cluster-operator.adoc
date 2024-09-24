@@ -31,7 +31,7 @@ If you deployed the Cluster Operator using a Helm chart, use `helm upgrade`.
 
 The `helm upgrade` command does not upgrade the {HelmCustomResourceDefinitions}.
 Install the new CRDs manually after upgrading the Cluster Operator.
-You can access the CRDs from the {ReleaseDownload} or find them in the `crd` subdirectory inside the Helm Chart.
+You can download the CRDs from the {ReleaseDownload} or find them in the `crd` subdirectory inside the Helm Chart.
 
 [id='con-upgrade-cluster-operator-unsupported-kafka-{context}']
 == Upgrading the Cluster Operator returns Kafka version error
