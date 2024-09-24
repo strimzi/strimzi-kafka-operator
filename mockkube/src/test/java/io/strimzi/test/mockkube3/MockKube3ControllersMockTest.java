@@ -133,8 +133,11 @@ public class MockKube3ControllersMockTest {
                 .build();
 
         client.apps().deployments().inNamespace(namespace).resource(dep).create();
-
-        TestUtils.waitFor("Wait for deployment to have status", 100L, 10_000L, () -> client.apps().deployments().inNamespace(namespace).withName(deploymentName).get() != null && client.apps().deployments().inNamespace(namespace).withName(deploymentName).get().getStatus() != null);
+        
+        TestUtils.waitFor("Wait for deployment to have status", 100L, 10_000L, 
+                () -> client.apps().deployments().inNamespace(namespace).withName(deploymentName).get() != null
+                        && client.apps().deployments().inNamespace(namespace).withName(deploymentName).get().getStatus() != null
+                        && client.apps().deployments().inNamespace(namespace).withName(deploymentName).get().getStatus().getObservedGeneration() != null);
 
         Deployment createdDeployment = client.apps().deployments().inNamespace(namespace).withName(deploymentName).get();
         assertThat(createdDeployment, is(notNullValue()));
