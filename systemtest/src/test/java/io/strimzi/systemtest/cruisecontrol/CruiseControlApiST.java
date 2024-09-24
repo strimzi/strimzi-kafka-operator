@@ -12,6 +12,7 @@ import io.skodjob.annotations.TestDoc;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -42,7 +43,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
         @Step(value = "Deploy the cluster operator", expected = "Cluster operator is deployed")
     },
     labels = {
-        @Label(value = "cruise-control"),
+        @Label(value = TestDocsLabels.CRUISE_CONTROL),
     }
 )
 public class CruiseControlApiST extends AbstractST {
@@ -61,7 +62,7 @@ public class CruiseControlApiST extends AbstractST {
             @Step(value = "Verify the Cruise Control state response", expected = "Response indicates Cruise Control is RUNNING with NO_TASK_IN_PROGRESS")
         },
         labels = {
-            @Label(value = "cruise-control"),
+            @Label(value = TestDocsLabels.CRUISE_CONTROL),
         }
     )
     void testCruiseControlBasicAPIRequestsWithSecurityDisabled() {
@@ -107,7 +108,7 @@ public class CruiseControlApiST extends AbstractST {
             @Step(value = "Do request to Cruise Control's API, specifically to `/state` endpoint with `arnost:heslo` user", expected = "Request is successful and response contains information about state of the Cruise Control")
         },
         labels = {
-            @Label(value = "cruise-control"),
+            @Label(value = TestDocsLabels.CRUISE_CONTROL),
         }
     )
     void testCruiseControlAPIUsers() {

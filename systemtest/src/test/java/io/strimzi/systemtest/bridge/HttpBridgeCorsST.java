@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
@@ -55,7 +56,7 @@ import static org.hamcrest.Matchers.containsString;
         @Step(value = "Deploy required Kafka resources and scraper pod", expected = "Kafka resources and scraper pod are deployed and running")
     },
     labels = {
-        @Label("bridge")
+        @Label(TestDocsLabels.BRIDGE)
     }
 )
 public class HttpBridgeCorsST extends AbstractST {
@@ -79,7 +80,7 @@ public class HttpBridgeCorsST extends AbstractST {
             @Step(value = "Check if the GET request response is '404 Not Found'", expected = "Response for GET request is 404 Not Found")
         },
         labels = {
-            @Label("bridge")
+            @Label(TestDocsLabels.BRIDGE)
         }
     )
     void testCorsOriginAllowed() {
@@ -134,7 +135,7 @@ public class HttpBridgeCorsST extends AbstractST {
             @Step(value = "Verify the response contains '403' and 'CORS Rejected - Invalid origin'", expected = "Response indicates the CORS request is rejected")
         },
         labels = {
-            @Label("bridge")
+            @Label(TestDocsLabels.BRIDGE)
         }
     )
     void testCorsForbidden() {

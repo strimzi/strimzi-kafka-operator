@@ -18,6 +18,7 @@ import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfiguration
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -62,7 +63,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
         @Step(value = "Set up the Cluster Operator", expected = "Cluster Operator is installed and running")
     },
     labels = {
-        @Label(value = "cruise-control")
+        @Label(value = TestDocsLabels.CRUISE_CONTROL)
     }
 )
 public class CruiseControlConfigurationST extends AbstractST {
@@ -83,7 +84,7 @@ public class CruiseControlConfigurationST extends AbstractST {
             @Step(value = "Verify Cruise Control and related configurations", expected = "Cruise Control and its configurations are verified to be present")
         },
         labels = {
-            @Label(value = "cruise-control"),
+            @Label(value = TestDocsLabels.CRUISE_CONTROL),
         }
     )
     void testDeployAndUnDeployCruiseControl() throws IOException {
@@ -164,7 +165,7 @@ public class CruiseControlConfigurationST extends AbstractST {
             @Step(value = "Verify new configurations are applied to Cruise Control in Kafka CR", expected = "New configurations are correctly applied")
         },
         labels = {
-            @Label(value = "cruise-control"),
+            @Label(value = TestDocsLabels.CRUISE_CONTROL),
         }
     )
     void testConfigurationUpdate() throws IOException {

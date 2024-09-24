@@ -20,6 +20,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -57,7 +58,7 @@ import static io.strimzi.systemtest.TestConstants.REGRESSION;
         
     },
     labels = {
-        @Label("bridge")
+        @Label(TestDocsLabels.BRIDGE)
     }
 )
 class HttpBridgeScramShaST extends AbstractST {
@@ -78,7 +79,7 @@ class HttpBridgeScramShaST extends AbstractST {
             @Step(value = "Wait for consumer success", expected = "Consumer finishes receiving messages without errors")
         },
         labels = {
-            @Label("bridge")
+            @Label(TestDocsLabels.BRIDGE)
         }
     )
     void testSendSimpleMessageTlsScramSha() {
@@ -114,7 +115,7 @@ class HttpBridgeScramShaST extends AbstractST {
             @Step(value = "Wait for clients' success validation", expected = "Messages are successfully consumed from the Kafka topic")
         },
         labels = {
-            @Label("bridge")
+            @Label(TestDocsLabels.BRIDGE)
         }
     )
     void testReceiveSimpleMessageTlsScramSha() {

@@ -30,6 +30,7 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.MixedRoleNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -86,7 +87,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         @Step(value = "Deploy cluster operator with default installation", expected = "Cluster operator is deployed and running")
     },
     labels = {
-        @Label(value = "cruise-control"),
+        @Label(value = TestDocsLabels.CRUISE_CONTROL),
     }
 )
 public class CruiseControlST extends AbstractST {
@@ -104,7 +105,7 @@ public class CruiseControlST extends AbstractST {
             @Step(value = "Verify Cruise Control topics are present", expected = "Cruise Control topics are found present in the configuration")
         },
         labels = {
-            @Label(value = "cruise-control"),
+            @Label(value = TestDocsLabels.CRUISE_CONTROL),
         }
     )
     void testAutoCreationOfCruiseControlTopicsWithResources() {
@@ -196,7 +197,7 @@ public class CruiseControlST extends AbstractST {
             @Step(value = "Execute rebalance process again", expected = "Rebalancing process re-executed successfully")
         },
         labels = {
-            @Label(value = "cruise-control"),
+            @Label(value = TestDocsLabels.CRUISE_CONTROL),
         }
     )
     void testCruiseControlWithRebalanceResourceAndRefreshAnnotation() {
@@ -248,7 +249,7 @@ public class CruiseControlST extends AbstractST {
             @Step(value = "Wait until KafkaRebalance returns to ProposalReady state", expected = "KafkaRebalance re-enters ProposalReady state following the update")
         },
         labels = {
-            @Label(value = "cruise-control"),
+            @Label(value = TestDocsLabels.CRUISE_CONTROL),
         }
     )
     void testCruiseControlChangesFromRebalancingtoProposalReadyWhenSpecUpdated() {
@@ -288,7 +289,7 @@ public class CruiseControlST extends AbstractST {
             @Step(value = "Check that the Kafka status no longer contains the single-node error message", expected = "Error message resolved")
         },
         labels = {
-            @Label(value = "cruise-control"),
+            @Label(value = TestDocsLabels.CRUISE_CONTROL),
         }
     )
     void testCruiseControlWithSingleNodeKafka() {
@@ -344,7 +345,7 @@ public class CruiseControlST extends AbstractST {
             @Step(value = "Wait for KafkaRebalance to reach Ready state", expected = "KafkaRebalance reaches the Ready state")
         },
         labels = {
-            @Label(value = "cruise-control"),
+            @Label(value = TestDocsLabels.CRUISE_CONTROL),
         }
     )
     void testCruiseControlTopicExclusion() {
@@ -395,7 +396,7 @@ public class CruiseControlST extends AbstractST {
             @Step(value = "Verify the updated Cruise Control configuration", expected = "Updated replica movement strategies are verified in Cruise Control configuration")
         },
         labels = {
-            @Label(value = "cruise-control"),
+            @Label(value = TestDocsLabels.CRUISE_CONTROL),
         }
     )
     void testCruiseControlReplicaMovementStrategy() {
@@ -455,7 +456,7 @@ public class CruiseControlST extends AbstractST {
             @Step(value = "Check the status of the Kafka Rebalance for intra-broker disk balancing", expected = "The 'provisionStatus' in the optimization result is 'UNDECIDED'")
         },
         labels = {
-            @Label(value = "cruise-control"),
+            @Label(value = TestDocsLabels.CRUISE_CONTROL),
         }
     )
     void testCruiseControlIntraBrokerBalancing() {
@@ -514,7 +515,7 @@ public class CruiseControlST extends AbstractST {
             @Step(value = "Scale Kafka down to the initial number of brokers", expected = "Kafka brokers are scaled down to the original number of replicas")
         },
         labels = {
-            @Label(value = "cruise-control"),
+            @Label(value = TestDocsLabels.CRUISE_CONTROL),
         }
     )
     void testCruiseControlDuringBrokerScaleUpAndDown() {
@@ -613,7 +614,7 @@ public class CruiseControlST extends AbstractST {
             @Step(value = "Perform re-balancing process with auto-approval", expected = "Re-balancing process completes successfully with auto-approval")
         },
         labels = {
-            @Label(value = "cruise-control"),
+            @Label(value = TestDocsLabels.CRUISE_CONTROL),
         }
     )
     void testKafkaRebalanceAutoApprovalMechanism() {
