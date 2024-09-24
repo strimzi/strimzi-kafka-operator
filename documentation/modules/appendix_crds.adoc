@@ -1374,7 +1374,7 @@ Used in: xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |The environment variable value.
 |valueFrom
 |xref:type-ContainerEnvVarSource-{context}[`ContainerEnvVarSource`]
-|Reference to secret or config map property to which will be the environment variable is set.
+|Reference to the secret or config map property to which the environment variable is set.
 |====
 
 [id='type-ContainerEnvVarSource-{context}']
