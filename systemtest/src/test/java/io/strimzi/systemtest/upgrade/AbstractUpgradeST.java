@@ -46,6 +46,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.crds.CrdUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
@@ -717,17 +718,21 @@ public class AbstractUpgradeST extends AbstractST {
     }
 
     protected void cleanUpKafkaTopics(String componentsNamespaceName) {
-        List<KafkaTopic> topics = KafkaTopicResource.kafkaTopicClient().inNamespace(componentsNamespaceName).list().getItems();
-        boolean finalizersAreSet = topics.stream().anyMatch(kafkaTopic -> kafkaTopic.getFinalizers() != null);
+        if (CrdUtils.isCrdPresent(KafkaTopic.RESOURCE_PLURAL, KafkaTopic.RESOURCE_GROUP)) {
+            List<KafkaTopic> topics = KafkaTopicResource.kafkaTopicClient().inNamespace(componentsNamespaceName).list().getItems();
+            boolean finalizersAreSet = topics.stream().anyMatch(kafkaTopic -> kafkaTopic.getFinalizers() != null);
 
-        // in case that we are upgrading/downgrading from UTO to BTO, we have to set finalizers on topics to null before deleting them
-        if (!StUtils.isUnidirectionalTopicOperatorUsed(componentsNamespaceName, eoSelector) && finalizersAreSet) {
-            KafkaTopicUtils.setFinalizersInAllTopicsToNull(componentsNamespaceName);
+            // in case that we are upgrading/downgrading from UTO to BTO, we have to set finalizers on topics to null before deleting them
+            if (!StUtils.isUnidirectionalTopicOperatorUsed(componentsNamespaceName, eoSelector) && finalizersAreSet) {
+                KafkaTopicUtils.setFinalizersInAllTopicsToNull(componentsNamespaceName);
+            }
+
+            // delete all topics created in test
+            cmdKubeClient(componentsNamespaceName).deleteAllByResource(KafkaTopic.RESOURCE_KIND);
+            KafkaTopicUtils.waitForTopicWithPrefixDeletion(componentsNamespaceName, topicName);
+        } else {
+            LOGGER.info("Kafka Topic Custom Resource Definition does not exist, no KafkaTopic is being deleted");
         }
-
-        // delete all topics created in test
-        cmdKubeClient(componentsNamespaceName).deleteAllByResource(KafkaTopic.RESOURCE_KIND);
-        KafkaTopicUtils.waitForTopicWithPrefixDeletion(componentsNamespaceName, topicName);
     }
 
     /**
