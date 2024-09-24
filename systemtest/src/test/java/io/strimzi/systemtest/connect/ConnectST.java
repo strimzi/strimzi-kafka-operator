@@ -1543,6 +1543,11 @@ class ConnectST extends AbstractST {
                                     .build())
                         .endValueFrom()
                     .endEnv()
+                    // TODO remove deprecated (yet still working) way of provisioning external configurations
+                    .addNewVolume()
+                        .withName(configMapName)
+                        .withConfigMap(new ConfigMapVolumeSourceBuilder().withName(configMapName).build())
+                    .endVolume()
                 .endExternalConfiguration()
                 .editOrNewTemplate()
                     .editOrNewPod()
@@ -1594,6 +1599,10 @@ class ConnectST extends AbstractST {
         assertThat(
             cmdKubeClient(testStorage.getNamespaceName()).execInPod(connectPodName, "/bin/bash", "-c", "cat " + dotedSecretMountPath + "/" + secretKey).out().trim(),
             equalTo(secretPassword)
+        );
+        assertThat(
+            cmdKubeClient(testStorage.getNamespaceName()).execInPod(connectPodName, "/bin/bash", "-c", "cat external-configuration/" + configMapName + "/" + configMapKey).out().trim(),
+            equalTo(configMapValue)
         );
     }
 
