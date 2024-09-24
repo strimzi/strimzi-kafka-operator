@@ -21,6 +21,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -72,7 +73,7 @@ import static org.hamcrest.Matchers.containsString;
         @Step(value = "Initialize Test Storage and deploy Kafka and Kafka Bridge", expected = "Kafka and Kafka Bridge are deployed with necessary configuration")
     },
     labels = {
-        @Label("bridge"),
+        @Label(TestDocsLabels.BRIDGE),
     }
 )
 class HttpBridgeST extends AbstractST {
@@ -95,7 +96,7 @@ class HttpBridgeST extends AbstractST {
             @Step(value = "Verify Kafka Bridge service labels", expected = "Labels for Kafka Bridge service are correctly set and verified")
         },
         labels = {
-            @Label("bridge"),
+            @Label(TestDocsLabels.BRIDGE),
         }
     )
     void testSendSimpleMessage() {
@@ -139,7 +140,7 @@ class HttpBridgeST extends AbstractST {
             @Step(value = "Verify message reception", expected = "All messages are received by Kafka Bridge consumer client")
         },
         labels = {
-            @Label("bridge"),
+            @Label(TestDocsLabels.BRIDGE),
         }
     )
     void testReceiveSimpleMessage() {
@@ -181,7 +182,7 @@ class HttpBridgeST extends AbstractST {
             @Step(value = "Verify Kafka Bridge configurations for producer and consumer", expected = "Producer and consumer configurations match the updated settings")
         },
         labels = {
-            @Label("bridge")
+            @Label(TestDocsLabels.BRIDGE)
         }
     )
     void testCustomAndUpdatedValues() {
@@ -314,7 +315,7 @@ class HttpBridgeST extends AbstractST {
             @Step(value = "Verify the status of KafkaBridge", expected = "KafkaBridge status should indicate it is ready with zero replicas")
         },
         labels = {
-            @Label("bridge")
+            @Label(TestDocsLabels.BRIDGE)
         }
     )
     void testScaleBridgeToZero() {
@@ -351,7 +352,7 @@ class HttpBridgeST extends AbstractST {
             @Step(value = "Check pod naming conventions.", expected = "Pod names should match the naming convention and be consistent.")
         },
         labels = {
-            @Label("bridge")
+            @Label(TestDocsLabels.BRIDGE)
         }
     )
     void testScaleBridgeSubresource() {
@@ -400,7 +401,7 @@ class HttpBridgeST extends AbstractST {
             @Step(value = "Check that observed generation is 2 and the new label is present", expected = "Observed generation is 2 and label 'another=label' is present")
         },
         labels = {
-            @Label("bridge")
+            @Label(TestDocsLabels.BRIDGE)
         }
     )
     void testConfigureDeploymentStrategy() {

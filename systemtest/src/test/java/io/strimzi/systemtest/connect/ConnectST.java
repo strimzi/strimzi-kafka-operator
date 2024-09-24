@@ -45,6 +45,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
@@ -117,7 +118,7 @@ import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
         @Step(value = "Deploy scraper Pod for accessing all other Pods", expected = "Scraper Pod is deployed")
     },
     labels = {
-        @Label(value = "connect")
+        @Label(value = TestDocsLabels.CONNECT)
     }
 )
 class ConnectST extends AbstractST {
@@ -137,7 +138,7 @@ class ConnectST extends AbstractST {
             @Step(value = "Kafka Connectors", expected = "Various Kafka Connect resource labels and configurations are verified to ensure correct deployment")
         },
         labels = {
-            @Label(value = "connect")
+            @Label(value = TestDocsLabels.CONNECT)
         }
     )
     void testDeployRollUndeploy() {
@@ -196,7 +197,7 @@ class ConnectST extends AbstractST {
             @Step(value = "Pause and run connector by modifying 'spec.state' property of Connector (with priority over now set 'spec.pause=false'), while also producing messages when connector pauses.", expected = "Connector pauses and resumes as expected, after resuming, produced messages are present in destination file, indicating connector resumed correctly.")
         },
         labels = {
-            @Label(value = "connect")
+            @Label(value = TestDocsLabels.CONNECT)
         }
     )
     void testKafkaConnectAndConnectorStateWithFileSinkPlugin() {
@@ -270,7 +271,7 @@ class ConnectST extends AbstractST {
             @Step(value = "Verify messages in KafkaConnect file sink", expected = "FileSink contains the expected number of messages")
         },
         labels = {
-            @Label(value = "connect")
+            @Label(value = TestDocsLabels.CONNECT)
         }
     )
     void testKafkaConnectWithPlainAndScramShaAuthentication() {
@@ -361,7 +362,7 @@ class ConnectST extends AbstractST {
             @Step(value = "Execute assertions to verify the Kafka Connector configuration and status", expected = "Assertions confirm the Kafka Connector is successfully deployed, has the correct configuration, and is running.")
         },
         labels = {
-            @Label(value = "connect")
+            @Label(value = TestDocsLabels.CONNECT)
         }
     )
     void testKafkaConnectAndConnectorFileSinkPlugin() {
@@ -424,7 +425,7 @@ class ConnectST extends AbstractST {
             @Step(value = "Verify JVM options and resource requirements", expected = "JVM options and resource requests/limits are correctly applied to the Kafka Connect pod")
         },
         labels = {
-            @Label(value = "connect")
+            @Label(value = TestDocsLabels.CONNECT)
         }
     )
     void testJvmAndResources() {
@@ -480,7 +481,7 @@ class ConnectST extends AbstractST {
             @Step(value = "Verify the replica count after scaling down", expected = "Replica count is verified to be the initial count")
         },
         labels = {
-            @Label(value = "connect")
+            @Label(value = TestDocsLabels.CONNECT)
         }
     )
     void testKafkaConnectScaleUpScaleDown() {
@@ -534,7 +535,7 @@ class ConnectST extends AbstractST {
             @Step(value = "Verify messages in Kafka Connect FileSink", expected = "Messages are verified in Kafka Connect FileSink")
         },
         labels = {
-            @Label(value = "connect")
+            @Label(value = TestDocsLabels.CONNECT)
         }
     )
     void testSecretsWithKafkaConnectWithTlsAndTlsClientAuthentication() {
@@ -627,7 +628,7 @@ class ConnectST extends AbstractST {
             @Step(value = "Verify messages in Kafka Connect file sink", expected = "Messages found in the specified file path")
         },
         labels = {
-            @Label(value = "connect")
+            @Label(value = TestDocsLabels.CONNECT)
         }
     )
     void testSecretsWithKafkaConnectWithTlsAndScramShaAuthentication() {
@@ -718,7 +719,7 @@ class ConnectST extends AbstractST {
             @Step(value = "Verify auto-restart count reset", expected = "Auto-restart count is reset to zero after task stability")
         },
         labels = {
-            @Label(value = "connect")
+            @Label(value = TestDocsLabels.CONNECT)
         }
     )
     void testConnectorTaskAutoRestart() {
@@ -823,7 +824,7 @@ class ConnectST extends AbstractST {
             @Step(value = "Verify updated configuration and environment variables", expected = "Updated configuration and environment variables are as expected")
         },
         labels = {
-            @Label(value = "connect")
+            @Label(value = TestDocsLabels.CONNECT)
         }
     )
     void testCustomAndUpdatedValues() {
@@ -940,7 +941,7 @@ class ConnectST extends AbstractST {
             @Step(value = "Verify that Kafka Connect writes messages to the specified file sink", expected = "Messages successfully written to the file sink by Kafka Connect")
         },
         labels = {
-            @Label(value = "connect")
+            @Label(value = TestDocsLabels.CONNECT)
         }
     )
     void testMultiNodeKafkaConnectWithConnectorCreation() {
@@ -1008,7 +1009,7 @@ class ConnectST extends AbstractST {
             @Step(value = "Verify that Kafka Connect can consume messages", expected = "Messages are consumed successfully by Kafka Connect")
         },
         labels = {
-            @Label(value = "connect")
+            @Label(value = TestDocsLabels.CONNECT)
         }
     )
     void testConnectTlsAuthWithWeirdUserName() {
@@ -1101,7 +1102,7 @@ class ConnectST extends AbstractST {
             @Step(value = "Verify that connector receives messages", expected = "Messages consumed by the connector and written to the specified sink")
         },
         labels = {
-            @Label(value = "connect")
+            @Label(value = TestDocsLabels.CONNECT)
         }
     )
     void testConnectScramShaAuthWithWeirdUserName() {
@@ -1193,7 +1194,7 @@ class ConnectST extends AbstractST {
             @Step(value = "Verify that KafkaConnect has 0 pods", expected = "No KafkaConnect pods are running and status is ready.")
         },
         labels = {
-            @Label(value = "connect")
+            @Label(value = TestDocsLabels.CONNECT)
         }
     )
     void testScaleConnectWithoutConnectorToZero() {
@@ -1243,7 +1244,7 @@ class ConnectST extends AbstractST {
             @Step(value = "Verify conditions", expected = "Pod size is 0, Kafka Connect is ready, Kafka Connector is not ready due to zero replicas")
         },
         labels = {
-            @Label(value = "connect")
+            @Label(value = TestDocsLabels.CONNECT)
         }
     )
     void testScaleConnectWithConnectorToZero() {
@@ -1308,7 +1309,7 @@ class ConnectST extends AbstractST {
             @Step(value = "Verify Kafka Connector subresource scaling", expected = "Kafka Connector task max in spec, status and Connect Pods API are as expected")
         },
         labels = {
-            @Label(value = "connect")
+            @Label(value = TestDocsLabels.CONNECT)
         }
     )
     void testScaleConnectAndConnectorSubresource() {
@@ -1393,7 +1394,7 @@ class ConnectST extends AbstractST {
             @Step(value = "Verify mounted volumes", expected = "Kafka Connect mounted volumes contain expected values from Secrets and ConfigMaps.")
         },
         labels = {
-            @Label(value = "connect")
+            @Label(value = TestDocsLabels.CONNECT)
         }
     )
     void testMountingSecretAndConfigMapAsVolumesAndEnvVars() {
@@ -1574,7 +1575,7 @@ class ConnectST extends AbstractST {
             @Step(value = "Verify Kafka Connect continues to function after rolling update", expected = "Kafka Connect remains functional and REST API is available")
         },
         labels = {
-            @Label(value = "connect")
+            @Label(value = TestDocsLabels.CONNECT)
         }
     )
     void testKafkaConnectWithScramShaAuthenticationRolledAfterPasswordChanged() {

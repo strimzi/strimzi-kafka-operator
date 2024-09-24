@@ -25,6 +25,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -59,7 +60,7 @@ import static io.strimzi.systemtest.TestConstants.REGRESSION;
         @Step(value = "Deploy HTTP bridge with TLS configuration", expected = "HTTP bridge is deployed with TLS configuration")
     },
     labels = {
-        @Label("bridge")
+        @Label(TestDocsLabels.BRIDGE)
     }
 )
 class HttpBridgeTlsST extends AbstractST {
@@ -79,7 +80,7 @@ class HttpBridgeTlsST extends AbstractST {
             @Step(value = "Verify that the consumer successfully receives messages", expected = "Consumer successfully receives the expected number of messages")
         },
         labels = {
-            @Label("bridge")
+            @Label(TestDocsLabels.BRIDGE)
         }
     )
     void testSendSimpleMessageTls() {
@@ -116,7 +117,7 @@ class HttpBridgeTlsST extends AbstractST {
             @Step(value = "Verify message consumption", expected = "Messages are successfully consumed by the Kafka Bridge consumer.")
         },
         labels = {
-            @Label("bridge")
+            @Label(TestDocsLabels.BRIDGE)
         }
     )
     void testReceiveSimpleMessageTls() {

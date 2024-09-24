@@ -34,6 +34,7 @@ import io.strimzi.systemtest.annotations.KindNotSupported;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -85,7 +86,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SuiteDoc(
     description = @Desc("Testing Kafka Connect build and plugin management."),
     labels = {
-        @Label(value = "connect"),
+        @Label(value = TestDocsLabels.CONNECT),
     }
 )
 class ConnectBuilderST extends AbstractST {
@@ -168,7 +169,7 @@ class ConnectBuilderST extends AbstractST {
             @Step(value = "Verify that EchoSink KafkaConnector is listed in Kafka Connect resource status", expected = "EchoSink KafkaConnector is listed in the status of Kafka Connect resource")
         },
         labels = {
-            @Label(value = "connect")
+            @Label(value = TestDocsLabels.CONNECT)
         }
     )
     void testBuildFailsWithWrongChecksumOfArtifact() {
@@ -254,7 +255,7 @@ class ConnectBuilderST extends AbstractST {
             @Step(value = "Check logs for received message", expected = "Logs contain the expected received message")
         },
         labels = {
-            @Label(value = "connect")
+            @Label(value = TestDocsLabels.CONNECT)
         }
     )
     void testBuildWithJarTgzAndZip() {
@@ -317,7 +318,7 @@ class ConnectBuilderST extends AbstractST {
             @Step(value = "Verify KafkaConnect build artifacts and status", expected = "KafkaConnect has two plugins, uses the image stream output and is in the 'Ready' state")
         },
         labels = {
-            @Label(value = "connect")
+            @Label(value = TestDocsLabels.CONNECT)
         }
     )
     void testPushIntoImageStream() {
@@ -372,7 +373,7 @@ class ConnectBuilderST extends AbstractST {
             @Step(value = "Verify that both connectors and plugins are present in Kafka Connect", expected = "Both connectors and plugins are verified successfully")
         },
         labels = {
-            @Label(value = "connect")
+            @Label(value = TestDocsLabels.CONNECT)
         }
     )
     void testUpdateConnectWithAnotherPlugin() {
@@ -479,7 +480,7 @@ class ConnectBuilderST extends AbstractST {
             @Step(value = "Verify plugin file name after update using the plugin's hash", expected = "Plugin file name is different from the previous name and matches the hash")
         },
         labels = {
-            @Label(value = "connect")
+            @Label(value = TestDocsLabels.CONNECT)
         }
     )
     void testBuildOtherPluginTypeWithAndWithoutFileName() {
@@ -552,7 +553,7 @@ class ConnectBuilderST extends AbstractST {
             @Step(value = "Verify that consumer receives messages", expected = "Consumer receives the expected messages")
         },
         labels = {
-            @Label(value = "connect")
+            @Label(value = TestDocsLabels.CONNECT)
         }
     )
     void testBuildPluginUsingMavenCoordinatesArtifacts() {
