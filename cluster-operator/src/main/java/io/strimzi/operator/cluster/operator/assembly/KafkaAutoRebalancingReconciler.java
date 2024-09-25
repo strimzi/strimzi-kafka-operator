@@ -89,7 +89,7 @@ public class KafkaAutoRebalancingReconciler {
             ScalingNodes scalingNodes = getScalingNodes(kafkaStatus.getAutoRebalance());
             LOGGER.infoCr(reconciliation, "Reconciling auto-rebalance from state [{}] with scaling nodes: blocked = {}, added = {}",
                     kafkaAutoRebalanceStatus.getState(), scalingNodes.blocked(), scalingNodes.added());
-            return computeNextStatus(scalingNodes)
+            return maybeRebalance(scalingNodes)
                     .onComplete(v -> kafkaStatus.setAutoRebalance(kafkaAutoRebalanceStatus));
         } else {
             LOGGER.infoCr(reconciliation, "No auto-rebalance state from the Kafka CR, initializing to [Idle]");
@@ -104,7 +104,7 @@ public class KafkaAutoRebalancingReconciler {
         }
     }
 
-    private Future<Void> computeNextStatus(ScalingNodes scalingNodes) {
+    private Future<Void> maybeRebalance(ScalingNodes scalingNodes) {
         switch (kafkaAutoRebalanceStatus.getState()) {
             case Idle:
                 return onIdle(scalingNodes);
@@ -118,7 +118,6 @@ public class KafkaAutoRebalancingReconciler {
     }
 
     private Future<Void> onIdle(ScalingNodes scalingNodes) {
-        LOGGER.infoCr(reconciliation, "onIdle");
         if (!scalingNodes.blocked().isEmpty()) {
             // if there is a queued rebalancing scale down (Kafka.status.autoRebalance.modes[remove-brokers] exists), start the rebalancing
             // scale down and transition to RebalanceOnScaleDown.
@@ -153,7 +152,7 @@ public class KafkaAutoRebalancingReconciler {
                 .compose(kafkaRebalance -> {
 
                     KafkaRebalanceState kafkaRebalanceState = KafkaRebalanceUtils.rebalanceState(kafkaRebalance.getStatus());
-                    LOGGER.infoCr(reconciliation, "onRebalanceOnScaleDown KafkaRebalance {}/{} in state {}",
+                    LOGGER.infoCr(reconciliation, "Auto-rebalance on scaling down with KafkaRebalance {}/{} in state {}",
                             kafkaRebalance.getMetadata().getNamespace(),
                             kafkaRebalance.getMetadata().getName(),
                             kafkaRebalanceState);
@@ -243,7 +242,7 @@ public class KafkaAutoRebalancingReconciler {
                 .compose(kafkaRebalance -> {
 
                     KafkaRebalanceState kafkaRebalanceState = KafkaRebalanceUtils.rebalanceState(kafkaRebalance.getStatus());
-                    LOGGER.infoCr(reconciliation, "onRebalanceOnScaleUp KafkaRebalance {}/{} in state {}",
+                    LOGGER.infoCr(reconciliation, "Auto-rebalance on scaling up with KafkaRebalance {}/{} in state {}",
                             kafkaRebalance.getMetadata().getNamespace(),
                             kafkaRebalance.getMetadata().getName(),
                             kafkaRebalanceState);
