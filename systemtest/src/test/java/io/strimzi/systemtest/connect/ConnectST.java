@@ -15,6 +15,8 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
+import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.skodjob.annotations.Desc;
 import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
@@ -1414,6 +1416,9 @@ class ConnectST extends AbstractST {
 
         final String dotedConfigMapName = "connect.config.map";
         final String dotedSecretName = "connect.secret";
+        // volumes for config maps and secrets containing "." symbol must be named without it (Kubernetes constraint)
+        final String dotedConfigMapVolumeName = "doted-configmap-volume-name";
+        final String dotedSecretVolumeName = "doted-secret-volume-name";
 
         final String configMapKey = "my-key";
         final String secretKey = "my-secret-key";
@@ -1452,6 +1457,30 @@ class ConnectST extends AbstractST {
             .addToData(configMapKey, configMapValue)
             .build();
 
+        final String secretMountPath = "/mnt/secret-volume";
+        final String configMapMountPath = "/mnt/configmap-volume";
+        final String dotedSecretMountPath = "/mnt/doted-secret-volume";
+        final String dotedConfigMapMountPath = "/mnt/doted-configmap-volume";
+
+        VolumeMount[] volumeMounts = new VolumeMount[]{
+            new VolumeMountBuilder()
+                .withName(secretName)
+                .withMountPath(secretMountPath)
+                .build(),
+            new VolumeMountBuilder()
+                .withName(configMapName)
+                .withMountPath(configMapMountPath)
+                .build(),
+            new VolumeMountBuilder()
+                .withName(dotedSecretVolumeName)
+                .withMountPath(dotedSecretMountPath)
+                .build(),
+            new VolumeMountBuilder()
+                .withName(dotedConfigMapVolumeName)
+                .withMountPath(dotedConfigMapMountPath)
+                .build()
+        };
+
         kubeClient(testStorage.getNamespaceName()).createSecret(connectSecret);
         kubeClient(testStorage.getNamespaceName()).createSecret(dotedConnectSecret);
 
@@ -1471,22 +1500,6 @@ class ConnectST extends AbstractST {
             .endMetadata()
             .editSpec()
                 .withNewExternalConfiguration()
-                    .addNewVolume()
-                        .withName(secretName)
-                        .withSecret(new SecretVolumeSourceBuilder().withSecretName(secretName).build())
-                    .endVolume()
-                    .addNewVolume()
-                        .withName(configMapName)
-                        .withConfigMap(new ConfigMapVolumeSourceBuilder().withName(configMapName).build())
-                    .endVolume()
-                    .addNewVolume()
-                        .withName(dotedSecretName)
-                        .withSecret(new SecretVolumeSourceBuilder().withSecretName(dotedSecretName).build())
-                    .endVolume()
-                    .addNewVolume()
-                        .withName(dotedConfigMapName)
-                        .withConfigMap(new ConfigMapVolumeSourceBuilder().withName(dotedConfigMapName).build())
-                    .endVolume()
                     .addNewEnv()
                         .withName(secretEnv)
                         .withNewValueFrom()
@@ -1531,7 +1544,35 @@ class ConnectST extends AbstractST {
                                     .build())
                         .endValueFrom()
                     .endEnv()
+                    // TODO remove deprecated (yet still working) way of provisioning external configurations
+                    .addNewVolume()
+                        .withName(configMapName)
+                        .withConfigMap(new ConfigMapVolumeSourceBuilder().withName(configMapName).build())
+                    .endVolume()
                 .endExternalConfiguration()
+                .editOrNewTemplate()
+                    .editOrNewPod()
+                        .addNewVolume()
+                            .withName(secretName)
+                            .withSecret(new SecretVolumeSourceBuilder().withSecretName(secretName).build())
+                        .endVolume()
+                        .addNewVolume()
+                            .withName(configMapName)
+                            .withConfigMap(new ConfigMapVolumeSourceBuilder().withName(configMapName).build())
+                        .endVolume()
+                            .addNewVolume()
+                            .withName(dotedSecretVolumeName)
+                            .withSecret(new SecretVolumeSourceBuilder().withSecretName(dotedSecretName).build())
+                        .endVolume()
+                        .addNewVolume()
+                            .withName(dotedConfigMapVolumeName)
+                            .withConfigMap(new ConfigMapVolumeSourceBuilder().withName(dotedConfigMapName).build())
+                        .endVolume()
+                    .endPod()
+                    .editOrNewConnectContainer()
+                        .addToVolumeMounts(volumeMounts)
+                    .endConnectContainer()
+                .endTemplate()
             .endSpec()
             .build());
 
@@ -1545,20 +1586,24 @@ class ConnectST extends AbstractST {
 
         LOGGER.info("Check if volumes contains desired values");
         assertThat(
+            cmdKubeClient(testStorage.getNamespaceName()).execInPod(connectPodName, "/bin/bash", "-c", "cat " + configMapMountPath + "/" + configMapKey).out().trim(),
+            equalTo(configMapValue)
+        );
+        assertThat(
+            cmdKubeClient(testStorage.getNamespaceName()).execInPod(connectPodName, "/bin/bash", "-c", "cat " + secretMountPath + "/" + secretKey).out().trim(),
+            equalTo(secretPassword)
+        );
+        assertThat(
+            cmdKubeClient(testStorage.getNamespaceName()).execInPod(connectPodName, "/bin/bash", "-c", "cat " + dotedConfigMapMountPath + "/" + configMapKey).out().trim(),
+            equalTo(configMapValue)
+        );
+        assertThat(
+            cmdKubeClient(testStorage.getNamespaceName()).execInPod(connectPodName, "/bin/bash", "-c", "cat " + dotedSecretMountPath + "/" + secretKey).out().trim(),
+            equalTo(secretPassword)
+        );
+        assertThat(
             cmdKubeClient(testStorage.getNamespaceName()).execInPod(connectPodName, "/bin/bash", "-c", "cat external-configuration/" + configMapName + "/" + configMapKey).out().trim(),
             equalTo(configMapValue)
-        );
-        assertThat(
-            cmdKubeClient(testStorage.getNamespaceName()).execInPod(connectPodName, "/bin/bash", "-c", "cat external-configuration/" + secretName + "/" + secretKey).out().trim(),
-            equalTo(secretPassword)
-        );
-        assertThat(
-            cmdKubeClient(testStorage.getNamespaceName()).execInPod(connectPodName, "/bin/bash", "-c", "cat external-configuration/" + dotedConfigMapName + "/" + configMapKey).out().trim(),
-            equalTo(configMapValue)
-        );
-        assertThat(
-            cmdKubeClient(testStorage.getNamespaceName()).execInPod(connectPodName, "/bin/bash", "-c", "cat external-configuration/" + dotedSecretName + "/" + secretKey).out().trim(),
-            equalTo(secretPassword)
         );
     }
 
