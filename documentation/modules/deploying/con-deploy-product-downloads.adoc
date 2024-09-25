@@ -3,18 +3,22 @@
 // deploying/assembly_deploy-tasks-prep.adoc
 
 [id='downloads-{context}']
-= Downloading Strimzi release artifacts
+= Downloading deployment files
 
 [role="_abstract"]
-To use deployment files to install Strimzi, download and extract the files from the {ReleaseDownload}.
+To deploy Strimzi components using YAML files, download and extract the latest release archive (`{ReleaseFile}`) from the {ReleaseDownload}.
 
-Strimzi release artifacts include sample YAML files to help you deploy the components of Strimzi to Kubernetes, perform common operations,
-and configure your Kafka cluster.
+The release archive contains sample YAML files for deploying Strimzi components to Kubernetes using `kubectl`. 
 
-Use `kubectl` to deploy the Cluster Operator from the `install/cluster-operator` folder of the downloaded ZIP file.
-For more information about deploying and configuring the Cluster Operator, see xref:cluster-operator-{context}[].
+Begin by deploying the Cluster Operator from the `install/cluster-operator` directory to watch a single namespace, multiple namespaces, or all namespaces.
 
-In addition, if you want to use standalone installations of the Topic and User Operators with a Kafka cluster that is not managed by the Strimzi Cluster Operator, you can deploy them from the `install/topic-operator` and `install/user-operator` folders.
+In the `install` folder, you can also deploy other Strimzi components, including: 
 
-NOTE: Strimzi container images are also available through the {DockerRepository}.
-However, we recommend that you use the YAML files provided to deploy Strimzi.
+* Strimzi administrator roles (`strimzi-admin`) 
+* Standalone Topic Operator (`topic-operator`) 
+* Standalone User Operator (`user-operator`)
+* Strimzi Drain Cleaner (`drain-cleaner`)
+
+The `examples` folder xref:config-examples-str[provides examples of Strimzi custom resources] to help you develop your own Kafka configurations.
+
+NOTE: Strimzi container images are available through the {DockerRepository}, but we recommend using the provided YAML files for deployment.

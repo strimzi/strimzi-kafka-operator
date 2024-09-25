@@ -12,7 +12,7 @@ In order to prevent issues arising when client consumer requests are processed b
 Additionally, each independent Kafka Bridge instance must have a replica.
 A Kafka Bridge instance has its own state which is not shared with another instances.
 
-For a deeper understanding of the Kafka Bridge and its cluster configuration options, refer to the link:{BookURLBridge}[Using the Kafka Bridge^] and the {BookURLConfiguring}[Strimzi Custom Resource API Reference^].
+For a deeper understanding of the Kafka Bridge and its cluster configuration options, refer to the link:{BookURLBridge}[Using the Kafka Bridge^] guide and the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
 
 .Example `KafkaBridge` custom resource configuration
 [source,yaml,subs="+quotes,attributes"]

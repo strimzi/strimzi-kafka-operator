@@ -16,12 +16,12 @@ If brokers are running on nodes with heterogeneous network resources, you can us
 
 If an empty object (`{}`) is used for the `cruiseControl` configuration, all properties use their default values.
 
+Strimzi provides xref:config-examples-{context}[example configuration files], which include `Kafka` custom resources with Cruise Control configuration.
 For more information on the configuration options for Cruise Control, see the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
 
 .Prerequisites
 
-* A Kubernetes cluster
-* A running Cluster Operator
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.] 
 
 .Procedure
 

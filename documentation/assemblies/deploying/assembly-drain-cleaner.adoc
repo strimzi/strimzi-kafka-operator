@@ -57,13 +57,6 @@ webhooks:
     # ...
 ----
 
-[id='drain-cleaner-prereqs-{context}']
-== Downloading the Strimzi Drain Cleaner deployment files
-
-To deploy and use the Strimzi Drain Cleaner, you need to download the deployment files.
-
-The Strimzi Drain Cleaner deployment files are available from the link:{ReleaseDownload}.
-
 //steps for deploying drain cleaner
 include::../../modules/drain-cleaner/proc-drain-cleaner-deploying.adoc[leveloffset=+1]
 ifdef::Section[]
