@@ -2,7 +2,6 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-
 package io.strimzi.operator.cluster.operator.resource;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -39,7 +38,6 @@ import java.util.stream.Collectors;
  */
 public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaBrokerConfigurationDiff.class);
-    private static final String PLACE_HOLDER = Pattern.quote("STRIMZI_BROKER_ID");
 
     private final Reconciliation reconciliation;
     private final Collection<AlterConfigOp> brokerConfigDiff;
@@ -83,13 +81,6 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         this.reconciliation = reconciliation;
         this.configModel = KafkaConfiguration.readConfigModel(kafkaVersion);
         this.brokerConfigDiff = diff(brokerNodeRef, desired, brokerConfigs, configModel);
-    }
-
-    private static void fillPlaceholderValue(Map<String, String> orderedProperties, String value) {
-        orderedProperties.entrySet().forEach(entry -> {
-            String v = entry.getValue().replaceAll("\\$\\{" + PLACE_HOLDER + "}", value);
-            entry.setValue(v);
-        });
     }
 
     /**
@@ -165,8 +156,6 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         OrderedProperties orderedProperties = new OrderedProperties();
         orderedProperties.addStringPairs(desired);
         Map<String, String> desiredMap = orderedProperties.asMap();
-
-        fillPlaceholderValue(desiredMap, Integer.toString(brokerNodeRef.nodeId()));
 
         JsonNode source = PATCH_MAPPER.valueToTree(currentMap);
         JsonNode target = PATCH_MAPPER.valueToTree(desiredMap);
@@ -251,7 +240,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
      */
     @Override
     public boolean isEmpty() {
-        return  brokerConfigDiff.size() == 0;
+        return brokerConfigDiff.isEmpty();
     }
 
     /**
