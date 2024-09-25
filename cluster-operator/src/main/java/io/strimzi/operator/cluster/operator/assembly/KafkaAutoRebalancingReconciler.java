@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceConfiguration;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceState;
@@ -88,7 +89,7 @@ public class KafkaAutoRebalancingReconciler {
             ScalingNodes scalingNodes = getScalingNodes(kafkaStatus.getAutoRebalance());
             LOGGER.infoCr(reconciliation, "Reconciling auto-rebalance from state [{}] with scaling nodes: blocked = {}, added = {}",
                     kafkaAutoRebalanceStatus.getState(), scalingNodes.blocked(), scalingNodes.added());
-            return computeNextStatus(kafkaAutoRebalanceStatus, scalingNodes)
+            return computeNextStatus(scalingNodes)
                     .onComplete(v -> kafkaStatus.setAutoRebalance(kafkaAutoRebalanceStatus));
         } else {
             LOGGER.infoCr(reconciliation, "No auto-rebalance state from the Kafka CR, initializing to [Idle]");
@@ -103,20 +104,20 @@ public class KafkaAutoRebalancingReconciler {
         }
     }
 
-    private Future<Void> computeNextStatus(KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus, ScalingNodes scalingNodes) {
+    private Future<Void> computeNextStatus(ScalingNodes scalingNodes) {
         switch (kafkaAutoRebalanceStatus.getState()) {
             case Idle:
-                return onIdle(kafkaAutoRebalanceStatus, scalingNodes);
+                return onIdle(scalingNodes);
             case RebalanceOnScaleDown:
-                return onRebalanceOnScaleDown(kafkaAutoRebalanceStatus, scalingNodes);
+                return onRebalanceOnScaleDown(scalingNodes);
             case RebalanceOnScaleUp:
-                return onRebalanceOnScaleUp(kafkaAutoRebalanceStatus, scalingNodes);
+                return onRebalanceOnScaleUp(scalingNodes);
             default:
                 return Future.failedFuture(new RuntimeException("Unexpected state " + kafkaAutoRebalanceStatus.getState()));
         }
     }
 
-    private Future<Void> onIdle(KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus, ScalingNodes scalingNodes) {
+    private Future<Void> onIdle(ScalingNodes scalingNodes) {
         LOGGER.infoCr(reconciliation, "onIdle");
         if (!scalingNodes.blocked().isEmpty()) {
             // if there is a queued rebalancing scale down (Kafka.status.autoRebalance.modes[remove-brokers] exists), start the rebalancing
@@ -147,7 +148,7 @@ public class KafkaAutoRebalancingReconciler {
         return Future.succeededFuture();
     }
 
-    private Future<Void> onRebalanceOnScaleDown(KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus, ScalingNodes scalingNodes) {
+    private Future<Void> onRebalanceOnScaleDown(ScalingNodes scalingNodes) {
         return getKafkaRebalance(reconciliation.namespace(), reconciliation.name(), KafkaRebalanceMode.REMOVE_BROKERS)
                 .compose(kafkaRebalance -> {
 
@@ -237,7 +238,7 @@ public class KafkaAutoRebalancingReconciler {
                 });
     }
 
-    private Future<Void> onRebalanceOnScaleUp(KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus, ScalingNodes scalingNodes) {
+    private Future<Void> onRebalanceOnScaleUp(ScalingNodes scalingNodes) {
         return getKafkaRebalance(reconciliation.namespace(), reconciliation.name(), KafkaRebalanceMode.ADD_BROKERS)
                 .compose(kafkaRebalance -> {
 
@@ -388,7 +389,7 @@ public class KafkaAutoRebalancingReconciler {
     }
 
     private Future<KafkaRebalance> getKafkaRebalance(String namespace, String cluster, KafkaRebalanceMode kafkaRebalanceMode) {
-        return kafkaRebalanceOperator.getAsync(namespace, KafkaRebalanceUtils.autoRebalancingKafkaRebalanceResourceName(cluster, kafkaRebalanceMode));
+        return kafkaRebalanceOperator.getAsync(namespace, KafkaResources.autoRebalancingKafkaRebalanceResourceName(cluster, kafkaRebalanceMode));
     }
 
     private Future<Boolean> createKafkaRebalance(String namespace, String cluster, KafkaRebalanceMode kafkaRebalanceMode, List<Integer> brokers) {
@@ -429,7 +430,7 @@ public class KafkaAutoRebalancingReconciler {
         KafkaRebalanceBuilder builder = new KafkaRebalanceBuilder()
                 .withNewMetadata()
                     .withNamespace(namespace)
-                    .withName(KafkaRebalanceUtils.autoRebalancingKafkaRebalanceResourceName(cluster, kafkaRebalanceMode))
+                    .withName(KafkaResources.autoRebalancingKafkaRebalanceResourceName(cluster, kafkaRebalanceMode))
                     .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, cluster)
                     .addToAnnotations(ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL, "true")
                     .addToFinalizers(STRIMZI_IO_AUTO_REBALANCING_FINALIZER)

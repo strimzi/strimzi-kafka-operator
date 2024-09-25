@@ -76,19 +76,6 @@ public class KafkaRebalanceUtils {
     }
 
     /**
-     * Compose the name of the KafkaRebalance custom resource to be used for running an auto-rebalancing in the specified mode
-     * for the specified Kafka cluster
-     *
-     * @param cluster   Kafka cluster name (from Kafka custom resource metadata)
-     * @param kafkaRebalanceMode    Auto-rebalance mode
-     * @return  the name of the KafkaRebalance custom resource to be used for running an auto-rebalancing
-     *          in the specified mode for the specified Kafka cluster
-     */
-    public static String autoRebalancingKafkaRebalanceResourceName(String cluster, KafkaRebalanceMode kafkaRebalanceMode) {
-        return cluster + "-auto-rebalancing-" + kafkaRebalanceMode.toValue();
-    }
-
-    /**
      * Starting from the provided KafkaAutoRebalanceStatus instance which brings the current auto-rebalance modes and brokers for
      * ongoing auto-rebalancing and from the set of brokers currently added by a scaling up operation, this method updates the KafkaStatus
      * instance with a consistent list of added brokers (current and new) into the corresponding auto-rebalance part.

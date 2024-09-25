@@ -280,7 +280,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.reconcileEntityOperator(clock))
                 .compose(state -> state.reconcileCruiseControl(clock))
                 .compose(state -> state.reconcileKafkaExporter(clock))
-                .compose(state -> reconcileState.isAutoRebalancingEnabled() ? state.reconcileKafkaAutoRebalancing() : Future.succeededFuture(state))
+                .compose(state -> state.isAutoRebalancingEnabled() ? state.reconcileKafkaAutoRebalancing() : Future.succeededFuture(state))
 
                 // Finish the reconciliation
                 .map((Void) null)

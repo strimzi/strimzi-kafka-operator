@@ -4,6 +4,8 @@
  */
 package io.strimzi.api.kafka.model.kafka;
 
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
+
 /**
  * Encapsulates the naming scheme used for the resources which the Cluster Operator manages for a
  * {@code Kafka} cluster.
@@ -411,5 +413,18 @@ public class KafkaResources {
      */
     public static String clusterOperatorCertsSecretName(String cluster) {
         return cluster + "-cluster-operator-certs";
+    }
+
+    /**
+     * Compose the name of the KafkaRebalance custom resource to be used for running an auto-rebalancing in the specified mode
+     * for the specified Kafka cluster
+     *
+     * @param cluster   Kafka cluster name (from Kafka custom resource metadata)
+     * @param kafkaRebalanceMode    Auto-rebalance mode
+     * @return  the name of the KafkaRebalance custom resource to be used for running an auto-rebalancing
+     *          in the specified mode for the specified Kafka cluster
+     */
+    public static String autoRebalancingKafkaRebalanceResourceName(String cluster, KafkaRebalanceMode kafkaRebalanceMode) {
+        return cluster + "-auto-rebalancing-" + kafkaRebalanceMode.toValue();
     }
 }
