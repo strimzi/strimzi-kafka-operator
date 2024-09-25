@@ -48,6 +48,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
 
     private final DeploymentOperator deploymentOperations;
     private final SharedEnvironmentProvider sharedEnvironmentProvider;
+    private final boolean isPodDisruptionBudgetGeneration;
 
     /**
      * @param vertx The Vertx instance
@@ -64,6 +65,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         super(vertx, pfa, KafkaBridge.RESOURCE_KIND, certManager, passwordGenerator, supplier.kafkaBridgeOperator, supplier, config);
         this.deploymentOperations = supplier.deploymentOperations;
         this.sharedEnvironmentProvider = supplier.sharedEnvironmentProvider;
+        this.isPodDisruptionBudgetGeneration = config.isPodDisruptionBudgetGeneration();
     }
 
     @Override
@@ -97,7 +99,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
             .compose(scale -> serviceOperations.reconcile(reconciliation, namespace, KafkaBridgeResources.serviceName(bridge.getCluster()), bridge.generateService()))
             .compose(i -> MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperations, bridge.logging(), null))
             .compose(metricsAndLogging -> configMapOperations.reconcile(reconciliation, namespace, KafkaBridgeResources.metricsAndLogConfigMapName(reconciliation.name()), bridge.generateMetricsAndLogConfigMap(metricsAndLogging)))
-            .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, bridge.getComponentName(), bridge.generatePodDisruptionBudget()))
+            .compose(i -> isPodDisruptionBudgetGeneration ? podDisruptionBudgetOperator.reconcile(reconciliation, namespace, bridge.getComponentName(), bridge.generatePodDisruptionBudget()) : Future.succeededFuture())
             .compose(i -> VertxUtil.authTlsHash(secretOperations, namespace, auth, trustedCertificates))
             .compose(hash -> deploymentOperations.reconcile(reconciliation, namespace, bridge.getComponentName(), bridge.generateDeployment(Collections.singletonMap(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash)), pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
             .compose(i -> deploymentOperations.scaleUp(reconciliation, namespace, bridge.getComponentName(), bridge.getReplicas(), operationTimeoutMs))

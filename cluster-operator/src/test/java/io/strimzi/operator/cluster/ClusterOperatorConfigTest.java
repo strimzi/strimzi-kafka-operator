@@ -47,6 +47,7 @@ public class ClusterOperatorConfigTest {
         ENV_VARS.put(ClusterOperatorConfig.FEATURE_GATES.key(), "-ContinueReconciliationOnManualRollingUpdateFailure");
         ENV_VARS.put(ClusterOperatorConfig.DNS_CACHE_TTL.key(), "10");
         ENV_VARS.put(ClusterOperatorConfig.POD_SECURITY_PROVIDER_CLASS.key(), "my.package.CustomPodSecurityProvider");
+        ENV_VARS.put(ClusterOperatorConfig.POD_DISRUPTION_BUDGET_GENERATION.key(), "false");
     }
 
     @Test
@@ -57,6 +58,7 @@ public class ClusterOperatorConfigTest {
         envVars.remove(ClusterOperatorConfig.CONNECT_BUILD_TIMEOUT_MS.key());
         envVars.remove(ClusterOperatorConfig.FEATURE_GATES.key());
         envVars.remove(ClusterOperatorConfig.POD_SECURITY_PROVIDER_CLASS.key());
+        envVars.remove(ClusterOperatorConfig.POD_DISRUPTION_BUDGET_GENERATION.key());
 
         ClusterOperatorConfig config = ClusterOperatorConfig.buildFromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
 
@@ -71,6 +73,7 @@ public class ClusterOperatorConfigTest {
         assertThat(config.isPodSetReconciliationOnly(), is(false));
         assertThat(config.getPodSecurityProviderClass(), is(ClusterOperatorConfig.POD_SECURITY_PROVIDER_CLASS.defaultValue()));
         assertThat(config.getLeaderElectionConfig(), is(nullValue()));
+        assertThat(config.isPodDisruptionBudgetGeneration(), is(true));
     }
 
     @Test
@@ -103,6 +106,7 @@ public class ClusterOperatorConfigTest {
         assertThat(config.featureGates().continueOnManualRUFailureEnabled(), is(false));
         assertThat(config.getDnsCacheTtlSec(), is(10));
         assertThat(config.getPodSecurityProviderClass(), is("my.package.CustomPodSecurityProvider"));
+        assertThat(config.isPodDisruptionBudgetGeneration(), is(false));
     }
 
     @Test
@@ -120,6 +124,7 @@ public class ClusterOperatorConfigTest {
         assertThat(config.featureGates().continueOnManualRUFailureEnabled(), is(true));
         assertThat(config.getDnsCacheTtlSec(), is(Integer.parseInt(ClusterOperatorConfig.DNS_CACHE_TTL.defaultValue())));
         assertThat(config.getPodSecurityProviderClass(), is(ClusterOperatorConfig.POD_SECURITY_PROVIDER_CLASS.defaultValue()));
+        assertThat(config.isPodDisruptionBudgetGeneration(), is(true));
     }
 
     private Map<String, String> envWithImages() {

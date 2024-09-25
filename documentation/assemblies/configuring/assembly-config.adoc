@@ -177,6 +177,9 @@ include::../../modules/configuring/ref-kubernetes-labels.adoc[leveloffset=+1]
 //scheduling separate Kafka pods 
 include::assembly-scheduling.adoc[leveloffset=+1]
 
+//disabling pod disruption budgets
+include::../../modules/configuring/proc-disable-pod-disruption-budget-generation.adoc[leveloffset=+1]
+
 //configuring log levels
 include::assembly-logging-configuration.adoc[leveloffset=+1]
 
