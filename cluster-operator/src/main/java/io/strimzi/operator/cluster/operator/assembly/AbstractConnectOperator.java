@@ -214,6 +214,21 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     }
 
     /**
+     * Creates the ClusterRoleBinding required for the init container used for client rack-awareness.
+     * The init-container needs to be able to read the labels from the node it is running on to be able
+     * to determine the `client.rack` option.
+     *
+     * @param reconciliation The reconciliation
+     * @param crbName ClusterRoleBinding name
+     * @param crb ClusterRoleBinding
+     *
+     * @return Future for tracking the asynchronous result of the ClusterRoleBinding reconciliation
+     */
+    protected Future<ReconcileResult<ClusterRoleBinding>> connectInitClusterRoleBinding(Reconciliation reconciliation, String crbName, ClusterRoleBinding crb) {
+        return ReconcilerUtils.withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, crbName, crb), crb);
+    }
+
+    /**
      * Reconciles the NetworkPolicy for the Connect cluster.
      *
      * @param reconciliation       The reconciliation
@@ -905,21 +920,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     private Future<ConnectorStatusAndConditions> updateConnectorTopics(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, ConnectorStatusAndConditions status) {
         return apiClient.getConnectorTopics(reconciliation, host, port, connectorName)
             .compose(updateConnectorStatusAndConditions(status));
-    }
-
-    /**
-     * Creates the ClusterRoleBinding required for the init container used for client rack-awareness.
-     * The init-container needs to be able to read the labels from the node it is running on to be able
-     * to determine the `client.rack` option.
-     *
-     * @param reconciliation The reconciliation
-     * @param crbName ClusterRoleBinding name
-     * @param crb ClusterRoleBinding
-     *
-     * @return Future for tracking the asynchronous result of the ClusterRoleBinding reconciliation
-     */
-    protected Future<ReconcileResult<ClusterRoleBinding>> connectInitClusterRoleBinding(Reconciliation reconciliation, String crbName, ClusterRoleBinding crb) {
-        return ReconcilerUtils.withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, crbName, crb), crb);
     }
 
     // Abstract methods for working with connector restarts. These methods are implemented in the KafkaConnectAssemblyOperator and KafkaMirrorMaker2AssemblyOperator

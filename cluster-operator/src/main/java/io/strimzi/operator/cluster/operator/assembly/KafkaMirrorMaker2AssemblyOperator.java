@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
-import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.connector.AutoRestartStatus;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorSpec;
@@ -167,14 +166,10 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 .compose(i -> hasZeroReplicas ? Future.succeededFuture() : reconcileConnectors(reconciliation, kafkaMirrorMaker2, mirrorMaker2Cluster, kafkaMirrorMaker2Status))
                 .map((Void) null)
                 .onComplete(reconciliationResult -> {
-                    List<Condition> conditions = kafkaMirrorMaker2Status.getConditions();
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaMirrorMaker2, kafkaMirrorMaker2Status, reconciliationResult.cause());
 
                     if (!hasZeroReplicas) {
                         kafkaMirrorMaker2Status.setUrl(KafkaMirrorMaker2Resources.url(mirrorMaker2Cluster.getCluster(), namespace, KafkaMirrorMaker2Cluster.REST_API_PORT));
-                    }
-                    if (conditions != null && !conditions.isEmpty()) {
-                        kafkaMirrorMaker2Status.addConditions(conditions);
                     }
                     kafkaMirrorMaker2Status.setReplicas(mirrorMaker2Cluster.getReplicas());
                     kafkaMirrorMaker2Status.setLabelSelector(mirrorMaker2Cluster.getSelectorLabels().toSelectorString());
@@ -192,6 +187,18 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     @Override
     protected KafkaMirrorMaker2Status createStatus(KafkaMirrorMaker2 ignored) {
         return new KafkaMirrorMaker2Status();
+    }
+
+    /**
+     * Deletes the ClusterRoleBinding which as a cluster-scoped resource cannot be deleted by the ownerReference
+     *
+     * @param reconciliation    The Reconciliation identification
+     * @return                  Future indicating the result of the deletion
+     */
+    @Override
+    protected Future<Boolean> delete(Reconciliation reconciliation) {
+        return ReconcilerUtils.withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, KafkaMirrorMaker2Resources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null)
+                .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
     }
 
     /**
@@ -239,24 +246,24 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
         List<KafkaConnector> desiredConnectors = mirrorMaker2Cluster.connectors().generateConnectorDefinitions();
 
-        return apiClient.list(reconciliation, host, KafkaConnectCluster.REST_API_PORT).compose(currentConnectors -> {
+        return apiClient.list(reconciliation, host, port).compose(currentConnectors -> {
             currentConnectors.removeAll(desiredConnectors.stream().map(c -> c.getMetadata().getName()).collect(Collectors.toSet()));
 
             Future<Void> deletionFuture = deleteConnectors(reconciliation, host, apiClient, currentConnectors);
             Future<Void> createOrUpdateFuture = createOrUpdateConnectors(reconciliation, host, apiClient, kafkaMirrorMaker2, desiredConnectors, mirrorMaker2Status);
 
-            return Future.join(deletionFuture, createOrUpdateFuture).map((Void) null);
+            return Future.join(deletionFuture, createOrUpdateFuture).mapEmpty();
         });
     }
 
-    private static Future<Void> deleteConnectors(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, List<String> connectorsForDeletion) {
+    private Future<Void> deleteConnectors(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, List<String> connectorsForDeletion) {
         return Future.join(connectorsForDeletion.stream()
                         .map(connectorName -> {
                             LOGGER.debugCr(reconciliation, "Deleting connector {}", connectorName);
-                            return apiClient.delete(reconciliation, host, KafkaConnectCluster.REST_API_PORT, connectorName);
+                            return apiClient.delete(reconciliation, host, port, connectorName);
                         })
                         .collect(Collectors.toList()))
-                .map((Void) null);
+                .mapEmpty();
     }
 
     private Future<Void> createOrUpdateConnectors(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, KafkaMirrorMaker2 mirrorMaker2, List<KafkaConnector> connectors, KafkaMirrorMaker2Status mirrorMaker2Status) {
@@ -309,18 +316,6 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         StatusUtils.setStatusConditionAndObservedGeneration(mirrorMaker2, status, error);
         return maybeUpdateStatusCommon(resourceOperator, mirrorMaker2, reconciliation, status,
             (mirror1, status2) -> new KafkaMirrorMaker2Builder(mirror1).withStatus(status2).build());
-    }
-
-    /**
-     * Deletes the ClusterRoleBinding which as a cluster-scoped resource cannot be deleted by the ownerReference
-     *
-     * @param reconciliation    The Reconciliation identification
-     * @return                  Future indicating the result of the deletion
-     */
-    @Override
-    protected Future<Boolean> delete(Reconciliation reconciliation) {
-        return ReconcilerUtils.withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, KafkaMirrorMaker2Resources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null)
-                .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
     }
 
     // Methods for working with connector restarts
