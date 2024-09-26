@@ -39,13 +39,6 @@ rules:
   - apiGroups:
       - "kafka.strimzi.io"
     resources:
-      # The Cluster Operator needs deletion for KafkaRebalance only (during auto-rebalancing)
-      - kafkarebalances
-    verbs:
-      - delete
-  - apiGroups:
-      - "kafka.strimzi.io"
-    resources:
       # The Cluster Operator needs to manage the status of the Strimzi custom resources
       - kafkas/status
       - kafkanodepools/status
@@ -81,3 +74,10 @@ rules:
       - get
       - patch
       - update
+  - apiGroups:
+      - "kafka.strimzi.io"
+    resources:
+      # The Cluster Operator needs deletion for KafkaRebalance only (during auto-rebalancing)
+      - kafkarebalances
+    verbs:
+      - delete
