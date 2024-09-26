@@ -162,7 +162,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         );
 
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
-        when(mockPodSetOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(kafkaCluster.generatePodSets(false, null, null, brokerId -> null)));
+        when(mockPodSetOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(kafkaCluster.generatePodSets(false, null, null, node -> null)));
 
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(kafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
@@ -226,7 +226,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
 
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.listAsync(any(), any(Labels.class))).thenAnswer(i -> {
-            List<StrimziPodSet> podSets = kafkaCluster.generatePodSets(false, null, null, brokerId -> null);
+            List<StrimziPodSet> podSets = kafkaCluster.generatePodSets(false, null, null, node -> null);
             podSets.stream()
                     .filter(ps -> (CLUSTER_NAME + "-brokers").equals(ps.getMetadata().getName()))
                     .findFirst()
@@ -299,7 +299,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         );
 
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
-        when(mockPodSetOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(kafkaCluster.generatePodSets(false, null, null, brokerId -> null)));
+        when(mockPodSetOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(kafkaCluster.generatePodSets(false, null, null, node -> null)));
 
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(kafkaCluster.getSelectorLabels()))).thenAnswer(i -> {
@@ -382,7 +382,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         );
 
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
-        when(mockPodSetOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(kafkaCluster.generatePodSets(false, null, null, brokerId -> null)));
+        when(mockPodSetOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(kafkaCluster.generatePodSets(false, null, null, node -> null)));
 
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(kafkaCluster.getSelectorLabels()))).thenAnswer(i -> {

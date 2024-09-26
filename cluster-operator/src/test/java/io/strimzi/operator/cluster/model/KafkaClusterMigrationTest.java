@@ -254,7 +254,7 @@ public class KafkaClusterMigrationTest {
                     SHARED_ENV_PROVIDER
             );
             
-            List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
+            List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
             
             podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
                 List<ContainerPort> ports = pod.getSpec().getContainers().get(0).getPorts();
