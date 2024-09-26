@@ -202,7 +202,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
 
     private void updateOrAdd(String propertyName, Map<String, ConfigModel> configModel, Map<String, String> desiredMap, Collection<AlterConfigOp> updatedCE, boolean nodeIsController) {
         if (!isIgnorableProperty(propertyName, nodeIsController)) {
-            if (isCustomEntry(propertyName, configModel)) {
+            if (KafkaConfiguration.isCustomConfigurationOption(propertyName, configModel)) {
                 LOGGER.traceCr(reconciliation, "custom property {} has been updated/added {}", propertyName, desiredMap.get(propertyName));
             } else {
                 LOGGER.traceCr(reconciliation, "property {} has been updated/added {}", propertyName, desiredMap.get(propertyName));
@@ -214,7 +214,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
     }
 
     private void removeProperty(Map<String, ConfigModel> configModel, Collection<AlterConfigOp> updatedCE, String pathValueWithoutSlash, ConfigEntry entry, boolean nodeIsController) {
-        if (isCustomEntry(entry.name(), configModel)) {
+        if (KafkaConfiguration.isCustomConfigurationOption(entry.name(), configModel)) {
             // we are deleting custom option
             LOGGER.traceCr(reconciliation, "removing custom property {}", entry.name());
         } else if (entry.isDefault()) {
@@ -242,15 +242,4 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
     public boolean isEmpty() {
         return brokerConfigDiff.isEmpty();
     }
-
-    /**
-     * For some reason not all default entries have set ConfigEntry.ConfigSource.DEFAULT_CONFIG so we need to compare
-     * @param entryName tested ConfigEntry
-     * @param configModel configModel
-     * @return true if entry is custom (not default)
-     */
-    private static boolean isCustomEntry(String entryName, Map<String, ConfigModel> configModel) {
-        return !configModel.containsKey(entryName);
-    }
-
 }
