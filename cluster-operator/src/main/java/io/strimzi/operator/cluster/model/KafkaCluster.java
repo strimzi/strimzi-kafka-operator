@@ -1125,7 +1125,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     /**
      * Prepares annotations for the controller resource such as StrimziPodSet.
      *
-     * @param storage   Storage configuration which should be stored int he annotation
+     * @param storage   Storage configuration which should be stored in the annotation
      *
      * @return  Map with all annotations which should be used for thr controller resource
      */
@@ -1153,7 +1153,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     public List<StrimziPodSet> generatePodSets(boolean isOpenShift,
                                                ImagePullPolicy imagePullPolicy,
                                                List<LocalObjectReference> imagePullSecrets,
-                                               Function<Integer, Map<String, String>> podAnnotationsProvider) {
+                                               Function<NodeRef, Map<String, String>> podAnnotationsProvider) {
         List<StrimziPodSet> podSets = new ArrayList<>();
 
         for (KafkaPool pool : nodePools)    {
@@ -1175,7 +1175,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                             componentName,
                             pool.templatePod,
                             DEFAULT_POD_LABELS,
-                            podAnnotationsProvider.apply(node.nodeId()),
+                            podAnnotationsProvider.apply(node),
                             KafkaResources.brokersServiceName(cluster),
                             getMergedAffinity(pool),
                             ContainerUtils.listOrNull(createInitContainer(imagePullPolicy, pool)),
@@ -1314,11 +1314,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     private List<Volume> getNonDataVolumes(boolean isOpenShift, NodeRef node, PodTemplate templatePod) {
         List<Volume> volumeList = new ArrayList<>();
 
-        if (node.broker()
-                && (rack != null || isExposedWithNodePort())) {
-            volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "1Mi", "Memory"));
-        }
-
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
         volumeList.add(VolumeUtils.createSecretVolume(CLUSTER_CA_CERTS_VOLUME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createSecretVolume(BROKER_CERTS_VOLUME, KafkaResources.kafkaSecretName(cluster), isOpenShift));
@@ -1326,36 +1321,43 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, node.podName()));
         volumeList.add(VolumeUtils.createEmptyDirVolume("ready-files", "1Ki", "Memory"));
 
-        TemplateUtils.addAdditionalVolumes(templatePod, volumeList);
-
-        for (GenericKafkaListener listener : listeners) {
-            if (listener.isTls()
-                    && listener.getConfiguration() != null
-                    && listener.getConfiguration().getBrokerCertChainAndKey() != null)  {
-                CertAndKeySecretSource secretSource = listener.getConfiguration().getBrokerCertChainAndKey();
-
-                Map<String, String> items = new HashMap<>(2);
-                items.put(secretSource.getKey(), "tls.key");
-                items.put(secretSource.getCertificate(), "tls.crt");
-
-                volumeList.add(
-                        VolumeUtils.createSecretVolume(
-                                "custom-" + ListenersUtils.identifier(listener) + "-certs",
-                                secretSource.getSecretName(),
-                                items,
-                                isOpenShift
-                        )
-                );
+        // Some volumes are used only on nodes with broker role and are not needed on controller-only nodes
+        if (node.broker()) {
+            // Volume for sharing data with init container for rack awareness and node port listeners
+            if (rack != null || isExposedWithNodePort()) {
+                volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "1Mi", "Memory"));
             }
 
-            if (ListenersUtils.isListenerWithOAuth(listener))   {
-                KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
-                CertUtils.createTrustedCertificatesVolumes(volumeList, oauth.getTlsTrustedCertificates(), isOpenShift, "oauth-" + ListenersUtils.identifier(listener));
-            }
+            // Listener specific volumes related to their specific authentication or encryption settings
+            for (GenericKafkaListener listener : listeners) {
+                if (listener.isTls()
+                        && listener.getConfiguration() != null
+                        && listener.getConfiguration().getBrokerCertChainAndKey() != null) {
+                    CertAndKeySecretSource secretSource = listener.getConfiguration().getBrokerCertChainAndKey();
 
-            if (ListenersUtils.isListenerWithCustomAuth(listener)) {
-                KafkaListenerAuthenticationCustom custom = (KafkaListenerAuthenticationCustom) listener.getAuth();
-                volumeList.addAll(AuthenticationUtils.configureGenericSecretVolumes("custom-listener-" + ListenersUtils.identifier(listener), custom.getSecrets(), isOpenShift));
+                    Map<String, String> items = new HashMap<>(2);
+                    items.put(secretSource.getKey(), "tls.key");
+                    items.put(secretSource.getCertificate(), "tls.crt");
+
+                    volumeList.add(
+                            VolumeUtils.createSecretVolume(
+                                    "custom-" + ListenersUtils.identifier(listener) + "-certs",
+                                    secretSource.getSecretName(),
+                                    items,
+                                    isOpenShift
+                            )
+                    );
+                }
+
+                if (ListenersUtils.isListenerWithOAuth(listener)) {
+                    KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
+                    CertUtils.createTrustedCertificatesVolumes(volumeList, oauth.getTlsTrustedCertificates(), isOpenShift, "oauth-" + ListenersUtils.identifier(listener));
+                }
+
+                if (ListenersUtils.isListenerWithCustomAuth(listener)) {
+                    KafkaListenerAuthenticationCustom custom = (KafkaListenerAuthenticationCustom) listener.getAuth();
+                    volumeList.addAll(AuthenticationUtils.configureGenericSecretVolumes("custom-listener-" + ListenersUtils.identifier(listener), custom.getSecrets(), isOpenShift));
+                }
             }
         }
 
@@ -1366,6 +1368,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         if (authorization instanceof KafkaAuthorizationKeycloak keycloakAuthz) {
             CertUtils.createTrustedCertificatesVolumes(volumeList, keycloakAuthz.getTlsTrustedCertificates(), isOpenShift, "authz-keycloak");
         }
+
+        TemplateUtils.addAdditionalVolumes(templatePod, volumeList);
 
         return volumeList;
     }
@@ -1408,28 +1412,32 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         volumeMountList.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount("ready-files", "/var/opt/kafka"));
 
-        if (isBroker
-                && (rack != null || isExposedWithNodePort())) {
-            volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
-        }
-
-        for (GenericKafkaListener listener : listeners) {
-            String identifier = ListenersUtils.identifier(listener);
-
-            if (listener.isTls()
-                    && listener.getConfiguration() != null
-                    && listener.getConfiguration().getBrokerCertChainAndKey() != null)  {
-                volumeMountList.add(VolumeUtils.createVolumeMount("custom-" + identifier + "-certs", "/opt/kafka/certificates/custom-" + identifier + "-certs"));
+        // Some volumes are used only on nodes with broker role and are not needed on controller-only nodes
+        if (isBroker)   {
+            // Volume for sharing data with init container for rack awareness and node port listeners
+            if (rack != null || isExposedWithNodePort()) {
+                volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
             }
 
-            if (ListenersUtils.isListenerWithOAuth(listener))   {
-                KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
-                CertUtils.createTrustedCertificatesVolumeMounts(volumeMountList, oauth.getTlsTrustedCertificates(), TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-" + identifier + "-certs/", "oauth-" + identifier);
-            }
+            // Listener specific volumes related to their specific authentication or encryption settings
+            for (GenericKafkaListener listener : listeners) {
+                String identifier = ListenersUtils.identifier(listener);
 
-            if (ListenersUtils.isListenerWithCustomAuth(listener)) {
-                KafkaListenerAuthenticationCustom custom = (KafkaListenerAuthenticationCustom) listener.getAuth();
-                volumeMountList.addAll(AuthenticationUtils.configureGenericSecretVolumeMounts("custom-listener-" + identifier, custom.getSecrets(), CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT + "/custom-listener-" + identifier));
+                if (listener.isTls()
+                        && listener.getConfiguration() != null
+                        && listener.getConfiguration().getBrokerCertChainAndKey() != null)  {
+                    volumeMountList.add(VolumeUtils.createVolumeMount("custom-" + identifier + "-certs", "/opt/kafka/certificates/custom-" + identifier + "-certs"));
+                }
+
+                if (ListenersUtils.isListenerWithOAuth(listener))   {
+                    KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
+                    CertUtils.createTrustedCertificatesVolumeMounts(volumeMountList, oauth.getTlsTrustedCertificates(), TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-" + identifier + "-certs/", "oauth-" + identifier);
+                }
+
+                if (ListenersUtils.isListenerWithCustomAuth(listener)) {
+                    KafkaListenerAuthenticationCustom custom = (KafkaListenerAuthenticationCustom) listener.getAuth();
+                    volumeMountList.addAll(AuthenticationUtils.configureGenericSecretVolumeMounts("custom-listener-" + identifier, custom.getSecrets(), CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT + "/custom-listener-" + identifier));
+                }
             }
         }
 
@@ -1567,16 +1575,19 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         JvmOptionUtils.jvmPerformanceOptions(varList, pool.jvmOptions);
         JvmOptionUtils.jvmSystemProperties(varList, pool.jvmOptions);
 
-        for (GenericKafkaListener listener : listeners) {
-            if (ListenersUtils.isListenerWithOAuth(listener))   {
-                KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
+        // Some environment variables are used only on nodes with broker role and are not needed on controller-only nodes
+        if (pool.isBroker()) {
+            for (GenericKafkaListener listener : listeners) {
+                if (ListenersUtils.isListenerWithOAuth(listener)) {
+                    KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
 
-                if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
-                    varList.add(ContainerUtils.createEnvVar("STRIMZI_" + ListenersUtils.envVarIdentifier(listener) + "_OAUTH_TRUSTED_CERTS", CertUtils.trustedCertsEnvVar(oauth.getTlsTrustedCertificates())));
-                }
+                    if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
+                        varList.add(ContainerUtils.createEnvVar("STRIMZI_" + ListenersUtils.envVarIdentifier(listener) + "_OAUTH_TRUSTED_CERTS", CertUtils.trustedCertsEnvVar(oauth.getTlsTrustedCertificates())));
+                    }
 
-                if (oauth.getClientSecret() != null)    {
-                    varList.add(ContainerUtils.createEnvVarFromSecret("STRIMZI_" + ListenersUtils.envVarIdentifier(listener) + "_OAUTH_CLIENT_SECRET", oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getKey()));
+                    if (oauth.getClientSecret() != null) {
+                        varList.add(ContainerUtils.createEnvVarFromSecret("STRIMZI_" + ListenersUtils.envVarIdentifier(listener) + "_OAUTH_CLIENT_SECRET", oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getKey()));
+                    }
                 }
             }
         }
