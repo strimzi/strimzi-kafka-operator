@@ -65,7 +65,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS;
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_RESTART_TASK;
@@ -232,7 +231,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, reconciliationResult.cause());
 
                     if (!hasZeroReplicas) {
-                        kafkaConnectStatus.setUrl(KafkaConnectResources.url(connect.getCluster(), namespace, KafkaConnectCluster.REST_API_PORT));
+                        kafkaConnectStatus.setUrl(KafkaConnectResources.url(connect.getCluster(), namespace, port));
                     }
 
                     kafkaConnectStatus.setReplicas(connect.getReplicas());
@@ -379,16 +378,11 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
                 Set<String> deleteConnectorNames = new HashSet<>(runningConnectorNames);
                 deleteConnectorNames.removeAll(desiredConnectors.stream().map(c -> c.getMetadata().getName()).collect(Collectors.toSet()));
-                LOGGER.debugCr(reconciliation, "{} cluster: delete connectors: {}", kind(), deleteConnectorNames);
-                Stream<Future<Void>> deletionFutures = deleteConnectorNames.stream().map(connectorName ->
-                        reconcileConnectorAndHandleResult(reconciliation, host, apiClient, true, connectorName, null)
-                );
 
-                LOGGER.debugCr(reconciliation, "{} cluster: required connectors: {}", kind(), desiredConnectors);
-                Stream<Future<Void>> createUpdateFutures = desiredConnectors.stream()
-                        .map(connector -> reconcileConnectorAndHandleResult(reconciliation, host, apiClient, true, connector.getMetadata().getName(), connector));
+                Future<Void> deletionFuture = deleteConnectors(reconciliation, host, apiClient, deleteConnectorNames);
+                Future<Void> createOrUpdateFuture = createOrUpdateConnectors(reconciliation, host, apiClient, desiredConnectors);
 
-                return Future.join(Stream.concat(deletionFutures, createUpdateFutures).collect(Collectors.toList())).map((Void) null);
+                return Future.join(deletionFuture, createOrUpdateFuture).map((Void) null);
             }).recover(error -> {
                 if (error instanceof ConnectTimeoutException) {
                     Promise<Void> connectorStatuses = Promise.promise();
@@ -407,6 +401,22 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 }
             });
         }
+    }
+
+    private Future<Void> deleteConnectors(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, Set<String> connectorsForDeletion) {
+        LOGGER.debugCr(reconciliation, "{} cluster: delete connectors: {}", kind(), connectorsForDeletion);
+        return Future.join(connectorsForDeletion.stream()
+                    .map(connectorName -> reconcileConnectorAndHandleResult(reconciliation, host, apiClient, true, connectorName, null))
+                    .collect(Collectors.toList()))
+                .mapEmpty();
+    }
+
+    private Future<Void> createOrUpdateConnectors(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, List<KafkaConnector> desiredConnectors) {
+        LOGGER.debugCr(reconciliation, "{} cluster: required connectors: {}", kind(), desiredConnectors);
+        return Future.join(desiredConnectors.stream()
+                    .map(connector -> reconcileConnectorAndHandleResult(reconciliation, host, apiClient, true, connector.getMetadata().getName(), connector))
+                    .collect(Collectors.toList()))
+                .mapEmpty();
     }
 
     /*test*/ Future<Void> reconcileConnectorAndHandleResult(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,
