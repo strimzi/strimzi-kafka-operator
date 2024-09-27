@@ -47,7 +47,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 @SuiteDoc(
     description = @Desc("Test ensuring Kafka Connect works properly using ConfigMap and EnvVar configuration."),
     beforeTestSteps = {
-        @Step(value = "Deploy uber operator across all namespaces, with custom configuration", expected = "Uber operator is deployed")
+        @Step(value = "Deploy cluster operator across all namespaces, with custom configuration", expected = "Cluster operator is deployed")
     },
     labels = {
         @Label(value = TestDocsLabels.KAFKA)
@@ -61,7 +61,6 @@ public class ConfigProviderST extends AbstractST {
     @TestDoc(
         description = @Desc("Test ensuring Kafka Connect works properly using ConfigMap and EnvVar configuration."),
         steps = {
-            @Step(value = "Initialize test storage and define custom file sink path", expected = "Test storage is initialized and file sink path is set"),
             @Step(value = "Create broker and controller pools", expected = "Resources are created and are in ready state"),
             @Step(value = "Create Kafka cluster", expected = "Kafka cluster is ready with 3 brokers"),
             @Step(value = "Create ConfigMap for connector configuration", expected = "ConfigMap with connector configuration is created"),

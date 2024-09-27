@@ -141,7 +141,6 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test sending messages over plain transport, without auth"),
         steps = {
-            @Step(value = "Create test storage instance", expected = "Instance of TestStorage is created"),
             @Step(value = "Create Kafka resources with wait", expected = "Kafka broker, controller, and topic are created"),
             @Step(value = "Log transmission message", expected = "Transmission message is logged"),
             @Step(value = "Produce and consume messages with plain clients", expected = "Messages are successfully produced and consumed"),
@@ -181,7 +180,6 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test sending messages over tls transport using mutual tls auth."),
         steps = {
-            @Step(value = "Create TestStorage instance", expected = "TestStorage object is created"),
             @Step(value = "Create Kafka node pool resources", expected = "Persistent storage node pools are created"),
             @Step(value = "Disable plain listener and enable tls listener in Kafka resource", expected = "Kafka with plain listener disabled and tls listener enabled is created"),
             @Step(value = "Create Kafka topic and user", expected = "Kafka topic and tls user are created"),
@@ -260,7 +258,6 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test sending messages over plain transport using scram sha auth."),
         steps = {
-            @Step(value = "Initialize test storage and resources", expected = "Test storage and resources are initialized"),
             @Step(value = "Create Kafka brokers and controllers", expected = "Kafka brokers and controllers are created"),
             @Step(value = "Enable Kafka with plain listener disabled and scram sha auth", expected = "Kafka instance with scram sha auth is enabled on a specified listener"),
             @Step(value = "Set up topic and user", expected = "Kafka topic and Kafka user are set up with scram sha auth credentials"),
@@ -338,7 +335,6 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test sending messages over TLS transport using SCRAM-SHA authentication."),
         steps = {
-            @Step(value = "Initialize test storage with test context", expected = "Test storage is initialized"),
             @Step(value = "Create resources for Kafka node pools", expected = "Kafka node pools are created"),
             @Step(value = "Create Kafka cluster with SCRAM-SHA-512 authentication", expected = "Kafka cluster is created with SCRAM-SHA authentication"),
             @Step(value = "Create Kafka topic and user", expected = "Kafka topic and user are created"),
@@ -421,7 +417,6 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test custom listener configured with scram SHA authentication and TLS."),
         steps = {
-            @Step(value = "Initialize test storage and resource manager", expected = "Resources are initialized successfully"),
             @Step(value = "Create a Kafka cluster with broker and controller node pools", expected = "Kafka cluster is created with node pools"),
             @Step(value = "Create a Kafka cluster with custom listener using TLS and SCRAM-SHA authentication", expected = "Kafka cluster with custom listener is ready"),
             @Step(value = "Create a Kafka topic and SCRAM-SHA user", expected = "Kafka topic and user are created"),
@@ -482,7 +477,6 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test checking the functionality of Kafka cluster with NodePort external listener configurations."),
         steps = {
-            @Step(value = "Initialize TestStorage object and set labels and annotations", expected = "TestStorage object is initialized and labels and annotations are set"),
             @Step(value = "Create resource with Kafka broker pool and controller pool", expected = "Resources with Kafka pools are created successfully"),
             @Step(value = "Create Kafka cluster with NodePort and TLS listeners", expected = "Kafka cluster is set up with the specified listeners"),
             @Step(value = "Create ExternalKafkaClient and verify message production and consumption", expected = "Messages are produced and consumed successfully"),
@@ -598,7 +592,6 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test verifying that NodePort configuration can be overridden for Kafka brokers and bootstrap service."),
         steps = {
-            @Step(value = "Initialize TestStorage instance and define broker and bootstrap NodePort values.", expected = "TestStorage instance is created and NodePort values are initialized."),
             @Step(value = "Create Kafka broker and controller pools using resource manager.", expected = "Kafka broker and controller pools are created successfully."),
             @Step(value = "Deploy Kafka cluster with overridden NodePort configuration for brokers and bootstrap.", expected = "Kafka cluster is deployed with specified NodePort values."),
             @Step(value = "Verify that the bootstrap service NodePort matches the configured value.", expected = "Bootstrap NodePort matches the configured value of 32100."),
@@ -679,7 +672,6 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test the NodePort TLS functionality for Kafka brokers in a Kubernetes environment."),
         steps = {
-            @Step(value = "Initialize test storage with the test context", expected = "Test storage is initialized with the test context"),
             @Step(value = "Create Kafka broker and controller node pools", expected = "Broker and controller node pools are created"),
             @Step(value = "Deploy Kafka cluster with NodePort listener and TLS enabled", expected = "Kafka cluster is deployed with NodePort listener and TLS"),
             @Step(value = "Create a Kafka topic", expected = "Kafka topic is created"),
@@ -860,7 +852,6 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test verifies the functionality of Kafka with a cluster IP listener."),
         steps = {
-            @Step(value = "Initialize the test storage and resource manager", expected = "Test storage and resource manager are initialized"),
             @Step(value = "Create the Kafka broker and controller pools", expected = "Kafka broker and controller pools are created"),
             @Step(value = "Create the Kafka cluster with a cluster IP listener", expected = "Kafka cluster with cluster IP listener is created"),
             @Step(value = "Retrieve the cluster IP bootstrap address", expected = "Cluster IP bootstrap address is correctly retrieved"),
@@ -904,7 +895,6 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("This test validates the creation of Kafka resources with TLS authentication, ensuring proper setup and functionality of the Kafka cluster in a parallel namespace."),
         steps = {
-            @Step(value = "Create TestStorage instance and initialize resource manager with broker and controller node pools", expected = "Broker and controller node pools are set up successfully"),
             @Step(value = "Create ephemeral Kafka cluster with TLS enabled on ClusterIP listener", expected = "Kafka cluster is created with TLS enabled listener on port 9103"),
             @Step(value = "Create Kafka user with TLS authentication", expected = "Kafka user is created successfully"),
             @Step(value = "Retrieve the ClusterIP bootstrap address for the Kafka cluster", expected = "Bootstrap address for the Kafka cluster is retrieved"),
@@ -1065,7 +1055,6 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test verifies the custom chain certificates configuration for Kafka NodePort listener."),
         steps = {
-            @Step(value = "Initialize test storage.", expected = "Test storage is initialized."),
             @Step(value = "Generate custom root CA and intermediate certificates.", expected = "Root and intermediate certificates are generated."),
             @Step(value = "Generate end entity certificates using intermediate CA.", expected = "End entity certificates are generated."),
             @Step(value = "Export certificates to PEM files.", expected = "Certificates are exported to PEM files."),
@@ -1175,7 +1164,6 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test verifying custom solo certificates for load balancer in a Kafka cluster."),
         steps = {
-            @Step(value = "Initialize test storage", expected = "Test storage is initialized with the current test context"),
             @Step(value = "Create custom secret", expected = "Custom secret is created with the specified certificate and key"),
             @Step(value = "Create Kafka resources with node pools", expected = "Kafka brokers and controller pools are created and configured"),
             @Step(value = "Create Kafka cluster with listeners", expected = "Kafka cluster is created with internal and load balancer listeners using the custom certificates"),
@@ -1489,7 +1477,6 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test to verify custom chain certificates for a Kafka Route."),
         steps = {
-            @Step(value = "Initialize TestStorage", expected = "TestStorage instance is created and associated resources are initialized"),
             @Step(value = "Generate root and intermediate certificates", expected = "Root and intermediate CA keys are generated"),
             @Step(value = "Create cluster custom certificate chain and root CA secrets", expected = "Custom certificate chain and root CA secrets are created in OpenShift"),
             @Step(value = "Create Kafka cluster with custom certificates", expected = "Kafka cluster is deployed with custom certificates for internal and external listeners"),
@@ -1599,7 +1586,6 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("This test verifies the behavior of Kafka with custom certificates for load balancer and TLS rolling updates."),
         steps = {
-            @Step(value = "Initialize test storage", expected = "Test storage initialized with context"),
             @Step(value = "Create custom secrets for Kafka clusters", expected = "Secrets created and available in namespace"),
             @Step(value = "Deploy Kafka resources with load balancer and internal TLS listener", expected = "Kafka resources deployed with respective configurations"),
             @Step(value = "Create Kafka user and retrieve certificates", expected = "Kafka user created and certificates retrieved from Kafka status and secrets"),
@@ -2418,7 +2404,6 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test for verifying non-existing custom certificate handling by creating necessary resources and ensuring correct error message check."),
         steps = {
-            @Step(value = "Initialize TestStorage object", expected = "TestStorage instance is created"),
             @Step(value = "Create necessary Kafka node pools", expected = "Kafka node pools are created and initialized"),
             @Step(value = "Create Kafka cluster with a listener using non-existing certificate", expected = "Kafka cluster resource is initialized with non-existing TLS certificate"),
             @Step(value = "Wait for pods to be ready if not in KRaft mode", expected = "Pods are ready"),
@@ -2469,7 +2454,6 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test checking behavior when Kafka is configured with a non-existing certificate in the TLS listener."),
         steps = {
-            @Step(value = "Initialize TestStorage object with test context.", expected = "TestStorage object is initialized."),
             @Step(value = "Define non-existing certificate name.", expected = "Non-existing certificate name is defined."),
             @Step(value = "Create a custom secret for Kafka with the defined certificate.", expected = "Custom secret created successfully."),
             @Step(value = "Create Kafka node pools resources.", expected = "Kafka node pools resources created."),
@@ -2526,7 +2510,6 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test verifies that a Kafka cluster correctly identifies and reports the absence of a specified custom certificate private key."),
         steps = {
-            @Step(value = "Initialize test storage.", expected = "Test storage is initialized with the current test context."),
             @Step(value = "Define the non-existing certificate key.", expected = "The non-existing certificate key string is defined."),
             @Step(value = "Create a custom secret with a certificate for Kafka server.", expected = "Custom secret is created in the namespace."),
             @Step(value = "Create broker and controller resources with node pools.", expected = "Resources are created and ready."),
@@ -2583,7 +2566,6 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Validates that messages can be sent and received over TLS with SCRAM-SHA authentication using a predefined password, and that the password can be updated and still be functional."),
         steps = {
-            @Step(value = "Create a test storage instance", expected = "Test storage is created"),
             @Step(value = "Create and encode the initial password", expected = "Initial password is encoded"),
             @Step(value = "Create and encode the secondary password", expected = "Secondary password is encoded"),
             @Step(value = "Create a secret in Kubernetes with the initial password", expected = "Secret is created and contains the initial password"),
@@ -2692,7 +2674,6 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Verify that advertised hostnames appear correctly in broker certificates."),
         steps = {
-            @Step(value = "Initialize TestStorage object", expected = "TestStorage object is initialized"),
             @Step(value = "Define internal and external advertised hostnames and ports", expected = "Hostnames and ports are defined and listed"),
             @Step(value = "Create broker configurations with advertised hostnames and ports", expected = "Broker configurations are created"),
             @Step(value = "Deploy resources with Wait function and create Kafka instance", expected = "Resources and Kafka instance are successfully created"),

@@ -46,19 +46,6 @@ import java.util.Collections;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.TestTags.TIERED_STORAGE;
 
-/**
- * @description This test suite covers scenarios for Tiered Storage integration implemented within Strimzi.
- *
- * @steps
- *  1. - Create test namespace
- *  2. - Build Kafka image based on passed parameters like image full name, base image, Dockerfile path (via Kaniko or OpenShift build)
- *  3. - Deploy Minio in test namespace and init the client inside the Minio pod
- *  4. - Init bucket in Minio for purposes of these tests
- *  5. - Deploy Strimzi Cluster Operator
- *
- * @usecase
- *  - tiered-storage-integration
- */
 @MicroShiftNotSupported("We are using Kaniko and OpenShift builds to build Kafka image with TS. To make it working on Microshift we will invest much time with not much additional value.")
 @Tag(REGRESSION)
 @Tag(TIERED_STORAGE)

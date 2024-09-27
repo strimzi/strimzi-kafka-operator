@@ -55,9 +55,6 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 public class QuotasST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(QuotasST.class);
 
-    /**
-     * Test to check Kafka Quotas Plugin for disk space
-     */
     @ParallelNamespaceTest
     @TestDoc(
         description = @Desc("Test to check Kafka Quotas Plugin for disk space."),
@@ -154,7 +151,7 @@ public class QuotasST extends AbstractST {
     @TestDoc(
         description = @Desc("Test verifying bandwidth limitations with Kafka quotas plugin."),
         steps = {
-            @Step(value = "Create test storage and set excluded principal", expected = "Test storage is created and excluded principal is set"),
+            @Step(value = "Set excluded principal", expected = "Principal is set"),
             @Step(value = "Create Kafka resources including node pools and persistent Kafka with quotas enabled", expected = "Kafka resources are created successfully with quotas setup"),
             @Step(value = "Create Kafka topic and user with SCRAM-SHA authentication", expected = "Kafka topic and SCRAM-SHA user are created successfully"),
             @Step(value = "Send messages with normal user", expected = "Messages are sent and duration is measured"),

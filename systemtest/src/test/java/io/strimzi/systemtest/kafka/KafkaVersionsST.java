@@ -49,16 +49,6 @@ public class KafkaVersionsST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaVersionsST.class);
 
-    /**
-     * Test checking basic functionality for each supported Kafka version.
-     * Ensures that for every Kafka version:
-     *     - Kafka cluster is deployed without an issue
-     *       - with Topic Operator, User Operator, 3 Zookeeper and Kafka pods
-     *     - Topic Operator is working - because of the KafkaTopic creation
-     *     - User Operator is working - because of SCRAM-SHA, ACLs and overall KafkaUser creations
-     *     - Sending and receiving messages is working to PLAIN (with SCRAM-SHA) and TLS listeners
-     * @param testKafkaVersion TestKafkaVersion added for each iteration of the parametrized test
-     */
     @ParameterizedTest(name = "Kafka version: {0}.version()")
     @MethodSource("io.strimzi.systemtest.utils.TestKafkaVersion#getSupportedKafkaVersions")
     @TestDoc(

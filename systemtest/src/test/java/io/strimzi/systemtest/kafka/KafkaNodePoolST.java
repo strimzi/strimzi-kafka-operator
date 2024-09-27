@@ -68,23 +68,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 public class KafkaNodePoolST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(KafkaNodePoolST.class);
 
-    /**
-     * @description This test case verifies the management of broker IDs in Kafka Node Pools using annotations.
-     *
-     * @steps
-     *  1. - Deploy a Kafka instance with annotations to manage Node Pools and Initial NodePool (Initial) to hold Topics and act as controller.
-     *     - Kafka instance is deployed according to Kafka and KafkaNodePool custom resource, with IDs 90, 91.
-     *  2. - Deploy additional 2 NodePools (A,B) with 1 and 2 replicas, and preset 'next-node-ids' annotations holding resp. values ([4],[6]).
-     *     - NodePools are deployed, NodePool A contains ID 4, NodePoolB contains Ids 6, 0.
-     *  3. - Annotate NodePool A 'next-node-ids' and NodePool B 'remove-node-ids' respectively ([20-21],[6,55]) afterward scale to 4 and 1 replica resp.
-     *     - NodePools are scaled, NodePool A contains IDs 4, 20, 21, 1. NodePool B contains ID 0.
-     *  4. - Annotate NodePool A 'remove-node-ids' and NodePool B 'next-node-ids' respectively ([20],[1]) afterward scale to 2 and 6 replica resp.
-     *     - NodePools are scaled, NodePool A contains IDs 1, 4. NodePool B contains ID 2, 3, 5.
-     *
-     * @usecase
-     *  - kafka-node-pool
-     *  - broker-id-management
-     */
     @ParallelNamespaceTest
     @TestDoc(
         description = @Desc("This test case verifies the management of broker IDs in Kafka Node Pools using annotations."),
