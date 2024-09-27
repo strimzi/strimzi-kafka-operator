@@ -10,7 +10,9 @@ package io.strimzi.systemtest.docs;
  */
 public interface TestDocsLabels {
 
+    String KAFKA = "kafka";
     String BRIDGE = "bridge";
     String CONNECT = "connect";
     String CRUISE_CONTROL = "cruise-control";
+    String DYNAMIC_CONFIGURATION = "dynamic-configuration";
 }

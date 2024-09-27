@@ -4,6 +4,11 @@
  */
 package io.strimzi.systemtest.kafka.listeners;
 
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
@@ -14,6 +19,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -48,6 +54,15 @@ import static io.strimzi.systemtest.TestTags.ROUTE;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
+@SuiteDoc(
+    description = @Desc("Test to verify the functionality of using multiple NodePorts in a Kafka cluster within the same namespace."),
+    beforeTestSteps = {
+        @Step(value = "Initialize TestStorage with current test context", expected = "TestStorage object is initialized successfully")
+    },
+    labels = {
+        @Label(value = TestDocsLabels.KAFKA)
+    }
+)
 public class MultipleListenersST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MultipleListenersST.class);
@@ -59,12 +74,32 @@ public class MultipleListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @TestDoc(
+        description = @Desc("Test verifying the functionality of using multiple NodePorts in a Kafka cluster within the same namespace."),
+        steps = {
+            @Step(value = "Initialize TestStorage with current test context", expected = "TestStorage object is initialized successfully"),
+            @Step(value = "Execute listener tests with NodePort configuration", expected = "Listener tests run without issues using NodePort")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testMultipleNodePorts() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         runListenersTest(testCases.get(KafkaListenerType.NODEPORT), testStorage.getClusterName());
     }
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @TestDoc(
+        description = @Desc("Test to verify the usage of more than one Kafka cluster within a single namespace."),
+        steps = {
+            @Step(value = "Initialize TestStorage with the test context", expected = "TestStorage instance is created"),
+            @Step(value = "Run the internal Kafka listeners test", expected = "Listeners test runs successfully on the specified cluster")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testMultipleInternal() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         runListenersTest(testCases.get(KafkaListenerType.INTERNAL), testStorage.getClusterName());
@@ -74,6 +109,18 @@ public class MultipleListenersST extends AbstractST {
     @Tag(ACCEPTANCE)
     @Tag(EXTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @TestDoc(
+        description = @Desc("Test verifying the combination of internal and external Kafka listeners."),
+        steps = {
+            @Step(value = "Check if the environment supports cluster-wide NodePort rights", expected = "Test is skipped if the environment is not suitable"),
+            @Step(value = "Initialize test storage with context", expected = "Test storage is successfully initialized"),
+            @Step(value = "Retrieve and combine internal and NodePort listeners", expected = "Listeners are successfully retrieved and combined"),
+            @Step(value = "Run listeners test with combined listeners", expected = "Listeners test is executed successfully")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testCombinationOfInternalAndExternalListeners() {
         // Nodeport needs cluster wide rights to work properly which is not possible with STRIMZI_RBAC_SCOPE=NAMESPACE
         assumeFalse(Environment.isNamespaceRbacScope());
@@ -94,6 +141,17 @@ public class MultipleListenersST extends AbstractST {
     @Tag(LOADBALANCER_SUPPORTED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(EXTERNAL_CLIENTS_USED)
+    @TestDoc(
+        description = @Desc("Test verifying the behavior of multiple load balancers in a single namespace using more than one Kafka cluster."),
+        steps = {
+            @Step(value = "Initialize TestStorage instance", expected = "TestStorage instance is created with proper context"),
+            @Step(value = "Run listeners test with LOADBALANCER type", expected = "Listeners test executes successfully with load balancers"),
+            @Step(value = "Validate the results", expected = "Results match the expected outcomes for multiple load balancers")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testMultipleLoadBalancers() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         runListenersTest(testCases.get(KafkaListenerType.LOADBALANCER), testStorage.getClusterName());
@@ -103,6 +161,17 @@ public class MultipleListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(ROUTE)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @TestDoc(
+        description = @Desc("Test to verify the functionality of multiple Kafka route listeners in a single namespace."),
+        steps = {
+            @Step(value = "Initialize the TestStorage object with the current test context", expected = "TestStorage object is created successfully"),
+            @Step(value = "Retrieve test cases for Kafka Listener Type ROUTE", expected = "Test cases for ROUTE are retrieved"),
+            @Step(value = "Run listener tests using the retrieved test cases and cluster name", expected = "Listener tests run successfully with no errors")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testMultipleRoutes() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         runListenersTest(testCases.get(KafkaListenerType.ROUTE), testStorage.getClusterName());
@@ -112,6 +181,19 @@ public class MultipleListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @TestDoc(
+        description = @Desc("Test ensuring that different types of external Kafka listeners (ROUTE and NODEPORT) work correctly when mixed."),
+        steps = {
+            @Step(value = "Initialize TestStorage", expected = "TestStorage is initialized with TestContext"),
+            @Step(value = "Retrieve route listeners", expected = "Route listeners are retrieved from test cases"),
+            @Step(value = "Retrieve nodeport listeners", expected = "Nodeport listeners are retrieved from test cases"),
+            @Step(value = "Combine route and nodeport listeners", expected = "Multiple different listeners list is populated"),
+            @Step(value = "Run listeners test", expected = "Listeners test runs using the combined list")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testMixtureOfExternalListeners() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
@@ -131,6 +213,18 @@ public class MultipleListenersST extends AbstractST {
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @TestDoc(
+        description = @Desc("Verifies the combination of every kind of Kafka listener: INTERNAL, NODEPORT, ROUTE, and LOADBALANCER."),
+        steps = {
+            @Step(value = "Create test storage instance", expected = "Test storage instance created with current test context"),
+            @Step(value = "Retrieve different types of Kafka listeners", expected = "Lists of INTERNAL, NODEPORT, ROUTE, and LOADBALANCER listeners are retrieved"),
+            @Step(value = "Combine all different listener lists", expected = "A combined list of all Kafka listener types is created"),
+            @Step(value = "Run listeners test with combined listener list", expected = "Listeners test runs with all types of Kafka listeners in the combined list")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testCombinationOfEveryKindOfListener() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 

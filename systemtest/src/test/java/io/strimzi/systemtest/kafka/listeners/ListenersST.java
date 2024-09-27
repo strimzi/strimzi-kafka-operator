@@ -7,6 +7,11 @@ package io.strimzi.systemtest.kafka.listeners;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Service;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVarBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -25,6 +30,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -91,6 +97,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag(REGRESSION)
+@SuiteDoc(
+    description = @Desc("This class demonstrates various tests for Kafka listeners using different authentication mechanisms."),
+    beforeTestSteps = {
+        @Step(value = "Install the cluster operator with default settings", expected = "Cluster operator is installed successfully")
+    },
+    labels = {
+        @Label(value = TestDocsLabels.KAFKA)
+    }
+)
 public class ListenersST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(ListenersST.class);
 
@@ -123,6 +138,19 @@ public class ListenersST extends AbstractST {
      * Test sending messages over plain transport, without auth
      */
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Test sending messages over plain transport, without auth"),
+        steps = {
+            @Step(value = "Create test storage instance", expected = "Instance of TestStorage is created"),
+            @Step(value = "Create Kafka resources with wait", expected = "Kafka broker, controller, and topic are created"),
+            @Step(value = "Log transmission message", expected = "Transmission message is logged"),
+            @Step(value = "Produce and consume messages with plain clients", expected = "Messages are successfully produced and consumed"),
+            @Step(value = "Validate Kafka service discovery annotation", expected = "The discovery annotation is validated successfully")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testSendMessagesPlainAnonymous() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -150,6 +178,21 @@ public class ListenersST extends AbstractST {
      * Test sending messages over tls transport using mutual tls auth
      */
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Test sending messages over tls transport using mutual tls auth."),
+        steps = {
+            @Step(value = "Create TestStorage instance", expected = "TestStorage object is created"),
+            @Step(value = "Create Kafka node pool resources", expected = "Persistent storage node pools are created"),
+            @Step(value = "Disable plain listener and enable tls listener in Kafka resource", expected = "Kafka with plain listener disabled and tls listener enabled is created"),
+            @Step(value = "Create Kafka topic and user", expected = "Kafka topic and tls user are created"),
+            @Step(value = "Configure and deploy Kafka clients", expected = "Kafka clients producer and consumer with tls are deployed"),
+            @Step(value = "Wait for clients to successfully send and receive messages", expected = "Clients successfully send and receive messages over tls"),
+            @Step(value = "Assert that the service discovery contains expected info", expected = "Service discovery matches expected info")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testSendMessagesTlsAuthenticated() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -214,6 +257,21 @@ public class ListenersST extends AbstractST {
      * Test sending messages over plain transport using scram sha auth
      */
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Test sending messages over plain transport using scram sha auth."),
+        steps = {
+            @Step(value = "Initialize test storage and resources", expected = "Test storage and resources are initialized"),
+            @Step(value = "Create Kafka brokers and controllers", expected = "Kafka brokers and controllers are created"),
+            @Step(value = "Enable Kafka with plain listener disabled and scram sha auth", expected = "Kafka instance with scram sha auth is enabled on a specified listener"),
+            @Step(value = "Set up topic and user", expected = "Kafka topic and Kafka user are set up with scram sha auth credentials"),
+            @Step(value = "Check logs in broker pod for authentication", expected = "Logs show that scram sha authentication succeeded"),
+            @Step(value = "Send messages over plain transport using scram sha authentication", expected = "Messages are successfully sent over plain transport using scram sha auth"),
+            @Step(value = "Verify service discovery annotation", expected = "Service discovery annotation is checked and validated")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testSendMessagesPlainScramSha() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -277,6 +335,21 @@ public class ListenersST extends AbstractST {
      */
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
+    @TestDoc(
+        description = @Desc("Test sending messages over TLS transport using SCRAM-SHA authentication."),
+        steps = {
+            @Step(value = "Initialize test storage with test context", expected = "Test storage is initialized"),
+            @Step(value = "Create resources for Kafka node pools", expected = "Kafka node pools are created"),
+            @Step(value = "Create Kafka cluster with SCRAM-SHA-512 authentication", expected = "Kafka cluster is created with SCRAM-SHA authentication"),
+            @Step(value = "Create Kafka topic and user", expected = "Kafka topic and user are created"),
+            @Step(value = "Transmit messages over TLS using SCRAM-SHA", expected = "Messages are successfully transmitted"),
+            @Step(value = "Check if generated password has the expected length", expected = "Password length is as expected"),
+            @Step(value = "Verify Kafka service discovery annotation", expected = "Service discovery annotation is as expected")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testSendMessagesTlsScramSha() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int passwordLength = 50;
@@ -345,6 +418,19 @@ public class ListenersST extends AbstractST {
      */
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
+    @TestDoc(
+        description = @Desc("Test custom listener configured with scram SHA authentication and TLS."),
+        steps = {
+            @Step(value = "Initialize test storage and resource manager", expected = "Resources are initialized successfully"),
+            @Step(value = "Create a Kafka cluster with broker and controller node pools", expected = "Kafka cluster is created with node pools"),
+            @Step(value = "Create a Kafka cluster with custom listener using TLS and SCRAM-SHA authentication", expected = "Kafka cluster with custom listener is ready"),
+            @Step(value = "Create a Kafka topic and SCRAM-SHA user", expected = "Kafka topic and user are created"),
+            @Step(value = "Transmit messages over TLS using SCRAM-SHA authentication", expected = "Messages are transmitted successfully")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testSendMessagesCustomListenerTlsScramSha() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -393,6 +479,20 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
+    @TestDoc(
+        description = @Desc("Test checking the functionality of Kafka cluster with NodePort external listener configurations."),
+        steps = {
+            @Step(value = "Initialize TestStorage object and set labels and annotations", expected = "TestStorage object is initialized and labels and annotations are set"),
+            @Step(value = "Create resource with Kafka broker pool and controller pool", expected = "Resources with Kafka pools are created successfully"),
+            @Step(value = "Create Kafka cluster with NodePort and TLS listeners", expected = "Kafka cluster is set up with the specified listeners"),
+            @Step(value = "Create ExternalKafkaClient and verify message production and consumption", expected = "Messages are produced and consumed successfully"),
+            @Step(value = "Check Kafka status for proper listener addresses", expected = "Listener addresses in Kafka status are validated successfully"),
+            @Step(value = "Check ClusterRoleBinding annotations and labels in Kafka cluster", expected = "Annotations and labels match the expected values")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testNodePort() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final Map<String, String> label = Collections.singletonMap("my-label", "value");
@@ -495,6 +595,20 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
+    @TestDoc(
+        description = @Desc("Test verifying that NodePort configuration can be overridden for Kafka brokers and bootstrap service."),
+        steps = {
+            @Step(value = "Initialize TestStorage instance and define broker and bootstrap NodePort values.", expected = "TestStorage instance is created and NodePort values are initialized."),
+            @Step(value = "Create Kafka broker and controller pools using resource manager.", expected = "Kafka broker and controller pools are created successfully."),
+            @Step(value = "Deploy Kafka cluster with overridden NodePort configuration for brokers and bootstrap.", expected = "Kafka cluster is deployed with specified NodePort values."),
+            @Step(value = "Verify that the bootstrap service NodePort matches the configured value.", expected = "Bootstrap NodePort matches the configured value of 32100."),
+            @Step(value = "Verify that the broker service NodePort matches the configured value.", expected = "Broker NodePort matches the configured value of 32000."),
+            @Step(value = "Produce and consume messages using an external Kafka client.", expected = "Messages are produced and consumed successfully using the external client.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testOverrideNodePortConfiguration() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -562,6 +676,20 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
+    @TestDoc(
+        description = @Desc("Test the NodePort TLS functionality for Kafka brokers in a Kubernetes environment."),
+        steps = {
+            @Step(value = "Initialize test storage with the test context", expected = "Test storage is initialized with the test context"),
+            @Step(value = "Create Kafka broker and controller node pools", expected = "Broker and controller node pools are created"),
+            @Step(value = "Deploy Kafka cluster with NodePort listener and TLS enabled", expected = "Kafka cluster is deployed with NodePort listener and TLS"),
+            @Step(value = "Create a Kafka topic", expected = "Kafka topic is created"),
+            @Step(value = "Create a Kafka user with TLS authentication", expected = "Kafka user with TLS authentication is created"),
+            @Step(value = "Configure external Kafka client and send and receive messages using TLS", expected = "External Kafka client sends and receives messages using TLS successfully")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testNodePortTls() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -608,6 +736,19 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
+    @TestDoc(
+        description = @Desc("Test verifying load balancer functionality with external clients."),
+        steps = {
+            @Step(value = "Create instances for broker pool and controller pool using NodePoolsConverter and KafkaNodePoolTemplates", expected = "Resources are created and ready for use"),
+            @Step(value = "Create Kafka cluster with ephemeral storage and load balancer listener", expected = "Kafka cluster is created with the specified configuration"),
+            @Step(value = "Wait until the load balancer address is reachable", expected = "Address is reachable"),
+            @Step(value = "Configure external Kafka client and send messages", expected = "Messages are sent successfully"),
+            @Step(value = "Verify that messages are correctly produced and consumed", expected = "Messages are produced and consumed as expected")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testLoadBalancer() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -655,6 +796,19 @@ public class ListenersST extends AbstractST {
     @Tag(ACCEPTANCE)
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
+    @TestDoc(
+        description = @Desc("Test validating the TLS connection through a Kafka LoadBalancer."),
+        steps = {
+            @Step(value = "Create and configure Kafka node pools", expected = "Node pools for brokers and controllers are created"),
+            @Step(value = "Create and configure Kafka cluster with TLS listener", expected = "Kafka cluster with TLS enabled LoadBalancer listener is created"),
+            @Step(value = "Create and configure Kafka user with TLS authentication", expected = "Kafka user with TLS authentication is created"),
+            @Step(value = "Wait for the LoadBalancer address to be reachable", expected = "LoadBalancer address becomes reachable"),
+            @Step(value = "Send and receive messages using external Kafka client", expected = "Messages are successfully produced and consumed over the TLS connection")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testLoadBalancerTls() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -703,6 +857,20 @@ public class ListenersST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Test verifies the functionality of Kafka with a cluster IP listener."),
+        steps = {
+            @Step(value = "Initialize the test storage and resource manager", expected = "Test storage and resource manager are initialized"),
+            @Step(value = "Create the Kafka broker and controller pools", expected = "Kafka broker and controller pools are created"),
+            @Step(value = "Create the Kafka cluster with a cluster IP listener", expected = "Kafka cluster with cluster IP listener is created"),
+            @Step(value = "Retrieve the cluster IP bootstrap address", expected = "Cluster IP bootstrap address is correctly retrieved"),
+            @Step(value = "Deploy Kafka clients", expected = "Kafka clients are deployed successfully"),
+            @Step(value = "Wait for Kafka clients to succeed", expected = "Kafka clients successfully produce and consume messages")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testClusterIp() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -733,6 +901,20 @@ public class ListenersST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("This test validates the creation of Kafka resources with TLS authentication, ensuring proper setup and functionality of the Kafka cluster in a parallel namespace."),
+        steps = {
+            @Step(value = "Create TestStorage instance and initialize resource manager with broker and controller node pools", expected = "Broker and controller node pools are set up successfully"),
+            @Step(value = "Create ephemeral Kafka cluster with TLS enabled on ClusterIP listener", expected = "Kafka cluster is created with TLS enabled listener on port 9103"),
+            @Step(value = "Create Kafka user with TLS authentication", expected = "Kafka user is created successfully"),
+            @Step(value = "Retrieve the ClusterIP bootstrap address for the Kafka cluster", expected = "Bootstrap address for the Kafka cluster is retrieved"),
+            @Step(value = "Instantiate TLS Kafka Clients (producer and consumer)", expected = "TLS Kafka clients are instantiated successfully"),
+            @Step(value = "Wait for the Kafka Clients to complete their tasks and verify success", expected = "Kafka Clients complete their tasks successfully")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testClusterIpTls() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -775,6 +957,23 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
+    @TestDoc(
+        description = @Desc("Test custom certificates in Kafka listeners, specifically for the NodePort type."),
+        steps = {
+            @Step(value = "Generate Root CA certificate and key", expected = "Root CA certificate and key are generated"),
+            @Step(value = "Generate Intermediate CA certificate and key using Root CA", expected = "Intermediate CA certificate and key are generated"),
+            @Step(value = "Generate Kafka Broker certificate and key using Intermediate CA", expected = "Broker certificate and key are generated"),
+            @Step(value = "Export generated certificates and keys to PEM files", expected = "PEM files are created with certificates and keys"),
+            @Step(value = "Create custom secret with the PEM files", expected = "Custom secret is created within the required namespace"),
+            @Step(value = "Deploy and wait for Kafka cluster resources with custom certificates", expected = "Kafka cluster is deployed successfully with custom certificates"),
+            @Step(value = "Create and wait for TLS KafkaUser", expected = "TLS KafkaUser is created successfully"),
+            @Step(value = "Produce and consume messages using ExternalKafkaClient", expected = "Messages are successfully produced and consumed"),
+            @Step(value = "Produce and consume messages using internal TLS client", expected = "Messages are successfully produced and consumed with internal TLS client")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testCustomSoloCertificatesForNodePort() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
@@ -863,6 +1062,24 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
+    @TestDoc(
+        description = @Desc("Test verifies the custom chain certificates configuration for Kafka NodePort listener."),
+        steps = {
+            @Step(value = "Initialize test storage.", expected = "Test storage is initialized."),
+            @Step(value = "Generate custom root CA and intermediate certificates.", expected = "Root and intermediate certificates are generated."),
+            @Step(value = "Generate end entity certificates using intermediate CA.", expected = "End entity certificates are generated."),
+            @Step(value = "Export certificates to PEM files.", expected = "Certificates are exported to PEM files."),
+            @Step(value = "Create Kubernetes secrets with the custom certificates.", expected = "Custom certificate secrets are created."),
+            @Step(value = "Deploy Kafka cluster with NodePort listener using the custom certificates.", expected = "Kafka cluster is deployed successfully."),
+            @Step(value = "Create a Kafka user with TLS authentication.", expected = "Kafka user is created."),
+            @Step(value = "Verify message production and consumption with external Kafka client.", expected = "Messages are produced and consumed successfully."),
+            @Step(value = "Verify message production with internal Kafka client.", expected = "Messages are produced successfully."),
+            @Step(value = "Verify message consumption with internal Kafka client.", expected = "Messages are consumed successfully.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testCustomChainCertificatesForNodePort() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String clusterCustomCertChain1 = testStorage.getClusterName() + "-" + customCertChain1;
@@ -955,6 +1172,22 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
+    @TestDoc(
+        description = @Desc("Test verifying custom solo certificates for load balancer in a Kafka cluster."),
+        steps = {
+            @Step(value = "Initialize test storage", expected = "Test storage is initialized with the current test context"),
+            @Step(value = "Create custom secret", expected = "Custom secret is created with the specified certificate and key"),
+            @Step(value = "Create Kafka resources with node pools", expected = "Kafka brokers and controller pools are created and configured"),
+            @Step(value = "Create Kafka cluster with listeners", expected = "Kafka cluster is created with internal and load balancer listeners using the custom certificates"),
+            @Step(value = "Create TLS user", expected = "TLS user is created"),
+            @Step(value = "Verify produced and consumed messages via external client", expected = "Messages are successfully produced and consumed using the custom certificates"),
+            @Step(value = "Create and verify TLS producer client", expected = "TLS producer client is created and verified for success"),
+            @Step(value = "Create and verify TLS consumer client", expected = "TLS consumer client is created and verified for success")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testCustomSoloCertificatesForLoadBalancer() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
@@ -1039,6 +1272,22 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
+    @TestDoc(
+        description = @Desc("Verifies custom certificate chain configuration for Kafka load balancer, ensuring proper secret creation, resource setup, and message sending/receiving functionality."),
+        steps = {
+            @Step(value = "Create custom secrets for certificate chains and root CA", expected = "Secrets are created successfully"),
+            @Step(value = "Deploy Kafka broker and controller pools with custom certificates", expected = "Kafka pools are deployed without issues"),
+            @Step(value = "Deploy Kafka cluster with custom listener configurations", expected = "Kafka cluster is deployed with custom listener configurations"),
+            @Step(value = "Set up Kafka topic and user", expected = "Kafka topic and user are created successfully"),
+            @Step(value = "Verify message production and consumption via external Kafka client with TLS", expected = "Messages are produced and consumed successfully"),
+            @Step(value = "Set up Kafka clients for further messaging operations", expected = "Kafka clients are set up without issues"),
+            @Step(value = "Produce messages using Kafka producer", expected = "Messages are produced successfully"),
+            @Step(value = "Consume messages using Kafka consumer", expected = "Messages are consumed successfully")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testCustomChainCertificatesForLoadBalancer() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String clusterCustomCertChain1 = testStorage.getClusterName() + "-" + customCertChain1;
@@ -1130,6 +1379,24 @@ public class ListenersST extends AbstractST {
     @Tag(ROUTE)
     @Tag(EXTERNAL_CLIENTS_USED)
     @OpenShiftOnly
+    @TestDoc(
+        description = @Desc("Test custom solo certificates for Kafka route and client communication."),
+        steps = {
+            @Step(value = "Generate root CA certificate and key", expected = "Root CA certificate and key are generated"),
+            @Step(value = "Generate intermediate CA certificate and key", expected = "Intermediate CA certificate and key are generated"),
+            @Step(value = "Generate end-entity certificate and key for Strimzi", expected = "End-entity certificate and key for Strimzi are generated"),
+            @Step(value = "Export certificates and keys to PEM files", expected = "Certificates and keys are exported to PEM files"),
+            @Step(value = "Create custom secret with certificates and keys", expected = "Custom secret is created in the namespace with certificates and keys"),
+            @Step(value = "Deploy Kafka cluster with custom certificates", expected = "Kafka cluster is deployed with custom certificates"),
+            @Step(value = "Create TLS Kafka user", expected = "TLS Kafka user is created"),
+            @Step(value = "Verify client communication using external Kafka client", expected = "Messages are successfully produced and consumed using external Kafka client"),
+            @Step(value = "Deploy Kafka clients with custom certificates", expected = "Kafka clients are deployed with custom certificates"),
+            @Step(value = "Verify client communication using internal Kafka client", expected = "Messages are successfully produced and consumed using internal Kafka client")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testCustomSoloCertificatesForRoute() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
@@ -1219,6 +1486,23 @@ public class ListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(ROUTE)
     @OpenShiftOnly
+    @TestDoc(
+        description = @Desc("Test to verify custom chain certificates for a Kafka Route."),
+        steps = {
+            @Step(value = "Initialize TestStorage", expected = "TestStorage instance is created and associated resources are initialized"),
+            @Step(value = "Generate root and intermediate certificates", expected = "Root and intermediate CA keys are generated"),
+            @Step(value = "Create cluster custom certificate chain and root CA secrets", expected = "Custom certificate chain and root CA secrets are created in OpenShift"),
+            @Step(value = "Create Kafka cluster with custom certificates", expected = "Kafka cluster is deployed with custom certificates for internal and external listeners"),
+            @Step(value = "Create Kafka user", expected = "Kafka user with TLS authentication is created"),
+            @Step(value = "Verify message production and consumption with external Kafka client", expected = "Messages are produced and consumed successfully using the external Kafka client"),
+            @Step(value = "Create Kafka clients for internal message production and consumption", expected = "Internal Kafka clients are created and configured with TLS authentication"),
+            @Step(value = "Verify internal message production with Kafka client", expected = "Messages are produced successfully using the internal Kafka client"),
+            @Step(value = "Verify internal message consumption with Kafka client", expected = "Messages are consumed successfully using the internal Kafka client")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testCustomChainCertificatesForRoute() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -1308,11 +1592,28 @@ public class ListenersST extends AbstractST {
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
     }
 
-
     @ParallelNamespaceTest
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @SuppressWarnings({"checkstyle:MethodLength"})
+    @TestDoc(
+        description = @Desc("This test verifies the behavior of Kafka with custom certificates for load balancer and TLS rolling updates."),
+        steps = {
+            @Step(value = "Initialize test storage", expected = "Test storage initialized with context"),
+            @Step(value = "Create custom secrets for Kafka clusters", expected = "Secrets created and available in namespace"),
+            @Step(value = "Deploy Kafka resources with load balancer and internal TLS listener", expected = "Kafka resources deployed with respective configurations"),
+            @Step(value = "Create Kafka user and retrieve certificates", expected = "Kafka user created and certificates retrieved from Kafka status and secrets"),
+            @Step(value = "Compare Kafka certificates with secret certificates", expected = "Certificates from Kafka status and secrets match"),
+            @Step(value = "Verify message production and consumption using an external Kafka client", expected = "Messages successfully produced and consumed over SSL"),
+            @Step(value = "Trigger and verify TLS rolling update", expected = "TLS rolling update completed successfully"),
+            @Step(value = "Repeat certificate verification steps after rolling update", expected = "Certificates from Kafka status and secrets match post update"),
+            @Step(value = "Repeatedly produce and consume messages to ensure Kafka stability", expected = "Messages successfully produced and consumed, ensuring stability"),
+            @Step(value = "Revert the certificate updates and verify Kafka status", expected = "Certificates reverted and verified, Kafka operates normally")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testCustomCertLoadBalancerAndTlsRollingUpdate() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
@@ -1560,6 +1861,23 @@ public class ListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @SuppressWarnings({"checkstyle:MethodLength"})
+    @TestDoc(
+        description = @Desc("Test verifies custom certificates with NodePort and rolling update in Kafka."),
+        steps = {
+            @Step(value = "Generate root and intermediate certificates", expected = "Certificates are generated successfully"),
+            @Step(value = "Generate end-entity certificates", expected = "End-entity certificates are generated successfully"),
+            @Step(value = "Create custom secrets with generated certificates", expected = "Secrets are created in Kubernetes"),
+            @Step(value = "Deploy Kafka cluster with custom NodePort and TLS settings", expected = "Kafka cluster is deployed and running"),
+            @Step(value = "Verify messages sent and received through external Kafka client", expected = "Messages are produced and consumed successfully"),
+            @Step(value = "Perform rolling update and update certificates in custom secrets", expected = "Rolling update is performed and certificates are updated"),
+            @Step(value = "Verify messages sent and received after rolling update", expected = "Messages are produced and consumed successfully after update"),
+            @Step(value = "Restore default certificate configuration and perform rolling update", expected = "Default certificates are restored and rolling update is completed"),
+            @Step(value = "Verify messages sent and received with restored configuration", expected = "Messages are produced and consumed successfully with restored configuration")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testCustomCertNodePortAndTlsRollingUpdate() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
@@ -1813,6 +2131,22 @@ public class ListenersST extends AbstractST {
     @Tag(ROUTE)
     @OpenShiftOnly
     @SuppressWarnings({"checkstyle:MethodLength"})
+    @TestDoc(
+        description = @Desc("This test verifies the custom certificate handling and TLS rolling update mechanisms for Kafka brokers using OpenShift-specific configurations."),
+        steps = {
+            @Step(value = "Create various certificate chains and export them to PEM files", expected = "Certificates are created and exported successfully"),
+            @Step(value = "Create custom secrets with the generated certificates", expected = "Secrets are created in the specified namespace"),
+            @Step(value = "Deploy Kafka cluster and TLS user with specified configurations", expected = "Kafka cluster and TLS user are deployed successfully"),
+            @Step(value = "Verify certificates in KafkaStatus match those in the secrets", expected = "Certificates are verified to match"),
+            @Step(value = "Use external Kafka client to produce and consume messages", expected = "Messages are produced and consumed successfully"),
+            @Step(value = "Update Kafka listeners with new certificates and perform rolling update", expected = "Kafka cluster rolls out successfully with updated certificates"),
+            @Step(value = "Verify certificates in KafkaStatus match after update", expected = "Certificates are verified to match after the update"),
+            @Step(value = "Repeat message production and consumption with updated certificates", expected = "Messages are produced and consumed successfully with new certificates")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testCustomCertRouteAndTlsRollingUpdate() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
@@ -2081,6 +2415,19 @@ public class ListenersST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Test for verifying non-existing custom certificate handling by creating necessary resources and ensuring correct error message check."),
+        steps = {
+            @Step(value = "Initialize TestStorage object", expected = "TestStorage instance is created"),
+            @Step(value = "Create necessary Kafka node pools", expected = "Kafka node pools are created and initialized"),
+            @Step(value = "Create Kafka cluster with a listener using non-existing certificate", expected = "Kafka cluster resource is initialized with non-existing TLS certificate"),
+            @Step(value = "Wait for pods to be ready if not in KRaft mode", expected = "Pods are ready"),
+            @Step(value = "Wait for Kafka status condition message indicating the non-existing secret", expected = "Correct error message regarding the non-existing secret appears")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testNonExistingCustomCertificate() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String nonExistingCertName = "non-existing-certificate";
@@ -2119,6 +2466,21 @@ public class ListenersST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Test checking behavior when Kafka is configured with a non-existing certificate in the TLS listener."),
+        steps = {
+            @Step(value = "Initialize TestStorage object with test context.", expected = "TestStorage object is initialized."),
+            @Step(value = "Define non-existing certificate name.", expected = "Non-existing certificate name is defined."),
+            @Step(value = "Create a custom secret for Kafka with the defined certificate.", expected = "Custom secret created successfully."),
+            @Step(value = "Create Kafka node pools resources.", expected = "Kafka node pools resources created."),
+            @Step(value = "Create Kafka cluster with ephemeral storage and the non-existing certificate.", expected = "Kafka cluster creation initiated."),
+            @Step(value = "Wait for controller pods to be ready if in non-KRaft mode.", expected = "Controller pods are ready."),
+            @Step(value = "Wait until Kafka status message indicates missing certificate.", expected = "Error message about missing certificate is found in Kafka status condition.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testCertificateWithNonExistingDataCrt() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String nonExistingCertName = "non-existing-crt";
@@ -2161,6 +2523,21 @@ public class ListenersST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Test verifies that a Kafka cluster correctly identifies and reports the absence of a specified custom certificate private key."),
+        steps = {
+            @Step(value = "Initialize test storage.", expected = "Test storage is initialized with the current test context."),
+            @Step(value = "Define the non-existing certificate key.", expected = "The non-existing certificate key string is defined."),
+            @Step(value = "Create a custom secret with a certificate for Kafka server.", expected = "Custom secret is created in the namespace."),
+            @Step(value = "Create broker and controller resources with node pools.", expected = "Resources are created and ready."),
+            @Step(value = "Deploy a Kafka cluster with a listener using the custom secret and non-existing key.", expected = "Deployment initiated without waiting for the resources to be ready."),
+            @Step(value = "If not in KRaft mode, wait for controller pods to be ready.", expected = "Controller pods are in ready state (if applicable)."),
+            @Step(value = "Check Kafka status condition for custom certificate error message.", expected = "Error message indicating the missing custom certificate private key is present in Kafka status conditions.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testCertificateWithNonExistingDataKey() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String nonExistingCertKey = "non-existing-key";
@@ -2203,6 +2580,25 @@ public class ListenersST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Validates that messages can be sent and received over TLS with SCRAM-SHA authentication using a predefined password, and that the password can be updated and still be functional."),
+        steps = {
+            @Step(value = "Create a test storage instance", expected = "Test storage is created"),
+            @Step(value = "Create and encode the initial password", expected = "Initial password is encoded"),
+            @Step(value = "Create and encode the secondary password", expected = "Secondary password is encoded"),
+            @Step(value = "Create a secret in Kubernetes with the initial password", expected = "Secret is created and contains the initial password"),
+            @Step(value = "Verify the password in the secret", expected = "Password in the secret is verified to be correct"),
+            @Step(value = "Create a KafkaUser with SCRAM-SHA authentication using the secret", expected = "KafkaUser is created with correct authentication settings"),
+            @Step(value = "Create Kafka cluster and topic with SCRAM-SHA authentication", expected = "Kafka cluster and topic are created correctly"),
+            @Step(value = "Produce and consume messages using TLS and SCRAM-SHA", expected = "Messages are successfully transmitted and received"),
+            @Step(value = "Update the secret with the secondary password", expected = "Secret is updated with the new password"),
+            @Step(value = "Wait for the user password change to take effect", expected = "Password change is detected and applied"),
+            @Step(value = "Produce and consume messages with the updated password", expected = "Messages are successfully transmitted and received with the new password")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testMessagesTlsScramShaWithPredefinedPassword() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -2293,6 +2689,20 @@ public class ListenersST extends AbstractST {
 
     @Tag(NODEPORT_SUPPORTED)
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Verify that advertised hostnames appear correctly in broker certificates."),
+        steps = {
+            @Step(value = "Initialize TestStorage object", expected = "TestStorage object is initialized"),
+            @Step(value = "Define internal and external advertised hostnames and ports", expected = "Hostnames and ports are defined and listed"),
+            @Step(value = "Create broker configurations with advertised hostnames and ports", expected = "Broker configurations are created"),
+            @Step(value = "Deploy resources with Wait function and create Kafka instance", expected = "Resources and Kafka instance are successfully created"),
+            @Step(value = "Retrieve broker certificates from Kubernetes secrets", expected = "Certificates are retrieved correctly from secrets"),
+            @Step(value = "Validate that each broker's certificate contains the expected internal and external advertised hostnames", expected = "Certificates contain the correct advertised hostnames")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testAdvertisedHostNamesAppearsInBrokerCerts() throws CertificateException {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 

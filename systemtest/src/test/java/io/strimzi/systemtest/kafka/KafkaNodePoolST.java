@@ -6,6 +6,11 @@ package io.strimzi.systemtest.kafka;
 
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
@@ -15,6 +20,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -49,6 +55,16 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 
 @Tag(REGRESSION)
+@SuiteDoc(
+    description = @Desc("This test suite verifies various functionalities of Kafka Node Pools in a Kafka cluster."),
+    beforeTestSteps = {
+        @Step(value = "Ensure the environment is not using OLM or Helm and Kafka Node Pools are enabled", expected = "Environment is validated"),
+        @Step(value = "Install the default cluster operator", expected = "Cluster operator is installed")
+    },
+    labels = {
+        @Label(value = TestDocsLabels.KAFKA)
+    }
+)
 public class KafkaNodePoolST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(KafkaNodePoolST.class);
 
@@ -70,6 +86,18 @@ public class KafkaNodePoolST extends AbstractST {
      *  - broker-id-management
      */
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("This test case verifies the management of broker IDs in Kafka Node Pools using annotations."),
+        steps = {
+            @Step(value = "Deploy a Kafka instance with annotations to manage Node Pools and Initial NodePool (Initial) to hold Topics and act as controller.", expected = "Kafka instance is deployed according to Kafka and KafkaNodePool custom resource, with IDs 90, 91."),
+            @Step(value = "Deploy additional 2 NodePools (A,B) with 1 and 2 replicas, and preset 'next-node-ids' annotations holding resp. values ([4],[6]).", expected = "NodePools are deployed, NodePool A contains ID 4, NodePool B contains IDs 6, 0."),
+            @Step(value = "Annotate NodePool A 'next-node-ids' and NodePool B 'remove-node-ids' respectively ([20-21],[6,55]) afterward scale to 4 and 1 replicas resp.", expected = "NodePools are scaled, NodePool A contains IDs 4, 20, 21, 1. NodePool B contains ID 0."),
+            @Step(value = "Annotate NodePool A 'remove-node-ids' and NodePool B 'next-node-ids' respectively ([20],[1]) afterward scale to 2 and 6 replicas resp.", expected = "NodePools are scaled, NodePool A contains IDs 1, 4. NodePool B contains IDs 2, 3, 5.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testKafkaNodePoolBrokerIdsManagementUsingAnnotations() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String nodePoolNameA = testStorage.getBrokerPoolName() + "-a";
@@ -161,27 +189,23 @@ public class KafkaNodePoolST extends AbstractST {
             KafkaNodePoolUtils.getCurrentKafkaNodePoolIds(testStorage.getNamespaceName(), nodePoolNameB).equals(Arrays.asList(0, 2, 3, 5)));
     }
 
-    /**
-     * @description This test case verifies changing of roles in Kafka Node Pools.
-     *
-     * @steps
-     *  1. - Deploy a Kafka instance with annotations to manage Node Pools and Initial 2 NodePools, both with mixed role, first one stable, second one which will be modified.
-     *  2. - Create KafkaTopic with replica number requiring all Kafka Brokers to be present.
-     *  3. - Annotate one of Node Pools to perform manual Rolling Update.
-     *     - Rolling Update started.
-     *  3. - Change role of Kafka Node Pool from mixed to controller only role.
-     *     - Role Change is being prevented because a previously created KafkaTopic still has some replicas present on the node to be scaled down, also there is original Rolling Update going on.
-     *  4. - Original Rolling Update finishes successfully.
-     *  5. - Delete previously created KafkaTopic.
-     *     - KafkaTopic is deleted, and roll of Node Pool whose role was changed begins resulting in new nodes with expected role.
-     *  6. - Change role of Kafka Node Pool from controller only to mixed role.
-     *     - Kafka Node Pool changes role to mixed role.
-     *  7. - Produce and consume messages on newly created KafkaTopic with replica count requiring also new brokers to be present.
-     *
-     * @usecase
-     *  - kafka-node-pool
-     */
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("This test case verifies changing of roles in Kafka Node Pools."),
+        steps = {
+            @Step(value = "Deploy a Kafka instance with annotations to manage Node Pools and Initial 2 NodePools, both with mixed role, first one stable, second one which will be modified.", expected = "Kafka instance with initial Node Pools is deployed."),
+            @Step(value = "Create KafkaTopic with replica number requiring all Kafka Brokers to be present.", expected = "KafkaTopic is created."),
+            @Step(value = "Annotate one of Node Pools to perform manual Rolling Update.", expected = "Rolling Update started."),
+            @Step(value = "Change role of Kafka Node Pool from mixed to controller only role.", expected = "Role Change is prevented due to existing KafkaTopic replicas and ongoing Rolling Update."),
+            @Step(value = "Original Rolling Update finishes successfully.", expected = "Rolling Update is completed."),
+            @Step(value = "Delete previously created KafkaTopic.", expected = "KafkaTopic is deleted and Node Pool role change is initiated."),
+            @Step(value = "Change role of Kafka Node Pool from controller only to mixed role.", expected = "Kafka Node Pool changes role to mixed role."),
+            @Step(value = "Produce and consume messages on newly created KafkaTopic with replica count requiring also new brokers to be present.", expected = "Messages are produced and consumed successfully.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testNodePoolsRolesChanging() {
         assumeTrue(Environment.isKRaftModeEnabled());
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -246,27 +270,21 @@ public class KafkaNodePoolST extends AbstractST {
         transmitMessagesWithNewTopicAndClean(testStorage, 5);
     }
 
-    /**
-     * @description This test case verifies possibility of adding and removing Kafka Node Pools into existing Kafka cluster.
-     *
-     * @steps
-     *  1. - Deploy a Kafka instance with annotations to manage Node Pools and Initial 2 NodePools, one being controller if possible other initial broker.
-     *     - Kafka instance is deployed according to Kafka and KafkaNodePool custom resource.
-     *  2. - Create KafkaTopic with replica number requiring all Kafka Brokers to be present, Deploy clients and transmit messages and remove KafkaTopic.
-     *     - transition of messages is finished successfully, KafkaTopic created and cleaned as expected.
-     *  3. - Add extra KafkaNodePool with broker role to the Kafka.
-     *     - KafkaNodePool is deployed and ready.
-     *  4. - Create KafkaTopic with replica number requiring all Kafka Brokers to be present, Deploy clients and transmit messages and remove KafkaTopic.
-     *     - transition of messages is finished successfully, KafkaTopic created and cleaned as expected.
-     *  5. - Remove one of kafkaNodePool with broker role.
-     *     - KafkaNodePool is removed, Pods are deleted, but other pods in Kafka are stable and ready.
-     *  6. - Create KafkaTopic with replica number requiring all the remaining Kafka Brokers to be present, Deploy clients and transmit messages and remove KafkaTopic.
-     *     - transition of messages is finished successfully, KafkaTopic created and cleaned as expected.
-     *
-     * @usecase
-     *  - kafka-node-pool
-     */
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("This test case verifies the possibility of adding and removing Kafka Node Pools into an existing Kafka cluster."),
+        steps = {
+            @Step(value = "Deploy a Kafka instance with annotations to manage Node Pools and Initial 2 NodePools.", expected = "Kafka instance is deployed according to Kafka and KafkaNodePool custom resource."),
+            @Step(value = "Create KafkaTopic with replica number requiring all Kafka Brokers to be present, Deploy clients and transmit messages and remove KafkaTopic.", expected = "Transition of messages is finished successfully, KafkaTopic created and cleaned as expected."),
+            @Step(value = "Add extra KafkaNodePool with broker role to the Kafka.", expected = "KafkaNodePool is deployed and ready."),
+            @Step(value = "Create KafkaTopic with replica number requiring all Kafka Brokers to be present, Deploy clients and transmit messages and remove KafkaTopic.", expected = "Transition of messages is finished successfully, KafkaTopic created and cleaned as expected."),
+            @Step(value = "Remove one of kafkaNodePool with broker role.", expected = "KafkaNodePool is removed, Pods are deleted, but other pods in Kafka are stable and ready."),
+            @Step(value = "Create KafkaTopic with replica number requiring all the remaining Kafka Brokers to be present, Deploy clients and transmit messages and remove KafkaTopic.", expected = "Transition of messages is finished successfully, KafkaTopic created and cleaned as expected.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testNodePoolsAdditionAndRemoval() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         // node pools name convention is 'A' for all roles (: if possible i.e. based on feature gate) 'B' for broker roles.
@@ -314,30 +332,22 @@ public class KafkaNodePoolST extends AbstractST {
         transmitMessagesWithNewTopicAndClean(testStorage, 2);
     }
 
-    /**
-     * @description This test case verifies transfer of Kafka Cluster from and to management by KafkaNodePool, by creating corresponding Kafka and KafkaNodePool custom resources
-     * and manipulating according kafka annotation.
-     *
-     * @steps
-     * 1. - Deploy Kafka with annotated to enable management by KafkaNodePool, and KafkaNodePool targeting given Kafka Cluster.
-     *    - Kafka is deployed, KafkaNodePool custom resource is targeting Kafka Cluster as expected.
-     * 2. - Modify KafkaNodePool by increasing number of Kafka Replicas.
-     *    - Number of Kafka Pods is increased to match specification from KafkaNodePool
-     * 3. - Produce and consume messages in given Kafka Cluster.
-     *    - Clients can produce and consume messages.
-     * 4. - Modify Kafka custom resource annotation strimzi.io/node-pool to disable management by KafkaNodePool.
-     *    - StrimziPodSet is modified, replacing former one, Pods are replaced and specification from KafkaNodePool (i.e., changed replica count) are ignored.
-     * 5. - Produce and consume messages in given Kafka Cluster.
-     *    - Clients can produce and consume messages.
-     * 6. - Modify Kafka custom resource annotation strimzi.io/node-pool to enable management by KafkaNodePool.
-     *    - new StrimziPodSet is created, replacing former one, Pods are replaced and specification from KafkaNodePool (i.e., changed replica count) has priority over Kafka specification.
-     * 7. - Produce and consume messages in given Kafka Cluster.
-     *    - Clients can produce and consume messages.
-     *
-     * @usecase
-     * - kafka-node-pool
-     */
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("This test case verifies transfer of Kafka Cluster from and to management by KafkaNodePool, by creating corresponding Kafka and KafkaNodePool custom resources and manipulating according Kafka annotation."),
+        steps = {
+            @Step(value = "Deploy Kafka with annotated to enable management by KafkaNodePool, and KafkaNodePool targeting given Kafka Cluster.", expected = "Kafka is deployed, KafkaNodePool custom resource is targeting Kafka Cluster as expected."),
+            @Step(value = "Modify KafkaNodePool by increasing number of Kafka Replicas.", expected = "Number of Kafka Pods is increased to match specification from KafkaNodePool."),
+            @Step(value = "Produce and consume messages in given Kafka Cluster.", expected = "Clients can produce and consume messages."),
+            @Step(value = "Modify Kafka custom resource annotation strimzi.io/node-pool to disable management by KafkaNodePool.", expected = "StrimziPodSet is modified, replacing former one, Pods are replaced and specification from KafkaNodePool (i.e., changed replica count) are ignored."),
+            @Step(value = "Produce and consume messages in given Kafka Cluster.", expected = "Clients can produce and consume messages."),
+            @Step(value = "Modify Kafka custom resource annotation strimzi.io/node-pool to enable management by KafkaNodePool.", expected = "New StrimziPodSet is created, replacing former one, Pods are replaced and specification from KafkaNodePool (i.e., changed replica count) has priority over Kafka specification."),
+            @Step(value = "Produce and consume messages in given Kafka Cluster.", expected = "Clients can produce and consume messages.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testKafkaManagementTransferToAndFromKafkaNodePool() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int originalKafkaReplicaCount = 3;

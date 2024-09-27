@@ -5,6 +5,11 @@
 package io.strimzi.systemtest.kafka.dynamicconfiguration;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.strimzi.api.kafka.model.kafka.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
@@ -14,6 +19,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -54,13 +60,14 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-/**
- * DynamicConfST is responsible for verify that if we change dynamic Kafka configuration it will not
- * trigger rolling update.
- * Isolated -> for each test case we have different configuration of Kafka resource
- */
 @Tag(REGRESSION)
 @Tag(DYNAMIC_CONFIGURATION)
+@SuiteDoc(
+    description = @Desc("DynamicConfST is responsible for verifying that changes in dynamic Kafka configuration do not trigger a rolling update."),
+    beforeTestSteps = {
+        @Step(value = "Deploy the Cluster Operator", expected = "Cluster Operator is installed successfully")
+    }
+)
 public class DynamicConfST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(DynamicConfST.class);
@@ -69,6 +76,22 @@ public class DynamicConfST extends AbstractST {
     private Map<String, Object> kafkaConfig;
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @TestDoc(
+        description = @Desc("Test for verifying dynamic configuration changes in a Kafka cluster with multiple clusters in one namespace."),
+        steps = {
+            @Step(value = "Deep copy shard Kafka configuration", expected = "Configuration map is duplicated with deep copy"),
+            @Step(value = "Create resources with wait", expected = "Resources are created and ready"),
+            @Step(value = "Create scraper pod", expected = "Scraper pod is created"),
+            @Step(value = "Retrieve and verify Kafka configurations from ConfigMaps", expected = "Configurations meet expected values"),
+            @Step(value = "Retrieve Kafka broker configuration via CLI", expected = "Dynamic configurations are retrieved"),
+            @Step(value = "Update Kafka configuration for unclean leader election", expected = "Configuration is updated and verified for dynamic property"),
+            @Step(value = "Verify updated Kafka configurations", expected = "Updated configurations are persistent and correct")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.DYNAMIC_CONFIGURATION),
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testSimpleDynamicConfiguration() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -127,6 +150,19 @@ public class DynamicConfST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(ROLLING_UPDATE)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @TestDoc(
+        description = @Desc("Ensures that updating to an external listener causes a rolling restart of the Kafka brokers."),
+        steps = {
+            @Step(value = "Create Kafka cluster with internal and external listeners.", expected = "Kafka cluster is created with the specified listeners."),
+            @Step(value = "Verify initial configurations are correctly set in the broker.", expected = "Initial broker configurations are verified."),
+            @Step(value = "Update Kafka cluster to change listener types.", expected = "Change in listener types triggers rolling update."),
+            @Step(value = "Verify the rolling restart is successful.", expected = "All broker nodes successfully rolled and Kafka configuration updated.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.DYNAMIC_CONFIGURATION),
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testUpdateToExternalListenerCausesRollingRestart() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -276,6 +312,24 @@ public class DynamicConfST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
+    @TestDoc(
+        description = @Desc("Test validating that updating Kafka cluster listeners to use external clients causes a rolling restart."),
+        steps = {
+            @Step(value = "Setup initial Kafka cluster and resources", expected = "Kafka cluster and resources are successfully created"),
+            @Step(value = "Create external Kafka clients and verify message production/consumption on plain listener", expected = "Messages are successfully produced and consumed using plain listener"),
+            @Step(value = "Attempt to produce/consume messages using TLS listener before update", expected = "Exception is thrown because the listener is plain"),
+            @Step(value = "Update Kafka cluster to use external TLS listener", expected = "Kafka cluster is updated and rolling restart occurs"),
+            @Step(value = "Verify message production/consumption using TLS listener after update", expected = "Messages are successfully produced and consumed using TLS listener"),
+            @Step(value = "Attempt to produce/consume messages using plain listener after TLS update", expected = "Exception is thrown because the listener is TLS"),
+            @Step(value = "Revert Kafka cluster listener to plain", expected = "Kafka cluster listener is reverted and rolling restart occurs"),
+            @Step(value = "Verify message production/consumption on plain listener after reverting", expected = "Messages are successfully produced and consumed using plain listener"),
+            @Step(value = "Attempt to produce/consume messages using TLS listener after reverting", expected = "Exception is thrown because the listener is plain")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.DYNAMIC_CONFIGURATION),
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testUpdateToExternalListenerCausesRollingRestartUsingExternalClients() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
