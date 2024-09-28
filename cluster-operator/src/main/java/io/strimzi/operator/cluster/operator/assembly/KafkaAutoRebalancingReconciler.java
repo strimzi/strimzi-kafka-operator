@@ -87,8 +87,10 @@ public class KafkaAutoRebalancingReconciler {
     public Future<Void> reconcile(KafkaStatus kafkaStatus) {
         if (kafkaAutoRebalanceStatus != null) {
             ScalingNodes scalingNodes = getScalingNodes(kafkaStatus.getAutoRebalance());
-            LOGGER.infoCr(reconciliation, "Reconciling auto-rebalance from state [{}] with scaling nodes: blocked = {}, added = {}",
-                    kafkaAutoRebalanceStatus.getState(), scalingNodes.blocked(), scalingNodes.added());
+            if (!scalingNodes.isEmpty()) {
+                LOGGER.infoCr(reconciliation, "Reconciling auto-rebalance in the [{}] state with scaling nodes: blocked scale down = {}, added scale up = {}",
+                        kafkaAutoRebalanceStatus.getState(), scalingNodes.blocked(), scalingNodes.added());
+            }
             return maybeRebalance(scalingNodes)
                     .onComplete(v -> kafkaStatus.setAutoRebalance(kafkaAutoRebalanceStatus));
         } else {
@@ -152,7 +154,7 @@ public class KafkaAutoRebalancingReconciler {
                 .compose(kafkaRebalance -> {
 
                     KafkaRebalanceState kafkaRebalanceState = KafkaRebalanceUtils.rebalanceState(kafkaRebalance.getStatus());
-                    LOGGER.infoCr(reconciliation, "Auto-rebalance on scaling down with KafkaRebalance {}/{} in state {}",
+                    LOGGER.infoCr(reconciliation, "Auto-rebalance on scaling down with KafkaRebalance {}/{} in state [{}]",
                             kafkaRebalance.getMetadata().getNamespace(),
                             kafkaRebalance.getMetadata().getName(),
                             kafkaRebalanceState);
@@ -242,7 +244,7 @@ public class KafkaAutoRebalancingReconciler {
                 .compose(kafkaRebalance -> {
 
                     KafkaRebalanceState kafkaRebalanceState = KafkaRebalanceUtils.rebalanceState(kafkaRebalance.getStatus());
-                    LOGGER.infoCr(reconciliation, "Auto-rebalance on scaling up with KafkaRebalance {}/{} in state {}",
+                    LOGGER.infoCr(reconciliation, "Auto-rebalance on scaling up with KafkaRebalance {}/{} in state [{}]",
                             kafkaRebalance.getMetadata().getNamespace(),
                             kafkaRebalance.getMetadata().getName(),
                             kafkaRebalanceState);
@@ -518,5 +520,13 @@ public class KafkaAutoRebalancingReconciler {
     /**
      * Utility class to take the updated blocked nodes (on scaling down) and added nodes (on scaling up)
      */
-    record ScalingNodes(Set<Integer> blocked, Set<Integer> added) { }
+    record ScalingNodes(Set<Integer> blocked, Set<Integer> added) {
+
+        /**
+         * @return true if both blocked scaled down or added on scale up nodes collections are empty, false otherwise
+         */
+        public boolean isEmpty() {
+            return blocked().isEmpty() && added().isEmpty();
+        }
+    }
 }
