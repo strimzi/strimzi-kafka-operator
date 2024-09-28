@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.UsedNodePoolStatus;
 import io.strimzi.api.kafka.model.kafka.UsedNodePoolStatusBuilder;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatus;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerAddress;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerAddressBuilder;
@@ -168,6 +169,8 @@ public class KafkaReconciler {
 
     private final KafkaMetadataStateManager kafkaMetadataStateManager;
 
+    private final KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus;
+
     /**
      * Constructs the Kafka reconciler
      *
@@ -215,6 +218,7 @@ public class KafkaReconciler {
         this.imagePullSecrets = config.getImagePullSecrets();
         this.previousNodeIds = kafkaCr.getStatus() != null ? kafkaCr.getStatus().getRegisteredNodeIds() : null;
         this.isPodDisruptionBudgetGeneration = config.isPodDisruptionBudgetGeneration();
+        this.kafkaAutoRebalanceStatus = kafkaCr.getStatus() != null ? kafkaCr.getStatus().getAutoRebalance() : null;
 
         this.stsOperator = supplier.stsOperations;
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
@@ -254,6 +258,7 @@ public class KafkaReconciler {
                 .compose(i -> initClientAuthenticationCertificates())
                 .compose(i -> manualPodCleaning())
                 .compose(i -> networkPolicy())
+                .compose(i -> updateKafkaAutoRebalanceStatus(kafkaStatus))
                 .compose(i -> manualRollingUpdate())
                 .compose(i -> pvcs(kafkaStatus))
                 .compose(i -> serviceAccount())
@@ -283,6 +288,11 @@ public class KafkaReconciler {
                 .compose(i -> updateKafkaVersion(kafkaStatus))
                 .compose(i -> updateKafkaMetadataMigrationState())
                 .compose(i -> updateKafkaMetadataState(kafkaStatus));
+    }
+
+    private Future<Void> updateKafkaAutoRebalanceStatus(KafkaStatus kafkaStatus) {
+        KafkaRebalanceUtils.updateKafkaAutoRebalanceStatus(kafkaStatus, kafkaAutoRebalanceStatus, kafka.addedBrokerNodes());
+        return Future.succeededFuture();
     }
 
     /**

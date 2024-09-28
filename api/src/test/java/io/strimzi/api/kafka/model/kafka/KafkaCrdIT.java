@@ -111,6 +111,24 @@ public class KafkaCrdIT extends AbstractCrdIT {
         assertThat(exception.getMessage(), containsStringIgnoringCase("spec.zookeeper.jmxOptions.authentication.type: Unsupported value: \"not-right\": supported values: \"password\""));
     }
 
+    @Test
+    public void testKafkaWithAutoRebalanceDefault() {
+        createDeleteCustomResource("Kafka-with-autorebalance-default.yaml");
+    }
+
+    @Test
+    public void testKafkaWithAutoRebalance() {
+        createDeleteCustomResource("Kafka-with-autorebalance.yaml");
+    }
+
+    @Test
+    public void testKafkaWithAutoRebalanceEmpty() {
+        Throwable exception = assertThrows(
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("Kafka-with-autorebalance-empty.yaml"));
+        assertThat(exception.getMessage(), containsStringIgnoringCase("spec.cruiseControl.autoRebalance in body should have at least 1 items"));
+    }
+
     @BeforeAll
     void setupEnvironment() {
         client = new KubernetesClientBuilder().withConfig(new ConfigBuilder().withNamespace(NAMESPACE).build()).build();

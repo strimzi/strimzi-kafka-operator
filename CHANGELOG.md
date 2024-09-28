@@ -9,6 +9,9 @@
 * Add support for templating `host` and `advertisedHost` fields in listener configuration.
 * Allow configuration of environment variables based on Config Map or Secret for every container in the container template sections.
 * Add support for disabling the generation of PodDisruptionBudget resources by the Cluster Operator.
+* Add support for running an automatic rebalancing, via Cruise Control, when the cluster is scaled down or up:
+  * after a scaling up, the operator triggers an auto-rebalancing for moving some of the existing partitions to the newly added brokers.
+  * before scaling down, and if the brokers to remove are hosting partitions, the operator triggers an auto-rebalancing to these partitions off the brokers to make them free to be removed.
 
 ### Changes, deprecations and removals
 

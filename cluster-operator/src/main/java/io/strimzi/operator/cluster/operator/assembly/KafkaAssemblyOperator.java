@@ -143,6 +143,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     }
 
     @Override
+    @SuppressWarnings({"checkstyle:NPathComplexity"})
     public Future<KafkaStatus> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
         Promise<KafkaStatus> createOrUpdatePromise = Promise.promise();
         ReconciliationState reconcileState = createReconciliationState(reconciliation, kafkaAssembly);
@@ -191,6 +192,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         && kafkaAssembly.getStatus().getRegisteredNodeIds() != null)  {
                     // Copy the list of registered node IDs if needed
                     status.setRegisteredNodeIds(kafkaAssembly.getStatus().getRegisteredNodeIds());
+                }
+
+                if (status.getAutoRebalance() == null
+                        && kafkaAssembly.getStatus().getAutoRebalance() != null) {
+                    // Copy the auto-rebalance state if needed
+                    status.setAutoRebalance(kafkaAssembly.getStatus().getAutoRebalance());
                 }
             }
 
@@ -273,6 +280,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.reconcileEntityOperator(clock))
                 .compose(state -> state.reconcileCruiseControl(clock))
                 .compose(state -> state.reconcileKafkaExporter(clock))
+                .compose(state -> state.isAutoRebalancingEnabled() ? state.reconcileKafkaAutoRebalancing() : Future.succeededFuture(state))
 
                 // Finish the reconciliation
                 .map((Void) null)
@@ -304,6 +312,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private Set<NodeRef> kafkaBrokerNodes;
         private Map<String, Storage> kafkaBrokerStorage;
         private Map<String, ResourceRequirements> kafkaBrokerResources;
+        // needed to take information for the auto-rebalancing on scaling via Cruise Control
+        private Set<Integer> scalingDownBlockedNodes;
 
         /* test */ KafkaStatus kafkaStatus = new KafkaStatus();
 
@@ -696,7 +706,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             currentPods.put(sts.getMetadata().getName(), IntStream.range(0, sts.getSpec().getReplicas()).mapToObj(i -> KafkaResources.kafkaPodName(kafkaAssembly.getMetadata().getName(), i)).toList());
                         }
 
-                        return new KafkaClusterCreator(vertx, reconciliation, config, kafkaMetadataStateManager.getMetadataConfigurationState(), supplier)
+                        KafkaClusterCreator kafkaClusterCreator =
+                                new KafkaClusterCreator(vertx, reconciliation, config, kafkaMetadataStateManager.getMetadataConfigurationState(), supplier);
+                        return kafkaClusterCreator
                                 .prepareKafkaCluster(kafkaAssembly, nodePools, oldStorage, currentPods, versionChange, kafkaStatus, true)
                                 .compose(kafkaCluster -> {
                                     // We store this for use with Cruise Control later. As these configurations might
@@ -706,6 +718,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                     kafkaBrokerNodes = kafkaCluster.brokerNodes();
                                     kafkaBrokerStorage = kafkaCluster.getStorageByPoolName();
                                     kafkaBrokerResources = kafkaCluster.getBrokerResourceRequirementsByPoolName();
+                                    scalingDownBlockedNodes = kafkaClusterCreator.scalingDownBlockedNodes();
 
                                     return Future.succeededFuture(kafkaReconciler(nodePools, kafkaCluster));
                                 });
@@ -806,6 +819,26 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         /**
+         * Provider method for the Kafka auto-rebalancing reconciler. Overriding this method can be used to get mocked reconciler.
+         *
+         * @return Kafka auto-rebalancing reconciler
+         */
+        KafkaAutoRebalancingReconciler kafkaAutoRebalancingReconciler() {
+            return new KafkaAutoRebalancingReconciler(reconciliation, kafkaAssembly, supplier, scalingDownBlockedNodes);
+        }
+
+        /**
+         * Run the reconciliation pipeline for Kafka auto-rebalancing
+         *
+         * @return  Future with Reconciliation State
+         */
+        Future<ReconciliationState> reconcileKafkaAutoRebalancing() {
+            return kafkaAutoRebalancingReconciler()
+                    .reconcile(kafkaStatus)
+                    .map(this);
+        }
+
+        /**
          * Run the reconciliation pipeline for the Entity Operator
          *
          * @param clock The clock for supplying the reconciler with the time instant of each reconciliation cycle.
@@ -817,6 +850,18 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return entityOperatorReconciler()
                     .reconcile(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, clock)
                     .map(this);
+        }
+
+        /**
+         * @return true if the autorebalance is enabled within the Cruise Control configuration, false otherwise
+         */
+        boolean isAutoRebalancingEnabled() {
+            // Cruise Control is not defined in the Kafka custom resource or no autorebalance enabled, so nothing to reconcile
+            if (kafkaAssembly.getSpec().getCruiseControl() == null || kafkaAssembly.getSpec().getCruiseControl().getAutoRebalance() == null) {
+                LOGGER.debugCr(reconciliation, "Cruise Control or inner autorebalance field not defined in the Kafka custom resource, no auto-rebalancing to reconcile");
+                return false;
+            }
+            return true;
         }
     }
 

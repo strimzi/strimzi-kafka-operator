@@ -317,18 +317,21 @@ public class KafkaPool extends AbstractModel {
     }
 
     /**
-     * Generates set of Kafka node IDs going to be removed from the Kafka cluster.
-     *
-     * @return  Set of Kafka node IDs which are going to be removed
+     * @return  the set of Kafka node IDs going to be removed from the Kafka cluster.
      */
     public Set<Integer> scaledDownNodes() {
         return idAssignment.toBeRemoved();
     }
 
     /**
-     * Generates set of Kafka node IDs that used to have the broker role but do not have it anymore.
-     *
-     * @return  Set of Kafka node IDs which are removing the broker role
+     * @return  the set of Kafka node IDs going to be added to the Kafka cluster.
+     */
+    public Set<Integer> scaleUpNodes() {
+        return idAssignment.toBeAdded();
+    }
+
+    /**
+     * @return  the set of Kafka node IDs that used to have the broker role but do not have it anymore.
      */
     public Set<Integer> usedToBeBrokerNodes() {
         return idAssignment.usedToBeBroker();

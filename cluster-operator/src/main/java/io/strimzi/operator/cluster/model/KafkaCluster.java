@@ -454,6 +454,24 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
+     * Generates list of Kafka node IDs that are going to be added to the Kafka cluster as brokers.
+     * This reports all broker nodes on cluster creation as well as the newly added ones on scaling up.
+     *
+     * @return  Set of Kafka node IDs which are going to be added as brokers.
+     */
+    public Set<Integer> addedBrokerNodes() {
+        Set<Integer> nodes = new LinkedHashSet<>();
+
+        for (KafkaPool pool : nodePools)    {
+            if (pool.isBroker()) {
+                nodes.addAll(pool.scaleUpNodes());
+            }
+        }
+
+        return nodes;
+    }
+
+    /**
      * Generates list of Kafka node IDs that used to have the broker role but do not have it anymore.
      *
      * @return  Set of Kafka node IDs which are removing the broker role
