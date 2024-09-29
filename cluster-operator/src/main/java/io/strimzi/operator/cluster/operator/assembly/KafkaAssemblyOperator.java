@@ -21,6 +21,9 @@ import io.strimzi.api.kafka.model.kafka.KafkaSpec;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.KafkaStatusBuilder;
 import io.strimzi.api.kafka.model.kafka.Storage;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceState;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatus;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatusBuilder;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolList;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
@@ -195,8 +198,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }
 
                 if (status.getAutoRebalance() == null
-                        && kafkaAssembly.getStatus().getAutoRebalance() != null) {
-                    // Copy the auto-rebalance state if needed
+                        && kafkaAssembly.getStatus().getAutoRebalance() != null
+                        && reconcileState.isAutoRebalancingEnabled()) {
+                    // Copy the auto-rebalance state if needed (i.e. reconciliation failed) but only if
+                    // the auto-rebalance is enabled otherwise I could reset it to null if needed
                     status.setAutoRebalance(kafkaAssembly.getStatus().getAutoRebalance());
                 }
             }
@@ -280,7 +285,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.reconcileEntityOperator(clock))
                 .compose(state -> state.reconcileCruiseControl(clock))
                 .compose(state -> state.reconcileKafkaExporter(clock))
-                .compose(state -> state.isAutoRebalancingEnabled() ? state.reconcileKafkaAutoRebalancing() : Future.succeededFuture(state))
+                .compose(state -> state.maybeAutoRebalancing() ? state.reconcileKafkaAutoRebalancing() : Future.succeededFuture(state))
 
                 // Finish the reconciliation
                 .map((Void) null)
@@ -853,15 +858,44 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         /**
+         * Based on the autorebalance being enabled or not within Cruise Control configuration:
+         * - return true because the auto-rebalancing reconciliation has to run or ...
+         * - ... create the auto-rebalance status on Idle if the cluster is still in the creation phase (no auto-rebalancing to run yet) or ...
+         * - ... reset to null the auto-rebalance status because the auto-rebalance was disabled
+         *
+         * @return true if the autorebalance reconciliation has to run, false otherwise
+         */
+        boolean maybeAutoRebalancing() {
+            if (kafkaAssembly.getSpec().getCruiseControl() == null || kafkaAssembly.getSpec().getCruiseControl().getAutoRebalance() == null) {
+                LOGGER.debugCr(reconciliation, "Cruise Control or inner autorebalance field not defined in the Kafka custom resource, no auto-rebalancing to reconcile");
+                // enforce no auto-rebalance status, if we are disabling Cruise Control and/or auto-rebalance from its configuration
+                kafkaStatus.setAutoRebalance(null);
+                return false;
+            } else {
+                // there is an auto-rebalance status already, so we need to run an auto-rebalance reconciliation
+                if (kafkaAssembly.getStatus() != null && kafkaAssembly.getStatus().getAutoRebalance() != null) {
+                    return true;
+                } else {
+                    // when the auto-rebalance status doesn't exist, the Kafka cluster is being created
+                    // so auto-rebalance can be set in an Idle state if it is enabled or
+                    // enforce no auto-rebalance status, if we are disabling auto-rebalance from Cruise Control configuration
+                    KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus = (kafkaAssembly.getSpec().getCruiseControl().getAutoRebalance() != null) ?
+                            new KafkaAutoRebalanceStatusBuilder()
+                                    .withState(KafkaAutoRebalanceState.Idle)
+                                    .withLastTransitionTime(StatusUtils.iso8601Now())
+                                    .build() : null;
+                    kafkaStatus.setAutoRebalance(kafkaAutoRebalanceStatus);
+                    // in both the above cases we don't have to run an auto-rebalance reconciliation
+                    return false;
+                }
+            }
+        }
+
+        /**
          * @return true if the autorebalance is enabled within the Cruise Control configuration, false otherwise
          */
         boolean isAutoRebalancingEnabled() {
-            // Cruise Control is not defined in the Kafka custom resource or no autorebalance enabled, so nothing to reconcile
-            if (kafkaAssembly.getSpec().getCruiseControl() == null || kafkaAssembly.getSpec().getCruiseControl().getAutoRebalance() == null) {
-                LOGGER.debugCr(reconciliation, "Cruise Control or inner autorebalance field not defined in the Kafka custom resource, no auto-rebalancing to reconcile");
-                return false;
-            }
-            return true;
+            return kafkaAssembly.getSpec().getCruiseControl() != null && kafkaAssembly.getSpec().getCruiseControl().getAutoRebalance() != null;
         }
     }
 

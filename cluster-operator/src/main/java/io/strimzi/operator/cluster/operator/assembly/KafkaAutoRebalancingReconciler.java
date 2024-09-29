@@ -13,7 +13,6 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceState;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatus;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatusBrokers;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatusBrokersBuilder;
-import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatusBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceBuilder;
@@ -85,25 +84,13 @@ public class KafkaAutoRebalancingReconciler {
      * @return  Future which completes when the reconciliation completes
      */
     public Future<Void> reconcile(KafkaStatus kafkaStatus) {
-        if (kafkaAutoRebalanceStatus != null) {
-            ScalingNodes scalingNodes = getScalingNodes(kafkaStatus.getAutoRebalance());
-            if (!scalingNodes.isEmpty()) {
-                LOGGER.infoCr(reconciliation, "Reconciling auto-rebalance in the [{}] state with scaling nodes: blocked scale down = {}, added scale up = {}",
-                        kafkaAutoRebalanceStatus.getState(), scalingNodes.blocked(), scalingNodes.added());
-            }
-            return maybeRebalance(scalingNodes)
-                    .onComplete(v -> kafkaStatus.setAutoRebalance(kafkaAutoRebalanceStatus));
-        } else {
-            LOGGER.infoCr(reconciliation, "No auto-rebalance state from the Kafka CR, initializing to [Idle]");
-            // when the auto-rebalance status doesn't exist, the Kafka cluster is being created
-            // so auto-rebalance can be set in an Idle state, no further actions
-            kafkaStatus.setAutoRebalance(
-                    new KafkaAutoRebalanceStatusBuilder()
-                            .withState(KafkaAutoRebalanceState.Idle)
-                            .withLastTransitionTime(StatusUtils.iso8601Now())
-                            .build());
-            return Future.succeededFuture();
+        ScalingNodes scalingNodes = getScalingNodes(kafkaStatus.getAutoRebalance());
+        if (!scalingNodes.isEmpty()) {
+            LOGGER.infoCr(reconciliation, "Reconciling auto-rebalance in the [{}] state with scaling nodes: blocked scale down = {}, added scale up = {}",
+                    kafkaAutoRebalanceStatus.getState(), scalingNodes.blocked(), scalingNodes.added());
         }
+        return maybeRebalance(scalingNodes)
+                .onComplete(v -> kafkaStatus.setAutoRebalance(kafkaAutoRebalanceStatus));
     }
 
     private Future<Void> maybeRebalance(ScalingNodes scalingNodes) {

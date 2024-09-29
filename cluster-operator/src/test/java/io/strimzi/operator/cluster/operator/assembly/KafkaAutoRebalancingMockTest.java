@@ -609,7 +609,7 @@ public class KafkaAutoRebalancingMockTest {
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // just checking that on Kafka cluster creation with no Cruise Control, the auto-rebalancing doesn't run
                     Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
-                    assertThat(k.getStatus().getAutoRebalance().getState(), is(nullValue()));
+                    assertThat(k.getStatus().getAutoRebalance(), is(nullValue()));
                     reconciliation.flag();
                 })));
     }
@@ -631,7 +631,45 @@ public class KafkaAutoRebalancingMockTest {
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // just checking that on Kafka cluster creation with no Cruise Control, the auto-rebalancing doesn't run
                     Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
-                    assertThat(k.getStatus().getAutoRebalance().getState(), is(nullValue()));
+                    assertThat(k.getStatus().getAutoRebalance(), is(nullValue()));
+                    reconciliation.flag();
+                })));
+    }
+
+    @Test
+    public void testAutoRebalancingStatusRemoved(VertxTestContext context) {
+        Checkpoint reconciliation = context.checkpoint();
+        // 1st reconcile, Kafka cluster creation
+        operator.reconcile(new Reconciliation("initial-reconciliation", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    // just checking that on Kafka cluster creation with no scaling, the auto-rebalancing is just in Idle state
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertThat(k.getStatus().getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
+                })))
+                // 2nd reconcile, no scaling down/up triggered
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    // just checking that without any scaling, the auto-rebalancing just stays in Idle state
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertThat(k.getStatus().getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
+
+                    // remove the autorebalance in the Cruise Control definition, to test the removal of auto-rebalancing status
+                    Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).edit(
+                            kc -> new KafkaBuilder(kc)
+                                    .editSpec()
+                                        .withNewCruiseControl()
+                                        .endCruiseControl()
+                                    .endSpec()
+                                    .build()
+                    );
+                })))
+                // 3rd reconcile
+                .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    // just checking that without autoRebalance configured within cruiseControl, the corresponding status is reset
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertThat(k.getStatus().getAutoRebalance(), is(nullValue()));
+
                     reconciliation.flag();
                 })));
     }
