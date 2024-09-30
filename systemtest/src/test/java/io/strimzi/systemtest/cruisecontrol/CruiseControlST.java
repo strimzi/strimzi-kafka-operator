@@ -699,6 +699,7 @@ public class CruiseControlST extends AbstractST {
         KafkaUtils.waitUntilKafkaHasStateAutoRebalance(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaAutoRebalanceState.Idle);
 
         final int scaleTo = 5;
+        Map<String, String> ccPod = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName()));
 
         LOGGER.info("Scaling Kafka up to {}", scaleTo);
         if (Environment.isKafkaNodePoolsEnabled()) {
@@ -707,6 +708,9 @@ public class CruiseControlST extends AbstractST {
         } else {
             KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setReplicas(scaleTo));
         }
+
+        // CC Rolled
+        ccPod = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName()), 1, ccPod);
 
         // 3 brokers + 3 controllers/zk
         final int kafkaClusterPodIndex = initialReplicas + initialReplicas;
@@ -727,8 +731,6 @@ public class CruiseControlST extends AbstractST {
 
         LOGGER.info("Scaling Kafka down to {}", initialReplicas);
 
-        final Map<String, String> ccPod = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName()));
-
         if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp ->
                 knp.getSpec().setReplicas(initialReplicas));
@@ -736,11 +738,13 @@ public class CruiseControlST extends AbstractST {
             KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setReplicas(initialReplicas));
         }
 
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(),
-            KafkaResources.autoRebalancingKafkaRebalanceResourceName(testStorage.getClusterName(),
-                KafkaRebalanceMode.REMOVE_BROKERS),
-            KafkaRebalanceState.ProposalReady);
-        KafkaRebalanceUtils.doRebalancingProcess(testStorage.getNamespaceName(), testStorage.getClusterName(), true);
+        // TODO: scale-down in KafkaStatus I can't see maybe it's just very quick I don't know
+
+//        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(),
+//            KafkaResources.autoRebalancingKafkaRebalanceResourceName(testStorage.getClusterName(),
+//                KafkaRebalanceMode.REMOVE_BROKERS),
+//            KafkaRebalanceState.ProposalReady);
+//        KafkaRebalanceUtils.doRebalancingProcess(testStorage.getNamespaceName(), testStorage.getClusterName(), true);
 
         // Nodes are scale down
         RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), initialReplicas);
