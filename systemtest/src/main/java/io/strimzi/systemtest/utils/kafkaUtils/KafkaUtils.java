@@ -17,8 +17,13 @@ import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaMetadataState;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.KafkaStatus;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceState;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatusBrokers;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.ConfigModels;
 import io.strimzi.kafka.config.model.Scope;
@@ -644,5 +649,53 @@ public class KafkaUtils {
      */
     private static String buildDirectoryPath(int volumeId, int kafkaIndex) {
         return String.format("/var/lib/kafka/data-%d/kafka-log%d/__cluster_metadata-0", volumeId, kafkaIndex);
+    }
+
+    public static void waitUntilKafkaHasStateAutoRebalance(final String namespaceName, final String clusterName,
+                                                           final KafkaAutoRebalanceState expectedKafkaAutoRebalanceState) {
+        TestUtils.waitFor("wait for...", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
+            () -> {
+                final KafkaStatus kS = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus();
+                if (kS != null) {
+                    KafkaAutoRebalanceState kafkaAutoRebalanceState = kS.getAutoRebalance().getState();
+                    if (kafkaAutoRebalanceState != null) {
+                        return kafkaAutoRebalanceState.equals(expectedKafkaAutoRebalanceState);
+                    } else {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            });
+    }
+
+    public static void waitUntilKafkaHasExpectedModeAndBrokersAutoRebalance(final String namespaceName, final String clusterName,
+                                                          final KafkaRebalanceMode expectedKafkaAutoRebalanceMode,
+                                                          final List<Integer> expectedBrokers) {
+        TestUtils.waitFor("wait for...", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
+            () -> {
+                final KafkaStatus kS = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus();
+                if (kS != null) {
+                    final List<KafkaAutoRebalanceStatusBrokers> kafkaAutoRebalanceStatusBrokers = kS.getAutoRebalance().getModes();
+                    if (kafkaAutoRebalanceStatusBrokers != null) {
+                        for (KafkaAutoRebalanceStatusBrokers kafkaAutoRebalanceStatusBroker : kafkaAutoRebalanceStatusBrokers) {
+                            KafkaRebalanceMode mode = kafkaAutoRebalanceStatusBroker.getMode();
+                            List<Integer> brokers = kafkaAutoRebalanceStatusBroker.getBrokers();
+
+                            if (!mode.equals(expectedKafkaAutoRebalanceMode) || !brokers.equals(expectedBrokers)) {
+                                continue;
+                            }
+
+                            // otherwise mode and brokers are equal we return true
+                            return true;
+                        }
+                    } else {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+                return false;
+            });
     }
 }
