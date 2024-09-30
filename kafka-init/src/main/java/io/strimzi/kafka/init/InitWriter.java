@@ -59,7 +59,7 @@ public class InitWriter {
             return false;
         }
 
-        return write(FILE_RACK_ID, rackId);
+        return write(FILE_RACK_ID, String.format("broker.rack=%s", rackId));
     }
 
     /**
@@ -101,12 +101,12 @@ public class InitWriter {
         String envVar;
 
         if (type != null) {
-            envVar = String.format("STRIMZI_NODEPORT_%s_ADDRESS", type.toValue().toUpperCase(Locale.ENGLISH));
+            envVar = String.format("nodeport.%s.address", type.toValue().toLowerCase(Locale.ENGLISH));
         } else {
-            envVar = "STRIMZI_NODEPORT_DEFAULT_ADDRESS";
+            envVar = "nodeport.default.address";
         }
 
-        return String.format("export %s=%s", envVar, address) + System.lineSeparator();
+        return String.format("%s=%s", envVar, address) + System.lineSeparator();
     }
 
     /**

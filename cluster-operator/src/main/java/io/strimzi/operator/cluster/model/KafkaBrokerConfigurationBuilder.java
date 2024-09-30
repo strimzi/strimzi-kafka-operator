@@ -56,20 +56,9 @@ import java.util.stream.Collectors;
 public class KafkaBrokerConfigurationBuilder {
     private final static String CONTROL_PLANE_LISTENER_NAME = "CONTROLPLANE-9090";
     private final static String REPLICATION_LISTENER_NAME = "REPLICATION-9091";
-    // Names of environment variables placeholders replaced only in the running container
-    private final static String PLACEHOLDER_CERT_STORE_PASSWORD = "${CERTS_STORE_PASSWORD}";
-    private final static String PLACEHOLDER_RACK_ID = "${STRIMZI_RACK_ID}";
-    private final static String PLACEHOLDER_OAUTH_CLIENT_SECRET = "${STRIMZI_%s_OAUTH_CLIENT_SECRET}";
-
-    // Additional placeholders are used in the configuration file for node port addresses. These are used for both
-    // per-broker and shared configurations. Listed here for reference only, they are constructed in the
-    // KafkaAssemblyOperator class on the fly based on the user configuration.
-    // * ${STRIMZI_NODEPORT_DEFAULT_ADDRESS}
-    // * ${STRIMZI_NODEPORT_EXTERNALIP_ADDRESS}
-    // * ${STRIMZI_NODEPORT_EXTERNALDNS_ADDRESS}
-    // * ${STRIMZI_NODEPORT_INTERNALIP_ADDRESS}
-    // * ${STRIMZI_NODEPORT_INTERNALDNS_ADDRESS}
-    // * ${STRIMZI_NODEPORT_HOSTNAME_ADDRESS}
+    // Names of environment variables expanded through config providers inside the Kafka node
+    private final static String PLACEHOLDER_CERT_STORE_PASSWORD = "${strimzienv:CERTS_STORE_PASSWORD}";
+    private final static String PLACEHOLDER_OAUTH_CLIENT_SECRET = "${strimzienv:STRIMZI_%s_OAUTH_CLIENT_SECRET}";
 
     private final StringWriter stringWriter = new StringWriter();
     private final PrintWriter writer = new PrintWriter(stringWriter);
@@ -167,7 +156,7 @@ public class KafkaBrokerConfigurationBuilder {
     public KafkaBrokerConfigurationBuilder withRackId(Rack rack)   {
         if (node.broker() && rack != null) {
             printSectionHeader("Rack ID");
-            writer.println("broker.rack=" + PLACEHOLDER_RACK_ID);
+            writer.println("broker.rack=${strimzifile:/opt/kafka/init/rack.id:broker.rack}");
             writer.println();
         }
 
@@ -822,6 +811,47 @@ public class KafkaBrokerConfigurationBuilder {
     }
 
     /**
+     * Configures the Kafka configuration providers
+     *
+     * @param userConfig    The user configuration to extract the possible user-provided config provider configuration
+     *                      from it
+     */
+    private void configProviders(KafkaConfiguration userConfig)    {
+        printSectionHeader("Config providers");
+
+        String strimziConfigProviders;
+        if (node.broker()) {
+            // File provider is used only on broker nodes
+            strimziConfigProviders = "strimzienv,strimzifile";
+        } else {
+            strimziConfigProviders = "strimzienv";
+        }
+
+        if (userConfig != null
+                && !userConfig.getConfiguration().isEmpty()
+                && userConfig.getConfigOption("config.providers") != null) {
+            writer.println("# Configuration providers configured by the user and by Strimzi");
+            writer.println("config.providers=" + userConfig.getConfigOption("config.providers") + "," + strimziConfigProviders);
+            userConfig.removeConfigOption("config.providers");
+        } else {
+            //System.out.println("User config is: " + userConfig.getConfiguration());
+            //System.out.println("User config is: " + userConfig.getConfigOption("config.providers"));
+            writer.println("config.providers=" + strimziConfigProviders);
+        }
+
+        writer.println("config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider");
+        writer.println("config.providers.strimzienv.param.allowlist.pattern=.*");
+
+        if (node.broker()) {
+            // File provider is used only on broker nodes
+            writer.println("config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider");
+            writer.println("config.providers.strimzifile.param.allowed.paths=/opt/kafka/init");
+        }
+
+        writer.println();
+    }
+
+    /**
      * Configures the configuration options passed by the user in the Kafka CR.
      *
      * @param userConfig                The User configuration - Kafka broker configuration options specified by the user in the Kafka custom resource
@@ -831,10 +861,13 @@ public class KafkaBrokerConfigurationBuilder {
      */
     public KafkaBrokerConfigurationBuilder withUserConfiguration(KafkaConfiguration userConfig, boolean injectCcMetricsReporter)  {
         if (userConfig != null && !userConfig.getConfiguration().isEmpty()) {
-            if (injectCcMetricsReporter)  {
-                // We have to create a copy of the configuration before we modify it
-                userConfig = new KafkaConfiguration(userConfig);
+            // We have to create a copy of the configuration before we modify it
+            userConfig = new KafkaConfiguration(userConfig);
 
+            // Configure the configuration providers => we have to inject the Strimzi ones
+            configProviders(userConfig);
+
+            if (injectCcMetricsReporter)  {
                 // We configure the Cruise Control Metrics Reporter is needed
                 if (userConfig.getConfigOption(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD) != null) {
                     if (!userConfig.getConfigOption(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD).contains(CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER)) {
@@ -848,11 +881,16 @@ public class KafkaBrokerConfigurationBuilder {
             printSectionHeader("User provided configuration");
             writer.println(userConfig.getConfiguration());
             writer.println();
-        } else if (injectCcMetricsReporter) {
-            // There is no user provided configuration. But we still need to inject the Cruise Control Metrics Reporter
-            printSectionHeader("Cruise Control Metrics Reporter");
-            writer.println(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD + "=" + CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER);
-            writer.println();
+        } else {
+            // Configure the configuration providers => we have to inject the Strimzi ones
+            configProviders(userConfig);
+
+            if (injectCcMetricsReporter) {
+                // There is no user provided configuration. But we still need to inject the Cruise Control Metrics Reporter
+                printSectionHeader("Cruise Control Metrics Reporter");
+                writer.println(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD + "=" + CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER);
+                writer.println();
+            }
         }
 
         return this;
@@ -917,10 +955,10 @@ public class KafkaBrokerConfigurationBuilder {
             + clusterName + "-kafka-brokers:9091");
         writer.println("rlmm.config.remote.log.metadata.common.client.security.protocol=SSL");
         writer.println("rlmm.config.remote.log.metadata.common.client.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
-        writer.println("rlmm.config.remote.log.metadata.common.client.ssl.keystore.password=${CERTS_STORE_PASSWORD}");
+        writer.println("rlmm.config.remote.log.metadata.common.client.ssl.keystore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
         writer.println("rlmm.config.remote.log.metadata.common.client.ssl.keystore.type=PKCS12");
         writer.println("rlmm.config.remote.log.metadata.common.client.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
-        writer.println("rlmm.config.remote.log.metadata.common.client.ssl.truststore.password=${CERTS_STORE_PASSWORD}");
+        writer.println("rlmm.config.remote.log.metadata.common.client.ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
         writer.println("rlmm.config.remote.log.metadata.common.client.ssl.truststore.type=PKCS12");
 
         writer.println("# RSM configs set by the operator and by the user");

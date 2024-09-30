@@ -225,12 +225,12 @@ public class KafkaListenersReconciler {
         NodeAddressType preferredType = ListenersUtils.preferredNodeAddressType(listener);
 
         if (preferredType != null && preferredType.toValue() != null)  {
-            preferredNodeAddressType = preferredType.toValue().toUpperCase(Locale.ENGLISH);
+            preferredNodeAddressType = preferredType.toValue().toLowerCase(Locale.ENGLISH);
         } else {
-            preferredNodeAddressType = "DEFAULT";
+            preferredNodeAddressType = "default";
         }
 
-        return String.format("${STRIMZI_NODEPORT_%s_ADDRESS}", preferredNodeAddressType);
+        return String.format("${strimzifile:/opt/kafka/init/external.address:nodeport.%s.address}", preferredNodeAddressType);
     }
 
     /**
