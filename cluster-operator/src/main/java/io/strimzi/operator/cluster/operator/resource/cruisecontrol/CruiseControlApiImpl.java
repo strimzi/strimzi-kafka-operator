@@ -279,6 +279,24 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                 .withParameter(CruiseControlParameters.JSON, "true")
                 .withAddBrokerParameters(options)
                 .build();
+        HttpClientOptions httpOptions = getHttpClientOptions();
+
+        return HttpClientUtils.withHttpClient(vertx, httpOptions, (httpClient, result) -> {
+            httpClient.request(HttpMethod.POST, port, host, path, request -> internalRebalance(reconciliation, host, port, path, userTaskId, request, result));
+        });
+    }
+
+    @Override
+    public Future<CruiseControlRebalanceResponse> removeBrokerDisksData(Reconciliation reconciliation, String host, int port, RemoveDisksOptions options, String userTaskId) {
+        if (options == null && userTaskId == null) {
+            return Future.failedFuture(
+                    new IllegalArgumentException("Either remove broker options or user task ID should be supplied, both were null"));
+        }
+
+        String path = new PathBuilder(CruiseControlEndpoints.REMOVE_DISKS)
+                .withParameter(CruiseControlParameters.JSON, "true")
+                .withRemoveBrokerDisksParameters(options)
+                .build();
 
         HttpClientOptions httpOptions = getHttpClientOptions();
 

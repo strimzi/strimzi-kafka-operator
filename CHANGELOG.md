@@ -12,6 +12,7 @@
 * Add support for running an automatic rebalancing, via Cruise Control, when the cluster is scaled down or up:
   * after a scaling up, the operator triggers an auto-rebalancing for moving some of the existing partitions to the newly added brokers.
   * before scaling down, and if the brokers to remove are hosting partitions, the operator triggers an auto-rebalancing to these partitions off the brokers to make them free to be removed.
+* Ability to move data between JBOD disks using Cruise Control
 
 ### Changes, deprecations and removals
 

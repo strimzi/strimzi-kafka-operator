@@ -207,6 +207,24 @@ public class MockCruiseControl {
                                 .withBody(jsonError)
                                 .withHeaders(header(USER_TASK_ID_HEADER, REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR_RESPONSE_UTID))
                                 .withDelay(TimeUnit.SECONDS, 0));
+
+        // Rebalance response with no goal that returns an error
+        server
+                .when(
+                        request()
+                                .withMethod("POST")
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.toString(), "true|false"))
+                                .withQueryStringParameter(buildBrokerIdParameter(endpoint))
+                                .withPath(endpoint.toString())
+                                .withHeader(AUTH_HEADER)
+                                .withSecure(true))
+                .respond(
+                        response()
+                                .withStatusCode(500)
+                                .withBody(jsonError)
+                                .withHeaders(header(USER_TASK_ID_HEADER, REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR_RESPONSE_UTID))
+                                .withDelay(TimeUnit.SECONDS, 0));
     }
 
     /**
@@ -222,7 +240,6 @@ public class MockCruiseControl {
                                 .withMethod("POST")
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.toString(), "true|false"))
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.toString(), "true|false"))
                                 .withQueryStringParameter(buildBrokerIdParameter(endpoint))
                                 .withPath(endpoint.toString())
                                 .withHeader(AUTH_HEADER)
@@ -255,7 +272,6 @@ public class MockCruiseControl {
                                 .withMethod("POST")
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.toString(), "true|false"))
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.toString(), "true|false"))
                                 .withQueryStringParameter(buildBrokerIdParameter(endpoint))
                                 .withPath(endpoint.toString())
                                 .withHeader(AUTH_HEADER)
@@ -307,6 +323,26 @@ public class MockCruiseControl {
                         response()
                                 .withBody(jsonVerbose)
                                 .withHeaders(header("User-Task-ID", REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID))
+                                .withDelay(TimeUnit.SECONDS, responseDelay));
+
+        // Rebalance response with no goals set - without verbose parameter
+        JsonBody jsonWithoutVerbose = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-Rebalance-no-goals.json"));
+
+        server
+                .when(
+                        request()
+                                .withMethod("POST")
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.toString(), "true|false"))
+                                .withQueryStringParameter(buildBrokerIdParameter(endpoint))
+                                .withPath(endpoint.toString())
+                                .withHeader(AUTH_HEADER)
+                                .withSecure(true),
+                        Times.unlimited())
+                .respond(
+                        response()
+                                .withBody(jsonWithoutVerbose)
+                                .withHeaders(header("User-Task-ID", REBALANCE_NO_GOALS_RESPONSE_UTID))
                                 .withDelay(TimeUnit.SECONDS, responseDelay));
     }
 
@@ -563,9 +599,13 @@ public class MockCruiseControl {
     }
 
     private Parameter buildBrokerIdParameter(CruiseControlEndpoints endpoint) {
-        return CruiseControlEndpoints.ADD_BROKER.equals(endpoint) || CruiseControlEndpoints.REMOVE_BROKER.equals(endpoint) ?
-                Parameter.param(CruiseControlParameters.BROKER_ID.toString(), "[0-9]+(,[0-9]+)*") :
-                null;
+        if (CruiseControlEndpoints.ADD_BROKER.equals(endpoint) || CruiseControlEndpoints.REMOVE_BROKER.equals(endpoint)) {
+            return Parameter.param(CruiseControlParameters.BROKER_ID.toString(), "[0-9]+(,[0-9]+)*");
+        } else if (CruiseControlEndpoints.REMOVE_DISKS.equals(endpoint)) {
+            return Parameter.param(CruiseControlParameters.BROKER_ID_AND_LOG_DIRS.toString(), "[0-9]+-/var/lib/kafka/data-[0-9]+/kafka-log[0-9]+(,[0-9]+-/var/lib/kafka/data-[0-9]+/kafka-log[0-9]+)*");
+        } else {
+            return null;
+        }
     }
 
     private static Header convertToHeader(HTTPHeader httpHeader) {
