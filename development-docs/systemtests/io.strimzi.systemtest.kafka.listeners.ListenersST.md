@@ -6,7 +6,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Install the cluster operator with default settings | Cluster operator is installed successfully |
+| 1. | Install the cluster operator with default settings. | Cluster operator is installed successfully. |
 
 **Labels:**
 
@@ -384,11 +384,11 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create resource with Kafka broker pool and controller pool | Resources with Kafka pools are created successfully |
-| 2. | Create Kafka cluster with NodePort and TLS listeners | Kafka cluster is set up with the specified listeners |
-| 3. | Create ExternalKafkaClient and verify message production and consumption | Messages are produced and consumed successfully |
-| 4. | Check Kafka status for proper listener addresses | Listener addresses in Kafka status are validated successfully |
-| 5. | Check ClusterRoleBinding annotations and labels in Kafka cluster | Annotations and labels match the expected values |
+| 1. | Create resource with Kafka broker pool and controller pool. | Resources with Kafka pools are created successfully. |
+| 2. | Create Kafka cluster with NodePort and TLS listeners. | Kafka cluster is set up with the specified listeners. |
+| 3. | Create ExternalKafkaClient and verify message production and consumption. | Messages are produced and consumed successfully. |
+| 4. | Check Kafka status for proper listener addresses. | Listener addresses in Kafka status are validated successfully. |
+| 5. | Check ClusterRoleBinding annotations and labels in Kafka cluster. | Annotations and labels match the expected values. |
 
 **Labels:**
 
@@ -403,7 +403,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create Kafka broker and controller node pools | Broker and controller node pools are created |
+| 1. | Create Kafka broker and controller node pools. | Broker and controller node pools are created |
 | 2. | Deploy Kafka cluster with NodePort listener and TLS enabled | Kafka cluster is deployed with NodePort listener and TLS |
 | 3. | Create a Kafka topic | Kafka topic is created |
 | 4. | Create a Kafka user with TLS authentication | Kafka user with TLS authentication is created |
@@ -459,10 +459,10 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create a Kafka cluster with broker and controller node pools | Kafka cluster is created with node pools |
-| 2. | Create a Kafka cluster with custom listener using TLS and SCRAM-SHA authentication | Kafka cluster with custom listener is ready |
-| 3. | Create a Kafka topic and SCRAM-SHA user | Kafka topic and user are created |
-| 4. | Transmit messages over TLS using SCRAM-SHA authentication | Messages are transmitted successfully |
+| 1. | Create a Kafka cluster with broker and controller node pools. | Kafka cluster is created with node pools. |
+| 2. | Create a Kafka cluster with custom listener using TLS and SCRAM-SHA authentication. | Kafka cluster with custom listener is ready. |
+| 3. | Create a Kafka topic and SCRAM-SHA user. | Kafka topic and user are created. |
+| 4. | Transmit messages over TLS using SCRAM-SHA authentication. | Messages are transmitted successfully. |
 
 **Labels:**
 
@@ -477,10 +477,10 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create Kafka resources with wait | Kafka broker, controller, and topic are created |
-| 2. | Log transmission message | Transmission message is logged |
-| 3. | Produce and consume messages with plain clients | Messages are successfully produced and consumed |
-| 4. | Validate Kafka service discovery annotation | The discovery annotation is validated successfully |
+| 1. | Create Kafka resources with wait. | Kafka broker, controller, and topic are created. |
+| 2. | Log transmission message. | Transmission message is logged. |
+| 3. | Produce and consume messages with plain clients. | Messages are successfully produced and consumed. |
+| 4. | Validate Kafka service discovery annotation. | The discovery annotation is validated successfully. |
 
 **Labels:**
 
@@ -495,12 +495,12 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create Kafka brokers and controllers | Kafka brokers and controllers are created |
-| 2. | Enable Kafka with plain listener disabled and scram sha auth | Kafka instance with scram sha auth is enabled on a specified listener |
-| 3. | Set up topic and user | Kafka topic and Kafka user are set up with scram sha auth credentials |
-| 4. | Check logs in broker pod for authentication | Logs show that scram sha authentication succeeded |
-| 5. | Send messages over plain transport using scram sha authentication | Messages are successfully sent over plain transport using scram sha auth |
-| 6. | Verify service discovery annotation | Service discovery annotation is checked and validated |
+| 1. | Create Kafka brokers and controllers. | Kafka brokers and controllers are created. |
+| 2. | Enable Kafka with plain listener disabled and scram sha auth. | Kafka instance with scram sha auth is enabled on a specified listener. |
+| 3. | Set up topic and user. | Kafka topic and Kafka user are set up with scram sha auth credentials. |
+| 4. | Check logs in broker pod for authentication. | Logs show that scram sha authentication succeeded. |
+| 5. | Send messages over plain transport using scram sha authentication. | Messages are successfully sent over plain transport using scram sha auth. |
+| 6. | Verify service discovery annotation. | Service discovery annotation is checked and validated. |
 
 **Labels:**
 
@@ -515,12 +515,12 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create Kafka node pool resources | Persistent storage node pools are created |
-| 2. | Disable plain listener and enable tls listener in Kafka resource | Kafka with plain listener disabled and tls listener enabled is created |
-| 3. | Create Kafka topic and user | Kafka topic and tls user are created |
-| 4. | Configure and deploy Kafka clients | Kafka clients producer and consumer with tls are deployed |
-| 5. | Wait for clients to successfully send and receive messages | Clients successfully send and receive messages over tls |
-| 6. | Assert that the service discovery contains expected info | Service discovery matches expected info |
+| 1. | Create Kafka node pool resources. | Persistent storage node pools are created. |
+| 2. | Disable plain listener and enable tls listener in Kafka resource. | Kafka with plain listener disabled and tls listener enabled is created. |
+| 3. | Create Kafka topic and user. | Kafka topic and tls user are created. |
+| 4. | Configure and deploy Kafka clients. | Kafka clients producer and consumer with tls are deployed. |
+| 5. | Wait for clients to successfully send and receive messages. | Clients successfully send and receive messages over tls. |
+| 6. | Assert that the service discovery contains expected info. | Service discovery matches expected info. |
 
 **Labels:**
 
@@ -535,12 +535,12 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create resources for Kafka node pools | Kafka node pools are created |
-| 2. | Create Kafka cluster with SCRAM-SHA-512 authentication | Kafka cluster is created with SCRAM-SHA authentication |
-| 3. | Create Kafka topic and user | Kafka topic and user are created |
-| 4. | Transmit messages over TLS using SCRAM-SHA | Messages are successfully transmitted |
-| 5. | Check if generated password has the expected length | Password length is as expected |
-| 6. | Verify Kafka service discovery annotation | Service discovery annotation is as expected |
+| 1. | Create resources for Kafka node pools. | Kafka node pools are created. |
+| 2. | Create Kafka cluster with SCRAM-SHA-512 authentication. | Kafka cluster is created with SCRAM-SHA authentication. |
+| 3. | Create Kafka topic and user. | Kafka topic and user are created. |
+| 4. | Transmit messages over TLS using SCRAM-SHA. | Messages are successfully transmitted. |
+| 5. | Check if generated password has the expected length. | Password length is as expected. |
+| 6. | Verify Kafka service discovery annotation. | Service discovery annotation is as expected. |
 
 **Labels:**
 

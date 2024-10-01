@@ -16,14 +16,14 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Initialize TestStorage and get test image name | TestStorage instance is created and the image name for the test case is retrieved |
-| 2. | Create a Plugin with wrong checksum and build Kafka Connect resource with it | Kafka Connect resource is created but the build fails due to wrong checksum |
-| 3. | Deploy Scraper pod with specific configurations | Kafka Scraper pod are successfully deployed |
-| 4. | Wait for Kafka Connect status to indicate build failure | Kafka Connect status contains message about build failure |
-| 5. | Deploy network policies for Kafka Connect | Network policies are successfully deployed for Kafka Connect |
-| 6. | Replace the plugin checksum with the correct one and update Kafka Connect resource | Kafka Connect resource is updated with the correct checksum |
-| 7. | Wait for Kafka Connect to be ready | Kafka Connect becomes ready |
-| 8. | Verify that EchoSink KafkaConnector is available in Kafka Connect API | EchoSink KafkaConnector is returned by Kafka Connect API |
+| 1. | Initialize TestStorage and get test image name. | TestStorage instance is created and the image name for the test case is retrieved. |
+| 2. | Create a Plugin with wrong checksum and build Kafka Connect resource with it. | Kafka Connect resource is created but the build fails due to wrong checksum. |
+| 3. | Deploy Scraper pod with specific configurations. | Kafka Scraper pod are successfully deployed. |
+| 4. | Wait for Kafka Connect status to indicate build failure. | Kafka Connect status contains message about build failure. |
+| 5. | Deploy network policies for Kafka Connect. | Network policies are successfully deployed for Kafka Connect. |
+| 6. | Replace the plugin checksum with the correct one and update Kafka Connect resource. | Kafka Connect resource is updated with the correct checksum. |
+| 7. | Wait for Kafka Connect to be ready. | Kafka Connect becomes ready. |
+| 8. | Verify that EchoSink KafkaConnector is available in Kafka Connect API. | EchoSink KafkaConnector is returned by Kafka Connect API. |
 | 9. | Verify that EchoSink KafkaConnector is listed in Kafka Connect resource status | EchoSink KafkaConnector is listed in the status of Kafka Connect resource |
 
 **Labels:**

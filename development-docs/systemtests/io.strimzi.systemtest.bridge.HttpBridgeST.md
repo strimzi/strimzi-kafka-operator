@@ -6,7 +6,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Initialize Test Storage and deploy Kafka and Kafka Bridge | Kafka and Kafka Bridge are deployed with necessary configuration |
+| 1. | Initialize Test Storage and deploy Kafka and Kafka Bridge. | Kafka and Kafka Bridge are deployed with necessary configuration. |
 
 **Labels:**
 
@@ -42,12 +42,12 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create a Kafka Bridge resource with initial configuration | Kafka Bridge is created and deployed with the specified initial configuration |
-| 2. | Remove an environment variable that is in use | Environment variable TEST_ENV_1 is removed from the initial configuration |
-| 3. | Verify initial probe values and environment variables | The probe values and environment variables match the initial configuration |
-| 4. | Update Kafka Bridge resource with new configuration | Kafka Bridge is updated and redeployed with the new configuration |
-| 5. | Verify updated probe values and environment variables | The probe values and environment variables match the updated configuration |
-| 6. | Verify Kafka Bridge configurations for producer and consumer | Producer and consumer configurations match the updated settings |
+| 1. | Create a Kafka Bridge resource with initial configuration. | Kafka Bridge is created and deployed with the specified initial configuration. |
+| 2. | Remove an environment variable that is in use. | Environment variable TEST_ENV_1 is removed from the initial configuration. |
+| 3. | Verify initial probe values and environment variables. | The probe values and environment variables match the initial configuration. |
+| 4. | Update Kafka Bridge resource with new configuration. | Kafka Bridge is updated and redeployed with the new configuration. |
+| 5. | Verify updated probe values and environment variables. | The probe values and environment variables match the updated configuration. |
+| 6. | Verify Kafka Bridge configurations for producer and consumer. | Producer and consumer configurations match the updated settings. |
 
 **Labels:**
 
@@ -81,10 +81,10 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Retrieve the Kafka Bridge service using kubeClient | Kafka Bridge service instance is obtained |
-| 2. | Extract the discovery annotation from the service metadata | The discovery annotation is retrieved as a string |
-| 3. | Convert the discovery annotation to a JsonArray | JsonArray representation of the discovery annotation is created |
-| 4. | Validate the content of the JsonArray against expected values | The JsonArray matches the expected service discovery information |
+| 1. | Retrieve the Kafka Bridge service using kubeClient. | Kafka Bridge service instance is obtained. |
+| 2. | Extract the discovery annotation from the service metadata. | The discovery annotation is retrieved as a string. |
+| 3. | Convert the discovery annotation to a JsonArray. | JsonArray representation of the discovery annotation is created. |
+| 4. | Validate the content of the JsonArray against expected values. | The JsonArray matches the expected service discovery information. |
 
 **Labels:**
 
@@ -100,11 +100,11 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Initialize the test storage | TestStorage instance is initialized |
-| 2. | Create Kafka topic resource | Kafka topic resource is created with specified configurations |
-| 3. | Setup and deploy Kafka Bridge consumer client | Kafka Bridge consumer client is set up and started receiving messages |
-| 4. | Send messages using Kafka producer | Messages are sent to Kafka successfully |
-| 5. | Verify message reception | All messages are received by Kafka Bridge consumer client |
+| 1. | Initialize the test storage. | TestStorage instance is initialized. |
+| 2. | Create Kafka topic resource. | Kafka topic resource is created with specified configurations. |
+| 3. | Setup and deploy Kafka Bridge consumer client. | Kafka Bridge consumer client is set up and started receiving messages. |
+| 4. | Send messages using Kafka producer. | Messages are sent to Kafka successfully. |
+| 5. | Verify message reception. | All messages are received by Kafka Bridge consumer client. |
 
 **Labels:**
 
@@ -137,10 +137,10 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create a KafkaBridge resource and wait for it to be ready | KafkaBridge resource is created and ready with 1 replica |
-| 2. | Fetch the current number of KafkaBridge pods | There should be exactly 1 KafkaBridge pod initially |
-| 3. | Scale KafkaBridge to zero replicas | Scaling action is acknowledged |
-| 4. | Wait for KafkaBridge to scale down to zero replicas | KafkaBridge scales down to zero replicas correctly |
+| 1. | Create a KafkaBridge resource and wait for it to be ready. | KafkaBridge resource is created and ready with 1 replica. |
+| 2. | Fetch the current number of KafkaBridge pods. | There should be exactly 1 KafkaBridge pod initially. |
+| 3. | Scale KafkaBridge to zero replicas. | Scaling action is acknowledged. |
+| 4. | Wait for KafkaBridge to scale down to zero replicas. | KafkaBridge scales down to zero replicas correctly. |
 | 5. | Check the number of KafkaBridge pods after scaling | No KafkaBridge pods should be running |
 | 6. | Verify the status of KafkaBridge | KafkaBridge status should indicate it is ready with zero replicas |
 
@@ -157,15 +157,15 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Initialize test storage | Test storage is initialized with necessary context |
-| 2. | Create a Kafka Bridge client job | Kafka Bridge client job is configured and instantiated |
-| 3. | Create Kafka topic | Kafka topic is successfully created |
-| 4. | Start Kafka Bridge producer | Kafka Bridge producer successfully begins sending messages |
-| 5. | Wait for producer success | All messages are sent successfully |
-| 6. | Start Kafka consumer | Kafka consumer is instantiated and starts consuming messages |
-| 7. | Wait for consumer success | All messages are consumed successfully |
-| 8. | Verify Kafka Bridge pod labels | Labels for Kafka Bridge pods are correctly set and verified |
-| 9. | Verify Kafka Bridge service labels | Labels for Kafka Bridge service are correctly set and verified |
+| 1. | Initialize test storage. | Test storage is initialized with necessary context. |
+| 2. | Create a Kafka Bridge client job. | Kafka Bridge client job is configured and instantiated. |
+| 3. | Create Kafka topic. | Kafka topic is successfully created. |
+| 4. | Start Kafka Bridge producer. | Kafka Bridge producer successfully begins sending messages. |
+| 5. | Wait for producer success. | All messages are sent successfully. |
+| 6. | Start Kafka consumer. | Kafka consumer is instantiated and starts consuming messages. |
+| 7. | Wait for consumer success. | All messages are consumed successfully. |
+| 8. | Verify Kafka Bridge pod labels. | Labels for Kafka Bridge pods are correctly set and verified. |
+| 9. | Verify Kafka Bridge service labels. | Labels for Kafka Bridge service are correctly set and verified. |
 
 **Labels:**
 

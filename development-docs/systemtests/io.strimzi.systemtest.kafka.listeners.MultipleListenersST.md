@@ -16,9 +16,9 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Retrieve different types of Kafka listeners | Lists of INTERNAL, NODEPORT, ROUTE, and LOADBALANCER listeners are retrieved |
-| 2. | Combine all different listener lists | A combined list of all Kafka listener types is created |
-| 3. | Run listeners test with combined listener list | Listeners test runs with all types of Kafka listeners in the combined list |
+| 1. | Retrieve different types of Kafka listeners. | Lists of INTERNAL, NODEPORT, ROUTE, and LOADBALANCER listeners are retrieved. |
+| 2. | Combine all different listener lists. | A combined list of all Kafka listener types is created. |
+| 3. | Run listeners test with combined listener list. | Listeners test runs with all types of Kafka listeners in the combined list. |
 
 **Labels:**
 
@@ -33,9 +33,9 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Check if the environment supports cluster-wide NodePort rights | Test is skipped if the environment is not suitable |
-| 2. | Retrieve and combine internal and NodePort listeners | Listeners are successfully retrieved and combined |
-| 3. | Run listeners test with combined listeners | Listeners test is executed successfully |
+| 1. | Check if the environment supports cluster-wide NodePort rights. | Test is skipped if the environment is not suitable. |
+| 2. | Retrieve and combine internal and NodePort listeners. | Listeners are successfully retrieved and combined. |
+| 3. | Run listeners test with combined listeners. | Listeners test is executed successfully. |
 
 **Labels:**
 
@@ -50,10 +50,10 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Retrieve route listeners | Route listeners are retrieved from test cases |
-| 2. | Retrieve nodeport listeners | Nodeport listeners are retrieved from test cases |
-| 3. | Combine route and nodeport listeners | Multiple different listeners list is populated |
-| 4. | Run listeners test | Listeners test runs using the combined list |
+| 1. | Retrieve route listeners. | Route listeners are retrieved from test cases. |
+| 2. | Retrieve nodeport listeners. | Nodeport listeners are retrieved from test cases. |
+| 3. | Combine route and nodeport listeners. | Multiple different listeners list is populated. |
+| 4. | Run listeners test. | Listeners test runs using the combined list. |
 
 **Labels:**
 
@@ -68,7 +68,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Run the internal Kafka listeners test | Listeners test runs successfully on the specified cluster |
+| 1. | Run the internal Kafka listeners test. | Listeners test runs successfully on the specified cluster. |
 
 **Labels:**
 
@@ -83,8 +83,8 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Run listeners test with LOADBALANCER type | Listeners test executes successfully with load balancers |
-| 2. | Validate the results | Results match the expected outcomes for multiple load balancers |
+| 1. | Run listeners test with LOADBALANCER type. | Listeners test executes successfully with load balancers. |
+| 2. | Validate the results. | Results match the expected outcomes for multiple load balancers. |
 
 **Labels:**
 
@@ -99,7 +99,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Execute listener tests with NodePort configuration | Listener tests run without issues using NodePort |
+| 1. | Execute listener tests with NodePort configuration. | Listener tests run without issues using NodePort. |
 
 **Labels:**
 
@@ -114,8 +114,8 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Retrieve test cases for Kafka Listener Type ROUTE | Test cases for ROUTE are retrieved |
-| 2. | Run listener tests using the retrieved test cases and cluster name | Listener tests run successfully with no errors |
+| 1. | Retrieve test cases for Kafka Listener Type ROUTE. | Test cases for ROUTE are retrieved. |
+| 2. | Run listener tests using the retrieved test cases and cluster name. | Listener tests run successfully with no errors. |
 
 **Labels:**
 

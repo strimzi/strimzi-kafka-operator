@@ -37,9 +37,9 @@ import static io.strimzi.systemtest.TestTags.KAFKA_SMOKE;
 
 @Tag(KAFKA_SMOKE)
 @SuiteDoc(
-    description = @Desc("Test checking basic functionality for each supported Kafka version. Ensures that Kafka functionality such as deployment, Topic Operator, User Operator, and message transmission via PLAIN and TLS listeners are working correctly."),
+    description = @Desc("Verifies the basic functionality for each supported Kafka version."),
     beforeTestSteps = {
-        @Step(value = "Deploy cluster operator with default installation", expected = "Cluster operator is deployed")
+        @Step(value = "Deploy Cluster Operator with default installation.", expected = "Cluster Operator is deployed.")
     },
     labels = {
         @Label(value = TestDocsLabels.KAFKA)
@@ -52,13 +52,13 @@ public class KafkaVersionsST extends AbstractST {
     @ParameterizedTest(name = "Kafka version: {0}.version()")
     @MethodSource("io.strimzi.systemtest.utils.TestKafkaVersion#getSupportedKafkaVersions")
     @TestDoc(
-        description = @Desc("Test checking basic functionality for each supported Kafka version. Ensures that Kafka functionality such as deployment, Topic Operator, User Operator, and message transmission via PLAIN and TLS listeners are working correctly."),
+        description = @Desc("Tests the basic functionality for each supported Kafka version, ensuring that deployment, Topic Operator, User Operator, and message transmission via PLAIN and TLS listeners work correctly."),
         steps = {
-            @Step(value = "Deploy Kafka cluster with specified version", expected = "Kafka cluster is deployed without any issue"),
-            @Step(value = "Verify the Topic Operator creation", expected = "Topic Operator is working correctly"),
-            @Step(value = "Verify the User Operator creation", expected = "User Operator is working correctly with SCRAM-SHA and ACLs"),
-            @Step(value = "Send and receive messages via PLAIN with SCRAM-SHA", expected = "Messages are sent and received successfully"),
-            @Step(value = "Send and receive messages via TLS", expected = "Messages are sent and received successfully")
+            @Step(value = "Deploy Kafka cluster with specified version.", expected = "Kafka cluster is deployed without any issue."),
+            @Step(value = "Verify the Topic Operator creation.", expected = "Topic Operator is working correctly."),
+            @Step(value = "Verify the User Operator creation.", expected = "User Operator is working correctly with SCRAM-SHA and ACLs."),
+            @Step(value = "Send and receive messages via PLAIN with SCRAM-SHA.", expected = "Messages are sent and received successfully."),
+            @Step(value = "Send and receive messages via TLS.", expected = "Messages are sent and received successfully.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)

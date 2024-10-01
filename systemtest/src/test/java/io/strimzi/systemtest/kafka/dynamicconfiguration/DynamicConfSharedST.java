@@ -50,9 +50,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @SuiteDoc(
     description = @Desc("DynamicConfigurationSharedST is responsible for verifying that changing dynamic Kafka configuration will not trigger a rolling update. Shared -> for each test case we use the same Kafka resource configuration."),
     beforeTestSteps = {
-        @Step(value = "Run cluster operator installation", expected = "Cluster operator is installed"),
-        @Step(value = "Deploy shared Kafka across all test cases", expected = "Shared Kafka is deployed"),
-        @Step(value = "Deploy scraper pod", expected = "Scraper pod is deployed")
+        @Step(value = "Run Cluster Operator installation.", expected = "Cluster Operator is installed."),
+        @Step(value = "Deploy shared Kafka across all test cases.", expected = "Shared Kafka is deployed."),
+        @Step(value = "Deploy scraper pod.", expected = "Scraper pod is deployed.")
     },
     labels = {
         @Label(value = TestDocsLabels.DYNAMIC_CONFIGURATION),

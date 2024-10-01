@@ -6,7 +6,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy scraper Pod for accessing all other Pods | Scraper Pod is deployed |
+| 1. | Deploy scraper Pod for accessing all other Pods. | Scraper Pod is deployed. |
 
 **Labels:**
 
@@ -22,8 +22,8 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create resource with Node Pools | Node Pools created successfully |
-| 2. | Create NodePools using resourceManager based on the configuration | NodePools for broker and controller are created or not based on configuration |
+| 1. | Create resource with node pools | Node Pools created successfully |
+| 2. | Create node pools using resourceManager based on the configuration | node pools for broker and controller are created or not based on configuration |
 | 3. | Deploy Kafka cluster with SCRAM-SHA-512 authentication | Kafka cluster deployed with specified authentications |
 | 4. | Create Kafka Topic | Topic created successfully |
 | 5. | Create Kafka SCRAM-SHA-512 user with a weird username | User created successfully with SCRAM-SHA-512 credentials |
@@ -46,7 +46,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Set up a name of username containing dots and 64 characters |  |
-| 2. | Create NodePools using resourceManager based on the configuration | NodePools for broker and controller are created or not based on configuration |
+| 2. | Create node pools using resourceManager based on the configuration | node pools for broker and controller are created or not based on configuration |
 | 3. | Create Kafka broker, controller, topic, and Kafka user with the specified username | Resources are created with the expected configurations |
 | 4. | Setup Kafka Connect with the created Kafka instance and TLS authentication | Kafka Connect is set up with the expected configurations |
 | 5. | Check if the user can produce messages to Kafka | Messages are produced successfully |
@@ -91,7 +91,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Create and configure Kafka Connect with initial values | Kafka Connect is created and configured with initial environment variables and readiness/liveness probes |
-| 2. | Create NodePools using resourceManager based on the configuration | NodePools for broker and controller are created or not based on configuration |
+| 2. | Create node pools using resourceManager based on the configuration | node pools for broker and controller are created or not based on configuration |
 | 3. | Verify initial configuration and environment variables | Initial configuration and environment variables are as expected |
 | 4. | Update Kafka Connect configuration and environment variables | Kafka Connect configuration and environment variables are updated |
 | 5. | Verify updated configuration and environment variables | Updated configuration and environment variables are as expected |
@@ -109,13 +109,13 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Initialize Test Storage | Test storage instance is created with required context |
-| 2. | Define expected configurations | Configurations are loaded from properties file |
-| 3. | Create and wait for resources | Kafka resources, including NodePools and KafkaConnect instances, are created and become ready |
-| 4. | Annotate for manual rolling update | KafkaConnect components are annotated for a manual rolling update |
-| 5. | Perform and wait for rolling update | KafkaConnect components roll and new pods are deployed |
-| 6. | Kafka Connect pod | Pod configurations and annotations are verified |
-| 7. | Kafka Connectors | Various Kafka Connect resource labels and configurations are verified to ensure correct deployment |
+| 1. | Initialize Test Storage. | Test storage instance is created with required context. |
+| 2. | Define expected configurations. | Configurations are loaded from properties file. |
+| 3. | Create and wait for resources. | Kafka resources, including node pools and KafkaConnect instances, are created and become ready. |
+| 4. | Annotate for manual rolling update. | KafkaConnect components are annotated for a manual rolling update. |
+| 5. | Perform and wait for rolling update. | KafkaConnect components roll and new pods are deployed. |
+| 6. | Kafka Connect pod. | Pod configurations and annotations are verified. |
+| 7. | Kafka Connectors. | Various Kafka Connect resource labels and configurations are verified to ensure correct deployment. |
 
 **Labels:**
 
@@ -131,7 +131,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Create TestStorage instance | TestStorage instance is created |
-| 2. | Create NodePools using resourceManager based on the configuration | NodePools for broker and controller are created or not based on configuration |
+| 2. | Create node pools using resourceManager based on the configuration | node pools for broker and controller are created or not based on configuration |
 | 3. | Create broker and controller node pools | Node pools are created and ready |
 | 4. | Create Kafka cluster | Kafka cluster is created and operational |
 | 5. | Setup JVM options and resource requirements for Kafka Connect | Kafka Connect is configured with specified JVM options and resources |
@@ -151,7 +151,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Create and configure test storage | Test storage is set up with necessary configurations. |
-| 2. | Create NodePools using resourceManager based on the configuration | NodePools for broker and controller are created or not based on configuration |
+| 2. | Create node pools using resourceManager based on the configuration | node pools for broker and controller are created or not based on configuration |
 | 3. | Create and wait for the broker and controller pools | Broker and controller pools are created and running. |
 | 4. | Deploy and configure Kafka Connect with File Sink Plugin | Kafka Connect with File Sink Plugin is deployed and configured. |
 | 5. | Deploy Network Policies for Kafka Connect | Network Policies are successfully deployed for Kafka Connect. |
@@ -192,7 +192,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Create TestStorage object instance | Instance of TestStorage is created |
-| 2. | Create NodePools using resourceManager based on the configuration | NodePools for broker and controller are created or not based on configuration |
+| 2. | Create node pools using resourceManager based on the configuration | node pools for broker and controller are created or not based on configuration |
 | 3. | Create resources for KafkaNodePools and KafkaCluster | Resources are created and ready |
 | 4. | Deploy Kafka Connect with file plugin | Kafka Connect is deployed with 1 initial replica |
 | 5. | Verify the initial replica count | Initial replica count is verified to be 1 |
@@ -214,8 +214,8 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create object instance of TestStorage | Instance of TestStorage is created |
-| 2. | Create NodePools using resourceManager based on the configuration | NodePools for broker and controller are created or not based on configuration |
+| 1. | Create object instance of TestStorage. | Instance of TestStorage is created. |
+| 2. | Create node pools using resourceManager based on the configuration. | node pools for broker and controller are created or not based on configuration. |
 | 3. | Deploy Kafka with SCRAM-SHA-512 listener | Kafka is deployed with the specified listener authentication |
 | 4. | Create KafkaUser with SCRAM-SHA authentication | KafkaUser is created using SCRAM-SHA authentication with the given credentials |
 | 5. | Create KafkaTopic | KafkaTopic is created |
@@ -238,7 +238,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create NodePools using resourceManager based on the configuration | NodePools for broker and controller are created or not based on configuration |
+| 1. | Create node pools using resourceManager based on the configuration | node pools for broker and controller are created or not based on configuration |
 | 2. | Create Kafka cluster with SCRAM-SHA authentication | Kafka cluster is created with SCRAM-SHA authentication enabled |
 | 3. | Create a Kafka user with SCRAM-SHA authentication | Kafka user with SCRAM-SHA authentication is created |
 | 4. | Deploy Kafka Connect with the created user credentials | Kafka Connect is deployed successfully |
@@ -260,7 +260,7 @@
 | - | - | - |
 | 1. | Create Secrets and ConfigMaps | Secrets and ConfigMaps are created successfully. |
 | 2. | Create Kafka environment | Kafka broker, Kafka Connect, and other resources are deployed successfully. |
-| 3. | Create NodePools using resourceManager based on the configuration | NodePools for broker and controller are created or not based on configuration |
+| 3. | Create node pools using resourceManager based on the configuration | node pools for broker and controller are created or not based on configuration |
 | 4. | Bind Secrets and ConfigMaps to Kafka Connect | Secrets and ConfigMaps are bound to Kafka Connect as volumes and environment variables. |
 | 5. | Verify environment variables | Kafka Connect environment variables contain expected values from Secrets and ConfigMaps. |
 | 6. | Verify mounted volumes | Kafka Connect mounted volumes contain expected values from Secrets and ConfigMaps. |
@@ -301,7 +301,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Initialize the test storage and create broker and controller pools | Broker and controller pools are created successfully |
-| 2. | Create NodePools using resourceManager based on the configuration | NodePools for broker and controller are created or not based on configuration |
+| 2. | Create node pools using resourceManager based on the configuration | node pools for broker and controller are created or not based on configuration |
 | 3. | Deploy Kafka, Kafka Connect and Kafka Connector resources | Kafka, Kafka Connect and Kafka Connector resources are deployed successfully |
 | 4. | Scale Kafka Connect subresource | Kafka Connect subresource is scaled successfully |
 | 5. | Verify Kafka Connect subresource scaling | Kafka Connect replicas and observed generation are as expected |
@@ -394,7 +394,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Create test storage instance | Test storage instance is created |
-| 2. | Create NodePools using resourceManager based on the configuration | NodePools for broker and controller are created or not based on configuration |
+| 2. | Create node pools using resourceManager based on the configuration | node pools for broker and controller are created or not based on configuration |
 | 3. | Create resources for Kafka broker and Kafka Connect components | Resources are created and ready |
 | 4. | Configure Kafka broker with TLS listener and client authentication | Kafka broker is configured correctly |
 | 5. | Deploy Kafka user with TLS authentication | Kafka user is deployed with TLS authentication |

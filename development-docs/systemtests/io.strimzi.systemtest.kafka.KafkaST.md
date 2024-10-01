@@ -1,12 +1,12 @@
 # KafkaST
 
-**Description:** Suite containing kafka related stuff (i.e., JVM resources, EO, TO or UO removal from Kafka cluster), which ensures proper functioning of Kafka clusters.
+**Description:** Test suite containing kafka related stuff (i.e., JVM resources, EO, TO or UO removal from Kafka cluster), which ensures proper functioning of Kafka clusters.
 
 **Before tests execution steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy cluster operator across all namespaces, with custom configuration | Cluster operator is deployed |
+| 1. | Deploy Cluster Operator across all namespaces, with custom configuration. | Cluster Operator is deployed. |
 
 **Labels:**
 
@@ -40,7 +40,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Initialize test storage with current context | Test storage is initialized |
+| 1. | Initialize test storage with current context. | Test storage is initialized. |
 | 2. | Create Kafka node pools | Kafka node pools are created and ready |
 | 3. | Deploy Kafka with a non-existing version | Kafka deployment with non-supported version begins |
 | 4. | Log Kafka deployment process | Log entry for Kafka deployment is created |
@@ -60,9 +60,9 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Kafka and its components with custom specifications, including specifying resources and JVM configuration | Kafka and its components (ZooKeeper, Entity Operator) are deployed |
-| 2. | For each of components (Kafka, ZooKeeper, Topic Operator, User Operator), verify specified configuration of JVM, resources, and also environment variables | Each of the components has requests and limits assigned correctly, JVM, and environment variables configured according to the specification. |
-| 3. | Wait for a time to observe that none of initiated components needed Rolling Update | All of Kafka components remained in stable state. |
+| 1. | Deploy Kafka and its components with custom specifications, including specifying resources and JVM configuration. | Kafka and its components (ZooKeeper, Entity Operator) are deployed. |
+| 2. | For each component (Kafka, ZooKeeper, Topic Operator, User Operator), verify specified configuration of JVM, resources, and also environment variables. | Each of the components has requests and limits assigned correctly, JVM, and environment variables configured according to the specification. |
+| 3. | Wait for a time to observe that no initiated components need rolling update. | All Kafka components remain in stable state. |
 
 **Labels:**
 
@@ -77,7 +77,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Kafka annotated to enable KRaft (and additionally annotated to enable management by KafkaNodePool due to default usage of NodePools), and KafkaNodePool targeting given Kafka Cluster. | Kafka is deployed, KafkaNodePool custom resource is targeting Kafka Cluster as expected. |
+| 1. | Deploy Kafka annotated to enable KRaft (and additionally annotated to enable node pool management), and configure a KafkaNodePool resource to target the Kafka cluster. | Kafka is deployed, and the KafkaNodePool resource targets the cluster as expected. |
 | 2. | Produce and consume messages in given Kafka Cluster. | Clients can produce and consume messages. |
 | 3. | Trigger manual Rolling Update. | Rolling update is triggered and completed shortly after. |
 
@@ -88,17 +88,17 @@
 
 ## testKafkaJBODDeleteClaimsTrueFalse
 
-**Description:** This test case verifies that Kafka with persistent storage, and JBOD storage, property 'delete claim' of JBOD storage.
+**Description:** This test case verifies Kafka running with persistent JBOD storage, and configured with the `deleteClaim`  storage property.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Kafka with persistent storage and JBOD storage with 2 volumes, both of these are configured to delete their Persistent Volume Claims on Kafka cluster un-provision. | Kafka is deployed, volumes are labeled and linked to Pods correctly. |
-| 2. | Verify that labels in Persistent Volume Claims are set correctly. | Persistent Volume Claims do contain expected labels and values. |
-| 3. | Modify Kafka Custom Resource, specifically 'delete claim' property of its first Kafka Volume. | Kafka CR is successfully modified, annotation of according Persistent Volume Claim is changed afterwards by Cluster Operator. |
-| 4. | Delete Kafka cluster. | Kafka cluster and its components are deleted, including Persistent Volume Claim of Volume with 'delete claim' property set to true. |
-| 5. | Verify remaining Persistent Volume Claims. | Persistent Volume Claim referenced by volume of formerly deleted Kafka Custom Resource with property 'delete claim' set to true is still present. |
+| 1. | Deploy Kafka with persistent storage and JBOD storage with 2 volumes, both of which are configured to delete their Persistent Volume Claims on Kafka cluster un-provision. | Kafka is deployed, volumes are labeled and linked to Pods correctly. |
+| 2. | Verify that labels in Persistent Volume Claims are set correctly. | Persistent Volume Claims contains expected labels and values. |
+| 3. | Modify Kafka Custom Resource, specifically 'deleteClaim' property of its first Kafka Volume. | Kafka CR is successfully modified, annotation of according Persistent Volume Claim is changed afterwards by Cluster Operator. |
+| 4. | Delete Kafka cluster. | Kafka cluster and its components are deleted, including Persistent Volume Claim of Volume with 'deleteClaim' property set to true. |
+| 5. | Verify remaining Persistent Volume Claims. | Persistent Volume Claim referenced by volume of formerly deleted Kafka Custom Resource with property 'deleteClaim' set to true is still present. |
 
 **Labels:**
 
@@ -107,16 +107,16 @@
 
 ## testLabelsExistenceAndManipulation
 
-**Description:** This test case verifies the presence of expected Strimzi specific labels, also labels and annotations specified by user. Some of user-specified labels are later modified (new one is added, one is modified) which triggers rolling update after which all changes took place as expected.
+**Description:** This test case verifies the presence of expected Strimzi specific labels, also labels and annotations specified by user. Some user-specified labels are later modified (new one is added, one is modified) which triggers rolling update after which all changes took place as expected.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Kafka with persistent storage and specify custom labels in CR metadata, and also other labels and annotation in PVC metadata | Kafka is deployed with its default labels and all others specified by user. |
-| 2. | Deploy Producer and Consumer configured to produce and consume default number of messages, to make sure Kafka works as expected | Producer and Consumer are able to produce and consume messages respectively. |
-| 3. | Modify configuration of Kafka CR with addition of new labels and modification of existing | Kafka is rolling and new labels are present in Kafka CR, and managed resources |
-| 4. | Deploy Producer and Consumer configured to produce and consume default number of messages, to make sure Kafka works as expected | Producer and Consumer are able to produce and consume messages respectively. |
+| 1. | Deploy Kafka with persistent storage and specify custom labels in CR metadata, and also other labels and annotation in PVC metadata. | Kafka is deployed with its default labels and all others specified by user. |
+| 2. | Deploy Producer and Consumer configured to produce and consume default number of messages, to make sure Kafka works as expected. | Producer and Consumer are able to produce and consume messages respectively. |
+| 3. | Modify configuration of Kafka CR with addition of new labels and modification of existing. | Kafka is rolling and new labels are present in Kafka CR, and managed resources. |
+| 4. | Deploy Producer and Consumer configured to produce and consume default number of messages, to make sure Kafka works as expected. | Producer and Consumer are able to produce and consume messages respectively. |
 
 **Labels:**
 
@@ -167,10 +167,10 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create Kafka without external listener | Kafka instance is created without an external listener |
-| 2. | Edit Kafka to include an external listener | External listener is correctly added to the Kafka instance |
-| 3. | Wait until the Kafka component has rolled | Kafka component rolls successfully with the new external listener |
-| 4. | Compare Kafka broker secrets before and after adding external listener | Secrets are different before and after adding the external listener |
+| 1. | Create Kafka without external listener. | Kafka instance is created without an external listener. |
+| 2. | Edit Kafka to include an external listener. | External listener is correctly added to the Kafka instance. |
+| 3. | Wait until the Kafka component has rolled. | Kafka component rolls successfully with the new external listener. |
+| 4. | Compare Kafka broker secrets before and after adding external listener. | Secrets are different before and after adding the external listener. |
 
 **Labels:**
 
@@ -179,17 +179,17 @@
 
 ## testRemoveComponentsFromEntityOperator
 
-**Description:** This test case verifies the correct deployment of Entity Operator, i.e., including both User Operator and Topic Operator. Entity Operator is firstly modified to exclude User Operator, afterwards it is modified to default configuration, which includes User Operator. The next step is removal of Topic Operator itself and finally, also removing User Operator, with Topic Operator being already removed.
+**Description:** his test case verifies the correct deployment of the Entity Operator, including both the User Operator and Topic Operator. First, the Entity Operator is modified to exclude the User Operator. Then, it's restored to its default configuration, which includes the User Operator. Next, the Topic Operator is removed, followed by the User Operator, with the Topic Operator already excluded
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Kafka with Entity Operator set. | Kafka is deployed, and Entity Operator consist of both Topic and User Operators |
-| 2. | Remove User Operator from the Kafka specification | User Operator container is deleted |
-| 3. | Set User Operator back in the Kafka specification | User Operator container is recreated |
-| 4. | Remove Topic Operator from the Kafka specification | Topic Operator container is removed from Entity Operator |
-| 5. | Remove User Operator from the Kafka specification | Entity Operator Pod is removed, as there are no other containers present. |
+| 1. | Deploy Kafka with Entity Operator set. | Kafka is deployed, and Entity Operator consists of both Topic Operator and User Operator. |
+| 2. | Remove User Operator from the Kafka specification. | User Operator container is deleted. |
+| 3. | Set User Operator back in the Kafka specification. | User Operator container is recreated. |
+| 4. | Remove Topic Operator from the Kafka specification. | Topic Operator container is removed from Entity Operator. |
+| 5. | Remove User Operator from the Kafka specification. | Entity Operator Pod is removed, as there are no other containers present. |
 
 **Labels:**
 

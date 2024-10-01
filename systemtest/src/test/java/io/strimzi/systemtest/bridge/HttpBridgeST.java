@@ -70,7 +70,7 @@ import static org.hamcrest.Matchers.containsString;
 @SuiteDoc(
     description = @Desc("Test suite for various Kafka Bridge operations."),
     beforeTestSteps = {
-        @Step(value = "Initialize Test Storage and deploy Kafka and Kafka Bridge", expected = "Kafka and Kafka Bridge are deployed with necessary configuration")
+        @Step(value = "Initialize Test Storage and deploy Kafka and Kafka Bridge.", expected = "Kafka and Kafka Bridge are deployed with necessary configuration.")
     },
     labels = {
         @Label(TestDocsLabels.BRIDGE),
@@ -85,15 +85,15 @@ class HttpBridgeST extends AbstractST {
     @TestDoc(
         description = @Desc("Test validating that sending a simple message through Kafka Bridge works correctly and checks labels."),
         steps = {
-            @Step(value = "Initialize test storage", expected = "Test storage is initialized with necessary context"),
-            @Step(value = "Create a Kafka Bridge client job", expected = "Kafka Bridge client job is configured and instantiated"),
-            @Step(value = "Create Kafka topic", expected = "Kafka topic is successfully created"),
-            @Step(value = "Start Kafka Bridge producer", expected = "Kafka Bridge producer successfully begins sending messages"),
-            @Step(value = "Wait for producer success", expected = "All messages are sent successfully"),
-            @Step(value = "Start Kafka consumer", expected = "Kafka consumer is instantiated and starts consuming messages"),
-            @Step(value = "Wait for consumer success", expected = "All messages are consumed successfully"),
-            @Step(value = "Verify Kafka Bridge pod labels", expected = "Labels for Kafka Bridge pods are correctly set and verified"),
-            @Step(value = "Verify Kafka Bridge service labels", expected = "Labels for Kafka Bridge service are correctly set and verified")
+            @Step(value = "Initialize test storage.", expected = "Test storage is initialized with necessary context."),
+            @Step(value = "Create a Kafka Bridge client job.", expected = "Kafka Bridge client job is configured and instantiated."),
+            @Step(value = "Create Kafka topic.", expected = "Kafka topic is successfully created."),
+            @Step(value = "Start Kafka Bridge producer.", expected = "Kafka Bridge producer successfully begins sending messages."),
+            @Step(value = "Wait for producer success.", expected = "All messages are sent successfully."),
+            @Step(value = "Start Kafka consumer.", expected = "Kafka consumer is instantiated and starts consuming messages."),
+            @Step(value = "Wait for consumer success.", expected = "All messages are consumed successfully."),
+            @Step(value = "Verify Kafka Bridge pod labels.", expected = "Labels for Kafka Bridge pods are correctly set and verified."),
+            @Step(value = "Verify Kafka Bridge service labels.", expected = "Labels for Kafka Bridge service are correctly set and verified.")
         },
         labels = {
             @Label(TestDocsLabels.BRIDGE),
@@ -133,11 +133,11 @@ class HttpBridgeST extends AbstractST {
     @TestDoc(
         description = @Desc("Test verifying that a simple message can be received using Kafka Bridge."),
         steps = {
-            @Step(value = "Initialize the test storage", expected = "TestStorage instance is initialized"),
-            @Step(value = "Create Kafka topic resource", expected = "Kafka topic resource is created with specified configurations"),
-            @Step(value = "Setup and deploy Kafka Bridge consumer client", expected = "Kafka Bridge consumer client is set up and started receiving messages"),
-            @Step(value = "Send messages using Kafka producer", expected = "Messages are sent to Kafka successfully"),
-            @Step(value = "Verify message reception", expected = "All messages are received by Kafka Bridge consumer client")
+            @Step(value = "Initialize the test storage.", expected = "TestStorage instance is initialized."),
+            @Step(value = "Create Kafka topic resource.", expected = "Kafka topic resource is created with specified configurations."),
+            @Step(value = "Setup and deploy Kafka Bridge consumer client.", expected = "Kafka Bridge consumer client is set up and started receiving messages."),
+            @Step(value = "Send messages using Kafka producer.", expected = "Messages are sent to Kafka successfully."),
+            @Step(value = "Verify message reception.", expected = "All messages are received by Kafka Bridge consumer client.")
         },
         labels = {
             @Label(TestDocsLabels.BRIDGE),
@@ -174,12 +174,12 @@ class HttpBridgeST extends AbstractST {
     @TestDoc(
         description = @Desc("Test that validates the creation, update, and verification of a Kafka Bridge with specific initial and updated configurations."),
         steps = {
-            @Step(value = "Create a Kafka Bridge resource with initial configuration", expected = "Kafka Bridge is created and deployed with the specified initial configuration"),
-            @Step(value = "Remove an environment variable that is in use", expected = "Environment variable TEST_ENV_1 is removed from the initial configuration"),
-            @Step(value = "Verify initial probe values and environment variables", expected = "The probe values and environment variables match the initial configuration"),
-            @Step(value = "Update Kafka Bridge resource with new configuration", expected = "Kafka Bridge is updated and redeployed with the new configuration"),
-            @Step(value = "Verify updated probe values and environment variables", expected = "The probe values and environment variables match the updated configuration"),
-            @Step(value = "Verify Kafka Bridge configurations for producer and consumer", expected = "Producer and consumer configurations match the updated settings")
+            @Step(value = "Create a Kafka Bridge resource with initial configuration.", expected = "Kafka Bridge is created and deployed with the specified initial configuration."),
+            @Step(value = "Remove an environment variable that is in use.", expected = "Environment variable TEST_ENV_1 is removed from the initial configuration."),
+            @Step(value = "Verify initial probe values and environment variables.", expected = "The probe values and environment variables match the initial configuration."),
+            @Step(value = "Update Kafka Bridge resource with new configuration.", expected = "Kafka Bridge is updated and redeployed with the new configuration."),
+            @Step(value = "Verify updated probe values and environment variables.", expected = "The probe values and environment variables match the updated configuration."),
+            @Step(value = "Verify Kafka Bridge configurations for producer and consumer.", expected = "Producer and consumer configurations match the updated settings.")
         },
         labels = {
             @Label(TestDocsLabels.BRIDGE)
@@ -286,10 +286,10 @@ class HttpBridgeST extends AbstractST {
     @TestDoc(
         description = @Desc("Test verifying the presence and correctness of the discovery annotation in the Kafka Bridge service."),
         steps = {
-            @Step(value = "Retrieve the Kafka Bridge service using kubeClient", expected = "Kafka Bridge service instance is obtained"),
-            @Step(value = "Extract the discovery annotation from the service metadata", expected = "The discovery annotation is retrieved as a string"),
-            @Step(value = "Convert the discovery annotation to a JsonArray", expected = "JsonArray representation of the discovery annotation is created"),
-            @Step(value = "Validate the content of the JsonArray against expected values", expected = "The JsonArray matches the expected service discovery information")
+            @Step(value = "Retrieve the Kafka Bridge service using kubeClient.", expected = "Kafka Bridge service instance is obtained."),
+            @Step(value = "Extract the discovery annotation from the service metadata.", expected = "The discovery annotation is retrieved as a string."),
+            @Step(value = "Convert the discovery annotation to a JsonArray.", expected = "JsonArray representation of the discovery annotation is created."),
+            @Step(value = "Validate the content of the JsonArray against expected values.", expected = "The JsonArray matches the expected service discovery information.")
         },
         labels = {
             @Label("service_discovery_verification"),
@@ -307,10 +307,10 @@ class HttpBridgeST extends AbstractST {
     @TestDoc(
         description = @Desc("Test that scales a KafkaBridge instance to zero replicas and verifies that it is properly handled."),
         steps = {
-            @Step(value = "Create a KafkaBridge resource and wait for it to be ready", expected = "KafkaBridge resource is created and ready with 1 replica"),
-            @Step(value = "Fetch the current number of KafkaBridge pods", expected = "There should be exactly 1 KafkaBridge pod initially"),
-            @Step(value = "Scale KafkaBridge to zero replicas", expected = "Scaling action is acknowledged"),
-            @Step(value = "Wait for KafkaBridge to scale down to zero replicas", expected = "KafkaBridge scales down to zero replicas correctly"),
+            @Step(value = "Create a KafkaBridge resource and wait for it to be ready.", expected = "KafkaBridge resource is created and ready with 1 replica."),
+            @Step(value = "Fetch the current number of KafkaBridge pods.", expected = "There should be exactly 1 KafkaBridge pod initially."),
+            @Step(value = "Scale KafkaBridge to zero replicas.", expected = "Scaling action is acknowledged."),
+            @Step(value = "Wait for KafkaBridge to scale down to zero replicas.", expected = "KafkaBridge scales down to zero replicas correctly."),
             @Step(value = "Check the number of KafkaBridge pods after scaling", expected = "No KafkaBridge pods should be running"),
             @Step(value = "Verify the status of KafkaBridge", expected = "KafkaBridge status should indicate it is ready with zero replicas")
         },

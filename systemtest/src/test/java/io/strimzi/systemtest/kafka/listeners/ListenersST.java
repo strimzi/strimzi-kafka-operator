@@ -100,7 +100,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @SuiteDoc(
     description = @Desc("This class demonstrates various tests for Kafka listeners using different authentication mechanisms."),
     beforeTestSteps = {
-        @Step(value = "Install the cluster operator with default settings", expected = "Cluster operator is installed successfully")
+        @Step(value = "Install the cluster operator with default settings.", expected = "Cluster operator is installed successfully.")
     },
     labels = {
         @Label(value = TestDocsLabels.KAFKA)
@@ -141,10 +141,10 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test sending messages over plain transport, without auth"),
         steps = {
-            @Step(value = "Create Kafka resources with wait", expected = "Kafka broker, controller, and topic are created"),
-            @Step(value = "Log transmission message", expected = "Transmission message is logged"),
-            @Step(value = "Produce and consume messages with plain clients", expected = "Messages are successfully produced and consumed"),
-            @Step(value = "Validate Kafka service discovery annotation", expected = "The discovery annotation is validated successfully")
+            @Step(value = "Create Kafka resources with wait.", expected = "Kafka broker, controller, and topic are created."),
+            @Step(value = "Log transmission message.", expected = "Transmission message is logged."),
+            @Step(value = "Produce and consume messages with plain clients.", expected = "Messages are successfully produced and consumed."),
+            @Step(value = "Validate Kafka service discovery annotation.", expected = "The discovery annotation is validated successfully.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)
@@ -180,12 +180,12 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test sending messages over tls transport using mutual tls auth."),
         steps = {
-            @Step(value = "Create Kafka node pool resources", expected = "Persistent storage node pools are created"),
-            @Step(value = "Disable plain listener and enable tls listener in Kafka resource", expected = "Kafka with plain listener disabled and tls listener enabled is created"),
-            @Step(value = "Create Kafka topic and user", expected = "Kafka topic and tls user are created"),
-            @Step(value = "Configure and deploy Kafka clients", expected = "Kafka clients producer and consumer with tls are deployed"),
-            @Step(value = "Wait for clients to successfully send and receive messages", expected = "Clients successfully send and receive messages over tls"),
-            @Step(value = "Assert that the service discovery contains expected info", expected = "Service discovery matches expected info")
+            @Step(value = "Create Kafka node pool resources.", expected = "Persistent storage node pools are created."),
+            @Step(value = "Disable plain listener and enable tls listener in Kafka resource.", expected = "Kafka with plain listener disabled and tls listener enabled is created."),
+            @Step(value = "Create Kafka topic and user.", expected = "Kafka topic and tls user are created."),
+            @Step(value = "Configure and deploy Kafka clients.", expected = "Kafka clients producer and consumer with tls are deployed."),
+            @Step(value = "Wait for clients to successfully send and receive messages.", expected = "Clients successfully send and receive messages over tls."),
+            @Step(value = "Assert that the service discovery contains expected info.", expected = "Service discovery matches expected info.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)
@@ -258,12 +258,12 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test sending messages over plain transport using scram sha auth."),
         steps = {
-            @Step(value = "Create Kafka brokers and controllers", expected = "Kafka brokers and controllers are created"),
-            @Step(value = "Enable Kafka with plain listener disabled and scram sha auth", expected = "Kafka instance with scram sha auth is enabled on a specified listener"),
-            @Step(value = "Set up topic and user", expected = "Kafka topic and Kafka user are set up with scram sha auth credentials"),
-            @Step(value = "Check logs in broker pod for authentication", expected = "Logs show that scram sha authentication succeeded"),
-            @Step(value = "Send messages over plain transport using scram sha authentication", expected = "Messages are successfully sent over plain transport using scram sha auth"),
-            @Step(value = "Verify service discovery annotation", expected = "Service discovery annotation is checked and validated")
+            @Step(value = "Create Kafka brokers and controllers.", expected = "Kafka brokers and controllers are created."),
+            @Step(value = "Enable Kafka with plain listener disabled and scram sha auth.", expected = "Kafka instance with scram sha auth is enabled on a specified listener."),
+            @Step(value = "Set up topic and user.", expected = "Kafka topic and Kafka user are set up with scram sha auth credentials."),
+            @Step(value = "Check logs in broker pod for authentication.", expected = "Logs show that scram sha authentication succeeded."),
+            @Step(value = "Send messages over plain transport using scram sha authentication.", expected = "Messages are successfully sent over plain transport using scram sha auth."),
+            @Step(value = "Verify service discovery annotation.", expected = "Service discovery annotation is checked and validated.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)
@@ -335,12 +335,12 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test sending messages over TLS transport using SCRAM-SHA authentication."),
         steps = {
-            @Step(value = "Create resources for Kafka node pools", expected = "Kafka node pools are created"),
-            @Step(value = "Create Kafka cluster with SCRAM-SHA-512 authentication", expected = "Kafka cluster is created with SCRAM-SHA authentication"),
-            @Step(value = "Create Kafka topic and user", expected = "Kafka topic and user are created"),
-            @Step(value = "Transmit messages over TLS using SCRAM-SHA", expected = "Messages are successfully transmitted"),
-            @Step(value = "Check if generated password has the expected length", expected = "Password length is as expected"),
-            @Step(value = "Verify Kafka service discovery annotation", expected = "Service discovery annotation is as expected")
+            @Step(value = "Create resources for Kafka node pools.", expected = "Kafka node pools are created."),
+            @Step(value = "Create Kafka cluster with SCRAM-SHA-512 authentication.", expected = "Kafka cluster is created with SCRAM-SHA authentication."),
+            @Step(value = "Create Kafka topic and user.", expected = "Kafka topic and user are created."),
+            @Step(value = "Transmit messages over TLS using SCRAM-SHA.", expected = "Messages are successfully transmitted."),
+            @Step(value = "Check if generated password has the expected length.", expected = "Password length is as expected."),
+            @Step(value = "Verify Kafka service discovery annotation.", expected = "Service discovery annotation is as expected.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)
@@ -417,10 +417,10 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test custom listener configured with scram SHA authentication and TLS."),
         steps = {
-            @Step(value = "Create a Kafka cluster with broker and controller node pools", expected = "Kafka cluster is created with node pools"),
-            @Step(value = "Create a Kafka cluster with custom listener using TLS and SCRAM-SHA authentication", expected = "Kafka cluster with custom listener is ready"),
-            @Step(value = "Create a Kafka topic and SCRAM-SHA user", expected = "Kafka topic and user are created"),
-            @Step(value = "Transmit messages over TLS using SCRAM-SHA authentication", expected = "Messages are transmitted successfully")
+            @Step(value = "Create a Kafka cluster with broker and controller node pools.", expected = "Kafka cluster is created with node pools."),
+            @Step(value = "Create a Kafka cluster with custom listener using TLS and SCRAM-SHA authentication.", expected = "Kafka cluster with custom listener is ready."),
+            @Step(value = "Create a Kafka topic and SCRAM-SHA user.", expected = "Kafka topic and user are created."),
+            @Step(value = "Transmit messages over TLS using SCRAM-SHA authentication.", expected = "Messages are transmitted successfully.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)
@@ -477,11 +477,11 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test checking the functionality of Kafka cluster with NodePort external listener configurations."),
         steps = {
-            @Step(value = "Create resource with Kafka broker pool and controller pool", expected = "Resources with Kafka pools are created successfully"),
-            @Step(value = "Create Kafka cluster with NodePort and TLS listeners", expected = "Kafka cluster is set up with the specified listeners"),
-            @Step(value = "Create ExternalKafkaClient and verify message production and consumption", expected = "Messages are produced and consumed successfully"),
-            @Step(value = "Check Kafka status for proper listener addresses", expected = "Listener addresses in Kafka status are validated successfully"),
-            @Step(value = "Check ClusterRoleBinding annotations and labels in Kafka cluster", expected = "Annotations and labels match the expected values")
+            @Step(value = "Create resource with Kafka broker pool and controller pool.", expected = "Resources with Kafka pools are created successfully."),
+            @Step(value = "Create Kafka cluster with NodePort and TLS listeners.", expected = "Kafka cluster is set up with the specified listeners."),
+            @Step(value = "Create ExternalKafkaClient and verify message production and consumption.", expected = "Messages are produced and consumed successfully."),
+            @Step(value = "Check Kafka status for proper listener addresses.", expected = "Listener addresses in Kafka status are validated successfully."),
+            @Step(value = "Check ClusterRoleBinding annotations and labels in Kafka cluster.", expected = "Annotations and labels match the expected values.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)
@@ -672,7 +672,7 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test the NodePort TLS functionality for Kafka brokers in a Kubernetes environment."),
         steps = {
-            @Step(value = "Create Kafka broker and controller node pools", expected = "Broker and controller node pools are created"),
+            @Step(value = "Create Kafka broker and controller node pools.", expected = "Broker and controller node pools are created"),
             @Step(value = "Deploy Kafka cluster with NodePort listener and TLS enabled", expected = "Kafka cluster is deployed with NodePort listener and TLS"),
             @Step(value = "Create a Kafka topic", expected = "Kafka topic is created"),
             @Step(value = "Create a Kafka user with TLS authentication", expected = "Kafka user with TLS authentication is created"),

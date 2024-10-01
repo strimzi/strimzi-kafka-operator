@@ -44,9 +44,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @SuiteDoc(
-    description = @Desc("NOTE: STs in this class will not properly work on `minikube` clusters (and maybe not on other clusters that use local storage), because the calculation of currently used storage is based on the local storage, which can be shared across multiple Docker containers. To properly run this suite, you should use cluster with proper storage."),
+    description = @Desc("NOTE: STs in this class will not work properly on `minikube` clusters (and maybe not on other clusters that use local storage), because the calculation of currently used storage is based on the local storage, which can be shared across multiple Docker containers. To properly run this suite, you should use cluster with proper storage."),
     beforeTestSteps = {
-        @Step(value = "Deploy default cluster operator with the required configurations", expected = "Cluster operator is deployed")
+        @Step(value = "Deploy default cluster operator with the required configurations.", expected = "Cluster operator is deployed.")
     },
     labels = {
         @Label(value = TestDocsLabels.KAFKA)
@@ -59,12 +59,12 @@ public class QuotasST extends AbstractST {
     @TestDoc(
         description = @Desc("Test to check Kafka Quotas Plugin for disk space."),
         steps = {
-            @Step(value = "Assume the cluster is not Minikube or MicroShift", expected = "Cluster is appropriate for the test"),
-            @Step(value = "Create necessary resources for Kafka and nodes", expected = "Resources are created and Kafka is set up with quotas plugin"),
-            @Step(value = "Send messages without any user; observe quota enforcement", expected = "Producer stops after reaching the minimum available bytes"),
-            @Step(value = "Check Kafka logs for quota enforcement message", expected = "Kafka logs contain the expected quota enforcement message"),
-            @Step(value = "Send messages with excluded user and observe the behavior", expected = "Messages are sent successfully without hitting the quota"),
-            @Step(value = "Clean up resources", expected = "Resources are deleted successfully")
+            @Step(value = "Assume the cluster is not Minikube or MicroShift.", expected = "Cluster is appropriate for the test."),
+            @Step(value = "Create necessary resources for Kafka and nodes.", expected = "Resources are created and Kafka is set up with quotas plugin."),
+            @Step(value = "Send messages without any user; observe quota enforcement.", expected = "Producer stops after reaching the minimum available bytes."),
+            @Step(value = "Check Kafka logs for quota enforcement message.", expected = "Kafka logs contain the expected quota enforcement message."),
+            @Step(value = "Send messages with excluded user and observe the behavior.", expected = "Messages are sent successfully without hitting the quota."),
+            @Step(value = "Clean up resources.", expected = "Resources are deleted successfully.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)
@@ -151,12 +151,12 @@ public class QuotasST extends AbstractST {
     @TestDoc(
         description = @Desc("Test verifying bandwidth limitations with Kafka quotas plugin."),
         steps = {
-            @Step(value = "Set excluded principal", expected = "Principal is set"),
-            @Step(value = "Create Kafka resources including node pools and persistent Kafka with quotas enabled", expected = "Kafka resources are created successfully with quotas setup"),
-            @Step(value = "Create Kafka topic and user with SCRAM-SHA authentication", expected = "Kafka topic and SCRAM-SHA user are created successfully"),
-            @Step(value = "Send messages with normal user", expected = "Messages are sent and duration is measured"),
-            @Step(value = "Send messages with excluded user", expected = "Messages are sent and duration is measured"),
-            @Step(value = "Assert that time taken for normal user is greater than for excluded user", expected = "Assertion is successful")
+            @Step(value = "Set excluded principal.", expected = "Principal is set."),
+            @Step(value = "Create Kafka resources including node pools and persistent Kafka with quotas enabled.", expected = "Kafka resources are created successfully with quotas setup."),
+            @Step(value = "Create Kafka topic and user with SCRAM-SHA authentication.", expected = "Kafka topic and SCRAM-SHA user are created successfully."),
+            @Step(value = "Send messages with normal user.", expected = "Messages are sent and duration is measured."),
+            @Step(value = "Send messages with excluded user.", expected = "Messages are sent and duration is measured."),
+            @Step(value = "Assert that time taken for normal user is greater than for excluded user.", expected = "Assertion is successful.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)

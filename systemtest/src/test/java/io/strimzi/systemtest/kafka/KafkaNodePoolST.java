@@ -56,10 +56,10 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
 @SuiteDoc(
-    description = @Desc("This test suite verifies various functionalities of Kafka Node Pools in a Kafka cluster."),
+    description = @Desc("This test suite verifies various functionalities of Kafka node pools in a Kafka cluster."),
     beforeTestSteps = {
-        @Step(value = "Ensure the environment is not using OLM or Helm and Kafka Node Pools are enabled", expected = "Environment is validated"),
-        @Step(value = "Install the default cluster operator", expected = "Cluster operator is installed")
+        @Step(value = "Ensure the environment is not using OLM or Helm and Kafka node pools are enabled.", expected = "Environment is validated."),
+        @Step(value = "Install the default Cluster Operator.", expected = "Cluster operator is installed.")
     },
     labels = {
         @Label(value = TestDocsLabels.KAFKA)
@@ -70,12 +70,12 @@ public class KafkaNodePoolST extends AbstractST {
 
     @ParallelNamespaceTest
     @TestDoc(
-        description = @Desc("This test case verifies the management of broker IDs in Kafka Node Pools using annotations."),
+        description = @Desc("This test case verifies the management of broker IDs in Kafka node pools using annotations."),
         steps = {
-            @Step(value = "Deploy a Kafka instance with annotations to manage Node Pools and Initial NodePool (Initial) to hold Topics and act as controller.", expected = "Kafka instance is deployed according to Kafka and KafkaNodePool custom resource, with IDs 90, 91."),
-            @Step(value = "Deploy additional 2 NodePools (A,B) with 1 and 2 replicas, and preset 'next-node-ids' annotations holding resp. values ([4],[6]).", expected = "NodePools are deployed, NodePool A contains ID 4, NodePool B contains IDs 6, 0."),
-            @Step(value = "Annotate NodePool A 'next-node-ids' and NodePool B 'remove-node-ids' respectively ([20-21],[6,55]) afterward scale to 4 and 1 replicas resp.", expected = "NodePools are scaled, NodePool A contains IDs 4, 20, 21, 1. NodePool B contains ID 0."),
-            @Step(value = "Annotate NodePool A 'remove-node-ids' and NodePool B 'next-node-ids' respectively ([20],[1]) afterward scale to 2 and 6 replicas resp.", expected = "NodePools are scaled, NodePool A contains IDs 1, 4. NodePool B contains IDs 2, 3, 5.")
+            @Step(value = "Deploy a Kafka instance with annotations to manage node pools and one initial node pool to hold topics and act as controller.", expected = "Kafka instance is deployed according to Kafka and KafkaNodePool custom resource, with IDs 90, 91."),
+            @Step(value = "Deploy additional 2 node pools (A,B) with 1 and 2 replicas, and preset 'next-node-ids' annotations holding resp. values ([4],[6]).", expected = "node pools are deployed, node pool A contains ID 4, node pool B contains IDs 6, 0."),
+            @Step(value = "Annotate node pool A 'next-node-ids' and node pool B 'remove-node-ids' respectively ([20-21],[6,55]) afterward scale to 4 and 1 replicas resp.", expected = "node pools are scaled, node pool A contains IDs 4, 20, 21, 1. node pool B contains ID 0."),
+            @Step(value = "Annotate node pool A 'remove-node-ids' and node pool B 'next-node-ids' respectively ([20],[1]) afterward scale to 2 and 6 replicas resp.", expected = "node pools are scaled, node pool A contains IDs 1, 4. node pool B contains IDs 2, 3, 5.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)
@@ -108,7 +108,7 @@ public class KafkaNodePoolST extends AbstractST {
 
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), nodePoolNameInitial), 2);
 
-        LOGGER.info("Testing deployment of NodePools with pre-configured annotation: {} is creating Brokers with correct IDs", Annotations.ANNO_STRIMZI_IO_NODE_POOLS);
+        LOGGER.info("Testing deployment of node pools with pre-configured annotation: {} is creating Brokers with correct IDs", Annotations.ANNO_STRIMZI_IO_NODE_POOLS);
 
         // Deploy NodePool A with only 1 replica and next ID 4, and NodePool B with 2 replica and next ID 6
         resourceManager.createResourceWithWait(KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), nodePoolNameA, testStorage.getClusterName(), 1)
@@ -174,11 +174,11 @@ public class KafkaNodePoolST extends AbstractST {
 
     @ParallelNamespaceTest
     @TestDoc(
-        description = @Desc("This test case verifies changing of roles in Kafka Node Pools."),
+        description = @Desc("This test case verifies changing of roles in Kafka node pools."),
         steps = {
-            @Step(value = "Deploy a Kafka instance with annotations to manage Node Pools and Initial 2 NodePools, both with mixed role, first one stable, second one which will be modified.", expected = "Kafka instance with initial Node Pools is deployed."),
+            @Step(value = "Deploy a Kafka instance with annotations to manage node pools and 2 initial node pools, both with mixed role, first one stable, second one which will be modified.", expected = "Kafka instance with initial node pools is deployed."),
             @Step(value = "Create KafkaTopic with replica number requiring all Kafka Brokers to be present.", expected = "KafkaTopic is created."),
-            @Step(value = "Annotate one of Node Pools to perform manual Rolling Update.", expected = "Rolling Update started."),
+            @Step(value = "Annotate one of node pools to perform manual Rolling Update.", expected = "Rolling Update started."),
             @Step(value = "Change role of Kafka Node Pool from mixed to controller only role.", expected = "Role Change is prevented due to existing KafkaTopic replicas and ongoing Rolling Update."),
             @Step(value = "Original Rolling Update finishes successfully.", expected = "Rolling Update is completed."),
             @Step(value = "Delete previously created KafkaTopic.", expected = "KafkaTopic is deleted and Node Pool role change is initiated."),
@@ -255,13 +255,13 @@ public class KafkaNodePoolST extends AbstractST {
 
     @ParallelNamespaceTest
     @TestDoc(
-        description = @Desc("This test case verifies the possibility of adding and removing Kafka Node Pools into an existing Kafka cluster."),
+        description = @Desc("This test case verifies the possibility of adding and removing Kafka node pools into an existing Kafka cluster."),
         steps = {
-            @Step(value = "Deploy a Kafka instance with annotations to manage Node Pools and Initial 2 NodePools.", expected = "Kafka instance is deployed according to Kafka and KafkaNodePool custom resource."),
+            @Step(value = "Deploy a Kafka instance with annotations to manage node pools and 2 initial node pools.", expected = "Kafka instance is deployed according to Kafka and KafkaNodePool custom resource."),
             @Step(value = "Create KafkaTopic with replica number requiring all Kafka Brokers to be present, Deploy clients and transmit messages and remove KafkaTopic.", expected = "Transition of messages is finished successfully, KafkaTopic created and cleaned as expected."),
             @Step(value = "Add extra KafkaNodePool with broker role to the Kafka.", expected = "KafkaNodePool is deployed and ready."),
             @Step(value = "Create KafkaTopic with replica number requiring all Kafka Brokers to be present, Deploy clients and transmit messages and remove KafkaTopic.", expected = "Transition of messages is finished successfully, KafkaTopic created and cleaned as expected."),
-            @Step(value = "Remove one of kafkaNodePool with broker role.", expected = "KafkaNodePool is removed, Pods are deleted, but other pods in Kafka are stable and ready."),
+            @Step(value = "Remove one kafkaNodePool with broker role.", expected = "KafkaNodePool is removed, Pods are deleted, but other pods in Kafka are stable and ready."),
             @Step(value = "Create KafkaTopic with replica number requiring all the remaining Kafka Brokers to be present, Deploy clients and transmit messages and remove KafkaTopic.", expected = "Transition of messages is finished successfully, KafkaTopic created and cleaned as expected.")
         },
         labels = {
@@ -317,14 +317,14 @@ public class KafkaNodePoolST extends AbstractST {
 
     @ParallelNamespaceTest
     @TestDoc(
-        description = @Desc("This test case verifies transfer of Kafka Cluster from and to management by KafkaNodePool, by creating corresponding Kafka and KafkaNodePool custom resources and manipulating according Kafka annotation."),
+        description = @Desc("This test verifies Kafka Cluster migration to and from node pools, using the necessary Kafka and KafkaNodePool resources and annotations."),
         steps = {
-            @Step(value = "Deploy Kafka with annotated to enable management by KafkaNodePool, and KafkaNodePool targeting given Kafka Cluster.", expected = "Kafka is deployed, KafkaNodePool custom resource is targeting Kafka Cluster as expected."),
+            @Step(value = "Deploy a Kafka cluster with the annotation to enable node pool management, and configure a KafkaNodePool resource to target the Kafka cluster.", expected = "Kafka is deployed, and the KafkaNodePool resource targets the cluster as expected."),
             @Step(value = "Modify KafkaNodePool by increasing number of Kafka Replicas.", expected = "Number of Kafka Pods is increased to match specification from KafkaNodePool."),
             @Step(value = "Produce and consume messages in given Kafka Cluster.", expected = "Clients can produce and consume messages."),
-            @Step(value = "Modify Kafka custom resource annotation strimzi.io/node-pool to disable management by KafkaNodePool.", expected = "StrimziPodSet is modified, replacing former one, Pods are replaced and specification from KafkaNodePool (i.e., changed replica count) are ignored."),
+            @Step(value = "Disable KafkaNodePool management in the Kafka custom resource using the node pool annotation.", expected = " StrimziPodSet is modified, pods are replaced, and any KafkaNodePool specifications (i.e., changed replica count)  are ignored."),
             @Step(value = "Produce and consume messages in given Kafka Cluster.", expected = "Clients can produce and consume messages."),
-            @Step(value = "Modify Kafka custom resource annotation strimzi.io/node-pool to enable management by KafkaNodePool.", expected = "New StrimziPodSet is created, replacing former one, Pods are replaced and specification from KafkaNodePool (i.e., changed replica count) has priority over Kafka specification."),
+            @Step(value = "Enable node pool management in the Kafka custom resource using the node pool annotation.", expected = "New StrimziPodSet is created, pods are replaced , and any KafkaNodePool specifications  (i.e., changed replica count) take priority over Kafka specifications."),
             @Step(value = "Produce and consume messages in given Kafka Cluster.", expected = "Clients can produce and consume messages.")
         },
         labels = {
@@ -380,7 +380,7 @@ public class KafkaNodePoolST extends AbstractST {
         LOGGER.info("Disable KafkaNodePool in Kafka Cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "disabled");
-            // because Kafka CR with NodePools is missing .spec.kafka.replicas and .spec.kafka.storage, we need to
+            // because Kafka CR with node pools is missing .spec.kafka.replicas and .spec.kafka.storage, we need to
             // set those here
             kafka.getSpec().getKafka().setReplicas(originalKafkaReplicaCount);
             kafka.getSpec().getKafka().setStorage(new PersistentClaimStorageBuilder()
