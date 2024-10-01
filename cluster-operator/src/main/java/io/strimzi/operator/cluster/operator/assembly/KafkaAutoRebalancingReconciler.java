@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceState;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatus;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatusBrokers;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatusBrokersBuilder;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatusBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceBuilder;
@@ -69,7 +70,14 @@ public class KafkaAutoRebalancingReconciler {
             ResourceOperatorSupplier supplier,
             Set<Integer> scalingDownBlockedNodes) {
         this.reconciliation = reconciliation;
-        this.kafkaAutoRebalanceStatus = kafkaCr.getStatus() != null ? kafkaCr.getStatus().getAutoRebalance() : null;
+        // load current autorebalance status if it exists (before starting the reconciliation) or initialize it to Idle
+        this.kafkaAutoRebalanceStatus =
+                (kafkaCr.getStatus() != null && kafkaCr.getStatus().getAutoRebalance() != null) ?
+                        kafkaCr.getStatus().getAutoRebalance() :
+                        new KafkaAutoRebalanceStatusBuilder()
+                                .withState(KafkaAutoRebalanceState.Idle)
+                                .withLastTransitionTime(StatusUtils.iso8601Now())
+                                .build();
         this.kafkaAutoRebalanceConfigurations = kafkaCr.getSpec().getCruiseControl().getAutoRebalance();
         this.kafkaRebalanceOperator = supplier.kafkaRebalanceOperator;
         this.scalingDownBlockedNodes = scalingDownBlockedNodes;
@@ -369,7 +377,7 @@ public class KafkaAutoRebalancingReconciler {
         // LOADING from the kafkaAutoRebalanceStatus filled by the KafkaReconciler
 
         Set<Integer> scalingUpAddedNodes = new HashSet<>();
-        if (kafkaAutoRebalanceStatus.getModes() != null) {
+        if (kafkaAutoRebalanceStatus != null && kafkaAutoRebalanceStatus.getModes() != null) {
             kafkaAutoRebalanceStatus.getModes().stream().filter(m -> m.getMode().equals(KafkaRebalanceMode.ADD_BROKERS)).findFirst()
                     .ifPresent(m -> scalingUpAddedNodes.addAll(m.getBrokers()));
         }

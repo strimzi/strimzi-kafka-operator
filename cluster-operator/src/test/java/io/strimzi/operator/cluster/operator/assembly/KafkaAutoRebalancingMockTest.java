@@ -1119,6 +1119,39 @@ public class KafkaAutoRebalancingMockTest {
                 })));
     }
 
+    @Test
+    public void testNoAutoRebalancingIdleOnClusterCreationWithMoreNodePools(VertxTestContext context) {
+        KafkaRebalance kafkaRebalanceTemplate = buildKafkaRebalanceTemplate("my-add-remove-brokers-rebalancing-template", List.of("CpuCapacityGoal"));
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kafkaRebalanceTemplate).create();
+
+        // preparing a new brokers pool to be used on creation
+        KafkaNodePool newBrokers = new KafkaNodePoolBuilder()
+                .withNewMetadata()
+                    .withName("new-brokers")
+                    .withNamespace(namespace)
+                    .withLabels(Map.of(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME))
+                    .withAnnotations(Map.of(ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[20-29]"))
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(2)
+                    .withNewEphemeralStorage()
+                    .endEphemeralStorage()
+                    .withRoles(ProcessRoles.BROKER)
+                .endSpec()
+                .build();
+        Crds.kafkaNodePoolOperation(client).inNamespace(namespace).resource(newBrokers).create();
+
+        Checkpoint reconciliation = context.checkpoint();
+        // 1st reconcile, Kafka cluster creation
+        operator.reconcile(new Reconciliation("initial-reconciliation", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    // just checking that on Kafka cluster creation with no scaling, the auto-rebalancing is just in Idle state
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
+                    assertThat(k.getStatus().getAutoRebalance().getState(), is(KafkaAutoRebalanceState.Idle));
+                    reconciliation.flag();
+                })));
+    }
+
     private void patchKafkaRebalanceState(KafkaRebalance kafkaRebalance, KafkaRebalanceState state) {
         KafkaRebalance kafkaRebalancePatch = new KafkaRebalanceBuilder(kafkaRebalance)
                 .withNewStatus()
