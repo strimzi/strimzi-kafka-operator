@@ -1,0 +1,87 @@
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='proc-resetting-connector-offsets-{context}']
+= Resetting connector offsets
+
+[role="_abstract"]
+To reset connector offsets using `KafkaConnector` resources, annotate the resource to clear the offsets.
+
+In this procedure, we reset the offset position for a source connector named `my-source-connector`.
+
+NOTE: You can also alter connector offsets using the `DELETE /connectors/{connector}/offsets` request through the Kafka Connect Rest API.
+
+.Prerequisites
+
+* The Cluster Operator is running.
+
+.Procedure
+
+. Edit the `KafkaConnector` resource to stop the connector.
++
+.Example configuration to stop a connector
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaConnectorApiVersion}
+kind: KafkaConnector
+metadata:
+  name: my-source-connector
+  labels:
+    strimzi.io/cluster: my-connect-cluster
+spec:
+  # ...
+  state: stopped # <1>
+  # ... 
+----
+<1> Changes the state of the connector to `stopped`. The default state for the connector when this property is not set is `running`.
+
+. Run the command to reset the offset position by annotating the `KafkaConnector` resource:
++
+[source,shell]
+----
+kubectl annotate kafkaconnector my-source-connector strimzi.io/connector-offsets=reset -n <namespace>
+----
++
+The annotation remains until either the reset operation succeeds, or it is manually removed from the resource.
+
+. Inspect the contents of the config map to verify the reset of the offset position:
++
+[source,shell]
+----
+kubectl describe configmap my-connector-offsets -n <namespace>
+----
++
+Strimzi puts the offsets into the `offsets.json` property. 
+It doesn't overwrite any other properties when updating an existing config map.
+After resetting, the `offsets.json` property is empty. 
++
+.Example source connector offset list
+[source,yaml,subs="+attributes"]
+----
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  # ...
+data: 
+  offsets.json: |-
+    {
+      "offsets" : []
+    } 
+----
+
+. Restart the connector by changing the state to `running`.
++
+.Example configuration to start a connector
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaConnectorApiVersion}
+kind: KafkaConnector
+metadata:
+  name: my-source-connector
+  labels:
+    strimzi.io/cluster: my-connect-cluster
+spec:
+  state: running
+  # ... 
+----

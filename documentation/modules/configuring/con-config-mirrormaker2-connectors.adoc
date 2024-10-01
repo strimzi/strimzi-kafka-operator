@@ -243,3 +243,34 @@ Specifically, ensure that the following properties have the same value across al
 
 For example, the value for `replication.policy.class` must be the same for the source, checkpoint, and heartbeat connectors.
 Mismatched or missing settings cause issues with data replication or offset syncing, so it's essential to keep all relevant connectors configured with the same settings.
+
+== Listing the offsets of MirrorMaker 2 connectors
+
+To list the offset positions of the internal MirrorMaker 2 connectors, use the same configuration that's used to manage Kafka Connect connectors.
+
+In this example, the `sourceConnector` configuration is updated to return the connector offset position.
+The offset information is written to a specified config map.
+
+.Example configuration for connector producers and consumers
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaMirrorMaker2ApiVersion}
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mirror-maker2
+spec:
+  version: {DefaultKafkaVersion}
+  # ...
+  mirrors:
+  - sourceCluster: "my-cluster-source"
+    targetCluster: "my-cluster-target"
+    sourceConnector:
+      listOffsets:
+        toConfigMap:
+          name: my-connector-offsets
+        # ...    
+----
+
+For more information on setting up the configuration, see xref:proc-listing-connector-offsets-{context}[].
+
+NOTE: It is possible to use configuration to xref:proc-altering-connector-offsets-{context}[alter] or xref:proc-resetting-connector-offsets-{context}[reset] connector offsets, though this is rarely necessary.
