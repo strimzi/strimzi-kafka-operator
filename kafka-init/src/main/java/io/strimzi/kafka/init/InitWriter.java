@@ -59,7 +59,7 @@ public class InitWriter {
             return false;
         }
 
-        return write(FILE_RACK_ID, String.format("broker.rack=%s", rackId));
+        return write(FILE_RACK_ID, rackId);
     }
 
     /**

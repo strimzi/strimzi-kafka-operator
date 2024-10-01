@@ -156,7 +156,7 @@ public class KafkaBrokerConfigurationBuilder {
     public KafkaBrokerConfigurationBuilder withRackId(Rack rack)   {
         if (node.broker() && rack != null) {
             printSectionHeader("Rack ID");
-            writer.println("broker.rack=${strimzifile:/opt/kafka/init/rack.id:broker.rack}");
+            writer.println("broker.rack=${strimzidir:/opt/kafka/init:rack.id}");
             writer.println();
         }
 
@@ -821,8 +821,8 @@ public class KafkaBrokerConfigurationBuilder {
 
         String strimziConfigProviders;
         if (node.broker()) {
-            // File provider is used only on broker nodes
-            strimziConfigProviders = "strimzienv,strimzifile";
+            // File and Directory providers are used only on broker nodes
+            strimziConfigProviders = "strimzienv,strimzifile,strimzidir";
         } else {
             strimziConfigProviders = "strimzienv";
         }
@@ -843,9 +843,11 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println("config.providers.strimzienv.param.allowlist.pattern=.*");
 
         if (node.broker()) {
-            // File provider is used only on broker nodes
+            // File and Directory providers are used only on broker nodes
             writer.println("config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider");
             writer.println("config.providers.strimzifile.param.allowed.paths=/opt/kafka");
+            writer.println("config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider");
+            writer.println("config.providers.strimzidir.param.allowed.paths=/opt/kafka");
         }
 
         writer.println();

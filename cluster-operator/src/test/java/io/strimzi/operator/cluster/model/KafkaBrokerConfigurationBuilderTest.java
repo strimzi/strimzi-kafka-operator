@@ -234,7 +234,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         assertThat(configuration, isEquivalent("broker.id=2",
                 "node.id=2",
-                "broker.rack=${strimzifile:/opt/kafka/init/rack.id:broker.rack}"));
+                "broker.rack=${strimzidir:/opt/kafka/init:rack.id}"));
     }
 
     @ParallelTest
@@ -244,7 +244,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
-                "broker.rack=${strimzifile:/opt/kafka/init/rack.id:broker.rack}"));
+                "broker.rack=${strimzidir:/opt/kafka/init:rack.id}"));
     }
 
     @ParallelTest
@@ -254,7 +254,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=1",
-                "broker.rack=${strimzifile:/opt/kafka/init/rack.id:broker.rack}"));
+                "broker.rack=${strimzidir:/opt/kafka/init:rack.id}"));
     }
 
     @ParallelTest
@@ -530,11 +530,13 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         assertThat(configuration, isEquivalent("broker.id=2",
                 "node.id=2",
-                "config.providers=strimzienv,strimzifile",
+                "config.providers=strimzienv,strimzifile,strimzidir",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
-                "config.providers.strimzifile.param.allowed.paths=/opt/kafka"));
+                "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
+                "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
+                "config.providers.strimzidir.param.allowed.paths=/opt/kafka"));
     }
 
     @ParallelTest
@@ -545,11 +547,13 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         assertThat(configuration, isEquivalent("broker.id=2",
                 "node.id=2",
-                "config.providers=strimzienv,strimzifile",
+                "config.providers=strimzienv,strimzifile,strimzidir",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
+                "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
+                "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
                 "metric.reporters=com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter"));
     }
 
@@ -564,11 +568,13 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         assertThat(configuration, isEquivalent("broker.id=2",
                 "node.id=2",
-                "config.providers=strimzienv,strimzifile",
+                "config.providers=strimzienv,strimzifile,strimzidir",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
-                "config.providers.strimzifile.param.allowed.paths=/opt/kafka"));
+                "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
+                "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
+                "config.providers.strimzidir.param.allowed.paths=/opt/kafka"));
     }
 
     @ParallelTest
@@ -587,11 +593,13 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         assertThat(configuration, isEquivalent("broker.id=2",
                 "node.id=2",
-                "config.providers=strimzienv,strimzifile",
+                "config.providers=strimzienv,strimzifile,strimzidir",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
+                "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
+                "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
                 "auto.create.topics.enable=false",
                 "offsets.topic.replication.factor=3",
                 "transaction.state.log.replication.factor=3",
@@ -612,11 +620,13 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
-                "config.providers=env,strimzienv,strimzifile",
+                "config.providers=env,strimzienv,strimzifile,strimzidir",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
+                "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
+                "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
                 "config.providers.env.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider"));
 
         // Controller
@@ -647,11 +657,13 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         assertThat(configuration, isEquivalent("broker.id=2",
                 "node.id=2",
-                "config.providers=strimzienv,strimzifile",
+                "config.providers=strimzienv,strimzifile,strimzidir",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
+                "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
+                "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
                 "auto.create.topics.enable=false",
                 "offsets.topic.replication.factor=3",
                 "transaction.state.log.replication.factor=3",
@@ -672,11 +684,13 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         assertThat(configuration, isEquivalent("broker.id=2",
                 "node.id=2",
-                "config.providers=strimzienv,strimzifile",
+                "config.providers=strimzienv,strimzifile,strimzidir",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
+                "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
+                "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
                 "metric.reporters=my.domain.CustomMetricReporter,com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter"));
     }
 

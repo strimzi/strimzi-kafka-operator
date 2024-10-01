@@ -66,7 +66,7 @@ public class InitWriterTest {
 
         InitWriter writer = new InitWriter(client, config);
         assertThat(writer.writeRack(), is(true));
-        assertThat(readFile(rackFolder + "/rack.id"), is("broker.rack=eu-zone1"));
+        assertThat(readFile(rackFolder + "/rack.id"), is("eu-zone1"));
     }
 
     @Test
