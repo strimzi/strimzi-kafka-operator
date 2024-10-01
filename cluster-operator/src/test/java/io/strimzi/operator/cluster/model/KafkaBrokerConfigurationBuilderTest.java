@@ -534,7 +534,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
-                "config.providers.strimzifile.param.allowed.paths=/opt/kafka/init"));
+                "config.providers.strimzifile.param.allowed.paths=/opt/kafka"));
     }
 
     @ParallelTest
@@ -549,7 +549,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
-                "config.providers.strimzifile.param.allowed.paths=/opt/kafka/init",
+                "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "metric.reporters=com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter"));
     }
 
@@ -568,7 +568,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
-                "config.providers.strimzifile.param.allowed.paths=/opt/kafka/init"));
+                "config.providers.strimzifile.param.allowed.paths=/opt/kafka"));
     }
 
     @ParallelTest
@@ -591,7 +591,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
-                "config.providers.strimzifile.param.allowed.paths=/opt/kafka/init",
+                "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "auto.create.topics.enable=false",
                 "offsets.topic.replication.factor=3",
                 "transaction.state.log.replication.factor=3",
@@ -616,7 +616,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
-                "config.providers.strimzifile.param.allowed.paths=/opt/kafka/init",
+                "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.env.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider"));
 
         // Controller
@@ -651,7 +651,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
-                "config.providers.strimzifile.param.allowed.paths=/opt/kafka/init",
+                "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "auto.create.topics.enable=false",
                 "offsets.topic.replication.factor=3",
                 "transaction.state.log.replication.factor=3",
@@ -676,7 +676,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
-                "config.providers.strimzifile.param.allowed.paths=/opt/kafka/init",
+                "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "metric.reporters=my.domain.CustomMetricReporter,com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter"));
     }
 

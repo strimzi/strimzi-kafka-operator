@@ -845,7 +845,7 @@ public class KafkaBrokerConfigurationBuilder {
         if (node.broker()) {
             // File provider is used only on broker nodes
             writer.println("config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider");
-            writer.println("config.providers.strimzifile.param.allowed.paths=/opt/kafka/init");
+            writer.println("config.providers.strimzifile.param.allowed.paths=/opt/kafka");
         }
 
         writer.println();
