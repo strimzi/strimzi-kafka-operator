@@ -291,7 +291,12 @@ public class KafkaReconciler {
     }
 
     private Future<Void> updateKafkaAutoRebalanceStatus(KafkaStatus kafkaStatus) {
-        KafkaRebalanceUtils.updateKafkaAutoRebalanceStatus(kafkaStatus, kafkaAutoRebalanceStatus, kafka.addedBrokerNodes());
+        // gather all the desired brokers' ids across the entire cluster accounting all node pools
+        Set<Integer> desired = kafka.nodes().stream().filter(NodeRef::broker).map(NodeRef::nodeId).collect(Collectors.toSet());
+        // if added brokers list contains all desired, it's a newly created cluster so there are no actual scaled up brokers.
+        // when added brokers list has fewer nodes than desired, it actually containes the new ones for scaling up
+        Set<Integer> scaledUpBrokerNodes = kafka.addedBrokerNodes().containsAll(desired) ? Set.of() : kafka.addedBrokerNodes();
+        KafkaRebalanceUtils.updateKafkaAutoRebalanceStatus(kafkaStatus, kafkaAutoRebalanceStatus, scaledUpBrokerNodes);
         return Future.succeededFuture();
     }
 

@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceState;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatus;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatusBrokers;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatusBrokersBuilder;
@@ -13,6 +14,7 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatusBu
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
+import io.strimzi.operator.common.model.StatusUtils;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -91,18 +93,19 @@ public class KafkaRebalanceUtils {
 
         Set<Integer> addedBrokers = new HashSet<>(kafkaAddedBrokerNodes);
         if (kafkaAutoRebalanceStatus == null) {
+            KafkaAutoRebalanceStatusBuilder kafkaAutoRebalanceStatusBuilder = new KafkaAutoRebalanceStatusBuilder()
+                    .withLastTransitionTime(StatusUtils.iso8601Now())
+                    .withState(KafkaAutoRebalanceState.Idle);
             // no already stored added nodes, adding only the new ones from current reconciliation
             if (!addedBrokers.isEmpty()) {
-                kafkaStatus.setAutoRebalance(
-                        new KafkaAutoRebalanceStatusBuilder()
-                                .withModes(
-                                        new KafkaAutoRebalanceStatusBrokersBuilder()
-                                                .withMode(KafkaRebalanceMode.ADD_BROKERS)
-                                                .withBrokers(kafkaAddedBrokerNodes.stream().toList())
-                                                .build()
-                                )
-                                .build());
+                kafkaAutoRebalanceStatusBuilder.withModes(
+                        new KafkaAutoRebalanceStatusBrokersBuilder()
+                                .withMode(KafkaRebalanceMode.ADD_BROKERS)
+                                .withBrokers(kafkaAddedBrokerNodes.stream().toList())
+                                .build()
+                );
             }
+            kafkaStatus.setAutoRebalance(kafkaAutoRebalanceStatusBuilder.build());
         } else {
             KafkaAutoRebalanceStatusBuilder builder = new KafkaAutoRebalanceStatusBuilder(kafkaAutoRebalanceStatus);
             if (kafkaAutoRebalanceStatus.getModes() == null) {
