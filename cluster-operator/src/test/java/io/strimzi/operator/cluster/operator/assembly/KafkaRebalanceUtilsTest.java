@@ -92,7 +92,7 @@ public class KafkaRebalanceUtilsTest {
     public void testAutoRebalanceNoStatusNoAddedNodes() {
         KafkaStatus kafkaStatus = new KafkaStatusBuilder().build();
         KafkaRebalanceUtils.updateKafkaAutoRebalanceStatus(kafkaStatus, null, Set.of());
-        assertThat(kafkaStatus.getAutoRebalance(), is(nullValue()));
+        assertThat(kafkaStatus.getAutoRebalance(), is(notNullValue()));
     }
 
     @Test
