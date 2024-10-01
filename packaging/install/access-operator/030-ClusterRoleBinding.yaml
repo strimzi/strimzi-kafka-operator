@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: strimzi-access-operator
+  labels:
+    app: strimzi-access-operator
+subjects:
+  - kind: ServiceAccount
+    name: strimzi-access-operator
+    namespace: strimzi-access-operator
+roleRef:
+  kind: ClusterRole
+  name: strimzi-access-operator
+  apiGroup: rbac.authorization.k8s.io
