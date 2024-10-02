@@ -743,6 +743,7 @@ public class KafkaRebalanceAssemblyOperator
             validateAnnotation(reconciliation, conditions, KafkaRebalanceState.PendingProposal, rebalanceAnnotation(kafkaRebalance), kafkaRebalance);
             String sessionId = kafkaRebalance.getStatus().getSessionId();
             if (sessionId == null) {
+                // sessionId can be null if the response to the previously issued request for a proposal was NotEnoughDataForProposal.
                 requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder).onSuccess(p::complete);
             } else {
                 apiClient.getUserTaskStatus(reconciliation, host, cruiseControlPort, sessionId)
