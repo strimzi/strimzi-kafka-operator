@@ -118,10 +118,12 @@ class RackAwarenessST extends AbstractST {
         String podNodeName = pod.getSpec().getNodeName();
         String hostname = podNodeName.contains(".") ? podNodeName.substring(0, podNodeName.indexOf(".")) : podNodeName;
 
+        // TODO: This should be rewritten to not rely on internal implementation details but use Kafka Admin API to check the rack instead
+        // Tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/10663
         String rackIdOut = cmdKubeClient(testStorage.getNamespaceName()).execInPod(podName, "/bin/bash", "-c", "cat /opt/kafka/init/rack.id").out().trim();
         String brokerRackOut = cmdKubeClient(testStorage.getNamespaceName()).execInPod(podName, "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack").out().trim();
         assertThat(rackIdOut.trim().contains(hostname), is(true));
-        assertThat(brokerRackOut.contains("broker.rack=" + hostname), is(true));
+        assertThat(brokerRackOut.contains("broker.rack=${strimzidir:/opt/kafka/init:rack.id}"), is(true));
 
         LOGGER.info("Producing and Consuming data in the Kafka cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
         KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
