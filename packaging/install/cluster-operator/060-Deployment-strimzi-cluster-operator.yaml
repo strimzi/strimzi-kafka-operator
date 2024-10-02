@@ -27,7 +27,7 @@ spec:
             name: strimzi-cluster-operator
       containers:
         - name: strimzi-cluster-operator
-          image: quay.io/strimzi/operator:latest
+          image: quay.io/ppatierno/operator:auto-rebalancing
           ports:
             - containerPort: 8080
               name: http
@@ -72,11 +72,11 @@ spec:
                 3.7.1=quay.io/strimzi/kafka:latest-kafka-3.7.1
                 3.8.0=quay.io/strimzi/kafka:latest-kafka-3.8.0
             - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
-              value: quay.io/strimzi/operator:latest
+              value: quay.io/ppatierno/operator:auto-rebalancing
             - name: STRIMZI_DEFAULT_USER_OPERATOR_IMAGE
-              value: quay.io/strimzi/operator:latest
+              value: quay.io/ppatierno/operator:auto-rebalancing
             - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
-              value: quay.io/strimzi/operator:latest
+              value: quay.io/ppatierno/operator:auto-rebalancing
             - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE
               value: quay.io/strimzi/kafka-bridge:0.30.0
             - name: STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE

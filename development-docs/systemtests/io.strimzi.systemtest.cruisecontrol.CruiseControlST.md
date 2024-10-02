@@ -33,6 +33,30 @@
 * [cruise-control](labels/cruise-control.md)
 
 
+## testAutoKafkaRebalanceScaleUpScaleDown
+
+**Description:** Test the Kafka Cruise Control auto-rebalance mechanism during scaling up and down of brokers.
+
+**Steps:**
+
+| Step | Action | Result |
+| - | - | - |
+| 1. | Create broker and controller KafkaNodePools. | Both KafkaNodePools are successfully created. |
+| 2. | Create KafkaRebalance templates for scale-up and scale-down operations. | KafkaRebalance templates are created and annotated as configuration templates. |
+| 3. | Deploy Kafka cluster with Cruise Control using the defined templates for auto-rebalance. | Kafka cluster with Cruise Control is deployed, configured with the specified auto-rebalance templates. |
+| 4. | Ensure the Kafka auto-rebalance status is Idle. | Kafka auto-rebalance status is confirmed to be Idle. |
+| 5. | Scale Kafka up to a higher number of brokers. | Kafka brokers are scaled up, and Cruise Control initiates rebalancing in ADD_BROKERS mode. |
+| 6. | Verify that Kafka auto-rebalance status transitions to RebalanceOnScaleUp and then back to Idle. | Auto-rebalance status moves to RebalanceOnScaleUp during scaling and returns to Idle after rebalancing completes. |
+| 7. | Check that topic replicas are moved to the new brokers. | Topic replicas are distributed onto the newly added brokers. |
+| 8. | Scale Kafka down to the original number of brokers. | Kafka brokers are scaled down, and Cruise Control initiates rebalancing in REMOVE_BROKERS mode. |
+| 9. | Verify that Kafka auto-rebalance status transitions to RebalanceOnScaleDown and then back to Idle. | Auto-rebalance status moves to RebalanceOnScaleDown during scaling down and returns to Idle after rebalancing completes. |
+| 10. | Confirm that the cluster is stable after scaling operations. | Cluster returns to a stable state with initial number of brokers and Cruise Control completed the rebalancing. |
+
+**Labels:**
+
+* [cruise-control](labels/cruise-control.md)
+
+
 ## testCruiseControlChangesFromRebalancingtoProposalReadyWhenSpecUpdated
 
 **Description:** Test that ensures Cruise Control transitions from Rebalancing to ProposalReady state when the KafkaRebalance spec is updated.

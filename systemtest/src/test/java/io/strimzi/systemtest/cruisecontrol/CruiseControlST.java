@@ -643,6 +643,24 @@ public class CruiseControlST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Test the Kafka Cruise Control auto-rebalance mechanism during scaling up and down of brokers."),
+        steps = {
+            @Step(value = "Create broker and controller KafkaNodePools.", expected = "Both KafkaNodePools are successfully created."),
+            @Step(value = "Create KafkaRebalance templates for scale-up and scale-down operations.", expected = "KafkaRebalance templates are created and annotated as configuration templates."),
+            @Step(value = "Deploy Kafka cluster with Cruise Control using the defined templates for auto-rebalance.", expected = "Kafka cluster with Cruise Control is deployed, configured with the specified auto-rebalance templates."),
+            @Step(value = "Ensure the Kafka auto-rebalance status is Idle.", expected = "Kafka auto-rebalance status is confirmed to be Idle."),
+            @Step(value = "Scale Kafka up to a higher number of brokers.", expected = "Kafka brokers are scaled up, and Cruise Control initiates rebalancing in ADD_BROKERS mode."),
+            @Step(value = "Verify that Kafka auto-rebalance status transitions to RebalanceOnScaleUp and then back to Idle.", expected = "Auto-rebalance status moves to RebalanceOnScaleUp during scaling and returns to Idle after rebalancing completes."),
+            @Step(value = "Check that topic replicas are moved to the new brokers.", expected = "Topic replicas are distributed onto the newly added brokers."),
+            @Step(value = "Scale Kafka down to the original number of brokers.", expected = "Kafka brokers are scaled down, and Cruise Control initiates rebalancing in REMOVE_BROKERS mode."),
+            @Step(value = "Verify that Kafka auto-rebalance status transitions to RebalanceOnScaleDown and then back to Idle.", expected = "Auto-rebalance status moves to RebalanceOnScaleDown during scaling down and returns to Idle after rebalancing completes."),
+            @Step(value = "Confirm that the cluster is stable after scaling operations.", expected = "Cluster returns to a stable state with initial number of brokers and Cruise Control completed the rebalancing.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.CRUISE_CONTROL),
+        }
+    )
     void testAutoKafkaRebalanceScaleUpScaleDown() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String scaleUpKafkaRebalanceTemplateName = testStorage.getClusterName() + "-scale-up";
@@ -663,37 +681,37 @@ public class CruiseControlST extends AbstractST {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_REBALANCE, "template")
                     .withName(scaleUpKafkaRebalanceTemplateName)
                 .endMetadata()
-                .editSpec()
-                    .withGoals("DiskCapacityGoal", "CpuCapacityGoal")
-                .endSpec()
                 .build(),
             KafkaRebalanceTemplates.kafkaRebalance(testStorage.getNamespaceName(), testStorage.getClusterName())
                 .editMetadata()
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_REBALANCE, "template")
                     .withName(scaleDownKafkaRebalanceTemplateName)
                 .endMetadata()
-                .editSpec()
-                    .withGoals("DiskCapacityGoal", "CpuCapacityGoal")
-                .endSpec()
                 .build()
         );
 
         // define CC with 2 KafkaRebalance templates
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(testStorage.getNamespaceName(), testStorage.getClusterName(), 3, 3)
-            .editSpec()
-                .editCruiseControl()
-                    .withAutoRebalance(
-                        new KafkaAutoRebalanceConfigurationBuilder()
-                            .withMode(KafkaRebalanceMode.ADD_BROKERS)
-                            .withNewTemplate(scaleUpKafkaRebalanceTemplateName)
-                            .build(),
-                        new KafkaAutoRebalanceConfigurationBuilder()
-                            .withMode(KafkaRebalanceMode.REMOVE_BROKERS)
-                            .withNewTemplate(scaleDownKafkaRebalanceTemplateName)
-                            .build())
-                .endCruiseControl()
-            .endSpec()
-            .build());
+        resourceManager.createResourceWithWait(
+            KafkaTemplates.kafkaWithCruiseControlTunedForFastModelGeneration(testStorage.getNamespaceName(), testStorage.getClusterName(), 3, 3)
+                .editSpec()
+                    .editCruiseControl()
+                        .withAutoRebalance(
+                            new KafkaAutoRebalanceConfigurationBuilder()
+                                .withMode(KafkaRebalanceMode.ADD_BROKERS)
+                                .withNewTemplate(scaleUpKafkaRebalanceTemplateName)
+                                .build(),
+                            new KafkaAutoRebalanceConfigurationBuilder()
+                                .withMode(KafkaRebalanceMode.REMOVE_BROKERS)
+                                .withNewTemplate(scaleDownKafkaRebalanceTemplateName)
+                                .build())
+                    .endCruiseControl()
+                .endSpec()
+            .build(),
+            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName(), 12, 3).build(),
+            ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
+        );
+
+        final String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
         // check that Kafka has `Idle` in auto-rebalance status
         KafkaUtils.waitUntilKafkaHasStateAutoRebalance(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaAutoRebalanceState.Idle);
@@ -709,9 +727,6 @@ public class CruiseControlST extends AbstractST {
             KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setReplicas(scaleTo));
         }
 
-        // CC Rolled
-        ccPod = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName()), 1, ccPod);
-
         // 3 brokers + 3 controllers/zk
         final int kafkaClusterPodIndex = initialReplicas + initialReplicas;
 
@@ -726,8 +741,15 @@ public class CruiseControlST extends AbstractST {
         // and then afterward we again move to Idle state after all is done
         KafkaUtils.waitUntilKafkaHasStateAutoRebalance(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaAutoRebalanceState.Idle);
 
+        // CC Rolled
+        ccPod = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName()), 1, ccPod);
+
         // we double-check that Rolling has been done.
         RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), scaleTo);
+
+        LOGGER.info("Checking that Topic: {} has replicas on one of the new brokers (or both)", testStorage.getTopicName());
+        List<String> topicReplicas = KafkaTopicUtils.getKafkaTopicReplicasForEachPartition(testStorage.getNamespaceName(), testStorage.getTopicName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
+        assertTrue(topicReplicas.stream().anyMatch(line -> line.contains("6") || line.contains("7")));
 
         LOGGER.info("Scaling Kafka down to {}", initialReplicas);
 
@@ -738,19 +760,21 @@ public class CruiseControlST extends AbstractST {
             KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setReplicas(initialReplicas));
         }
 
-        // TODO: scale-down in KafkaStatus I can't see maybe it's just very quick I don't know
+        KafkaUtils.waitUntilKafkaHasExpectedModeAndBrokersAutoRebalance(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            KafkaRebalanceMode.REMOVE_BROKERS,
+            // brokers with [6, 7]
+            Arrays.asList(kafkaClusterPodIndex, kafkaClusterPodIndex + 1));
 
-//        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(),
-//            KafkaResources.autoRebalancingKafkaRebalanceResourceName(testStorage.getClusterName(),
-//                KafkaRebalanceMode.REMOVE_BROKERS),
-//            KafkaRebalanceState.ProposalReady);
-//        KafkaRebalanceUtils.doRebalancingProcess(testStorage.getNamespaceName(), testStorage.getClusterName(), true);
+        // check that Kafka has `RebalanceOnScaleDown` in auto-rebalance status
+        KafkaUtils.waitUntilKafkaHasStateAutoRebalance(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaAutoRebalanceState.RebalanceOnScaleDown);
 
-        // Nodes are scale down
-        RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), initialReplicas);
+        // and then afterward we again move to Idle state after all is done
+        KafkaUtils.waitUntilKafkaHasStateAutoRebalance(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaAutoRebalanceState.Idle);
 
         // CC is rolled
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName()), 1, ccPod);
+
+        RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), initialReplicas);
     }
 
     @BeforeAll
