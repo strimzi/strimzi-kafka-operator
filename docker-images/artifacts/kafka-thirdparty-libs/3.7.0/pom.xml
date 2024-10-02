@@ -16,6 +16,7 @@
     </licenses>
 
     <properties>
+        <strimzi-metrics-reporter>0.1.0</strimzi-metrics-reporter>
         <strimzi-oauth.version>0.15.0</strimzi-oauth.version>
         <jayway-json-path.version>2.9.0</jayway-json-path.version>
         <cruise-control.version>2.5.139</cruise-control.version>
@@ -325,6 +326,12 @@
                     <artifactId>jackson-databind</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <!-- Metrics Reporter -->
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>strimzi-metrics-reporter</artifactId>
+            <version>${strimzi-metrics-reporter.version}</version>
         </dependency>
         <!-- Open Policy Authorization plugin -->
         <dependency>
