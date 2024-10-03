@@ -70,7 +70,6 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
@@ -396,7 +395,7 @@ public class KafkaRollerST extends AbstractST {
      * particularly the controller nodes, while leaving others like broker nodes unaffected.
      *
      * @steps
-     *  1. - Assume that KRaft mode is enabled and the installation method is bundle only.
+     *  1. - Assume that KRaft mode is enabled.
      *  2. - Create and deploy a Kafka node pool with broker role (brokerPool) and another with controller role (controllerPool), each with 3 replicas.
      *  3. - Take snapshots of the broker and controller pods for later comparison.
      *  4. - Update a specific Kafka configuration that affects only controller nodes and verify the rolling update behavior.
@@ -416,7 +415,6 @@ public class KafkaRollerST extends AbstractST {
     @ParallelNamespaceTest
     void testKafkaRollingUpdatesOfSingleRoleNodePools() {
         assumeTrue(Environment.isKRaftModeEnabled());
-        assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -493,7 +491,7 @@ public class KafkaRollerST extends AbstractST {
      * of nodes serving mixed roles, while ensuring compatibility with KRaft mode and excluding OLM or Helm installations.
      *
      * @steps
-     *  1. - Ensure that the environment is running in KRaft mode and is neither an OLM nor Helm installation (only Bundle/YAML!).
+     *  1. - Ensure that the environment is running in KRaft mode.
      *  2. - Create and deploy a Kafka node pool with mixed roles (controller and broker), consisting of 6 replicas.
      *  3. - Take a snapshot of the mixed-role pods for comparison before and after the configuration change.
      *  4. - Update a specific Kafka configuration targeting controller roles.
@@ -508,7 +506,6 @@ public class KafkaRollerST extends AbstractST {
     @ParallelNamespaceTest
     void testKafkaRollingUpdatesOfMixedNodes() {
         assumeTrue(Environment.isKRaftModeEnabled());
-        assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int mixedPoolReplicas = 6;

@@ -45,7 +45,6 @@ import java.util.Random;
 import static io.strimzi.operator.common.Util.hashStub;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 
@@ -457,7 +456,6 @@ public class KafkaNodePoolST extends AbstractST {
 
     @BeforeAll
     void setup() {
-        assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
         assumeTrue(Environment.isKafkaNodePoolsEnabled());
 
         this.clusterOperator = this.clusterOperator.defaultInstallation()
