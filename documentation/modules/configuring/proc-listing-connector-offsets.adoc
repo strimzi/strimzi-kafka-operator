@@ -9,14 +9,13 @@
 To track connector offsets using `KafkaConnector` resources, add the `listOffsets` configuration. 
 The offsets, which keep track of the flow of data, are written to a config map specified in the configuration. 
 If the config map does not exist, Strimzi creates it. 
-The list is written to the config map by annotating the `KafkaConnector` resource.
+
+After the configuration is in place, annotate the `KafkaConnector` resource to write the list to the config map.
 
 Sink connectors use Kafka's standard consumer offset mechanism, while source connectors store offsets in a custom format within a Kafka topic.
 
 * For sink connectors, the list shows Kafka topic partitions and the last committed offset for each partition.
 * For source connectors, the list shows the source system’s partition and the last offset processed. 
-
-NOTE: You can also list connector offsets using the `GET /connectors/{connector}/offsets` request through the Kafka Connect Rest API.
 
 .Prerequisites
 

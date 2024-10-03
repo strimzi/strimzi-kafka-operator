@@ -6,15 +6,14 @@
 = Altering connector offsets
 
 [role="_abstract"]
-To alter connector offsets using `KafkaConnector` resources, add the `alterOffsets` configuration.
-This can be useful, for example, to skip a _poison_ record or replay a record.
-The offset changes are specified in a config map. 
+To alter connector offsets using `KafkaConnector` resources, configure the resource to stop the connector and add `alterOffsets` configuration to specify the offset changes in a config map. 
 You can reuse the same config map used to xref:proc-listing-connector-offsets-{context}[list offsets].
-The offset alteration is applied by annotating the `KafkaConnector` resource.
+
+After the connector is stopped and the configuration is in place, annotate the `KafkaConnector` resource to apply the offset alteration, then restart the connector. 
+
+Altering connector offsets can be useful, for example, to skip a _poison_ record or replay a record.
 
 In this procedure, we alter the offset position for a source connector named `my-source-connector`.
-
-NOTE: You can also alter connector offsets using the `PATCH /connectors/{connector}/offsets` request through the Kafka Connect Rest API.
 
 .Prerequisites
 
@@ -22,7 +21,7 @@ NOTE: You can also alter connector offsets using the `PATCH /connectors/{connect
 
 .Procedure
 
-. Edit the `KafkaConnector` resource to stop the connector and include the `listOffsets` configuration.
+. Edit the `KafkaConnector` resource to stop the connector and include the `alterOffsets` configuration.
 +
 .Example configuration to stop a connector and alter offsets
 [source,yaml,subs="+attributes"]
@@ -79,36 +78,7 @@ kubectl annotate kafkaconnector my-source-connector strimzi.io/connector-offsets
 +
 The annotation remains until either the update operation succeeds, or it is manually removed from the resource.
 
-. Inspect the contents of the config map to verify the update to the offset position:
-+
-[source,shell]
-----
-kubectl describe configmap my-connector-offsets -n <namespace>
-----
-+
-Strimzi puts the offsets into the `offsets.json` property. 
-It doesn't overwrite any other properties when updating an existing config map.
-+
-.Example source connector offset list
-[source,yaml,subs="+attributes"]
-----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  # ...
-data: 
-  offsets.json: |-
-    {
-      "offsets" : [ {
-        "partition" : {
-          "filename" : "/data/myfile.txt"
-        },
-        "offset" : {
-          "position" : 15000
-        }
-      } ]
-    } 
-----
+. Check the changes by using the procedure to xref:proc-listing-connector-offsets-{context}[list connector offsets].
 
 . Restart the connector by changing the state to `running`.
 +

@@ -6,11 +6,11 @@
 = Resetting connector offsets
 
 [role="_abstract"]
-To reset connector offsets using `KafkaConnector` resources, annotate the resource to clear the offsets.
+To reset connector offsets using `KafkaConnector` resources, configure the resource to stop the connector. 
+
+After the connector is stopped, annotate the `KafkaConnector` resource to clear the offsets, then restart the connector.
 
 In this procedure, we reset the offset position for a source connector named `my-source-connector`.
-
-NOTE: You can also alter connector offsets using the `DELETE /connectors/{connector}/offsets` request through the Kafka Connect Rest API.
 
 .Prerequisites
 
@@ -45,15 +45,8 @@ kubectl annotate kafkaconnector my-source-connector strimzi.io/connector-offsets
 +
 The annotation remains until either the reset operation succeeds, or it is manually removed from the resource.
 
-. Inspect the contents of the config map to verify the reset of the offset position:
+. Check the changes by using the procedure to xref:proc-listing-connector-offsets-{context}[list connector offsets].
 +
-[source,shell]
-----
-kubectl describe configmap my-connector-offsets -n <namespace>
-----
-+
-Strimzi puts the offsets into the `offsets.json` property. 
-It doesn't overwrite any other properties when updating an existing config map.
 After resetting, the `offsets.json` property is empty. 
 +
 .Example source connector offset list
