@@ -14,7 +14,7 @@ See our [website](https://strimzi.io) for more details about the project.
   Follow the [documentation](https://strimzi.io/docs/operators/latest/full/deploying.html#assembly-kraft-mode-str) for more details. 
 * Kafka Mirror Maker 1 support will be soon removed from Apache Kafka and Strimzi.
   Currently, the last Strimzi version with Mirror Maker 1 support is expected to be Strimzi 0.45.
-  Please plan your migration to Mirror Maker 2 or other mirroring tool.
+  Please plan your migration to Mirror Maker 2 or another mirroring tool.
 * Upgrading to Strimzi 0.32 and newer directly from Strimzi 0.22 and earlier is no longer possible.
   Please follow the [documentation](https://strimzi.io/docs/operators/latest/full/deploying.html#assembly-upgrade-str) for more details.
 
@@ -32,11 +32,11 @@ cluster using the [Helm](https://helm.sh) package manager.
 * **Topic Management** - Creates and manages Kafka Topics within the cluster.
 * **User Management** - Creates and manages Kafka Users within the cluster.
 * **Connector Management** - Creates and manages Kafka Connect connectors.
-* **Includes Kafka Mirror Maker** - Allows for mirroring data between different Apache Kafka® clusters.
+* **Includes Kafka MirrorMaker** - Allows for mirroring data between different Apache Kafka® clusters.
 * **Includes HTTP Kafka Bridge** - Allows clients to send and receive messages through an Apache Kafka® cluster via the HTTP protocol.
 * **Includes Cruise Control** - Automates the process of balancing partitions across an Apache Kafka® cluster.
 * **Auto-rebalancing when scaling** - Automatically rebalance the Kafka cluster after a scale-up or before a scale-down.
-* **Tiered storage** - Allows to offload older and less critical data to a lower cost and performance storage tier (such as object storage). 
+* **Tiered storage** - Offloads older, less critical data to a lower-cost, lower-performance storage tier, such as object storage.
 * **Prometheus monitoring** - Built-in support for monitoring using Prometheus.
 * **Grafana Dashboards** - Built-in support for loading Grafana® dashboards via the grafana_sidecar
 
