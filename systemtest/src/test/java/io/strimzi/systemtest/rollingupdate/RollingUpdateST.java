@@ -74,7 +74,6 @@ import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
@@ -253,7 +252,6 @@ class RollingUpdateST extends AbstractST {
     @Tag(ROLLING_UPDATE)
     void testRecoveryDuringKRaftRollingUpdate() {
         assumeTrue(Environment.isKRaftModeEnabled());
-        assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
         // kafka with 1 knp broker and 1 knp controller
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
