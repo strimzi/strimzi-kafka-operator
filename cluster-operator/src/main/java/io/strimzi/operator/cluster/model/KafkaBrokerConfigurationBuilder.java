@@ -834,8 +834,7 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println("config.providers=" + userConfig.getConfigOption("config.providers") + "," + strimziConfigProviders);
             userConfig.removeConfigOption("config.providers");
         } else {
-            //System.out.println("User config is: " + userConfig.getConfiguration());
-            //System.out.println("User config is: " + userConfig.getConfigOption("config.providers"));
+            writer.println("# Configuration providers configured by Strimzi");
             writer.println("config.providers=" + strimziConfigProviders);
         }
 
