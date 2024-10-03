@@ -132,7 +132,7 @@
 | - | - | - |
 | 1. | Create TestStorage instance | TestStorage instance is created |
 | 2. | Create node pools using resourceManager based on the configuration | node pools for broker and controller are created or not based on configuration |
-| 3. | Create broker and controller node pools | Node pools are created and ready |
+| 3. | Create broker and controller KafkaNodePools. | Node pools are created and ready |
 | 4. | Create Kafka cluster | Kafka cluster is created and operational |
 | 5. | Setup JVM options and resource requirements for Kafka Connect | Kafka Connect is configured with specified JVM options and resources |
 | 6. | Verify JVM options and resource requirements | JVM options and resource requests/limits are correctly applied to the Kafka Connect pod |
@@ -279,7 +279,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Initialize test storage and determine connect cluster name | Test storage and cluster name properly initialized |
-| 2. | Create broker and controller node pools | Broker and controller node pools created successfully |
+| 2. | Create broker and controller KafkaNodePools. | Broker and controller node pools created successfully |
 | 3. | Deploy Kafka cluster in ephemeral mode | Kafka cluster deployed successfully |
 | 4. | Create Kafka Connect cluster with default image | Kafka Connect cluster created with appropriate configuration |
 | 5. | Create and configure Kafka Connector | Kafka Connector deployed and configured with correct settings |
@@ -322,7 +322,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Create TestStorage instance | TestStorage instance is created with context |
-| 2. | Create broker and controller node pools | Broker and Controller node pools are created |
+| 2. | Create broker and controller KafkaNodePools. | Broker and Controller node pools are created |
 | 3. | Create ephemeral Kafka cluster | Kafka cluster with 3 replicas is created |
 | 4. | Create Kafka Connect with file plugin | Kafka Connect is created with 2 replicas and file plugin |
 | 5. | Create Kafka Connector | Kafka Connector is created with necessary configurations |
@@ -346,7 +346,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Initialize TestStorage and create namespace | Namespace and storage initialized |
-| 2. | Create broker and controller node pools | Node pools created with 3 replicas. |
+| 2. | Create broker and controller KafkaNodePools. | Node pools created with 3 replicas. |
 | 3. | Create ephemeral Kafka cluster | Kafka cluster created with 3 replicas. |
 | 4. | Create KafkaConnect resource with 2 replicas | KafkaConnect resource created with 2 replicas. |
 | 5. | Verify that KafkaConnect has 2 pods | 2 KafkaConnect pods are running. |
@@ -368,7 +368,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Initialize test storage | Instances created successfully |
-| 2. | Create Kafka node pools (broker and controller) | Node pools created and ready |
+| 2. | Create KafkaNodePool (broker and controller) | Node pools created and ready |
 | 3. | Deploy Kafka cluster with TLS and SCRAM-SHA-512 authentication | Kafka cluster deployed with listeners configured |
 | 4. | Create Kafka user with SCRAM-SHA-512 | User created successfully |
 | 5. | Deploy Kafka topic | Topic created successfully |

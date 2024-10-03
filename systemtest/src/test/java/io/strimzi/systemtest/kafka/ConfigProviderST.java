@@ -61,7 +61,7 @@ public class ConfigProviderST extends AbstractST {
     @TestDoc(
         description = @Desc("Tests to ensure Kafka Connect functions correctly using ConfigMap and EnvVar configuration."),
         steps = {
-            @Step(value = "Create broker and controller pools.", expected = "Resources are created and are in ready state."),
+            @Step(value = "Create broker and controller KafkaNodePools.", expected = "Resources are created and are in ready state."),
             @Step(value = "Create Kafka cluster.", expected = "Kafka cluster is ready with 3 brokers."),
             @Step(value = "Create ConfigMap for connector configuration.", expected = "ConfigMap with connector configuration is created."),
             @Step(value = "Deploy Kafka Connect with external configuration.", expected = "Kafka Connect is deployed with proper configuration."),

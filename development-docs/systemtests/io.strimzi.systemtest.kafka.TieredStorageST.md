@@ -7,7 +7,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Create test namespace. | Namespace is created. |
-| 2. | Build Kafka image based on passed parameters like image full name, base image, Dockerfile path (via Kaniko or OpenShift build). | Kafka image is built. |
+| 2. | Build Kafka image based on passed parameters like image full name, base image, Dockerfile path (via Kaniko or OpenShift build), and include the Aiven Tiered Storage plugin from (<a href="https://github.com/Aiven-Open/tiered-storage-for-apache-kafka/tree/main">tiered-storage-for-apache-kafka</a>). | Kafka image is built with the Aiven Tiered Storage plugin integrated. |
 | 3. | Deploy Minio in test namespace and init the client inside the Minio pod. | Minio is deployed and client is initialized. |
 | 4. | Init bucket in Minio for purposes of these tests. | Bucket is initialized in Minio. |
 | 5. | Deploy Cluster Operator. | Cluster Operator is deployed. |

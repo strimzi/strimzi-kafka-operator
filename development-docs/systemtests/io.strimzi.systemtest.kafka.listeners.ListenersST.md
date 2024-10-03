@@ -43,7 +43,7 @@
 | - | - | - |
 | 1. | Define non-existing certificate name. | Non-existing certificate name is defined. |
 | 2. | Create a custom secret for Kafka with the defined certificate. | Custom secret created successfully. |
-| 3. | Create Kafka node pools resources. | Kafka node pools resources created. |
+| 3. | Create KafkaNodePool resources. | KafkaNodePool resources created. |
 | 4. | Create Kafka cluster with ephemeral storage and the non-existing certificate. | Kafka cluster creation initiated. |
 | 5. | Wait for controller pods to be ready if in non-KRaft mode. | Controller pods are ready. |
 | 6. | Wait until Kafka status message indicates missing certificate. | Error message about missing certificate is found in Kafka status condition. |
@@ -63,7 +63,7 @@
 | - | - | - |
 | 1. | Define the non-existing certificate key. | The non-existing certificate key string is defined. |
 | 2. | Create a custom secret with a certificate for Kafka server. | Custom secret is created in the namespace. |
-| 3. | Create broker and controller resources with node pools. | Resources are created and ready. |
+| 3. | Create broker and controller KafkaNodePools. | Resources are created and ready. |
 | 4. | Deploy a Kafka cluster with a listener using the custom secret and non-existing key. | Deployment initiated without waiting for the resources to be ready. |
 | 5. | If not in KRaft mode, wait for controller pods to be ready. | Controller pods are in ready state (if applicable). |
 | 6. | Check Kafka status condition for custom certificate error message. | Error message indicating the missing custom certificate private key is present in Kafka status conditions. |
@@ -341,7 +341,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create and configure Kafka node pools | Node pools for brokers and controllers are created |
+| 1. | Create and configure KafkaNodePools | Node pools for brokers and controllers are created |
 | 2. | Create and configure Kafka cluster with TLS listener | Kafka cluster with TLS enabled LoadBalancer listener is created |
 | 3. | Create and configure Kafka user with TLS authentication | Kafka user with TLS authentication is created |
 | 4. | Wait for the LoadBalancer address to be reachable | LoadBalancer address becomes reachable |
@@ -422,7 +422,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create necessary Kafka node pools | Kafka node pools are created and initialized |
+| 1. | Create necessary KafkaNodePools | KafkaNodePools are created and initialized |
 | 2. | Create Kafka cluster with a listener using non-existing certificate | Kafka cluster resource is initialized with non-existing TLS certificate |
 | 3. | Wait for pods to be ready if not in KRaft mode | Pods are ready |
 | 4. | Wait for Kafka status condition message indicating the non-existing secret | Correct error message regarding the non-existing secret appears |
@@ -535,7 +535,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create resources for Kafka node pools. | Kafka node pools are created. |
+| 1. | Create resources for KafkaNodePools. | KafkaNodePools are created. |
 | 2. | Create Kafka cluster with SCRAM-SHA-512 authentication. | Kafka cluster is created with SCRAM-SHA authentication. |
 | 3. | Create Kafka topic and user. | Kafka topic and user are created. |
 | 4. | Transmit messages over TLS using SCRAM-SHA. | Messages are successfully transmitted. |

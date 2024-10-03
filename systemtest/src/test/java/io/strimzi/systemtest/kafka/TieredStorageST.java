@@ -53,7 +53,7 @@ import static io.strimzi.systemtest.TestTags.TIERED_STORAGE;
     description = @Desc("This test suite covers scenarios for Tiered Storage integration implemented within Strimzi."),
     beforeTestSteps = {
         @Step(value = "Create test namespace.", expected = "Namespace is created."),
-        @Step(value = "Build Kafka image based on passed parameters like image full name, base image, Dockerfile path (via Kaniko or OpenShift build).", expected = "Kafka image is built."),
+        @Step(value = "Build Kafka image based on passed parameters like image full name, base image, Dockerfile path (via Kaniko or OpenShift build), and include the Aiven Tiered Storage plugin from (<a href=\"https://github.com/Aiven-Open/tiered-storage-for-apache-kafka/tree/main\">tiered-storage-for-apache-kafka</a>).", expected = "Kafka image is built with the Aiven Tiered Storage plugin integrated."),
         @Step(value = "Deploy Minio in test namespace and init the client inside the Minio pod.", expected = "Minio is deployed and client is initialized."),
         @Step(value = "Init bucket in Minio for purposes of these tests.", expected = "Bucket is initialized in Minio."),
         @Step(value = "Deploy Cluster Operator.", expected = "Cluster Operator is deployed.")

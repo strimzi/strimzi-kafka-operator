@@ -310,7 +310,7 @@ class KafkaST extends AbstractST {
 
     @ParallelNamespaceTest
     @TestDoc(
-        description = @Desc("his test case verifies the correct deployment of the Entity Operator, including both the User Operator and Topic Operator. First, the Entity Operator is modified to exclude the User Operator. Then, it's restored to its default configuration, which includes the User Operator. Next, the Topic Operator is removed, followed by the User Operator, with the Topic Operator already excluded"),
+        description = @Desc("This test case verifies the correct deployment of the Entity Operator, including both the User Operator and Topic Operator. First, the Entity Operator is modified to exclude the User Operator. Then, it's restored to its default configuration, which includes the User Operator. Next, the Topic Operator is removed, followed by the User Operator, with the Topic Operator already excluded"),
         steps = {
             @Step(value = "Deploy Kafka with Entity Operator set.", expected = "Kafka is deployed, and Entity Operator consists of both Topic Operator and User Operator."),
             @Step(value = "Remove User Operator from the Kafka specification.", expected = "User Operator container is deleted."),
@@ -1060,7 +1060,7 @@ class KafkaST extends AbstractST {
         description = @Desc("Test to ensure that deploying Kafka with an unsupported version results in the expected error."),
         steps = {
             @Step(value = "Initialize test storage with current context.", expected = "Test storage is initialized."),
-            @Step(value = "Create Kafka node pools", expected = "Kafka node pools are created and ready"),
+            @Step(value = "Create KafkaNodePools", expected = "KafkaNodePools are created and ready"),
             @Step(value = "Deploy Kafka with a non-existing version", expected = "Kafka deployment with non-supported version begins"),
             @Step(value = "Log Kafka deployment process", expected = "Log entry for Kafka deployment is created"),
             @Step(value = "Wait for Kafka to not be ready", expected = "Kafka is not ready as expected"),

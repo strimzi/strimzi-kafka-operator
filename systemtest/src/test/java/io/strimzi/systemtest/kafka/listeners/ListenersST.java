@@ -335,7 +335,7 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test sending messages over TLS transport using SCRAM-SHA authentication."),
         steps = {
-            @Step(value = "Create resources for Kafka node pools.", expected = "Kafka node pools are created."),
+            @Step(value = "Create resources for KafkaNodePools.", expected = "KafkaNodePools are created."),
             @Step(value = "Create Kafka cluster with SCRAM-SHA-512 authentication.", expected = "Kafka cluster is created with SCRAM-SHA authentication."),
             @Step(value = "Create Kafka topic and user.", expected = "Kafka topic and user are created."),
             @Step(value = "Transmit messages over TLS using SCRAM-SHA.", expected = "Messages are successfully transmitted."),
@@ -791,7 +791,7 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test validating the TLS connection through a Kafka LoadBalancer."),
         steps = {
-            @Step(value = "Create and configure Kafka node pools", expected = "Node pools for brokers and controllers are created"),
+            @Step(value = "Create and configure KafkaNodePools", expected = "Node pools for brokers and controllers are created"),
             @Step(value = "Create and configure Kafka cluster with TLS listener", expected = "Kafka cluster with TLS enabled LoadBalancer listener is created"),
             @Step(value = "Create and configure Kafka user with TLS authentication", expected = "Kafka user with TLS authentication is created"),
             @Step(value = "Wait for the LoadBalancer address to be reachable", expected = "LoadBalancer address becomes reachable"),
@@ -2404,7 +2404,7 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test for verifying non-existing custom certificate handling by creating necessary resources and ensuring correct error message check."),
         steps = {
-            @Step(value = "Create necessary Kafka node pools", expected = "Kafka node pools are created and initialized"),
+            @Step(value = "Create necessary KafkaNodePools", expected = "KafkaNodePools are created and initialized"),
             @Step(value = "Create Kafka cluster with a listener using non-existing certificate", expected = "Kafka cluster resource is initialized with non-existing TLS certificate"),
             @Step(value = "Wait for pods to be ready if not in KRaft mode", expected = "Pods are ready"),
             @Step(value = "Wait for Kafka status condition message indicating the non-existing secret", expected = "Correct error message regarding the non-existing secret appears")
@@ -2456,7 +2456,7 @@ public class ListenersST extends AbstractST {
         steps = {
             @Step(value = "Define non-existing certificate name.", expected = "Non-existing certificate name is defined."),
             @Step(value = "Create a custom secret for Kafka with the defined certificate.", expected = "Custom secret created successfully."),
-            @Step(value = "Create Kafka node pools resources.", expected = "Kafka node pools resources created."),
+            @Step(value = "Create KafkaNodePool resources.", expected = "KafkaNodePool resources created."),
             @Step(value = "Create Kafka cluster with ephemeral storage and the non-existing certificate.", expected = "Kafka cluster creation initiated."),
             @Step(value = "Wait for controller pods to be ready if in non-KRaft mode.", expected = "Controller pods are ready."),
             @Step(value = "Wait until Kafka status message indicates missing certificate.", expected = "Error message about missing certificate is found in Kafka status condition.")
@@ -2512,7 +2512,7 @@ public class ListenersST extends AbstractST {
         steps = {
             @Step(value = "Define the non-existing certificate key.", expected = "The non-existing certificate key string is defined."),
             @Step(value = "Create a custom secret with a certificate for Kafka server.", expected = "Custom secret is created in the namespace."),
-            @Step(value = "Create broker and controller resources with node pools.", expected = "Resources are created and ready."),
+            @Step(value = "Create broker and controller KafkaNodePools.", expected = "Resources are created and ready."),
             @Step(value = "Deploy a Kafka cluster with a listener using the custom secret and non-existing key.", expected = "Deployment initiated without waiting for the resources to be ready."),
             @Step(value = "If not in KRaft mode, wait for controller pods to be ready.", expected = "Controller pods are in ready state (if applicable)."),
             @Step(value = "Check Kafka status condition for custom certificate error message.", expected = "Error message indicating the missing custom certificate private key is present in Kafka status conditions.")

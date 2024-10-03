@@ -23,7 +23,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Assume the cluster is not Minikube or MicroShift. | Cluster is appropriate for the test. |
-| 2. | Create necessary resources for Kafka and nodes. | Resources are created and Kafka is set up with quotas plugin. |
+| 2. | Create necessary resources for Kafka, including KafkaNodePools and persistent Kafka setup with quotas plugin. Configure producer and consumer quotas with specific byte rate limits, and define excluded principals to bypass the quotas. | Kafka and KafkaNodePools are created with quotas applied, and excluded principals are correctly configured. |
 | 3. | Send messages without any user; observe quota enforcement. | Producer stops after reaching the minimum available bytes. |
 | 4. | Check Kafka logs for quota enforcement message. | Kafka logs contain the expected quota enforcement message. |
 | 5. | Send messages with excluded user and observe the behavior. | Messages are sent successfully without hitting the quota. |
@@ -43,7 +43,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Set excluded principal. | Principal is set. |
-| 2. | Create Kafka resources including node pools and persistent Kafka with quotas enabled. | Kafka resources are created successfully with quotas setup. |
+| 2. | Create Kafka resources including KafkaNodePools and persistent Kafka with quotas enabled. Configure producer and consumer byte rate limits and add excluded principals to bypass the quota enforcement. | Kafka resources are successfully created with proper quota configuration and excluded principals. |
 | 3. | Create Kafka topic and user with SCRAM-SHA authentication. | Kafka topic and SCRAM-SHA user are created successfully. |
 | 4. | Send messages with normal user. | Messages are sent and duration is measured. |
 | 5. | Send messages with excluded user. | Messages are sent and duration is measured. |

@@ -41,7 +41,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Initialize test storage with current context. | Test storage is initialized. |
-| 2. | Create Kafka node pools | Kafka node pools are created and ready |
+| 2. | Create KafkaNodePools | KafkaNodePools are created and ready |
 | 3. | Deploy Kafka with a non-existing version | Kafka deployment with non-supported version begins |
 | 4. | Log Kafka deployment process | Log entry for Kafka deployment is created |
 | 5. | Wait for Kafka to not be ready | Kafka is not ready as expected |
@@ -179,7 +179,7 @@
 
 ## testRemoveComponentsFromEntityOperator
 
-**Description:** his test case verifies the correct deployment of the Entity Operator, including both the User Operator and Topic Operator. First, the Entity Operator is modified to exclude the User Operator. Then, it's restored to its default configuration, which includes the User Operator. Next, the Topic Operator is removed, followed by the User Operator, with the Topic Operator already excluded
+**Description:** This test case verifies the correct deployment of the Entity Operator, including both the User Operator and Topic Operator. First, the Entity Operator is modified to exclude the User Operator. Then, it's restored to its default configuration, which includes the User Operator. Next, the Topic Operator is removed, followed by the User Operator, with the Topic Operator already excluded
 
 **Steps:**
 

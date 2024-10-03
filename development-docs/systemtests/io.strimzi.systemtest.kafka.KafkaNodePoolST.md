@@ -1,12 +1,12 @@
 # KafkaNodePoolST
 
-**Description:** This test suite verifies various functionalities of Kafka node pools in a Kafka cluster.
+**Description:** This test suite verifies various functionalities of KafkaNodePools in a Kafka cluster.
 
 **Before tests execution steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Ensure the environment is not using OLM or Helm and Kafka node pools are enabled. | Environment is validated. |
+| 1. | Ensure the environment is not using OLM or Helm and KafkaNodePools are enabled. | Environment is validated. |
 | 2. | Install the default Cluster Operator. | Cluster operator is installed. |
 
 **Labels:**
@@ -38,7 +38,7 @@
 
 ## testKafkaNodePoolBrokerIdsManagementUsingAnnotations
 
-**Description:** This test case verifies the management of broker IDs in Kafka node pools using annotations.
+**Description:** This test case verifies the management of broker IDs in KafkaNodePools using annotations.
 
 **Steps:**
 
@@ -56,7 +56,7 @@
 
 ## testNodePoolsAdditionAndRemoval
 
-**Description:** This test case verifies the possibility of adding and removing Kafka node pools into an existing Kafka cluster.
+**Description:** This test case verifies the possibility of adding and removing KafkaNodePools into an existing Kafka cluster.
 
 **Steps:**
 
@@ -76,7 +76,7 @@
 
 ## testNodePoolsRolesChanging
 
-**Description:** This test case verifies changing of roles in Kafka node pools.
+**Description:** This test case verifies changing of roles in KafkaNodePools.
 
 **Steps:**
 

@@ -56,9 +56,9 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
 @SuiteDoc(
-    description = @Desc("This test suite verifies various functionalities of Kafka node pools in a Kafka cluster."),
+    description = @Desc("This test suite verifies various functionalities of KafkaNodePools in a Kafka cluster."),
     beforeTestSteps = {
-        @Step(value = "Ensure the environment is not using OLM or Helm and Kafka node pools are enabled.", expected = "Environment is validated."),
+        @Step(value = "Ensure the environment is not using OLM or Helm and KafkaNodePools are enabled.", expected = "Environment is validated."),
         @Step(value = "Install the default Cluster Operator.", expected = "Cluster operator is installed.")
     },
     labels = {
@@ -70,7 +70,7 @@ public class KafkaNodePoolST extends AbstractST {
 
     @ParallelNamespaceTest
     @TestDoc(
-        description = @Desc("This test case verifies the management of broker IDs in Kafka node pools using annotations."),
+        description = @Desc("This test case verifies the management of broker IDs in KafkaNodePools using annotations."),
         steps = {
             @Step(value = "Deploy a Kafka instance with annotations to manage node pools and one initial node pool to hold topics and act as controller.", expected = "Kafka instance is deployed according to Kafka and KafkaNodePool custom resource, with IDs 90, 91."),
             @Step(value = "Deploy additional 2 node pools (A,B) with 1 and 2 replicas, and preset 'next-node-ids' annotations holding resp. values ([4],[6]).", expected = "node pools are deployed, node pool A contains ID 4, node pool B contains IDs 6, 0."),
@@ -174,7 +174,7 @@ public class KafkaNodePoolST extends AbstractST {
 
     @ParallelNamespaceTest
     @TestDoc(
-        description = @Desc("This test case verifies changing of roles in Kafka node pools."),
+        description = @Desc("This test case verifies changing of roles in KafkaNodePools."),
         steps = {
             @Step(value = "Deploy a Kafka instance with annotations to manage node pools and 2 initial node pools, both with mixed role, first one stable, second one which will be modified.", expected = "Kafka instance with initial node pools is deployed."),
             @Step(value = "Create KafkaTopic with replica number requiring all Kafka Brokers to be present.", expected = "KafkaTopic is created."),
@@ -255,7 +255,7 @@ public class KafkaNodePoolST extends AbstractST {
 
     @ParallelNamespaceTest
     @TestDoc(
-        description = @Desc("This test case verifies the possibility of adding and removing Kafka node pools into an existing Kafka cluster."),
+        description = @Desc("This test case verifies the possibility of adding and removing KafkaNodePools into an existing Kafka cluster."),
         steps = {
             @Step(value = "Deploy a Kafka instance with annotations to manage node pools and 2 initial node pools.", expected = "Kafka instance is deployed according to Kafka and KafkaNodePool custom resource."),
             @Step(value = "Create KafkaTopic with replica number requiring all Kafka Brokers to be present, Deploy clients and transmit messages and remove KafkaTopic.", expected = "Transition of messages is finished successfully, KafkaTopic created and cleaned as expected."),

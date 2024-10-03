@@ -22,7 +22,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create broker and controller pools. | Resources are created and are in ready state. |
+| 1. | Create broker and controller KafkaNodePools. | Resources are created and are in ready state. |
 | 2. | Create Kafka cluster. | Kafka cluster is ready with 3 brokers. |
 | 3. | Create ConfigMap for connector configuration. | ConfigMap with connector configuration is created. |
 | 4. | Deploy Kafka Connect with external configuration. | Kafka Connect is deployed with proper configuration. |

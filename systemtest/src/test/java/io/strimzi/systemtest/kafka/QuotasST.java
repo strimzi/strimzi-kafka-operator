@@ -60,7 +60,7 @@ public class QuotasST extends AbstractST {
         description = @Desc("Test to check Kafka Quotas Plugin for disk space."),
         steps = {
             @Step(value = "Assume the cluster is not Minikube or MicroShift.", expected = "Cluster is appropriate for the test."),
-            @Step(value = "Create necessary resources for Kafka and nodes.", expected = "Resources are created and Kafka is set up with quotas plugin."),
+            @Step(value = "Create necessary resources for Kafka, including KafkaNodePools and persistent Kafka setup with quotas plugin. Configure producer and consumer quotas with specific byte rate limits, and define excluded principals to bypass the quotas.", expected = "Kafka and KafkaNodePools are created with quotas applied, and excluded principals are correctly configured."),
             @Step(value = "Send messages without any user; observe quota enforcement.", expected = "Producer stops after reaching the minimum available bytes."),
             @Step(value = "Check Kafka logs for quota enforcement message.", expected = "Kafka logs contain the expected quota enforcement message."),
             @Step(value = "Send messages with excluded user and observe the behavior.", expected = "Messages are sent successfully without hitting the quota."),
@@ -152,7 +152,7 @@ public class QuotasST extends AbstractST {
         description = @Desc("Test verifying bandwidth limitations with Kafka quotas plugin."),
         steps = {
             @Step(value = "Set excluded principal.", expected = "Principal is set."),
-            @Step(value = "Create Kafka resources including node pools and persistent Kafka with quotas enabled.", expected = "Kafka resources are created successfully with quotas setup."),
+            @Step(value = "Create Kafka resources including KafkaNodePools and persistent Kafka with quotas enabled. Configure producer and consumer byte rate limits and add excluded principals to bypass the quota enforcement.", expected = "Kafka resources are successfully created with proper quota configuration and excluded principals."),
             @Step(value = "Create Kafka topic and user with SCRAM-SHA authentication.", expected = "Kafka topic and SCRAM-SHA user are created successfully."),
             @Step(value = "Send messages with normal user.", expected = "Messages are sent and duration is measured."),
             @Step(value = "Send messages with excluded user.", expected = "Messages are sent and duration is measured."),

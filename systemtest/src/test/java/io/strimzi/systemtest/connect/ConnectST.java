@@ -421,7 +421,7 @@ class ConnectST extends AbstractST {
         steps = {
             @Step(value = "Create TestStorage instance", expected = "TestStorage instance is created"),
             @Step(value = "Create node pools using resourceManager based on the configuration", expected = "node pools for broker and controller are created or not based on configuration"),
-            @Step(value = "Create broker and controller node pools", expected = "Node pools are created and ready"),
+            @Step(value = "Create broker and controller KafkaNodePools.", expected = "Node pools are created and ready"),
             @Step(value = "Create Kafka cluster", expected = "Kafka cluster is created and operational"),
             @Step(value = "Setup JVM options and resource requirements for Kafka Connect", expected = "Kafka Connect is configured with specified JVM options and resources"),
             @Step(value = "Verify JVM options and resource requirements", expected = "JVM options and resource requests/limits are correctly applied to the Kafka Connect pod")
@@ -617,7 +617,7 @@ class ConnectST extends AbstractST {
         description = @Desc("Test validating Kafka Connect with TLS and SCRAM-SHA authentication along with associated resources setup and verification."),
         steps = {
             @Step(value = "Initialize test storage", expected = "Instances created successfully"),
-            @Step(value = "Create Kafka node pools (broker and controller)", expected = "Node pools created and ready"),
+            @Step(value = "Create KafkaNodePool (broker and controller)", expected = "Node pools created and ready"),
             @Step(value = "Deploy Kafka cluster with TLS and SCRAM-SHA-512 authentication", expected = "Kafka cluster deployed with listeners configured"),
             @Step(value = "Create Kafka user with SCRAM-SHA-512", expected = "User created successfully"),
             @Step(value = "Deploy Kafka topic", expected = "Topic created successfully"),
@@ -934,7 +934,7 @@ class ConnectST extends AbstractST {
         description = @Desc("Test validating multi-node Kafka Connect cluster creation, connector deployment, and message processing."),
         steps = {
             @Step(value = "Initialize test storage and determine connect cluster name", expected = "Test storage and cluster name properly initialized"),
-            @Step(value = "Create broker and controller node pools", expected = "Broker and controller node pools created successfully"),
+            @Step(value = "Create broker and controller KafkaNodePools.", expected = "Broker and controller node pools created successfully"),
             @Step(value = "Deploy Kafka cluster in ephemeral mode", expected = "Kafka cluster deployed successfully"),
             @Step(value = "Create Kafka Connect cluster with default image", expected = "Kafka Connect cluster created with appropriate configuration"),
             @Step(value = "Create and configure Kafka Connector", expected = "Kafka Connector deployed and configured with correct settings"),
@@ -1187,7 +1187,7 @@ class ConnectST extends AbstractST {
         description = @Desc("Test to validate scaling KafkaConnect without a connector to zero replicas."),
         steps = {
             @Step(value = "Initialize TestStorage and create namespace", expected = "Namespace and storage initialized"),
-            @Step(value = "Create broker and controller node pools", expected = "Node pools created with 3 replicas."),
+            @Step(value = "Create broker and controller KafkaNodePools.", expected = "Node pools created with 3 replicas."),
             @Step(value = "Create ephemeral Kafka cluster", expected = "Kafka cluster created with 3 replicas."),
             @Step(value = "Create KafkaConnect resource with 2 replicas", expected = "KafkaConnect resource created with 2 replicas."),
             @Step(value = "Verify that KafkaConnect has 2 pods", expected = "2 KafkaConnect pods are running."),
@@ -1235,7 +1235,7 @@ class ConnectST extends AbstractST {
         description = @Desc("Test scaling Kafka Connect with a connector to zero replicas."),
         steps = {
             @Step(value = "Create TestStorage instance", expected = "TestStorage instance is created with context"),
-            @Step(value = "Create broker and controller node pools", expected = "Broker and Controller node pools are created"),
+            @Step(value = "Create broker and controller KafkaNodePools.", expected = "Broker and Controller node pools are created"),
             @Step(value = "Create ephemeral Kafka cluster", expected = "Kafka cluster with 3 replicas is created"),
             @Step(value = "Create Kafka Connect with file plugin", expected = "Kafka Connect is created with 2 replicas and file plugin"),
             @Step(value = "Create Kafka Connector", expected = "Kafka Connector is created with necessary configurations"),
