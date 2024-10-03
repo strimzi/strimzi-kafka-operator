@@ -656,7 +656,8 @@ public class KafkaUtils {
      * @param clusterName           The name of the Kafka cluster.
      * @param expectedState         The expected {@link KafkaAutoRebalanceState} that is set.
      */
-    public static void waitUntilKafkaHasAutoRebalanceState(final String namespaceName, final String clusterName,
+    public static void waitUntilKafkaHasAutoRebalanceState(final String namespaceName,
+                                                           final String clusterName,
                                                            final KafkaAutoRebalanceState expectedState) {
         TestUtils.waitFor(
             String.format("waiting for Kafka cluster '%s' in namespace '%s' and KafkaRebalance state: '%s'", clusterName, namespaceName, expectedState),
@@ -669,8 +670,7 @@ public class KafkaUtils {
                 }
 
                 final KafkaAutoRebalanceState currentState = kafka.getStatus().getAutoRebalance() != null
-                    ? kafka.getStatus().getAutoRebalance().getState()
-                    : null;
+                    ? kafka.getStatus().getAutoRebalance().getState() : null;
 
                 return currentState != null && currentState.equals(expectedState);
             }
@@ -683,14 +683,15 @@ public class KafkaUtils {
      * @param namespaceName                     The name of the Kubernetes namespace where the Kafka cluster resides.
      * @param clusterName                       The name of the Kafka cluster.
      * @param expectedKafkaAutoRebalanceMode    The expected {@link KafkaRebalanceMode} that the Kafka cluster should reach.
-     * @param expectedBrokers                   A list of expected broker IDs that the Kafka cluster should have in AutoRebalance state.
+     * @param scalingBrokers                    A list of expected broker IDs that the Kafka cluster should have in AutoRebalance state.
      */
-    public static void waitUntilKafkaHasExpectedAutoRebalanceModeAndBrokers(final String namespaceName, final String clusterName,
+    public static void waitUntilKafkaHasExpectedAutoRebalanceModeAndBrokers(final String namespaceName,
+                                                                            final String clusterName,
                                                                             final KafkaRebalanceMode expectedKafkaAutoRebalanceMode,
-                                                                            final List<Integer> expectedBrokers) {
+                                                                            final List<Integer> scalingBrokers) {
         TestUtils.waitFor(
             String.format("Waiting for Kafka cluster '%s' in namespace '%s' and KafkaRebalance mode '%s' with brokers %s",
-                clusterName, namespaceName, expectedKafkaAutoRebalanceMode, expectedBrokers),
+                clusterName, namespaceName, expectedKafkaAutoRebalanceMode, scalingBrokers),
             TestConstants.GLOBAL_POLL_INTERVAL,
             TestConstants.GLOBAL_TIMEOUT,
             () -> {
@@ -705,8 +706,8 @@ public class KafkaUtils {
                 }
 
                 return autoRebalanceModeBrokersList.stream()
-                    .anyMatch(autoRebalanceStatusBroker -> autoRebalanceStatusBroker.getMode().equals(expectedKafkaAutoRebalanceMode)
-                        && autoRebalanceStatusBroker.getBrokers().equals(expectedBrokers));
+                    .anyMatch(modeBrokers -> modeBrokers.getMode().equals(expectedKafkaAutoRebalanceMode)
+                        && modeBrokers.getBrokers().equals(scalingBrokers));
             }
         );
     }

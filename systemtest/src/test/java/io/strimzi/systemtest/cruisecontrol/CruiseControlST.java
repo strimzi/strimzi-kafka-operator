@@ -21,7 +21,6 @@ import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceConfigurationBuilder;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceState;
-import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
@@ -56,13 +55,11 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
-import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -656,7 +653,8 @@ public class CruiseControlST extends AbstractST {
             @Step(value = "Scale Kafka up to a higher number of brokers.", expected = "Kafka brokers are scaled up, and Cruise Control initiates rebalancing in ADD_BROKERS mode."),
             @Step(value = "Verify that Kafka auto-rebalance status transitions to RebalanceOnScaleUp and then back to Idle.", expected = "Auto-rebalance status moves to RebalanceOnScaleUp during scaling and returns to Idle after rebalancing completes."),
             @Step(value = "Check that topic replicas are moved to the new brokers.", expected = "Topic replicas are distributed onto the newly added brokers."),
-            @Step(value = "Scale Kafka down to the original number of brokers.", expected = "Kafka brokers are scaled down, and Cruise Control initiates rebalancing in REMOVE_BROKERS mode."),
+            @Step(value = "Change number of replicas of Kafka cluster to initial replicas within KafkaNodePool (i.e., 3 brokers)", expected = "KafkaNodePool is set successfully to 3 replicas and auto-rebalance is triggered."),
+            @Step(value = "After auto-rebalance is done, Kafka cluster is scale-down to the original number of brokers.", expected = "Kafka brokers are scaled down before of free partitions"),
             @Step(value = "Verify that Kafka auto-rebalance status transitions to RebalanceOnScaleDown and then back to Idle.", expected = "Auto-rebalance status moves to RebalanceOnScaleDown during scaling down and returns to Idle after rebalancing completes."),
             @Step(value = "Confirm that the cluster is stable after scaling operations.", expected = "Cluster returns to a stable state with initial number of brokers and Cruise Control completed the rebalancing.")
         },

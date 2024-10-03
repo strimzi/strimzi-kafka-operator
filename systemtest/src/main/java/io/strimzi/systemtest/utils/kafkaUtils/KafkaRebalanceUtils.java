@@ -162,10 +162,10 @@ public class KafkaRebalanceUtils {
     }
 
     public static void waitForKafkaRebalanceIsPresent(final String namespaceName, final String kafkaRebalanceName) {
-        TestUtils.waitFor("KafkaRebalance status is present", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT, () -> KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(kafkaRebalanceName).get() != null);
+        TestUtils.waitFor("KafkaRebalance is present", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT, () -> KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(kafkaRebalanceName).get() != null);
     }
 
     public static void waitForKafkaRebalanceIsDeleted(final String namespaceName, final String kafkaRebalanceName) {
-        TestUtils.waitFor("KafkaRebalance status is deleted", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT, () -> KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(kafkaRebalanceName).get() == null);
+        TestUtils.waitFor("KafkaRebalance is deleted", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT, () -> KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(kafkaRebalanceName).get() == null);
     }
 }

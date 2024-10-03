@@ -48,9 +48,10 @@
 | 5. | Scale Kafka up to a higher number of brokers. | Kafka brokers are scaled up, and Cruise Control initiates rebalancing in ADD_BROKERS mode. |
 | 6. | Verify that Kafka auto-rebalance status transitions to RebalanceOnScaleUp and then back to Idle. | Auto-rebalance status moves to RebalanceOnScaleUp during scaling and returns to Idle after rebalancing completes. |
 | 7. | Check that topic replicas are moved to the new brokers. | Topic replicas are distributed onto the newly added brokers. |
-| 8. | Scale Kafka down to the original number of brokers. | Kafka brokers are scaled down, and Cruise Control initiates rebalancing in REMOVE_BROKERS mode. |
-| 9. | Verify that Kafka auto-rebalance status transitions to RebalanceOnScaleDown and then back to Idle. | Auto-rebalance status moves to RebalanceOnScaleDown during scaling down and returns to Idle after rebalancing completes. |
-| 10. | Confirm that the cluster is stable after scaling operations. | Cluster returns to a stable state with initial number of brokers and Cruise Control completed the rebalancing. |
+| 8. | Change number of replicas of Kafka cluster to initial replicas within KafkaNodePool (i.e., 3 brokers) | KafkaNodePool is set successfully to 3 replicas and auto-rebalance is triggered. |
+| 9. | After auto-rebalance is done, Kafka cluster is scale-down to the original number of brokers. | Kafka brokers are scaled down before of free partitions |
+| 10. | Verify that Kafka auto-rebalance status transitions to RebalanceOnScaleDown and then back to Idle. | Auto-rebalance status moves to RebalanceOnScaleDown during scaling down and returns to Idle after rebalancing completes. |
+| 11. | Confirm that the cluster is stable after scaling operations. | Cluster returns to a stable state with initial number of brokers and Cruise Control completed the rebalancing. |
 
 **Labels:**
 
