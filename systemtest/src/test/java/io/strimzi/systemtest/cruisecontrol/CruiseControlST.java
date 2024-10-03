@@ -503,7 +503,7 @@ public class CruiseControlST extends AbstractST {
     @IsolatedTest
     @MixedRoleNotSupported("Scaling a Kafka Node Pool with mixed roles is not supported yet")
     @TestDoc(
-        description = @Desc("Testing the behavior of Cruise Control during both scaling up and down of Kafka brokers using node pools."),
+        description = @Desc("Testing the behavior of Cruise Control during both scaling up and down of Kafka brokers using KafkaNodePools."),
         steps = {
             @Step(value = "Create broker and controller KafkaNodePools", expected = "Both KafkaNodePools are successfully created"),
             @Step(value = "Create initial Kafka cluster setup with Cruise Control and topic", expected = "Kafka cluster, topic, and scraper pod are created successfully"),

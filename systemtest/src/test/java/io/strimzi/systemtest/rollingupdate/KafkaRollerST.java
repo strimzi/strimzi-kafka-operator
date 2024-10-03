@@ -391,7 +391,7 @@ public class KafkaRollerST extends AbstractST {
 
     /**
      * @description This test case verifies the rolling update behavior of Kafka controller nodes under specific conditions.
-     * It focuses on ensuring that changes in Kafka configuration and node pool properties affect only the intended node pools,
+     * It focuses on ensuring that changes in Kafka configuration and node pool properties affect only the intended KafkaNodePools,
      * particularly the controller nodes, while leaving others like broker nodes unaffected.
      *
      * @steps

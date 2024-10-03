@@ -56,7 +56,7 @@
 
 ## testCruiseControlDuringBrokerScaleUpAndDown
 
-**Description:** Testing the behavior of Cruise Control during both scaling up and down of Kafka brokers using node pools.
+**Description:** Testing the behavior of Cruise Control during both scaling up and down of Kafka brokers using KafkaNodePools.
 
 **Steps:**
 
