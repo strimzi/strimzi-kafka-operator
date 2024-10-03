@@ -387,7 +387,8 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
     private void krNewToPendingProposalToProposalReady(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr) throws IOException, URISyntaxException {
         // Set up the rebalance endpoint with the number of pending calls before a response is received.
-        cruiseControlServer.setupCCRebalanceResponse(2, endpoint);
+        cruiseControlServer.setupCCRebalanceResponse(1, endpoint);
+        cruiseControlServer.setupCCUserTasksResponseNoGoals(1, 0);
 
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
         crdCreateKafka();
@@ -531,6 +532,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     private void krNewToPendingProposalToStoppedAndRefresh(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr) throws IOException, URISyntaxException {
         // Set up the rebalance endpoint with the number of pending calls before a response is received.
         cruiseControlServer.setupCCRebalanceResponse(2, endpoint);
+        cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 0);
 
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
         crdCreateKafka();
@@ -1133,7 +1135,8 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
     private void krNewToPendingProposalDelete(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr) throws IOException, URISyntaxException {
         // Set up the rebalance endpoint with the number of pending calls before a response is received.
-        cruiseControlServer.setupCCRebalanceResponse(2, endpoint);
+        cruiseControlServer.setupCCRebalanceResponse(1, endpoint);
+        cruiseControlServer.setupCCUserTasksResponseNoGoals(1, 0);
 
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
         crdCreateKafka();
