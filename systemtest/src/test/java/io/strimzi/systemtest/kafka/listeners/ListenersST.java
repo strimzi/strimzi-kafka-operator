@@ -180,7 +180,7 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test sending messages over tls transport using mutual tls auth."),
         steps = {
-            @Step(value = "Create Kafka node pool resources.", expected = "Persistent storage node pools are created."),
+            @Step(value = "CreateKafkaNodePool resources.", expected = "Persistent storage node pools are created."),
             @Step(value = "Disable plain listener and enable tls listener in Kafka resource.", expected = "Kafka with plain listener disabled and tls listener enabled is created."),
             @Step(value = "Create Kafka topic and user.", expected = "Kafka topic and tls user are created."),
             @Step(value = "Configure and deploy Kafka clients.", expected = "Kafka clients producer and consumer with tls are deployed."),

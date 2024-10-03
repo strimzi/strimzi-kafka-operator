@@ -85,10 +85,10 @@
 | 1. | Deploy a Kafka instance with annotations to manage node pools and 2 initial node pools, both with mixed role, first one stable, second one which will be modified. | Kafka instance with initial node pools is deployed. |
 | 2. | Create KafkaTopic with replica number requiring all Kafka Brokers to be present. | KafkaTopic is created. |
 | 3. | Annotate one of node pools to perform manual Rolling Update. | Rolling Update started. |
-| 4. | Change role of Kafka Node Pool from mixed to controller only role. | Role Change is prevented due to existing KafkaTopic replicas and ongoing Rolling Update. |
+| 4. | Change role ofKafkaNodePool from mixed to controller only role. | Role Change is prevented due to existing KafkaTopic replicas and ongoing Rolling Update. |
 | 5. | Original Rolling Update finishes successfully. | Rolling Update is completed. |
 | 6. | Delete previously created KafkaTopic. | KafkaTopic is deleted and Node Pool role change is initiated. |
-| 7. | Change role of Kafka Node Pool from controller only to mixed role. | Kafka Node Pool changes role to mixed role. |
+| 7. | Change role ofKafkaNodePool from controller only to mixed role. | KafkaNodePool changes role to mixed role. |
 | 8. | Produce and consume messages on newly created KafkaTopic with replica count requiring also new brokers to be present. | Messages are produced and consumed successfully. |
 
 **Labels:**

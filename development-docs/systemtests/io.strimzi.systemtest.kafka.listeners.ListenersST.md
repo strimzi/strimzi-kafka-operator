@@ -515,7 +515,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create Kafka node pool resources. | Persistent storage node pools are created. |
+| 1. | CreateKafkaNodePool resources. | Persistent storage node pools are created. |
 | 2. | Disable plain listener and enable tls listener in Kafka resource. | Kafka with plain listener disabled and tls listener enabled is created. |
 | 3. | Create Kafka topic and user. | Kafka topic and tls user are created. |
 | 4. | Configure and deploy Kafka clients. | Kafka clients producer and consumer with tls are deployed. |
