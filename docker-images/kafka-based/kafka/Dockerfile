@@ -9,6 +9,12 @@ ARG strimzi_version
 ARG TARGETOS
 ARG TARGETARCH
 
+LABEL name='kafka' \
+    version="${strimzi_version}-${KAFKA_VERSION}" \
+    release="${strimzi_version}" \
+    summary="Kafka ${KAFKA_VERSION} image of the Strimzi Kafka Operator project." \
+    description="Kafka image used by the Strimzi Kafka Operator to run Kafka ${KAFKA_VERSION} clusters."
+
 RUN microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install -y gettext nmap-ncat net-tools unzip hostname findutils tar \
     && microdnf clean all -y
 
