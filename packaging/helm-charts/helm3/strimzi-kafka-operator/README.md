@@ -5,12 +5,18 @@ Strimzi provides a way to run an [Apache Kafka®](https://kafka.apache.org) clus
 See our [website](https://strimzi.io) for more details about the project.
 
 **!!! IMPORTANT !!!**
-Upgrading to Strimzi 0.32 and newer directly from Strimzi 0.22 and earlier is no longer possible.
-Please follow the [documentation](https://strimzi.io/docs/operators/latest/full/deploying.html#assembly-upgrade-str) for more details.
 
-**!!! IMPORTANT !!!**
-From Strimzi 0.44.0 on, we support only Kubernetes 1.25 and newer.
-Kubernetes 1.23 and 1.24 are not supported anymore.
+* From Strimzi 0.44.0 on, we support only Kubernetes 1.25 and newer.
+  Kubernetes 1.23 and 1.24 are not supported anymore.
+* ZooKeeper support will be soon removed from Apache Kafka and Strimzi.
+  Currently, the last Strimzi version with ZooKeeper support is expected to be Strimzi 0.45.
+  Please plan your migration to KRaft (ZooKeeper-less Apache Kafka) accordingly.
+  Follow the [documentation](https://strimzi.io/docs/operators/latest/full/deploying.html#assembly-kraft-mode-str) for more details. 
+* Kafka Mirror Maker 1 support will be soon removed from Apache Kafka and Strimzi.
+  Currently, the last Strimzi version with Mirror Maker 1 support is expected to be Strimzi 0.45.
+  Please plan your migration to Mirror Maker 2 or another mirroring tool.
+* Upgrading to Strimzi 0.32 and newer directly from Strimzi 0.22 and earlier is no longer possible.
+  Please follow the [documentation](https://strimzi.io/docs/operators/latest/full/deploying.html#assembly-upgrade-str) for more details.
 
 ## Introduction
 
@@ -21,14 +27,16 @@ cluster using the [Helm](https://helm.sh) package manager.
 ### Supported Features
 
 * **Manages the Kafka Cluster** - Deploys and manages all of the components of this complex application, including dependencies like Apache ZooKeeper® that are traditionally hard to administer.
-* **KRaft support** - Allows running Apache Kafka clusters in the KRaft mode (without ZooKeeper). 
+* **KRaft support** - Allows running Apache Kafka clusters in the KRaft mode (without ZooKeeper).
 * **Includes Kafka Connect** - Allows for configuration of common data sources and sinks to move data into and out of the Kafka cluster.
 * **Topic Management** - Creates and manages Kafka Topics within the cluster.
 * **User Management** - Creates and manages Kafka Users within the cluster.
 * **Connector Management** - Creates and manages Kafka Connect connectors.
-* **Includes Kafka Mirror Maker 1 and 2** - Allows for mirroring data between different Apache Kafka® clusters.
+* **Includes Kafka MirrorMaker** - Allows for mirroring data between different Apache Kafka® clusters.
 * **Includes HTTP Kafka Bridge** - Allows clients to send and receive messages through an Apache Kafka® cluster via the HTTP protocol.
 * **Includes Cruise Control** - Automates the process of balancing partitions across an Apache Kafka® cluster.
+* **Auto-rebalancing when scaling** - Automatically rebalance the Kafka cluster after a scale-up or before a scale-down.
+* **Tiered storage** - Offloads older, less critical data to a lower-cost, lower-performance storage tier, such as object storage.
 * **Prometheus monitoring** - Built-in support for monitoring using Prometheus.
 * **Grafana Dashboards** - Built-in support for loading Grafana® dashboards via the grafana_sidecar
 
