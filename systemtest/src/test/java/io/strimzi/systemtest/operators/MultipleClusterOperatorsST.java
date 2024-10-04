@@ -100,7 +100,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
      *     - Kafka is not deployed.
      *  5. - Verify state of metric 'strimzi_resource' for Kafka, which holds number of operated Kafka operands.
      *     - Metric 'strimzi_resource' exposed by Cluster Operators is not present indicating no Kafka resource is being operated.
-     *  6. - Modify Kafka custom resource, by changing its label 'app.kubernetes.io/operator' to point to the first Cluster Operator
+     *  6. - Modify Kafka CustomResource, by changing its label 'app.kubernetes.io/operator' to point to the first Cluster Operator
      *     - Kafka is deployed and operated by the first Cluster Operator.
      *  7. - Deploy Kafka Connect (with label 'app.kubernetes.io/operator' pointing the first Cluster Operator) and  Kafka Connector
      *     - Both operands are successfully deployed, and managed by the first Cluster Operator.
@@ -231,7 +231,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
      *  3. - Deploy Kafka Cluster with 3 Kafka replicas and label 'app.kubernetes.io/operator' pointing to the first Cluster Operator.
      *  4. - Change Kafka's label selector 'app.kubernetes.io/operator' to point to not existing Cluster Operator.
      *     - Kafka Cluster is no longer controlled by any Cluster Operator.
-     *  5. - Modify Kafka custom resource, by increasing number of replicas from 3 to 4.
+     *  5. - Modify Kafka CustomResource, by increasing number of replicas from 3 to 4.
      *     - Kafka is not scaled to 4 replicas.
      *  6. - Deploy Kafka Rebalance without 'app.kubernetes.io/operator' label.
      *     - For a stable period of time, Kafka Rebalance is ignored as well.

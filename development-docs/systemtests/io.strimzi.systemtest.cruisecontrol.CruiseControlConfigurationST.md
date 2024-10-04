@@ -6,7 +6,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Set up the Cluster Operator | Cluster Operator is installed and running |
+| 1. | Set up the cluster operator | Cluster operator is installed and running |
 
 **Labels:**
 

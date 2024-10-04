@@ -1,12 +1,12 @@
 # DynamicConfST
 
-**Description:** DynamicConfST is responsible for verifying that changes in dynamic Kafka configuration do not trigger a rolling update.
+**Description:** Responsible for verifying that changes in dynamic Kafka configuration do not trigger a rolling update.
 
 **Before tests execution steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy the Cluster Operator. | Cluster Operator is installed successfully. |
+| 1. | Deploy the cluster operator. | Cluster operator is installed successfully. |
 
 <hr style="border:1px solid">
 

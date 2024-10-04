@@ -11,6 +11,7 @@ These tests are crucial to ensure that Kafka clusters can handle production work
 - [testReadOnlyRootFileSystem](../io.strimzi.systemtest.kafka.KafkaST.md)
 - [testLabelsExistenceAndManipulation](../io.strimzi.systemtest.kafka.KafkaST.md)
 - [testSendMessagesCustomListenerTlsScramSha](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
+- [testDynConfiguration](../io.strimzi.systemtest.kafka.dynamicconfiguration.DynamicConfSharedST.md)
 - [testKafkaJBODDeleteClaimsTrueFalse](../io.strimzi.systemtest.kafka.KafkaST.md)
 - [testCertificateWithNonExistingDataKey](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
 - [testResizeJbodVolumes](../io.strimzi.systemtest.kafka.KafkaST.md)

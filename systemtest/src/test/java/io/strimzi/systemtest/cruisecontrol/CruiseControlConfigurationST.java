@@ -60,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @SuiteDoc(
     description = @Desc("This test suite, verify configuration of the Cruise Control component."),
     beforeTestSteps = {
-        @Step(value = "Set up the Cluster Operator", expected = "Cluster Operator is installed and running")
+        @Step(value = "Set up the cluster operator", expected = "Cluster operator is installed and running")
     },
     labels = {
         @Label(value = TestDocsLabels.CRUISE_CONTROL)

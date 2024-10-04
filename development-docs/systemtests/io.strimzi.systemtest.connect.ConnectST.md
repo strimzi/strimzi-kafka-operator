@@ -28,7 +28,7 @@
 | 4. | Create Kafka Topic | Topic created successfully |
 | 5. | Create Kafka SCRAM-SHA-512 user with a weird username | User created successfully with SCRAM-SHA-512 credentials |
 | 6. | Deploy Kafka Connect with SCRAM-SHA-512 authentication | Kafka Connect instance deployed and configured with user credentials |
-| 7. | Deploy Kafka Connector | Kafka Connector deployed and configured successfully |
+| 7. | Deploy KafkaConnector | KafkaConnector deployed and configured successfully |
 | 8. | Send messages using the configured client | Messages sent successfully |
 | 9. | Verify that connector receives messages | Messages consumed by the connector and written to the specified sink |
 
@@ -66,9 +66,9 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Create test storage instance | Test storage instance is created |
-| 2. | Create node pool resources | Node pool resources are created and waited for readiness |
+| 2. | Create KafkaNodePool resources | KafkaNodePool resources are created and waited for readiness |
 | 3. | Create Kafka cluster | Kafka cluster is created and waited for readiness |
-| 4. | Deploy EchoSink Kafka Connector with autor restart enabled | Kafka Connector is created with auto-restart enabled |
+| 4. | Deploy EchoSink KafkaConnector with autor restart enabled | KafkaConnector is created with auto-restart enabled |
 | 5. | Send first batch of messages | First batch of messages is sent to the topic |
 | 6. | Ensure connection success for the first batch | Successfully produce the first batch of messages |
 | 7. | Send second batch of messages | Second batch of messages is sent to the topic |
@@ -115,7 +115,7 @@
 | 4. | Annotate for manual rolling update. | KafkaConnect components are annotated for a manual rolling update. |
 | 5. | Perform and wait for rolling update. | KafkaConnect components roll and new pods are deployed. |
 | 6. | Kafka Connect pod. | Pod configurations and annotations are verified. |
-| 7. | Kafka Connectors. | Various Kafka Connect resource labels and configurations are verified to ensure correct deployment. |
+| 7. | KafkaConnectors. | Various Kafka Connect resource labels and configurations are verified to ensure correct deployment. |
 
 **Labels:**
 
@@ -155,10 +155,10 @@
 | 3. | Create and wait for the broker and controller pools | Broker and controller pools are created and running. |
 | 4. | Deploy and configure Kafka Connect with File Sink Plugin | Kafka Connect with File Sink Plugin is deployed and configured. |
 | 5. | Deploy Network Policies for Kafka Connect | Network Policies are successfully deployed for Kafka Connect. |
-| 6. | Create and wait for Kafka Connector | Kafka Connector is created and running. |
+| 6. | Create and wait for KafkaConnector | KafkaConnector is created and running. |
 | 7. | Deploy and configure scraper pod | Scraper pod is deployed and configured. |
 | 8. | Deploy and configure Kafka clients | Kafka clients are deployed and configured. |
-| 9. | Execute assertions to verify the Kafka Connector configuration and status | Assertions confirm the Kafka Connector is successfully deployed, has the correct configuration, and is running. |
+| 9. | Execute assertions to verify the KafkaConnector configuration and status | Assertions confirm the KafkaConnector is successfully deployed, has the correct configuration, and is running. |
 
 **Labels:**
 
@@ -282,8 +282,8 @@
 | 2. | Create broker and controller KafkaNodePools. | Broker and controller KafkaNodePools created successfully |
 | 3. | Deploy Kafka cluster in ephemeral mode | Kafka cluster deployed successfully |
 | 4. | Create Kafka Connect cluster with default image | Kafka Connect cluster created with appropriate configuration |
-| 5. | Create and configure Kafka Connector | Kafka Connector deployed and configured with correct settings |
-| 6. | Verify the status of the Kafka Connector | Kafka Connector status retrieved and worker node identified |
+| 5. | Create and configure KafkaConnector | KafkaConnector deployed and configured with correct settings |
+| 6. | Verify the status of the KafkaConnector | KafkaConnector status retrieved and worker node identified |
 | 7. | Deploy Kafka clients for producer and consumer | Kafka producer and consumer clients deployed |
 | 8. | Verify that Kafka Connect writes messages to the specified file sink | Messages successfully written to the file sink by Kafka Connect |
 
@@ -294,7 +294,7 @@
 
 ## testScaleConnectAndConnectorSubresource
 
-**Description:** This test verifies the scaling functionality of Kafka Connect and Kafka Connector subresources.
+**Description:** This test verifies the scaling functionality of Kafka Connect and KafkaConnector subresources.
 
 **Steps:**
 
@@ -302,7 +302,7 @@
 | - | - | - |
 | 1. | Initialize the test storage and create broker and controller pools | Broker and controller pools are created successfully |
 | 2. | Create KafkaNodePools using resourceManager based on the configuration | KafkaNodePools for broker and controller are created or not based on configuration |
-| 3. | Deploy Kafka, Kafka Connect and Kafka Connector resources | Kafka, Kafka Connect and Kafka Connector resources are deployed successfully |
+| 3. | Deploy Kafka, Kafka Connect and KafkaConnector resources | Kafka, Kafka Connect and KafkaConnector resources are deployed successfully |
 | 4. | Scale Kafka Connect subresource | Kafka Connect subresource is scaled successfully |
 | 5. | Verify Kafka Connect subresource scaling | Kafka Connect replicas and observed generation are as expected |
 | 6. | Scale Kafka Connector subresource | Kafka Connector subresource task max is set correctly |
@@ -325,12 +325,12 @@
 | 2. | Create broker and controller KafkaNodePools. | Broker and Controller KafkaNodePools are created |
 | 3. | Create ephemeral Kafka cluster | Kafka cluster with 3 replicas is created |
 | 4. | Create Kafka Connect with file plugin | Kafka Connect is created with 2 replicas and file plugin |
-| 5. | Create Kafka Connector | Kafka Connector is created with necessary configurations |
+| 5. | Create KafkaConnector | KafkaConnector is created with necessary configurations |
 | 6. | Check Kafka Connect pods | There are 2 Kafka Connect pods |
 | 7. | Scale down Kafka Connect to zero | Kafka Connect is scaled down to 0 replicas |
 | 8. | Wait for Kafka Connect to be ready | Kafka Connect readiness is verified |
-| 9. | Wait for Kafka Connector to not be ready | Kafka Connector readiness is verified |
-| 10. | Verify conditions | Pod size is 0, Kafka Connect is ready, Kafka Connector is not ready due to zero replicas |
+| 9. | Wait for KafkaConnector to not be ready | KafkaConnector readiness is verified |
+| 10. | Verify conditions | Pod size is 0, Kafka Connect is ready, KafkaConnector is not ready due to zero replicas |
 
 **Labels:**
 

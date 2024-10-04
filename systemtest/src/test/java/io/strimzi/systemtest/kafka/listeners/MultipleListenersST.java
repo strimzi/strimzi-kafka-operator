@@ -55,7 +55,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
 @SuiteDoc(
-    description = @Desc("Test to verify the functionality of using multiple NodePorts in a Kafka cluster within the same namespace."),
+    description = @Desc("Test to verify the functionality of using multiple NodePort listeners in a Kafka cluster within the same namespace."),
     labels = {
         @Label(value = TestDocsLabels.KAFKA)
     }
@@ -72,7 +72,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @TestDoc(
-        description = @Desc("Test verifying the functionality of using multiple NodePorts in a Kafka cluster within the same namespace."),
+        description = @Desc("Test verifying the functionality of using multiple NodePort listeners in a Kafka cluster within the same namespace."),
         steps = {
             @Step(value = "Execute listener tests with NodePort configuration.", expected = "Listener tests run without issues using NodePort.")
         },
@@ -89,7 +89,7 @@ public class MultipleListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test to verify the usage of more than one Kafka cluster within a single namespace."),
         steps = {
-            @Step(value = "Run the internal Kafka listeners test.", expected = "Listeners test runs successfully on the specified cluster.")
+            @Step(value = "Run the Internal Kafka listeners test.", expected = "Listeners test runs successfully on the specified cluster.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)
@@ -105,10 +105,10 @@ public class MultipleListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @TestDoc(
-        description = @Desc("Test verifying the combination of internal and external Kafka listeners."),
+        description = @Desc("Test verifying the combination of Internal and Enternal Kafka listeners."),
         steps = {
             @Step(value = "Check if the environment supports cluster-wide NodePort rights.", expected = "Test is skipped if the environment is not suitable."),
-            @Step(value = "Retrieve and combine internal and NodePort listeners.", expected = "Listeners are successfully retrieved and combined."),
+            @Step(value = "Retrieve and combine Internal and NodePort listeners.", expected = "Listeners are successfully retrieved and combined."),
             @Step(value = "Run listeners test with combined listeners.", expected = "Listeners test is executed successfully.")
         },
         labels = {
@@ -136,10 +136,10 @@ public class MultipleListenersST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(EXTERNAL_CLIENTS_USED)
     @TestDoc(
-        description = @Desc("Test verifying the behavior of multiple load balancers in a single namespace using more than one Kafka cluster."),
+        description = @Desc("Test verifying the behavior of multiple LoadBalancers in a single namespace using more than one Kafka cluster."),
         steps = {
-            @Step(value = "Run listeners test with LOADBALANCER type.", expected = "Listeners test executes successfully with load balancers."),
-            @Step(value = "Validate the results.", expected = "Results match the expected outcomes for multiple load balancers.")
+            @Step(value = "Run listeners test with LoadBalancer type.", expected = "Listeners test executes successfully with LoadBalancers."),
+            @Step(value = "Validate the results.", expected = "Results match the expected outcomes for multiple LoadBalancers.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)
@@ -157,7 +157,7 @@ public class MultipleListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test to verify the functionality of multiple Kafka route listeners in a single namespace."),
         steps = {
-            @Step(value = "Retrieve test cases for Kafka Listener Type ROUTE.", expected = "Test cases for ROUTE are retrieved."),
+            @Step(value = "Retrieve test cases for Kafka Listener Type Route.", expected = "Test cases for Route are retrieved."),
             @Step(value = "Run listener tests using the retrieved test cases and cluster name.", expected = "Listener tests run successfully with no errors.")
         },
         labels = {
@@ -174,11 +174,11 @@ public class MultipleListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @TestDoc(
-        description = @Desc("Test ensuring that different types of external Kafka listeners (ROUTE and NODEPORT) work correctly when mixed."),
+        description = @Desc("Test ensuring that different types of Enternal Kafka listeners (Route and NodePort) work correctly when mixed."),
         steps = {
             @Step(value = "Retrieve route listeners.", expected = "Route listeners are retrieved from test cases."),
-            @Step(value = "Retrieve nodeport listeners.", expected = "Nodeport listeners are retrieved from test cases."),
-            @Step(value = "Combine route and nodeport listeners.", expected = "Multiple different listeners list is populated."),
+            @Step(value = "Retrieve NodePort listeners.", expected = "Nodeport listeners are retrieved from test cases."),
+            @Step(value = "Combine route and NodePort listeners.", expected = "Multiple different listeners list is populated."),
             @Step(value = "Run listeners test.", expected = "Listeners test runs using the combined list.")
         },
         labels = {
@@ -205,9 +205,9 @@ public class MultipleListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @TestDoc(
-        description = @Desc("Verifies the combination of every kind of Kafka listener: INTERNAL, NODEPORT, ROUTE, and LOADBALANCER."),
+        description = @Desc("Verifies the combination of every kind of Kafka listener: Internal, NodePort, Route, and LOADBALANCER."),
         steps = {
-            @Step(value = "Retrieve different types of Kafka listeners.", expected = "Lists of INTERNAL, NODEPORT, ROUTE, and LOADBALANCER listeners are retrieved."),
+            @Step(value = "Retrieve different types of Kafka listeners.", expected = "Lists of Internal, NodePort, Route, and LOADBALANCER listeners are retrieved."),
             @Step(value = "Combine all different listener lists.", expected = "A combined list of all Kafka listener types is created."),
             @Step(value = "Run listeners test with combined listener list.", expected = "Listeners test runs with all types of Kafka listeners in the combined list.")
         },

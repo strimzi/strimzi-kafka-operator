@@ -255,7 +255,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Create custom secret | Custom secret is created with the specified certificate and key |
-| 2. | Create Kafka resources with node pools | Kafka brokers and controller pools are created and configured |
+| 2. | Create Kafka resources with KafkaNodePools | Kafka brokers and controller pools are created and configured |
 | 3. | Create Kafka cluster with listeners | Kafka cluster is created with internal and load balancer listeners using the custom certificates |
 | 4. | Create TLS user | TLS user is created |
 | 5. | Verify produced and consumed messages via external client | Messages are successfully produced and consumed using the custom certificates |
@@ -341,7 +341,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create and configure KafkaNodePools | Node pools for brokers and controllers are created |
+| 1. | Create and configure KafkaNodePools | KafkaNodePools for brokers and controllers are created |
 | 2. | Create and configure Kafka cluster with TLS listener | Kafka cluster with TLS enabled LoadBalancer listener is created |
 | 3. | Create and configure Kafka user with TLS authentication | Kafka user with TLS authentication is created |
 | 4. | Wait for the LoadBalancer address to be reachable | LoadBalancer address becomes reachable |
@@ -403,7 +403,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create Kafka broker and controller node pools. | Broker and controller node pools are created |
+| 1. | Create Kafka broker and controller KafkaNodePools. | Broker and controller KafkaNodePools are created |
 | 2. | Deploy Kafka cluster with NodePort listener and TLS enabled | Kafka cluster is deployed with NodePort listener and TLS |
 | 3. | Create a Kafka topic | Kafka topic is created |
 | 4. | Create a Kafka user with TLS authentication | Kafka user with TLS authentication is created |
@@ -459,7 +459,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create a Kafka cluster with broker and controller node pools. | Kafka cluster is created with node pools. |
+| 1. | Create a Kafka cluster with broker and controller KafkaNodePools. | Kafka cluster is created with KafkaNodePools. |
 | 2. | Create a Kafka cluster with custom listener using TLS and SCRAM-SHA authentication. | Kafka cluster with custom listener is ready. |
 | 3. | Create a Kafka topic and SCRAM-SHA user. | Kafka topic and user are created. |
 | 4. | Transmit messages over TLS using SCRAM-SHA authentication. | Messages are transmitted successfully. |
@@ -515,7 +515,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | CreateKafkaNodePool resources. | Persistent storage node pools are created. |
+| 1. | CreateKafkaNodePool resources. | Persistent storage KafkaNodePools are created. |
 | 2. | Disable plain listener and enable tls listener in Kafka resource. | Kafka with plain listener disabled and tls listener enabled is created. |
 | 3. | Create Kafka topic and user. | Kafka topic and tls user are created. |
 | 4. | Configure and deploy Kafka clients. | Kafka clients producer and consumer with tls are deployed. |

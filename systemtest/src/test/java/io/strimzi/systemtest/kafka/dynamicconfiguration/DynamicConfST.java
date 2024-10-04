@@ -63,9 +63,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @Tag(REGRESSION)
 @Tag(DYNAMIC_CONFIGURATION)
 @SuiteDoc(
-    description = @Desc("DynamicConfST is responsible for verifying that changes in dynamic Kafka configuration do not trigger a rolling update."),
+    description = @Desc("Responsible for verifying that changes in dynamic Kafka configuration do not trigger a rolling update."),
     beforeTestSteps = {
-        @Step(value = "Deploy the Cluster Operator.", expected = "Cluster Operator is installed successfully.")
+        @Step(value = "Deploy the cluster operator.", expected = "Cluster operator is installed successfully.")
     }
 )
 public class DynamicConfST extends AbstractST {

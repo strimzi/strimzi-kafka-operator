@@ -113,9 +113,9 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 @Tag(REGRESSION)
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
 @SuiteDoc(
-    description = @Desc("Test suite containing kafka related stuff (i.e., JVM resources, EO, TO or UO removal from Kafka cluster), which ensures proper functioning of Kafka clusters."),
+    description = @Desc("Test suite containing Kafka related stuff (i.e., JVM resources, EO, TO or UO removal from Kafka cluster), which ensures proper functioning of Kafka clusters."),
     beforeTestSteps = {
-        @Step(value = "Deploy Cluster Operator across all namespaces, with custom configuration.", expected = "Cluster Operator is deployed.")
+        @Step(value = "Deploy cluster operator across all namespaces, with custom configuration.", expected = "Cluster operator is deployed.")
     },
     labels = {
         @Label(value = TestDocsLabels.KAFKA)
@@ -399,9 +399,9 @@ class KafkaST extends AbstractST {
         steps = {
             @Step(value = "Deploy Kafka with persistent storage and JBOD storage with 2 volumes, both of which are configured to delete their Persistent Volume Claims on Kafka cluster un-provision.", expected = "Kafka is deployed, volumes are labeled and linked to Pods correctly."),
             @Step(value = "Verify that labels in Persistent Volume Claims are set correctly.", expected = "Persistent Volume Claims contains expected labels and values."),
-            @Step(value = "Modify Kafka Custom Resource, specifically 'deleteClaim' property of its first Kafka Volume.", expected = "Kafka CR is successfully modified, annotation of according Persistent Volume Claim is changed afterwards by Cluster Operator."),
+            @Step(value = "Modify Kafka CustomResource, specifically 'deleteClaim' property of its first Kafka Volume.", expected = "Kafka CR is successfully modified, annotation of according Persistent Volume Claim is changed afterwards by cluster operator."),
             @Step(value = "Delete Kafka cluster.", expected = "Kafka cluster and its components are deleted, including Persistent Volume Claim of Volume with 'deleteClaim' property set to true."),
-            @Step(value = "Verify remaining Persistent Volume Claims.", expected = "Persistent Volume Claim referenced by volume of formerly deleted Kafka Custom Resource with property 'deleteClaim' set to true is still present.")
+            @Step(value = "Verify remaining Persistent Volume Claims.", expected = "Persistent Volume Claim referenced by volume of formerly deleted Kafka CustomResource with property 'deleteClaim' set to true is still present.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)
@@ -1223,9 +1223,9 @@ class KafkaST extends AbstractST {
 
     @ParallelNamespaceTest()
     @TestDoc(
-        description = @Desc("This test case verifies basic working of Kafka Cluster managed by Cluster Operator with KRaft."),
+        description = @Desc("This test case verifies basic working of Kafka Cluster managed by cluster operator with KRaft."),
         steps = {
-            @Step(value = "Deploy Kafka annotated to enable KRaft (and additionally annotated to enable node pool management), and configure a KafkaNodePool resource to target the Kafka cluster.", expected = "Kafka is deployed, and the KafkaNodePool resource targets the cluster as expected."),
+            @Step(value = "Deploy Kafka annotated to enable KRaft (and additionally annotated to enable KafkaNodePool management), and configure a KafkaNodePool resource to target the Kafka cluster.", expected = "Kafka is deployed, and the KafkaNodePool resource targets the cluster as expected."),
             @Step(value = "Produce and consume messages in given Kafka Cluster.", expected = "Clients can produce and consume messages."),
             @Step(value = "Trigger manual Rolling Update.", expected = "Rolling update is triggered and completed shortly after.")
         },

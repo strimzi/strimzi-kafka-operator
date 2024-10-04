@@ -137,7 +137,7 @@ class ConnectST extends AbstractST {
             @Step(value = "Annotate for manual rolling update.", expected = "KafkaConnect components are annotated for a manual rolling update."),
             @Step(value = "Perform and wait for rolling update.", expected = "KafkaConnect components roll and new pods are deployed."),
             @Step(value = "Kafka Connect pod.", expected = "Pod configurations and annotations are verified."),
-            @Step(value = "Kafka Connectors.", expected = "Various Kafka Connect resource labels and configurations are verified to ensure correct deployment.")
+            @Step(value = "KafkaConnectors.", expected = "Various Kafka Connect resource labels and configurations are verified to ensure correct deployment.")
         },
         labels = {
             @Label(value = TestDocsLabels.CONNECT)
@@ -358,10 +358,10 @@ class ConnectST extends AbstractST {
             @Step(value = "Create and wait for the broker and controller pools", expected = "Broker and controller pools are created and running."),
             @Step(value = "Deploy and configure Kafka Connect with File Sink Plugin", expected = "Kafka Connect with File Sink Plugin is deployed and configured."),
             @Step(value = "Deploy Network Policies for Kafka Connect", expected = "Network Policies are successfully deployed for Kafka Connect."),
-            @Step(value = "Create and wait for Kafka Connector", expected = "Kafka Connector is created and running."),
+            @Step(value = "Create and wait for KafkaConnector", expected = "KafkaConnector is created and running."),
             @Step(value = "Deploy and configure scraper pod", expected = "Scraper pod is deployed and configured."),
             @Step(value = "Deploy and configure Kafka clients", expected = "Kafka clients are deployed and configured."),
-            @Step(value = "Execute assertions to verify the Kafka Connector configuration and status", expected = "Assertions confirm the Kafka Connector is successfully deployed, has the correct configuration, and is running.")
+            @Step(value = "Execute assertions to verify the KafkaConnector configuration and status", expected = "Assertions confirm the KafkaConnector is successfully deployed, has the correct configuration, and is running.")
         },
         labels = {
             @Label(value = TestDocsLabels.CONNECT)
@@ -709,9 +709,9 @@ class ConnectST extends AbstractST {
         description = @Desc("Test the automatic restart functionality of Kafka Connect tasks when they fail."),
         steps = {
             @Step(value = "Create test storage instance", expected = "Test storage instance is created"),
-            @Step(value = "Create node pool resources", expected = "Node pool resources are created and waited for readiness"),
+            @Step(value = "Create KafkaNodePool resources", expected = "KafkaNodePool resources are created and waited for readiness"),
             @Step(value = "Create Kafka cluster", expected = "Kafka cluster is created and waited for readiness"),
-            @Step(value = "Deploy EchoSink Kafka Connector with autor restart enabled", expected = "Kafka Connector is created with auto-restart enabled"),
+            @Step(value = "Deploy EchoSink KafkaConnector with autor restart enabled", expected = "KafkaConnector is created with auto-restart enabled"),
             @Step(value = "Send first batch of messages", expected = "First batch of messages is sent to the topic"),
             @Step(value = "Ensure connection success for the first batch", expected = "Successfully produce the first batch of messages"),
             @Step(value = "Send second batch of messages", expected = "Second batch of messages is sent to the topic"),
@@ -937,8 +937,8 @@ class ConnectST extends AbstractST {
             @Step(value = "Create broker and controller KafkaNodePools.", expected = "Broker and controller KafkaNodePools created successfully"),
             @Step(value = "Deploy Kafka cluster in ephemeral mode", expected = "Kafka cluster deployed successfully"),
             @Step(value = "Create Kafka Connect cluster with default image", expected = "Kafka Connect cluster created with appropriate configuration"),
-            @Step(value = "Create and configure Kafka Connector", expected = "Kafka Connector deployed and configured with correct settings"),
-            @Step(value = "Verify the status of the Kafka Connector", expected = "Kafka Connector status retrieved and worker node identified"),
+            @Step(value = "Create and configure KafkaConnector", expected = "KafkaConnector deployed and configured with correct settings"),
+            @Step(value = "Verify the status of the KafkaConnector", expected = "KafkaConnector status retrieved and worker node identified"),
             @Step(value = "Deploy Kafka clients for producer and consumer", expected = "Kafka producer and consumer clients deployed"),
             @Step(value = "Verify that Kafka Connect writes messages to the specified file sink", expected = "Messages successfully written to the file sink by Kafka Connect")
         },
@@ -1099,7 +1099,7 @@ class ConnectST extends AbstractST {
             @Step(value = "Create Kafka Topic", expected = "Topic created successfully"),
             @Step(value = "Create Kafka SCRAM-SHA-512 user with a weird username", expected = "User created successfully with SCRAM-SHA-512 credentials"),
             @Step(value = "Deploy Kafka Connect with SCRAM-SHA-512 authentication", expected = "Kafka Connect instance deployed and configured with user credentials"),
-            @Step(value = "Deploy Kafka Connector", expected = "Kafka Connector deployed and configured successfully"),
+            @Step(value = "Deploy KafkaConnector", expected = "KafkaConnector deployed and configured successfully"),
             @Step(value = "Send messages using the configured client", expected = "Messages sent successfully"),
             @Step(value = "Verify that connector receives messages", expected = "Messages consumed by the connector and written to the specified sink")
         },
@@ -1238,12 +1238,12 @@ class ConnectST extends AbstractST {
             @Step(value = "Create broker and controller KafkaNodePools.", expected = "Broker and Controller KafkaNodePools are created"),
             @Step(value = "Create ephemeral Kafka cluster", expected = "Kafka cluster with 3 replicas is created"),
             @Step(value = "Create Kafka Connect with file plugin", expected = "Kafka Connect is created with 2 replicas and file plugin"),
-            @Step(value = "Create Kafka Connector", expected = "Kafka Connector is created with necessary configurations"),
+            @Step(value = "Create KafkaConnector", expected = "KafkaConnector is created with necessary configurations"),
             @Step(value = "Check Kafka Connect pods", expected = "There are 2 Kafka Connect pods"),
             @Step(value = "Scale down Kafka Connect to zero", expected = "Kafka Connect is scaled down to 0 replicas"),
             @Step(value = "Wait for Kafka Connect to be ready", expected = "Kafka Connect readiness is verified"),
-            @Step(value = "Wait for Kafka Connector to not be ready", expected = "Kafka Connector readiness is verified"),
-            @Step(value = "Verify conditions", expected = "Pod size is 0, Kafka Connect is ready, Kafka Connector is not ready due to zero replicas")
+            @Step(value = "Wait for KafkaConnector to not be ready", expected = "KafkaConnector readiness is verified"),
+            @Step(value = "Verify conditions", expected = "Pod size is 0, Kafka Connect is ready, KafkaConnector is not ready due to zero replicas")
         },
         labels = {
             @Label(value = TestDocsLabels.CONNECT)
@@ -1300,11 +1300,11 @@ class ConnectST extends AbstractST {
     @Tag(CONNECTOR_OPERATOR)
     @Tag(COMPONENT_SCALING)
     @TestDoc(
-        description = @Desc("This test verifies the scaling functionality of Kafka Connect and Kafka Connector subresources."),
+        description = @Desc("This test verifies the scaling functionality of Kafka Connect and KafkaConnector subresources."),
         steps = {
             @Step(value = "Initialize the test storage and create broker and controller pools", expected = "Broker and controller pools are created successfully"),
             @Step(value = "Create KafkaNodePools using resourceManager based on the configuration", expected = "KafkaNodePools for broker and controller are created or not based on configuration"),
-            @Step(value = "Deploy Kafka, Kafka Connect and Kafka Connector resources", expected = "Kafka, Kafka Connect and Kafka Connector resources are deployed successfully"),
+            @Step(value = "Deploy Kafka, Kafka Connect and KafkaConnector resources", expected = "Kafka, Kafka Connect and KafkaConnector resources are deployed successfully"),
             @Step(value = "Scale Kafka Connect subresource", expected = "Kafka Connect subresource is scaled successfully"),
             @Step(value = "Verify Kafka Connect subresource scaling", expected = "Kafka Connect replicas and observed generation are as expected"),
             @Step(value = "Scale Kafka Connector subresource", expected = "Kafka Connector subresource task max is set correctly"),

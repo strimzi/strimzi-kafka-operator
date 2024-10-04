@@ -72,10 +72,10 @@ public class KafkaNodePoolST extends AbstractST {
     @TestDoc(
         description = @Desc("This test case verifies the management of broker IDs in KafkaNodePools using annotations."),
         steps = {
-            @Step(value = "Deploy a Kafka instance with annotations to manage node pools and one initial node pool to hold topics and act as controller.", expected = "Kafka instance is deployed according to Kafka and KafkaNodePool custom resource, with IDs 90, 91."),
-            @Step(value = "Deploy additional 2 node pools (A,B) with 1 and 2 replicas, and preset 'next-node-ids' annotations holding resp. values ([4],[6]).", expected = "node pools are deployed, node pool A contains ID 4, node pool B contains IDs 6, 0."),
-            @Step(value = "Annotate node pool A 'next-node-ids' and node pool B 'remove-node-ids' respectively ([20-21],[6,55]) afterward scale to 4 and 1 replicas resp.", expected = "node pools are scaled, node pool A contains IDs 4, 20, 21, 1. node pool B contains ID 0."),
-            @Step(value = "Annotate node pool A 'remove-node-ids' and node pool B 'next-node-ids' respectively ([20],[1]) afterward scale to 2 and 6 replicas resp.", expected = "node pools are scaled, node pool A contains IDs 1, 4. node pool B contains IDs 2, 3, 5.")
+            @Step(value = "Deploy a Kafka instance with annotations to manage KafkaNodePools and one initial KafkaNodePool to hold topics and act as controller.", expected = "Kafka instance is deployed according to Kafka and KafkaNodePool CustomResource, with IDs 90, 91."),
+            @Step(value = "Deploy additional 2 KafkaNodePools (A,B) with 1 and 2 replicas, and preset 'next-node-ids' annotations holding resp. values ([4],[6]).", expected = "KafkaNodePools are deployed, KafkaNodePool A contains ID 4, KafkaNodePool B contains IDs 6, 0."),
+            @Step(value = "Annotate KafkaNodePool A 'next-node-ids' and KafkaNodePool B 'remove-node-ids' respectively ([20-21],[6,55]) afterward scale to 4 and 1 replicas resp.", expected = "KafkaNodePools are scaled, KafkaNodePool A contains IDs 4, 20, 21, 1. KafkaNodePool B contains ID 0."),
+            @Step(value = "Annotate KafkaNodePool A 'remove-node-ids' and KafkaNodePool B 'next-node-ids' respectively ([20],[1]) afterward scale to 2 and 6 replicas resp.", expected = "KafkaNodePools are scaled, KafkaNodePool A contains IDs 1, 4. KafkaNodePool B contains IDs 2, 3, 5.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)
@@ -108,7 +108,7 @@ public class KafkaNodePoolST extends AbstractST {
 
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), nodePoolNameInitial), 2);
 
-        LOGGER.info("Testing deployment of node pools with pre-configured annotation: {} is creating Brokers with correct IDs", Annotations.ANNO_STRIMZI_IO_NODE_POOLS);
+        LOGGER.info("Testing deployment of KafkaNodePools with pre-configured annotation: {} is creating Brokers with correct IDs", Annotations.ANNO_STRIMZI_IO_NODE_POOLS);
 
         // Deploy NodePool A with only 1 replica and next ID 4, and NodePool B with 2 replica and next ID 6
         resourceManager.createResourceWithWait(KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), nodePoolNameA, testStorage.getClusterName(), 1)
@@ -176,12 +176,14 @@ public class KafkaNodePoolST extends AbstractST {
     @TestDoc(
         description = @Desc("This test case verifies changing of roles in KafkaNodePools."),
         steps = {
-            @Step(value = "Deploy a Kafka instance with annotations to manage node pools and 2 initial node pools, both with mixed role, first one stable, second one which will be modified.", expected = "Kafka instance with initial node pools is deployed."),
-            @Step(value = "Create KafkaTopic with replica number requiring all Kafka Brokers to be present.", expected = "KafkaTopic is created."),
-            @Step(value = "Annotate one of node pools to perform manual Rolling Update.", expected = "Rolling Update started."),
-            @Step(value = "Change role ofKafkaNodePool from mixed to controller only role.", expected = "Role Change is prevented due to existing KafkaTopic replicas and ongoing Rolling Update."),
-            @Step(value = "Original Rolling Update finishes successfully.", expected = "Rolling Update is completed."),
-            @Step(value = "Delete previously created KafkaTopic.", expected = "KafkaTopic is deleted and Node Pool role change is initiated."),
+            @Step(value = "Deploy a Kafka instance with annotations to manage KafkaNodePools and 2 initial KafkaNodePools, both with mixed role, first one stable, second one which will be modified.", expected = "Kafka instance with initial KafkaNodePools is deployed."),
+            @Step(value = "Create KafkaTopic with replica number requiring all the remaining Kafka Brokers to be present.", expected = "KafkaTopic created."),
+            @Step(value = "Deploy clients and transmit messages and remove KafkaTopic.", expected = "Transition of messages is finished successfully."),
+            @Step(value = "Remove KafkaTopic.", expected = "KafkaTopic is cleaned as expected."),
+            @Step(value = "Annotate one of KafkaNodePools to perform manual rolling update.", expected = "rolling update started."),
+            @Step(value = "Change role ofKafkaNodePool from mixed to controller only role.", expected = "Role Change is prevented due to existing KafkaTopic replicas and ongoing rolling update."),
+            @Step(value = "Original rolling update finishes successfully.", expected = "rolling update is completed."),
+            @Step(value = "Delete previously created KafkaTopic.", expected = "KafkaTopic is deleted and KafkaNodePool role change is initiated."),
             @Step(value = "Change role ofKafkaNodePool from controller only to mixed role.", expected = "KafkaNodePool changes role to mixed role."),
             @Step(value = "Produce and consume messages on newly created KafkaTopic with replica count requiring also new brokers to be present.", expected = "Messages are produced and consumed successfully.")
         },
@@ -199,7 +201,7 @@ public class KafkaNodePoolST extends AbstractST {
         final LabelSelector volatilePoolLabelSelector = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), volatileRolePoolName, ProcessRoles.CONTROLLER);
 
 
-        // Stable Node Pool for purpose of having at least 3 brokers and 3 controllers all the time.
+        // Stable KafkaNodePool for purpose of having at least 3 brokers and 3 controllers all the time.
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
                 KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
@@ -232,7 +234,7 @@ public class KafkaNodePoolST extends AbstractST {
         LOGGER.info("Wait for warning message in Kafka {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getNamespaceName(), testStorage.getClusterName(), ".*Reverting role change.*");
 
-        LOGGER.info("Wait for (original) Rolling Update to finish successfully");
+        LOGGER.info("Wait for (original) rolling update to finish successfully");
         volatilePoolPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), volatilePoolLabelSelector, 3, volatilePoolPodsSnapshot);
 
         // remove topic which blocks role change (removal of broker role thus decreasing number of broker nodes available)
@@ -257,12 +259,18 @@ public class KafkaNodePoolST extends AbstractST {
     @TestDoc(
         description = @Desc("This test case verifies the possibility of adding and removing KafkaNodePools into an existing Kafka cluster."),
         steps = {
-            @Step(value = "Deploy a Kafka instance with annotations to manage node pools and 2 initial node pools.", expected = "Kafka instance is deployed according to Kafka and KafkaNodePool custom resource."),
-            @Step(value = "Create KafkaTopic with replica number requiring all Kafka Brokers to be present, Deploy clients and transmit messages and remove KafkaTopic.", expected = "Transition of messages is finished successfully, KafkaTopic created and cleaned as expected."),
+            @Step(value = "Deploy a Kafka instance with annotations to manage KafkaNodePools and 2 initial KafkaNodePools.", expected = "Kafka instance is deployed according to Kafka and KafkaNodePool CustomResource."),
+            @Step(value = "Create KafkaTopic with replica number requiring all the remaining Kafka Brokers to be present.", expected = "KafkaTopic created."),
+            @Step(value = "Deploy clients and transmit messages and remove KafkaTopic.", expected = "Transition of messages is finished successfully."),
+            @Step(value = "Remove KafkaTopic.", expected = "KafkaTopic is cleaned as expected."),
             @Step(value = "Add extra KafkaNodePool with broker role to the Kafka.", expected = "KafkaNodePool is deployed and ready."),
-            @Step(value = "Create KafkaTopic with replica number requiring all Kafka Brokers to be present, Deploy clients and transmit messages and remove KafkaTopic.", expected = "Transition of messages is finished successfully, KafkaTopic created and cleaned as expected."),
-            @Step(value = "Remove one kafkaNodePool with broker role.", expected = "KafkaNodePool is removed, Pods are deleted, but other pods in Kafka are stable and ready."),
-            @Step(value = "Create KafkaTopic with replica number requiring all the remaining Kafka Brokers to be present, Deploy clients and transmit messages and remove KafkaTopic.", expected = "Transition of messages is finished successfully, KafkaTopic created and cleaned as expected.")
+            @Step(value = "Create KafkaTopic with replica number requiring all the remaining Kafka Brokers to be present.", expected = "KafkaTopic created."),
+            @Step(value = "Deploy clients and transmit messages and remove KafkaTopic.", expected = "Transition of messages is finished successfully."),
+            @Step(value = "Remove KafkaTopic.", expected = "KafkaTopic is cleaned as expected."),
+            @Step(value = "Remove one KafkaNodePool with broker role.", expected = "KafkaNodePool is removed, Pods are deleted, but other pods in Kafka are stable and ready."),
+            @Step(value = "Create KafkaTopic with replica number requiring all the remaining Kafka Brokers to be present.", expected = "KafkaTopic created."),
+            @Step(value = "Deploy clients and transmit messages and remove KafkaTopic.", expected = "Transition of messages is finished successfully."),
+            @Step(value = "Remove KafkaTopic.", expected = "KafkaTopic is cleaned as expected.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)
@@ -270,7 +278,7 @@ public class KafkaNodePoolST extends AbstractST {
     )
     void testNodePoolsAdditionAndRemoval() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        // node pools name convention is 'A' for all roles (: if possible i.e. based on feature gate) 'B' for broker roles.
+        // KafkaNodePools name convention is 'A' for all roles (: if possible i.e. based on feature gate) 'B' for broker roles.
         final String poolAName = testStorage.getBrokerPoolName() + "-a";
         final String poolB1Name = testStorage.getBrokerPoolName() + "-b1";
         final String poolB2NameAdded = testStorage.getBrokerPoolName() + "-b2-added";
@@ -304,7 +312,7 @@ public class KafkaNodePoolST extends AbstractST {
 
         KafkaNodePoolUtils.waitForKafkaNodePoolPodsReady(testStorage, poolB2NameAdded, ProcessRoles.BROKER, brokerNodePoolReplicaCount);
 
-        // replica count of this KafkaTopic will require that new brokers were correctly added into Kafka Cluster
+        // replica count of this KafkaTopic will require that new brokers were correctly added into Kafka cluster
         transmitMessagesWithNewTopicAndClean(testStorage, 5);
 
         LOGGER.info("Delete KafkaNodePool: {}/{} and wait for Kafka pods stability", testStorage.getNamespaceName(), poolB1Name);
@@ -317,15 +325,15 @@ public class KafkaNodePoolST extends AbstractST {
 
     @ParallelNamespaceTest
     @TestDoc(
-        description = @Desc("This test verifies Kafka Cluster migration to and from node pools, using the necessary Kafka and KafkaNodePool resources and annotations."),
+        description = @Desc("This test verifies Kafka cluster migration to and from KafkaNodePools, using the necessary Kafka and KafkaNodePool resources and annotations."),
         steps = {
-            @Step(value = "Deploy a Kafka cluster with the annotation to enable node pool management, and configure a KafkaNodePool resource to target the Kafka cluster.", expected = "Kafka is deployed, and the KafkaNodePool resource targets the cluster as expected."),
-            @Step(value = "Modify KafkaNodePool by increasing number of Kafka Replicas.", expected = "Number of Kafka Pods is increased to match specification from KafkaNodePool."),
-            @Step(value = "Produce and consume messages in given Kafka Cluster.", expected = "Clients can produce and consume messages."),
-            @Step(value = "Disable KafkaNodePool management in the Kafka custom resource using the node pool annotation.", expected = " StrimziPodSet is modified, pods are replaced, and any KafkaNodePool specifications (i.e., changed replica count)  are ignored."),
-            @Step(value = "Produce and consume messages in given Kafka Cluster.", expected = "Clients can produce and consume messages."),
-            @Step(value = "Enable node pool management in the Kafka custom resource using the node pool annotation.", expected = "New StrimziPodSet is created, pods are replaced , and any KafkaNodePool specifications  (i.e., changed replica count) take priority over Kafka specifications."),
-            @Step(value = "Produce and consume messages in given Kafka Cluster.", expected = "Clients can produce and consume messages.")
+            @Step(value = "Deploy a Kafka cluster with the annotation to enable KafkaNodePool management, and configure a KafkaNodePool resource to target the Kafka cluster.", expected = "Kafka is deployed, and the KafkaNodePool resource targets the cluster as expected."),
+            @Step(value = "Modify KafkaNodePool by increasing number of Kafka replicas.", expected = "Number of Kafka Pods is increased to match specification from KafkaNodePool."),
+            @Step(value = "Produce and consume messages in given Kafka cluster.", expected = "Clients can produce and consume messages."),
+            @Step(value = "Disable KafkaNodePool management in the Kafka CustomResource using the KafkaNodePool annotation.", expected = " StrimziPodSet is modified, pods are replaced, and any KafkaNodePool specifications (i.e., changed replica count) are ignored."),
+            @Step(value = "Produce and consume messages in given Kafka cluster.", expected = "Clients can produce and consume messages."),
+            @Step(value = "Enable KafkaNodePool management in the Kafka CustomResource using the KafkaNodePool annotation.", expected = "New StrimziPodSet is created, pods are replaced , and any KafkaNodePool specifications  (i.e., changed replica count) take priority over Kafka specifications."),
+            @Step(value = "Produce and consume messages in given Kafka cluster.", expected = "Clients can produce and consume messages.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA)
@@ -337,7 +345,7 @@ public class KafkaNodePoolST extends AbstractST {
         final int nodePoolIncreasedKafkaReplicaCount = 5;
         final String kafkaNodePoolName = "kafka";
 
-        LOGGER.info("Deploying Kafka Cluster: {}/{} controlled by KafkaNodePool: {}", testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaNodePoolName);
+        LOGGER.info("Deploying Kafka cluster: {}/{} controlled by KafkaNodePool: {}", testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaNodePoolName);
 
         final Kafka kafkaCr = KafkaTemplates.kafkaPersistentNodePools(testStorage.getNamespaceName(), testStorage.getClusterName(), originalKafkaReplicaCount, 3).build();
 
@@ -377,10 +385,10 @@ public class KafkaNodePoolST extends AbstractST {
         );
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        LOGGER.info("Disable KafkaNodePool in Kafka Cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
+        LOGGER.info("Disable KafkaNodePool in Kafka cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "disabled");
-            // because Kafka CR with node pools is missing .spec.kafka.replicas and .spec.kafka.storage, we need to
+            // because Kafka CR with KafkaNodePools is missing .spec.kafka.replicas and .spec.kafka.storage, we need to
             // set those here
             kafka.getSpec().getKafka().setReplicas(originalKafkaReplicaCount);
             kafka.getSpec().getKafka().setStorage(new PersistentClaimStorageBuilder()
@@ -406,7 +414,7 @@ public class KafkaNodePoolST extends AbstractST {
         );
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        LOGGER.info("Enable KafkaNodePool in Kafka Cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
+        LOGGER.info("Enable KafkaNodePool in Kafka cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled");
             kafka.getSpec().getKafka().setReplicas(null);

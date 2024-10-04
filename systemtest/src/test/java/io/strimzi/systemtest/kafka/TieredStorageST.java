@@ -76,7 +76,7 @@ public class TieredStorageST extends AbstractST {
         description = @Desc("This testcase is focused on testing of Tiered Storage integration implemented within Strimzi. The tests use Aiven Tiered Storage plugin (<a href=\"https://github.com/Aiven-Open/tiered-storage-for-apache-kafka/tree/main\">tiered-storage-for-apache-kafka</a>)."),
         steps = {
             @Step(value = "Deploys KafkaNodePool resource with PV of size 10Gi.", expected = "KafkaNodePool resource is deployed successfully with specified configuration."),
-            @Step(value = "Deploys Kafka resource with configuration of Tiered Storage for Aiven plugin, pointing to Minio S3, and with image built in beforeAll.", expected = "Kafka resource is deployed successfully with Tiered Storage configuration."),
+            @Step(value = "Deploy Kafka CustomResource with Tiered Storage configuration pointing to Minio S3, using a built Kafka image. Reduce the `remote.log.manager.task.interval.ms` and `log.retention.check.interval.ms` to minimize delays during log uploads and deletions.", expected = "Kafka CustomResource is deployed successfully with optimized intervals to speed up log uploads and local log deletions."),
             @Step(value = "Creates topic with enabled Tiered Storage sync with size of segments set to 10mb (this is needed to speed up the sync).", expected = "Topic is created successfully with Tiered Storage enabled and segment size of 10mb."),
             @Step(value = "Starts continuous producer to send data to Kafka.", expected = "Continuous producer starts sending data to Kafka."),
             @Step(value = "Wait until Minio size is not empty (contains data from Kafka).", expected = "Minio contains data from Kafka.")

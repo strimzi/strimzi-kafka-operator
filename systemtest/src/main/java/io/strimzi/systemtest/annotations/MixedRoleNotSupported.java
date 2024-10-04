@@ -15,5 +15,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @ExtendWith(MixedRoleNotSupportedCondition.class)
 public @interface MixedRoleNotSupported {
-    String value() default "Mixed role in Kafka Node Pools is not supported with configuration in this test case.";
+    String value() default "Mixed role in KafkaNodePools is not supported with configuration in this test case.";
 }

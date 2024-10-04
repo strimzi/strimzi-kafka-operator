@@ -17,19 +17,19 @@
 
 ## testKafkaManagementTransferToAndFromKafkaNodePool
 
-**Description:** This test verifies Kafka Cluster migration to and from node pools, using the necessary Kafka and KafkaNodePool resources and annotations.
+**Description:** This test verifies Kafka cluster migration to and from KafkaNodePools, using the necessary Kafka and KafkaNodePool resources and annotations.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy a Kafka cluster with the annotation to enable node pool management, and configure a KafkaNodePool resource to target the Kafka cluster. | Kafka is deployed, and the KafkaNodePool resource targets the cluster as expected. |
-| 2. | Modify KafkaNodePool by increasing number of Kafka Replicas. | Number of Kafka Pods is increased to match specification from KafkaNodePool. |
-| 3. | Produce and consume messages in given Kafka Cluster. | Clients can produce and consume messages. |
-| 4. | Disable KafkaNodePool management in the Kafka custom resource using the node pool annotation. |  StrimziPodSet is modified, pods are replaced, and any KafkaNodePool specifications (i.e., changed replica count)  are ignored. |
-| 5. | Produce and consume messages in given Kafka Cluster. | Clients can produce and consume messages. |
-| 6. | Enable node pool management in the Kafka custom resource using the node pool annotation. | New StrimziPodSet is created, pods are replaced , and any KafkaNodePool specifications  (i.e., changed replica count) take priority over Kafka specifications. |
-| 7. | Produce and consume messages in given Kafka Cluster. | Clients can produce and consume messages. |
+| 1. | Deploy a Kafka cluster with the annotation to enable KafkaNodePool management, and configure a KafkaNodePool resource to target the Kafka cluster. | Kafka is deployed, and the KafkaNodePool resource targets the cluster as expected. |
+| 2. | Modify KafkaNodePool by increasing number of Kafka replicas. | Number of Kafka Pods is increased to match specification from KafkaNodePool. |
+| 3. | Produce and consume messages in given Kafka cluster. | Clients can produce and consume messages. |
+| 4. | Disable KafkaNodePool management in the Kafka CustomResource using the KafkaNodePool annotation. |  StrimziPodSet is modified, pods are replaced, and any KafkaNodePool specifications (i.e., changed replica count) are ignored. |
+| 5. | Produce and consume messages in given Kafka cluster. | Clients can produce and consume messages. |
+| 6. | Enable KafkaNodePool management in the Kafka CustomResource using the KafkaNodePool annotation. | New StrimziPodSet is created, pods are replaced , and any KafkaNodePool specifications  (i.e., changed replica count) take priority over Kafka specifications. |
+| 7. | Produce and consume messages in given Kafka cluster. | Clients can produce and consume messages. |
 
 **Labels:**
 
@@ -44,10 +44,10 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy a Kafka instance with annotations to manage node pools and one initial node pool to hold topics and act as controller. | Kafka instance is deployed according to Kafka and KafkaNodePool custom resource, with IDs 90, 91. |
-| 2. | Deploy additional 2 node pools (A,B) with 1 and 2 replicas, and preset 'next-node-ids' annotations holding resp. values ([4],[6]). | node pools are deployed, node pool A contains ID 4, node pool B contains IDs 6, 0. |
-| 3. | Annotate node pool A 'next-node-ids' and node pool B 'remove-node-ids' respectively ([20-21],[6,55]) afterward scale to 4 and 1 replicas resp. | node pools are scaled, node pool A contains IDs 4, 20, 21, 1. node pool B contains ID 0. |
-| 4. | Annotate node pool A 'remove-node-ids' and node pool B 'next-node-ids' respectively ([20],[1]) afterward scale to 2 and 6 replicas resp. | node pools are scaled, node pool A contains IDs 1, 4. node pool B contains IDs 2, 3, 5. |
+| 1. | Deploy a Kafka instance with annotations to manage KafkaNodePools and one initial KafkaNodePool to hold topics and act as controller. | Kafka instance is deployed according to Kafka and KafkaNodePool CustomResource, with IDs 90, 91. |
+| 2. | Deploy additional 2 KafkaNodePools (A,B) with 1 and 2 replicas, and preset 'next-node-ids' annotations holding resp. values ([4],[6]). | KafkaNodePools are deployed, KafkaNodePool A contains ID 4, KafkaNodePool B contains IDs 6, 0. |
+| 3. | Annotate KafkaNodePool A 'next-node-ids' and KafkaNodePool B 'remove-node-ids' respectively ([20-21],[6,55]) afterward scale to 4 and 1 replicas resp. | KafkaNodePools are scaled, KafkaNodePool A contains IDs 4, 20, 21, 1. KafkaNodePool B contains ID 0. |
+| 4. | Annotate KafkaNodePool A 'remove-node-ids' and KafkaNodePool B 'next-node-ids' respectively ([20],[1]) afterward scale to 2 and 6 replicas resp. | KafkaNodePools are scaled, KafkaNodePool A contains IDs 1, 4. KafkaNodePool B contains IDs 2, 3, 5. |
 
 **Labels:**
 
@@ -62,12 +62,18 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy a Kafka instance with annotations to manage node pools and 2 initial node pools. | Kafka instance is deployed according to Kafka and KafkaNodePool custom resource. |
-| 2. | Create KafkaTopic with replica number requiring all Kafka Brokers to be present, Deploy clients and transmit messages and remove KafkaTopic. | Transition of messages is finished successfully, KafkaTopic created and cleaned as expected. |
-| 3. | Add extra KafkaNodePool with broker role to the Kafka. | KafkaNodePool is deployed and ready. |
-| 4. | Create KafkaTopic with replica number requiring all Kafka Brokers to be present, Deploy clients and transmit messages and remove KafkaTopic. | Transition of messages is finished successfully, KafkaTopic created and cleaned as expected. |
-| 5. | Remove one kafkaNodePool with broker role. | KafkaNodePool is removed, Pods are deleted, but other pods in Kafka are stable and ready. |
-| 6. | Create KafkaTopic with replica number requiring all the remaining Kafka Brokers to be present, Deploy clients and transmit messages and remove KafkaTopic. | Transition of messages is finished successfully, KafkaTopic created and cleaned as expected. |
+| 1. | Deploy a Kafka instance with annotations to manage KafkaNodePools and 2 initial KafkaNodePools. | Kafka instance is deployed according to Kafka and KafkaNodePool CustomResource. |
+| 2. | Create KafkaTopic with replica number requiring all the remaining Kafka Brokers to be present. | KafkaTopic created. |
+| 3. | Deploy clients and transmit messages and remove KafkaTopic. | Transition of messages is finished successfully. |
+| 4. | Remove KafkaTopic. | KafkaTopic is cleaned as expected. |
+| 5. | Add extra KafkaNodePool with broker role to the Kafka. | KafkaNodePool is deployed and ready. |
+| 6. | Create KafkaTopic with replica number requiring all the remaining Kafka Brokers to be present. | KafkaTopic created. |
+| 7. | Deploy clients and transmit messages and remove KafkaTopic. | Transition of messages is finished successfully. |
+| 8. | Remove KafkaTopic. | KafkaTopic is cleaned as expected. |
+| 9. | Remove one KafkaNodePool with broker role. | KafkaNodePool is removed, Pods are deleted, but other pods in Kafka are stable and ready. |
+| 10. | Create KafkaTopic with replica number requiring all the remaining Kafka Brokers to be present. | KafkaTopic created. |
+| 11. | Deploy clients and transmit messages and remove KafkaTopic. | Transition of messages is finished successfully. |
+| 12. | Remove KafkaTopic. | KafkaTopic is cleaned as expected. |
 
 **Labels:**
 
@@ -82,14 +88,16 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy a Kafka instance with annotations to manage node pools and 2 initial node pools, both with mixed role, first one stable, second one which will be modified. | Kafka instance with initial node pools is deployed. |
-| 2. | Create KafkaTopic with replica number requiring all Kafka Brokers to be present. | KafkaTopic is created. |
-| 3. | Annotate one of node pools to perform manual Rolling Update. | Rolling Update started. |
-| 4. | Change role ofKafkaNodePool from mixed to controller only role. | Role Change is prevented due to existing KafkaTopic replicas and ongoing Rolling Update. |
-| 5. | Original Rolling Update finishes successfully. | Rolling Update is completed. |
-| 6. | Delete previously created KafkaTopic. | KafkaTopic is deleted and Node Pool role change is initiated. |
-| 7. | Change role ofKafkaNodePool from controller only to mixed role. | KafkaNodePool changes role to mixed role. |
-| 8. | Produce and consume messages on newly created KafkaTopic with replica count requiring also new brokers to be present. | Messages are produced and consumed successfully. |
+| 1. | Deploy a Kafka instance with annotations to manage KafkaNodePools and 2 initial KafkaNodePools, both with mixed role, first one stable, second one which will be modified. | Kafka instance with initial KafkaNodePools is deployed. |
+| 2. | Create KafkaTopic with replica number requiring all the remaining Kafka Brokers to be present. | KafkaTopic created. |
+| 3. | Deploy clients and transmit messages and remove KafkaTopic. | Transition of messages is finished successfully. |
+| 4. | Remove KafkaTopic. | KafkaTopic is cleaned as expected. |
+| 5. | Annotate one of KafkaNodePools to perform manual rolling update. | rolling update started. |
+| 6. | Change role ofKafkaNodePool from mixed to controller only role. | Role Change is prevented due to existing KafkaTopic replicas and ongoing rolling update. |
+| 7. | Original rolling update finishes successfully. | rolling update is completed. |
+| 8. | Delete previously created KafkaTopic. | KafkaTopic is deleted and KafkaNodePool role change is initiated. |
+| 9. | Change role ofKafkaNodePool from controller only to mixed role. | KafkaNodePool changes role to mixed role. |
+| 10. | Produce and consume messages on newly created KafkaTopic with replica count requiring also new brokers to be present. | Messages are produced and consumed successfully. |
 
 **Labels:**
 

@@ -180,7 +180,7 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test sending messages over tls transport using mutual tls auth."),
         steps = {
-            @Step(value = "CreateKafkaNodePool resources.", expected = "Persistent storage node pools are created."),
+            @Step(value = "CreateKafkaNodePool resources.", expected = "Persistent storage KafkaNodePools are created."),
             @Step(value = "Disable plain listener and enable tls listener in Kafka resource.", expected = "Kafka with plain listener disabled and tls listener enabled is created."),
             @Step(value = "Create Kafka topic and user.", expected = "Kafka topic and tls user are created."),
             @Step(value = "Configure and deploy Kafka clients.", expected = "Kafka clients producer and consumer with tls are deployed."),
@@ -417,7 +417,7 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test custom listener configured with scram SHA authentication and TLS."),
         steps = {
-            @Step(value = "Create a Kafka cluster with broker and controller node pools.", expected = "Kafka cluster is created with node pools."),
+            @Step(value = "Create a Kafka cluster with broker and controller KafkaNodePools.", expected = "Kafka cluster is created with KafkaNodePools."),
             @Step(value = "Create a Kafka cluster with custom listener using TLS and SCRAM-SHA authentication.", expected = "Kafka cluster with custom listener is ready."),
             @Step(value = "Create a Kafka topic and SCRAM-SHA user.", expected = "Kafka topic and user are created."),
             @Step(value = "Transmit messages over TLS using SCRAM-SHA authentication.", expected = "Messages are transmitted successfully.")
@@ -672,7 +672,7 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test the NodePort TLS functionality for Kafka brokers in a Kubernetes environment."),
         steps = {
-            @Step(value = "Create Kafka broker and controller node pools.", expected = "Broker and controller node pools are created"),
+            @Step(value = "Create Kafka broker and controller KafkaNodePools.", expected = "Broker and controller KafkaNodePools are created"),
             @Step(value = "Deploy Kafka cluster with NodePort listener and TLS enabled", expected = "Kafka cluster is deployed with NodePort listener and TLS"),
             @Step(value = "Create a Kafka topic", expected = "Kafka topic is created"),
             @Step(value = "Create a Kafka user with TLS authentication", expected = "Kafka user with TLS authentication is created"),
@@ -791,7 +791,7 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test validating the TLS connection through a Kafka LoadBalancer."),
         steps = {
-            @Step(value = "Create and configure KafkaNodePools", expected = "Node pools for brokers and controllers are created"),
+            @Step(value = "Create and configure KafkaNodePools", expected = "KafkaNodePools for brokers and controllers are created"),
             @Step(value = "Create and configure Kafka cluster with TLS listener", expected = "Kafka cluster with TLS enabled LoadBalancer listener is created"),
             @Step(value = "Create and configure Kafka user with TLS authentication", expected = "Kafka user with TLS authentication is created"),
             @Step(value = "Wait for the LoadBalancer address to be reachable", expected = "LoadBalancer address becomes reachable"),
@@ -1165,7 +1165,7 @@ public class ListenersST extends AbstractST {
         description = @Desc("Test verifying custom solo certificates for load balancer in a Kafka cluster."),
         steps = {
             @Step(value = "Create custom secret", expected = "Custom secret is created with the specified certificate and key"),
-            @Step(value = "Create Kafka resources with node pools", expected = "Kafka brokers and controller pools are created and configured"),
+            @Step(value = "Create Kafka resources with KafkaNodePools", expected = "Kafka brokers and controller pools are created and configured"),
             @Step(value = "Create Kafka cluster with listeners", expected = "Kafka cluster is created with internal and load balancer listeners using the custom certificates"),
             @Step(value = "Create TLS user", expected = "TLS user is created"),
             @Step(value = "Verify produced and consumed messages via external client", expected = "Messages are successfully produced and consumed using the custom certificates"),
