@@ -39,7 +39,7 @@ import static io.strimzi.systemtest.TestTags.KAFKA_SMOKE;
 @SuiteDoc(
     description = @Desc("Verifies the basic functionality for each supported Kafka version."),
     beforeTestSteps = {
-        @Step(value = "Deploy Cluster Operator with default installation.", expected = "Cluster Operator is deployed.")
+        @Step(value = "Deploy cluster operator with default installation.", expected = "Cluster operator is deployed.")
     },
     labels = {
         @Label(value = TestDocsLabels.KAFKA)
