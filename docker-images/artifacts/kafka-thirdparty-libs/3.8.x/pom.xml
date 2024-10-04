@@ -39,10 +39,6 @@
             <id>cruise-control</id>
             <url>https://linkedin.jfrog.io/artifactory/cruise-control/</url>
         </repository>
-        <repository>
-            <id>staging</id>
-            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1229/</url>
-        </repository>
     </repositories>
 
     <dependencyManagement>
