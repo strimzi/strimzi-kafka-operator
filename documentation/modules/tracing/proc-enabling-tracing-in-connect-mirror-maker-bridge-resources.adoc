@@ -3,11 +3,20 @@
 // assembly-setting-up-tracing-mirror-maker-connect-bridge.adoc
 
 [id='proc-enabling-tracing-in-connect-mirror-maker-bridge-resources-{context}']
-= Enabling tracing in MirrorMaker, Kafka Connect, and Kafka Bridge resources
+= Enabling tracing in supported Kafka components
 
 [role="_abstract"]
 Distributed tracing is supported for MirrorMaker, MirrorMaker 2, Kafka Connect, and the Kafka Bridge.
-Configure the custom resource of the component to specify and enable a tracer service. 
+Enable tracing using OpenTelemetry by setting the `spec.tracing.type` property to `opentelemetry`. 
+Configure the custom resource of the component to specify and enable a tracing system using `spec.template` properties.
+
+By default, OpenTelemetry uses the OTLP (OpenTelemetry Protocol) exporter and endpoint to gather trace data. 
+This procedure shows the configuration to use OTLP as the tracing system.
+
+If you prefer to use a different tracing system supported by OpenTelemetry, such as Jaeger, you can modify the exporter and endpoint settings in the tracing configuration.
+
+CAUTION: Strimzi no longer supports OpenTracing.
+If you were previously using OpenTracing with the `type: jaeger` option, we encourage you to transition to using OpenTelemetry instead.
 
 Enabling tracing in a resource triggers the following events:
 
@@ -16,8 +25,6 @@ Enabling tracing in a resource triggers the following events:
 * For MirrorMaker, MirrorMaker 2, and Kafka Connect, the tracing agent initializes a tracer based on the tracing configuration defined in the resource.
 
 * For the Kafka Bridge, a tracer based on the tracing configuration defined in the resource is initialized by the Kafka Bridge itself.
-
-You can enable tracing that uses OpenTelemetry.
 
 .Tracing in MirrorMaker and MirrorMaker 2
 
@@ -128,6 +135,43 @@ spec:
 #...
 ----
 --
+
+. (Optional) If TLS authentication is configured on the OTLP endpoint, use the `OTEL_EXPORTER_OTLP_CERTIFICATE` environment variable to specify the path to a trusted certificate
+This secures communication between Kafka components and the OpenTelemetry endpoint.
++
+To provide the certificate, mount a volume containing the secret that holds the trusted certificate.  
+Unless the endpoint address is redirected from `http`, use `https`.
++
+.Example configuration for TLS
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaConnectApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect-cluster
+spec:
+  #...
+  template:
+    connectContainer:
+      env:
+        - name: OTEL_SERVICE_NAME
+          value: my-otel-service
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "https://otlp-host:4317"
+        - name: OTEL_EXPORTER_OTLP_CERTIFICATE
+          value: "/mnt/mysecret"
+      volumeMounts:
+        - name: tracing-secret-volume
+          mountPath: /mnt/mysecret   
+    pod:
+      volumes:
+        - name: tracing-secret-volume
+          secret:
+            secretName: mysecret     
+  tracing:
+    type: opentelemetry
+  #...
+----
 
 . Create or update the resource:
 +

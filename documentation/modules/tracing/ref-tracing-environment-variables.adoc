@@ -6,12 +6,12 @@
 = Environment variables for tracing
 
 [role="_abstract"]
-Use environment variables when you are enabling tracing for Kafka components or initializing a tracer for Kafka clients.
+Use environment variables to enable tracing for Kafka components or to initialize a tracer for Kafka clients.
 
 Tracing environment variables are subject to change. 
 For the latest information, see the {OpenTelemetryDocs}.
 
-The following tables describe the key environment variables for setting up a tracer. 
+The following table describes the key environment variables for setting up tracing with OpenTelemetry. 
 
 .OpenTelemetry environment variables
 [cols="2m,1,2",options="header"]
@@ -23,17 +23,24 @@ The following tables describe the key environment variables for setting up a tra
 
 |OTEL_SERVICE_NAME
 |Yes
-|The name of the Jaeger tracing service for OpenTelemetry.
+|The name of the tracing service for OpenTelemetry, such as OTLP or Jaeger.
 
-|OTEL_EXPORTER_JAEGER_ENDPOINT
-|Yes
-|The exporter used for tracing.
+|OTEL_EXPORTER_OTLP_ENDPOINT
+|Yes (if using OTLP exporter)
+|The OTLP endpoint for exporting trace data to the tracing system.
+For Jaeger tracing, specify the `OTEL_EXPORTER_JAEGER_ENDPOINT`.
+For other tracing systems, xref:proc-enabling-tracing-type-{context}[specify the appropriate endpoint]. 
 
 |OTEL_TRACES_EXPORTER
-|Yes
-|The exporter used for tracing.
-Set to `otlp` by default. If using Jaeger tracing, you need to set this environment variable as `jaeger`.
-If you are using another tracing implementation, xref:proc-enabling-tracing-type-{context}[specify the exporter used].
+|No (unless using a non-OTLP exporter)
+|The exporter used for tracing. 
+The default is `otlp`, which does not need to be specified. 
+For Jaeger tracing, set this variable to `jaeger`. 
+For other tracing systems, xref:proc-enabling-tracing-type-{context}[specify the appropriate exporter].
 
+|OTEL_EXPORTER_OTLP_CERTIFICATE
+|No (required if using TLS with OTLP)
+|The path to the file containing trusted certificates for TLS authentication.
+Required to secure communication between Kafka components and the OpenTelemetry endpoint when using TLS with the `otlp` exporter.
 
 |===

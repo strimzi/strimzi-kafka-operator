@@ -6,19 +6,14 @@
 = Tracing options
 
 [role="_abstract"]
-Use OpenTelemetry with the Jaeger tracing system.
+Distributed traces consist of spans, which represent individual units of work performed over a specific time period.
+When instrumented with tracers, applications generate traces that follow requests as they move through the system, making it easier to identify delays or issues.
 
-OpenTelemetry provides an API specification that is independent from the tracing or monitoring system.
+OpenTelemetry, a telemetry framework, provides APIs for tracing that are independent of any specific backend tracing system. 
+In Strimzi, the default protocol for transmitting traces between Kafka components and tracing systems is OpenTelemetry’s OTLP (OpenTelemetry Protocol), a vendor-neutral protocol.
 
-You use the APIs to instrument application code for tracing. 
-
-* Instrumented applications generate _traces_ for individual requests across the distributed system.
-
-* Traces are composed of _spans_ that define specific units of work over time.
-
-Jaeger is a tracing system for microservices-based distributed systems.
-
-* The Jaeger user interface allows you to query, filter, and analyze trace data.
+While OTLP is the default, Strimzi also supports other tracing systems, such as Jaeger. 
+Jaeger is a distributed tracing system designed for monitoring microservices, and its user interface allows you to query, filter, and analyze trace data in detail.
 
 .The Jaeger user interface showing a simple query
 image:image_con-overview-distributed-tracing.png[The Jaeger user interface showing a simple query]
