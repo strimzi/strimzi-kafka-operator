@@ -7,7 +7,6 @@ package io.strimzi.systemtest.upgrade;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
