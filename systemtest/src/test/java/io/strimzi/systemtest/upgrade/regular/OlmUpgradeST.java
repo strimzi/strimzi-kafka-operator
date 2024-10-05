@@ -40,6 +40,7 @@ import static io.strimzi.systemtest.TestTags.OLM_UPGRADE;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.not;
 
 
 /**
@@ -56,11 +57,10 @@ public class OlmUpgradeST extends AbstractUpgradeST {
     @IsolatedTest
     void testStrimziUpgrade() throws IOException {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), CO_NAMESPACE);
-        final String toVersion = olmUpgradeData.getToVersion();
         final String fromVersion = olmUpgradeData.getFromVersion();
 
         LOGGER.info("====================================================================================");
-        LOGGER.info("---------------- Updating Cluster Operator version " + fromVersion + "=>" + toVersion + " -----------------");
+        LOGGER.info("---------------- Updating Cluster Operator version " + fromVersion + " => HEAD -----------------");
         LOGGER.info("====================================================================================");
         LOGGER.info("-------------------------- Upgrade data used in this test --------------------------");
         LOGGER.info(olmUpgradeData.toString());
@@ -118,7 +118,6 @@ public class OlmUpgradeST extends AbstractUpgradeST {
 
         OlmConfiguration upgradeOlmConfig = new OlmConfigurationBuilder(clusterOperator.getOlmResource().getOlmConfiguration())
             .withChannelName("stable")
-            .withOperatorVersion(toVersion)
             .build();
 
         // Cluster Operator upgrade
@@ -130,7 +129,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
 
         // Verification that Cluster Operator has been upgraded to a correct version
         String afterUpgradeVersionOfCo = kubeClient().getCsvWithPrefix(CO_NAMESPACE, upgradeOlmConfig.getOlmAppBundlePrefix()).getSpec().getVersion();
-        assertThat(afterUpgradeVersionOfCo, is(toVersion));
+        assertThat(afterUpgradeVersionOfCo, is(not(fromVersion)));
 
         // Wait for Rolling Update to finish
         controllerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(CO_NAMESPACE, controllerSelector, 3, controllerPods);

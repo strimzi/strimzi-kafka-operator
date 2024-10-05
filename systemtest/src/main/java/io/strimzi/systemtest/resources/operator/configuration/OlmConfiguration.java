@@ -18,16 +18,16 @@ public class OlmConfiguration {
     private ExtensionContext extensionContext;
     private String namespaceName;
     private String namespaceToWatch;
-    private String featureGates = Environment.STRIMZI_FEATURE_GATES;
-    private String olmAppBundlePrefix = Environment.OLM_APP_BUNDLE_PREFIX;
-    private String olmOperatorName = Environment.OLM_OPERATOR_NAME;
+    private final String featureGates = Environment.STRIMZI_FEATURE_GATES;
+    private final String olmAppBundlePrefix = Environment.OLM_APP_BUNDLE_PREFIX;
+    private final String olmOperatorName = Environment.OLM_OPERATOR_NAME;
+    private final String olmSourceName = Environment.OLM_SOURCE_NAME;
+    private final String olmSourceNamespace = Environment.OLM_SOURCE_NAMESPACE;
     private String olmOperatorDeploymentNamePrefix = Environment.OLM_OPERATOR_DEPLOYMENT_NAME;
-    private String olmSourceName = Environment.OLM_SOURCE_NAME;
-    private String olmSourceNamespace = Environment.OLM_SOURCE_NAMESPACE;
-    // Init value is needed due to UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR
-    private String operatorVersion = "";
+    private String olmOperatorDeploymentName = "";
+    private String operatorVersion;
     private OlmInstallationStrategy olmInstallationStrategy;
-    private String channelName;
+    private String channelName = Environment.OLM_OPERATOR_CHANNEL;
     private List<EnvVar> envVars;
     private long reconciliationInterval;
     private long operationTimeout;
@@ -68,7 +68,7 @@ public class OlmConfiguration {
     }
 
     public void setOperatorVersion(String operatorVersion) {
-        this.operatorVersion = operatorVersion != null && operatorVersion.isEmpty() ? Environment.OLM_OPERATOR_LATEST_RELEASE_VERSION : operatorVersion;
+        this.operatorVersion = operatorVersion;
     }
 
     public String getOperatorVersion() {
@@ -80,7 +80,7 @@ public class OlmConfiguration {
     }
 
     public void setChannelName(String channelName) {
-        this.channelName = channelName == null && operatorVersion.equals(Environment.OLM_OPERATOR_LATEST_RELEASE_VERSION) ? "stable" : channelName;
+        this.channelName = channelName == null ? this.channelName : channelName;
     }
 
     public String getChannelName() {
@@ -119,8 +119,16 @@ public class OlmConfiguration {
         return olmAppBundlePrefix;
     }
 
+    public String getOlmOperatorDeploymentNamePrefix() {
+        return olmOperatorDeploymentNamePrefix;
+    }
+
+    public void setOlmOperatorDeploymentName(String olmOperatorDeploymentName) {
+        this.olmOperatorDeploymentName = olmOperatorDeploymentName;
+    }
+
     public String getOlmOperatorDeploymentName() {
-        return olmOperatorDeploymentNamePrefix + "-v" + operatorVersion;
+        return olmOperatorDeploymentName;
     }
 
     public String getOlmOperatorName() {

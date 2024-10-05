@@ -402,9 +402,13 @@ public class KubeClient {
         return client.apps().deployments().inNamespace(namespaceName).withName(deploymentName).get();
     }
 
-    public String getDeploymentNameByPrefix(String namePrefix) {
-        List<Deployment> prefixDeployments = client.apps().deployments().inNamespace(getNamespace()).list().getItems().stream().filter(
-            rs -> rs.getMetadata().getName().startsWith(namePrefix)).collect(Collectors.toList());
+    public String getDeploymentNameByPrefix(String deploymentNamePrefix) {
+        return getDeploymentNameByPrefix(getNamespace(), deploymentNamePrefix);
+    }
+
+    public String getDeploymentNameByPrefix(String namespaceName, String deploymentNamePrefix) {
+        List<Deployment> prefixDeployments = client.apps().deployments().inNamespace(namespaceName).list().getItems().stream().filter(
+            rs -> rs.getMetadata().getName().startsWith(deploymentNamePrefix)).collect(Collectors.toList());
 
         if (prefixDeployments.size() > 0) {
             return prefixDeployments.get(0).getMetadata().getName();
@@ -993,9 +997,11 @@ public class KubeClient {
         client.adapt(OpenShiftClient.class).operatorHub().installPlans().inNamespace(namespaceName).withName(installPlanName).patch(installPlan);
     }
 
-    public InstallPlan getNonApprovedInstallPlan(String namespaceName) {
+    public InstallPlan getNonApprovedInstallPlanForCsvNameOrPrefix(String namespaceName, String csvNameOrPrefix) {
         return client.adapt(OpenShiftClient.class).operatorHub().installPlans()
-            .inNamespace(namespaceName).list().getItems().stream().filter(installPlan -> !installPlan.getSpec().getApproved()).findFirst().get();
+            .inNamespace(namespaceName).list().getItems().stream()
+            .filter(installPlan -> !installPlan.getSpec().getApproved()
+                && installPlan.getSpec().getClusterServiceVersionNames().get(0).contains(csvNameOrPrefix)).findFirst().get();
     }
 
     public ClusterServiceVersion getCsv(String namespaceName, String csvName) {

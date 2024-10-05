@@ -368,7 +368,13 @@ public class SetupClusterOperator {
         }
 
         updateSubscription(olmConfiguration);
-        OlmUtils.waitUntilNonUsedInstallPlanWithSpecificCsvIsPresentAndApprove(namespaceInstallTo, olmConfiguration.getCsvName());
+        // Because we are updating to latest available CO, we want to wait for new install plan with CSV prefix, not with the exact CSV (containing the prefix and version)
+        OlmUtils.waitForNonApprovedInstallPlanWithCsvNameOrPrefix(namespaceInstallTo, olmConfiguration.getOlmAppBundlePrefix());
+        String newDeploymentName = OlmUtils.approveNonApprovedInstallPlanAndReturnDeploymentName(namespaceInstallTo, olmConfiguration.getOlmAppBundlePrefix());
+
+        olmConfiguration.setOlmOperatorDeploymentName(kubeClient().getDeploymentNameByPrefix(olmConfiguration.getNamespaceName(), newDeploymentName));
+        DeploymentUtils.waitForCreationOfDeploymentWithPrefix(namespaceInstallTo, olmConfiguration.getOlmOperatorDeploymentName());
+
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceInstallTo, olmConfiguration.getOlmOperatorDeploymentName(), 1);
     }
 
