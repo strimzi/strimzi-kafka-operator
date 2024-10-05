@@ -322,7 +322,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create instances for broker pool and controller pool using NodePoolsConverter and KafkaNodePoolTemplates | Resources are created and ready for use |
+| 1. | Create Kafka broker and controller KafkaNodePools. | Broker and controller KafkaNodePools are created |
 | 2. | Create Kafka cluster with ephemeral storage and load balancer listener | Kafka cluster is created with the specified configuration |
 | 3. | Wait until the load balancer address is reachable | Address is reachable |
 | 4. | Configure external Kafka client and send messages | Messages are sent successfully |

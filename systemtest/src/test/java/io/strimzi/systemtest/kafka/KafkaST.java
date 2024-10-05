@@ -1083,9 +1083,9 @@ class KafkaST extends AbstractST {
         );
         resourceManager.createResourceWithoutWait(KafkaTemplates.kafkaEphemeral(testStorage.getNamespaceName(), testStorage.getClusterName(), 1, 1)
             .editSpec()
-            .editKafka()
-            .withVersion(nonExistingVersion)
-            .endKafka()
+                .editKafka()
+                    .withVersion(nonExistingVersion)
+                .endKafka()
             .endSpec()
             .build()
         );

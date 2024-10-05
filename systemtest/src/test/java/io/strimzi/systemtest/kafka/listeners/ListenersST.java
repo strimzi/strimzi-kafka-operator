@@ -731,7 +731,7 @@ public class ListenersST extends AbstractST {
     @TestDoc(
         description = @Desc("Test verifying load balancer functionality with external clients."),
         steps = {
-            @Step(value = "Create instances for broker pool and controller pool using NodePoolsConverter and KafkaNodePoolTemplates", expected = "Resources are created and ready for use"),
+            @Step(value = "Create Kafka broker and controller KafkaNodePools.", expected = "Broker and controller KafkaNodePools are created"),
             @Step(value = "Create Kafka cluster with ephemeral storage and load balancer listener", expected = "Kafka cluster is created with the specified configuration"),
             @Step(value = "Wait until the load balancer address is reachable", expected = "Address is reachable"),
             @Step(value = "Configure external Kafka client and send messages", expected = "Messages are sent successfully"),
