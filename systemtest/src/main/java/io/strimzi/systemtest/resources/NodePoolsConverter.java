@@ -7,7 +7,9 @@ package io.strimzi.systemtest.resources;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -38,7 +40,7 @@ public class NodePoolsConverter {
      * @return array of updated and filtered NodePools
      */
     public static KafkaNodePool[] convertNodePoolsIfNeeded(KafkaNodePool... nodePoolsToBeConverted) {
-        List<KafkaNodePool> nodePools = Arrays.asList(nodePoolsToBeConverted);
+        List<KafkaNodePool> nodePools = new ArrayList<>(Arrays.asList(nodePoolsToBeConverted));
 
         changeNodePoolsToHaveMixedRoles(nodePools);
 
@@ -57,7 +59,14 @@ public class NodePoolsConverter {
         if (!Environment.isSeparateRolesMode() && Environment.isKRaftModeEnabled()) {
             // remove controller NodePools, so we have just one NodePool for the mixed mode
             nodePools.removeIf(nodePool -> nodePool.getSpec().getRoles().stream().anyMatch(ProcessRoles.CONTROLLER::equals));
-            nodePools.forEach(nodePool -> nodePool.getSpec().setRoles(List.of(ProcessRoles.BROKER, ProcessRoles.CONTROLLER)));
+            nodePools.forEach(nodePool -> {
+                // set the roles for the broker NodePool to both broker and controller
+                nodePool.getSpec().setRoles(List.of(ProcessRoles.BROKER, ProcessRoles.CONTROLLER));
+                // replace the broker role prefix in the NodePool's name with the mixed role prefix
+                nodePool.getMetadata().setName(nodePool.getMetadata().getName().replace(TestConstants.BROKER_ROLE_PREFIX, TestConstants.MIXED_ROLE_PREFIX));
+                // adjust the replicas of the NodePool ->
+                nodePool.getSpec().setReplicas((int) Math.ceil(nodePool.getSpec().getReplicas() * 1.5));
+            });
         }
     }
 
