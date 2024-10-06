@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
  *  This handler is needed in STs to switch between modes without a problem - and also to make the whole process less confusing.
  */
 public class NodePoolsConverter {
+    public static final double MIXED_ROLES_MULTIPLIER = 1.5;
 
     /**
      * Method that converts each of the NodePool passed to it, based on the mode.
@@ -65,7 +66,7 @@ public class NodePoolsConverter {
                 // replace the broker role prefix in the NodePool's name with the mixed role prefix
                 nodePool.getMetadata().setName(nodePool.getMetadata().getName().replace(TestConstants.BROKER_ROLE_PREFIX, TestConstants.MIXED_ROLE_PREFIX));
                 // adjust the replicas of the NodePool ->
-                nodePool.getSpec().setReplicas((int) Math.ceil(nodePool.getSpec().getReplicas() * 1.5));
+                nodePool.getSpec().setReplicas((int) Math.ceil(nodePool.getSpec().getReplicas() * MIXED_ROLES_MULTIPLIER));
             });
         }
     }
