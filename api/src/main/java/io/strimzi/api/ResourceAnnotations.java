@@ -45,6 +45,11 @@ public class ResourceAnnotations {
     public static final String ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL = STRIMZI_DOMAIN + "rebalance-auto-approval";
 
     /**
+     * Use this boolean annotation to set the KafkaRebalance as a template to be used for auto-rebalancing operations
+     */
+    public static final String ANNO_STRIMZI_IO_REBALANCE_TEMPLATE = STRIMZI_DOMAIN + "rebalance-template";
+
+    /**
      * Annotation which enabled the use of the connector operator
      */
     public static final String STRIMZI_IO_USE_CONNECTOR_RESOURCES = STRIMZI_DOMAIN + "use-connector-resources";

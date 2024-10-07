@@ -65,6 +65,7 @@ import java.util.function.Function;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS;
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_REBALANCE;
+import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_REBALANCE_TEMPLATE;
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_REMOVE_NODE_IDS;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -1203,7 +1204,7 @@ public class KafkaAutoRebalancingMockTest {
         return new KafkaRebalanceBuilder()
                 .withNewMetadata()
                     .withName(name)
-                    .withAnnotations(Map.of(ANNO_STRIMZI_IO_REBALANCE, "template"))
+                    .withAnnotations(Map.of(ANNO_STRIMZI_IO_REBALANCE_TEMPLATE, "true"))
                 .endMetadata()
                 .withNewSpec()
                     .withGoals(goals)
