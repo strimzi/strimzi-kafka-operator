@@ -503,6 +503,12 @@ This property is used to select the preferred address type, which is checked fir
 |publishNotReadyAddresses
 |boolean
 |Configures whether the service endpoints are considered "ready" even if the Pods themselves are not. Defaults to `false`. This field can not be used with `internal` listeners.
+|hostTemplate
+|string
+|Configures the template for generating the hostnames of the individual brokers. Valid placeholders that you can use in the template are `{nodeId}` and `{nodePodName}`.
+|advertisedHostTemplate
+|string
+|Configures the template for generating the advertised hostnames of the individual brokers. Valid placeholders that you can use in the template are `{nodeId}` and `{nodePodName}`.
 |====
 
 [id='type-CertAndKeySecretSource-{context}']
@@ -1366,6 +1372,26 @@ Used in: xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |value
 |string
 |The environment variable value.
+|valueFrom
+|xref:type-ContainerEnvVarSource-{context}[`ContainerEnvVarSource`]
+|Reference to the secret or config map property to which the environment variable is set.
+|====
+
+[id='type-ContainerEnvVarSource-{context}']
+= `ContainerEnvVarSource` schema reference
+
+Used in: xref:type-ContainerEnvVar-{context}[`ContainerEnvVar`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|secretKeyRef
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#secretkeyselector-v1-core[SecretKeySelector]
+|Reference to a key in a secret.
+|configMapKeyRef
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#configmapkeyselector-v1-core[ConfigMapKeySelector]
+|Reference to a key in a config map.
 |====
 
 [id='type-TieredStorageCustom-{context}']
@@ -1872,6 +1898,9 @@ include::../api/io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec
 |apiUsers
 |xref:type-HashLoginServiceApiUsers-{context}[`HashLoginServiceApiUsers`]
 |Configuration of the Cruise Control REST API users.
+|autoRebalance
+|xref:type-KafkaAutoRebalanceConfiguration-{context}[`KafkaAutoRebalanceConfiguration`] array
+|Auto-rebalancing on scaling related configuration listing the modes, when brokers are added or removed, with the corresponding rebalance template configurations.If this field is set, at least one mode has to be defined.
 |====
 
 [id='type-CruiseControlTemplate-{context}']
@@ -1989,6 +2018,38 @@ Used in: xref:type-HashLoginServiceApiUsers-{context}[`HashLoginServiceApiUsers`
 |secretKeyRef
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#secretkeyselector-v1-core[SecretKeySelector]
 |Selects a key of a Secret in the resource's namespace.
+|====
+
+[id='type-KafkaAutoRebalanceConfiguration-{context}']
+= `KafkaAutoRebalanceConfiguration` schema reference
+
+Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|mode
+|string (one of [remove-brokers, full, add-brokers])
+|Mode for which running the auto-rebalancing on scaling, when brokers are added or removed. The supported modes are `add-brokers` and `remove-brokers`.
+
+|template
+|xref:type-LocalObjectReference-{context}[`LocalObjectReference`]
+|Reference to the KafkaRebalance custom resource to be used as the configuration template for the auto-rebalancing on scaling when running for the corresponding mode.
+|====
+
+[id='type-LocalObjectReference-{context}']
+= `LocalObjectReference` schema reference
+
+Used in: xref:type-AlterOffsets-{context}[`AlterOffsets`], xref:type-KafkaAutoRebalanceConfiguration-{context}[`KafkaAutoRebalanceConfiguration`], xref:type-ListOffsets-{context}[`ListOffsets`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|name
+|string
+|
 |====
 
 [id='type-JmxTransSpec-{context}']
@@ -2206,6 +2267,9 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |kafkaMetadataState
 |string (one of [PreKRaft, ZooKeeper, KRaftMigration, KRaftDualWriting, KRaftPostMigration, KRaft])
 |Defines where cluster metadata are stored. Possible values are: ZooKeeper if the metadata are stored in ZooKeeper; KRaftMigration if the controllers are connected to ZooKeeper, brokers are being rolled with Zookeeper migration enabled and connection information to controllers, and the metadata migration process is running; KRaftDualWriting if the metadata migration process finished and the cluster is in dual-write mode; KRaftPostMigration if the brokers are fully KRaft-based but controllers being rolled to disconnect from ZooKeeper; PreKRaft if brokers and controller are fully KRaft-based, metadata are stored in KRaft, but ZooKeeper must be deleted; KRaft if the metadata are stored in KRaft.
+|autoRebalance
+|xref:type-KafkaAutoRebalanceStatus-{context}[`KafkaAutoRebalanceStatus`]
+|The status of an auto-rebalancing triggered by a cluster scaling request.
 |====
 
 [id='type-Condition-{context}']
@@ -2289,6 +2353,48 @@ Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`]
 |name
 |string
 |The name of the KafkaNodePool used by this Kafka resource.
+|====
+
+[id='type-KafkaAutoRebalanceStatus-{context}']
+= `KafkaAutoRebalanceStatus` schema reference
+
+Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|state
+|string (one of [RebalanceOnScaleUp, Idle, RebalanceOnScaleDown])
+|The current state of the auto-rebalancing operation. Possible values are: 
+
+* Idle as the initial state when an auto-rebalancing is requested or as final state when it completes or fails.
+* RebalanceOnScaleDown if a rebalancing related to a scale down operation is running.
+* RebalanceOnScaleUp if a rebalancing related to a scale up operation is running.
+
+|lastTransitionTime
+|string
+|The timestamp of the latest auto-rebalancing state update.
+|modes
+|xref:type-KafkaAutoRebalanceStatusBrokers-{context}[`KafkaAutoRebalanceStatusBrokers`] array
+|List of the modes for which there is an auto-rebalancing operation already running or queued. For each mode entry, which could be for add-brokers or remove-brokers, it contains either:- the brokers' IDs relevant to the current ongoing auto-rebalance, or- the brokers' IDs relevant to a queued auto-rebalance (if a previous auto-rebalance is still in progress).
+|====
+
+[id='type-KafkaAutoRebalanceStatusBrokers-{context}']
+= `KafkaAutoRebalanceStatusBrokers` schema reference
+
+Used in: xref:type-KafkaAutoRebalanceStatus-{context}[`KafkaAutoRebalanceStatus`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|mode
+|string (one of [remove-brokers, full, add-brokers])
+|Mode for which there is an auto-rebalancing operation in progress or queued, when brokers are added or removed. The possible modes are `add-brokers` and `remove-brokers`.
+|brokers
+|integer array
+|List of brokers' IDs involved in an auto-rebalancing operation related to current mode. it contains either: - the brokers' IDs relevant to the current ongoing auto-rebalance, or - the brokers' IDs relevant to a queued auto-rebalance (if a previous auto-rebalance is still in progress).
 |====
 
 [id='type-KafkaConnect-{context}']
@@ -2378,7 +2484,7 @@ include::../api/io.strimzi.api.kafka.model.connect.KafkaConnectSpec.adoc[levelof
 |Template for Kafka Connect and Kafka MirrorMaker 2 resources. The template allows users to specify how the `Pods`, `Service`, and other services are generated.
 |externalConfiguration
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
-|Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
+|**The `externalConfiguration` property has been deprecated.** The external configuration is deprecated and will be removed in the future. Please use the template section instead to configure additional environment variables or volumes. Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
 |build
 |xref:type-Build-{context}[`Build`]
 |Configures how the Connect container image should be built. Optional.
@@ -2736,6 +2842,9 @@ Used in: xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
 [id='type-ExternalConfiguration-{context}']
 = `ExternalConfiguration` schema reference
 
+*The type `ExternalConfiguration` has been deprecated.*
+Please use xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`] instead.
+
 Used in: xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
 xref:type-ExternalConfiguration-schema-{context}[Full list of `ExternalConfiguration` schema properties]
@@ -2751,14 +2860,17 @@ include::../api/io.strimzi.api.kafka.model.connect.ExternalConfiguration.adoc[le
 |Property |Property type |Description
 |env
 |xref:type-ExternalConfigurationEnv-{context}[`ExternalConfigurationEnv`] array
-|Makes data from a Secret or ConfigMap available in the Kafka Connect pods as environment variables.
+|**The `env` property has been deprecated.** The external configuration environment variables are deprecated and will be removed in the future. Please use the environment variables in a container template instead. Makes data from a Secret or ConfigMap available in the Kafka Connect pods as environment variables.
 |volumes
 |xref:type-ExternalConfigurationVolumeSource-{context}[`ExternalConfigurationVolumeSource`] array
-|Makes data from a Secret or ConfigMap available in the Kafka Connect pods as volumes.
+|**The `volumes` property has been deprecated.** The external configuration volumes are deprecated and will be removed in the future. Please use the additional volumes and volume mounts in pod and container templates instead to mount additional secrets or config maps. Makes data from a Secret or ConfigMap available in the Kafka Connect pods as volumes.
 |====
 
 [id='type-ExternalConfigurationEnv-{context}']
 = `ExternalConfigurationEnv` schema reference
+
+*The type `ExternalConfigurationEnv` has been deprecated.*
+Please use xref:type-ContainerEnvVar-{context}[`ContainerEnvVar`] instead.
 
 Used in: xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 
@@ -2793,6 +2905,9 @@ Used in: xref:type-ExternalConfigurationEnv-{context}[`ExternalConfigurationEnv`
 
 [id='type-ExternalConfigurationVolumeSource-{context}']
 = `ExternalConfigurationVolumeSource` schema reference
+
+*The type `ExternalConfigurationVolumeSource` has been deprecated.*
+Please use xref:type-AdditionalVolume-{context}[`AdditionalVolume`] instead.
 
 Used in: xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 
@@ -3980,6 +4095,12 @@ Used in: xref:type-KafkaConnector-{context}[`KafkaConnector`]
 |state
 |string (one of [running, paused, stopped])
 |The state the connector should be in. Defaults to running.
+|listOffsets
+|xref:type-ListOffsets-{context}[`ListOffsets`]
+|Configuration for listing offsets.
+|alterOffsets
+|xref:type-AlterOffsets-{context}[`AlterOffsets`]
+|Configuration for altering offsets.
 |====
 
 [id='type-AutoRestart-{context}']
@@ -4004,6 +4125,34 @@ include::../api/io.strimzi.api.kafka.model.connector.AutoRestart.adoc[leveloffse
 |maxRestarts
 |integer
 |The maximum number of connector restarts that the operator will try. If the connector remains in a failed state after reaching this limit, it must be restarted manually by the user. Defaults to an unlimited number of restarts.
+|====
+
+[id='type-ListOffsets-{context}']
+= `ListOffsets` schema reference
+
+Used in: xref:type-KafkaConnectorSpec-{context}[`KafkaConnectorSpec`], xref:type-KafkaMirrorMaker2ConnectorSpec-{context}[`KafkaMirrorMaker2ConnectorSpec`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|toConfigMap
+|xref:type-LocalObjectReference-{context}[`LocalObjectReference`]
+|Reference to the ConfigMap where the list of offsets will be written to.
+|====
+
+[id='type-AlterOffsets-{context}']
+= `AlterOffsets` schema reference
+
+Used in: xref:type-KafkaConnectorSpec-{context}[`KafkaConnectorSpec`], xref:type-KafkaMirrorMaker2ConnectorSpec-{context}[`KafkaMirrorMaker2ConnectorSpec`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|fromConfigMap
+|xref:type-LocalObjectReference-{context}[`LocalObjectReference`]
+|Reference to the ConfigMap where the new offsets are stored.
 |====
 
 [id='type-KafkaConnectorStatus-{context}']
@@ -4132,7 +4281,7 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |Template for Kafka Connect and Kafka MirrorMaker 2 resources. The template allows users to specify how the `Pods`, `Service`, and other services are generated.
 |externalConfiguration
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
-|Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
+|**The `externalConfiguration` property has been deprecated.** The external configuration is deprecated and will be removed in the future. Please use the template section instead to configure additional environment variables or volumes. Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
 |====
 
 [id='type-KafkaMirrorMaker2ClusterSpec-{context}']
@@ -4236,6 +4385,12 @@ Used in: xref:type-KafkaMirrorMaker2MirrorSpec-{context}[`KafkaMirrorMaker2Mirro
 |autoRestart
 |xref:type-AutoRestart-{context}[`AutoRestart`]
 |Automatic restart of connector and tasks configuration.
+|listOffsets
+|xref:type-ListOffsets-{context}[`ListOffsets`]
+|Configuration for listing offsets.
+|alterOffsets
+|xref:type-AlterOffsets-{context}[`AlterOffsets`]
+|Configuration for altering offsets.
 |====
 
 [id='type-KafkaMirrorMaker2Status-{context}']

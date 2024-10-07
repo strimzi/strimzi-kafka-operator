@@ -5,6 +5,14 @@
 * Add the "Unmanaged" KafkaTopic status update.
 * The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate moves to beta stage and is enabled by default.
   If needed, `ContinueReconciliationOnManualRollingUpdateFailure` can be disabled in the feature gates configuration in the Cluster Operator.
+* Add support for managing connector offsets via KafkaConnector and KafkaMirrorMaker2 custom resources.
+* Add support for templating `host` and `advertisedHost` fields in listener configuration.
+* Allow configuration of environment variables based on Config Map or Secret for every container in the container template sections.
+* Add support for disabling the generation of PodDisruptionBudget resources by the Cluster Operator.
+* Add support for running an automatic rebalancing, via Cruise Control, when the cluster is scaled down or up:
+  * after a scaling up, the operator triggers an auto-rebalancing for moving some of the existing partitions to the newly added brokers.
+  * before scaling down, and if the brokers to remove are hosting partitions, the operator triggers an auto-rebalancing to these partitions off the brokers to make them free to be removed.
+* Strimzi Access Operator 0.1.0 added to the installation files and examples
 
 ### Changes, deprecations and removals
 
@@ -12,6 +20,8 @@
   Kubernetes 1.23 and 1.24 are not supported anymore.
 * When finalizers are enabled (default), the Topic Operator will no longer restore finalizers on unmanaged `KafkaTopic` resources if they are removed, aligning the behavior with paused topics, where finalizers are also not restored.
   This change matches user expectations.
+* The External Configuration (`.spec.externalConfiguration`) in `KafkaConnect` and `KafkaMirrorMaker2` resources is deprecated and will be removed in the future.
+  Please use the environment variables, additional volumes and volume mounts in Pod and container templates instead.
 
 ## 0.43.0
 

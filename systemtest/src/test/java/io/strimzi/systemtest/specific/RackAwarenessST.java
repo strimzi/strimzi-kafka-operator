@@ -44,9 +44,9 @@ import org.junit.jupiter.api.Tag;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.strimzi.systemtest.TestConstants.CONNECT;
-import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER2;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestTags.CONNECT;
+import static io.strimzi.systemtest.TestTags.MIRROR_MAKER2;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -118,10 +118,12 @@ class RackAwarenessST extends AbstractST {
         String podNodeName = pod.getSpec().getNodeName();
         String hostname = podNodeName.contains(".") ? podNodeName.substring(0, podNodeName.indexOf(".")) : podNodeName;
 
+        // TODO: This should be rewritten to not rely on internal implementation details but use Kafka Admin API to check the rack instead
+        // Tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/10663
         String rackIdOut = cmdKubeClient(testStorage.getNamespaceName()).execInPod(podName, "/bin/bash", "-c", "cat /opt/kafka/init/rack.id").out().trim();
         String brokerRackOut = cmdKubeClient(testStorage.getNamespaceName()).execInPod(podName, "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack").out().trim();
         assertThat(rackIdOut.trim().contains(hostname), is(true));
-        assertThat(brokerRackOut.contains("broker.rack=" + hostname), is(true));
+        assertThat(brokerRackOut.contains("broker.rack=${strimzidir:/opt/kafka/init:rack.id}"), is(true));
 
         LOGGER.info("Producing and Consuming data in the Kafka cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
         KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
@@ -184,7 +186,7 @@ class RackAwarenessST extends AbstractST {
             .build());
 
         LOGGER.info("Check that KafkaConnect Pod is unschedulable");
-        KafkaConnectUtils.waitForConnectPodCondition("Unschedulable", testStorage.getNamespaceName(), invalidConnectClusterName, 30_000);
+        KafkaConnectUtils.waitForConnectPodCondition(testStorage.getNamespaceName(), "Unschedulable", invalidConnectClusterName, 30_000);
 
         KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
@@ -214,7 +216,7 @@ class RackAwarenessST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        consumeDataWithNewSinkConnector(testStorage.getClusterName(), testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+        consumeDataWithNewSinkConnector(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getMessageCount());
     }
 
     /**
@@ -305,27 +307,27 @@ class RackAwarenessST extends AbstractST {
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
     }
 
-    private void consumeDataWithNewSinkConnector(String newConnectorName, String connectClusterName, String topicName, String namespace, int msgCount) {
+    private void consumeDataWithNewSinkConnector(String namespaceName, String newConnectorName, String connectClusterName, String topicName, int msgCount) {
 
-        LOGGER.info("Deploying Sink KafkaConnector in KafkaConnect Cluster: {}/{}", namespace, newConnectorName);
+        LOGGER.info("Deploying Sink KafkaConnector in KafkaConnect Cluster: {}/{}", namespaceName, newConnectorName);
         Map<String, Object> connectorConfig = new HashMap<>();
         connectorConfig.put("topics", topicName);
         connectorConfig.put("file", TestConstants.DEFAULT_SINK_FILE_PATH);
         connectorConfig.put("key.converter", "org.apache.kafka.connect.storage.StringConverter");
         connectorConfig.put("value.converter", "org.apache.kafka.connect.storage.StringConverter");
 
-        resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(namespace, newConnectorName)
+        resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(namespaceName, newConnectorName)
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .withConfig(connectorConfig)
             .endSpec()
             .build());
 
-        String kafkaConnectPodName = KubeClusterResource.kubeClient(namespace).listPods(connectClusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
-        LOGGER.info("KafkaConnect Pod: {}/{}", namespace, kafkaConnectPodName);
-        KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(namespace, kafkaConnectPodName);
+        String kafkaConnectPodName = KubeClusterResource.kubeClient(namespaceName).listPods(connectClusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        LOGGER.info("KafkaConnect Pod: {}/{}", namespaceName, kafkaConnectPodName);
+        KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(namespaceName, kafkaConnectPodName);
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespace, kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, msgCount);
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespaceName, kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, msgCount);
     }
 
     @BeforeAll

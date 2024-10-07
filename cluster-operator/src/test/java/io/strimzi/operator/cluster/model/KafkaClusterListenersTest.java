@@ -32,6 +32,7 @@ import io.strimzi.api.kafka.model.kafka.listener.NodeAddressType;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.common.Reconciliation;
@@ -753,17 +754,16 @@ public class KafkaClusterListenersTest {
 
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
-
-        for (KafkaPool pool : pools) {
-            // Check port
-            List<ContainerPort> ports = kc.getContainerPortList(pool);
-
-            if (!"controllers".equals(pool.poolName))   {
-                assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
-            } else {
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            List<ContainerPort> ports = pod.getSpec().getContainers().stream().findAny().orElseThrow().getPorts();
+            if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
                 assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(false));
+            } else {
+                assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
             }
-        }
+        }));
 
         // Check external bootstrap service
         List<Service> bootstrapServices = kc.generateExternalBootstrapServices();
@@ -982,17 +982,17 @@ public class KafkaClusterListenersTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
 
-        for (KafkaPool pool : pools) {
-            // Check port
-            List<ContainerPort> ports = kc.getContainerPortList(pool);
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            List<ContainerPort> ports = pod.getSpec().getContainers().stream().findAny().orElseThrow().getPorts();
 
-            if (!"controllers".equals(pool.poolName)) {
-                assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
-            } else {
+            if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
                 assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(false));
+            } else {
+                assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
             }
-        }
+        }));
 
         // Check external bootstrap service
         List<Service> bootstrapServices = kc.generateExternalBootstrapServices();
@@ -1365,17 +1365,17 @@ public class KafkaClusterListenersTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            List<ContainerPort> ports = pod.getSpec().getContainers().stream().findAny().orElseThrow().getPorts();
 
-        for (KafkaPool pool : pools) {
-            // Check port
-            List<ContainerPort> ports = kc.getContainerPortList(pool);
-
-            if (!"controllers".equals(pool.poolName)) {
-                assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
-            } else {
+            if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
                 assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(false));
+            } else {
+                assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
             }
-        }
+        }));
 
         // Check external bootstrap service
         List<Service> bootstrapServices = kc.generateExternalBootstrapServices();
@@ -1495,21 +1495,31 @@ public class KafkaClusterListenersTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
-
-        for (KafkaPool pool : pools) {
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        
+        podSets.forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
             // Check Init container
-            Container initCont = kc.createInitContainer(null, pool);
+            Container initCont = pod.getSpec().getInitContainers().stream().findAny().orElse(null);
+            Container cont = pod.getSpec().getContainers().stream().findAny().orElseThrow();
 
-            if (!"controllers".equals(pool.poolName)) {
-                assertThat(initCont, is(notNullValue()));
-                assertThat(initCont.getEnv().stream().filter(env -> KafkaCluster.ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse(null), is("TRUE"));
+            if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
+                assertThat(initCont, is(nullValue()));
+
+                assertThat(pod.getSpec().getVolumes().stream().map(Volume::getName)
+                        .filter(KafkaCluster.INIT_VOLUME_NAME::equals).findFirst().orElse(null), is(nullValue()));
+                assertThat(cont.getVolumeMounts().stream().map(VolumeMount::getName)
+                        .filter(KafkaCluster.INIT_VOLUME_NAME::equals).findFirst().orElse(null), is(nullValue()));
             } else {
                 assertThat(initCont, is(notNullValue()));
                 assertThat(initCont.getEnv().stream().filter(env -> KafkaCluster.ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse(null), is(nullValue()));
+                        .map(EnvVar::getValue).findFirst().orElse(null), is("TRUE"));
+
+                assertThat(pod.getSpec().getVolumes().stream().map(Volume::getName)
+                        .filter(KafkaCluster.INIT_VOLUME_NAME::equals).findFirst().orElse(null), is(notNullValue()));
+                assertThat(cont.getVolumeMounts().stream().map(VolumeMount::getName)
+                        .filter(KafkaCluster.INIT_VOLUME_NAME::equals).findFirst().orElse(null), is(notNullValue()));
             }
-        }
+        }));
     }
 
     @ParallelTest
@@ -1543,17 +1553,17 @@ public class KafkaClusterListenersTest {
 
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            List<ContainerPort> ports = pod.getSpec().getContainers().stream().findAny().orElseThrow().getPorts();
 
-        for (KafkaPool pool : pools) {
-            // Check port
-            List<ContainerPort> ports = kc.getContainerPortList(pool);
-
-            if (!"controllers".equals(pool.poolName)) {
-                assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
-            } else {
+            if ((CLUSTER + "-controllers").equals(podSet.getMetadata().getName())) {
                 assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(false));
+            } else {
+                assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
             }
-        }
+        }));
 
         // Check external bootstrap service
         Service ext = kc.generateExternalBootstrapServices().get(0);
@@ -1823,18 +1833,18 @@ public class KafkaClusterListenersTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
 
-        assertThat(kc.isExposedWithIngress(), is(true));
+        assertThat(kc.getListeners().stream().findFirst().orElseThrow().getType(), is(KafkaListenerType.INGRESS));
 
-        for (KafkaPool pool : pools) {
-            // Check port
-            List<ContainerPort> ports = kc.getContainerPortList(pool);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            List<ContainerPort> ports = pod.getSpec().getContainers().stream().findAny().orElseThrow().getPorts();
 
-            if (!"controllers".equals(pool.poolName)) {
-                assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
-            } else {
+            if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
                 assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(false));
+            } else {
+                assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
             }
-        }
+        }));
 
         // Check external bootstrap service
         List<Service> bootstrapServices = kc.generateExternalBootstrapServices();
@@ -2056,19 +2066,20 @@ public class KafkaClusterListenersTest {
 
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        
+        assertThat(kc.getListeners().stream().findFirst().orElseThrow().getType(), is(KafkaListenerType.CLUSTER_IP));
+        
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
 
-        assertThat(kc.isExposedWithClusterIP(), is(true));
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            List<ContainerPort> ports = pod.getSpec().getContainers().stream().findAny().orElseThrow().getPorts();
 
-        for (KafkaPool pool : pools) {
-            // Check port
-            List<ContainerPort> ports = kc.getContainerPortList(pool);
-
-            if (!"controllers".equals(pool.poolName)) {
-                assertThat(ports.contains(ContainerUtils.createContainerPort("tcp-clusterip", 9094)), is(true));
-            } else {
+            if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
                 assertThat(ports.contains(ContainerUtils.createContainerPort("tcp-clusterip", 9094)), is(false));
+            } else {
+                assertThat(ports.contains(ContainerUtils.createContainerPort("tcp-clusterip", 9094)), is(true));
             }
-        }
+        }));
 
         // Check external bootstrap service
         List<Service> bootstrapServices = kc.generateExternalBootstrapServices();
@@ -2206,24 +2217,30 @@ public class KafkaClusterListenersTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
 
-        for (KafkaPool pool : pools) {
-            // Volume mounts
-            Container cont = kc.createContainer(null, pool);
-            assertThat(cont.getVolumeMounts().stream().filter(mount -> "custom-listener-plain-9092-0".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT + "/custom-listener-plain-9092/test"));
-            assertThat(cont.getVolumeMounts().stream().filter(mount -> "custom-listener-plain-9092-1".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT + "/custom-listener-plain-9092/test2"));
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            Container cont = pod.getSpec().getContainers().stream().findFirst().orElseThrow();
+            List<Volume> volumes = pod.getSpec().getVolumes();
 
-            // Volumes
-            List<Volume> volumes = kc.getNonDataVolumes(false, "foo-brokers-6", null);
+            if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
+                assertThat(cont.getVolumeMounts().stream().filter(mount -> "custom-listener-plain-9092-0".equals(mount.getName())).findFirst().orElse(null), is(nullValue()));
+                assertThat(cont.getVolumeMounts().stream().filter(mount -> "custom-listener-plain-9092-1".equals(mount.getName())).findFirst().orElse(null), is(nullValue()));
 
-            assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().size(), is(1));
-            assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getKey(), is("foo"));
-            assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getPath(), is("foo"));
+                assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElse(null), is(nullValue()));
+                assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElse(null), is(nullValue()));
+            } else {
+                assertThat(cont.getVolumeMounts().stream().filter(mount -> "custom-listener-plain-9092-0".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT + "/custom-listener-plain-9092/test"));
+                assertThat(cont.getVolumeMounts().stream().filter(mount -> "custom-listener-plain-9092-1".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT + "/custom-listener-plain-9092/test2"));
 
-            assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().size(), is(1));
-            assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getKey(), is("bar"));
-            assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getPath(), is("bar"));
-        }
+                assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().size(), is(1));
+                assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getKey(), is("foo"));
+                assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getPath(), is("foo"));
+                assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().size(), is(1));
+                assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getKey(), is("bar"));
+                assertThat(volumes.stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getPath(), is("bar"));
+            }
+        }));
     }
 
     @ParallelTest
@@ -2253,27 +2270,33 @@ public class KafkaClusterListenersTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
 
-        // Test volumes
-        List<Volume> volumes = kc.getNonDataVolumes(false, "foo-brokers-6", null);
-        Volume vol = volumes.stream().filter(v -> "custom-external-9094-certs".equals(v.getName())).findFirst().orElse(null);
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            // Volumes
+            List<Volume> volumes = pod.getSpec().getVolumes();
+            Volume vol = volumes.stream().filter(v -> "custom-external-9094-certs".equals(v.getName())).findFirst().orElse(null);
 
-        assertThat(vol, is(notNullValue()));
-        assertThat(vol.getSecret().getSecretName(), is(secret));
-        assertThat(vol.getSecret().getItems().get(0).getKey(), is(key));
-        assertThat(vol.getSecret().getItems().get(0).getPath(), is("tls.key"));
-        assertThat(vol.getSecret().getItems().get(1).getKey(), is(cert));
-        assertThat(vol.getSecret().getItems().get(1).getPath(), is("tls.crt"));
+            // Volume mounts
+            Container container = pod.getSpec().getContainers().stream().findFirst().orElseThrow();
+            VolumeMount mount = container.getVolumeMounts().stream().filter(v -> "custom-external-9094-certs".equals(v.getName())).findFirst().orElse(null);
 
-        for (KafkaPool pool : pools) {
-            // Test volume mounts
-            Container cont = kc.createContainer(null, pool);
-            VolumeMount mount = cont.getVolumeMounts().stream().filter(v -> "custom-external-9094-certs".equals(v.getName())).findFirst().orElse(null);
+            if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
+                assertThat(vol, is(nullValue()));
+                assertThat(mount, is(nullValue()));
+            } else {
+                assertThat(vol, is(notNullValue()));
+                assertThat(vol.getSecret().getSecretName(), is(secret));
+                assertThat(vol.getSecret().getItems().get(0).getKey(), is(key));
+                assertThat(vol.getSecret().getItems().get(0).getPath(), is("tls.key"));
+                assertThat(vol.getSecret().getItems().get(1).getKey(), is(cert));
+                assertThat(vol.getSecret().getItems().get(1).getPath(), is("tls.crt"));
 
-            assertThat(mount, is(notNullValue()));
-            assertThat(mount.getName(), is("custom-external-9094-certs"));
-            assertThat(mount.getMountPath(), is("/opt/kafka/certificates/custom-external-9094-certs"));
-        }
+                assertThat(mount, is(notNullValue()));
+                assertThat(mount.getName(), is("custom-external-9094-certs"));
+                assertThat(mount.getMountPath(), is("/opt/kafka/certificates/custom-external-9094-certs"));
+            }
+        }));
     }
 
     @ParallelTest
@@ -2303,26 +2326,32 @@ public class KafkaClusterListenersTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
 
-        // Test volumes
-        List<Volume> volumes = kc.getNonDataVolumes(false, "foo-brokers-6", null);
-        Volume vol = volumes.stream().filter(v -> "custom-tls-9093-certs".equals(v.getName())).findFirst().orElse(null);
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            // Test volumes
+            List<Volume> volumes = pod.getSpec().getVolumes();
+            Volume vol = volumes.stream().filter(v -> "custom-tls-9093-certs".equals(v.getName())).findFirst().orElse(null);
 
-        assertThat(vol, is(notNullValue()));
-        assertThat(vol.getSecret().getSecretName(), is(secret));
-        assertThat(vol.getSecret().getItems().get(0).getKey(), is(key));
-        assertThat(vol.getSecret().getItems().get(0).getPath(), is("tls.key"));
-        assertThat(vol.getSecret().getItems().get(1).getKey(), is(cert));
-        assertThat(vol.getSecret().getItems().get(1).getPath(), is("tls.crt"));
-
-        for (KafkaPool pool : pools) {
             // Test volume mounts
-            Container cont = kc.createContainer(null, pool);
-            VolumeMount mount = cont.getVolumeMounts().stream().filter(v -> "custom-tls-9093-certs".equals(v.getName())).findFirst().orElse(null);
+            Container container = pod.getSpec().getContainers().stream().findAny().orElseThrow();
+            VolumeMount mount = container.getVolumeMounts().stream().filter(v -> "custom-tls-9093-certs".equals(v.getName())).findFirst().orElse(null);
 
-            assertThat(mount, is(notNullValue()));
-            assertThat(mount.getName(), is("custom-tls-9093-certs"));
-            assertThat(mount.getMountPath(), is("/opt/kafka/certificates/custom-tls-9093-certs"));
-        }
+            if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
+                assertThat(vol, is(nullValue()));
+                assertThat(mount, is(nullValue()));
+            } else {
+                assertThat(vol, is(notNullValue()));
+                assertThat(vol.getSecret().getSecretName(), is(secret));
+                assertThat(vol.getSecret().getItems().get(0).getKey(), is(key));
+                assertThat(vol.getSecret().getItems().get(0).getPath(), is("tls.key"));
+                assertThat(vol.getSecret().getItems().get(1).getKey(), is(cert));
+                assertThat(vol.getSecret().getItems().get(1).getPath(), is("tls.crt"));
+
+                assertThat(mount, is(notNullValue()));
+                assertThat(mount.getName(), is("custom-tls-9093-certs"));
+                assertThat(mount.getMountPath(), is("/opt/kafka/certificates/custom-tls-9093-certs"));
+            }
+        }));
     }
 }

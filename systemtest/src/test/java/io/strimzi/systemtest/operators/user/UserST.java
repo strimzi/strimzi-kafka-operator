@@ -50,8 +50,8 @@ import org.junit.jupiter.api.Tag;
 
 import java.util.List;
 
-import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestTags.ACCEPTANCE;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -130,9 +130,9 @@ class UserST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(sharedTestStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(sharedTestStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        KafkaUserResource.replaceUserResourceInSpecificNamespace(testStorage.getKafkaUsername(), ku -> {
+        KafkaUserResource.replaceUserResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername(), ku -> {
             ku.getSpec().setAuthentication(new KafkaUserScramSha512ClientAuthentication());
-        }, Environment.TEST_SUITE_NAMESPACE);
+        });
 
         KafkaUserUtils.waitForKafkaUserIncreaseObserverGeneration(Environment.TEST_SUITE_NAMESPACE, observedGeneration, testStorage.getKafkaUsername());
         KafkaUserUtils.waitForKafkaUserCreation(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername());
@@ -394,18 +394,18 @@ class UserST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        KafkaUserResource.replaceUserResourceInSpecificNamespace(testStorage.getKafkaUsername(),
-            user -> {
-                user.getSpec().setAuthorization(new KafkaUserAuthorizationSimpleBuilder()
-                        .addNewAcl()
-                            .withNewAclRuleTopicResource()
-                                .withPatternType(AclResourcePatternType.LITERAL)
-                                .withName(testStorage.getTopicName())
-                            .endAclRuleTopicResource()
-                            .withOperations(AclOperation.READ, AclOperation.DESCRIBE)
-                        .endAcl()
-                        .build());
-            }, testStorage.getNamespaceName());
+        KafkaUserResource.replaceUserResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getKafkaUsername(), user -> {
+            user.getSpec().setAuthorization(new KafkaUserAuthorizationSimpleBuilder()
+                    .addNewAcl()
+                        .withNewAclRuleTopicResource()
+                            .withPatternType(AclResourcePatternType.LITERAL)
+                            .withName(testStorage.getTopicName())
+                        .endAclRuleTopicResource()
+                        .withOperations(AclOperation.READ, AclOperation.DESCRIBE)
+                    .endAcl()
+                    .build());
+        }
+        );
 
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
 

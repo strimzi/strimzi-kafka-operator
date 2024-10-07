@@ -6,6 +6,10 @@ package io.strimzi.systemtest.upgrade;
 
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 /**
  * Class for representing Kafka version, with LMFV and IBPV for our upgrade/downgrade tests
  * Represents "procedures" which should be done after upgrade of operator/before downgrade of operator
@@ -91,6 +95,33 @@ public class UpgradeKafkaVersion {
                     TestKafkaVersion.parseKafkaVersionsFromUrl(kafkaVersionsUrl), kafkaVersion
                 );
                 return new UpgradeKafkaVersion(testKafkaVersion);
+            } catch (Exception e) {
+                throw new RuntimeException(e.getMessage());
+            }
+        }
+    }
+
+    public static Optional<UpgradeKafkaVersion> getKafkaVersionSupportedBeforeUnsupportedAfterUpgrade(String fromKafkaVersionsUrl) {
+        List<TestKafkaVersion> supportedKafkaVersionsBeforeUpgrade = getSupportedKafkaVersions(fromKafkaVersionsUrl);
+        List<String> supportedKafkaVersionsAfterUpgrade = getSupportedKafkaVersions("HEAD")
+                .stream()
+                .map(TestKafkaVersion::version)
+                .collect(Collectors.toList());
+
+        return supportedKafkaVersionsBeforeUpgrade
+                .stream()
+                .filter(version -> !supportedKafkaVersionsAfterUpgrade.contains(version.version()))
+                .map(UpgradeKafkaVersion::new)
+                .findFirst();
+    }
+
+    private static List<TestKafkaVersion> getSupportedKafkaVersions(String kafkaVersionsUrl) {
+        if (kafkaVersionsUrl.equals("HEAD")) {
+            return TestKafkaVersion.getSupportedKafkaVersions();
+        } else {
+            try {
+                List<TestKafkaVersion> kafkaVersions = TestKafkaVersion.parseKafkaVersionsFromUrl(kafkaVersionsUrl);
+                return TestKafkaVersion.getSupportedKafkaVersionsFromAllVersions(kafkaVersions);
             } catch (Exception e) {
                 throw new RuntimeException(e.getMessage());
             }

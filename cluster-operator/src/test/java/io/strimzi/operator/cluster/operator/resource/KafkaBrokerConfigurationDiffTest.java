@@ -53,13 +53,13 @@ public class KafkaBrokerConfigurationDiffTest {
 
     private String getDesiredConfiguration(List<ConfigEntry> additional) {
         try (InputStream is = getClass().getClassLoader().getResourceAsStream("desired-kafka-broker.conf")) {
-            String desiredConfigString = ReadWriteUtils.readInputStream(is);
+            StringBuilder desiredConfigString = new StringBuilder(ReadWriteUtils.readInputStream(is));
 
             for (ConfigEntry ce : additional) {
-                desiredConfigString += "\n" + ce.name() + "=" + ce.value();
+                desiredConfigString.append("\n").append(ce.name()).append("=").append(ce.value());
             }
 
-            return desiredConfigString;
+            return desiredConfigString.toString();
         } catch (IOException e) {
             fail(e);
         }
@@ -71,7 +71,7 @@ public class KafkaBrokerConfigurationDiffTest {
 
         try (InputStream is = getClass().getClassLoader().getResourceAsStream("current-kafka-broker.conf")) {
 
-            List<String> configList = Arrays.asList(ReadWriteUtils.readInputStream(is).split(System.getProperty("line.separator")));
+            List<String> configList = Arrays.asList(ReadWriteUtils.readInputStream(is).split(System.lineSeparator()));
             configList.forEach(entry -> {
                 String[] split = entry.split("=");
                 String val = split.length == 1 ? "" : split[1];
@@ -136,17 +136,17 @@ public class KafkaBrokerConfigurationDiffTest {
 
     @Test
     public void testChangedPresentValue() {
-        List<ConfigEntry> ces = singletonList(new ConfigEntry("min.insync.replicas", "2"));
+        List<ConfigEntry> ces = singletonList(new ConfigEntry("min.insync.replicas", "1"));
         KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()),
                 getDesiredConfiguration(ces), kafkaVersion, nodeRef);
         assertThat(kcd.getDiffSize(), is(1));
         assertThat(kcd.canBeUpdatedDynamically(), is(true));
-        assertConfig(kcd, new ConfigEntry("min.insync.replicas", "2"));
+        assertConfig(kcd, new ConfigEntry("min.insync.replicas", "1"));
     }
 
     @Test
     public void testChangedPresentValueToDefault() {
-        List<ConfigEntry> ces = singletonList(new ConfigEntry("min.insync.replicas", "1"));
+        List<ConfigEntry> ces = singletonList(new ConfigEntry("min.insync.replicas", "2"));
         KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()),
                 getDesiredConfiguration(ces), kafkaVersion, nodeRef);
         assertThat(kcd.getDiffSize(), is(0));

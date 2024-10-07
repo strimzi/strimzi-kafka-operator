@@ -15,14 +15,14 @@ for CRT in /opt/kafka/cluster-ca-certs/*.crt; do
 done
 echo "Preparing truststore for replication listener is complete"
 
-echo "Looking for the right CA"
+echo "Looking for the CA matching the server certificate"
 CA=$(find_ca /opt/kafka/cluster-ca-certs "/opt/kafka/broker-certs/$HOSTNAME.crt")
 
 if [ ! -f "$CA" ]; then
-    echo "No CA found. Thus exiting."
+    echo "No CA matching the server certificate found. This process will exit with failure."
     exit 1
 fi
-echo "Found the right CA: $CA"
+echo "CA matching the server certificate found: $CA"
 
 echo "Preparing keystore for replication and clienttls listener"
 STORE=/tmp/kafka/cluster.keystore.p12

@@ -147,7 +147,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesZooBasedTest {
 
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(zkCluster.generatePodSet(kafka.getSpec().getZookeeper().getReplicas(), false, null, null, podNum -> null)));
-        when(mockPodSetOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(kafkaCluster.generatePodSets(false, null, null, brokerId -> null)));
+        when(mockPodSetOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(kafkaCluster.generatePodSets(false, null, null, node -> null)));
 
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(zkCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
@@ -247,7 +247,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesZooBasedTest {
             return Future.succeededFuture(zkPodSet);
         });
         when(mockPodSetOps.listAsync(any(), any(Labels.class))).thenAnswer(i -> {
-            StrimziPodSet kafkaPodSet = kafkaCluster.generatePodSets(false, null, null, brokerId -> null).stream().filter(ps -> kafkaCluster.getComponentName().equals(ps.getMetadata().getName())).findFirst().orElseThrow();
+            StrimziPodSet kafkaPodSet = kafkaCluster.generatePodSets(false, null, null, node -> null).stream().filter(ps -> kafkaCluster.getComponentName().equals(ps.getMetadata().getName())).findFirst().orElseThrow();
             kafkaPodSet.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true");
             return Future.succeededFuture(List.of(kafkaPodSet));
         });
@@ -351,7 +351,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesZooBasedTest {
 
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(zkCluster.generatePodSet(kafka.getSpec().getZookeeper().getReplicas(), false, null, null, podNum -> null)));
-        when(mockPodSetOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(kafkaCluster.generatePodSets(false, null, null, brokerId -> null)));
+        when(mockPodSetOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(kafkaCluster.generatePodSets(false, null, null, node -> null)));
 
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(zkCluster.getSelectorLabels()))).thenAnswer(i -> {
@@ -491,7 +491,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesZooBasedTest {
 
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(zkCluster.generatePodSet(kafka.getSpec().getZookeeper().getReplicas(), false, null, null, podNum -> null)));
-        when(mockPodSetOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(kafkaCluster.generatePodSets(false, null, null, brokerId -> null)));
+        when(mockPodSetOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(kafkaCluster.generatePodSets(false, null, null, node -> null)));
 
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(zkCluster.getSelectorLabels()))).thenAnswer(i -> {
@@ -645,7 +645,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesZooBasedTest {
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(zkCluster.generatePodSet(kafka.getSpec().getZookeeper().getReplicas(), false, null, null, podNum -> null)));
         when(mockPodSetOps.listAsync(any(), any(Labels.class))).thenAnswer(i -> {
-            List<StrimziPodSet> podSets = kafkaCluster.generatePodSets(false, null, null, brokerId -> null);
+            List<StrimziPodSet> podSets = kafkaCluster.generatePodSets(false, null, null, node -> null);
             podSets.get(1).getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true");
             return Future.succeededFuture(podSets);
         });

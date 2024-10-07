@@ -69,6 +69,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -77,6 +78,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(VertxExtension.class)
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class KafkaRebalanceAssemblyOperatorTest {
     private static final String HOST = "localhost";
     private static final String RESOURCE_NAME = "my-rebalance";
@@ -385,7 +387,8 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
     private void krNewToPendingProposalToProposalReady(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr) throws IOException, URISyntaxException {
         // Set up the rebalance endpoint with the number of pending calls before a response is received.
-        cruiseControlServer.setupCCRebalanceResponse(2, endpoint);
+        cruiseControlServer.setupCCRebalanceResponse(1, endpoint);
+        cruiseControlServer.setupCCUserTasksResponseNoGoals(1, 0);
 
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
         crdCreateKafka();
@@ -529,6 +532,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     private void krNewToPendingProposalToStoppedAndRefresh(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr) throws IOException, URISyntaxException {
         // Set up the rebalance endpoint with the number of pending calls before a response is received.
         cruiseControlServer.setupCCRebalanceResponse(2, endpoint);
+        cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 0);
 
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
         crdCreateKafka();
@@ -1131,7 +1135,8 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
     private void krNewToPendingProposalDelete(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr) throws IOException, URISyntaxException {
         // Set up the rebalance endpoint with the number of pending calls before a response is received.
-        cruiseControlServer.setupCCRebalanceResponse(2, endpoint);
+        cruiseControlServer.setupCCRebalanceResponse(1, endpoint);
+        cruiseControlServer.setupCCUserTasksResponseNoGoals(1, 0);
 
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
         crdCreateKafka();
@@ -1655,6 +1660,29 @@ public class KafkaRebalanceAssemblyOperatorTest {
                         "Connection refused");
                 checkpoint.flag();
             }));
+    }
+
+    /**
+     * Test a template KafkaRebalance custom resource that has to be just ignored by
+     * the KafkaRebalanceAssemblyOperator without updating its state
+     */
+    @Test
+    public void testRebalanceTemplate(VertxTestContext context) {
+        KafkaRebalance kr = new KafkaRebalanceBuilder(createKafkaRebalance(namespace, null, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false))
+                .editMetadata()
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.template.toString())
+                .endMetadata()
+                .build();
+
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
+
+        Checkpoint checkpoint = context.checkpoint();
+        krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, RESOURCE_NAME))
+                .onComplete(context.succeeding(v -> {
+                    KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(RESOURCE_NAME).get();
+                    assertThat(kafkaRebalance, not(StateMatchers.hasState()));
+                    checkpoint.flag();
+                }));
     }
 
     /**

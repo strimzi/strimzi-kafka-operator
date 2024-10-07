@@ -2,11 +2,14 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-
-package io.strimzi.api.kafka.model.common;
+package io.strimzi.api.kafka.model.connector;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.strimzi.api.kafka.model.common.Constants;
+import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -16,37 +19,28 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Representation for environment variables for Strimzi containers.
+ * Configuration for altering connector offsets.
  */
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({"name", "value"})
+@JsonPropertyOrder({"fromConfigMap"})
 @EqualsAndHashCode
 @ToString
-public class ContainerEnvVar implements UnknownPropertyPreserving {
-    private String name;
-    private String value;
+public class AlterOffsets implements UnknownPropertyPreserving {
+    private LocalObjectReference fromConfigMap;
     private Map<String, Object> additionalProperties;
 
-    @Description("The environment variable key.")
-    public String getName() {
-        return name;
+    @Description("Reference to the ConfigMap where the new offsets are stored.")
+    @JsonProperty(required = true)
+    public LocalObjectReference getFromConfigMap() {
+        return fromConfigMap;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    @Description("The environment variable value.")
-    public String getValue() {
-        return value;
-    }
-
-    public void setValue(String value) {
-        this.value = value;
+    public void setFromConfigMap(LocalObjectReference fromConfigMap) {
+        this.fromConfigMap = fromConfigMap;
     }
 
     @Override

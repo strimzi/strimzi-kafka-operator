@@ -6,7 +6,7 @@
 = Upgrading Strimzi
 
 [role="_abstract"]
-Upgrade your Strimzi installation to version {ProductVersion} and benefit from new features, performance improvements, and enhanced security options.
+Download the latest Strimzi xref:downloads-{context}[deployment files] and upgrade your Strimzi installation to version {ProductVersion} to benefit from new features, performance improvements, and enhanced security options.
 During the upgrade, Kafka is also be updated to the latest supported version, introducing additional features and bug fixes to your Strimzi deployment.
 
 Use the same method to upgrade the Cluster Operator as the initial method of deployment.
@@ -15,8 +15,6 @@ After you have upgraded your Cluster Operator to {ProductVersion}, the next step
 Kafka upgrades are performed by the Cluster Operator through rolling updates of the Kafka nodes.
 
 If you encounter any issues with the new version, Strimzi can be xref:assembly-downgrade-{context}[downgraded] to the previous version.
-
-Released Strimzi versions can be found at {ReleaseDownload}.
 
 .Upgrade without downtime
 

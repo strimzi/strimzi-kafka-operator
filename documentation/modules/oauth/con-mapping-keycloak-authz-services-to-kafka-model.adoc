@@ -17,6 +17,7 @@ However, you can also use different OAuth client ids (for example, `my-cluster-k
 ====
 
 The `kafka` client definition must have the *Authorization Enabled* option enabled in the Keycloak Admin Console.
+For information on enabling authorization services, see the guide to {keycloak-authorization-services}.
 
 All permissions exist within the scope of the `kafka` client. 
 If you have different Kafka clusters configured with different OAuth client IDs, they each need a separate set of permissions even though they're part of the same Keycloak realm.

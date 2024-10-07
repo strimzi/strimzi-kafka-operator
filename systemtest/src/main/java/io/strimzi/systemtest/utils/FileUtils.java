@@ -107,7 +107,7 @@ public class FileUtils {
         return null;
     }
 
-    public static File updateNamespaceOfYamlFile(String pathToOrigin, String namespace) throws IOException {
+    public static File updateNamespaceOfYamlFile(String namespaceName, String pathToOrigin) throws IOException {
         byte[] encoded;
         File yamlFile = Files.createTempFile("temp-file", ".yaml").toFile();
 
@@ -115,7 +115,7 @@ public class FileUtils {
             encoded = Files.readAllBytes(Paths.get(pathToOrigin));
 
             String yaml = new String(encoded, StandardCharsets.UTF_8);
-            yaml = yaml.replaceAll("myproject", namespace);
+            yaml = yaml.replaceAll("myproject", namespaceName);
 
             osw.write(yaml);
             return yamlFile.toPath().toFile();

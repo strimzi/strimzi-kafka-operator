@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.UsedNodePoolStatus;
 import io.strimzi.api.kafka.model.kafka.UsedNodePoolStatusBuilder;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatus;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerAddress;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerAddressBuilder;
@@ -114,6 +115,7 @@ public class KafkaReconciler {
     // Various settings
     private final long operationTimeoutMs;
     private final boolean isNetworkPolicyGeneration;
+    private final boolean isPodDisruptionBudgetGeneration;
     private final boolean isKafkaNodePoolsEnabled;
     private final List<String> maintenanceWindows;
     private final String operatorNamespace;
@@ -167,6 +169,8 @@ public class KafkaReconciler {
 
     private final KafkaMetadataStateManager kafkaMetadataStateManager;
 
+    private final KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus;
+
     /**
      * Constructs the Kafka reconciler
      *
@@ -213,6 +217,8 @@ public class KafkaReconciler {
         this.imagePullPolicy = config.getImagePullPolicy();
         this.imagePullSecrets = config.getImagePullSecrets();
         this.previousNodeIds = kafkaCr.getStatus() != null ? kafkaCr.getStatus().getRegisteredNodeIds() : null;
+        this.isPodDisruptionBudgetGeneration = config.isPodDisruptionBudgetGeneration();
+        this.kafkaAutoRebalanceStatus = kafkaCr.getStatus() != null ? kafkaCr.getStatus().getAutoRebalance() : null;
 
         this.stsOperator = supplier.stsOperations;
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
@@ -252,6 +258,7 @@ public class KafkaReconciler {
                 .compose(i -> initClientAuthenticationCertificates())
                 .compose(i -> manualPodCleaning())
                 .compose(i -> networkPolicy())
+                .compose(i -> updateKafkaAutoRebalanceStatus(kafkaStatus))
                 .compose(i -> manualRollingUpdate())
                 .compose(i -> pvcs(kafkaStatus))
                 .compose(i -> serviceAccount())
@@ -281,6 +288,16 @@ public class KafkaReconciler {
                 .compose(i -> updateKafkaVersion(kafkaStatus))
                 .compose(i -> updateKafkaMetadataMigrationState())
                 .compose(i -> updateKafkaMetadataState(kafkaStatus));
+    }
+
+    private Future<Void> updateKafkaAutoRebalanceStatus(KafkaStatus kafkaStatus) {
+        // gather all the desired brokers' ids across the entire cluster accounting all node pools
+        Set<Integer> desired = kafka.nodes().stream().filter(NodeRef::broker).map(NodeRef::nodeId).collect(Collectors.toSet());
+        // if added brokers list contains all desired, it's a newly created cluster so there are no actual scaled up brokers.
+        // when added brokers list has fewer nodes than desired, it actually containes the new ones for scaling up
+        Set<Integer> scaledUpBrokerNodes = kafka.addedBrokerNodes().containsAll(desired) ? Set.of() : kafka.addedBrokerNodes();
+        KafkaRebalanceUtils.updateKafkaAutoRebalanceStatus(kafkaStatus, kafkaAutoRebalanceStatus, scaledUpBrokerNodes);
+        return Future.succeededFuture();
     }
 
     /**
@@ -765,26 +782,30 @@ public class KafkaReconciler {
      * @return  Completes when the PDB was successfully created or updated
      */
     protected Future<Void> podDisruptionBudget() {
-        return podDisruptionBudgetOperator
+        if (isPodDisruptionBudgetGeneration) {
+            return podDisruptionBudgetOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaComponentName(reconciliation.name()), kafka.generatePodDisruptionBudget())
-                    .map((Void) null);
+                    .mapEmpty();
+        } else {
+            return Future.succeededFuture();
+        }
     }
 
     /**
      * Prepares annotations for Kafka pods within a StrimziPodSet which are known only in the KafkaAssemblyOperator level.
      * These are later passed to KafkaCluster where there are used when creating the Pod definitions.
      *
-     * @param nodeId    ID of the broker, the annotations of which are being prepared.
+     * @param node    The node for which the annotations are being prepared.
      *
      * @return  Map with Pod annotations
      */
-    private Map<String, String> podSetPodAnnotations(int nodeId) {
+    private Map<String, String> podSetPodAnnotations(NodeRef node) {
         Map<String, String> podAnnotations = new LinkedHashMap<>(9);
         podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(this.clusterCa.caCertGeneration()));
         podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(this.clusterCa.caKeyGeneration()));
         podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, String.valueOf(this.clientsCa.caCertGeneration()));
-        podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_HASH, brokerLoggingHash.get(nodeId));
-        podAnnotations.put(KafkaCluster.ANNO_STRIMZI_BROKER_CONFIGURATION_HASH, brokerConfigurationHash.get(nodeId));
+        podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_HASH, brokerLoggingHash.get(node.nodeId()));
+        podAnnotations.put(KafkaCluster.ANNO_STRIMZI_BROKER_CONFIGURATION_HASH, brokerConfigurationHash.get(node.nodeId()));
         podAnnotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafka.getKafkaVersion().version());
 
         String logMessageFormatVersion = kafka.getLogMessageFormatVersion();
@@ -797,10 +818,10 @@ public class KafkaReconciler {
             podAnnotations.put(KafkaCluster.ANNO_STRIMZI_IO_INTER_BROKER_PROTOCOL_VERSION, interBrokerProtocolVersion);
         }
 
-        podAnnotations.put(ANNO_STRIMZI_SERVER_CERT_HASH, kafkaServerCertificateHash.get(nodeId)); // Annotation of broker certificate hash
+        podAnnotations.put(ANNO_STRIMZI_SERVER_CERT_HASH, kafkaServerCertificateHash.get(node.nodeId())); // Annotation of broker certificate hash
 
         // Annotations with custom cert thumbprints to help with rolling updates when they change
-        if (!listenerReconciliationResults.customListenerCertificateThumbprints.isEmpty()) {
+        if (node.broker() && !listenerReconciliationResults.customListenerCertificateThumbprints.isEmpty()) {
             podAnnotations.put(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, listenerReconciliationResults.customListenerCertificateThumbprints.toString());
         }
 
@@ -1087,7 +1108,7 @@ public class KafkaReconciler {
                             Set<ListenerAddress> statusAddresses = new HashSet<>(brokerNodes.size());
 
                             for (Map.Entry<Integer, Node> entry : brokerNodes.entrySet())   {
-                                String advertisedHost = ListenersUtils.brokerAdvertisedHost(listener, entry.getKey());
+                                String advertisedHost = ListenersUtils.brokerAdvertisedHost(listener, kafka.nodePoolForNodeId(entry.getKey()).nodeRef(entry.getKey()));
                                 ListenerAddress address;
 
                                 if (advertisedHost != null)    {

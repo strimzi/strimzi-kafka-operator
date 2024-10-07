@@ -87,7 +87,7 @@ public class MockCruiseControl {
             .respond(
                 HttpResponse.response()
                     .withStatusCode(HttpStatusCode.OK_200.code())
-                    .withBody(new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile("cruisecontrol/topic-config-success.json")))
+                    .withBody(new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/cruisecontrol/topic-config-success.json")))
                     .withHeader(Header.header("User-Task-ID", "8911ca89-351f-888-8d0f-9aade00e098h"))
                     .withDelay(TimeUnit.SECONDS, 0));
 
@@ -108,7 +108,7 @@ public class MockCruiseControl {
             .respond(
                 HttpResponse.response()
                     .withStatusCode(HttpStatusCode.OK_200.code())
-                    .withBody(new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile("cruisecontrol/topic-config-success.json")))
+                    .withBody(new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/cruisecontrol/topic-config-success.json")))
                     .withHeader(Header.header("User-Task-ID", "8911ca89-351f-888-8d0f-9aade00e098h"))
                     .withDelay(TimeUnit.SECONDS, 0));
 
@@ -126,7 +126,7 @@ public class MockCruiseControl {
             .respond(
                 HttpResponse.response()
                     .withStatusCode(HttpStatusCode.OK_200.code())
-                    .withBody(new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile("cruisecontrol/topic-config-success.json")))
+                    .withBody(new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/cruisecontrol/topic-config-success.json")))
                     .withHeader(Header.header("User-Task-ID", "8911ca89-351f-888-8d0f-9aade00e098h"))
                     .withDelay(TimeUnit.SECONDS, 0));
 
@@ -146,7 +146,7 @@ public class MockCruiseControl {
             .respond(
                 HttpResponse.response()
                     .withStatusCode(HttpStatusCode.OK_200.code())
-                    .withBody(new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile("cruisecontrol/topic-config-success.json")))
+                    .withBody(new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/cruisecontrol/topic-config-success.json")))
                     .withHeader(Header.header("User-Task-ID", "8911ca89-351f-888-8d0f-9aade00e098h"))
                     .withDelay(TimeUnit.SECONDS, 0));
     }
@@ -168,7 +168,7 @@ public class MockCruiseControl {
             .respond(
                 HttpResponse.response()
                     .withStatusCode(HttpStatusCode.INTERNAL_SERVER_ERROR_500.code())
-                    .withBody(new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile("cruisecontrol/topic-config-failure.json")))
+                    .withBody(new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/cruisecontrol/topic-config-failure.json")))
                     .withHeader(Header.header("User-Task-ID", "8911ca89-351f-888-8d0f-9aade00e098h"))
                     .withDelay(TimeUnit.SECONDS, 0));
     }
@@ -225,7 +225,7 @@ public class MockCruiseControl {
             .respond(
                 HttpResponse.response()
                     .withStatusCode(HttpStatusCode.OK_200.code())
-                    .withBody(new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile("cruisecontrol/user-tasks-success.json")))
+                    .withBody(new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/cruisecontrol/user-tasks-success.json")))
                     .withDelay(TimeUnit.SECONDS, 0));
 
         // encryption and authentication enabled
@@ -243,7 +243,7 @@ public class MockCruiseControl {
             .respond(
                 HttpResponse.response()
                     .withStatusCode(HttpStatusCode.OK_200.code())
-                    .withBody(new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile("cruisecontrol/user-tasks-success.json")))
+                    .withBody(new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/cruisecontrol/user-tasks-success.json")))
                     .withDelay(TimeUnit.SECONDS, 0));
 
         // encryption only
@@ -258,7 +258,7 @@ public class MockCruiseControl {
             .respond(
                 HttpResponse.response()
                     .withStatusCode(HttpStatusCode.OK_200.code())
-                    .withBody(new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile("cruisecontrol/user-tasks-success.json")))
+                    .withBody(new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/cruisecontrol/user-tasks-success.json")))
                     .withDelay(TimeUnit.SECONDS, 0));
 
         // authentication only
@@ -275,7 +275,7 @@ public class MockCruiseControl {
             .respond(
                 HttpResponse.response()
                     .withStatusCode(HttpStatusCode.OK_200.code())
-                    .withBody(new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile("cruisecontrol/user-tasks-success.json")))
+                    .withBody(new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/cruisecontrol/user-tasks-success.json")))
                     .withDelay(TimeUnit.SECONDS, 0));
     }
 
@@ -294,7 +294,7 @@ public class MockCruiseControl {
             .respond(
                 HttpResponse.response()
                     .withStatusCode(HttpStatusCode.INTERNAL_SERVER_ERROR_500.code())
-                    .withBody(new JsonBody(ReadWriteUtils.readSingleLineJsonStringFromResourceFile("cruisecontrol/user-tasks-failure.json")))
+                    .withBody(new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/cruisecontrol/user-tasks-failure.json")))
                     .withDelay(TimeUnit.SECONDS, 0));
     }
 

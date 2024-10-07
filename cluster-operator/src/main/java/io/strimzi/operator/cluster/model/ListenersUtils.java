@@ -8,6 +8,7 @@ import io.strimzi.api.kafka.model.common.template.ExternalTrafficPolicy;
 import io.strimzi.api.kafka.model.common.template.IpFamily;
 import io.strimzi.api.kafka.model.common.template.IpFamilyPolicy;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfiguration;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBroker;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationCustom;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuth;
@@ -475,17 +476,31 @@ public class ListenersUtils {
     }
 
     /**
-     * Finds broker host configuration
+     * Replaces the template fields in the template string with the corresponding values from the node reference.
      *
-     * @param listener  Listener for which the host should be found
-     * @param pod       Pod ID for which we should get the configuration option
-     * @return          Host or null if not specified
+     * @param template  Template with the placeholders
+     * @param node      Node reference that should be used to provide the final values
+     *
+     * @return  The rendered template
      */
-    public static String brokerHost(GenericKafkaListener listener, int pod)    {
-        if (listener.getConfiguration() != null
-                && listener.getConfiguration().getBrokers() != null) {
-            return listener.getConfiguration().getBrokers().stream()
-                    .filter(broker -> broker != null && broker.getBroker() != null && broker.getBroker() == pod && broker.getHost() != null)
+    /* test */ static String renderHostTemplate(String template, NodeRef node) {
+        return template
+                .replace("{nodeId}", Integer.toString(node.nodeId()))
+                .replace("{nodePodName}", node.podName());
+    }
+
+    /**
+     * Finds per-broker host configuration based on node ID.
+     *
+     * @param listenerConfiguration     Configuration of the listener for which the host should be found
+     * @param nodeId                    Node ID for which we should get the configuration option
+     *
+     * @return  Host configured for given node ID or null if not specified
+     */
+    private static String brokerHost(GenericKafkaListenerConfiguration listenerConfiguration, int nodeId)    {
+        if (listenerConfiguration.getBrokers() != null) {
+            return listenerConfiguration.getBrokers().stream()
+                    .filter(broker -> broker != null && broker.getBroker() != null && broker.getBroker() == nodeId && broker.getHost() != null)
                     .map(GenericKafkaListenerConfigurationBroker::getHost)
                     .findAny()
                     .orElse(null);
@@ -495,20 +510,68 @@ public class ListenersUtils {
     }
 
     /**
-     * Finds broker advertised host configuration
+     * Finds broker host configuration either in the per-broker configuration or renders it from the template. If no
+     * per-broker value and no template are set, it returns null.
      *
-     * @param listener  Listener for which the advertised host should be found
-     * @param pod       Pod ID for which we should get the configuration option
-     * @return          Advertised Host or null if not specified
+     * @param listener  Listener for which the host should be found
+     * @param node      Node reference describing the node for which we want to find the host
+     *
+     * @return          Host or null if not specified
      */
-    public static String brokerAdvertisedHost(GenericKafkaListener listener, int pod)    {
-        if (listener.getConfiguration() != null
-                && listener.getConfiguration().getBrokers() != null) {
-            return listener.getConfiguration().getBrokers().stream()
-                    .filter(broker -> broker != null && broker.getBroker() != null && broker.getBroker() == pod && broker.getAdvertisedHost() != null)
+    public static String brokerHost(GenericKafkaListener listener, NodeRef node)    {
+        if (listener.getConfiguration() != null)    {
+            String host = brokerHost(listener.getConfiguration(), node.nodeId());
+
+            if (host == null && listener.getConfiguration().getHostTemplate() != null)   {
+                // There is no host defined specifically for given broker, so we try to use the template
+                host = renderHostTemplate(listener.getConfiguration().getHostTemplate(), node);
+            }
+
+            return host;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Finds per-broker advertised host configuration based on node ID.
+     *
+     * @param listenerConfiguration     Configuration of the listener for which the advertised host should be found
+     * @param nodeId                    Node ID for which we should get the configuration option
+     *
+     * @return  Advertised Host or null if not specified
+     */
+    private static String brokerAdvertisedHost(GenericKafkaListenerConfiguration listenerConfiguration, int nodeId)    {
+        if (listenerConfiguration.getBrokers() != null) {
+            return listenerConfiguration.getBrokers().stream()
+                    .filter(broker -> broker != null && broker.getBroker() != null && broker.getBroker() == nodeId && broker.getAdvertisedHost() != null)
                     .map(GenericKafkaListenerConfigurationBroker::getAdvertisedHost)
                     .findAny()
                     .orElse(null);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Finds broker advertised host configuration either in the per-broker configuration or renders it from the template. If no
+     * per-broker value and no template are set, it returns null.
+     *
+     * @param listener  Listener for which the advertised host should be found
+     * @param node      The node for which the advertised hostname should be obtained
+     *
+     * @return  Advertised Host or null if not specified
+     */
+    public static String brokerAdvertisedHost(GenericKafkaListener listener, NodeRef node)    {
+        if (listener.getConfiguration() != null)    {
+            String advertisedHost = brokerAdvertisedHost(listener.getConfiguration(), node.nodeId());
+
+            if (advertisedHost == null && listener.getConfiguration().getAdvertisedHostTemplate() != null)   {
+                // There is no advertised host defined specifically for given broker, so we try to use the template
+                advertisedHost = renderHostTemplate(listener.getConfiguration().getAdvertisedHostTemplate(), node);
+            }
+
+            return advertisedHost;
         } else {
             return null;
         }
@@ -669,28 +732,6 @@ public class ListenersUtils {
         } else {
             return "ClusterIP";
         }
-    }
-
-
-    /**
-     * Returns the advertised host for given broker. If user specified some override in the listener configuration, it
-     * will return this override. If no override is specified, it will return the host obtained from Kubernetes
-     * passes as parameter to this method.
-     *
-     * @param listener  Listener where the configuration should be found
-     * @param nodeId    Kafka node ID
-     * @param hostname  The advertised hostname which will be used if there is no listener override
-     *
-     * @return  The advertised hostname
-     */
-    public static String advertisedHostnameFromOverrideOrParameter(GenericKafkaListener listener, int nodeId, String hostname) {
-        String advertisedHost = ListenersUtils.brokerAdvertisedHost(listener, nodeId);
-
-        if (advertisedHost == null && hostname == null)  {
-            return null;
-        }
-
-        return advertisedHost != null ? advertisedHost : hostname;
     }
 
     /**

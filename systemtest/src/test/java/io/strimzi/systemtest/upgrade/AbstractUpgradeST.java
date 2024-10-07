@@ -24,6 +24,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -45,6 +46,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.crds.CrdUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
@@ -64,6 +66,8 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import static io.strimzi.systemtest.Environment.TEST_SUITE_NAMESPACE;
+import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
 import static io.strimzi.systemtest.TestConstants.DEFAULT_SINK_FILE_PATH;
 import static io.strimzi.systemtest.TestConstants.PATH_TO_KAFKA_TOPIC_CONFIG;
 import static io.strimzi.systemtest.TestConstants.PATH_TO_PACKAGING;
@@ -307,9 +311,9 @@ public class AbstractUpgradeST extends AbstractST {
 
         Arrays.stream(Objects.requireNonNull(root.listFiles())).sorted().forEach(f -> {
             if (watchedNsRoleBindingFilePrefixes.stream().anyMatch((rbFilePrefix) -> f.getName().startsWith(rbFilePrefix))) {
-                cmdKubeClient(componentsNamespaceName).replaceContent(TestUtils.changeRoleBindingSubject(f, clusterOperatorNamespaceName));
+                cmdKubeClient(componentsNamespaceName).replaceContent(StUtils.changeRoleBindingSubject(f, clusterOperatorNamespaceName));
             } else if (f.getName().matches(".*RoleBinding.*")) {
-                cmdKubeClient(clusterOperatorNamespaceName).replaceContent(TestUtils.changeRoleBindingSubject(f, clusterOperatorNamespaceName));
+                cmdKubeClient(clusterOperatorNamespaceName).replaceContent(StUtils.changeRoleBindingSubject(f, clusterOperatorNamespaceName));
             } else if (f.getName().matches(".*Deployment.*")) {
                 cmdKubeClient(clusterOperatorNamespaceName).replaceContent(StUtils.changeDeploymentConfiguration(componentsNamespaceName, f, strimziFeatureGatesValue));
             } else {
@@ -342,9 +346,9 @@ public class AbstractUpgradeST extends AbstractST {
             Arrays.stream(Objects.requireNonNull(root.listFiles())).sorted().forEach(f -> {
                 try {
                     if (watchedNsRoleBindingFilePrefixes.stream().anyMatch((rbFilePrefix) -> f.getName().startsWith(rbFilePrefix))) {
-                        cmdKubeClient(componentsNamespaceName).deleteContent(TestUtils.changeRoleBindingSubject(f, clusterOperatorNamespaceName));
+                        cmdKubeClient(componentsNamespaceName).deleteContent(StUtils.changeRoleBindingSubject(f, clusterOperatorNamespaceName));
                     } else if (f.getName().matches(".*RoleBinding.*")) {
-                        cmdKubeClient(clusterOperatorNamespaceName).deleteContent(TestUtils.changeRoleBindingSubject(f, clusterOperatorNamespaceName));
+                        cmdKubeClient(clusterOperatorNamespaceName).deleteContent(StUtils.changeRoleBindingSubject(f, clusterOperatorNamespaceName));
                     } else {
                         cmdKubeClient(clusterOperatorNamespaceName).delete(f);
                     }
@@ -469,7 +473,7 @@ public class AbstractUpgradeST extends AbstractST {
             // ##############################
             // Validate that continuous clients finished successfully
             // ##############################
-            ClientUtils.waitForClientsSuccess(producerName, consumerName, componentsNamespaceNames, upgradeData.getContinuousClientsMessages());
+            ClientUtils.waitForClientsSuccess(componentsNamespaceNames, consumerName, producerName, upgradeData.getContinuousClientsMessages());
             // ##############################
         }
     }
@@ -714,16 +718,39 @@ public class AbstractUpgradeST extends AbstractST {
     }
 
     protected void cleanUpKafkaTopics(String componentsNamespaceName) {
-        List<KafkaTopic> topics = KafkaTopicResource.kafkaTopicClient().inNamespace(componentsNamespaceName).list().getItems();
-        boolean finalizersAreSet = topics.stream().anyMatch(kafkaTopic -> kafkaTopic.getFinalizers() != null);
+        if (CrdUtils.isCrdPresent(KafkaTopic.RESOURCE_PLURAL, KafkaTopic.RESOURCE_GROUP)) {
+            List<KafkaTopic> topics = KafkaTopicResource.kafkaTopicClient().inNamespace(componentsNamespaceName).list().getItems();
+            boolean finalizersAreSet = topics.stream().anyMatch(kafkaTopic -> kafkaTopic.getFinalizers() != null);
 
-        // in case that we are upgrading/downgrading from UTO to BTO, we have to set finalizers on topics to null before deleting them
-        if (!StUtils.isUnidirectionalTopicOperatorUsed(componentsNamespaceName, eoSelector) && finalizersAreSet) {
-            KafkaTopicUtils.setFinalizersInAllTopicsToNull(componentsNamespaceName);
+            // in case that we are upgrading/downgrading from UTO to BTO, we have to set finalizers on topics to null before deleting them
+            if (!StUtils.isUnidirectionalTopicOperatorUsed(componentsNamespaceName, eoSelector) && finalizersAreSet) {
+                KafkaTopicUtils.setFinalizersInAllTopicsToNull(componentsNamespaceName);
+            }
+
+            // delete all topics created in test
+            cmdKubeClient(componentsNamespaceName).deleteAllByResource(KafkaTopic.RESOURCE_KIND);
+            KafkaTopicUtils.waitForTopicWithPrefixDeletion(componentsNamespaceName, topicName);
+        } else {
+            LOGGER.info("Kafka Topic Custom Resource Definition does not exist, no KafkaTopic is being deleted");
         }
+    }
 
-        // delete all topics created in test
-        cmdKubeClient(componentsNamespaceName).deleteAllByResource(KafkaTopic.RESOURCE_KIND);
-        KafkaTopicUtils.waitForTopicWithPrefixDeletion(componentsNamespaceName, topicName);
+    /**
+     * Sets up the namespaces required for the file-based Strimzi upgrade test.
+     * This method creates and prepares the necessary namespaces if operator is installed from example files
+     */
+    protected void setUpStrimziUpgradeTestNamespaces() {
+        NamespaceManager.getInstance().createNamespaceAndPrepare(CO_NAMESPACE);
+        NamespaceManager.getInstance().createNamespaceAndPrepare(TEST_SUITE_NAMESPACE);
+    }
+
+    /**
+     * Cleans resources installed to namespaces from example files and namespaces themselves.
+     */
+    protected void cleanUpStrimziUpgradeTestNamespaces() {
+        cleanUpKafkaTopics(TEST_SUITE_NAMESPACE);
+        deleteInstalledYamls(CO_NAMESPACE, TEST_SUITE_NAMESPACE, coDir);
+        NamespaceManager.getInstance().deleteNamespaceWithWait(CO_NAMESPACE);
+        NamespaceManager.getInstance().deleteNamespaceWithWait(TEST_SUITE_NAMESPACE);
     }
 }

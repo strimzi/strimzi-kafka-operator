@@ -3,14 +3,14 @@
 // deploying/deploying.adoc
 
 [id="deploy-tasks-prereqs_{context}"]
-= Preparing for your Strimzi deployment
+= Preparing for your deployment
 
 [role="_abstract"]
 Prepare for a deployment of Strimzi by completing any necessary pre-deployment tasks. 
 Take the necessary preparatory steps according to your specific requirements, such as the following:
 
 * xref:deploy-prereqs-{context}[Ensuring you have the necessary prerequisites before deploying Strimzi]
-* xref:downloads-{context}[Downloading the Strimzi release artifacts to facilitate your deployment]
+* xref:con-deploy-operator-best-practices-{context}[Considering operator deployment best practices]
 * xref:container-images-{context}[Pushing the Strimzi container images into your own registry (if required)]
 * xref:adding-users-the-strimzi-admin-role-{context}[Setting up admin roles to enable configuration of custom resources used in the deployment]
 
@@ -20,8 +20,6 @@ NOTE: To run the commands in this guide, your cluster user must have the rights 
 include::../../modules/deploying/con-deploy-prereqs.adoc[leveloffset=+1]
 //operator deployment tips
 include::../../modules/deploying/con-deploy-operator-best-practices.adoc[leveloffset=+1]
-//How to access release artifacts
-include::../../modules/deploying/con-deploy-product-downloads.adoc[leveloffset=+1]
 //Container images
 include::../../modules/deploying/con-deploy-container-images.adoc[leveloffset=+1]
 //Designating administrators to manage the install process

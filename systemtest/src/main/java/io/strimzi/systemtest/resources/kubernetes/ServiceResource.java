@@ -43,7 +43,7 @@ public class ServiceResource implements ResourceType<Service> {
         return resource != null;
     }
 
-    public static Service createServiceResource(Service service, String clientNamespace) {
+    public static Service createServiceResource(String clientNamespace, Service service) {
         LOGGER.info("Creating Service: {}/{}", clientNamespace, service.getMetadata().getName());
         ResourceManager.getInstance().createResourceWithWait(service);
         return service;

@@ -50,10 +50,16 @@ image::secure_communication_zookeeper.png[Secure Communication]
 
 The ZooKeeper ports are used as follows:
 
-ZooKeeper Port (2181):: ZooKeeper port for connection to Kafka brokers.
+ZooKeeper port (2181):: ZooKeeper port for connection to Kafka brokers.
 Additionally, the Cluster Operator communicates with ZooKeeper through this port.
 ZooKeeper internodal communication port (2888):: ZooKeeper port for internodal communication between ZooKeeper nodes.
 ZooKeeper leader election port (3888):: ZooKeeper port for leader election among ZooKeeper nodes in a ZooKeeper cluster.
+
+.Node status monitoring using the `KafkaAgent` (8443)
+
+Strimzi includes a component called `KafkaAgent` that runs inside each Kafka node. 
+The agent is responsible for collecting and providing node-specific information, such as current state and readiness, to the Cluster Operator. 
+It listens on port 8443 for secure HTTPS connections and exposes this information through a REST API, which the Cluster Operator uses to retrieve data from the nodes.
 
 include::../../modules/security/con-certificate-authorities.adoc[leveloffset=+1]
 

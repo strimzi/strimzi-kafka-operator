@@ -49,7 +49,7 @@ mkdir -p /tmp/kafka
 
 # Generate and print the config file
 echo "Starting Kafka with configuration:"
-./kafka_config_generator.sh | tee /tmp/strimzi.properties | sed -e 's/sasl.jaas.config=.*/sasl.jaas.config=[hidden]/g' -e 's/password=.*/password=[hidden]/g'
+tee /tmp/strimzi.properties < "$KAFKA_HOME/custom-config/server.config" | sed -e 's/sasl.jaas.config=.*/sasl.jaas.config=[hidden]/g' -e 's/password=.*/password=[hidden]/g'
 echo ""
 
 # Configure heap based on the available resources if needed

@@ -122,6 +122,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         return fromSpec(reconciliation, buildKafkaConnectSpec(spec, connectCluster), versions, result);
     }
 
+    @SuppressWarnings("deprecation") // External Configuration is deprecated
     private static KafkaConnectSpec buildKafkaConnectSpec(KafkaMirrorMaker2Spec spec, KafkaMirrorMaker2ClusterSpec connectCluster) {
 
         ClientTls connectTls = null;

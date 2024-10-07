@@ -20,6 +20,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -38,8 +39,8 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
-import static io.strimzi.systemtest.TestConstants.BRIDGE;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestTags.BRIDGE;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
 
 @Tag(BRIDGE)
 @Tag(REGRESSION)
@@ -57,7 +58,7 @@ import static io.strimzi.systemtest.TestConstants.REGRESSION;
         
     },
     labels = {
-        @Label("bridge")
+        @Label(TestDocsLabels.BRIDGE)
     }
 )
 class HttpBridgeScramShaST extends AbstractST {
@@ -78,7 +79,7 @@ class HttpBridgeScramShaST extends AbstractST {
             @Step(value = "Wait for consumer success", expected = "Consumer finishes receiving messages without errors")
         },
         labels = {
-            @Label("bridge")
+            @Label(TestDocsLabels.BRIDGE)
         }
     )
     void testSendSimpleMessageTlsScramSha() {
@@ -93,7 +94,7 @@ class HttpBridgeScramShaST extends AbstractST {
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), suiteTestStorage.getClusterName()).build());
 
         resourceManager.createResourceWithWait(kafkaBridgeClientJb.producerStrimziBridge());
-        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         final KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(suiteTestStorage.getClusterName()))
             .withUsername(suiteTestStorage.getUsername())
@@ -114,7 +115,7 @@ class HttpBridgeScramShaST extends AbstractST {
             @Step(value = "Wait for clients' success validation", expected = "Messages are successfully consumed from the Kafka topic")
         },
         labels = {
-            @Label("bridge")
+            @Label(TestDocsLabels.BRIDGE)
         }
     )
     void testReceiveSimpleMessageTlsScramSha() {
@@ -134,7 +135,7 @@ class HttpBridgeScramShaST extends AbstractST {
             .build();
 
         resourceManager.createResourceWithWait(kafkaClients.producerScramShaTlsStrimzi(suiteTestStorage.getClusterName()));
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     @BeforeAll

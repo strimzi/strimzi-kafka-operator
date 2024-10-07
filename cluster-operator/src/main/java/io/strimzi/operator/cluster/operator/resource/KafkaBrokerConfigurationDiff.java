@@ -2,7 +2,6 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-
 package io.strimzi.operator.cluster.operator.resource;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -39,7 +38,6 @@ import java.util.stream.Collectors;
  */
 public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaBrokerConfigurationDiff.class);
-    private static final String PLACE_HOLDER = Pattern.quote("STRIMZI_BROKER_ID");
 
     private final Reconciliation reconciliation;
     private final Collection<AlterConfigOp> brokerConfigDiff;
@@ -83,13 +81,6 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         this.reconciliation = reconciliation;
         this.configModel = KafkaConfiguration.readConfigModel(kafkaVersion);
         this.brokerConfigDiff = diff(brokerNodeRef, desired, brokerConfigs, configModel);
-    }
-
-    private static void fillPlaceholderValue(Map<String, String> orderedProperties, String value) {
-        orderedProperties.entrySet().forEach(entry -> {
-            String v = entry.getValue().replaceAll("\\$\\{" + PLACE_HOLDER + "}", value);
-            entry.setValue(v);
-        });
     }
 
     /**
@@ -166,8 +157,6 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         orderedProperties.addStringPairs(desired);
         Map<String, String> desiredMap = orderedProperties.asMap();
 
-        fillPlaceholderValue(desiredMap, Integer.toString(brokerNodeRef.nodeId()));
-
         JsonNode source = PATCH_MAPPER.valueToTree(currentMap);
         JsonNode target = PATCH_MAPPER.valueToTree(desiredMap);
         JsonNode jsonDiff = JsonDiff.asJson(source, target);
@@ -213,7 +202,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
 
     private void updateOrAdd(String propertyName, Map<String, ConfigModel> configModel, Map<String, String> desiredMap, Collection<AlterConfigOp> updatedCE, boolean nodeIsController) {
         if (!isIgnorableProperty(propertyName, nodeIsController)) {
-            if (isCustomEntry(propertyName, configModel)) {
+            if (KafkaConfiguration.isCustomConfigurationOption(propertyName, configModel)) {
                 LOGGER.traceCr(reconciliation, "custom property {} has been updated/added {}", propertyName, desiredMap.get(propertyName));
             } else {
                 LOGGER.traceCr(reconciliation, "property {} has been updated/added {}", propertyName, desiredMap.get(propertyName));
@@ -225,7 +214,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
     }
 
     private void removeProperty(Map<String, ConfigModel> configModel, Collection<AlterConfigOp> updatedCE, String pathValueWithoutSlash, ConfigEntry entry, boolean nodeIsController) {
-        if (isCustomEntry(entry.name(), configModel)) {
+        if (KafkaConfiguration.isCustomConfigurationOption(entry.name(), configModel)) {
             // we are deleting custom option
             LOGGER.traceCr(reconciliation, "removing custom property {}", entry.name());
         } else if (entry.isDefault()) {
@@ -251,17 +240,6 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
      */
     @Override
     public boolean isEmpty() {
-        return  brokerConfigDiff.size() == 0;
+        return brokerConfigDiff.isEmpty();
     }
-
-    /**
-     * For some reason not all default entries have set ConfigEntry.ConfigSource.DEFAULT_CONFIG so we need to compare
-     * @param entryName tested ConfigEntry
-     * @param configModel configModel
-     * @return true if entry is custom (not default)
-     */
-    private static boolean isCustomEntry(String entryName, Map<String, ConfigModel> configModel) {
-        return !configModel.containsKey(entryName);
-    }
-
 }

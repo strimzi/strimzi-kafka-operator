@@ -79,4 +79,11 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+    - "kafka.strimzi.io"
+  resources:
+    # The Cluster Operator needs deletion for KafkaRebalance only (during auto-rebalancing)
+    - kafkarebalances
+  verbs:
+    - delete
 {{- end -}}

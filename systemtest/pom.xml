@@ -434,11 +434,11 @@
         </profile>
 
         <profile>
-            <id>performance-capacity</id>
+            <id>capacity</id>
             <properties>
                 <skipTests>false</skipTests>
                 <groups>
-                    performance-capacity
+                    capacity
                 </groups>
                 <it.test>performance/**/*Performance*</it.test>
             </properties>

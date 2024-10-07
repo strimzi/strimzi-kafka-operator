@@ -8,7 +8,6 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KindIPv6NotSupported;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
-import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.upgrade.AbstractUpgradeST;
@@ -31,10 +30,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 
 import static io.strimzi.systemtest.Environment.TEST_SUITE_NAMESPACE;
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
-import static io.strimzi.systemtest.TestConstants.UPGRADE;
+import static io.strimzi.systemtest.TestTags.UPGRADE;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -110,10 +110,11 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
     @IsolatedTest
     void testUpgradeAcrossVersionsWithUnsupportedKafkaVersion() throws IOException {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        UpgradeKafkaVersion upgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(acrossUpgradeData.getFromKafkaVersionsUrl(), acrossUpgradeData.getStartingKafkaVersion());
+        Optional<UpgradeKafkaVersion> upgradeKafkaVersion = UpgradeKafkaVersion.getKafkaVersionSupportedBeforeUnsupportedAfterUpgrade(acrossUpgradeData.getFromKafkaVersionsUrl());
+        assumeTrue(upgradeKafkaVersion.isPresent(), "Supported Kafka versions after upgrade contains all supported Kafka versions before upgrade so test is skipped");
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(CO_NAMESPACE, testStorage, acrossUpgradeData, upgradeKafkaVersion);
+        setupEnvAndUpgradeClusterOperator(CO_NAMESPACE, testStorage, acrossUpgradeData, upgradeKafkaVersion.get());
 
         // Make snapshots of all Pods
         makeComponentsSnapshots(TEST_SUITE_NAMESPACE);
@@ -164,15 +165,11 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
 
     @BeforeEach
     void setupEnvironment() {
-        NamespaceManager.getInstance().createNamespaceAndPrepare(CO_NAMESPACE);
-        NamespaceManager.getInstance().createNamespaceAndPrepare(TEST_SUITE_NAMESPACE);
+        setUpStrimziUpgradeTestNamespaces();
     }
 
     @AfterEach
     void afterEach() {
-        cleanUpKafkaTopics(TEST_SUITE_NAMESPACE);
-        deleteInstalledYamls(CO_NAMESPACE, TEST_SUITE_NAMESPACE, coDir);
-        NamespaceManager.getInstance().deleteNamespaceWithWait(CO_NAMESPACE);
-        NamespaceManager.getInstance().deleteNamespaceWithWait(TEST_SUITE_NAMESPACE);
+        cleanUpStrimziUpgradeTestNamespaces();
     }
 }

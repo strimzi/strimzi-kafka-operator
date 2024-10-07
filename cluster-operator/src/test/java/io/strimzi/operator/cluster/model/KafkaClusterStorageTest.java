@@ -28,7 +28,6 @@ import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
@@ -574,7 +573,7 @@ public class KafkaClusterStorageTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
 
         // Test generated SPS
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> new HashMap<>());
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -607,7 +606,7 @@ public class KafkaClusterStorageTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
 
         // Test generated SPS
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> new HashMap<>());
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {

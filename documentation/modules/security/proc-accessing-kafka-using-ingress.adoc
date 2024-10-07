@@ -49,8 +49,7 @@ The name of the listener is `external2`.
 
 . Configure a `Kafka` resource with an external listener set to the `ingress` type.
 +
-Specify an ingress hostname for the bootstrap service and each of the Kafka brokers in the Kafka cluster.
-Add any hostname to the `bootstrap` and `broker-<index>` prefixes that identify the bootstrap and brokers.
+Specify an ingress hostname for the bootstrap service and for the Kafka brokers in the Kafka cluster.
 +
 For example:
 +
@@ -74,22 +73,18 @@ spec:
         authentication:
           type: tls
         configuration:
+          class: nginx # <2>
+          hostTemplate: broker-{nodeId}.myingress.com  # <3>
           bootstrap:
-            host: bootstrap.myingress.com
-          brokers:
-          - broker: 0
-            host: broker-0.myingress.com
-          - broker: 1
-            host: broker-1.myingress.com
-          - broker: 2
-            host: broker-2.myingress.com
-          class: nginx  # <2>
+            host: bootstrap.myingress.com # <4>
     # ...
   zookeeper:
     # ...
 ----
 <1> For `ingress` type listeners, TLS encryption must be enabled (`true`).
-<2> (Optional) Class that specifies the ingress controller to use. You might need to add a class if you have not set up a default and a class name is missing in the ingresses created. 
+<2> (Optional) Class that specifies the ingress controller to use. You might need to add a class if you have not set up a default and a class name is missing in the ingresses created.
+<3> The host template used to generate the hostnames for the per-broker Ingress resources.
+<4> The host used as the hostnames for the bootstrap Ingress resource.
 
 . Create or update the resource.
 +

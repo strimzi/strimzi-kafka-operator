@@ -22,6 +22,7 @@ A system administrator can designate Strimzi administrators after the Cluster Op
 
 .Prerequisites
 
+* The Strimzi admin deployment files, which are included in the Strimzi xref:downloads-{context}[deployment files].
 * The Strimzi Custom Resource Definitions (CRDs) and role-based access control (RBAC) resources to manage the CRDs have been xref:cluster-operator-{context}[deployed with the Cluster Operator].
 
 .Procedure

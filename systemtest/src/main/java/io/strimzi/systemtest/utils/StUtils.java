@@ -17,10 +17,11 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.strimzi.api.kafka.model.common.ContainerEnvVar;
-import io.strimzi.api.kafka.model.common.ContainerEnvVarBuilder;
+import io.strimzi.api.kafka.model.common.template.ContainerEnvVar;
+import io.strimzi.api.kafka.model.common.template.ContainerEnvVarBuilder;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.TestTags;
 import io.strimzi.systemtest.annotations.SkipDefaultNetworkPolicyCreation;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
@@ -43,11 +44,13 @@ import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.StringTokenizer;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
@@ -380,7 +383,7 @@ public class StUtils {
      * otherwise false
      */
     public static boolean isParallelTest(Object annotationHolder) {
-        return CONTAINS_ANNOTATION.apply(TestConstants.PARALLEL_TEST, annotationHolder);
+        return CONTAINS_ANNOTATION.apply(TestTags.PARALLEL_TEST, annotationHolder);
     }
 
     /**
@@ -390,7 +393,7 @@ public class StUtils {
      * otherwise false
      */
     public static boolean isIsolatedTest(Object annotationHolder) {
-        return CONTAINS_ANNOTATION.apply(TestConstants.ISOLATED_TEST, annotationHolder);
+        return CONTAINS_ANNOTATION.apply(TestTags.ISOLATED_TEST, annotationHolder);
     }
 
     /**
@@ -400,7 +403,7 @@ public class StUtils {
      * otherwise false
      */
     public static boolean isParallelNamespaceTest(Object annotationHolder) {
-        return CONTAINS_ANNOTATION.apply(TestConstants.PARALLEL_NAMESPACE, annotationHolder);
+        return CONTAINS_ANNOTATION.apply(TestTags.PARALLEL_NAMESPACE, annotationHolder);
     }
 
     /**
@@ -415,32 +418,34 @@ public class StUtils {
 
     /**
      * Retrieve namespace based on the cluster configuration
-     * @param namespace suite namespace
+     *
+     * @param namespaceName    suite namespace
      * @param extensionContext test context for get the parallel namespace
      * @return single or parallel namespace based on cluster configuration
      */
-    public static String getNamespaceBasedOnRbac(String namespace, ExtensionContext extensionContext) {
-        return Environment.isNamespaceRbacScope() ? namespace : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.NAMESPACE_KEY).toString();
+    public static String getNamespaceBasedOnRbac(String namespaceName, ExtensionContext extensionContext) {
+        return Environment.isNamespaceRbacScope() ? namespaceName : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.NAMESPACE_KEY).toString();
     }
 
     /**
      * Copies the image pull secret from the default namespace to the specified target namespace.
-     * @param namespace the target namespace
+     *
+     * @param namespaceName the target namespace
      */
-    public static void copyImagePullSecrets(String namespace) {
+    public static void copyImagePullSecrets(String namespaceName) {
         if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
             LOGGER.info("Checking if Secret: {} is in the default Namespace", Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
             if (kubeClient("default").getSecret(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET) == null) {
                 throw new RuntimeException(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET + " is not in the default Namespace!");
             }
-            LOGGER.info("Creating pull Secret: {}/{}", namespace, Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
+            LOGGER.info("Creating pull Secret: {}/{}", namespaceName, Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
             Secret pullSecret = kubeClient("default").getSecret(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
-            kubeClient(namespace).createSecret(new SecretBuilder()
+            kubeClient(namespaceName).createSecret(new SecretBuilder()
                 .withApiVersion("v1")
                 .withKind("Secret")
                 .withNewMetadata()
                     .withName(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET)
-                    .withNamespace(namespace)
+                    .withNamespace(namespaceName)
                 .endMetadata()
                 .withType("kubernetes.io/dockerconfigjson")
                 .withData(Collections.singletonMap(".dockerconfigjson", pullSecret.getData().get(".dockerconfigjson")))
@@ -451,14 +456,14 @@ public class StUtils {
             if (kubeClient("default").getSecret(Environment.CONNECT_BUILD_REGISTRY_SECRET) == null) {
                 throw new RuntimeException(Environment.CONNECT_BUILD_REGISTRY_SECRET + " is not in the default namespace!");
             }
-            LOGGER.info("Creating pull Secret: {}/{}", namespace, Environment.CONNECT_BUILD_REGISTRY_SECRET);
+            LOGGER.info("Creating pull Secret: {}/{}", namespaceName, Environment.CONNECT_BUILD_REGISTRY_SECRET);
             Secret pullSecret = kubeClient("default").getSecret(Environment.CONNECT_BUILD_REGISTRY_SECRET);
-            kubeClient(namespace).createSecret(new SecretBuilder()
+            kubeClient(namespaceName).createSecret(new SecretBuilder()
                 .withApiVersion("v1")
                 .withKind("Secret")
                 .withNewMetadata()
                     .withName(Environment.CONNECT_BUILD_REGISTRY_SECRET)
-                    .withNamespace(namespace)
+                    .withNamespace(namespaceName)
                 .endMetadata()
                 .withType("kubernetes.io/dockerconfigjson")
                 .withData(Collections.singletonMap(".dockerconfigjson", pullSecret.getData().get(".dockerconfigjson")))
@@ -577,5 +582,71 @@ public class StUtils {
 
         LOGGER.warn("Cannot determine if UTO is used or not, because the EO Pod doesn't exist, gonna assume that it's not");
         return false;
+    }
+
+    /**
+     * Indents the input string with for empty spaces at the beginning of each line.
+     *
+     * @param input     Input string that should be indented
+     *
+     * @return  Indented string
+     */
+    public static String indent(String input) {
+        StringBuilder sb = new StringBuilder();
+        String[] lines = input.split("[\n\r]");
+
+        for (String line : lines) {
+            sb.append("    ").append(line).append(System.lineSeparator());
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     * Changes the {@code subject} of the RoleBinding in the given YAML resource to be the
+     * {@code strimzi-cluster-operator} {@code ServiceAccount} in the given namespace.
+     *
+     * @param roleBindingFile   The RoleBinding YAML file to load and change
+     * @param namespace         Namespace of the service account which should be the subject of this RoleBinding
+     *
+     * @return Modified RoleBinding resource YAML
+     */
+    public static String changeRoleBindingSubject(File roleBindingFile, String namespace) {
+        YAMLMapper mapper = new YAMLMapper();
+        try {
+            JsonNode node = mapper.readTree(roleBindingFile);
+            ArrayNode subjects = (ArrayNode) node.get("subjects");
+            ObjectNode subject = (ObjectNode) subjects.get(0);
+            subject.put("kind", "ServiceAccount")
+                .put("name", "strimzi-cluster-operator")
+                .put("namespace", namespace);
+            return mapper.writeValueAsString(node);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Parse the image map String into a Map.
+     *
+     * @param imageMapString    String with the image map (contains key-value pairs separated by new lines in a single string)
+     *
+     * @return  Map with the parsed images
+     */
+    public static Map<String, String> parseImageMap(String imageMapString) {
+        if (imageMapString != null) {
+            StringTokenizer tok = new StringTokenizer(imageMapString, ", \t\n\r");
+            HashMap<String, String> map = new HashMap<>();
+            while (tok.hasMoreTokens()) {
+                String versionImage = tok.nextToken();
+                int endIndex = versionImage.indexOf('=');
+                String version = versionImage.substring(0, endIndex);
+                String image = versionImage.substring(endIndex + 1);
+                map.put(version.trim(), image.trim());
+            }
+            return Collections.unmodifiableMap(map);
+        } else {
+            return Collections.emptyMap();
+        }
     }
 }

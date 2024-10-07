@@ -24,6 +24,7 @@ In this way, you can use the User Operator with multiple Kafka clusters.
 
 .Prerequisites
 
+* The standalone User Operator deployment files, which are included in the Strimzi xref:downloads-{context}[deployment files].
 * You are running a Kafka cluster for the User Operator to connect to.
 +
 As long as the standalone User Operator is correctly configured for connection,

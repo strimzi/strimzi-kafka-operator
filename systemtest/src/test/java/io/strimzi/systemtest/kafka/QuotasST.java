@@ -32,8 +32,7 @@ import org.junit.jupiter.api.Tag;
 
 import java.util.Collections;
 
-import static io.strimzi.systemtest.TestConstants.QUOTAS_PLUGIN;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
@@ -44,7 +43,6 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
  * on the local storage, which can be shared across multiple Docker containers.
  * To properly run this suite, you should use cluster with proper storage.
  */
-@Tag(QUOTAS_PLUGIN)
 public class QuotasST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(QuotasST.class);
 

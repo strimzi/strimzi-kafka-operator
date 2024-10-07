@@ -39,7 +39,7 @@ logging:
 
 To use a ConfigMap for metrics configuration, you add a reference to the `metricsConfig` configuration of the component in the same way.
 
-`ExternalConfiguration` properties make data from a ConfigMap (or Secret) mounted to a pod available as environment variables or volumes.
+`template` properties allow data from a `ConfigMap` or `Secret` to be mounted in a pod as environment variables or volumes.
 You can use external configuration data for the connectors used by Kafka Connect.
 The data might be related to an external data source, providing the values needed for the connector to communicate with that data source.
 
@@ -54,13 +54,14 @@ metadata:
   name: my-connect
 spec:
   # ...
-  externalConfiguration:
-    env:
-      - name: MY_ENVIRONMENT_VARIABLE
-        valueFrom:
-          configMapKeyRef:
-            name: my-config-map
-            key: my-key
+  template:
+    connectContainer:
+      env:
+        - name: MY_ENVIRONMENT_VARIABLE
+          valueFrom:
+            configMapKeyRef:
+              name: my-config-map
+              key: my-key
 ----
 
 If you are using ConfigMaps that are managed externally, use configuration providers to load the data in the ConfigMaps.  
@@ -78,5 +79,5 @@ Make sure that any custom ConfigMaps you create do not have the same name as the
 * xref:ref-list-of-kafka-cluster-resources-str[List of Kafka cluster resources] (including ConfigMaps)
 * xref:external-logging_str[Logging configuration]
 * link:{BookURLConfiguring}#con-common-configuration-prometheus-reference[`metricsConfig`^]
-* link:{BookURLConfiguring}#type-ExternalConfiguration-reference[`ExternalConfiguration` schema reference^]
+* link:{BookURLConfiguring}#type-ContainerTemplate-reference[`ContainerTemplate` schema reference^]
 * xref:assembly-loading-config-with-providers-{context}[Loading configuration values from external sources]

@@ -122,12 +122,12 @@ public class KafkaResource implements ResourceType<Kafka> {
         return Crds.kafkaOperation(ResourceManager.kubeClient().getClient());
     }
 
-    public static void replaceKafkaResourceInSpecificNamespace(String resourceName, Consumer<Kafka> editor, String namespaceName) {
-        ResourceManager.replaceCrdResource(Kafka.class, KafkaList.class, resourceName, editor, namespaceName);
+    public static void replaceKafkaResourceInSpecificNamespace(String namespaceName, String resourceName, Consumer<Kafka> editor) {
+        ResourceManager.replaceCrdResource(namespaceName, Kafka.class, KafkaList.class, resourceName, editor);
     }
 
-    public static KafkaStatus getKafkaStatus(String clusterName, String namespace) {
-        return kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus();
+    public static KafkaStatus getKafkaStatus(String namespaceName, String clusterName) {
+        return kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus();
     }
 
     public static LabelSelector getLabelSelector(String clusterName, String componentName) {

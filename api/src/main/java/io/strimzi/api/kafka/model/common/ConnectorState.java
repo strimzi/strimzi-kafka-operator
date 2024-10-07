@@ -7,6 +7,8 @@ package io.strimzi.api.kafka.model.common;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
+import java.util.Locale;
+
 /**
  * This defines values for the spec.state field of connectors
  */
@@ -17,7 +19,7 @@ public enum ConnectorState {
 
     @JsonCreator
     public static ConnectorState forValue(String value) {
-        switch (value) {
+        switch (value.toLowerCase(Locale.ENGLISH)) {
             case "paused":
                 return PAUSED;
             case "stopped":

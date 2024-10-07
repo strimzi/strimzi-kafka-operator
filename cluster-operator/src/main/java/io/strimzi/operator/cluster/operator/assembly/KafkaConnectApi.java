@@ -216,6 +216,38 @@ public interface KafkaConnectApi {
      * this returns the connector's topics.
      */
     Future<List<String>> getConnectorTopics(Reconciliation reconciliation, String host, int port, String connectorName);
+
+    /**
+     * Make a {@code GET} request to {@code /connectors/${connectorName}/offsets}.
+     * @param reconciliation The reconciliation
+     * @param host The host to make the request to.
+     * @param port The port to make the request to.
+     * @param connectorName The name of the connector to get the offsets of.
+     * @return A Future which completes with the result of the request. If the request was successful,
+     * this returns the connector's offsets.
+     */
+    Future<String> getConnectorOffsets(Reconciliation reconciliation, String host, int port, String connectorName);
+
+    /**
+     * Make a {@code PATCH} request to {@code /connectors/${connectorName}/offsets}.
+     * @param reconciliation The reconciliation
+     * @param host The host to make the request to.
+     * @param port The port to make the request to.
+     * @param connectorName The name of the connector to alter the offsets of.
+     * @param newOffsets The new offsets for the connector.
+     * @return A Future which completes with the result of the request.
+     */
+    Future<Void> alterConnectorOffsets(Reconciliation reconciliation, String host, int port, String connectorName, String newOffsets);
+
+    /**
+     * Make a {@code DELETE} request to {@code /connectors/${connectorName}/offsets}.
+     * @param reconciliation The reconciliation
+     * @param host The host to make the request to.
+     * @param port The port to make the request to.
+     * @param connectorName The name of the connector to reset the offsets of.
+     * @return A Future which completes with the result of the request.
+     */
+    Future<Void> resetConnectorOffsets(Reconciliation reconciliation, String host, int port, String connectorName);
 }
 
 class ConnectRestException extends RuntimeException {

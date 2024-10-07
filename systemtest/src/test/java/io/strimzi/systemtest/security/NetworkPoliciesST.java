@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
 import io.skodjob.testframe.MetricsCollector;
+import io.skodjob.testframe.metrics.Gauge;
 import io.skodjob.testframe.metrics.Metric;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
@@ -49,9 +50,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.TestConstants.CRUISE_CONTROL;
-import static io.strimzi.systemtest.TestConstants.NETWORKPOLICIES_SUPPORTED;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestTags.CRUISE_CONTROL;
+import static io.strimzi.systemtest.TestTags.NETWORKPOLICIES_SUPPORTED;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -213,12 +214,12 @@ public class NetworkPoliciesST extends AbstractST {
         );
 
         LOGGER.info("Verifying that clients: {}, {}, {}, {} are all allowed to communicate", producerNameAccessedPlain, consumerNameAccessedPlain, producerNameAccessedTls, consumerNameAccessedTls);
-        ClientUtils.waitForClientsSuccess(producerNameAccessedPlain, consumerNameAccessedPlain, testStorage.getNamespaceName(), testStorage.getMessageCount());
-        ClientUtils.waitForClientsSuccess(producerNameAccessedTls, consumerNameAccessedTls, testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), consumerNameAccessedPlain, producerNameAccessedPlain, testStorage.getMessageCount());
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), consumerNameAccessedTls, producerNameAccessedTls, testStorage.getMessageCount());
 
         LOGGER.info("Verifying that clients: {}, {}, {}, {} are denied to communicate", producerNameDeniedPlain, consumerNameDeniedPlain, producerNameDeniedTls, consumerNameDeniedTls);
-        ClientUtils.waitForClientsTimeout(producerNameDeniedPlain, consumerNameDeniedPlain, testStorage.getNamespaceName(), testStorage.getMessageCount());
-        ClientUtils.waitForClientsTimeout(producerNameDeniedTls, consumerNameDeniedTls, testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientsTimeout(testStorage.getNamespaceName(), consumerNameDeniedPlain, producerNameDeniedPlain, testStorage.getMessageCount());
+        ClientUtils.waitForClientsTimeout(testStorage.getNamespaceName(), consumerNameDeniedTls, producerNameDeniedTls, testStorage.getMessageCount());
 
         LOGGER.info("Check metrics exported by KafkaExporter");
 
@@ -234,12 +235,18 @@ public class NetworkPoliciesST extends AbstractST {
         for (Map.Entry<String, List<Metric>> entry : metricsCollector.getCollectedData().entrySet()) {
             assertThat("Value from collected metric should be non-empty", !entry.getValue().isEmpty());
             MetricsUtils.assertContainsMetric(entry.getValue(), "kafka_consumergroup_current_offset");
-            MetricsUtils.assertContainsMetric(entry.getValue(), "kafka_topic_partitions{topic=\"" + topicNameAccessedTls + "\"} 1");
-            MetricsUtils.assertContainsMetric(entry.getValue(), "kafka_topic_partitions{topic=\"" + topicNameAccessedPlain + "\"} 1");
+
+            List<Metric> topicPartitionsMetrics = entry.getValue().stream().filter(metrics -> metrics.getName().contains("kafka_topic_partitions")).toList();
+
+            Gauge topicAccessedTlsMetric = (Gauge) topicPartitionsMetrics.stream().filter(metric -> metric.getLabels().get("topic").equals(topicNameAccessedTls)).findFirst().get();
+            Gauge topicAccessedPlainMetric = (Gauge) topicPartitionsMetrics.stream().filter(metric -> metric.getLabels().get("topic").equals(topicNameAccessedPlain)).findFirst().get();
+
+            assertThat(topicAccessedTlsMetric.getValue(), is(1.0));
+            assertThat(topicAccessedPlainMetric.getValue(), is(1.0));
         }
 
-        checkNetworkPoliciesInNamespace(testStorage.getClusterName(), Environment.TEST_SUITE_NAMESPACE);
-        changeKafkaConfigurationAndCheckObservedGeneration(testStorage.getClusterName(), Environment.TEST_SUITE_NAMESPACE);
+        checkNetworkPoliciesInNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName());
+        changeKafkaConfigurationAndCheckObservedGeneration(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName());
     }
 
     @IsolatedTest("Specific Cluster Operator for test case")
@@ -290,9 +297,9 @@ public class NetworkPoliciesST extends AbstractST {
             .build()
         );
 
-        checkNetworkPoliciesInNamespace(testStorage.getClusterName(), secondNamespace);
+        checkNetworkPoliciesInNamespace(secondNamespace, testStorage.getClusterName());
 
-        changeKafkaConfigurationAndCheckObservedGeneration(testStorage.getClusterName(), secondNamespace);
+        changeKafkaConfigurationAndCheckObservedGeneration(secondNamespace, testStorage.getClusterName());
     }
 
     @IsolatedTest("Specific Cluster Operator for test case")
@@ -335,23 +342,23 @@ public class NetworkPoliciesST extends AbstractST {
         assertThat("List of NetworkPolicies generated by Strimzi is not empty.", networkPolicyList, is(Collections.EMPTY_LIST));
     }
 
-    void checkNetworkPoliciesInNamespace(String clusterName, String namespace) {
-        List<NetworkPolicy> networkPolicyList = new ArrayList<>(kubeClient().getClient().network().networkPolicies().inNamespace(namespace).list().getItems());
+    void checkNetworkPoliciesInNamespace(String namespaceName, String clusterName) {
+        List<NetworkPolicy> networkPolicyList = new ArrayList<>(kubeClient().getClient().network().networkPolicies().inNamespace(namespaceName).list().getItems());
 
         assertNotNull(networkPolicyList.stream().filter(networkPolicy ->  networkPolicy.getMetadata().getName().contains(KafkaResources.kafkaNetworkPolicyName(clusterName))).findFirst());
         assertNotNull(networkPolicyList.stream().filter(networkPolicy ->  networkPolicy.getMetadata().getName().contains(KafkaResources.zookeeperNetworkPolicyName(clusterName))).findFirst());
         assertNotNull(networkPolicyList.stream().filter(networkPolicy ->  networkPolicy.getMetadata().getName().contains(KafkaResources.entityOperatorDeploymentName(clusterName))).findFirst());
 
         // if KE is enabled
-        if (KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafkaExporter() != null) {
+        if (KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getKafkaExporter() != null) {
             assertNotNull(networkPolicyList.stream().filter(networkPolicy ->  networkPolicy.getMetadata().getName().contains(KafkaExporterResources.componentName(clusterName))).findFirst());
         }
     }
 
-    void changeKafkaConfigurationAndCheckObservedGeneration(String clusterName, String namespace) {
-        long observedGen = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getObservedGeneration();
-        KafkaUtils.updateConfigurationWithStabilityWait(namespace, clusterName, "log.message.timestamp.type", "LogAppendTime");
+    void changeKafkaConfigurationAndCheckObservedGeneration(String namespaceName, String clusterName) {
+        long observedGen = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getObservedGeneration();
+        KafkaUtils.updateConfigurationWithStabilityWait(namespaceName, clusterName, "log.message.timestamp.type", "LogAppendTime");
 
-        assertThat(KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getObservedGeneration(), is(not(observedGen)));
+        assertThat(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getObservedGeneration(), is(not(observedGen)));
     }
 }

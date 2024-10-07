@@ -5,6 +5,14 @@ LABEL org.opencontainers.image.source='https://github.com/strimzi/strimzi-kafka-
 ARG JAVA_VERSION=17
 ARG TARGETOS
 ARG TARGETARCH
+ARG strimzi_version
+
+LABEL name='base' \
+    vendor='Strimzi' \
+    version="${strimzi_version}" \
+    release="${strimzi_version}" \
+    summary='Base image of the Strimzi Kafka Operator project.' \
+    description='Strimzi Kafka Operator base image, containing common utilities across all component images.'
 
 USER root
 

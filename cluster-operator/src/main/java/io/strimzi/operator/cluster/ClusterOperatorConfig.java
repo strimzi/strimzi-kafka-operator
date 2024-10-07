@@ -250,6 +250,11 @@ public class ClusterOperatorConfig {
     /* test */ static final ConfigParameter<String> POD_SECURITY_PROVIDER_RESTRICTED_CLASS = new ConfigParameter<>("POD_SECURITY_PROVIDER_RESTRICTED_CLASS", STRING, "io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider", CONFIG_VALUES);
 
     /**
+     * Set true to generate Pod Disruption Budgets
+     */
+    public static final ConfigParameter<Boolean> POD_DISRUPTION_BUDGET_GENERATION = new ConfigParameter<>("STRIMZI_POD_DISRUPTION_BUDGET_GENERATION", BOOLEAN, "true", CONFIG_VALUES);
+
+    /**
      * The configured Kafka versions
      */
     private final KafkaVersion.Lookup versions;
@@ -598,6 +603,13 @@ public class ClusterOperatorConfig {
         }
     }
 
+    /**
+     * @return  Indicates whether Pod Disruption Budgets should be generated
+     */
+    public boolean isPodDisruptionBudgetGeneration() {
+        return get(POD_DISRUPTION_BUDGET_GENERATION);
+    }
+
     @Override
     public String toString() {
         return "ClusterOperatorConfig{" +
@@ -620,6 +632,7 @@ public class ClusterOperatorConfig {
                 "\n\toperatorName='" + getOperatorName() + '\'' +
                 "\n\tpodSecurityProviderClass='" + getPodSecurityProviderClass() + '\'' +
                 "\n\tleaderElectionConfig='" + getLeaderElectionConfig() + '\'' +
+                "\n\tpodDisruptionBudgetGeneration=" + isPodDisruptionBudgetGeneration() +
                 "}";
     }
 }

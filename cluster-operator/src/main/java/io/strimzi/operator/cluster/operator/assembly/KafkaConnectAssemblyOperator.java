@@ -33,8 +33,8 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.KafkaConnectBuild;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
+import io.strimzi.operator.cluster.model.KafkaConnectorOffsetsAnnotation;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
-import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
@@ -65,8 +65,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
+import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS;
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_RESTART_TASK;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART;
 
@@ -202,7 +202,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     return configMapOperations.reconcile(reconciliation, namespace, logAndMetricsConfigMap.getMetadata().getName(), logAndMetricsConfigMap);
                 })
                 .compose(i -> ReconcilerUtils.reconcileJmxSecret(reconciliation, secretOperations, connect))
-                .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, connect.getComponentName(), connect.generatePodDisruptionBudget()))
+                .compose(i -> connectPodDisruptionBudget(reconciliation, namespace, connect))
                 .compose(i -> generateAuthHash(namespace, kafkaConnect.getSpec()))
                 .compose(hash -> {
                     podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash));
@@ -231,7 +231,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, reconciliationResult.cause());
 
                     if (!hasZeroReplicas) {
-                        kafkaConnectStatus.setUrl(KafkaConnectResources.url(connect.getCluster(), namespace, KafkaConnectCluster.REST_API_PORT));
+                        kafkaConnectStatus.setUrl(KafkaConnectResources.url(connect.getCluster(), namespace, port));
                     }
 
                     kafkaConnectStatus.setReplicas(connect.getReplicas());
@@ -245,33 +245,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 });
 
         return createOrUpdatePromise.future();
-    }
-
-    private Future<Void> controllerResources(Reconciliation reconciliation,
-                                             KafkaConnectCluster connect,
-                                             AtomicReference<Deployment> deploymentReference,
-                                             AtomicReference<StrimziPodSet> podSetReference)   {
-        return Future
-                .join(deploymentOperations.getAsync(reconciliation.namespace(), connect.getComponentName()), podSetOperations.getAsync(reconciliation.namespace(), connect.getComponentName()))
-                .compose(res -> {
-                    deploymentReference.set(res.resultAt(0));
-                    podSetReference.set(res.resultAt(1));
-
-                    return Future.succeededFuture();
-                });
-    }
-
-    private Future<Void> reconcilePodSet(Reconciliation reconciliation,
-                                         KafkaConnectCluster connect,
-                                         Map<String, String> podAnnotations,
-                                         Map<String, String> podSetAnnotations,
-                                         String customContainerImage)  {
-        return podSetOperations.reconcile(reconciliation, reconciliation.namespace(), connect.getComponentName(), connect.generatePodSet(connect.getReplicas(), podSetAnnotations, podAnnotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, customContainerImage))
-                .compose(reconciliationResult -> {
-                    KafkaConnectRoller roller = new KafkaConnectRoller(reconciliation, connect, operationTimeoutMs, podOperations);
-                    return roller.maybeRoll(PodSetUtils.podNames(reconciliationResult.resource()), pod -> KafkaConnectRoller.needsRollingRestart(reconciliationResult.resource(), pod));
-                })
-                .compose(i -> podSetOperations.readiness(reconciliation, reconciliation.namespace(), connect.getComponentName(), 1_000, operationTimeoutMs));
     }
 
     @Override
@@ -405,16 +378,11 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
                 Set<String> deleteConnectorNames = new HashSet<>(runningConnectorNames);
                 deleteConnectorNames.removeAll(desiredConnectors.stream().map(c -> c.getMetadata().getName()).collect(Collectors.toSet()));
-                LOGGER.debugCr(reconciliation, "{} cluster: delete connectors: {}", kind(), deleteConnectorNames);
-                Stream<Future<Void>> deletionFutures = deleteConnectorNames.stream().map(connectorName ->
-                        reconcileConnectorAndHandleResult(reconciliation, host, apiClient, true, connectorName, null)
-                );
 
-                LOGGER.debugCr(reconciliation, "{} cluster: required connectors: {}", kind(), desiredConnectors);
-                Stream<Future<Void>> createUpdateFutures = desiredConnectors.stream()
-                        .map(connector -> reconcileConnectorAndHandleResult(reconciliation, host, apiClient, true, connector.getMetadata().getName(), connector));
+                Future<Void> deletionFuture = deleteConnectors(reconciliation, host, apiClient, deleteConnectorNames);
+                Future<Void> createOrUpdateFuture = createOrUpdateConnectors(reconciliation, host, apiClient, desiredConnectors);
 
-                return Future.join(Stream.concat(deletionFutures, createUpdateFutures).collect(Collectors.toList())).map((Void) null);
+                return Future.join(deletionFuture, createOrUpdateFuture).map((Void) null);
             }).recover(error -> {
                 if (error instanceof ConnectTimeoutException) {
                     Promise<Void> connectorStatuses = Promise.promise();
@@ -433,6 +401,22 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 }
             });
         }
+    }
+
+    private Future<Void> deleteConnectors(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, Set<String> connectorsForDeletion) {
+        LOGGER.debugCr(reconciliation, "{} cluster: delete connectors: {}", kind(), connectorsForDeletion);
+        return Future.join(connectorsForDeletion.stream()
+                    .map(connectorName -> reconcileConnectorAndHandleResult(reconciliation, host, apiClient, true, connectorName, null))
+                    .collect(Collectors.toList()))
+                .mapEmpty();
+    }
+
+    private Future<Void> createOrUpdateConnectors(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, List<KafkaConnector> desiredConnectors) {
+        LOGGER.debugCr(reconciliation, "{} cluster: required connectors: {}", kind(), desiredConnectors);
+        return Future.join(desiredConnectors.stream()
+                    .map(connector -> reconcileConnectorAndHandleResult(reconciliation, host, apiClient, true, connector.getMetadata().getName(), connector))
+                    .collect(Collectors.toList()))
+                .mapEmpty();
     }
 
     /*test*/ Future<Void> reconcileConnectorAndHandleResult(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,
@@ -715,7 +699,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .endMetadata()
                 .build();
         return connectorOperator.patchAsync(reconciliation, patchedKafkaConnector)
-                .compose(ignored -> Future.succeededFuture());
+                .mapEmpty();
     }
 
     /**
@@ -745,6 +729,51 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                         return Future.succeededFuture(null);
                     }
                 });
+    }
+
+    // Methods for working with connector offsets
+
+    /**
+     * Returns the operation to perform for connector offsets of the provided custom resource.
+     * For KafkaConnector returns the value of strimzi.io/connector-offsets annotation on the provided KafkaConnector.
+     *
+     * @param resource          KafkaConnector resource instance to check
+     * @param connectorName     Name of the connector being reconciled (not used for Kafka Connect, used only for Mirror Maker 2)
+     *
+     * @return  The operation to perform for connector offsets of the provided KafkaConnector.
+     */
+    @SuppressWarnings({ "rawtypes" })
+    @Override
+    protected KafkaConnectorOffsetsAnnotation getConnectorOffsetsOperation(CustomResource resource, String connectorName) {
+        String annotation = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.none.toString());
+        return KafkaConnectorOffsetsAnnotation.valueOf(annotation);
+    }
+
+    /**
+     * Patches the custom resource to remove the connector-offsets annotation
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param resource          KafkaConnector resource from which the annotation should be removed
+     *
+     * @return  Future that indicates the operation completion
+     */
+    @SuppressWarnings({ "rawtypes" })
+    @Override
+    protected Future<Void> removeConnectorOffsetsAnnotations(Reconciliation reconciliation, CustomResource resource) {
+        return removeAnnotation(reconciliation, (KafkaConnector) resource, ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
+    }
+
+    /**
+     * Returns the key to use for either writing connector offsets to a ConfigMap or fetching connector offsets
+     * from a ConfigMap.
+     *
+     * @param connectorName Name of the connector that is being managed (not used for Kafka Connect, used only for Mirror Maker 2).
+     *
+     * @return The String to use when interacting with ConfigMap resources.
+     */
+    @Override
+    protected String getConnectorOffsetsConfigMapEntryKey(String connectorName) {
+        return "offsets.json";
     }
 
     // Static utility methods and classes

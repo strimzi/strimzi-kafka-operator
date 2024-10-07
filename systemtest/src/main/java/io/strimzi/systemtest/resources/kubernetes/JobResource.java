@@ -36,6 +36,6 @@ public class JobResource implements ResourceType<Job> {
 
     @Override
     public boolean waitForReadiness(Job resource) {
-        return JobUtils.waitForJobRunning(resource.getMetadata().getName(), resource.getMetadata().getNamespace());
+        return JobUtils.waitForJobRunning(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
     }
 }

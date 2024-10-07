@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
-import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.connector.AutoRestartStatus;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorSpec;
@@ -23,8 +22,8 @@ import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
+import io.strimzi.operator.cluster.model.KafkaConnectorOffsetsAnnotation;
 import io.strimzi.operator.cluster.model.KafkaMirrorMaker2Cluster;
-import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
@@ -32,6 +31,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.StatusUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -49,6 +49,8 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
+import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS;
+import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN;
@@ -138,7 +140,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                     return configMapOperations.reconcile(reconciliation, namespace, logAndMetricsConfigMap.getMetadata().getName(), logAndMetricsConfigMap);
                 })
                 .compose(i -> ReconcilerUtils.reconcileJmxSecret(reconciliation, secretOperations, mirrorMaker2Cluster))
-                .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getComponentName(), mirrorMaker2Cluster.generatePodDisruptionBudget()))
+                .compose(i -> connectPodDisruptionBudget(reconciliation, namespace, mirrorMaker2Cluster))
                 .compose(i -> generateAuthHash(namespace, kafkaMirrorMaker2.getSpec()))
                 .compose(hash -> {
                     podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash));
@@ -159,19 +161,15 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                                 podOperations
                         )
                         .migrateFromDeploymentToStrimziPodSets(deployment.get(), podSet.get()))
-                .compose(i -> reconcilePodSet(reconciliation, mirrorMaker2Cluster, podAnnotations))
+                .compose(i -> reconcilePodSet(reconciliation, mirrorMaker2Cluster, podAnnotations, null, null))
                 .compose(i -> hasZeroReplicas ? Future.succeededFuture() : reconcileConnectLoggers(reconciliation, KafkaMirrorMaker2Resources.qualifiedServiceName(reconciliation.name(), namespace), desiredLogging.get(), mirrorMaker2Cluster.defaultLogConfig()))
                 .compose(i -> hasZeroReplicas ? Future.succeededFuture() : reconcileConnectors(reconciliation, kafkaMirrorMaker2, mirrorMaker2Cluster, kafkaMirrorMaker2Status))
                 .map((Void) null)
                 .onComplete(reconciliationResult -> {
-                    List<Condition> conditions = kafkaMirrorMaker2Status.getConditions();
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaMirrorMaker2, kafkaMirrorMaker2Status, reconciliationResult.cause());
 
                     if (!hasZeroReplicas) {
                         kafkaMirrorMaker2Status.setUrl(KafkaMirrorMaker2Resources.url(mirrorMaker2Cluster.getCluster(), namespace, KafkaMirrorMaker2Cluster.REST_API_PORT));
-                    }
-                    if (conditions != null && !conditions.isEmpty()) {
-                        kafkaMirrorMaker2Status.addConditions(conditions);
                     }
                     kafkaMirrorMaker2Status.setReplicas(mirrorMaker2Cluster.getReplicas());
                     kafkaMirrorMaker2Status.setLabelSelector(mirrorMaker2Cluster.getSelectorLabels().toSelectorString());
@@ -186,34 +184,21 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         return createOrUpdatePromise.future();
     }
 
-    private Future<Void> controllerResources(Reconciliation reconciliation,
-                                             KafkaMirrorMaker2Cluster mirrorMaker2Cluster,
-                                             AtomicReference<Deployment> deploymentReference,
-                                             AtomicReference<StrimziPodSet> podSetReference)   {
-        return Future
-                .join(deploymentOperations.getAsync(reconciliation.namespace(), mirrorMaker2Cluster.getComponentName()), podSetOperations.getAsync(reconciliation.namespace(), mirrorMaker2Cluster.getComponentName()))
-                .compose(res -> {
-                    deploymentReference.set(res.resultAt(0));
-                    podSetReference.set(res.resultAt(1));
-
-                    return Future.succeededFuture();
-                });
-    }
-
-    private Future<Void> reconcilePodSet(Reconciliation reconciliation,
-                                         KafkaConnectCluster connect,
-                                         Map<String, String> podAnnotations)  {
-        return podSetOperations.reconcile(reconciliation, reconciliation.namespace(), connect.getComponentName(), connect.generatePodSet(connect.getReplicas(), null, podAnnotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, null))
-                .compose(reconciliationResult -> {
-                    KafkaConnectRoller roller = new KafkaConnectRoller(reconciliation, connect, operationTimeoutMs, podOperations);
-                    return roller.maybeRoll(PodSetUtils.podNames(reconciliationResult.resource()), pod -> KafkaConnectRoller.needsRollingRestart(reconciliationResult.resource(), pod));
-                })
-                .compose(i -> podSetOperations.readiness(reconciliation, reconciliation.namespace(), connect.getComponentName(), 1_000, operationTimeoutMs));
-    }
-
     @Override
     protected KafkaMirrorMaker2Status createStatus(KafkaMirrorMaker2 ignored) {
         return new KafkaMirrorMaker2Status();
+    }
+
+    /**
+     * Deletes the ClusterRoleBinding which as a cluster-scoped resource cannot be deleted by the ownerReference
+     *
+     * @param reconciliation    The Reconciliation identification
+     * @return                  Future indicating the result of the deletion
+     */
+    @Override
+    protected Future<Boolean> delete(Reconciliation reconciliation) {
+        return ReconcilerUtils.withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, KafkaMirrorMaker2Resources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null)
+                .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
     }
 
     /**
@@ -261,31 +246,31 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
         List<KafkaConnector> desiredConnectors = mirrorMaker2Cluster.connectors().generateConnectorDefinitions();
 
-        return apiClient.list(reconciliation, host, KafkaConnectCluster.REST_API_PORT).compose(currentConnectors -> {
+        return apiClient.list(reconciliation, host, port).compose(currentConnectors -> {
             currentConnectors.removeAll(desiredConnectors.stream().map(c -> c.getMetadata().getName()).collect(Collectors.toSet()));
 
             Future<Void> deletionFuture = deleteConnectors(reconciliation, host, apiClient, currentConnectors);
-            Future<Void> createOrUpdateFuture = reconcileConnectors(reconciliation, host, apiClient, kafkaMirrorMaker2, desiredConnectors, mirrorMaker2Status);
+            Future<Void> createOrUpdateFuture = createOrUpdateConnectors(reconciliation, host, apiClient, kafkaMirrorMaker2, desiredConnectors, mirrorMaker2Status);
 
-            return Future.join(deletionFuture, createOrUpdateFuture).map((Void) null);
+            return Future.join(deletionFuture, createOrUpdateFuture).mapEmpty();
         });
     }
 
-    private static Future<Void> deleteConnectors(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, List<String> connectorsForDeletion) {
+    private Future<Void> deleteConnectors(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, List<String> connectorsForDeletion) {
         return Future.join(connectorsForDeletion.stream()
                         .map(connectorName -> {
                             LOGGER.debugCr(reconciliation, "Deleting connector {}", connectorName);
-                            return apiClient.delete(reconciliation, host, KafkaConnectCluster.REST_API_PORT, connectorName);
+                            return apiClient.delete(reconciliation, host, port, connectorName);
                         })
                         .collect(Collectors.toList()))
-                .map((Void) null);
+                .mapEmpty();
     }
 
-    private Future<Void> reconcileConnectors(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, KafkaMirrorMaker2 mirrorMaker2, List<KafkaConnector> connectors, KafkaMirrorMaker2Status mirrorMaker2Status) {
+    private Future<Void> createOrUpdateConnectors(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, KafkaMirrorMaker2 mirrorMaker2, List<KafkaConnector> connectors, KafkaMirrorMaker2Status mirrorMaker2Status) {
         return Future.join(connectors.stream()
                         .map(connector -> {
                             LOGGER.debugCr(reconciliation, "Creating / updating connector {}", connector.getMetadata().getName());
-                            return reconcileMirrorMaker2Connector(reconciliation, mirrorMaker2, apiClient, host, connector.getMetadata().getName(), connector.getSpec(), mirrorMaker2Status);
+                            return createOrUpdateMirrorMaker2Connector(reconciliation, mirrorMaker2, apiClient, host, connector.getMetadata().getName(), connector.getSpec(), mirrorMaker2Status);
                         })
                         .collect(Collectors.toList()))
                 .compose(i -> {
@@ -301,10 +286,10 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                         return Future.succeededFuture();
                     }
                 })
-                .map((Void) null);
+                .mapEmpty();
     }
 
-    private Future<Void> reconcileMirrorMaker2Connector(Reconciliation reconciliation, KafkaMirrorMaker2 mirrorMaker2, KafkaConnectApi apiClient, String host, String connectorName, KafkaConnectorSpec connectorSpec, KafkaMirrorMaker2Status mirrorMaker2Status) {
+    private Future<Void> createOrUpdateMirrorMaker2Connector(Reconciliation reconciliation, KafkaMirrorMaker2 mirrorMaker2, KafkaConnectApi apiClient, String host, String connectorName, KafkaConnectorSpec connectorSpec, KafkaMirrorMaker2Status mirrorMaker2Status) {
         return maybeCreateOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec, mirrorMaker2)
                 .onComplete(result -> {
                     if (result.succeeded()) {
@@ -320,7 +305,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                     } else {
                         maybeUpdateMirrorMaker2Status(reconciliation, mirrorMaker2, result.cause());
                     }
-                }).compose(ignored -> Future.succeededFuture());
+                }).mapEmpty();
     }
 
     private Future<Void> maybeUpdateMirrorMaker2Status(Reconciliation reconciliation, KafkaMirrorMaker2 mirrorMaker2, Throwable error) {
@@ -331,18 +316,6 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         StatusUtils.setStatusConditionAndObservedGeneration(mirrorMaker2, status, error);
         return maybeUpdateStatusCommon(resourceOperator, mirrorMaker2, reconciliation, status,
             (mirror1, status2) -> new KafkaMirrorMaker2Builder(mirror1).withStatus(status2).build());
-    }
-
-    /**
-     * Deletes the ClusterRoleBinding which as a cluster-scoped resource cannot be deleted by the ownerReference
-     *
-     * @param reconciliation    The Reconciliation identification
-     * @return                  Future indicating the result of the deletion
-     */
-    @Override
-    protected Future<Boolean> delete(Reconciliation reconciliation) {
-        return ReconcilerUtils.withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, KafkaMirrorMaker2Resources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null)
-                .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
     }
 
     // Methods for working with connector restarts
@@ -429,7 +402,28 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 .endMetadata()
                 .build();
         return resourceOperator.patchAsync(reconciliation, patchedKafkaMirrorMaker2)
-                .compose(ignored -> Future.succeededFuture());
+                .mapEmpty();
+    }
+
+    /**
+     * Patches the KafkaMirrorMaker2 CR to remove the supplied annotations.
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param resource          KafkaMirrorMaker2 resource from which the annotations should be removed
+     * @param annotationKeys     List of Annotations that should be removed
+     *
+     * @return  Future that indicates the operation completion
+     */
+    private Future<Void> removeAnnotations(Reconciliation reconciliation, KafkaMirrorMaker2 resource, List<String> annotationKeys) {
+        LOGGER.debugCr(reconciliation, "Removing annotations {}", annotationKeys);
+        Map<String, String> annotationsToRemove = annotationKeys.stream().collect(Collectors.toMap(key -> key, key -> ""));
+        KafkaMirrorMaker2 patchedKafkaMirrorMaker2 = new KafkaMirrorMaker2Builder(resource)
+                .editMetadata()
+                    .removeFromAnnotations(annotationsToRemove)
+                .endMetadata()
+                .build();
+        return resourceOperator.patchAsync(reconciliation, patchedKafkaMirrorMaker2)
+                .mapEmpty();
     }
 
     /**
@@ -460,6 +454,65 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             LOGGER.warnCr(reconciliation, "The Kafka Mirror Maker 2 resource is missing or has a wrong type.", reconciliation.namespace(), reconciliation.name());
             return Future.succeededFuture(null);
         }
+    }
+
+    // Methods for working with connector offsets
+
+    /**
+     * Returns the operation to perform for connector offsets of the provided custom resource.
+     * For KafkaMirrorMaker2 returns the value of strimzi.io/connector-offsets annotation on the provided KafkaMirrorMaker2.
+     * Also verifies the strimzi.io/mirrormaker-connector annotation is present on the resource and references the connector being reconciled.
+     * If both annotations are present, but the mirrormaker-connector annotation references a different connector,
+     * the value 'none' is returned.
+     *
+     * @param resource          KafkaMirrorMaker2 resource instance to check
+     * @param connectorName     Name of the connector being reconciled
+     *
+     * @return  The operation to perform for connector offsets of the connector being reconciled as part of the provided KafkaMirrorMaker2.
+     * @throws InvalidResourceException if one of strimzi.io/connector-offsets or strimzi.io/mirrormaker-connector is missing.
+     */
+    @SuppressWarnings({ "rawtypes" })
+    @Override
+    protected KafkaConnectorOffsetsAnnotation getConnectorOffsetsOperation(CustomResource resource, String connectorName) {
+        boolean offsetsAnnotationPresent = Annotations.hasAnnotation(resource, ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
+        boolean connectorAnnotationPresent = Annotations.hasAnnotation(resource, ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR);
+        if (offsetsAnnotationPresent && !connectorAnnotationPresent) {
+            throw new InvalidResourceException(String.format("KafkaMirrorMaker2 resource %s/%s is missing annotation strimzi.io/mirrormaker-connector", resource.getMetadata().getNamespace(), resource.getMetadata().getName()));
+        }
+        if (!offsetsAnnotationPresent && connectorAnnotationPresent) {
+            throw new InvalidResourceException(String.format("KafkaMirrorMaker2 resource %s/%s is missing annotation strimzi.io/connector-offsets", resource.getMetadata().getNamespace(), resource.getMetadata().getName()));
+        }
+        String annotation = connectorName.equals(Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR, "")) ?
+                Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, KafkaConnectorOffsetsAnnotation.none.toString()) :
+                KafkaConnectorOffsetsAnnotation.none.toString();
+        return KafkaConnectorOffsetsAnnotation.valueOf(annotation);
+    }
+
+    /**
+     * Patches the custom resource to remove the connector-offsets annotation
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param resource          KafkaMirrorMaker2 resource from which the annotation should be removed
+     *
+     * @return  Future that indicates the operation completion
+     */
+    @SuppressWarnings({ "rawtypes" })
+    @Override
+    protected Future<Void> removeConnectorOffsetsAnnotations(Reconciliation reconciliation, CustomResource resource) {
+        return removeAnnotations(reconciliation, (KafkaMirrorMaker2) resource, List.of(ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR));
+    }
+
+    /**
+     * Returns the key to use for either writing connector offsets to a ConfigMap or fetching connector offsets
+     * from a ConfigMap.
+     *
+     * @param connectorName Name of the connector that is being managed.
+     *
+     * @return The String to use when interacting with ConfigMap resources.
+     */
+    @Override
+    protected String getConnectorOffsetsConfigMapEntryKey(String connectorName) {
+        return connectorName.replace("->", "--") + ".json";
     }
 
     // Static utility methods and classes

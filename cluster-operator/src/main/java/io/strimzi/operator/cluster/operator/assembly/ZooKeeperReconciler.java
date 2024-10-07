@@ -83,6 +83,7 @@ public class ZooKeeperReconciler {
     private final String operatorNamespace;
     private final Labels operatorNamespaceLabels;
     private final boolean isNetworkPolicyGeneration;
+    private final boolean isPodDisruptionBudgetGeneration;
     private final PlatformFeaturesAvailability pfa;
     private final int adminSessionTimeoutMs;
     private final ImagePullPolicy imagePullPolicy;
@@ -161,6 +162,7 @@ public class ZooKeeperReconciler {
         this.imagePullPolicy = config.getImagePullPolicy();
         this.imagePullSecrets = config.getImagePullSecrets();
         this.isKRaftMigrationRollback = isKRaftMigrationRollback;
+        this.isPodDisruptionBudgetGeneration = config.isPodDisruptionBudgetGeneration();
 
         this.stsOperator = supplier.stsOperations;
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
@@ -492,9 +494,13 @@ public class ZooKeeperReconciler {
      * @return  Completes when the PDB was successfully created or updated
      */
     protected Future<Void> podDisruptionBudget() {
-        return podDisruptionBudgetOperator
-                .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperComponentName(reconciliation.name()), zk.generatePodDisruptionBudget())
-                .map((Void) null);
+        if (isPodDisruptionBudgetGeneration) {
+            return podDisruptionBudgetOperator
+                    .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperComponentName(reconciliation.name()), zk.generatePodDisruptionBudget())
+                    .mapEmpty();
+        } else {
+            return Future.succeededFuture();
+        }
     }
 
     /**

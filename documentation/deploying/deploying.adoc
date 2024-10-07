@@ -8,14 +8,16 @@ include::shared/attributes.adoc[]
 
 //Introduction to the install process
 include::assemblies/deploying/assembly-deploy-intro.adoc[leveloffset=+1]
-//Install options
-include::modules/deploying/con-strimzi-installation-methods.adoc[leveloffset=+1]
-//Checklist to show deployment order and the options available
-include::assemblies/deploying/assembly-deploy-options.adoc[leveloffset=+1]
-//Prep for the deployment
-include::assemblies/deploying/assembly-deploy-tasks-prep.adoc[leveloffset=+1]
 //Using Kafka in Kraft mode
 include::assemblies/deploying/assembly-kraft-mode.adoc[leveloffset=+1]
+//Install options
+include::modules/deploying/con-strimzi-installation-methods.adoc[leveloffset=+1]
+//Deployment path
+include::modules/deploying/con-deploy-paths.adoc[leveloffset=+1]
+//How to access release artifacts
+include::modules/deploying/con-deploy-product-downloads.adoc[leveloffset=+1]
+//Prep for the deployment
+include::assemblies/deploying/assembly-deploy-tasks-prep.adoc[leveloffset=+1]
 //Deployment steps using installation artifacts
 include::assemblies/deploying/assembly-deploy-tasks.adoc[leveloffset=+1]
 //Deployment using operatorhub.io

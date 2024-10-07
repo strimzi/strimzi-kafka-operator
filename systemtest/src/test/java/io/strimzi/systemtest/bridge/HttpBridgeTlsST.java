@@ -24,7 +24,9 @@ import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.TestTags;
 import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -43,9 +45,9 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
-import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
-import static io.strimzi.systemtest.TestConstants.BRIDGE;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestTags.ACCEPTANCE;
+import static io.strimzi.systemtest.TestTags.BRIDGE;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
 
 @Tag(REGRESSION)
 @Tag(BRIDGE)
@@ -59,7 +61,7 @@ import static io.strimzi.systemtest.TestConstants.REGRESSION;
         @Step(value = "Deploy HTTP bridge with TLS configuration", expected = "HTTP bridge is deployed with TLS configuration")
     },
     labels = {
-        @Label("bridge")
+        @Label(TestDocsLabels.BRIDGE)
     }
 )
 class HttpBridgeTlsST extends AbstractST {
@@ -79,7 +81,7 @@ class HttpBridgeTlsST extends AbstractST {
             @Step(value = "Verify that the consumer successfully receives messages", expected = "Consumer successfully receives the expected number of messages")
         },
         labels = {
-            @Label("bridge")
+            @Label(TestDocsLabels.BRIDGE)
         }
     )
     void testSendSimpleMessageTls() {
@@ -93,14 +95,14 @@ class HttpBridgeTlsST extends AbstractST {
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), suiteTestStorage.getClusterName()).build());
 
         resourceManager.createResourceWithWait(kafkaBridgeClientJobProduce.producerStrimziBridge());
-        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
         final KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(suiteTestStorage.getClusterName()))
             .withUsername(suiteTestStorage.getUsername())
             .build();
 
         resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(suiteTestStorage.getClusterName()));
-        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount());
     }
 
     @ParallelTest
@@ -116,7 +118,7 @@ class HttpBridgeTlsST extends AbstractST {
             @Step(value = "Verify message consumption", expected = "Messages are successfully consumed by the Kafka Bridge consumer.")
         },
         labels = {
-            @Label("bridge")
+            @Label(TestDocsLabels.BRIDGE)
         }
     )
     void testReceiveSimpleMessageTls() {
@@ -137,7 +139,7 @@ class HttpBridgeTlsST extends AbstractST {
             .build();
 
         resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(suiteTestStorage.getClusterName()));
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     @ParallelTest
@@ -198,8 +200,8 @@ class HttpBridgeTlsST extends AbstractST {
 
     private void testWeirdUsername(String weirdUserName, KafkaListenerAuthentication auth,
                                    KafkaBridgeSpec spec, TestStorage testStorage) {
-        String bridgeProducerName = testStorage.getProducerName() + "-" + TestConstants.BRIDGE;
-        String bridgeConsumerName = testStorage.getConsumerName() + "-" + TestConstants.BRIDGE;
+        String bridgeProducerName = testStorage.getProducerName() + "-" + TestTags.BRIDGE;
+        String bridgeConsumerName = testStorage.getConsumerName() + "-" + TestTags.BRIDGE;
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -268,9 +270,9 @@ class HttpBridgeTlsST extends AbstractST {
             resourceManager.createResourceWithWait(kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()));
         }
 
-        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getProducerName(), testStorage.getMessageCount());
 
-        ClientUtils.waitForClientSuccess(bridgeConsumerName, testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), bridgeConsumerName, testStorage.getMessageCount());
     }
 
     @BeforeAll

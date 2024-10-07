@@ -5,6 +5,11 @@
 package io.strimzi.systemtest.cruisecontrol;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
@@ -13,6 +18,7 @@ import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfiguration
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -41,8 +47,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 
-import static io.strimzi.systemtest.TestConstants.CRUISE_CONTROL;
-import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestTags.CRUISE_CONTROL;
+import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -51,11 +57,36 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
+@SuiteDoc(
+    description = @Desc("This test suite, verify configuration of the Cruise Control component."),
+    beforeTestSteps = {
+        @Step(value = "Set up the Cluster Operator", expected = "Cluster Operator is installed and running")
+    },
+    labels = {
+        @Label(value = TestDocsLabels.CRUISE_CONTROL)
+    }
+)
 public class CruiseControlConfigurationST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(CruiseControlConfigurationST.class);
 
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Deploy and subsequently remove Cruise Control from Kafka cluster to verify system stability and correctness of configuration management."),
+        steps = {
+            @Step(value = "Create broker and controller KafkaNodePools", expected = "Both KafkaNodePools are successfully created"),
+            @Step(value = "Deploy Kafka with Cruise Control", expected = "Kafka cluster with Cruise Control is deployed"),
+            @Step(value = "Take a snapshot of broker pods", expected = "Snapshot of the current broker pods is taken"),
+            @Step(value = "Remove Cruise Control from Kafka", expected = "Cruise Control is removed from Kafka and configuration is updated"),
+            @Step(value = "Verify Cruise Control is removed", expected = "No Cruise Control related pods or configurations are found"),
+            @Step(value = "Create Admin client to verify Cruise Control topics", expected = "Admin client is created and Cruise Control topics are verified to exist"),
+            @Step(value = "Re-add Cruise Control to Kafka", expected = "Cruise Control is added back to Kafka"),
+            @Step(value = "Verify Cruise Control and related configurations", expected = "Cruise Control and its configurations are verified to be present")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.CRUISE_CONTROL),
+        }
+    )
     void testDeployAndUnDeployCruiseControl() throws IOException {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         // number of brokers to be created and also number of default replica count for each topic created
@@ -79,10 +110,10 @@ public class CruiseControlConfigurationST extends AbstractST {
 
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             LOGGER.info("Removing CruiseControl from Kafka");
             kafka.getSpec().setCruiseControl(null);
-        }, testStorage.getNamespaceName());
+        });
 
         brokerPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), defaultBrokerReplicaCount, brokerPods);
 
@@ -107,10 +138,10 @@ public class CruiseControlConfigurationST extends AbstractST {
         LOGGER.info("Cruise Control Topics will not be deleted and will stay in the Kafka cluster");
         CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(adminClient, defaultBrokerReplicaCount);
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             LOGGER.info("Adding CruiseControl to the classic Kafka");
             kafka.getSpec().setCruiseControl(new CruiseControlSpec());
-        }, testStorage.getNamespaceName());
+        });
 
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), defaultBrokerReplicaCount, brokerPods);
 
@@ -122,6 +153,21 @@ public class CruiseControlConfigurationST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Test verifying configuration update for Cruise Control and ensuring Kafka Pods did not roll unnecessarily."),
+        steps = {
+            @Step(value = "Create broker and controller KafkaNodePools", expected = "Both KafkaNodePools are successfully created"),
+            @Step(value = "Create and wait for Kafka with Cruise Control", expected = "Kafka and Cruise Control are deployed successfully"),
+            @Step(value = "Take initial snapshots of Kafka and Cruise Control deployments", expected = "Snapshots of current deployments are stored"),
+            @Step(value = "Update Cruise Control configuration with new performance tuning options", expected = "Configuration update initiated"),
+            @Step(value = "Verify Cruise Control Pod rolls after configuration change", expected = "Cruise Control Pod restarts to apply new configurations"),
+            @Step(value = "Verify Kafka Pods did not roll after configuration change", expected = "Kafka Pods remain unchanged"),
+            @Step(value = "Verify new configurations are applied to Cruise Control in Kafka CR", expected = "New configurations are correctly applied")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.CRUISE_CONTROL),
+        }
+    )
     void testConfigurationUpdate() throws IOException {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -142,12 +188,12 @@ public class CruiseControlConfigurationST extends AbstractST {
                 put(CruiseControlConfigurationParameters.REPLICATION_THROTTLE.getValue(), -1);
             }};
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             LOGGER.info("Changing CruiseControl performance tuning options");
             kafka.getSpec().setCruiseControl(new CruiseControlSpecBuilder()
                     .addToConfig(performanceTuningOpts)
                     .build());
-        }, testStorage.getNamespaceName());
+        });
 
         LOGGER.info("Verifying that CC Pod is rolling, after changing options");
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName()), 1, cruiseControlSnapShot);

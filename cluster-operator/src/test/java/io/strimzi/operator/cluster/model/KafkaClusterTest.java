@@ -47,7 +47,6 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.CertificateExpirationPolicy;
-import io.strimzi.api.kafka.model.common.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.Probe;
 import io.strimzi.api.kafka.model.common.ProbeBuilder;
@@ -58,9 +57,9 @@ import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetricsBui
 import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
+import io.strimzi.api.kafka.model.common.template.ContainerEnvVar;
 import io.strimzi.api.kafka.model.kafka.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
-import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationKeycloakBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationOpaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -69,7 +68,6 @@ import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
@@ -85,7 +83,6 @@ import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.InvalidResourceException;
@@ -97,6 +94,8 @@ import io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matchers;
 
@@ -107,6 +106,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -121,6 +121,7 @@ import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasKey;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -315,11 +316,13 @@ public class KafkaClusterTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        assertThat(podSets.size(), is(3));
 
-        for (KafkaPool pool : pools) {
-            assertThat(kc.getEnvVars(pool).get(3).getName(), is("STRIMZI_JAVA_SYSTEM_PROPERTIES"));
-            assertThat(kc.getEnvVars(pool).get(3).getValue(), is("-Djavax.net.debug=verbose -Dsomething.else=42"));
-        }
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            final Optional<EnvVar> envVarValue = pod.getSpec().getContainers().stream().findAny().orElseThrow().getEnv().stream().filter(env -> env.getName().equals("STRIMZI_JAVA_SYSTEM_PROPERTIES")).findAny();
+            assertThat(envVarValue.isPresent(), is(true));
+        }));
     }
 
     @ParallelTest
@@ -351,19 +354,20 @@ public class KafkaClusterTest {
 
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(controllers, mixed, brokers), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        assertThat(podSets.size(), is(3));
 
-        for (KafkaPool pool : pools) {
-            if ("controllers".equals(pool.poolName))    {
-                assertThat(kc.getEnvVars(pool).get(3).getName(), is("STRIMZI_JAVA_SYSTEM_PROPERTIES"));
-                assertThat(kc.getEnvVars(pool).get(3).getValue(), is("-Djavax.net.debug=verbose -Dsomething.else=42"));
-            } else if ("mixed".equals(pool.poolName))    {
-                assertThat(kc.getEnvVars(pool).get(3).getName(), is("STRIMZI_JAVA_SYSTEM_PROPERTIES"));
-                assertThat(kc.getEnvVars(pool).get(3).getValue(), is("-Djavax.net.debug=verbose -Dsomething.else=1874"));
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            final Optional<EnvVar> envVarValue = pod.getSpec().getContainers().stream().findAny().orElseThrow().getEnv().stream().filter(env -> env.getName().equals("STRIMZI_JAVA_SYSTEM_PROPERTIES")).findAny();
+            assertThat(envVarValue.isPresent(), is(true));
+            if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
+                assertThat(envVarValue.get().getValue(), is("-Djavax.net.debug=verbose -Dsomething.else=42"));
+            } else if (pod.getMetadata().getName().startsWith(CLUSTER + "-mixed")) {
+                assertThat(envVarValue.get().getValue(), is("-Djavax.net.debug=verbose -Dsomething.else=1874"));
             } else {
-                assertThat(kc.getEnvVars(pool).get(3).getName(), is("STRIMZI_JAVA_SYSTEM_PROPERTIES"));
-                assertThat(kc.getEnvVars(pool).get(3).getValue(), is("-Djavax.net.debug=verbose -Dsomething.else=1919"));
+                assertThat(envVarValue.get().getValue(), is("-Djavax.net.debug=verbose -Dsomething.else=1919"));
             }
-        }
+        }));
     }
 
     @ParallelTest
@@ -397,19 +401,20 @@ public class KafkaClusterTest {
 
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, mixed, brokers), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        assertThat(podSets.size(), is(3));
 
-        for (KafkaPool pool : pools) {
-            if ("controllers".equals(pool.poolName))    {
-                assertThat(kc.getEnvVars(pool).get(3).getName(), is("STRIMZI_JAVA_SYSTEM_PROPERTIES"));
-                assertThat(kc.getEnvVars(pool).get(3).getValue(), is("-Djavax.net.debug=verbose -Dsomething.else=42"));
-            } else if ("mixed".equals(pool.poolName))    {
-                assertThat(kc.getEnvVars(pool).get(3).getName(), is("STRIMZI_JAVA_SYSTEM_PROPERTIES"));
-                assertThat(kc.getEnvVars(pool).get(3).getValue(), is("-Djavax.net.debug=verbose -Dsomething.else=1874"));
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            final Optional<EnvVar> envVarValue = pod.getSpec().getContainers().stream().findAny().orElseThrow().getEnv().stream().filter(env -> env.getName().equals("STRIMZI_JAVA_SYSTEM_PROPERTIES")).findAny();
+            assertThat(envVarValue.isPresent(), is(true));
+            if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
+                assertThat(envVarValue.get().getValue(), is("-Djavax.net.debug=verbose -Dsomething.else=42"));
+            } else if (pod.getMetadata().getName().startsWith(CLUSTER + "-mixed")) {
+                assertThat(envVarValue.get().getValue(), is("-Djavax.net.debug=verbose -Dsomething.else=1874"));
             } else {
-                assertThat(kc.getEnvVars(pool).get(3).getName(), is("STRIMZI_JAVA_SYSTEM_PROPERTIES"));
-                assertThat(kc.getEnvVars(pool).get(3).getValue(), is("-Djavax.net.debug=verbose -Dsomething.else=1919"));
+                assertThat(envVarValue.get().getValue(), is("-Djavax.net.debug=verbose -Dsomething.else=1919"));
             }
-        }
+        }));
     }
 
     @ParallelTest
@@ -427,14 +432,17 @@ public class KafkaClusterTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
 
-        for (KafkaPool pool : pools) {
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
             // Check container
-            assertThat(kc.createContainer(null, pool).getImage(), is("my-image:my-tag"));
+            assertThat(pod.getSpec().getContainers().stream().findAny().orElseThrow().getImage(), is("my-image:my-tag"));
 
             // Check Init container
-            assertThat(kc.createInitContainer(null, pool).getImage(), is("my-init-image:my-init-tag"));
-        }
+            if (!pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
+                assertThat(pod.getSpec().getInitContainers().stream().findAny().orElseThrow().getImage(), is("my-init-image:my-init-tag"));
+            }
+        }));
     }
 
     @ParallelTest
@@ -461,10 +469,10 @@ public class KafkaClusterTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
 
-        for (KafkaPool pool : pools) {
-            // Check container
-            Container cont = kc.createContainer(null, pool);
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            Container cont = pod.getSpec().getContainers().stream().findAny().orElseThrow();
 
             assertThat(cont.getLivenessProbe().getInitialDelaySeconds(), is(1));
             assertThat(cont.getLivenessProbe().getPeriodSeconds(), is(2));
@@ -477,7 +485,7 @@ public class KafkaClusterTest {
             assertThat(cont.getReadinessProbe().getTimeoutSeconds(), is(8));
             assertThat(cont.getReadinessProbe().getSuccessThreshold(), is(9));
             assertThat(cont.getReadinessProbe().getFailureThreshold(), is(10));
-        }
+        }));
     }
 
     @ParallelTest
@@ -541,22 +549,28 @@ public class KafkaClusterTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
 
-        for (KafkaPool pool : pools) {
-            Container cont = kc.createInitContainer(null, pool);
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            Container initCont = pod.getSpec().getInitContainers().stream().findAny().orElse(null);
 
-            assertThat(cont.getName(), is(KafkaCluster.INIT_NAME));
-            assertThat(cont.getSecurityContext(), is(securityContext));
-            assertThat(cont.getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar1.getValue()));
-            assertThat(cont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar2.getValue()));
-            assertThat(cont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
+            if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
+                assertThat(initCont, is(nullValue()));
+            } else {
+                assertThat(initCont, is(notNullValue()));
+                assertThat(initCont.getName(), is(KafkaCluster.INIT_NAME));
+                assertThat(initCont.getSecurityContext(), is(securityContext));
+                assertThat(initCont.getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar1.getValue()));
+                assertThat(initCont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar2.getValue()));
+                assertThat(initCont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
 
-            assertThat(cont.getVolumeMounts().size(), is(2));
-            assertThat(cont.getVolumeMounts().get(0).getName(), is("rack-volume"));
-            assertThat(cont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
-            assertThat(cont.getVolumeMounts().get(1).getName(), is("secret-volume-name"));
-            assertThat(cont.getVolumeMounts().get(1).getMountPath(), is("/mnt/secret-volume"));
-        }
+                assertThat(initCont.getVolumeMounts().size(), is(2));
+                assertThat(initCont.getVolumeMounts().get(0).getName(), is("rack-volume"));
+                assertThat(initCont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
+                assertThat(initCont.getVolumeMounts().get(1).getName(), is("secret-volume-name"));
+                assertThat(initCont.getVolumeMounts().get(1).getMountPath(), is("/mnt/secret-volume"));
+            }
+        }));
     }
 
     @ParallelTest
@@ -642,50 +656,39 @@ public class KafkaClusterTest {
 
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, mixed, brokers), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
 
-        for (KafkaPool pool : pools) {
-            if ("controllers".equals(pool.poolName))    {
-                Container cont = kc.createInitContainer(null, pool);
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            Container initCont = pod.getSpec().getInitContainers().stream().findAny().orElse(null);
 
-                assertThat(cont.getName(), is(KafkaCluster.INIT_NAME));
-                assertThat(cont.getSecurityContext(), is(securityContext));
-                assertThat(cont.getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar1.getValue()));
-                assertThat(cont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar2.getValue()));
-                assertThat(cont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
+            if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
+                assertThat(initCont, is(nullValue()));
+            } else if (pod.getMetadata().getName().startsWith(CLUSTER + "-mixed")) {
+                assertThat(initCont, is(notNullValue()));
+                assertThat(initCont.getName(), is(KafkaCluster.INIT_NAME));
+                assertThat(initCont.getSecurityContext(), is(securityContext));
+                assertThat(initCont.getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElse(null), is(nullValue()));
+                assertThat(initCont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar2.getValue()));
+                assertThat(initCont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
 
-                assertThat(cont.getVolumeMounts().size(), is(2));
-                assertThat(cont.getVolumeMounts().get(0).getName(), is("rack-volume"));
-                assertThat(cont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
-                assertThat(cont.getVolumeMounts().get(1).getName(), is("secret-volume-name"));
-                assertThat(cont.getVolumeMounts().get(1).getMountPath(), is("/mnt/secret-volume"));
-            } else if ("mixed".equals(pool.poolName))    {
-                Container cont = kc.createInitContainer(null, pool);
-
-                assertThat(cont.getName(), is(KafkaCluster.INIT_NAME));
-                assertThat(cont.getSecurityContext(), is(securityContext));
-                assertThat(cont.getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElse(null), is(nullValue()));
-                assertThat(cont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar2.getValue()));
-                assertThat(cont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
-
-                assertThat(cont.getVolumeMounts().size(), is(1));
-                assertThat(cont.getVolumeMounts().get(0).getName(), is("rack-volume"));
-                assertThat(cont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
+                assertThat(initCont.getVolumeMounts().size(), is(1));
+                assertThat(initCont.getVolumeMounts().get(0).getName(), is("rack-volume"));
+                assertThat(initCont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
             } else {
-                Container cont = kc.createInitContainer(null, pool);
+                assertThat(initCont, is(notNullValue()));
+                assertThat(initCont.getName(), is(KafkaCluster.INIT_NAME));
+                assertThat(initCont.getSecurityContext(), is(Matchers.nullValue()));
+                assertThat(initCont.getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar1.getValue()));
+                assertThat(initCont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElse(null), is(nullValue()));
+                assertThat(initCont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
 
-                assertThat(cont.getName(), is(KafkaCluster.INIT_NAME));
-                assertThat(cont.getSecurityContext(), is(Matchers.nullValue()));
-                assertThat(cont.getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar1.getValue()));
-                assertThat(cont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElse(null), is(nullValue()));
-                assertThat(cont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
-
-                assertThat(cont.getVolumeMounts().size(), is(2));
-                assertThat(cont.getVolumeMounts().get(0).getName(), is("rack-volume"));
-                assertThat(cont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
-                assertThat(cont.getVolumeMounts().get(1).getName(), is("secret-volume-name"));
-                assertThat(cont.getVolumeMounts().get(1).getMountPath(), is("/mnt/secret-volume"));
+                assertThat(initCont.getVolumeMounts().size(), is(2));
+                assertThat(initCont.getVolumeMounts().get(0).getName(), is("rack-volume"));
+                assertThat(initCont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
+                assertThat(initCont.getVolumeMounts().get(1).getName(), is("secret-volume-name"));
+                assertThat(initCont.getVolumeMounts().get(1).getMountPath(), is("/mnt/secret-volume"));
             }
-        }
+        }));
     }
 
     @ParallelTest
@@ -775,50 +778,39 @@ public class KafkaClusterTest {
 
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(controllers, mixed, brokers), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
 
-        for (KafkaPool pool : pools) {
-            if ("controllers".equals(pool.poolName))    {
-                Container cont = kc.createInitContainer(null, pool);
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            Container initCont = pod.getSpec().getInitContainers().stream().findAny().orElse(null);
 
-                assertThat(cont.getName(), is(KafkaCluster.INIT_NAME));
-                assertThat(cont.getSecurityContext(), is(securityContext));
-                assertThat(cont.getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar1.getValue()));
-                assertThat(cont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar2.getValue()));
-                assertThat(cont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
+            if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
+                assertThat(initCont, is(nullValue()));
+            } else if (pod.getMetadata().getName().startsWith(CLUSTER + "-mixed")) {
+                assertThat(initCont, is(notNullValue()));
+                assertThat(initCont.getName(), is(KafkaCluster.INIT_NAME));
+                assertThat(initCont.getSecurityContext(), is(securityContext));
+                assertThat(initCont.getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElse(null), is(nullValue()));
+                assertThat(initCont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar2.getValue()));
+                assertThat(initCont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
 
-                assertThat(cont.getVolumeMounts().size(), is(2));
-                assertThat(cont.getVolumeMounts().get(0).getName(), is("rack-volume"));
-                assertThat(cont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
-                assertThat(cont.getVolumeMounts().get(1).getName(), is("secret-volume-name"));
-                assertThat(cont.getVolumeMounts().get(1).getMountPath(), is("/mnt/secret-volume"));
-            } else if ("mixed".equals(pool.poolName))    {
-                Container cont = kc.createInitContainer(null, pool);
-
-                assertThat(cont.getName(), is(KafkaCluster.INIT_NAME));
-                assertThat(cont.getSecurityContext(), is(securityContext));
-                assertThat(cont.getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElse(null), is(nullValue()));
-                assertThat(cont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar2.getValue()));
-                assertThat(cont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
-
-                assertThat(cont.getVolumeMounts().size(), is(1));
-                assertThat(cont.getVolumeMounts().get(0).getName(), is("rack-volume"));
-                assertThat(cont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
+                assertThat(initCont.getVolumeMounts().size(), is(1));
+                assertThat(initCont.getVolumeMounts().get(0).getName(), is("rack-volume"));
+                assertThat(initCont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
             } else {
-                Container cont = kc.createInitContainer(null, pool);
+                assertThat(initCont, is(notNullValue()));
+                assertThat(initCont.getName(), is(KafkaCluster.INIT_NAME));
+                assertThat(initCont.getSecurityContext(), is(Matchers.nullValue()));
+                assertThat(initCont.getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar1.getValue()));
+                assertThat(initCont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElse(null), is(nullValue()));
+                assertThat(initCont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
 
-                assertThat(cont.getName(), is(KafkaCluster.INIT_NAME));
-                assertThat(cont.getSecurityContext(), is(Matchers.nullValue()));
-                assertThat(cont.getEnv().stream().filter(e -> envVar1.getName().equals(e.getName())).findFirst().orElseThrow().getValue(), is(envVar1.getValue()));
-                assertThat(cont.getEnv().stream().filter(e -> envVar2.getName().equals(e.getName())).findFirst().orElse(null), is(nullValue()));
-                assertThat(cont.getEnv().stream().filter(e -> KafkaCluster.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(e.getName())).findFirst().orElseThrow().getValue(), is(not(envVar3.getValue())));
-
-                assertThat(cont.getVolumeMounts().size(), is(2));
-                assertThat(cont.getVolumeMounts().get(0).getName(), is("rack-volume"));
-                assertThat(cont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
-                assertThat(cont.getVolumeMounts().get(1).getName(), is("secret-volume-name"));
-                assertThat(cont.getVolumeMounts().get(1).getMountPath(), is("/mnt/secret-volume"));
+                assertThat(initCont.getVolumeMounts().size(), is(2));
+                assertThat(initCont.getVolumeMounts().get(0).getName(), is("rack-volume"));
+                assertThat(initCont.getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
+                assertThat(initCont.getVolumeMounts().get(1).getName(), is("secret-volume-name"));
+                assertThat(initCont.getVolumeMounts().get(1).getMountPath(), is("/mnt/secret-volume"));
             }
-        }
+        }));
     }
 
     @ParallelTest
@@ -840,8 +832,19 @@ public class KafkaClusterTest {
         assertThat(clusterIp.getSpec().getIpFamilyPolicy(), is(nullValue()));
         assertThat(clusterIp.getSpec().getIpFamilies(), is(nullValue()));
         assertThat(clusterIp.getSpec().getPublishNotReadyAddresses(), is(nullValue()));
-
-        assertThat(clusterIp.getMetadata().getAnnotations(), is(Util.mergeLabelsOrAnnotations(KC.getInternalDiscoveryAnnotation())));
+        
+        assertThat(clusterIp.getMetadata().getAnnotations(), hasKey("strimzi.io/discovery"));        
+        JsonArray annotation = new JsonArray(clusterIp.getMetadata().getAnnotations().get("strimzi.io/discovery"));
+        JsonObject listener1 = annotation.getJsonObject(0);
+        assertThat(listener1.getString("port"), is("9092"));
+        assertThat(listener1.getString("tls"), is("false"));
+        assertThat(listener1.getString("protocol"), is("kafka"));
+        assertThat(listener1.getString("auth"), is("none"));
+        JsonObject listener2 = annotation.getJsonObject(1);
+        assertThat(listener2.getString("port"), is("9093"));
+        assertThat(listener2.getString("tls"), is("true"));
+        assertThat(listener2.getString("protocol"), is("kafka"));
+        assertThat(listener2.getString("auth"), is("none"));
 
         assertThat(clusterIp.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(true));
         assertThat(clusterIp.getMetadata().getLabels().get(Labels.STRIMZI_DISCOVERY_LABEL), is("true"));
@@ -938,11 +941,13 @@ public class KafkaClusterTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
 
-        ContainerPort jmxContainerPort = ContainerUtils.createContainerPort(JMX_PORT_NAME, JMX_PORT);
-        for (KafkaPool pool : pools) {
-            assertThat(kc.createContainer(ImagePullPolicy.IFNOTPRESENT, pool).getPorts().contains(jmxContainerPort), is(true));
-        }
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            Container cont = pod.getSpec().getContainers().stream().findAny().orElseThrow();
+            ContainerPort jmxPort = cont.getPorts().stream().filter(port -> JMX_PORT_NAME.equals(port.getName())).findFirst().orElseThrow();
+            assertThat(jmxPort.getContainerPort(), is(JMX_PORT));
+        }));
     }
 
     @ParallelTest
@@ -963,16 +968,17 @@ public class KafkaClusterTest {
 
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
 
-        for (KafkaPool pool : pools) {
-            List<ContainerPort> ports = kc.createContainer(null, pool).getPorts();
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            List<ContainerPort> ports = pod.getSpec().getContainers().stream().findAny().orElseThrow().getPorts();
 
-            if ("controllers".equals(pool.poolName))    {
+            if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
                 assertThat(ports.size(), is(3));
                 assertThat(ports.get(0).getContainerPort(), is(8443));
                 assertThat(ports.get(1).getContainerPort(), is(9090));
                 assertThat(ports.get(2).getContainerPort(), is(9404));
-            } else if ("mixed".equals(pool.poolName))    {
+            } else if (pod.getMetadata().getName().startsWith(CLUSTER + "-mixed")) {
                 assertThat(ports.size(), is(6));
                 assertThat(ports.get(0).getContainerPort(), is(8443));
                 assertThat(ports.get(1).getContainerPort(), is(9090));
@@ -988,7 +994,7 @@ public class KafkaClusterTest {
                 assertThat(ports.get(3).getContainerPort(), is(9094));
                 assertThat(ports.get(4).getContainerPort(), is(9404));
             }
-        }
+        }));
     }
 
     @ParallelTest
@@ -1173,293 +1179,6 @@ public class KafkaClusterTest {
                 assertThat(cm.getData().get(KafkaCluster.BROKER_METADATA_VERSION_FILENAME), is(KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE.metadataVersion()));
             }
         }
-    }
-
-    @ParallelTest
-    public void testGenerateDeploymentWithOAuthWithClientSecret() {
-        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
-                .editSpec()
-                    .editKafka()
-                        .withListeners(new GenericKafkaListenerBuilder()
-                                .withName("plain")
-                                .withPort(9092)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withTls(false)
-                                .withAuth(
-                                        new KafkaListenerAuthenticationOAuthBuilder()
-                                                .withClientId("my-client-id")
-                                                .withValidIssuerUri("http://valid-issuer")
-                                                .withIntrospectionEndpointUri("http://introspection")
-                                                .withNewClientSecret()
-                                                .withSecretName("my-secret-secret")
-                                                .withKey("my-secret-key")
-                                                .endClientSecret()
-                                                .build())
-                                .build())
-                    .endKafka()
-                .endSpec()
-                .build();
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
-        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
-
-        for (KafkaPool pool : pools) {
-            Container cont = kc.createContainer(null, pool);
-            assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
-            assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
-        }
-    }
-
-    @ParallelTest
-    public void testGenerateDeploymentWithOAuthWithClientSecretAndTls() {
-        CertSecretSource cert1 = new CertSecretSourceBuilder()
-                .withSecretName("first-certificate")
-                .withCertificate("ca.crt")
-                .build();
-
-        CertSecretSource cert2 = new CertSecretSourceBuilder()
-                .withSecretName("second-certificate")
-                .withCertificate("tls.crt")
-                .build();
-
-        CertSecretSource cert3 = new CertSecretSourceBuilder()
-                .withSecretName("first-certificate")
-                .withCertificate("ca2.crt")
-                .build();
-
-        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
-                .editSpec()
-                    .editKafka()
-                        .withListeners(new GenericKafkaListenerBuilder()
-                                .withName("plain")
-                                .withPort(9092)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withTls(false)
-                                .withAuth(
-                                        new KafkaListenerAuthenticationOAuthBuilder()
-                                                .withClientId("my-client-id")
-                                                .withValidIssuerUri("http://valid-issuer")
-                                                .withIntrospectionEndpointUri("http://introspection")
-                                                .withNewClientSecret()
-                                                .withSecretName("my-secret-secret")
-                                                .withKey("my-secret-key")
-                                                .endClientSecret()
-                                                .withDisableTlsHostnameVerification(true)
-                                                .withTlsTrustedCertificates(cert1, cert2, cert3)
-                                                .build())
-                                .build())
-                    .endKafka()
-                .endSpec()
-                .build();
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
-        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
-
-        for (KafkaPool pool : pools) {
-            Container cont = kc.createContainer(null, pool);
-
-            // Env Vars
-            assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
-            assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
-
-            // Volume mounts
-            assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-plain-9092-first-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-plain-9092-certs/first-certificate"));
-            assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-plain-9092-second-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-plain-9092-certs/second-certificate"));
-
-            // Volumes
-            List<Volume> volumes = kc.getNonDataVolumes(false, "foo-brokers-6", null);
-            assertThat(volumes.stream().filter(vol -> "oauth-plain-9092-first-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
-            assertThat(volumes.stream().filter(vol -> "oauth-plain-9092-second-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
-
-            // Environment variable
-            assertThat(cont.getEnv().stream().filter(e -> "STRIMZI_PLAIN_9092_OAUTH_TRUSTED_CERTS".equals(e.getName())).findFirst().orElseThrow().getValue(), is("first-certificate/ca.crt;second-certificate/tls.crt;first-certificate/ca2.crt"));
-        }
-    }
-
-    @ParallelTest
-    public void testGenerateDeploymentWithOAuthEverywhere() {
-        CertSecretSource cert1 = new CertSecretSourceBuilder()
-                .withSecretName("first-certificate")
-                .withCertificate("ca.crt")
-                .build();
-
-        CertSecretSource cert2 = new CertSecretSourceBuilder()
-                .withSecretName("second-certificate")
-                .withCertificate("tls.crt")
-                .build();
-
-        CertSecretSource cert3 = new CertSecretSourceBuilder()
-                .withSecretName("first-certificate")
-                .withCertificate("ca2.crt")
-                .build();
-
-        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
-                .editSpec()
-                    .editKafka()
-                        .withListeners(new GenericKafkaListenerBuilder()
-                                    .withName("plain")
-                                    .withPort(9092)
-                                    .withType(KafkaListenerType.INTERNAL)
-                                    .withTls(false)
-                                    .withAuth(
-                                            new KafkaListenerAuthenticationOAuthBuilder()
-                                                    .withClientId("my-client-id")
-                                                    .withValidIssuerUri("http://valid-issuer")
-                                                    .withIntrospectionEndpointUri("http://introspection")
-                                                    .withNewClientSecret()
-                                                    .withSecretName("my-secret-secret")
-                                                    .withKey("my-secret-key")
-                                                    .endClientSecret()
-                                                    .withDisableTlsHostnameVerification(true)
-                                                    .withTlsTrustedCertificates(cert1, cert2, cert3)
-                                                    .build())
-                                    .build(),
-                                new GenericKafkaListenerBuilder()
-                                    .withName("tls")
-                                    .withPort(9093)
-                                    .withType(KafkaListenerType.INTERNAL)
-                                    .withTls(true)
-                                    .withAuth(
-                                            new KafkaListenerAuthenticationOAuthBuilder()
-                                                    .withClientId("my-client-id")
-                                                    .withValidIssuerUri("http://valid-issuer")
-                                                    .withIntrospectionEndpointUri("http://introspection")
-                                                    .withNewClientSecret()
-                                                    .withSecretName("my-secret-secret")
-                                                    .withKey("my-secret-key")
-                                                    .endClientSecret()
-                                                    .withDisableTlsHostnameVerification(true)
-                                                    .withTlsTrustedCertificates(cert1, cert2, cert3)
-                                                    .build())
-                                    .build(),
-                                new GenericKafkaListenerBuilder()
-                                    .withName("external")
-                                    .withPort(9094)
-                                    .withType(KafkaListenerType.NODEPORT)
-                                    .withTls(true)
-                                    .withAuth(
-                                            new KafkaListenerAuthenticationOAuthBuilder()
-                                                    .withClientId("my-client-id")
-                                                    .withValidIssuerUri("http://valid-issuer")
-                                                    .withIntrospectionEndpointUri("http://introspection")
-                                                    .withNewClientSecret()
-                                                    .withSecretName("my-secret-secret")
-                                                    .withKey("my-secret-key")
-                                                    .endClientSecret()
-                                                    .withDisableTlsHostnameVerification(true)
-                                                    .withTlsTrustedCertificates(cert1, cert2, cert3)
-                                                    .build())
-                                    .build())
-                    .endKafka()
-                .endSpec()
-                .build();
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
-        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
-
-        for (KafkaPool pool : pools) {
-            Container cont = kc.createContainer(null, pool);
-
-            // Test Env Vars
-            assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
-            assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
-
-            assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_TLS_9093_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
-            assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_TLS_9093_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
-
-            assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_EXTERNAL_9094_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
-            assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_EXTERNAL_9094_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
-
-            // Volume mounts
-            assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-plain-9092-first-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-plain-9092-certs/first-certificate"));
-            assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-plain-9092-second-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-plain-9092-certs/second-certificate"));
-
-            assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-tls-9093-first-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-tls-9093-certs/first-certificate"));
-            assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-tls-9093-second-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-tls-9093-certs/second-certificate"));
-
-            assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-external-9094-first-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-external-9094-certs/first-certificate"));
-            assertThat(cont.getVolumeMounts().stream().filter(mount -> "oauth-external-9094-second-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-external-9094-certs/second-certificate"));
-
-            // Volumes
-            List<Volume> volumes = kc.getNonDataVolumes(false, "foo-brokers-6", null);
-
-            assertThat(volumes.stream().filter(vol -> "oauth-plain-9092-first-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
-            assertThat(volumes.stream().filter(vol -> "oauth-plain-9092-second-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
-
-            assertThat(volumes.stream().filter(vol -> "oauth-tls-9093-first-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
-            assertThat(volumes.stream().filter(vol -> "oauth-tls-9093-second-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
-
-            assertThat(volumes.stream().filter(vol -> "oauth-external-9094-first-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
-            assertThat(volumes.stream().filter(vol -> "oauth-external-9094-second-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
-
-            // Environment variable
-            assertThat(cont.getEnv().stream().filter(e -> "STRIMZI_PLAIN_9092_OAUTH_TRUSTED_CERTS".equals(e.getName())).findFirst().orElseThrow().getValue(), is("first-certificate/ca.crt;second-certificate/tls.crt;first-certificate/ca2.crt"));
-            assertThat(cont.getEnv().stream().filter(e -> "STRIMZI_TLS_9093_OAUTH_TRUSTED_CERTS".equals(e.getName())).findFirst().orElseThrow().getValue(), is("first-certificate/ca.crt;second-certificate/tls.crt;first-certificate/ca2.crt"));
-            assertThat(cont.getEnv().stream().filter(e -> "STRIMZI_EXTERNAL_9094_OAUTH_TRUSTED_CERTS".equals(e.getName())).findFirst().orElseThrow().getValue(), is("first-certificate/ca.crt;second-certificate/tls.crt;first-certificate/ca2.crt"));
-        }
-    }
-
-    @ParallelTest
-    public void testGenerateDeploymentWithKeycloakAuthorization() {
-        CertSecretSource cert1 = new CertSecretSourceBuilder()
-                .withSecretName("first-certificate")
-                .withCertificate("ca.crt")
-                .build();
-
-        CertSecretSource cert2 = new CertSecretSourceBuilder()
-                .withSecretName("second-certificate")
-                .withCertificate("tls.crt")
-                .build();
-
-        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
-                .editSpec()
-                    .editKafka()
-                        .withListeners(new GenericKafkaListenerBuilder()
-                                .withName("plain")
-                                .withPort(9092)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withTls(false)
-                                .withAuth(
-                                        new KafkaListenerAuthenticationOAuthBuilder()
-                                                .withClientId("my-client-id")
-                                                .withValidIssuerUri("http://valid-issuer")
-                                                .withIntrospectionEndpointUri("http://introspection")
-                                                .withMaxSecondsWithoutReauthentication(3600)
-                                                .withNewClientSecret()
-                                                .withSecretName("my-secret-secret")
-                                                .withKey("my-secret-key")
-                                                .endClientSecret()
-                                                .withDisableTlsHostnameVerification(true)
-                                                .withTlsTrustedCertificates(cert1, cert2)
-                                                .build())
-                                .build())
-                    .withAuthorization(
-                            new KafkaAuthorizationKeycloakBuilder()
-                                    .withClientId("my-client-id")
-                                    .withTokenEndpointUri("http://token-endpoint-uri")
-                                    .withDisableTlsHostnameVerification(true)
-                                    .withDelegateToKafkaAcls(false)
-                                    .withGrantsRefreshPeriodSeconds(90)
-                                    .withGrantsRefreshPoolSize(4)
-                                    .withTlsTrustedCertificates(cert1, cert2)
-                                    .build())
-                    .endKafka()
-                .endSpec()
-                .build();
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
-        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
-
-        for (KafkaPool pool : pools) {
-            // Volume mounts
-            Container cont = kc.createContainer(null, pool);
-            assertThat(cont.getVolumeMounts().stream().filter(mount -> "authz-keycloak-first-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-keycloak-certs/first-certificate"));
-            assertThat(cont.getVolumeMounts().stream().filter(mount -> "authz-keycloak-second-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-keycloak-certs/second-certificate"));
-
-            // Environment variable
-            assertThat(cont.getEnv().stream().filter(e -> "STRIMZI_KEYCLOAK_AUTHZ_TRUSTED_CERTS".equals(e.getName())).findFirst().orElseThrow().getValue(), is("first-certificate/ca.crt;second-certificate/tls.crt"));
-        }
-
-        // Volumes
-        List<Volume> volumes = kc.getNonDataVolumes(false, "foo-brokers-6", null);
-        assertThat(volumes.stream().filter(vol -> "authz-keycloak-first-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
-        assertThat(volumes.stream().filter(vol -> "authz-keycloak-second-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
     }
 
     @ParallelTest
@@ -1988,23 +1707,6 @@ public class KafkaClusterTest {
     }
 
     @ParallelTest
-    public void testGenerateDeploymentWithKeycloakAuthorizationMissingOAuthListeners() {
-        assertThrows(InvalidResourceException.class, () -> {
-            Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
-                    .editSpec()
-                    .editKafka()
-                    .withAuthorization(
-                            new KafkaAuthorizationKeycloakBuilder().build())
-                    .endKafka()
-                    .endSpec()
-                    .build();
-
-            List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
-            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
-        });
-    }
-
-    @ParallelTest
     public void testReplicasAndRelatedOptionsValidationNok() {
         InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> {
             Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
@@ -2268,17 +1970,13 @@ public class KafkaClusterTest {
 
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
 
-        for (KafkaPool pool : pools) {
-            List<EnvVar> envVars = kc.createInitContainer(null, pool).getEnv();
-
-            if ("controllers".equals(pool.poolName))    {
-                assertThat(envVars.size(), is(2));
-                assertThat(envVars.get(0).getName(), is("NODE_NAME"));
-                assertThat(envVars.get(0).getValueFrom(), is(notNullValue()));
-                assertThat(envVars.get(1).getName(), is("RACK_TOPOLOGY_KEY"));
-                assertThat(envVars.get(1).getValue(), is("my-topology-key"));
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
+                assertThat(pod.getSpec().getInitContainers(), is(empty()));
             } else {
+                List<EnvVar> envVars = pod.getSpec().getInitContainers().stream().findAny().orElseThrow().getEnv();
                 assertThat(envVars.size(), is(3));
                 assertThat(envVars.get(0).getName(), is("NODE_NAME"));
                 assertThat(envVars.get(0).getValueFrom(), is(notNullValue()));
@@ -2287,7 +1985,7 @@ public class KafkaClusterTest {
                 assertThat(envVars.get(2).getName(), is("EXTERNAL_ADDRESS"));
                 assertThat(envVars.get(2).getValue(), is("TRUE"));
             }
-        }
+        }));
     }
 
     @ParallelTest
@@ -2317,12 +2015,15 @@ public class KafkaClusterTest {
             .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
-
-        for (KafkaPool pool : pools) {
-            ResourceRequirements initContainersResources = kc.createInitContainer(ImagePullPolicy.IFNOTPRESENT, pool).getResources();
-            assertThat(initContainersResources.getRequests(), is(requirements));
-            assertThat(initContainersResources.getLimits(), is(limits));
-        }
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
+        
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            if (!pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
+                ResourceRequirements initContainersResources = pod.getSpec().getInitContainers().stream().findAny().orElseThrow().getResources();
+                assertThat(initContainersResources.getRequests(), is(requirements));
+                assertThat(initContainersResources.getLimits(), is(limits));
+            }
+        }));
     }
 
     @ParallelTest
@@ -2371,18 +2072,17 @@ public class KafkaClusterTest {
 
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(controllers, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
 
-        for (KafkaPool pool : pools) {
-            ResourceRequirements initContainersResources = kc.createInitContainer(ImagePullPolicy.IFNOTPRESENT, pool).getResources();
-
-            if (!"controllers".equals(pool.poolName)) {
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
+                assertThat(pod.getSpec().getInitContainers(), is(empty()));
+            } else {
+                ResourceRequirements initContainersResources = pod.getSpec().getInitContainers().get(0).getResources();
                 assertThat(initContainersResources.getRequests(), is(requirements));
                 assertThat(initContainersResources.getLimits(), is(limits));
-            } else {
-                assertThat(initContainersResources.getRequests(), is(poolRequirements));
-                assertThat(initContainersResources.getLimits(), is(poolLimits));
             }
-        }
+        }));
     }
 
     @ParallelTest
@@ -2409,25 +2109,28 @@ public class KafkaClusterTest {
                 .endKafka()
             .endSpec()
             .build();
-        KafkaNodePool controllers = new KafkaNodePoolBuilder(POOL_CONTROLLERS)
+        KafkaNodePool mixed = new KafkaNodePoolBuilder(POOL_MIXED)
                 .editSpec()
                     .withResources(poolResourceReq)
                 .endSpec()
                 .build();
 
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(controllers, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, mixed, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
 
-        for (KafkaPool pool : pools) {
-            ResourceRequirements initContainersResources = kc.createInitContainer(ImagePullPolicy.IFNOTPRESENT, pool).getResources();
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
+            Container initCont = pod.getSpec().getInitContainers().stream().findAny().orElse(null);
 
-            if (!"controllers".equals(pool.poolName)) {
-                assertThat(initContainersResources, is(nullValue()));
+            if (pod.getMetadata().getName().startsWith(CLUSTER + "-controllers")) {
+                assertThat(initCont, is(nullValue()));
+            } else if (pod.getMetadata().getName().startsWith(CLUSTER + "-mixed")) {
+                assertThat(initCont.getResources().getRequests(), is(poolRequirements));
+                assertThat(initCont.getResources().getLimits(), is(poolLimits));
             } else {
-                assertThat(initContainersResources.getRequests(), is(poolRequirements));
-                assertThat(initContainersResources.getLimits(), is(poolLimits));
+                assertThat(initCont.getResources(), is(nullValue()));
             }
-        }
+        }));
     }
 
     @ParallelTest
@@ -2572,7 +2275,7 @@ public class KafkaClusterTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
 
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -2624,7 +2327,7 @@ public class KafkaClusterTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
 
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -2706,7 +2409,7 @@ public class KafkaClusterTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, brokers), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
 
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -2762,7 +2465,7 @@ public class KafkaClusterTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_CONTROLLERS, POOL_MIXED, brokers), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
 
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -2870,7 +2573,7 @@ public class KafkaClusterTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
 
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3050,7 +2753,7 @@ public class KafkaClusterTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, brokers), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
 
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3187,7 +2890,7 @@ public class KafkaClusterTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, brokers), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
 
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of());
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3229,21 +2932,22 @@ public class KafkaClusterTest {
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
 
-        for (KafkaPool pool : pools) {
+        podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
             // Volume mounts
-            Container cont = kc.createContainer(null, pool);
+            Container cont = pod.getSpec().getContainers().stream().findAny().orElseThrow();
             assertThat(cont.getVolumeMounts().stream().filter(mount -> "authz-opa-first-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-opa-certs/first-certificate"));
             assertThat(cont.getVolumeMounts().stream().filter(mount -> "authz-opa-second-certificate".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-opa-certs/second-certificate"));
 
             // Environment variable
             assertThat(cont.getEnv().stream().filter(e -> "STRIMZI_OPA_AUTHZ_TRUSTED_CERTS".equals(e.getName())).findFirst().orElseThrow().getValue(), is("first-certificate/ca.crt;second-certificate/tls.crt"));
-        }
 
-        // Volumes
-        List<Volume> volumes = kc.getNonDataVolumes(false, "foo-brokers-6", null);
-        assertThat(volumes.stream().filter(vol -> "authz-opa-first-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
-        assertThat(volumes.stream().filter(vol -> "authz-opa-second-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
+            // Volumes
+            List<Volume> volumes = pod.getSpec().getVolumes();
+            assertThat(volumes.stream().filter(vol -> "authz-opa-first-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
+            assertThat(volumes.stream().filter(vol -> "authz-opa-second-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
+        }));
 
         String brokerConfig = kc.generatePerBrokerConfiguration(1, ADVERTISED_HOSTNAMES, ADVERTISED_PORTS);
         // Due to a bug, this is set when custom values are configured even in controllers
@@ -3262,7 +2966,7 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testImagePullPolicy() {
         // Test ALWAYS policy
-        List<StrimziPodSet> podSets = KC.generatePodSets(true, ImagePullPolicy.ALWAYS, null, brokerId -> new HashMap<>());
+        List<StrimziPodSet> podSets = KC.generatePodSets(true, ImagePullPolicy.ALWAYS, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3274,7 +2978,7 @@ public class KafkaClusterTest {
         }
 
         // Test IFNOTPRESENT policy
-        podSets = KC.generatePodSets(true, ImagePullPolicy.IFNOTPRESENT, null, brokerId -> new HashMap<>());
+        podSets = KC.generatePodSets(true, ImagePullPolicy.IFNOTPRESENT, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3286,7 +2990,7 @@ public class KafkaClusterTest {
         }
 
         // Test NEVER policy
-        podSets = KC.generatePodSets(true, ImagePullPolicy.NEVER, null, brokerId -> new HashMap<>());
+        podSets = KC.generatePodSets(true, ImagePullPolicy.NEVER, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3319,7 +3023,7 @@ public class KafkaClusterTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
 
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> new HashMap<>());
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3342,7 +3046,7 @@ public class KafkaClusterTest {
         secrets.add(secret1);
         secrets.add(secret2);
 
-        List<StrimziPodSet> podSets = KC.generatePodSets(true, null, secrets, brokerId -> new HashMap<>());
+        List<StrimziPodSet> podSets = KC.generatePodSets(true, null, secrets, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3377,7 +3081,7 @@ public class KafkaClusterTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
 
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, List.of(secret1), brokerId -> new HashMap<>());
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, List.of(secret1), node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3421,7 +3125,7 @@ public class KafkaClusterTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(POOL_CONTROLLERS, POOL_MIXED, brokers), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
 
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> new HashMap<>());
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3459,7 +3163,7 @@ public class KafkaClusterTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_CONTROLLERS, POOL_MIXED, brokers), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
 
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, List.of(secret1), brokerId -> new HashMap<>());
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, List.of(secret1), node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3481,7 +3185,7 @@ public class KafkaClusterTest {
 
     @ParallelTest
     public void testDefaultImagePullSecrets() {
-        List<StrimziPodSet> podSets = KC.generatePodSets(true, null, null, brokerId -> new HashMap<>());
+        List<StrimziPodSet> podSets = KC.generatePodSets(true, null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3501,7 +3205,7 @@ public class KafkaClusterTest {
         kc.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
 
         // Test generated SPS
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> new HashMap<>());
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3519,7 +3223,7 @@ public class KafkaClusterTest {
 
     @ParallelTest
     public void testDefaultSecurityContext() {
-        List<StrimziPodSet> podSets = KC.generatePodSets(true, null, null, brokerId -> new HashMap<>());
+        List<StrimziPodSet> podSets = KC.generatePodSets(true, null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3544,7 +3248,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
 
         // Test generated SPS
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> new HashMap<>());
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of());
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -3568,7 +3272,7 @@ public class KafkaClusterTest {
     @SuppressWarnings({"checkstyle:MethodLength"})
     @ParallelTest
     public void testPodSet()   {
-        List<StrimziPodSet> podSets = KC.generatePodSets(true, null, null, brokerId -> Map.of("test-anno", "test-value"));
+        List<StrimziPodSet> podSets = KC.generatePodSets(true, null, null, node -> Map.of("test-anno", "test-value"));
         assertThat(podSets.size(), is(3));
 
         // Controllers
@@ -3942,7 +3646,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
 
         // Test generated SPS
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of("special", "annotation"));
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of("special", "annotation"));
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -4280,7 +3984,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
 
         // Test generated SPS
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of("special", "annotation"));
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of("special", "annotation"));
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {
@@ -4581,7 +4285,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
 
         // Test generated SPS
-        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, brokerId -> Map.of("special", "annotation"));
+        List<StrimziPodSet> podSets = kc.generatePodSets(true, null, null, node -> Map.of("special", "annotation"));
         assertThat(podSets.size(), is(3));
 
         for (StrimziPodSet podSet : podSets)    {

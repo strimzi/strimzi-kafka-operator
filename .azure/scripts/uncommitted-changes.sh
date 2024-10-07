@@ -4,8 +4,8 @@ set -e
 echo "Build reason: ${BUILD_REASON}"
 echo "Source branch: ${BRANCH}"
 
-CHANGED_DERIVED=$(git diff --name-status -- packaging/install/ packaging/helm-charts/ documentation/modules/appendix_crds.adoc cluster-operator/src/main/resources/cluster-roles development-docs/systemtests/)
-GENERATED_FILES=$(git ls-files --other --exclude-standard -- packaging/install/ packaging/helm-charts/ cluster-operator/src/main/resources/cluster-roles api/src/test/resources/io/strimzi/api/kafka/model development-docs/systemtests/)
+CHANGED_DERIVED=$(git diff --name-status -- packaging/install/ packaging/helm-charts/ documentation/modules/appendix_crds.adoc cluster-operator/src/main/resources/cluster-roles development-docs/systemtests/ ':!development-docs/systemtests/labels')
+GENERATED_FILES=$(git ls-files --other --exclude-standard -- packaging/install/ packaging/helm-charts/ cluster-operator/src/main/resources/cluster-roles api/src/test/resources/io/strimzi/api/kafka/model development-docs/systemtests/ ':!development-docs/systemtests/labels')
 if [ -n "$CHANGED_DERIVED" ] || [ -n "$GENERATED_FILES" ] ; then
     if [ -n "$CHANGED_DERIVED" ] ; then
         echo "ERROR: Uncommitted changes in derived resources:"

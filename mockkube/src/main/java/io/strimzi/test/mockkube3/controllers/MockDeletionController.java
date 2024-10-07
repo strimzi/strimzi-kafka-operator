@@ -23,6 +23,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -62,6 +63,7 @@ public class MockDeletionController extends AbstractMockController {
      */
     @Override
     @SuppressFBWarnings({"SIC_INNER_SHOULD_BE_STATIC_ANON"}) // Just a test util, no need to complicate the code bay factoring the anonymous watcher class out
+    @SuppressWarnings({"checkstyle:methodlength"})
     public void start(KubernetesClient client) {
         watches.add(client.services().inAnyNamespace().watch(new Watcher<>() {
             @Override
@@ -195,6 +197,27 @@ public class MockDeletionController extends AbstractMockController {
                 LOGGER.error("Mock PodDisruptionBudget deletion watch closed", e);
             }
         }));
+
+        try {
+            watches.add(Crds.kafkaRebalanceOperation(client).inAnyNamespace().watch(new Watcher<>() {
+                @Override
+                public void eventReceived(Action action, KafkaRebalance kafkaRebalance) {
+                    if (action == Action.MODIFIED) {
+                        removeFinalizersIfNeeded(Crds.kafkaRebalanceOperation(client), kafkaRebalance);
+                    }
+                }
+
+                @Override
+                public void onClose(WatcherException e) {
+                    LOGGER.error("Mock KafkaRebalance deletion watch closed", e);
+                }
+            }));
+        } catch (KubernetesClientException e)   {
+            if (404 != e.getCode()) {
+                // 404 error might happen if the KafkaRebalance CRD is missing. In that cae, we just ignore the exception. Otherwise. we rethrow it.
+                throw e;
+            }
+        }
     }
 
     private <T extends HasMetadata, R extends Resource<T>, L> void removeFinalizersIfNeeded(MixedOperation<T, L, R> op, T resource)    {

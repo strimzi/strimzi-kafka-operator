@@ -3,22 +3,26 @@
 // deploying/assembly_deploy-tasks.adoc
 
 [id='con-deploy-paths-{context}']
-= Basic deployment path 
+= Deployment path 
 
 [role="_abstract"]
-You can set up a deployment where Strimzi manages a single Kafka cluster in the same namespace.
-You might use this configuration for development or testing. 
-Or you can use Strimzi in a production environment to manage a number of Kafka clusters in different namespaces. 
+You can configure a deployment where Strimzi manages a single Kafka cluster in the same namespace, suitable for development or testing. 
+Alternatively, Strimzi can manage multiple Kafka clusters across different namespaces in a production environment.
 
-The basic deployment path is as follows:
+The basic deployment path includes the following steps:
 
-. xref:downloads-{context}[Download the release artifacts] 
-. Create a Kubernetes namespace in which to deploy the Cluster Operator
-. xref:cluster-operator-{context}[Deploy the Cluster Operator]
-.. Update the `install/cluster-operator` files to use the namespace created for the Cluster Operator 
-.. Install the Cluster Operator to watch one, multiple, or all namespaces
-. xref:kafka-cluster-{context}[Create a Kafka cluster]
+. Create a Kubernetes namespace for the Cluster Operator.
+. Deploy the Cluster Operator based on your chosen deployment method.
+. Deploy the Kafka cluster, including the Topic Operator and User Operator if desired.
+. Optionally, deploy additional components:
+** The Topic Operator and User Operator as standalone components, if not deployed with the Kafka cluster
+** Kafka Connect
+** Kafka MirrorMaker
+** Kafka Bridge
+** Metrics monitoring components
 
-After which, you can deploy other Kafka components and set up monitoring of your deployment. 
+The Cluster Operator creates Kubernetes resources such as `Deployment`, `Service`, and `Pod` for each component. 
+The resource names are appended with the name of the deployed component. 
+For example, a Kafka cluster named `my-kafka-cluster` will have a service named `my-kafka-cluster-kafka`.
 
 

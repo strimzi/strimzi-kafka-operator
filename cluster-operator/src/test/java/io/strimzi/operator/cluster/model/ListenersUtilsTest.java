@@ -32,6 +32,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ParallelSuite
 public class ListenersUtilsTest {
+    private final static NodeRef NODE_0 = new NodeRef("my-cluster-kafka-0", 0, "kafka", false, true);
+    private final static NodeRef NODE_1 = new NodeRef("my-cluster-kafka-1", 1, "kafka", false, true);
+    private final static NodeRef NODE_2 = new NodeRef("my-cluster-kafka-2", 2, "kafka", false, true);
+
     private final GenericKafkaListener oldPlain = new GenericKafkaListenerBuilder()
             .withName("plain")
             .withPort(9092)
@@ -312,6 +316,25 @@ public class ListenersUtilsTest {
             .endConfiguration()
             .build();
 
+    private final GenericKafkaListener ingressPartialTemplate = new GenericKafkaListenerBuilder()
+            .withName("ing1")
+            .withPort(9907)
+            .withType(KafkaListenerType.INGRESS)
+            .withTls(true)
+            .withNewConfiguration()
+                .withHostTemplate("my-host-template-{nodeId}")
+                .withAdvertisedHostTemplate("my-advertised-host-template-{nodeId}")
+                .withNewBootstrap()
+                    .withHost("my-host")
+                .endBootstrap()
+                .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                                .withBroker(0)
+                                .withHost("my-host-0")
+                                .withAdvertisedHost("my-advertised-host-0")
+                                .build())
+            .endConfiguration()
+            .build();
+
     List<GenericKafkaListener> simpleListeners = asList(oldPlain, oldTls, oldExternal, newNodePort, newLoadBalancer, newIngress, newClusterIP);
     List<GenericKafkaListener> internalListeners = asList(oldPlain, oldTls, newPlain, newTls);
     List<GenericKafkaListener> allListeners = asList(oldPlain, oldTls, oldExternal, newPlain, newTls, newRoute,
@@ -524,35 +547,56 @@ public class ListenersUtilsTest {
     }
 
     @ParallelTest
+    public void testHostTemplateRendering() {
+        assertThat(ListenersUtils.renderHostTemplate("my-host", NODE_1), is("my-host"));
+        assertThat(ListenersUtils.renderHostTemplate("my-host-{nodeId}", NODE_1), is("my-host-1"));
+        assertThat(ListenersUtils.renderHostTemplate("{nodePodName}", NODE_1), is("my-cluster-kafka-1"));
+        assertThat(ListenersUtils.renderHostTemplate("my-host-{nodePodName}-{nodeId}", NODE_1), is("my-host-my-cluster-kafka-1-1"));
+        assertThat(ListenersUtils.renderHostTemplate("my-{nodeId}-host-{nodeId}", NODE_1), is("my-1-host-1"));
+        assertThat(ListenersUtils.renderHostTemplate("my-{nodeId}-host-{nodeID}", NODE_1), is("my-1-host-{nodeID}"));
+        assertThat(ListenersUtils.renderHostTemplate("my-{nodeId}-host-nodeId", NODE_1), is("my-1-host-nodeId"));
+    }
+
+    @ParallelTest
     public void testBrokerHost() {
-        assertThat(ListenersUtils.brokerHost(newLoadBalancer, 1), is(nullValue()));
-        assertThat(ListenersUtils.brokerHost(oldExternal, 0), is(nullValue()));
-        assertThat(ListenersUtils.brokerHost(newRoute, 0), is("my-route-host-1"));
-        assertThat(ListenersUtils.brokerHost(newRoute, 1), is("my-route-host-2"));
-        assertThat(ListenersUtils.brokerHost(newRoute, 2), is(nullValue()));
-        assertThat(ListenersUtils.brokerHost(newIngress, 0), is("my-host-1"));
-        assertThat(ListenersUtils.brokerHost(newIngress, 1), is("my-host-2"));
-        assertThat(ListenersUtils.brokerHost(newIngress, 2), is(nullValue()));
-        assertThat(ListenersUtils.brokerHost(newClusterIP, 0), is("my-host-1"));
-        assertThat(ListenersUtils.brokerHost(newClusterIP, 1), is("my-host-2"));
-        assertThat(ListenersUtils.brokerHost(newClusterIP, 2), is(nullValue()));
-        assertThat(ListenersUtils.brokerHost(oldPlain, 1), is(nullValue()));
-        assertThat(ListenersUtils.brokerHost(newTls, 1), is(nullValue()));
-        assertThat(ListenersUtils.brokerHost(newNodePort, 1), is(nullValue()));
-        assertThat(ListenersUtils.brokerHost(newNodePort3, 1), is(nullValue()));
+        assertThat(ListenersUtils.brokerHost(newLoadBalancer, NODE_1), is(nullValue()));
+        assertThat(ListenersUtils.brokerHost(oldExternal, NODE_0), is(nullValue()));
+        assertThat(ListenersUtils.brokerHost(newRoute, NODE_0), is("my-route-host-1"));
+        assertThat(ListenersUtils.brokerHost(newRoute, NODE_1), is("my-route-host-2"));
+        assertThat(ListenersUtils.brokerHost(newRoute, NODE_2), is(nullValue()));
+        assertThat(ListenersUtils.brokerHost(newIngress, NODE_0), is("my-host-1"));
+        assertThat(ListenersUtils.brokerHost(newIngress, NODE_1), is("my-host-2"));
+        assertThat(ListenersUtils.brokerHost(newIngress, NODE_2), is(nullValue()));
+        assertThat(ListenersUtils.brokerHost(newClusterIP, NODE_0), is("my-host-1"));
+        assertThat(ListenersUtils.brokerHost(newClusterIP, NODE_1), is("my-host-2"));
+        assertThat(ListenersUtils.brokerHost(newClusterIP, NODE_2), is(nullValue()));
+        assertThat(ListenersUtils.brokerHost(oldPlain, NODE_1), is(nullValue()));
+        assertThat(ListenersUtils.brokerHost(newTls, NODE_1), is(nullValue()));
+        assertThat(ListenersUtils.brokerHost(newNodePort, NODE_1), is(nullValue()));
+        assertThat(ListenersUtils.brokerHost(newNodePort3, NODE_1), is(nullValue()));
+
+        // With template
+        assertThat(ListenersUtils.brokerHost(ingressPartialTemplate, NODE_0), is("my-host-0"));
+        assertThat(ListenersUtils.brokerHost(ingressPartialTemplate, NODE_1), is("my-host-template-1"));
+        assertThat(ListenersUtils.brokerHost(ingressPartialTemplate, NODE_2), is("my-host-template-2"));
     }
 
     @ParallelTest
     public void testBrokerAdvertisedHost() {
-        assertThat(ListenersUtils.brokerAdvertisedHost(newLoadBalancer, 1), is(nullValue()));
-        assertThat(ListenersUtils.brokerAdvertisedHost(oldExternal, 0), is(nullValue()));
-        assertThat(ListenersUtils.brokerAdvertisedHost(newLoadBalancer2, 0), is("advertised-host-1"));
-        assertThat(ListenersUtils.brokerAdvertisedHost(newLoadBalancer2, 1), is("advertised-host-2"));
-        assertThat(ListenersUtils.brokerAdvertisedHost(newLoadBalancer2, 2), is(nullValue()));
-        assertThat(ListenersUtils.brokerAdvertisedHost(oldPlain, 1), is(nullValue()));
-        assertThat(ListenersUtils.brokerAdvertisedHost(newTls, 1), is("advertised-host"));
-        assertThat(ListenersUtils.brokerAdvertisedHost(newNodePort, 1), is(nullValue()));
-        assertThat(ListenersUtils.brokerAdvertisedHost(newNodePort3, 1), is(nullValue()));
+        assertThat(ListenersUtils.brokerAdvertisedHost(newLoadBalancer, NODE_1), is(nullValue()));
+        assertThat(ListenersUtils.brokerAdvertisedHost(oldExternal, NODE_0), is(nullValue()));
+        assertThat(ListenersUtils.brokerAdvertisedHost(newLoadBalancer2, NODE_0), is("advertised-host-1"));
+        assertThat(ListenersUtils.brokerAdvertisedHost(newLoadBalancer2, NODE_1), is("advertised-host-2"));
+        assertThat(ListenersUtils.brokerAdvertisedHost(newLoadBalancer2, NODE_2), is(nullValue()));
+        assertThat(ListenersUtils.brokerAdvertisedHost(oldPlain, NODE_1), is(nullValue()));
+        assertThat(ListenersUtils.brokerAdvertisedHost(newTls, NODE_1), is("advertised-host"));
+        assertThat(ListenersUtils.brokerAdvertisedHost(newNodePort, NODE_1), is(nullValue()));
+        assertThat(ListenersUtils.brokerAdvertisedHost(newNodePort3, NODE_1), is(nullValue()));
+
+        // With template
+        assertThat(ListenersUtils.brokerAdvertisedHost(ingressPartialTemplate, NODE_0), is("my-advertised-host-0"));
+        assertThat(ListenersUtils.brokerAdvertisedHost(ingressPartialTemplate, NODE_1), is("my-advertised-host-template-1"));
+        assertThat(ListenersUtils.brokerAdvertisedHost(ingressPartialTemplate, NODE_2), is("my-advertised-host-template-2"));
     }
 
     @ParallelTest
@@ -699,11 +743,6 @@ public class ListenersUtilsTest {
                 .endConfiguration()
                 .build();
 
-        assertThat(ListenersUtils.advertisedHostnameFromOverrideOrParameter(listener, 0, "some-host.com"), is("my-host-0.cz"));
-        assertThat(ListenersUtils.advertisedHostnameFromOverrideOrParameter(listener, 0, ""), is("my-host-0.cz"));
-        assertThat(ListenersUtils.advertisedHostnameFromOverrideOrParameter(listener, 1, "some-host.com"), is("some-host.com"));
-        assertThat(ListenersUtils.advertisedHostnameFromOverrideOrParameter(listener, 1, ""), is(""));
-
         assertThat(ListenersUtils.advertisedPortFromOverrideOrParameter(listener, 0, 12345), is("10000"));
         assertThat(ListenersUtils.advertisedPortFromOverrideOrParameter(listener, 0, 12345), is("10000"));
         assertThat(ListenersUtils.advertisedPortFromOverrideOrParameter(listener, 1, 12345), is("12345"));
@@ -718,9 +757,6 @@ public class ListenersUtilsTest {
                 .withType(KafkaListenerType.NODEPORT)
                 .withTls(true)
                 .build();
-
-        assertThat(ListenersUtils.advertisedHostnameFromOverrideOrParameter(listener, 0, "some-host.com"), is("some-host.com"));
-        assertThat(ListenersUtils.advertisedHostnameFromOverrideOrParameter(listener, 0, ""), is(""));
 
         assertThat(ListenersUtils.advertisedPortFromOverrideOrParameter(listener, 0, 12345), is("12345"));
         assertThat(ListenersUtils.advertisedPortFromOverrideOrParameter(listener, 0, 12345), is("12345"));

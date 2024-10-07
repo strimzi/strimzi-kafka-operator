@@ -54,6 +54,7 @@ import java.util.Map;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaAssemblyOperatorCustomCertMockTest {
@@ -219,12 +220,24 @@ public class KafkaAssemblyOperatorCustomCertMockTest {
                     podSets.forEach(podSet -> podSet.getSpec().getPods()
                             .stream()
                             .map(PodSetUtils::mapToPod)
-                            .forEach(pod -> assertThat(pod.getMetadata().getAnnotations(), hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, ORIGINAL_THUMBPRINT))));
+                            .forEach(pod -> {
+                                if (pod.getMetadata().getName().startsWith("my-cluster-controllers")) {
+                                    assertThat(pod.getMetadata().getAnnotations().get(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS), is(nullValue()));
+                                } else {
+                                    assertThat(pod.getMetadata().getAnnotations(), hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, ORIGINAL_THUMBPRINT));
+                                }
+                            }));
 
                     // Verify the initial hash stub of the custom listener cert in the actual Pods
                     List<Pod> pods = client.pods().inNamespace(namespace).withLabels(Map.of(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME)).list().getItems();
                     assertThat(pods.size(), is(6));
-                    pods.forEach(pod -> assertThat(pod.getMetadata().getAnnotations(), hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, ORIGINAL_THUMBPRINT)));
+                    pods.forEach(pod -> {
+                        if (pod.getMetadata().getName().startsWith("my-cluster-controllers")) {
+                            assertThat(pod.getMetadata().getAnnotations().get(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS), is(nullValue()));
+                        } else {
+                            assertThat(pod.getMetadata().getAnnotations(), hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, ORIGINAL_THUMBPRINT));
+                        }
+                    });
                 })))
                 .compose(i -> {
                     // Update the custom listener certificate secret
@@ -240,12 +253,24 @@ public class KafkaAssemblyOperatorCustomCertMockTest {
                     podSets.forEach(podSet -> podSet.getSpec().getPods()
                             .stream()
                             .map(PodSetUtils::mapToPod)
-                            .forEach(pod -> assertThat(pod.getMetadata().getAnnotations(), hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, UPDATED_THUMBPRINT))));
+                            .forEach(pod -> {
+                                if (pod.getMetadata().getName().startsWith("my-cluster-controllers")) {
+                                    assertThat(pod.getMetadata().getAnnotations().get(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS), is(nullValue()));
+                                } else {
+                                    assertThat(pod.getMetadata().getAnnotations(), hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, UPDATED_THUMBPRINT));
+                                }
+                            }));
 
                     // Verify the updated hash stub of the custom listener cert in the actual Pods
                     List<Pod> pods = client.pods().inNamespace(namespace).withLabels(Map.of(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME)).list().getItems();
                     assertThat(pods.size(), is(6));
-                    pods.forEach(pod -> assertThat(pod.getMetadata().getAnnotations(), hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, UPDATED_THUMBPRINT)));
+                    pods.forEach(pod -> {
+                        if (pod.getMetadata().getName().startsWith("my-cluster-controllers")) {
+                            assertThat(pod.getMetadata().getAnnotations().get(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS), is(nullValue()));
+                        } else {
+                            assertThat(pod.getMetadata().getAnnotations(), hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, UPDATED_THUMBPRINT));
+                        }
+                    });
 
                     async.flag();
                 })));

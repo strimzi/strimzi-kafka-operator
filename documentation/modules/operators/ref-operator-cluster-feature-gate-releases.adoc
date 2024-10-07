@@ -24,7 +24,7 @@ Alpha and beta stage features are removed if they do not prove to be useful.
   It is now permanently enabled and cannot be disabled.
 * The `KafkaNodePools` feature gate moved to GA stage in Strimzi 0.41.
   It is now permanently enabled and cannot be disabled.
-  To use the Kafka Node Pool resources, you still need to use the `strimzi.io/node-pools: enabled` annotation on the `Kafka` custom resources.
+  To use `KafkaNodePool` resources, you still need to use the `strimzi.io/node-pools: enabled` annotation on the `Kafka` custom resources.
 * The `UnidirectionalTopicOperator` feature gate moved to GA stage in Strimzi 0.41.
   It is now permanently enabled and cannot be disabled.
 * The `UseKRaft` feature gate moved to GA stage in Strimzi 0.42.

@@ -740,44 +740,44 @@ public class SetupClusterOperator {
     public void applyRoleBindings(String namespace, String bindingsNamespace) {
         // 020-RoleBinding => Cluster Operator rights for managing operands
         File roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml");
-        RoleBindingResource.roleBinding(switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath(), namespace, bindingsNamespace);
+        RoleBindingResource.roleBinding(namespace, bindingsNamespace, switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath());
 
         // 022-RoleBinding => Leader election RoleBinding (is only in the operator namespace)
         roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/022-RoleBinding-strimzi-cluster-operator.yaml");
         roleFile = switchClusterRolesToRolesIfNeeded(roleFile);
-        RoleBindingResource.roleBinding(changeLeaseNameInResourceIfNeeded(roleFile.getAbsolutePath()), namespace, namespace);
+        RoleBindingResource.roleBinding(namespace, namespace, changeLeaseNameInResourceIfNeeded(roleFile.getAbsolutePath()));
 
         // 023-RoleBinding => Leader election RoleBinding (is only in the operator namespace)
         roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/023-RoleBinding-strimzi-cluster-operator.yaml");
-        RoleBindingResource.roleBinding(switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath(), namespace, bindingsNamespace);
+        RoleBindingResource.roleBinding(namespace, bindingsNamespace, switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath());
 
         // 031-RoleBinding => Entity Operator delegation
         roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml");
-        RoleBindingResource.roleBinding(switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath(), namespace, bindingsNamespace);
+        RoleBindingResource.roleBinding(namespace, bindingsNamespace, switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath());
     }
 
     public void applyRoles(String namespace) {
         File roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-ClusterRole-strimzi-cluster-operator-role.yaml");
-        RoleResource.role(switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath(), namespace);
+        RoleResource.role(namespace, switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath());
 
         roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/021-ClusterRole-strimzi-cluster-operator-role.yaml");
-        RoleResource.role(switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath(), namespace);
+        RoleResource.role(namespace, switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath());
 
         roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/022-ClusterRole-strimzi-cluster-operator-role.yaml");
         roleFile = switchClusterRolesToRolesIfNeeded(roleFile);
-        RoleResource.role(changeLeaseNameInResourceIfNeeded(roleFile.getAbsolutePath()), namespace);
+        RoleResource.role(namespace, changeLeaseNameInResourceIfNeeded(roleFile.getAbsolutePath()));
 
         roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/023-ClusterRole-strimzi-cluster-operator-role.yaml");
-        RoleResource.role(switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath(), namespace);
+        RoleResource.role(namespace, switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath());
 
         roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/030-ClusterRole-strimzi-kafka-broker.yaml");
-        RoleResource.role(switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath(), namespace);
+        RoleResource.role(namespace, switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath());
 
         roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/031-ClusterRole-strimzi-entity-operator.yaml");
-        RoleResource.role(switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath(), namespace);
+        RoleResource.role(namespace, switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath());
 
         roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/033-ClusterRole-strimzi-kafka-client.yaml");
-        RoleResource.role(switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath(), namespace);
+        RoleResource.role(namespace, switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath());
     }
 
     /**
@@ -813,11 +813,11 @@ public class SetupClusterOperator {
 
     private static void applyClusterRoleBindings(ExtensionContext extensionContext, String namespace) {
         // 021-ClusterRoleBinding
-        ClusterRoleBindingResource.clusterRoleBinding(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace);
+        ClusterRoleBindingResource.clusterRoleBinding(namespace, TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml");
         // 030-ClusterRoleBinding
-        ClusterRoleBindingResource.clusterRoleBinding(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace);
+        ClusterRoleBindingResource.clusterRoleBinding(namespace, TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml");
         // 033-ClusterRoleBinding
-        ClusterRoleBindingResource.clusterRoleBinding(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/033-ClusterRoleBinding-strimzi-cluster-operator-kafka-client-delegation.yaml", namespace);
+        ClusterRoleBindingResource.clusterRoleBinding(namespace, TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/033-ClusterRoleBinding-strimzi-cluster-operator-kafka-client-delegation.yaml");
     }
 
     public synchronized void unInstall() {

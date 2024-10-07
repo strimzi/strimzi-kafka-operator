@@ -36,7 +36,7 @@ import java.util.Collections;
 import java.util.HashMap;
 
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
-import static io.strimzi.systemtest.TestConstants.OLM_UPGRADE;
+import static io.strimzi.systemtest.TestTags.OLM_UPGRADE;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -145,7 +145,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         // ======== Kafka upgrade ends ========
 
         // Wait for messages of previously created clients
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), CO_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientsSuccess(CO_NAMESPACE, testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
     @BeforeAll

@@ -3,10 +3,10 @@
 // deploying.adoc (downstream)
 
 [id="con-strimzi-installation-methods_{context}"]
-= Strimzi installation methods
+= Deployment methods
 
 [role="_abstract"]
-You can install Strimzi on Kubernetes {KubernetesVersion} in three ways.
+You can deploy Strimzi on Kubernetes {KubernetesVersion} using one of the following methods:
 
 [cols="2*",options="header"]
 |===
@@ -14,28 +14,16 @@ You can install Strimzi on Kubernetes {KubernetesVersion} in three ways.
 |Installation method
 |Description
 
-|xref:deploy-tasks_str[Installation artifacts (YAML files)]
-a|Download the release artifacts from the {ReleaseDownload}.
-
-Download the `strimzi-_<version>_.zip` or `strimzi-_<version>_.tar.gz` archive file.
-The archive file contains installation artifacts and example configuration files.
-
-Deploy the YAML installation artifacts to your Kubernetes cluster using `kubectl`.
-You start by deploying the Cluster Operator from `install/cluster-operator` to a single namespace, multiple namespaces, or all namespaces.
-
-You can also use the `install/` artifacts to deploy the following:
-
-* Strimi administrator roles (`strimzi-admin`)
-* A standalone Topic Operator (`topic-operator`)
-* A standalone User Operator (`user-operator`)
-* Strimzi Drain Cleaner (`drain-cleaner`)
-
+|xref:deploy-tasks_str[Deployment files (YAML files)]
+a|xref:downloads-{context}[Download the deployment files] to manually deploy Strimzi components.
 
 |xref:deploying-strimzi-from-operator-hub-str[OperatorHub.io]
-|Use the *Strimzi Kafka* operator in the OperatorHub.io to deploy the Cluster Operator. You then deploy Strimzi components using custom resources.
+|Deploy the Strimzi Cluster operator through the OperatorHub.io, then deploy Strimzi components using custom resources.
 
+ifdef::Section[]
 |xref:deploying-cluster-operator-helm-chart-str[Helm chart]
-|Use a Helm chart to deploy the Cluster Operator. You then deploy Strimzi components using custom resources.
+|Use a Helm chart to deploy the Cluster Operator, then deploy Strimzi components using custom resources.
+endif::Section[]
 
 |===
 

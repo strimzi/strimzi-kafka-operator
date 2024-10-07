@@ -725,3 +725,6 @@ spec:
           - name: example-pvc-volume
             mountPath: /mnt/data
 ----
+
+You can use volumes to store files containing configuration values for a Kafka component and then load those values using a configuration provider.
+For more information, see link:{BookURLDeploying}#assembly-loading-config-with-providers-str[Loading configuration values from external sources^].

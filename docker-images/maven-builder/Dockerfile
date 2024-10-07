@@ -2,6 +2,15 @@ FROM registry.access.redhat.com/ubi9/openjdk-17:1.20
 
 LABEL org.opencontainers.image.source='https://github.com/strimzi/strimzi-kafka-operator'
 
+ARG strimzi_version
+
+LABEL name='maven-builder' \
+    vendor='Strimzi' \
+    version="${strimzi_version}" \
+    release="${strimzi_version}" \
+    summary='Maven builder image of the Strimzi Kafka Operator.' \
+    description='Builder image used to dynamically create Kafka Connect images with user-provided plugins.'
+
 USER root
 
 # Add strimzi user with UID 1001

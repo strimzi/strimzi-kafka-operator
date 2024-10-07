@@ -20,7 +20,9 @@ metrics
 │   ├── strimzi-kafka-connect.json
 │   ├── strimzi-kafka-exporter.json
 │   ├── strimzi-kafka-mirror-maker-2.json
+|   ├── strimzi-kafka-oauth.json
 │   ├── strimzi-kafka.json
+|   ├── strimzi-kraft.json
 │   ├── strimzi-operators.json
 │   └── strimzi-zookeeper.json
 ├── grafana-install
@@ -38,7 +40,9 @@ metrics
 ├── kafka-connect-metrics.yaml <10>
 ├── kafka-cruise-control-metrics.yaml <11>
 ├── kafka-metrics.yaml <12>
-└── kafka-mirror-maker-2-metrics.yaml <13>
+├── kafka-mirror-maker-2-metrics.yaml <13>
+└── oauth-metrics.yaml <14>
+
 --
 <1> Example Grafana dashboards for the different Strimzi components.
 <2> Installation file for the Grafana image.
@@ -52,7 +56,7 @@ metrics
 <10> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka Connect.
 <11> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Cruise Control.
 <12> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka and ZooKeeper.
-<13> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka MirrorMaker 2.
+<13> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for OAuth 2.0.
 
 //Example Prometheus metrics files
 include::../../modules/metrics/ref-prometheus-metrics-config.adoc[leveloffset=+1]

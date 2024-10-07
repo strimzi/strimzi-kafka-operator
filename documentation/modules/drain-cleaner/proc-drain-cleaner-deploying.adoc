@@ -16,7 +16,7 @@ For the legacy mode to work, you have to configure the `PodDisruptionBudget` to 
 
 .Prerequisites
 
-* You have xref:drain-cleaner-prereqs-str[downloaded the Strimzi Drain Cleaner deployment files].
+* The Drain Cleaner deployment files, which are included in the Strimzi xref:downloads-{context}[deployment files].
 * You have a highly available Kafka cluster deployment running with Kubernetes worker nodes that you would like to update.
 * Topics are replicated for high availability.
 +

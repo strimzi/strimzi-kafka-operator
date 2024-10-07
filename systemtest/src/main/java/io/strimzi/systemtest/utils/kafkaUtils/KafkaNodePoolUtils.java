@@ -39,8 +39,8 @@ public class KafkaNodePoolUtils {
 
     public static void setKafkaNodePoolAnnotation(String namespaceName, String resourceName,  Map<String, String> annotations) {
         LOGGER.info("Annotating KafkaNodePool: {}/{} with annotation: {}", namespaceName, resourceName, annotations);
-        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(resourceName,
-            kafkaNodePool -> kafkaNodePool.getMetadata().setAnnotations(annotations),  namespaceName);
+        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(namespaceName, resourceName,
+            kafkaNodePool -> kafkaNodePool.getMetadata().setAnnotations(annotations));
     }
 
     public static void scaleKafkaNodePool(String namespaceName, String kafkaNodePoolName, int scaleToReplicas) {
