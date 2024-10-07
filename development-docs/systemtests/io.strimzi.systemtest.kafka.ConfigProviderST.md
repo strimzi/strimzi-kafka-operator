@@ -6,7 +6,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy cluster operator across all namespaces, with custom configuration. | Cluster operator is deployed. |
+| 1. | Deploy Cluster Operator across all namespaces, with custom configuration. | Cluster Operator is deployed. |
 
 **Labels:**
 

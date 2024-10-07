@@ -84,7 +84,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
     description = @Desc("This test suite validates the functionality and behavior of Cruise Control across multiple Kafka scenarios. " +
         "It ensures correct operation under various configurations and conditions."),
     beforeTestSteps = {
-        @Step(value = "Deploy cluster operator with default installation", expected = "Cluster operator is deployed and running")
+        @Step(value = "Deploy Cluster Operator with default installation", expected = "Cluster Operator is deployed and running")
     },
     labels = {
         @Label(value = TestDocsLabels.CRUISE_CONTROL),

@@ -6,7 +6,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Install the cluster operator with default settings. | Cluster operator is installed successfully. |
+| 1. | Install the Cluster Operator with default settings. | Cluster Operator is installed successfully. |
 
 **Labels:**
 

@@ -100,7 +100,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @SuiteDoc(
     description = @Desc("This class demonstrates various tests for Kafka listeners using different authentication mechanisms."),
     beforeTestSteps = {
-        @Step(value = "Install the cluster operator with default settings.", expected = "Cluster operator is installed successfully.")
+        @Step(value = "Install the Cluster Operator with default settings.", expected = "Cluster Operator is installed successfully.")
     },
     labels = {
         @Label(value = TestDocsLabels.KAFKA)

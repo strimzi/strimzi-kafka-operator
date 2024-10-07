@@ -46,7 +46,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @SuiteDoc(
     description = @Desc("NOTE: STs in this class will not work properly on `minikube` clusters (and maybe not on other clusters that use local storage), because the calculation of currently used storage is based on the local storage, which can be shared across multiple Docker containers. To properly run this suite, you should use cluster with proper storage."),
     beforeTestSteps = {
-        @Step(value = "Deploy default cluster operator with the required configurations.", expected = "Cluster operator is deployed.")
+        @Step(value = "Deploy default Cluster Operator with the required configurations.", expected = "Cluster Operator is deployed.")
     },
     labels = {
         @Label(value = TestDocsLabels.KAFKA)

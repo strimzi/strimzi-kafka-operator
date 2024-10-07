@@ -47,7 +47,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 @SuiteDoc(
     description = @Desc("This test suite verifies Kafka Connect using ConfigMap and EnvVar configuration."),
     beforeTestSteps = {
-        @Step(value = "Deploy cluster operator across all namespaces, with custom configuration.", expected = "Cluster operator is deployed.")
+        @Step(value = "Deploy Cluster Operator across all namespaces, with custom configuration.", expected = "Cluster Operator is deployed.")
     },
     labels = {
         @Label(value = TestDocsLabels.KAFKA)

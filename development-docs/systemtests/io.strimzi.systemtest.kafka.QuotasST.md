@@ -6,7 +6,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy default cluster operator with the required configurations. | Cluster operator is deployed. |
+| 1. | Deploy default Cluster Operator with the required configurations. | Cluster Operator is deployed. |
 
 **Labels:**
 

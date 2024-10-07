@@ -6,7 +6,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Run cluster operator installation. | Cluster operator is installed. |
+| 1. | Run Cluster Operator installation. | Cluster Operator is installed. |
 | 2. | Deploy shared Kafka across all test cases. | Shared Kafka is deployed. |
 | 3. | Deploy scraper pod. | Scraper pod is deployed. |
 

@@ -6,7 +6,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy cluster operator across all namespaces, with custom configuration. | Cluster operator is deployed. |
+| 1. | Deploy Cluster Operator across all namespaces, with custom configuration. | Cluster Operator is deployed. |
 
 **Labels:**
 
@@ -71,7 +71,7 @@
 
 ## testKRaftMode
 
-**Description:** This test case verifies basic working of Kafka Cluster managed by cluster operator with KRaft.
+**Description:** This test case verifies basic working of Kafka Cluster managed by Cluster Operator with KRaft.
 
 **Steps:**
 
@@ -96,7 +96,7 @@
 | - | - | - |
 | 1. | Deploy Kafka with persistent storage and JBOD storage with 2 volumes, both of which are configured to delete their Persistent Volume Claims on Kafka cluster un-provision. | Kafka is deployed, volumes are labeled and linked to Pods correctly. |
 | 2. | Verify that labels in Persistent Volume Claims are set correctly. | Persistent Volume Claims contains expected labels and values. |
-| 3. | Modify Kafka CustomResource, specifically 'deleteClaim' property of its first Kafka Volume. | Kafka CR is successfully modified, annotation of according Persistent Volume Claim is changed afterwards by cluster operator. |
+| 3. | Modify Kafka CustomResource, specifically 'deleteClaim' property of its first Kafka Volume. | Kafka CR is successfully modified, annotation of according Persistent Volume Claim is changed afterwards by Cluster Operator. |
 | 4. | Delete Kafka cluster. | Kafka cluster and its components are deleted, including Persistent Volume Claim of Volume with 'deleteClaim' property set to true. |
 | 5. | Verify remaining Persistent Volume Claims. | Persistent Volume Claim referenced by volume of formerly deleted Kafka CustomResource with property 'deleteClaim' set to true is still present. |
 
