@@ -119,8 +119,9 @@ public class KafkaMirrorMaker2Connectors {
                         errorMessages.add("Target cluster alias " + mirror.getTargetCluster() + " is used in a mirror definition, but cluster with this alias does not exist in cluster definitions");
                     }
 
-                    if (!mirror.getTargetCluster().equals(connectCluster) && !hasMatchingBootstrapServers(kafkaMirrorMaker2, mirror, connectCluster)) {
-                        errorMessages.add("Connect cluster alias (currently set to " + connectCluster + ") has to be the same as the target cluster alias " + mirror.getTargetCluster());
+                    if (!mirror.getTargetCluster().equals(connectCluster) && !hasMatchingBootstrapServers(kafkaMirrorMaker2, connectCluster, mirror.getTargetCluster())) {
+                        errorMessages.add("Connect cluster alias (currently set to " + connectCluster + ") must match the target cluster alias " + mirror.getTargetCluster() + " or both clusters must have the same bootstrap servers.");
+
                     }
                 }
 
@@ -330,22 +331,17 @@ public class KafkaMirrorMaker2Connectors {
         }
     }
 
-    private static boolean hasMatchingBootstrapServers(KafkaMirrorMaker2 kafkaMirrorMaker2, KafkaMirrorMaker2MirrorSpec mirror, String connectCluster) {
-        Map<String, String> configs = new HashMap<>();
-
-        Optional.ofNullable(kafkaMirrorMaker2)
+    private static boolean hasMatchingBootstrapServers(KafkaMirrorMaker2 kafkaMirrorMaker2, String connectClusterAlias, String targetClusterAlias) {
+        List<String> configs = Optional.ofNullable(kafkaMirrorMaker2)
                 .map(KafkaMirrorMaker2::getSpec)
                 .map(KafkaMirrorMaker2Spec::getClusters)
                 .orElse(Collections.emptyList())
-                .forEach(clusterLists -> {
-                    if (connectCluster != null && connectCluster.equals(clusterLists.getAlias())) {
-                        configs.put("connectClusterBootstrapServer", clusterLists.getBootstrapServers());
-                    }
-                    if (mirror.getTargetCluster() != null && mirror.getTargetCluster().equals(clusterLists.getAlias())) {
-                        configs.put("targetClusterBootstrapServers", clusterLists.getBootstrapServers());
-                    }
-                });
+                .stream()
+                .filter(cluster -> connectClusterAlias.equals(cluster.getAlias()) || targetClusterAlias.equals(cluster.getAlias()))
+                .map(KafkaMirrorMaker2ClusterSpec::getBootstrapServers)
+                .toList();
 
-        return configs.get("connectClusterBootstrapServer").equals(configs.get("targetClusterBootstrapServers"));
+        return configs.size() == 2 && configs.get(0).equals(configs.get(1));
+
     }
 }

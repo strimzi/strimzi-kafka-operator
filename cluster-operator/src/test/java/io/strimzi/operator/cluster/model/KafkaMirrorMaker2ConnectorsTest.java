@@ -118,7 +118,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
         assertThat(ex.getMessage(), is("KafkaMirrorMaker2 resource validation failed: " +
                 "[Each MirrorMaker 2 mirror definition has to specify the source cluster alias, " +
                 "Target cluster alias wrong-target is used in a mirror definition, but cluster with this alias does not exist in cluster definitions, " +
-                "Connect cluster alias (currently set to target) has to be the same as the target cluster alias wrong-target]"));
+                "Connect cluster alias (currently set to target) must match the target cluster alias wrong-target or both clusters must have the same bootstrap servers.]"));
     }
 
     @Test
@@ -131,7 +131,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
                 .build();
         InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> KafkaMirrorMaker2Connectors.validateConnectors(kmm2));
         assertThat(ex.getMessage(), is("KafkaMirrorMaker2 resource validation failed: " +
-                "[Connect cluster alias (currently set to source) has to be the same as the target cluster alias target]"));
+                "[Connect cluster alias (currently set to source) must match the target cluster alias target or both clusters must have the same bootstrap servers.]"));
 
         // A case where one mirror has the correct target cluster, but the other does not
         KafkaMirrorMaker2 kmm2CorrectAndIncorrectMirror = new KafkaMirrorMaker2Builder(KMM2)
@@ -147,7 +147,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
                 .build();
         ex = assertThrows(InvalidResourceException.class, () -> KafkaMirrorMaker2Connectors.validateConnectors(kmm2CorrectAndIncorrectMirror));
         assertThat(ex.getMessage(), is("KafkaMirrorMaker2 resource validation failed: " +
-                "[Connect cluster alias (currently set to target) has to be the same as the target cluster alias third]"));
+                "[Connect cluster alias (currently set to target) must match the target cluster alias third or both clusters must have the same bootstrap servers.]"));
     }
 
 
