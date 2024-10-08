@@ -6,7 +6,20 @@
 = Introducing distributed tracing
 
 [role="_abstract"]
-include::../../modules/tracing/con-distributed-tracing-description.adoc[leveloffset=+1]
+Distributed tracing allows you to track the progress of transactions between applications in a distributed system. 
+In a microservices architecture, tracing tracks the progress of transactions between services. 
+Trace data is useful for monitoring application performance and investigating issues with target systems and end-user applications.
+
+In Strimzi, distributed tracing facilitates end-to-end tracking of messages: from source systems to Kafka, and then from Kafka to target systems and applications. 
+This complements the monitoring of metrics in Grafana dashboards and component loggers.
+
+Strimzi provides built-in support for tracing for the following Kafka components:
+
+* MirrorMaker to trace messages from a source cluster to a target cluster
+* Kafka Connect to trace messages consumed and produced by Kafka Connect
+* Kafka Bridge to trace messages between Kafka and HTTP client applications
+
+Tracing is not supported for Kafka brokers.
 
 include::../../modules/tracing/con-overview-tracing.adoc[leveloffset=+1]
 
