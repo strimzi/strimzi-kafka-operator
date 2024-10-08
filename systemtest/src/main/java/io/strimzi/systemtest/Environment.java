@@ -117,7 +117,7 @@ public class Environment {
     private static final String OLM_SOURCE_NAME_ENV = "OLM_SOURCE_NAME";
     private static final String OLM_SOURCE_NAMESPACE_ENV = "OLM_SOURCE_NAMESPACE";
     private static final String OLM_APP_BUNDLE_PREFIX_ENV = "OLM_APP_BUNDLE_PREFIX";
-    private static final String OLM_OPERATOR_VERSION_ENV = "OLM_OPERATOR_VERSION";
+    private static final String OLM_OPERATOR_CHANNEL_ENV = "OLM_OPERATOR_CHANNEL";
     /**
      * Allows network policies
      */
@@ -202,6 +202,7 @@ public class Environment {
     public static final String OLM_OPERATOR_DEPLOYMENT_NAME_DEFAULT = TestConstants.STRIMZI_DEPLOYMENT_NAME;
     public static final String OLM_SOURCE_NAME_DEFAULT = "community-operators";
     public static final String OLM_APP_BUNDLE_PREFIX_DEFAULT = "strimzi-cluster-operator";
+    public static final String OLM_OPERATOR_CHANNEL_DEFAULT = "stable";
     private static final boolean DEFAULT_TO_DENY_NETWORK_POLICIES_DEFAULT = true;
     private static final ClusterOperatorInstallType CLUSTER_OPERATOR_INSTALL_TYPE_DEFAULT = ClusterOperatorInstallType.BUNDLE;
     private static final boolean LB_FINALIZERS_DEFAULT = false;
@@ -212,7 +213,6 @@ public class Environment {
     private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "3.8.0";
     public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.9.1";
     public static final String ST_FILE_PLUGIN_URL_DEFAULT = "https://repo1.maven.org/maven2/org/apache/kafka/connect-file/" + ST_KAFKA_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_VERSION_DEFAULT + ".jar";
-    public static final String OLM_OPERATOR_VERSION_DEFAULT = "0.43.0";
 
     public static final String IP_FAMILY_DEFAULT = "ipv4";
     public static final String IP_FAMILY_VERSION_6 = "ipv6";
@@ -259,7 +259,7 @@ public class Environment {
     public static final String OLM_SOURCE_NAME = getOrDefault(OLM_SOURCE_NAME_ENV, OLM_SOURCE_NAME_DEFAULT);
     public static final String OLM_SOURCE_NAMESPACE = getOrDefault(OLM_SOURCE_NAMESPACE_ENV, OpenShift.OLM_SOURCE_NAMESPACE);
     public static final String OLM_APP_BUNDLE_PREFIX = getOrDefault(OLM_APP_BUNDLE_PREFIX_ENV, OLM_APP_BUNDLE_PREFIX_DEFAULT);
-    public static final String OLM_OPERATOR_LATEST_RELEASE_VERSION = getOrDefault(OLM_OPERATOR_VERSION_ENV, OLM_OPERATOR_VERSION_DEFAULT);
+    public static final String OLM_OPERATOR_CHANNEL = getOrDefault(OLM_OPERATOR_CHANNEL_ENV, OLM_OPERATOR_CHANNEL_DEFAULT);
     // NetworkPolicy variable
     public static final boolean DEFAULT_TO_DENY_NETWORK_POLICIES = getOrDefault(DEFAULT_TO_DENY_NETWORK_POLICIES_ENV, Boolean::parseBoolean, DEFAULT_TO_DENY_NETWORK_POLICIES_DEFAULT);
     // Cluster Operator installation type variable
