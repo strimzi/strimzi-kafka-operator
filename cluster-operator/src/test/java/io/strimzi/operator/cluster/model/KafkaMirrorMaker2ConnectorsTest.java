@@ -155,12 +155,17 @@ public class KafkaMirrorMaker2ConnectorsTest {
     public void testClusterNotSameButBootstrapUrlSame() {
         KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder(KMM2)
                 .editSpec()
-                .editCluster(1)
-                .withBootstrapServers("source:9092")
-                .endCluster()
                 .withConnectCluster("source")
+                .addToClusters(new KafkaMirrorMaker2ClusterSpecBuilder()
+                        .withAlias("third")
+                        .withBootstrapServers("source:9092")
+                        .build())
+                .editMirror(0)
+                .withTargetCluster("third")
+                .endMirror()
                 .endSpec()
                 .build();
+
         assertDoesNotThrow(() -> KafkaMirrorMaker2Connectors.validateConnectors(kmm2));
     }
 
