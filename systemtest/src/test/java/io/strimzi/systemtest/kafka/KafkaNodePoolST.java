@@ -180,9 +180,9 @@ public class KafkaNodePoolST extends AbstractST {
             @Step(value = "Create KafkaTopic with replica number requiring all the remaining Kafka Brokers to be present.", expected = "KafkaTopic created."),
             @Step(value = "Deploy clients and transmit messages and remove KafkaTopic.", expected = "Transition of messages is finished successfully."),
             @Step(value = "Remove KafkaTopic.", expected = "KafkaTopic is cleaned as expected."),
-            @Step(value = "Annotate one of KafkaNodePools to perform manual rolling update.", expected = "rolling update started."),
+            @Step(value = "Annotate one of KafkaNodePools to perform manual rolling update.", expected = "Rolling update started."),
             @Step(value = "Change role of KafkaNodePool from mixed to controller only role.", expected = "Role Change is prevented due to existing KafkaTopic replicas and ongoing rolling update."),
-            @Step(value = "Original rolling update finishes successfully.", expected = "rolling update is completed."),
+            @Step(value = "Original rolling update finishes successfully.", expected = "Rolling update is completed."),
             @Step(value = "Delete previously created KafkaTopic.", expected = "KafkaTopic is deleted and KafkaNodePool role change is initiated."),
             @Step(value = "Change role of KafkaNodePool from controller only to mixed role.", expected = "KafkaNodePool changes role to mixed role."),
             @Step(value = "Produce and consume messages on newly created KafkaTopic with replica count requiring also new brokers to be present.", expected = "Messages are produced and consumed successfully.")

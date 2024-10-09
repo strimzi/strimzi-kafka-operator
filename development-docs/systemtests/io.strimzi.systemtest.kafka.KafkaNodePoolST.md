@@ -92,9 +92,9 @@
 | 2. | Create KafkaTopic with replica number requiring all the remaining Kafka Brokers to be present. | KafkaTopic created. |
 | 3. | Deploy clients and transmit messages and remove KafkaTopic. | Transition of messages is finished successfully. |
 | 4. | Remove KafkaTopic. | KafkaTopic is cleaned as expected. |
-| 5. | Annotate one of KafkaNodePools to perform manual rolling update. | rolling update started. |
+| 5. | Annotate one of KafkaNodePools to perform manual rolling update. | Rolling update started. |
 | 6. | Change role of KafkaNodePool from mixed to controller only role. | Role Change is prevented due to existing KafkaTopic replicas and ongoing rolling update. |
-| 7. | Original rolling update finishes successfully. | rolling update is completed. |
+| 7. | Original rolling update finishes successfully. | Rolling update is completed. |
 | 8. | Delete previously created KafkaTopic. | KafkaTopic is deleted and KafkaNodePool role change is initiated. |
 | 9. | Change role of KafkaNodePool from controller only to mixed role. | KafkaNodePool changes role to mixed role. |
 | 10. | Produce and consume messages on newly created KafkaTopic with replica count requiring also new brokers to be present. | Messages are produced and consumed successfully. |

@@ -136,8 +136,7 @@ class ConnectST extends AbstractST {
             @Step(value = "Create and wait for resources.", expected = "Kafka resources, including KafkaNodePools and KafkaConnect instances, are created and become ready."),
             @Step(value = "Annotate for manual rolling update.", expected = "KafkaConnect components are annotated for a manual rolling update."),
             @Step(value = "Perform and wait for rolling update.", expected = "KafkaConnect components roll and new pods are deployed."),
-            @Step(value = "Kafka Connect pod.", expected = "Pod configurations and annotations are verified."),
-            @Step(value = "KafkaConnectors.", expected = "Various Kafka Connect resource labels and configurations are verified to ensure correct deployment.")
+            @Step(value = "Verify KafkaConnect Pod.", expected = "Pod configurations and labels are verified."),
         },
         labels = {
             @Label(value = TestDocsLabels.CONNECT)

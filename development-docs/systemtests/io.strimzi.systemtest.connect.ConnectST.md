@@ -114,8 +114,7 @@
 | 3. | Create and wait for resources. | Kafka resources, including KafkaNodePools and KafkaConnect instances, are created and become ready. |
 | 4. | Annotate for manual rolling update. | KafkaConnect components are annotated for a manual rolling update. |
 | 5. | Perform and wait for rolling update. | KafkaConnect components roll and new pods are deployed. |
-| 6. | Kafka Connect pod. | Pod configurations and annotations are verified. |
-| 7. | KafkaConnectors. | Various Kafka Connect resource labels and configurations are verified to ensure correct deployment. |
+| 6. | Verify KafkaConnect Pod. | Pod configurations and labels are verified. |
 
 **Labels:**
 

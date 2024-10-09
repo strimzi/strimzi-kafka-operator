@@ -45,7 +45,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 @Tag(REGRESSION)
 @SuiteDoc(
-    description = @Desc("This test suite verifies Kafka Connect using ConfigMap and EnvVar configuration."),
+    description = @Desc("This test suite verifies KafkaConnect using ConfigMap and EnvVar configuration."),
     beforeTestSteps = {
         @Step(value = "Deploy Cluster Operator across all namespaces, with custom configuration.", expected = "Cluster Operator is deployed.")
     },
@@ -64,9 +64,9 @@ public class ConfigProviderST extends AbstractST {
             @Step(value = "Create broker and controller KafkaNodePools.", expected = "Resources are created and are in ready state."),
             @Step(value = "Create Kafka cluster.", expected = "Kafka cluster is ready"),
             @Step(value = "Create ConfigMap for connector configuration.", expected = "ConfigMap with connector configuration is created."),
-            @Step(value = "Deploy Kafka Connect with external configuration from ConfigMap.", expected = "Kafka Connect is deployed with proper configuration."),
+            @Step(value = "Deploy Kafka Connect with external configuration from ConfigMap.", expected = "KafkaConnect is deployed with proper configuration."),
             @Step(value = "Create necessary Role and RoleBinding for connector.", expected = "Role and RoleBinding are created and applied."),
-            @Step(value = "Deploy Kafka connector.", expected = "Kafka connector is successfully deployed."),
+            @Step(value = "Deploy KafkaConnector.", expected = "KafkaConnector is successfully deployed."),
             @Step(value = "Deploy Kafka clients.", expected = "Kafka clients are deployed and ready."),
             @Step(value = "Send messages and verify they are written to sink file.", expected = "Messages are successfully written to the specified sink file.")
         },
