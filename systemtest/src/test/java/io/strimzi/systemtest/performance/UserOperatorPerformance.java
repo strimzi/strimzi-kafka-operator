@@ -4,12 +4,13 @@
  */
 package io.strimzi.systemtest.performance;
 
+import io.skodjob.testframe.LogCollector;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.UserAuthType;
-import io.strimzi.systemtest.logs.LogCollector;
+import io.strimzi.systemtest.logs.LogCollectorUtils;
 import io.strimzi.systemtest.metrics.UserOperatorMetricsComponent;
 import io.strimzi.systemtest.performance.gather.collectors.UserOperatorMetricsCollector;
 import io.strimzi.systemtest.performance.gather.schedulers.UserOperatorMetricsCollectionScheduler;
@@ -198,8 +199,8 @@ public class UserOperatorPerformance extends AbstractST {
 
                     // after a failure we will gather logs from all components under test (i.e., UO, Kafka pods) to observer behaviour
                     // what might be a bottleneck of such performance
-                    this.logCollector = new LogCollector();
-                    this.logCollector.collect();
+                    this.logCollector = LogCollectorUtils.getDefaultLogCollector();
+                    this.logCollector.collectFromNamespaces(testStorage.getNamespaceName());
 
                     break; // Break out of the loop if an error occurs
                 }
