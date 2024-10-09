@@ -52,8 +52,8 @@ import static org.hamcrest.Matchers.containsString;
 @SuiteDoc(
     description = @Desc("Test suite for HTTP Bridge CORS functionality, focusing on verifying correct handling of allowed and forbidden origins."),
     beforeTestSteps = {
-        @Step(value = "Set up Kafka Bridge and its configuration including CORS settings", expected = "Kafka Bridge is set up with the correct configuration"),
-        @Step(value = "Deploy required Kafka resources and scraper pod", expected = "Kafka resources and scraper pod are deployed and running")
+        @Step(value = "Set up Kafka Bridge and its configuration including CORS settings.", expected = "Kafka Bridge is set up with the correct configuration."),
+        @Step(value = "Deploy required Kafka resources and scraper pod.", expected = "Kafka resources and scraper pod are deployed and running.")
     },
     labels = {
         @Label(TestDocsLabels.BRIDGE)
@@ -72,12 +72,12 @@ public class HttpBridgeCorsST extends AbstractST {
     @TestDoc(
         description = @Desc("This test checks if CORS handling for allowed origin works correctly in the Kafka Bridge."),
         steps = {
-            @Step(value = "Set up the Kafka Bridge user and configuration", expected = "Kafka Bridge user and configuration are set up"),
-            @Step(value = "Construct the request URL and headers", expected = "URL and headers are constructed properly"),
-            @Step(value = "Send OPTIONS request to Kafka Bridge and capture the response", expected = "Response is captured from Bridge"),
-            @Step(value = "Validate the response contains expected status codes and headers", expected = "Response has correct status codes and headers for allowed origin"),
-            @Step(value = "Send GET request to Kafka Bridge and capture the response", expected = "Response is captured from Bridge for GET request"),
-            @Step(value = "Check if the GET request response is '404 Not Found'", expected = "Response for GET request is 404 Not Found")
+            @Step(value = "Set up the Kafka Bridge user and configuration.", expected = "Kafka Bridge user and configuration are set up."),
+            @Step(value = "Construct the request URL and headers.", expected = "URL and headers are constructed properly."),
+            @Step(value = "Send OPTIONS request to Kafka Bridge and capture the response.", expected = "Response is captured from Bridge."),
+            @Step(value = "Validate the response contains expected status codes and headers.", expected = "Response has correct status codes and headers for allowed origin."),
+            @Step(value = "Send GET request to Kafka Bridge and capture the response.", expected = "Response is captured from Bridge for GET request."),
+            @Step(value = "Check if the GET request response is '404 Not Found'.", expected = "Response for GET request is 404 Not Found.")
         },
         labels = {
             @Label(TestDocsLabels.BRIDGE)
@@ -126,13 +126,13 @@ public class HttpBridgeCorsST extends AbstractST {
     @TestDoc(
         description = @Desc("Test ensuring that CORS (Cross-Origin Resource Sharing) requests with forbidden origins are correctly rejected by the Bridge."),
         steps = {
-            @Step(value = "Create Kafka Bridge user and consumer group", expected = "Kafka Bridge user and consumer group are created successfully"),
-            @Step(value = "Set up headers with forbidden origin and pre-flight HTTP OPTIONS method", expected = "Headers and method are set correctly"),
-            @Step(value = "Send HTTP OPTIONS request to the Bridge", expected = "HTTP OPTIONS request is sent to the Bridge and a response is received"),
-            @Step(value = "Verify the response contains '403' and 'CORS Rejected - Invalid origin'", expected = "Response indicates the CORS request is rejected"),
-            @Step(value = "Remove 'Access-Control-Request-Method' from headers and set HTTP POST method", expected = "Headers are updated and HTTP method is set correctly"),
-            @Step(value = "Send HTTP POST request to the Bridge", expected = "HTTP POST request is sent to the Bridge and a response is received"),
-            @Step(value = "Verify the response contains '403' and 'CORS Rejected - Invalid origin'", expected = "Response indicates the CORS request is rejected")
+            @Step(value = "Create Kafka Bridge user and consumer group.", expected = "Kafka Bridge user and consumer group are created successfully."),
+            @Step(value = "Set up headers with forbidden origin and pre-flight HTTP OPTIONS method.", expected = "Headers and method are set correctly."),
+            @Step(value = "Send HTTP OPTIONS request to the Bridge.", expected = "HTTP OPTIONS request is sent to the Bridge and a response is received."),
+            @Step(value = "Verify the response contains '403' and 'CORS Rejected - Invalid origin'.", expected = "Response indicates the CORS request is rejected."),
+            @Step(value = "Remove 'Access-Control-Request-Method' from headers and set HTTP POST method.", expected = "Headers are updated and HTTP method is set correctly."),
+            @Step(value = "Send HTTP POST request to the Bridge.", expected = "HTTP POST request is sent to the Bridge and a response is received."),
+            @Step(value = "Verify the response contains '403' and 'CORS Rejected - Invalid origin'.", expected = "Response indicates the CORS request is rejected.")
         },
         labels = {
             @Label(TestDocsLabels.BRIDGE)

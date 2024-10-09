@@ -692,11 +692,11 @@ class LoggingChangeST extends AbstractST {
      *  1. - Deploy Kafka cluster and KafkaConnect cluster, the latter with Log level Off.
      *  2. - Deploy all additional resources, scraper Pod and network policies.
      *  3. - Verify that no logs are present in KafkaConnect Pods.
-     *  4. - Set inline log level to Debug in KafkaConnect custom resource.
+     *  4. - Set inline log level to Debug in KafkaConnect CustomResource.
      *     - log4j.properties file for given cluster has log level Debug, and pods provide logs on respective level.
-     *  5. - Change inline log level from Debug to Info in KafkaConnect custom resource.
+     *  5. - Change inline log level from Debug to Info in KafkaConnect CustomResource.
      *     - log4j.properties file for given cluster has log level Info, and pods provide logs on respective level.
-     *  6. - Create ConfigMap with necessary data for external logging and modify KafkaConnect custom resource to use external logging setting log level Off.
+     *  6. - Create ConfigMap with necessary data for external logging and modify KafkaConnect CustomResource to use external logging setting log level Off.
      *     - log4j.properties file for given cluster has log level Off, and pods provide no more logs.
      *  7. - Disable the use of connector resources via annotations and verify KafkaConnect pod rolls.
      *     - Verify that KafkaConnect deployment rolls
@@ -1578,7 +1578,7 @@ class LoggingChangeST extends AbstractST {
      * @description This test case check that changing Logging configuration from internal to external triggers Rolling Update.
      *
      * @steps
-     *  1. - Deploy Kafka Cluster, without any logging related configuration
+     *  1. - Deploy Kafka cluster, without any logging related configuration
      *     - Cluster is deployed
      *  2. - Modify Kafka by changing specification of logging to new external value
      *     - Change in logging specification triggers Rolling Update

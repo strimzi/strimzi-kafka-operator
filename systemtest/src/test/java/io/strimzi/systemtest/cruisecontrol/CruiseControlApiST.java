@@ -40,7 +40,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @SuiteDoc(
     description = @Desc("This test suite verifies that Cruise Control's basic API requests function correctly"),
     beforeTestSteps = {
-        @Step(value = "Deploy the cluster operator", expected = "Cluster operator is deployed")
+        @Step(value = "Deploy the Cluster Operator", expected = "Cluster Operator is deployed")
     },
     labels = {
         @Label(value = TestDocsLabels.CRUISE_CONTROL),

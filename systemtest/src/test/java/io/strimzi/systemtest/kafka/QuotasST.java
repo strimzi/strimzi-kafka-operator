@@ -4,6 +4,11 @@
  */
 package io.strimzi.systemtest.kafka;
 
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
@@ -11,6 +16,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -37,19 +43,33 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
-/**
- * NOTE: STs in this class will not properly work on `minikube` clusters (and maybe not on other clusters that uses local
- * storage), because the calculation of currently used storage is based
- * on the local storage, which can be shared across multiple Docker containers.
- * To properly run this suite, you should use cluster with proper storage.
- */
+@SuiteDoc(
+    description = @Desc("NOTE: STs in this class will not work properly on `minikube` clusters (and maybe not on other clusters that use local storage), because the calculation of currently used storage is based on the local storage, which can be shared across multiple Docker containers. To properly run this suite, you should use cluster with proper storage."),
+    beforeTestSteps = {
+        @Step(value = "Deploy default Cluster Operator with the required configurations.", expected = "Cluster Operator is deployed.")
+    },
+    labels = {
+        @Label(value = TestDocsLabels.KAFKA)
+    }
+)
 public class QuotasST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(QuotasST.class);
 
-    /**
-     * Test to check Kafka Quotas Plugin for disk space
-     */
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Test to check Kafka Quotas Plugin for disk space."),
+        steps = {
+            @Step(value = "Assume the cluster is not Minikube or MicroShift.", expected = "Cluster is appropriate for the test."),
+            @Step(value = "Create necessary resources for Kafka, including KafkaNodePools and persistent Kafka setup with quotas plugin. Configure producer and consumer quotas with specific byte rate limits, and define excluded principals to bypass the quotas.", expected = "Kafka and KafkaNodePools are created with quotas applied, and excluded principals are correctly configured."),
+            @Step(value = "Send messages without any user; observe quota enforcement.", expected = "Producer stops after reaching the minimum available bytes."),
+            @Step(value = "Check Kafka logs for quota enforcement message.", expected = "Kafka logs contain the expected quota enforcement message."),
+            @Step(value = "Send messages with excluded user and observe the behavior.", expected = "Messages are sent successfully without hitting the quota."),
+            @Step(value = "Clean up resources.", expected = "Resources are deleted successfully.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testKafkaQuotasPluginIntegration() {
         assumeFalse(cluster.isMinikube() || cluster.isMicroShift());
 
@@ -128,6 +148,20 @@ public class QuotasST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(REGRESSION)
+    @TestDoc(
+        description = @Desc("Test verifying bandwidth limitations with Kafka quotas plugin."),
+        steps = {
+            @Step(value = "Set excluded principal.", expected = "Principal is set."),
+            @Step(value = "Create Kafka resources including KafkaNodePools and persistent Kafka with quotas enabled. Configure producer and consumer byte rate limits and add excluded principals to bypass the quota enforcement.", expected = "Kafka resources are successfully created with proper quota configuration and excluded principals."),
+            @Step(value = "Create Kafka topic and user with SCRAM-SHA authentication.", expected = "Kafka topic and SCRAM-SHA user are created successfully."),
+            @Step(value = "Send messages with normal user.", expected = "Messages are sent and duration is measured."),
+            @Step(value = "Send messages with excluded user.", expected = "Messages are sent and duration is measured."),
+            @Step(value = "Assert that time taken for normal user is greater than for excluded user.", expected = "Assertion is successful.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testKafkaQuotasPluginWithBandwidthLimitation() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String excludedPrincipal = "User:" + testStorage.getUsername();

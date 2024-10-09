@@ -169,7 +169,7 @@ class RollingUpdateST extends AbstractST {
         // Kafka recovery
 
         // change kafka to unreasonable CPU request causing trigger of Rolling update and recover by second modification
-        // if kafka node pool is enabled change specification directly in KNP CR as changing it in kafka would have no impact in case it is already specified in KNP
+        // if kafka KafkaNodePool is enabled change specification directly in KNP CR as changing it in kafka would have no impact in case it is already specified in KNP
         if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp -> {
                 knp.getSpec()
@@ -195,7 +195,7 @@ class RollingUpdateST extends AbstractST {
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
         LOGGER.info("Recover Kafka {}/{} from pending state by modifying its resource request to realistic value", testStorage.getClusterName(), testStorage.getNamespaceName());
-        // if kafka node pool is enabled change specification directly in KNP CR as changing it in kafka would have no impact in case it is already specified in KNP
+        // if kafka KafkaNodePool is enabled change specification directly in KNP CR as changing it in kafka would have no impact in case it is already specified in KNP
         if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp -> {
                 knp.getSpec()
@@ -870,10 +870,10 @@ class RollingUpdateST extends AbstractST {
     }
 
     /**
-     * Modifies a Kafka node pool to have an unreasonable CPU request, triggering a rolling update,
+     * Modifies a Kafka KafkaNodePool to have an unreasonable CPU request, triggering a rolling update,
      * and then recovers it to a normal state. CPU request is firstly increased, causing single pod
      * to enter a pending state. Afterward wait for the pod to stabilize before reducing the CPU
-     * request back to a reasonable amount, allowing the node pool to recover.
+     * request back to a reasonable amount, allowing the KafkaNodePool to recover.
      */
     private static void modifyNodePoolToUnscheduledAndRecover(final String controllerPoolName, final LabelSelector controllerPoolSelector, final TestStorage testStorage) {
         // change knp to unreasonable CPU request causing trigger of Rolling update

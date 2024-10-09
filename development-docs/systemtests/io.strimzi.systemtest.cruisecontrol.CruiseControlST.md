@@ -6,7 +6,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy cluster operator with default installation | Cluster operator is deployed and running |
+| 1. | Deploy Cluster Operator with default installation | Cluster Operator is deployed and running |
 
 **Labels:**
 
@@ -56,7 +56,7 @@
 
 ## testCruiseControlDuringBrokerScaleUpAndDown
 
-**Description:** Testing the behavior of Cruise Control during both scaling up and down of Kafka brokers using node pools.
+**Description:** Testing the behavior of Cruise Control during both scaling up and down of Kafka brokers using KafkaNodePools.
 
 **Steps:**
 

@@ -411,18 +411,18 @@ public class TopicST extends AbstractST {
     }
 
     /**
-     * @description This test case checks that Kafka cluster will not act upon KafkaTopic Custom Resources
-     * which are not of its concern, i.e., KafkaTopic Custom Resources are not labeled accordingly.
+     * @description This test case checks that Kafka cluster will not act upon KafkaTopic CustomResources
+     * which are not of its concern, i.e., KafkaTopic CustomResources are not labeled accordingly.
      *
      * @steps
      *  1. - Deploy Kafka with short reconciliation time configured on Topic Operator
      *     - Kafka is deployed
-     *  2. - Create KafkaTopic Custom Resource without any labels provided
-     *     - KafkaTopic Custom resource is created
+     *  2. - Create KafkaTopic CustomResource without any labels provided
+     *     - KafkaTopic CustomResource is created
      *  3. - Verify that KafkaTopic specified by created KafkaTopic is not created
      *     - Given KafkaTopic is not present inside Kafka cluster
-     *  4. - Delete given KafkaTopic Custom Resource
-     *     - KafkaTopic Custom Resource is deleted
+     *  4. - Delete given KafkaTopic CustomResource
+     *     - KafkaTopic CustomResource is deleted
      *
      * @testcase
      *  - topic-operator

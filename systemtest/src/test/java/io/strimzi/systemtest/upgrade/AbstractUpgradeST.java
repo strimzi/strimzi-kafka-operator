@@ -305,7 +305,7 @@ public class AbstractUpgradeST extends AbstractST {
 
         final List<String> watchedNsRoleBindingFilePrefixes = List.of(
             "020-RoleBinding",  // rb to role for creating KNative resources
-            "023-RoleBinding",  // rb to role for watching Strimzi custom resources
+            "023-RoleBinding",  // rb to role for watching Strimzi CustomResources
             "031-RoleBinding"   // rb to role for entity operator
         );
 
@@ -339,7 +339,7 @@ public class AbstractUpgradeST extends AbstractST {
         if (root != null) {
             final List<String> watchedNsRoleBindingFilePrefixes = List.of(
                 "020-RoleBinding",  // rb to role for creating KNative resources
-                "023-RoleBinding",  // rb to role for watching Strimzi custom resources
+                "023-RoleBinding",  // rb to role for watching Strimzi CustomResources
                 "031-RoleBinding"   // rb to role for entity operator
             );
 
@@ -731,7 +731,7 @@ public class AbstractUpgradeST extends AbstractST {
             cmdKubeClient(componentsNamespaceName).deleteAllByResource(KafkaTopic.RESOURCE_KIND);
             KafkaTopicUtils.waitForTopicWithPrefixDeletion(componentsNamespaceName, topicName);
         } else {
-            LOGGER.info("Kafka Topic Custom Resource Definition does not exist, no KafkaTopic is being deleted");
+            LOGGER.info("Kafka Topic CustomResource Definition does not exist, no KafkaTopic is being deleted");
         }
     }
 

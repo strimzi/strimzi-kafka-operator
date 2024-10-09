@@ -84,7 +84,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
     description = @Desc("This test suite validates the functionality and behavior of Cruise Control across multiple Kafka scenarios. " +
         "It ensures correct operation under various configurations and conditions."),
     beforeTestSteps = {
-        @Step(value = "Deploy cluster operator with default installation", expected = "Cluster operator is deployed and running")
+        @Step(value = "Deploy Cluster Operator with default installation", expected = "Cluster Operator is deployed and running")
     },
     labels = {
         @Label(value = TestDocsLabels.CRUISE_CONTROL),
@@ -501,9 +501,9 @@ public class CruiseControlST extends AbstractST {
     }
 
     @IsolatedTest
-    @MixedRoleNotSupported("Scaling a Kafka Node Pool with mixed roles is not supported yet")
+    @MixedRoleNotSupported("Scaling a KafkaNodePool with mixed roles is not supported yet")
     @TestDoc(
-        description = @Desc("Testing the behavior of Cruise Control during both scaling up and down of Kafka brokers using node pools."),
+        description = @Desc("Testing the behavior of Cruise Control during both scaling up and down of Kafka brokers using KafkaNodePools."),
         steps = {
             @Step(value = "Create broker and controller KafkaNodePools", expected = "Both KafkaNodePools are successfully created"),
             @Step(value = "Create initial Kafka cluster setup with Cruise Control and topic", expected = "Kafka cluster, topic, and scraper pod are created successfully"),

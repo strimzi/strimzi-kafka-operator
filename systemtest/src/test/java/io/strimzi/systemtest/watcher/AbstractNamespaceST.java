@@ -65,7 +65,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
     // namespace for all resources in this test except for KafkaTopics and KafkaUsers watched by Primary Kafka Cluser.
     static final String MAIN_TEST_NAMESPACE = "main-test-namespace";
 
-    // namespace watched by Primary Kafka Cluster's TO and UO for any KafkaTopic and KafkaUser CRs.
+    // namespace watched by Primary Kafka cluster's TO and UO for any KafkaTopic and KafkaUser CRs.
     static final String PRIMARY_KAFKA_WATCHED_NAMESPACE = "primary-kafka-watched-namespace";
 
     // name of kafka cluster which is to be created before any of these tests
@@ -99,7 +99,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
      * from one where Cluster Operator resides correctly.
      *
      * @steps
-     *  1. - KafkaBridge custom resource is deployed in namespace watched by Cluster Operator.
+     *  1. - KafkaBridge CustomResource is deployed in namespace watched by Cluster Operator.
      *     - KafkaBridge is transitioned into ready state.
      *
      * @usecase
@@ -120,13 +120,13 @@ public abstract class AbstractNamespaceST extends AbstractST {
 
     /**
      * @description This test case verifies that Topic Operator configured to watch other namespace than the one it is deployed in still watches and acts upon
-     * custom resources correctly.
+     * CustomResources correctly.
      *
      * @steps
-     *  1. - As part of setup Kafka Cluster is deployed in main namespace, with Topic Operator configured to watch other namespace.
+     *  1. - As part of setup Kafka cluster is deployed in main namespace, with Topic Operator configured to watch other namespace.
      *     - Kafka and its components are deployed and ready.
-     *  2. - KafkaTopic custom resource is created in namespace watched by Topic Operator.
-     *     - Topic Operator acts upon KafkaTopic custom resource located in watched namespace and creates corresponding KafkaTopic in given Kafka Cluster.
+     *  2. - KafkaTopic CustomResource is created in namespace watched by Topic Operator.
+     *     - Topic Operator acts upon KafkaTopic CustomResource located in watched namespace and creates corresponding KafkaTopic in given Kafka cluster.
      *
      * @usecase
      *  - namespaces
@@ -149,16 +149,16 @@ public abstract class AbstractNamespaceST extends AbstractST {
     }
 
     /**
-     * @description This test case verifies that KafkaUser custom resource managed by is act upon by User Operator from correctly, despite being watched
+     * @description This test case verifies that KafkaUser CustomResource managed by is act upon by User Operator from correctly, despite being watched
      * from different namespace.
      *
      * @steps
-     *  1. - As part of setup Kafka Cluster is deployed in main namespace, with the User Operator configured to watch other namespace.
+     *  1. - As part of setup Kafka cluster is deployed in main namespace, with the User Operator configured to watch other namespace.
      *     - Kafka and its components are deployed and ready.
-     *  2. - KafkaUser custom resource is created in namespace watched by Topic Operator.
-     *     - Topic Operator acts upon KafkaUser custom resource which is transitioned into ready state while also creating all other resources (e.g., Secret).
-     *  3. - Credentials generated due to this KafkaUser custom resources are used in order to allow clients to communicate with Kafka Cluster.
-     *     - Clients are able to successfully communicate with the Kafka Cluster.
+     *  2. - KafkaUser CustomResource is created in namespace watched by Topic Operator.
+     *     - Topic Operator acts upon KafkaUser CustomResource which is transitioned into ready state while also creating all other resources (e.g., Secret).
+     *  3. - Credentials generated due to this KafkaUser CustomResources are used in order to allow clients to communicate with Kafka cluster.
+     *     - Clients are able to successfully communicate with the Kafka cluster.
      *
      * @usecase
      *  - namespaces
@@ -198,15 +198,15 @@ public abstract class AbstractNamespaceST extends AbstractST {
     }
 
     /**
-     * @description This test case verifies that KafkaMirrorMaker2 custom resource can be created correctly in different namespace than the one containing Cluster Operator.
+     * @description This test case verifies that KafkaMirrorMaker2 CustomResource can be created correctly in different namespace than the one containing Cluster Operator.
      *
      * @steps
-     *  1. - As part of setup source Kafka Cluster is deployed in main namespace,
+     *  1. - As part of setup source Kafka cluster is deployed in main namespace,
      *     - Kafka and its components are deployed and ready.
-     *  2. - Second Kafka Cluster is deployed in the same namespace as the first one.
-     *     - Second Kafka Cluster is deployed and in ready state.
-     *  3. - MirrorMaker2 Custom Resource is deployed in same main namespace, pointing as source and target Kafka Cluster 2 Kafka Clusters mentioned in previous step.
-     *     - KafkaMirrorMaker2 custom resource is in ready state.
+     *  2. - Second Kafka cluster is deployed in the same namespace as the first one.
+     *     - Second Kafka cluster is deployed and in ready state.
+     *  3. - MirrorMaker2 CustomResource is deployed in same main namespace, pointing as source and target Kafka cluster 2 Kafka Clusters mentioned in previous step.
+     *     - KafkaMirrorMaker2 CustomResource is in ready state.
      *
      * @usecase
      *  - namespaces
@@ -235,10 +235,10 @@ public abstract class AbstractNamespaceST extends AbstractST {
 
 
     /**
-     * @description This test case verifies that KafkaConnect and KafkaConnector custom resource can be created correctly in different namespace than the one containing Cluster Operator.
+     * @description This test case verifies that KafkaConnect and KafkaConnector CustomResource can be created correctly in different namespace than the one containing Cluster Operator.
      *
      * @steps
-     *  1. - As part of setup source Kafka Cluster is deployed in main namespace,
+     *  1. - As part of setup source Kafka cluster is deployed in main namespace,
      *     - Kafka and its components are deployed and ready.
      *  2. - KafkaConnect is deployed in another namespace than Cluster Operator.
      *     - KafkaConnect cluster is successfully deployed.
@@ -315,7 +315,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
     }
 
     /**
-     * Helper method which deploys Kafka Cluster and Scraper Pod in primary namespace. It is supposed to be called once there is a running Cluster Operator.
+     * Helper method which deploys Kafka cluster and Scraper Pod in primary namespace. It is supposed to be called once there is a running Cluster Operator.
      *
      */
     final protected void deployAdditionalGenericResourcesForAbstractNamespaceST() {

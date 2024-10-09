@@ -158,14 +158,14 @@ class ConnectBuilderST extends AbstractST {
     @TestDoc(
         description = @Desc("Test that ensures Kafka Connect build fails with wrong artifact checksum and recovers with correct checksum."),
         steps = {
-            @Step(value = "Initialize TestStorage and get test image name", expected = "TestStorage instance is created and the image name for the test case is retrieved"),
-            @Step(value = "Create a Plugin with wrong checksum and build Kafka Connect resource with it", expected = "Kafka Connect resource is created but the build fails due to wrong checksum"),
-            @Step(value = "Deploy Scraper pod with specific configurations", expected = "Kafka Scraper pod are successfully deployed"),
-            @Step(value = "Wait for Kafka Connect status to indicate build failure", expected = "Kafka Connect status contains message about build failure"),
-            @Step(value = "Deploy network policies for Kafka Connect", expected = "Network policies are successfully deployed for Kafka Connect"),
-            @Step(value = "Replace the plugin checksum with the correct one and update Kafka Connect resource", expected = "Kafka Connect resource is updated with the correct checksum"),
-            @Step(value = "Wait for Kafka Connect to be ready", expected = "Kafka Connect becomes ready"),
-            @Step(value = "Verify that EchoSink KafkaConnector is available in Kafka Connect API", expected = "EchoSink KafkaConnector is returned by Kafka Connect API"),
+            @Step(value = "Initialize TestStorage and get test image name.", expected = "TestStorage instance is created and the image name for the test case is retrieved."),
+            @Step(value = "Create a Plugin with wrong checksum and build Kafka Connect resource with it.", expected = "Kafka Connect resource is created but the build fails due to wrong checksum."),
+            @Step(value = "Deploy Scraper pod with specific configurations.", expected = "Kafka Scraper pod are successfully deployed."),
+            @Step(value = "Wait for Kafka Connect status to indicate build failure.", expected = "Kafka Connect status contains message about build failure."),
+            @Step(value = "Deploy network policies for Kafka Connect.", expected = "Network policies are successfully deployed for Kafka Connect."),
+            @Step(value = "Replace the plugin checksum with the correct one and update Kafka Connect resource.", expected = "Kafka Connect resource is updated with the correct checksum."),
+            @Step(value = "Wait for Kafka Connect to be ready.", expected = "Kafka Connect becomes ready."),
+            @Step(value = "Verify that EchoSink KafkaConnector is available in Kafka Connect API.", expected = "EchoSink KafkaConnector is returned by Kafka Connect API."),
             @Step(value = "Verify that EchoSink KafkaConnector is listed in Kafka Connect resource status", expected = "EchoSink KafkaConnector is listed in the status of Kafka Connect resource")
         },
         labels = {

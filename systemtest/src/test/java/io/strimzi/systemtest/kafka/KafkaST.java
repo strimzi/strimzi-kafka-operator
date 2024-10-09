@@ -18,6 +18,11 @@ import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.JvmOptionsBuilder;
@@ -49,6 +54,7 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.KindNotSupported;
 import io.strimzi.systemtest.annotations.MultiNodeClusterOnly;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -106,30 +112,32 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
+@SuiteDoc(
+    description = @Desc("Test suite containing Kafka related stuff (i.e., JVM resources, EO, TO or UO removal from Kafka cluster), which ensures proper functioning of Kafka clusters."),
+    beforeTestSteps = {
+        @Step(value = "Deploy Cluster Operator across all namespaces, with custom configuration.", expected = "Cluster Operator is deployed.")
+    },
+    labels = {
+        @Label(value = TestDocsLabels.KAFKA)
+    }
+)
 class KafkaST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(KafkaST.class);
     private static final String OPENSHIFT_CLUSTER_NAME = "openshift-my-cluster";
 
-    /**
-     * @description This test case verifies that Pod's resources (limits and requests), custom JVM configurations, and expected Java configuration
-     * are propagated correctly to Pods, containers, and processes.
-     *
-     * @steps
-     *  1. - Deploy Kafka and its components with custom specifications, including specifying resources and JVM configuration
-     *     - Kafka and its components (ZooKeeper, Entity Operator) are deployed
-     *  2. - For each of components (Kafka, ZooKeeper, Topic Operator, User Operator), verify specified configuration of JVM, resources, and also environment variables.
-     *     - Each of the components has requests and limits assigned correctly, JVM, and environment variables configured according to the specification.
-     *  3. - Wait for a time to observe that none of initiated components needed Rolling Update.
-     *     - All of Kafka components remained in stable state.
-     *
-     * @usecase
-     *  - JVM
-     *  - configuration
-     *  - resources
-     *  - environment variables
-     */
     @ParallelNamespaceTest
     @SuppressWarnings({"checkstyle:MethodLength"})
+    @TestDoc(
+        description = @Desc("This test case verifies that Pod's resources (limits and requests), custom JVM configurations, and expected Java configuration are propagated correctly to Pods, containers, and processes."),
+        steps = {
+            @Step(value = "Deploy Kafka and its components with custom specifications, including specifying resources and JVM configuration.", expected = "Kafka and its components (ZooKeeper, Entity Operator) are deployed."),
+            @Step(value = "For each component (Kafka, ZooKeeper, Topic Operator, User Operator), verify specified configuration of JVM, resources, and also environment variables.", expected = "Each of the components has requests and limits assigned correctly, JVM, and environment variables configured according to the specification."),
+            @Step(value = "Wait for a time to observe that no initiated components need rolling update.", expected = "All Kafka components remain in stable state.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testJvmAndResources() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -300,29 +308,20 @@ class KafkaST extends AbstractST {
         DeploymentUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), eoDepName, eoPods);
     }
 
-    /**
-     * @description This test case verifies the correct deployment of Entity Operator, i.e., including both User Operator and Topic Operator.
-     * Entity Operator is firstly modified to exclude User Operator, afterwards it is modified to default configuration, which includes User Operator.
-     * The next step is removal of Topic Operator itself and finally, also removing User Operator, with Topic Operator being already removed.
-     *
-     * @steps
-     *  1. - Deploy Kafka with Entity Operator set.
-     *     - Kafka is deployed, and Entity Operator consist of both Topic and User Operators
-     *  2. - Remove User Operator from the Kafka specification
-     *     - User Operator container is deleted
-     *  3. - Set User Operator back in the Kafka specification
-     *     - User Operator container is recreated
-     *  4. - Remove Topic Operator from the Kafka specification
-     *     - Topic Operator container is removed Entity Operator
-     *  5. - Remove User Operator from the Kafka specification
-     *     - Entity Operator Pod is removed, as there are no other containers present.
-     *
-     * @usecase
-     *  - Entity Operator
-     *  - Topic Operator
-     *  - User Operator
-     */
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("This test case verifies the correct deployment of the Entity Operator, including both the User Operator and Topic Operator. First, the Entity Operator is modified to exclude the User Operator. Then, it's restored to its default configuration, which includes the User Operator. Next, the Topic Operator is removed, followed by the User Operator, with the Topic Operator already excluded"),
+        steps = {
+            @Step(value = "Deploy Kafka with Entity Operator set.", expected = "Kafka is deployed, and Entity Operator consists of both Topic Operator and User Operator."),
+            @Step(value = "Remove User Operator from the Kafka specification.", expected = "User Operator container is deleted."),
+            @Step(value = "Set User Operator back in the Kafka specification.", expected = "User Operator container is recreated."),
+            @Step(value = "Remove Topic Operator from the Kafka specification.", expected = "Topic Operator container is removed from Entity Operator."),
+            @Step(value = "Remove User Operator from the Kafka specification.", expected = "Entity Operator Pod is removed, as there are no other containers present.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testRemoveComponentsFromEntityOperator() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -394,28 +393,20 @@ class KafkaST extends AbstractST {
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName()), 0);
     }
 
-    /**
-     * @description This test case verifies that Kafka with persistent storage, and JBOD storage, property 'delete claim' of JBOD storage.
-     *
-     * @steps
-     *  1. - Deploy Kafka with persistent storage and JBOD storage with 2 volumes, both of these are configured to delete their Persistent Volume Claims on Kafka cluster un-provision.
-     *     - Kafka is deployed, volumes are labeled and linked to Pods correctly.
-     *  2. - Verify that labels in Persistent Volume Claims are set correctly.
-     *     - Persistent Volume Claims do contain expected labels and values.
-     *  2. - Modify Kafka Custom Resource, specifically 'delete claim' property of its first Kafka Volume.
-     *     - Kafka CR is successfully modified, annotation of according Persistent Volume Claim is changed afterwards by Cluster Operator.
-     *  3. - Delete Kafka cluster.
-     *     - Kafka cluster and its components are deleted, including Persistent Volume Claim of Volume with 'delete claim' property set to true.
-     *  4. - Verify remaining Persistent Volume Claims.
-     *     - Persistent Volume Claim referenced by volume of formerly deleted Kafka Custom Resource with property 'delete claim' set to true is still present.
-     *
-     * @usecase
-     *  - JBOD
-     *  - PVC
-     *  - volume
-     *  - annotations
-     */
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("This test case verifies Kafka running with persistent JBOD storage, and configured with the `deleteClaim`  storage property."),
+        steps = {
+            @Step(value = "Deploy Kafka with persistent storage and JBOD storage with 2 volumes, both of which are configured to delete their Persistent Volume Claims on Kafka cluster un-provision.", expected = "Kafka is deployed, volumes are labeled and linked to Pods correctly."),
+            @Step(value = "Verify that labels in Persistent Volume Claims are set correctly.", expected = "Persistent Volume Claims contains expected labels and values."),
+            @Step(value = "Modify Kafka CustomResource, specifically 'deleteClaim' property of its first Kafka Volume.", expected = "Kafka CR is successfully modified, annotation of according Persistent Volume Claim is changed afterwards by Cluster Operator."),
+            @Step(value = "Delete Kafka cluster.", expected = "Kafka cluster and its components are deleted, including Persistent Volume Claim of Volume with 'deleteClaim' property set to true."),
+            @Step(value = "Verify remaining Persistent Volume Claims.", expected = "Persistent Volume Claim referenced by volume of formerly deleted Kafka CustomResource with property 'deleteClaim' set to true is still present.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testKafkaJBODDeleteClaimsTrueFalse() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int kafkaReplicas = 2;
@@ -494,6 +485,18 @@ class KafkaST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(LOADBALANCER_SUPPORTED)
+    @TestDoc(
+        description = @Desc("Test regenerates certificates after changing Kafka's external address."),
+        steps = {
+            @Step(value = "Create Kafka without external listener.", expected = "Kafka instance is created without an external listener."),
+            @Step(value = "Edit Kafka to include an external listener.", expected = "External listener is correctly added to the Kafka instance."),
+            @Step(value = "Wait until the Kafka component has rolled.", expected = "Kafka component rolls successfully with the new external listener."),
+            @Step(value = "Compare Kafka broker secrets before and after adding external listener.", expected = "Secrets are different before and after adding the external listener.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testRegenerateCertExternalAddressChange() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -544,44 +547,35 @@ class KafkaST extends AbstractST {
         });
     }
 
-    /**
-     * @description This test case verifies the presence of expected Strimzi specific labels, also labels and annotations specified by user.
-     * Some of user-specified labels are later modified (new one is added, one is modified) which triggers rolling update after which
-     * all changes took place as expected.
-     *
-     * @steps
-     *  1. - Deploy Kafka with persistent storage and specify custom labels in CR metadata, and also other labels and annotation in PVC metadata
-     *     - Kafka is deployed with its default labels and all others specified by user.
-     *  2. - Deploy Producer and Consumer configured to produce and consume default number of messages, to make sure Kafka works as expected
-     *     - Producer and Consumer are able to produce and consume messages respectively.
-     *  3. - Modify configuration of Kafka CR with addition of new labels and modification of existing
-     *     - Kafka is rolling and new labels are present in Kafka CR, and managed resources
-     *  4. - Deploy Producer and Consumer configured to produce and consume default number of messages, to make sure Kafka works as expected
-     *     - Producer and Consumer are able to produce and consume messages respectively.
-     *
-     * @usecase
-     *  - annotations
-     *  - labels
-     *  - kafka-rolling-update
-     *  - persistent-storage
-     */
     @ParallelNamespaceTest
     @SuppressWarnings({"checkstyle:JavaNCSS", "checkstyle:NPathComplexity", "checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
+    @TestDoc(
+        description = @Desc("This test case verifies the presence of expected Strimzi specific labels, also labels and annotations specified by user. Some user-specified labels are later modified (new one is added, one is modified) which triggers rolling update after which all changes took place as expected."),
+        steps = {
+            @Step(value = "Deploy Kafka with persistent storage and specify custom labels in CR metadata, and also other labels and annotation in PVC metadata.", expected = "Kafka is deployed with its default labels and all others specified by user."),
+            @Step(value = "Deploy Producer and Consumer configured to produce and consume default number of messages, to make sure Kafka works as expected.", expected = "Producer and Consumer are able to produce and consume messages respectively."),
+            @Step(value = "Modify configuration of Kafka CR with addition of new labels and modification of existing.", expected = "Kafka is rolling and new labels are present in Kafka CR, and managed resources."),
+            @Step(value = "Deploy Producer and Consumer configured to produce and consume default number of messages, to make sure Kafka works as expected.", expected = "Producer and Consumer are able to produce and consume messages respectively.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testLabelsExistenceAndManipulation() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // label key and values to be used as part of kafka CR
         final String firstKafkaLabelKey = "first-kafka-label-key";
-        final String firstKafkaLabelValue = "first-kafka-label-value";
+        final String firstKafkaLabelValue = "first-kafka-label-value.";
         final String secondKafkaLabelKey = "second-kafka-label-key";
-        final String secondKafkaLabelValue = "second-kafka-label-value";
+        final String secondKafkaLabelValue = "second-kafka-label-value.";
         final Map<String, String> customSpecifiedLabels = new HashMap<>();
         customSpecifiedLabels.put(firstKafkaLabelKey, firstKafkaLabelValue);
         customSpecifiedLabels.put(secondKafkaLabelKey, secondKafkaLabelValue);
 
         // label key and value used in addition for while creating kafka CR (as part of PVCs label and annotation)
         final String pvcLabelOrAnnotationKey = "pvc-label-annotation-key";
-        final String pvcLabelOrAnnotationValue = "pvc-label-annotation-value";
+        final String pvcLabelOrAnnotationValue = "pvc-label-annotation-value.";
         final Map<String, String> customSpecifiedLabelOrAnnotationPvc = new HashMap<>();
         customSpecifiedLabelOrAnnotationPvc.put(pvcLabelOrAnnotationKey, pvcLabelOrAnnotationValue);
 
@@ -767,7 +761,7 @@ class KafkaST extends AbstractST {
         // key-value pairs modification and addition of user specified labels for kafka CR metadata
         final String firstKafkaLabelValueModified = "first-kafka-label-value-modified";
         final String thirdKafkaLabelKey = "third-kafka-label-key";
-        final String thirdKafkaLabelValue = "third-kafka-label-value";
+        final String thirdKafkaLabelValue = "third-kafka-label-value.";
         customSpecifiedLabels.replace(firstKafkaLabelKey, firstKafkaLabelValueModified);
         customSpecifiedLabels.put(thirdKafkaLabelKey, thirdKafkaLabelValue);
         LOGGER.info("New values of labels which are to modify Kafka CR after their replacement and addition of new one are following {}", customSpecifiedLabels);
@@ -875,27 +869,20 @@ class KafkaST extends AbstractST {
         ClientUtils.waitForInstantClientSuccess(testStorage);
     }
 
-    /**
-     * @description This test case verifies correct storage of messages on disk, and their presence even after rolling update of all Kafka Pods. Test case
-     * also checks if offset topic related files are present.
-     *
-     * @steps
-     *  1. - Deploy persistent Kafka with corresponding configuration of offsets topic.
-     *     - Kafka is created with expected configuration.
-     *  2. - Create KafkaTopic with corresponding configuration
-     *     - KafkaTopic is created with expected configuration.
-     *  3. - Execute command to check presence of offsets topic related files.
-     *     - Files related to Offset topic are present.
-     *  4. - Produce default number of messages to already created topic.
-     *     - Produced messages are present.
-     *  5. - Perform rolling update on all Kafka Pods, in this case single broker.
-     *     - After rolling update is completed all messages are again present, as they were successfully stored on disk.
-     *
-     * @usecase
-     *  - data-storage
-     *  - kafka-configuration
-     */
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("This test case verifies correct storage of messages on disk, and their presence even after rolling update of all Kafka Pods. Test case also checks if offset topic related files are present."),
+        steps = {
+            @Step(value = "Deploy persistent Kafka with corresponding configuration of offsets topic.", expected = "Kafka is created with expected configuration."),
+            @Step(value = "Create KafkaTopic with corresponding configuration.", expected = "KafkaTopic is created with expected configuration."),
+            @Step(value = "Execute command to check presence of offsets topic related files.", expected = "Files related to Offset topic are present."),
+            @Step(value = "Produce default number of messages to already created topic.", expected = "Produced messages are present."),
+            @Step(value = "Perform rolling update on all Kafka Pods, in this case single broker.", expected = "After rolling update is completed all messages are again present, as they were successfully stored on disk.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testMessagesAndConsumerOffsetFilesOnDisk() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -925,17 +912,17 @@ class KafkaST extends AbstractST {
 
         TestUtils.waitFor("KafkaTopic creation inside Kafka Pod", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient(testStorage.getNamespaceName()).execInPod(brokerPodName, "/bin/bash",
-                        "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1").out().contains(testStorage.getTopicName()));
+                "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1").out().contains(testStorage.getTopicName()));
 
         String topicDirNameInPod = cmdKubeClient(testStorage.getNamespaceName()).execInPod(brokerPodName, "/bin/bash",
-                "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1 | sed -n '/" + testStorage.getTopicName() + "/p'").out();
+            "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1 | sed -n '/" + testStorage.getTopicName() + "/p'").out();
 
         String commandToGetDataFromTopic =
-                "cd /var/lib/kafka/data/kafka-log0/" + topicDirNameInPod + "/;cat 00000000000000000000.log";
+            "cd /var/lib/kafka/data/kafka-log0/" + topicDirNameInPod + "/;cat 00000000000000000000.log";
 
         LOGGER.info("Executing command: {} in {}", commandToGetDataFromTopic, brokerPodName);
         String topicData = cmdKubeClient(testStorage.getNamespaceName()).execInPod(brokerPodName,
-                "/bin/bash", "-c", commandToGetDataFromTopic).out();
+            "/bin/bash", "-c", commandToGetDataFromTopic).out();
 
         LOGGER.info("Topic: {} is present in Kafka Broker: {} with no data", testStorage.getTopicName(), brokerPodName);
         assertThat("Topic contains data", topicData, emptyOrNullString());
@@ -974,23 +961,19 @@ class KafkaST extends AbstractST {
         assertThat("Topic has no data", topicData, notNullValue());
     }
 
-    /**
-     * @description This test case verifies that Kafka (with all its components, including Zookeeper, Entity Operator, KafkaExporter, CruiseControl) configured with
-     * 'withReadOnlyRootFilesystem' can be deployed and also works correctly.
-     *
-     * @steps
-     *  1. - Deploy persistent Kafka with 3 Kafka and Zookeeper replicas, Entity Operator, CruiseControl, and KafkaExporter. Each component has configuration 'withReadOnlyRootFilesystem' set to true.
-     *     - Kafka and its components are deployed.
-     *  2. - Create Kafka producer and consumer.
-     *     - Kafka clients are successfully created.
-     *  3. - Produce and consume messages using created clients.
-     *     - Messages are successfully send and received.
-     *
-     * @usecase
-     *  - root-file-system
-     */
     @ParallelNamespaceTest
     @Tag(CRUISE_CONTROL)
+    @TestDoc(
+        description = @Desc("This test case verifies that Kafka (with all its components, including Zookeeper, Entity Operator, KafkaExporter, CruiseControl) configured with 'withReadOnlyRootFilesystem' can be deployed and also works correctly."),
+        steps = {
+            @Step(value = "Deploy persistent Kafka with 3 Kafka and Zookeeper replicas, Entity Operator, CruiseControl, and KafkaExporter. Each component has configuration 'withReadOnlyRootFilesystem' set to true.", expected = "Kafka and its components are deployed."),
+            @Step(value = "Create Kafka producer and consumer.", expected = "Kafka clients are successfully created."),
+            @Step(value = "Produce and consume messages using created clients.", expected = "Messages are successfully sent and received.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testReadOnlyRootFileSystem() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -1073,6 +1056,20 @@ class KafkaST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Test to ensure that deploying Kafka with an unsupported version results in the expected error."),
+        steps = {
+            @Step(value = "Initialize test storage with current context.", expected = "Test storage is initialized."),
+            @Step(value = "Create KafkaNodePools", expected = "KafkaNodePools are created and ready"),
+            @Step(value = "Deploy Kafka with a non-existing version", expected = "Kafka deployment with non-supported version begins"),
+            @Step(value = "Log Kafka deployment process", expected = "Log entry for Kafka deployment is created"),
+            @Step(value = "Wait for Kafka to not be ready", expected = "Kafka is not ready as expected"),
+            @Step(value = "Verify Kafka status message for unsupported version", expected = "Error message for unsupported version is found in Kafka status")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testDeployUnsupportedKafka() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         String nonExistingVersion = "6.6.6";
@@ -1099,30 +1096,22 @@ class KafkaST extends AbstractST {
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getNamespaceName(), testStorage.getClusterName(), nonExistingVersionMessage);
     }
 
-    /**
-     * @description This test verifies the functionality of resizing JBOD storage volumes on a Kafka cluster.
-     * It checks that the system can handle volume size changes and performs a rolling update to apply these changes.
-     *
-     * @steps
-     *  1. - Deploy a Kafka cluster with JBOD storage and initial volume sizes.
-     *     - Kafka cluster is operational.
-     *  2. - Produce and consume messages continuously to simulate cluster activity.
-     *     - Message traffic is consistent.
-     *  3. - Increase the size of one of the JBOD volumes.
-     *     - Volume size change is applied.
-     *  4. - Verify that the updated volume size is reflected.
-     *     - PVC reflects the new size.
-     *  5. - Ensure continuous message production and consumption are unaffected during the update process.
-     *     - Message flow continues without interruption.
-     *
-     * @usecase
-     *  - jbod
-     *  - volume-resize
-     *  - persistent-volume-claims
-     */
     @KindNotSupported       // Storage Class standard does not support resizing of volumes
     @MultiNodeClusterOnly   // in multi-node we use different Storage Class, which support re-sizing of volumes
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("This test verifies the functionality of resizing JBOD storage volumes on a Kafka cluster. It checks that the system can handle volume size changes and performs a rolling update to apply these changes."),
+        steps = {
+            @Step(value = "Deploy a Kafka cluster with JBOD storage and initial volume sizes.", expected = "Kafka cluster is operational."),
+            @Step(value = "Produce and consume messages continuously to simulate cluster activity.", expected = "Message traffic is consistent."),
+            @Step(value = "Increase the size of one of the JBOD volumes.", expected = "Volume size change is applied."),
+            @Step(value = "Verify that the updated volume size is reflected.", expected = "PVC reflects the new size."),
+            @Step(value = "Ensure continuous message production and consumption are unaffected during the update process.", expected = "Message flow continues without interruption.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testResizeJbodVolumes() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int numberOfKafkaReplicas = 3;
@@ -1232,22 +1221,18 @@ class KafkaST extends AbstractST {
         // ##############################
     }
 
-    /**
-     * @description This test case verifies basic working of Kafka Cluster managed by Cluster Operator with KRaft.
-     *
-     * @steps
-     *  1. - Deploy Kafka annotated to enable KRaft (and additionally annotated to enable management by KafkaNodePool due to default usage of NodePools), and KafkaNodePool targeting given Kafka Cluster.
-     *     - Kafka is deployed, KafkaNodePool custom resource is targeting Kafka Cluster as expected.
-     *  2. - Produce and consume messages in given Kafka Cluster.
-     *     - Clients can produce and consume messages.
-     *  3. - Trigger manual Rolling Update.
-     *     - Rolling update is triggered and completed shortly after.
-     *
-     * @usecase
-     *  - kafka-node-pool
-     *  - kraft
-     */
     @ParallelNamespaceTest()
+    @TestDoc(
+        description = @Desc("This test case verifies basic working of Kafka Cluster managed by Cluster Operator with KRaft."),
+        steps = {
+            @Step(value = "Deploy Kafka annotated to enable KRaft (and additionally annotated to enable KafkaNodePool management), and configure a KafkaNodePool resource to target the Kafka cluster.", expected = "Kafka is deployed, and the KafkaNodePool resource targets the cluster as expected."),
+            @Step(value = "Produce and consume messages in given Kafka Cluster.", expected = "Clients can produce and consume messages."),
+            @Step(value = "Trigger manual Rolling Update.", expected = "Rolling update is triggered and completed shortly after.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testKRaftMode() {
         assumeTrue(Environment.isKRaftModeEnabled() && Environment.isKafkaNodePoolsEnabled());
 
@@ -1287,28 +1272,21 @@ class KafkaST extends AbstractST {
         ClientUtils.waitForContinuousClientSuccess(testStorage);
     }
 
-    /**
-     * @description This test validates the mounting and usage of additional volumes for Kafka, Kafka Connect, and Kafka Bridge components.
-     * It tests whether secret and config map volumes are correctly created, mounted, and accessible across various deployments.
-     *
-     * @steps
-     *  1. - Setup environment prerequisites and configure test storage.
-     *     - Ensure the environment is in KRaft mode.
-     *  2. - Create necessary Kafka resources with additional volumes for secrets and config maps.
-     *     - Resources are correctly instantiated with specified volumes.
-     *  3. - Deploy Kafka, Kafka Connect, and Kafka Bridge with these volumes.
-     *     - Components are correctly configured with additional volumes.
-     *  4. - Verify that all pods (Kafka, Connect, and Bridge) have additional volumes mounted and accessible.
-     *     - Volumes are correctly mounted and usable within pods.
-     *
-     * @usecase
-     *  - additional-volumes
-     *  - secrets-management
-     *  - configuration-management
-     */
     @ParallelNamespaceTest
     @Tag(CONNECT)
     @Tag(BRIDGE)
+    @TestDoc(
+        description = @Desc("This test validates the mounting and usage of additional volumes for Kafka, Kafka Connect, and Kafka Bridge components. It tests whether secret and config map volumes are correctly created, mounted, and accessible across various deployments."),
+        steps = {
+            @Step(value = "Setup environment prerequisites and configure test storage.", expected = "Ensure the environment is in KRaft mode."),
+            @Step(value = "Create necessary Kafka resources with additional volumes for secrets and config maps.", expected = "Resources are correctly instantiated with specified volumes."),
+            @Step(value = "Deploy Kafka, Kafka Connect, and Kafka Bridge with these volumes.", expected = "Components are correctly configured with additional volumes."),
+            @Step(value = "Verify that all pods (Kafka, Connect, and Bridge) have additional volumes mounted and accessible.", expected = "Volumes are correctly mounted and usable within pods.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testAdditionalVolumes() {
         assumeTrue(Environment.isKRaftModeEnabled());
 

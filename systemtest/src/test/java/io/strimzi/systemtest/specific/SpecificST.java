@@ -95,7 +95,7 @@ public class SpecificST extends AbstractST {
 
         clusterOperator.unInstall();
 
-        // create namespace, where we will be able to deploy Custom Resources
+        // create namespace, where we will be able to deploy CustomResources
         NamespaceManager.getInstance().createNamespaceAndPrepare(namespaceWhereCreationOfCustomResourcesIsApproved,
             CollectorElement.createCollectorElement(ResourceManager.getTestContext().getRequiredTestClass().getName(), ResourceManager.getTestContext().getRequiredTestMethod().getName()));
 
@@ -120,7 +120,7 @@ public class SpecificST extends AbstractST {
         resourceManager.createResourceWithoutWait(KafkaTemplates.kafkaEphemeral(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), 3).build());
 
         // implicit verification that a user is able to deploy Kafka cluster in namespace <example-1>, where we are allowed
-        // to create Custom Resources because of `*-namespaced Role`
+        // to create CustomResources because of `*-namespaced Role`
         resourceManager.createResourceWithoutWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
                 KafkaNodePoolTemplates.brokerPool(namespaceWhereCreationOfCustomResourcesIsApproved, testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),

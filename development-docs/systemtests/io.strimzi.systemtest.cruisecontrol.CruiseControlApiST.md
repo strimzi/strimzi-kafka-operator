@@ -6,7 +6,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy the cluster operator | Cluster operator is deployed |
+| 1. | Deploy the Cluster Operator | Cluster Operator is deployed |
 
 **Labels:**
 
