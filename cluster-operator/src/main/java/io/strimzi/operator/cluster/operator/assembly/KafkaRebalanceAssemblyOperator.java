@@ -146,13 +146,13 @@ public class KafkaRebalanceAssemblyOperator
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaRebalanceAssemblyOperator.class.getName());
 
-    protected static final String BROKER_LOAD_KEY = "brokerLoad.json";
+    /* test */ static final String BROKER_LOAD_KEY = "brokerLoad.json";
     private final CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> kafkaRebalanceOperator;
     private final CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator;
     private final SecretOperator secretOperations;
     private final LabelSelector kafkaSelector;
     private final ConfigMapOperator configMapOperator;
-    private int cruiseControlPort;
+    private final int cruiseControlPort;
 
     /**
      * @param vertx The Vertx instance
@@ -420,8 +420,7 @@ public class KafkaRebalanceAssemblyOperator
     }
 
     private KafkaRebalanceStatus buildRebalanceStatusFromPreviousStatus(KafkaRebalanceStatus currentStatus, Set<Condition> validation) {
-        List<Condition> conditions = new ArrayList<>();
-        conditions.addAll(validation);
+        List<Condition> conditions = new ArrayList<>(validation);
         Condition currentState = KafkaRebalanceUtils.rebalanceStateCondition(currentStatus);
         conditions.add(currentState);
         return new KafkaRebalanceStatusBuilder()
