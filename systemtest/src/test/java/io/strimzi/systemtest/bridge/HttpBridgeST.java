@@ -127,6 +127,8 @@ class HttpBridgeST extends AbstractST {
         // Checking labels for KafkaBridge
         VerificationUtils.verifyPodsLabels(testStorage.getNamespaceName(), KafkaBridgeResources.componentName(suiteTestStorage.getClusterName()), KafkaBridgeResource.getLabelSelector(suiteTestStorage.getClusterName(), KafkaBridgeResources.componentName(suiteTestStorage.getClusterName())));
         VerificationUtils.verifyServiceLabels(testStorage.getNamespaceName(), KafkaBridgeResources.serviceName(suiteTestStorage.getClusterName()), KafkaBridgeResource.getLabelSelector(suiteTestStorage.getClusterName(), KafkaBridgeResources.componentName(suiteTestStorage.getClusterName())));
+
+        assertThat(true, is(false));
     }
 
     @ParallelTest
@@ -168,6 +170,7 @@ class HttpBridgeST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaClients.producerStrimzi());
 
         ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
+        assertThat(true, is(false));
     }
 
     @ParallelTest

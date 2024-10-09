@@ -4,14 +4,13 @@
  */
 package io.strimzi.systemtest.performance;
 
-import io.skodjob.testframe.LogCollector;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.ConditionStatus;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
-import io.strimzi.systemtest.logs.LogCollectorUtils;
+import io.strimzi.systemtest.logs.TestLogCollector;
 import io.strimzi.systemtest.metrics.TopicOperatorMetricsComponent;
 import io.strimzi.systemtest.performance.gather.collectors.TopicOperatorMetricsCollector;
 import io.strimzi.systemtest.performance.gather.schedulers.TopicOperatorMetricsCollectionScheduler;
@@ -54,7 +53,7 @@ public class TopicOperatorPerformance extends AbstractST {
     private TestStorage testStorage;
     private TopicOperatorMetricsCollector topicOperatorCollector;
     private TopicOperatorMetricsCollectionScheduler topicOperatorMetricsGatherer;
-    private LogCollector logCollector;
+    private TestLogCollector logCollector;
 
     protected static final TemporalAccessor ACTUAL_TIME = LocalDateTime.now();
     protected static final String REPORT_DIRECTORY = "topic-operator";
@@ -188,8 +187,8 @@ public class TopicOperatorPerformance extends AbstractST {
 
                     // after a failure we will gather logs from all components under test (i.e., TO, Kafka pods) to observer behaviour
                     // what might be a bottleneck of such performance
-                    this.logCollector = LogCollectorUtils.getDefaultLogCollector();
-                    this.logCollector.collectFromNamespaces(testStorage.getNamespaceName());
+                    this.logCollector = new TestLogCollector();
+                    this.logCollector.collectLogs();
 
                     break; // Break out of the loop if an error occurs
                 }
