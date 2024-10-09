@@ -18,7 +18,7 @@
     <properties>
         <strimzi-oauth.version>0.15.0</strimzi-oauth.version>
         <jayway-json-path.version>2.9.0</jayway-json-path.version>
-        <cruise-control.version>2.5.139</cruise-control.version>
+        <cruise-control.version>2.5.141</cruise-control.version>
         <opa-authorizer.version>1.5.1</opa-authorizer.version>
         <kafka-quotas-plugin.version>0.3.1</kafka-quotas-plugin.version>
         <kafka-mirror-maker-2-extensions.version>1.2.0</kafka-mirror-maker-2-extensions.version>
