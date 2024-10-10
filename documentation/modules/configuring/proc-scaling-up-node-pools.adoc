@@ -29,8 +29,9 @@ NOTE: During this process, the ID of the node that holds the partition replicas 
 
 * xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
 * xref:proc-configuring-deploying-cruise-control-str[Cruise Control is deployed with Kafka.]
-* (Optional) For scale up operations, xref:proc-managing-node-pools-ids-{context}[you can specify the node IDs to use in the operation].
-+
+* (Optional) xref:proc-automating-rebalances-{context}[Auto-rebalancing is enabled]. +
+If auto-rebalancing is enabled, partition reassignment happens automatically during the node scaling process, so you don't need to manually initiate the reassignment through Cruise Control.
+* (Optional) For scale up operations, xref:proc-managing-node-pools-ids-{context}[you can specify the node IDs to use in the operation]. +
 If you have assigned a range of node IDs for the operation, the ID of the node being added is determined by the sequence of nodes given. 
 If you have assigned a single node ID, a node is added with the specified ID.
 Otherwise, the lowest available node ID across the cluster is used.  
@@ -61,11 +62,12 @@ my-cluster-pool-a-0  1/1    Running  0
 my-cluster-pool-a-1  1/1    Running  0
 my-cluster-pool-a-2  1/1    Running  0
 my-cluster-pool-a-3  1/1    Running  0
----- 
+----
 
 . Reassign the partitions after increasing the number of nodes in the node pool.
 +
-After scaling up a node pool, use the Cruise Control `add-brokers` mode to move partition replicas from existing brokers to the newly added brokers.
+* If auto-rebalancing is enabled, partitions are reassigned to new nodes automatically, so you can skip this step.  
+* If auto-rebalancing is not enabled, use the Cruise Control `add-brokers` mode to move partition replicas from existing brokers to the newly added brokers.
 +
 .Using Cruise Control to reassign partition replicas
 [source,shell,subs="+attributes"]
