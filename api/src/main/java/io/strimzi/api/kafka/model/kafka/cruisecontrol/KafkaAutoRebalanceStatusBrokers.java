@@ -46,10 +46,10 @@ public class KafkaAutoRebalanceStatusBrokers implements UnknownPropertyPreservin
         this.mode = mode;
     }
 
-    @Description("List of brokers' IDs involved in an auto-rebalancing operation related to current mode. " +
-            "it contains either: " +
-            "- the brokers' IDs relevant to the current ongoing auto-rebalance, or " +
-            "- the brokers' IDs relevant to a queued auto-rebalance (if a previous auto-rebalance is still in progress)")
+    @Description("List of broker IDs involved in an auto-rebalancing operation related to the current mode. \n" +
+            "The list contains one of the following: \n\n" +
+            "* Broker IDs for a current auto-rebalance. \n" +
+            "* Broker IDs for a queued auto-rebalance (if a previous auto-rebalance is still in progress). \n")
     public List<Integer> getBrokers() {
         return brokers;
     }
