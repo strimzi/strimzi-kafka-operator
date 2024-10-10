@@ -1,0 +1,61 @@
+// Module included in the following assemblies:
+//
+// deploying.adoc
+
+[id='assembly-scaling-kafka-clusters-{context}']
+= Scaling clusters by adding or removing brokers
+
+[role="_abstract"]
+Scaling Kafka clusters by adding brokers can improve performance and reliability. 
+Increasing the number of brokers provides more resources, enabling the cluster to handle larger workloads and process more messages. 
+It also enhances fault tolerance by providing additional replicas. 
+Conversely, removing underutilized brokers can reduce resource consumption and increase efficiency. 
+Scaling must be done carefully to avoid disruption or data loss. 
+Redistributing partitions across brokers reduces the load on individual brokers, increasing the overall throughput of the cluster.
+
+Adjusting the `Kafka.spec.kafka.replicas` configuration changes the number of brokers in the cluster. 
+The actual replication factor for topics is determined by the `default.replication.factor` and `min.insync.replicas` settings, and the number of available brokers. 
+
+A replication factor of 3 means each partition is replicated across three brokers, ensuring fault tolerance in case of a broker failure:
+
+.Example replica configuration
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    replicas: 3
+    # ...
+  config:
+      # ...
+      default.replication.factor: 3
+      min.insync.replicas: 2  
+ # ...
+----
+
+When adding brokers through `Kafka` resource configuration, node IDs start at 0, and the Cluster Operator assigns the next lowest available ID to new brokers. 
+Removing brokers starts with the pod that has the highest node ID.
+
+If you are managing nodes using node pools, adjust the `KafkaNodePool.spec.replicas` configuration to change the number of nodes in the pool. 
+Additionally, when scaling clusters with node pools, you can xref:proc-managing-node-pools-ids-{context}[assign node IDs for scaling operations].
+
+NOTE: To increase the throughput of a Kafka topic, you can increase the number of partitions for that topic. 
+This distributes the load across multiple brokers. 
+However, if all brokers are constrained by a resource (such as I/O), adding more partitions will not increase throughput. 
+In such cases, adding more brokers is necessary.
+
+When adding or removing brokers, Strimzi can automatically reassign partitions if Cruise Control is deployed and auto-rebalancing is enabled in the `Kafka` resource. 
+If you prefer not to use auto-rebalancing during scaling, you can use Cruise Control to generate optimization proposals before rebalancing the cluster.
+
+Cruise Control provides `add-brokers` and `remove-brokers` modes for scaling:
+
+* Use the `add-brokers` mode after scaling up to move partition replicas to the new brokers.
+* Use the `remove-brokers` mode before scaling down to move partition replicas off the brokers being removed.
+
+With auto-rebalancing, these modes run automatically using default Cruise Control configuration or configuration supplied through a rebalancing template. 
+
+include::../../modules/cruise-control/proc-automating-rebalances.adoc[leveloffset=+1]
+include::../../modules/configuring/con-skipping-scale-down-checks.adoc[leveloffset=+1]

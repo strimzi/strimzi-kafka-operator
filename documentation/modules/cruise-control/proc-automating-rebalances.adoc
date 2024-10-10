@@ -1,0 +1,188 @@
+// Module included in the following assemblies:
+//
+// assembly-cruise-control-concepts.adoc
+
+[id='proc-automating-rebalances-{context}']
+= Triggering auto-rebalances when scaling clusters
+
+[role="_abstract"]
+Set up auto-rebalancing to automatically redistribute topic partitions when scaling a cluster.
+You can scale a Kafka cluster by adjusting the number of brokers using the `spec.replicas` property in the `Kafka` or `KafkaNodePool` custom resource used in deployment. 
+When auto-rebalancing is enabled, the cluster is rebalanced without further intervention.
+
+* After adding brokers, topic partitions are redistributed across the new brokers.
+* Before removing brokers, partitions are moved off the brokers being removed.
+
+Auto-rebalancing helps maintain balanced load distribution across Kafka brokers during scaling operations, depending on how the rebalancing configuration is set up.
+
+Scaling operates in two modes: `add-brokers` and `remove-brokers`.
+Each mode can have its own auto-rebalancing configuration specified in the `Kafka` resource under `spec.cruiseControl.autoRebalance` properties. 
+Use the `template` property to specify a predefined `KafkaRebalance` resource, which serves as a rebalance configuration template.
+If a template is not specified in the `autorebalance` configuration, the default Cruise Control rebalancing configuration is used.
+You can apply the same template configuration for both scaling modes, use different configurations for each, or enable auto-rebalancing for only one mode.
+If `autorebalance` configuration is not set for a mode, auto-rebalancing will not occur for that mode.
+
+The template `KafkaRebalance` resource must include the `strimzi.io/rebalance: template` annotation. 
+The template does not represent an actual rebalance request but holds the rebalancing configuration.
+During scaling, the Cluster Operator creates a `KafkaRebalance` resource based on this template, named `<cluster_name>-auto-rebalancing-<mode>`, where <mode> is either `add-brokers` or `remove-brokers`. 
+The Cluster Operator applies a finalizer (`strimzi.io/auto-rebalancing`) to prevent the resource's deletion during the rebalancing process.
+
+Progress is reflected in the status of the `Kafka` resource.
+The `status.autoRebalance` property indicates the state of the rebalance. 
+A `modes` property lists the brokers being added or removed during the operation to help track progress across reconciliations.
+
+.Prerequisites
+
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
+* xref:proc-configuring-deploying-cruise-control-str[Cruise Control is deployed with Kafka.]
+* You have configured optimization goals and, optionally, capacity limits on broker resources.
+
+.Procedure
+
+. Create a rebalancing template for the auto-rebalancing operation (if required).
++
+Configure a `KafkaRebalance` resource with the `strimzi.io/rebalance: template` annotation.
+The rebalance configuration template does not require `mode` and `brokers` properties unlike when xref:#proc-generating-optimization-proposals-str[when generating an optimization proposal for rebalancing]. 
++
+.Example rebalancing template configuration 
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaRebalanceApiVersion}
+kind: KafkaRebalance
+metadata:
+  name: my-add-remove-brokers-rebalancing-template
+  annotations:
+    strimzi.io/rebalance: template # <1>
+spec:
+  goals:
+    - CpuCapacityGoal
+    - NetworkInboundCapacityGoal
+    - DiskCapacityGoal
+    - RackAwareGoal
+    - MinTopicLeadersPerBrokerGoal
+    - NetworkOutboundCapacityGoal
+    - ReplicaCapacityGoal
+  skipHardGoalCheck: true
+  # ... other rebalancing configuration
+----
+<1> The annotation designates the resource as a rebalance configuration template.
+
+. Apply the configuration to create the template. 
+
+. Add auto-rebalancing configuration to the `Kafka` resource.
++
+In this example, the same template is used for adding and removing brokers.
++
+.Example using template specifications for auto-rebalancing
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+  cruiseControl:
+    autoRebalance:
+      - mode: add-brokers
+        template:
+          name: my-add-remove-brokers-rebalancing-template
+      - mode: remove-brokers
+        template:
+          name: my-add-remove-brokers-rebalancing-template
+----
++
+To use default Cruise Control configuration for rebalancing, omit the template configuration.
+In this example, the default configuration is used when adding brokers.
++
+.Example using default specifications for auto-rebalancing
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+  cruiseControl:
+    autoRebalance:
+      - mode: add-brokers
+      - mode: remove-brokers
+        template:
+          name: my-add-remove-brokers-rebalancing-template
+----
+
+. Apply the changes to the `Kafka` configuration. +
+Wait for the Cluster Operator to update the cluster.
+
+. Scale the cluster by adjusting the `spec.replicas` property representing the number of brokers in the cluster.
++
+The following example shows a node pool configuration for a cluster using three brokers (`replicas: 3`). 
++
+.Example node pool configuration
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaNodePoolApiVersion}
+kind: KafkaNodePool
+metadata:
+  name: pool-b
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  replicas: 3
+  roles:
+    - broker
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 100Gi
+        deleteClaim: false
+  # ...
+----
++
+For more information on scaling through node pools, see the following:
++
+* xref:proc-scaling-up-node-pools-str[].
+* xref:proc-scaling-down-node-pools-str[].
+
+. Check the rebalance status. +
+The status is visible in the `Kafka` resource.
++
+.Example status for auto-rebalancing
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+  cruiseControl:
+    autoRebalance:
+      - mode: add-brokers
+        template:
+          name: my-add-remove-brokers-rebalancing-template
+      - mode: remove-brokers
+        template:
+          name: my-add-remove-brokers-rebalancing-template
+status:
+  autoRebalance:
+    lastTransitionTime: <timestamp_for_last_rebalance_state>
+    state: RebalanceOnScaleDown # <1>
+    modes: # <2>
+      - mode: add-brokers
+        brokers: <broker_ids>
+      - mode: remove-brokers
+        brokers: <broker_ids>       
+----
+<1> The state of the rebalance, which shows `RebalanceOnScaleUp` when adding brokers, and `RebalanceOnScaleDown` when removing brokers. 
+Scale-down operations take precedence.
+Initial and final state (failed or successful) shows as `Idle`.
+<2> Rebalance operations grouped by mode, with a list of nodes to be added or removed.
+
+NOTE: During a rebalance, the status of the `KafkaRebalance` resource used for the rebalance is checked, and the auto-rebalance state is adjusted accordingly. 
