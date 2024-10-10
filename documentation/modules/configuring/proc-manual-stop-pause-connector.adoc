@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// assembly-deploy-kafka-connect-with-plugins.adoc
+// assembly-config.adoc
 
 [id='proc-manual-stop-pause-connector-{context}']
 = Manually stopping or pausing Kafka Connect connectors

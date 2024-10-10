@@ -12,7 +12,7 @@ The status provides information on the Strimzi and Kafka versions being used.
 To ensure that you have the correct versions after completing an upgrade, verify the `kafkaVersion` and `operatorLastSuccessfulVersion` values in the Kafka status.  
 
 * `operatorLastSuccessfulVersion` is the version of the Strimzi operator that last performed a successful reconciliation.
-* `kafkaVersion` is the the version of Kafka being used by the Kafka cluster.
+* `kafkaVersion` is the version of Kafka being used by the Kafka cluster.
 * `kafkaMetadataVersion` is the metadata version used by KRaft-based Kafka clusters 
 
 You can use these values to check an upgrade of Strimzi or Kafka has completed.
