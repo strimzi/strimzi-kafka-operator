@@ -171,6 +171,8 @@ public interface TestConstants {
     String OPERATOR_GROUP = "OperatorGroup";
     String BUILD_CONFIG = "BuildConfig";
     String IMAGE_STREAM = "ImageStream";
+    String INSTALL_PLAN = "InstallPlan";
+    String CLUSTER_SERVICE_VERSION = "ClusterServiceVersion";
 
     /**
      * KafkaBridge JSON encoding with JSON embedded format

@@ -18,6 +18,7 @@ import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -51,7 +52,7 @@ public class NamespaceManager {
 
     /**
      * Adds Namespace with {@param namespaceName} to the {@code MAP_WITH_SUITE_NAMESPACES} based on the {@param collectorElement}
-     * The Map of these Namespaces is then used in {@link io.strimzi.systemtest.logs.LogCollector} for logs collection or in
+     * The Map of these Namespaces is then used in LogCollector for logs collection or in
      * {@code AbstractST.afterAllMayOverride} method for deleting all Namespaces after all test cases
      *
      * @param namespaceName name of the Namespace that should be added into the Set
@@ -317,5 +318,28 @@ public class NamespaceManager {
 
                 return false;
             });
+    }
+
+    /**
+     * This method returns all Namespaces that are created for particular test-class and test-case.
+     *
+     * @param testClass     name of the test-class where the test-case is running (for test-class-wide Namespaces)
+     * @param testCase      name of the test-case (for test-case Namespaces)
+     *
+     * @return  list of Namespaces for the test-class and test-case
+     */
+    public List<String> getListOfNamespacesForTestClassAndTestCase(String testClass, String testCase) {
+        List<String> namespaces = new ArrayList<>();
+        namespaces.addAll(getMapWithSuiteNamespaces().get(new CollectorElement(testClass)));
+
+        if (testCase != null) {
+            Set<String> namespacesForTestCase = getMapWithSuiteNamespaces().get(new CollectorElement(testClass, testCase));
+
+            if (namespacesForTestCase != null) {
+                namespaces.addAll(getMapWithSuiteNamespaces().get(new CollectorElement(testClass, testCase)));
+            }
+        }
+
+        return namespaces;
     }
 }

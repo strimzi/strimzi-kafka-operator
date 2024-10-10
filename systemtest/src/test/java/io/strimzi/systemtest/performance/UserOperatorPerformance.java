@@ -9,7 +9,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.UserAuthType;
-import io.strimzi.systemtest.logs.LogCollector;
+import io.strimzi.systemtest.logs.TestLogCollector;
 import io.strimzi.systemtest.metrics.UserOperatorMetricsComponent;
 import io.strimzi.systemtest.performance.gather.collectors.UserOperatorMetricsCollector;
 import io.strimzi.systemtest.performance.gather.schedulers.UserOperatorMetricsCollectionScheduler;
@@ -56,7 +56,7 @@ public class UserOperatorPerformance extends AbstractST {
     private UserOperatorMetricsCollector userOperatorCollector;
     private UserOperatorMetricsCollectionScheduler userOperatorMetricsGatherer;
     private UserOperatorPerformanceReporter userOperatorPerformanceReporter = new UserOperatorPerformanceReporter();
-    private LogCollector logCollector;
+    private TestLogCollector logCollector;
 
     /**
      * Provides a stream of configurations for capacity testing, designed to evaluate
@@ -198,8 +198,8 @@ public class UserOperatorPerformance extends AbstractST {
 
                     // after a failure we will gather logs from all components under test (i.e., UO, Kafka pods) to observer behaviour
                     // what might be a bottleneck of such performance
-                    this.logCollector = new LogCollector();
-                    this.logCollector.collect();
+                    this.logCollector = new TestLogCollector();
+                    this.logCollector.collectLogs();
 
                     break; // Break out of the loop if an error occurs
                 }
