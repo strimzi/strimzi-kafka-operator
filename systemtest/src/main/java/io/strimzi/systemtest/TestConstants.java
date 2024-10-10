@@ -172,7 +172,7 @@ public interface TestConstants {
     String BUILD_CONFIG = "BuildConfig";
     String IMAGE_STREAM = "ImageStream";
     String INSTALL_PLAN = "InstallPlan";
-    String CSV = "CSV";
+    String CLUSTER_SERVICE_VERSION = "ClusterServiceVersion";
 
     /**
      * KafkaBridge JSON encoding with JSON embedded format

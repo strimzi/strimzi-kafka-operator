@@ -24,6 +24,7 @@ import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -155,7 +156,7 @@ public class TestLogCollector {
                 TestConstants.OPERATOR_GROUP.toLowerCase(Locale.ROOT),
                 TestConstants.SUBSCRIPTION.toLowerCase(Locale.ROOT),
                 TestConstants.INSTALL_PLAN.toLowerCase(Locale.ROOT),
-                TestConstants.CSV.toLowerCase(Locale.ROOT)
+                TestConstants.CLUSTER_SERVICE_VERSION.toLowerCase(Locale.ROOT)
             ));
         }
 
@@ -178,8 +179,8 @@ public class TestLogCollector {
      *
      * @return  full path to logs directory built from specified root path and index
      */
-    private String checkPathAndReturnFullRootPathWithIndexFolder(String rootPathToLogsForTestCase) {
-        File logsForTestCase = new File(rootPathToLogsForTestCase);
+    private Path checkPathAndReturnFullRootPathWithIndexFolder(Path rootPathToLogsForTestCase) {
+        File logsForTestCase = rootPathToLogsForTestCase.toFile();
         int index = 1;
 
         if (logsForTestCase.exists()) {
@@ -204,7 +205,7 @@ public class TestLogCollector {
             }
         }
 
-        return rootPathToLogsForTestCase + "/" + index;
+        return rootPathToLogsForTestCase.resolve(String.valueOf(index));
     }
 
     /**
@@ -215,11 +216,11 @@ public class TestLogCollector {
      *
      * @return full path to the logs for test-class and test-case, together with index
      */
-    private String buildFullPathToLogs(String testClass, String testCase) {
-        String rootPathToLogsForTestCase = String.join("/", Environment.TEST_LOG_DIR, CURRENT_DATE, testClass);
+    private Path buildFullPathToLogs(String testClass, String testCase) {
+        Path rootPathToLogsForTestCase = Path.of(Environment.TEST_LOG_DIR, CURRENT_DATE, testClass);
 
         if (testCase != null) {
-            rootPathToLogsForTestCase = String.join("/", rootPathToLogsForTestCase, testCase);
+            rootPathToLogsForTestCase = rootPathToLogsForTestCase.resolve(testCase);
         }
 
         return checkPathAndReturnFullRootPathWithIndexFolder(rootPathToLogsForTestCase);
@@ -254,10 +255,10 @@ public class TestLogCollector {
      * @param testCase      name of the test-case, for which the logs should be collected
      */
     public void collectLogs(String testClass, String testCase) {
-        String rootPathToLogsForTestCase = buildFullPathToLogs(testClass, testCase);
+        Path rootPathToLogsForTestCase = buildFullPathToLogs(testClass, testCase);
 
         final LogCollector testCaseCollector = new LogCollectorBuilder(logCollector)
-            .withRootFolderPath(rootPathToLogsForTestCase)
+            .withRootFolderPath(rootPathToLogsForTestCase.toString())
             .build();
 
         List<String> namespaces = NamespaceManager.getInstance().getListOfNamespacesForTestClassAndTestCase(testClass, testCase);
