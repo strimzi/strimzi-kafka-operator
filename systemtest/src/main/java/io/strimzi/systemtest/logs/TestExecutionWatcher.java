@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.logs;
 
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.exceptions.KubernetesClusterUnstableException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -13,13 +12,10 @@ import org.junit.jupiter.api.extension.LifecycleMethodExecutionExceptionHandler;
 import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
 import org.opentest4j.TestAbortedException;
 
-import java.io.IOException;
-
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-
 public class TestExecutionWatcher implements TestExecutionExceptionHandler, LifecycleMethodExecutionExceptionHandler {
 
     private static final Logger LOGGER = LogManager.getLogger(TestExecutionWatcher.class);
+    private static final TestLogCollector LOG_COLLECTOR = new TestLogCollector();
 
     @Override
     public void handleTestExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
@@ -27,7 +23,8 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
         if (!(throwable instanceof TestAbortedException || throwable instanceof KubernetesClusterUnstableException)) {
             final String testClass = extensionContext.getRequiredTestClass().getName();
             final String testMethod = extensionContext.getRequiredTestMethod().getName();
-            collectLogs(extensionContext, new CollectorElement(testClass, testMethod));
+
+            LOG_COLLECTOR.collectLogs(testClass, testMethod);
         }
         throw throwable;
     }
@@ -37,7 +34,8 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
         LOGGER.error("{} - Exception {} has been thrown in @BeforeAll. Going to collect logs from components.", extensionContext.getRequiredTestClass().getSimpleName(), throwable.getMessage());
         if (!(throwable instanceof TestAbortedException || throwable instanceof KubernetesClusterUnstableException)) {
             final String testClass = extensionContext.getRequiredTestClass().getName();
-            collectLogs(extensionContext, new CollectorElement(testClass));
+
+            LOG_COLLECTOR.collectLogs(testClass);
         }
         throw throwable;
     }
@@ -48,7 +46,8 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
         if (!(throwable instanceof TestAbortedException || throwable instanceof KubernetesClusterUnstableException)) {
             final String testClass = extensionContext.getRequiredTestClass().getName();
             final String testMethod = extensionContext.getRequiredTestMethod().getName();
-            collectLogs(extensionContext, new CollectorElement(testClass, testMethod));
+
+            LOG_COLLECTOR.collectLogs(testClass, testMethod);
         }
         throw throwable;
     }
@@ -60,7 +59,7 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
             final String testClass = extensionContext.getRequiredTestClass().getName();
             final String testMethod = extensionContext.getRequiredTestMethod().getName();
 
-            collectLogs(extensionContext, new CollectorElement(testClass, testMethod));
+            LOG_COLLECTOR.collectLogs(testClass, testMethod);
         }
         throw throwable;
     }
@@ -71,14 +70,8 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
         if (!(throwable instanceof KubernetesClusterUnstableException)) {
             final String testClass = extensionContext.getRequiredTestClass().getName();
 
-            collectLogs(extensionContext, new CollectorElement(testClass));
+            LOG_COLLECTOR.collectLogs(testClass);
         }
         throw throwable;
-    }
-
-    public synchronized static void collectLogs(ExtensionContext extensionContext, CollectorElement collectorElement) throws IOException {
-        final LogCollector logCollector = new LogCollector(extensionContext, collectorElement, kubeClient(), Environment.TEST_LOG_DIR);
-        // collecting logs for all resources inside Kubernetes cluster
-        logCollector.collect();
     }
 }
