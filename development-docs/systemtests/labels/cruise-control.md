@@ -11,6 +11,7 @@ Ensuring the correctness of Cruise Control behavior under different configuratio
 **Tests:**
 - [testAutoCreationOfCruiseControlTopicsWithResources](../io.strimzi.systemtest.cruisecontrol.CruiseControlST.md)
 - [testConfigurationUpdate](../io.strimzi.systemtest.cruisecontrol.CruiseControlConfigurationST.md)
+- [testAutoKafkaRebalanceScaleUpScaleDown](../io.strimzi.systemtest.cruisecontrol.CruiseControlST.md)
 - [testCruiseControlWithSingleNodeKafka](../io.strimzi.systemtest.cruisecontrol.CruiseControlST.md)
 - [testKafkaRebalanceAutoApprovalMechanism](../io.strimzi.systemtest.cruisecontrol.CruiseControlST.md)
 - [testCruiseControlDuringBrokerScaleUpAndDown](../io.strimzi.systemtest.cruisecontrol.CruiseControlST.md)
