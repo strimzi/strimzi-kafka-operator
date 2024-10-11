@@ -35,7 +35,6 @@ import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.Cruise
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(VertxExtension.class)
@@ -198,8 +197,8 @@ public class CruiseControlClientTest {
                 .build();
         this.ccBrokerDoesNotExist(vertx, context, options, CruiseControlEndpoints.ADD_BROKER,
                 result -> {
-                    assertThat(result, instanceOf(IllegalArgumentException.class));
-                    assertTrue(result.getMessage().contains("Some/all brokers specified don't exist"));
+                    assertTrue(result.getJson().containsKey("errorMessage"));
+                    assertTrue(result.getJson().getString("errorMessage").contains("IllegalArgumentException"));
                 });
     }
 
@@ -255,8 +254,8 @@ public class CruiseControlClientTest {
                 .build();
         this.ccBrokerDoesNotExist(vertx, context, options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> {
-                    assertThat(result, instanceOf(IllegalArgumentException.class));
-                    assertTrue(result.getMessage().contains("Some/all brokers specified don't exist"));
+                    assertTrue(result.getJson().containsKey("errorMessage"));
+                    assertTrue(result.getJson().getString("errorMessage").contains("IllegalArgumentException"));
                 });
     }
 
@@ -384,7 +383,7 @@ public class CruiseControlClientTest {
         }
     }
 
-    private void ccBrokerDoesNotExist(Vertx vertx, VertxTestContext context, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<Throwable> assertion) throws IOException, URISyntaxException {
+    private void ccBrokerDoesNotExist(Vertx vertx, VertxTestContext context, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlResponse> assertion) throws IOException, URISyntaxException {
         cruiseControlServer.setupCCBrokerDoesNotExist(endpoint);
 
         CruiseControlApi client = cruiseControlClientProvider(vertx);
@@ -393,14 +392,14 @@ public class CruiseControlClientTest {
         switch (endpoint) {
             case ADD_BROKER:
                 client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (AddBrokerOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
-                        .onComplete(context.failing(result -> context.verify(() -> {
+                        .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
                         })));
                 break;
             case REMOVE_BROKER:
                 client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveBrokerOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
-                        .onComplete(context.failing(result -> context.verify(() -> {
+                        .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
                         })));

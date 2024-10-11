@@ -430,9 +430,13 @@ public class KafkaRebalanceAssemblyOperator
                 .build();
     }
 
-    private MapAndStatus<ConfigMap, KafkaRebalanceStatus> buildRebalanceStatus(String sessionID, KafkaRebalanceState cruiseControlState, Set<Condition> validation) {
+    private MapAndStatus<ConfigMap, KafkaRebalanceStatus> buildRebalanceStatus(String sessionID, KafkaRebalanceState cruiseControlState, Set<Condition> validation, Throwable exception) {
         List<Condition> conditions = new ArrayList<>();
-        conditions.add(StatusUtils.buildRebalanceCondition(cruiseControlState.toString()));
+        if (exception != null) {
+            conditions.add(StatusUtils.buildConditionFromException(cruiseControlState.toString(), "True", exception));
+        } else {
+            conditions.add(StatusUtils.buildRebalanceCondition(cruiseControlState.toString()));
+        }
         conditions.addAll(validation);
         return new MapAndStatus<>(null, new KafkaRebalanceStatusBuilder()
                 .withSessionId(sessionID)
@@ -736,7 +740,7 @@ public class KafkaRebalanceAssemblyOperator
             requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder).onSuccess(p::complete);
         } else if (rebalanceAnnotation(kafkaRebalance) == KafkaRebalanceAnnotation.stop) {
             LOGGER.infoCr(reconciliation, "Stopping to request proposal or checking the status");
-            p.complete(buildRebalanceStatus(null, KafkaRebalanceState.Stopped, StatusUtils.validate(reconciliation, kafkaRebalance)));
+            p.complete(buildRebalanceStatus(null, KafkaRebalanceState.Stopped, StatusUtils.validate(reconciliation, kafkaRebalance), null));
         } else {
             LOGGER.infoCr(reconciliation, "Requesting a new proposal or checking the status for an already issued one");
             Set<Condition> conditions = StatusUtils.validate(reconciliation, kafkaRebalance);
@@ -781,7 +785,7 @@ public class KafkaRebalanceAssemblyOperator
                 // TODO: Once we can get the error details we need to add an error field to the Rebalance Status to hold
                 //       details of any issues while rebalancing.
                 LOGGER.errorCr(reconciliation, "Rebalance ({}) optimization proposal has failed to complete", sessionId);
-                p.complete(buildRebalanceStatus(sessionId, KafkaRebalanceState.NotReady, conditions));
+                p.complete(buildRebalanceStatus(sessionId, KafkaRebalanceState.NotReady, conditions, null));
                 break;
             case COMPLETED:
                 if (!dryRun) {
@@ -901,7 +905,7 @@ public class KafkaRebalanceAssemblyOperator
         if (rebalanceAnnotation(kafkaRebalance) == KafkaRebalanceAnnotation.stop) {
             LOGGER.infoCr(reconciliation, "Stopping current Cruise Control rebalance user task");
             apiClient.stopExecution(reconciliation, host, cruiseControlPort)
-                .onSuccess(r -> p.complete(buildRebalanceStatus(null, KafkaRebalanceState.Stopped, StatusUtils.validate(reconciliation, kafkaRebalance))))
+                .onSuccess(r -> p.complete(buildRebalanceStatus(null, KafkaRebalanceState.Stopped, StatusUtils.validate(reconciliation, kafkaRebalance), null)))
                 .onFailure(e -> {
                     LOGGER.errorCr(reconciliation, "Cruise Control stopping execution failed", e.getCause());
                     p.fail(e.getCause());
@@ -954,7 +958,7 @@ public class KafkaRebalanceAssemblyOperator
         } else {
             Set<Condition> conditions = StatusUtils.validate(reconciliation, kafkaRebalance);
             validateAnnotation(reconciliation, conditions, KafkaRebalanceState.Stopped, rebalanceAnnotation, kafkaRebalance);
-            return Future.succeededFuture(buildRebalanceStatus(null, KafkaRebalanceState.Stopped, conditions));
+            return Future.succeededFuture(buildRebalanceStatus(null, KafkaRebalanceState.Stopped, conditions, null));
         }
     }
 
@@ -1150,22 +1154,22 @@ public class KafkaRebalanceAssemblyOperator
             if (response.isNotEnoughDataForProposal()) {
                 // If there is not enough data for a rebalance, it's an error at the Cruise Control level
                 // Need to re-request the proposal at a later time so move to the PendingProposal State.
-                return buildRebalanceStatus(null, KafkaRebalanceState.PendingProposal, StatusUtils.validate(reconciliation, kafkaRebalance));
+                return buildRebalanceStatus(null, KafkaRebalanceState.PendingProposal, StatusUtils.validate(reconciliation, kafkaRebalance), null);
             } else if (response.isProposalStillCalculating()) {
                 // If rebalance proposal is still being processed, we need to re-request the proposal at a later time
                 // with the corresponding session-id so we move to the PendingProposal State.
-                return buildRebalanceStatus(response.getUserTaskId(), KafkaRebalanceState.PendingProposal, StatusUtils.validate(reconciliation, kafkaRebalance));
+                return buildRebalanceStatus(response.getUserTaskId(), KafkaRebalanceState.PendingProposal, StatusUtils.validate(reconciliation, kafkaRebalance), null);
             }
         } else {
             if (response.isNotEnoughDataForProposal()) {
                 // We do not include a session id with this status as we do not want to retrieve the state of
                 // this failed tasks (COMPLETED_WITH_ERROR)
-                return buildRebalanceStatus(null, KafkaRebalanceState.PendingProposal, StatusUtils.validate(reconciliation, kafkaRebalance));
+                return buildRebalanceStatus(null, KafkaRebalanceState.PendingProposal, StatusUtils.validate(reconciliation, kafkaRebalance), null);
             } else if (response.isProposalStillCalculating()) {
                 // If dryrun=false and the proposal is not ready we are going to be in a rebalancing state as
                 // soon as it is ready, so set the state to rebalancing.
                 // In the onRebalancing method the optimization proposal will be added when it is ready.
-                return buildRebalanceStatus(response.getUserTaskId(), KafkaRebalanceState.Rebalancing, StatusUtils.validate(reconciliation, kafkaRebalance));
+                return buildRebalanceStatus(response.getUserTaskId(), KafkaRebalanceState.Rebalancing, StatusUtils.validate(reconciliation, kafkaRebalance), null);
             }
         }
 
@@ -1175,7 +1179,7 @@ public class KafkaRebalanceAssemblyOperator
             KafkaRebalanceState ready = dryrun ? KafkaRebalanceState.ProposalReady : KafkaRebalanceState.Rebalancing;
             return buildRebalanceStatus(kafkaRebalance, response.getUserTaskId(), ready, response.getJson(), StatusUtils.validate(reconciliation, kafkaRebalance));
         } else {
-            throw new CruiseControlRestException("Rebalance returned unknown response: " + response);
+            return buildRebalanceStatus(null, KafkaRebalanceState.NotReady, StatusUtils.validate(reconciliation, kafkaRebalance), new CruiseControlRestException(response.getJson().getString("errorMessage")));
         }
     }
 
