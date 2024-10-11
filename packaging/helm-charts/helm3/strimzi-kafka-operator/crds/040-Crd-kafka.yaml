@@ -6334,8 +6334,7 @@ spec:
                               - full
                               - add-brokers
                               - remove-brokers
-                            description: |
-                              Mode for which running the auto-rebalancing on scaling, when brokers are added or removed. The supported modes are `add-brokers` and `remove-brokers`.
+                            description: "Specifies the mode for automatically rebalancing when brokers are added or removed. Supported modes are `add-brokers` and `remove-brokers`. \n"
                           template:
                             type: object
                             properties:
@@ -8215,7 +8214,7 @@ spec:
                         - Idle
                         - RebalanceOnScaleDown
                         - RebalanceOnScaleUp
-                      description: "The current state of the auto-rebalancing operation. Possible values are: \n\n* Idle as the initial state when an auto-rebalancing is requested or as final state when it completes or fails.\n* RebalanceOnScaleDown if a rebalancing related to a scale down operation is running.\n* RebalanceOnScaleUp if a rebalancing related to a scale up operation is running.\n"
+                      description: "The current state of an auto-rebalancing operation. Possible values are: \n\n* `Idle` as the initial state when an auto-rebalancing is requested or as final state when it completes or fails.\n* `RebalanceOnScaleDown` if an auto-rebalance related to a scale-down operation is running.\n* `RebalanceOnScaleUp` if an auto-rebalance related to a scale-up operation is running."
                     lastTransitionTime:
                       type: string
                       description: The timestamp of the latest auto-rebalancing state update.
@@ -8235,7 +8234,7 @@ spec:
                             type: array
                             items:
                               type: integer
-                            description: "List of brokers' IDs involved in an auto-rebalancing operation related to current mode. it contains either: - the brokers' IDs relevant to the current ongoing auto-rebalance, or - the brokers' IDs relevant to a queued auto-rebalance (if a previous auto-rebalance is still in progress)."
-                      description: "List of the modes for which there is an auto-rebalancing operation already running or queued. For each mode entry, which could be for add-brokers or remove-brokers, it contains either:- the brokers' IDs relevant to the current ongoing auto-rebalance, or- the brokers' IDs relevant to a queued auto-rebalance (if a previous auto-rebalance is still in progress)."
+                            description: "List of broker IDs involved in an auto-rebalancing operation related to the current mode. \nThe list contains one of the following: \n\n* Broker IDs for a current auto-rebalance. \n* Broker IDs for a queued auto-rebalance (if a previous auto-rebalance is still in progress). \n"
+                      description: "List of modes where an auto-rebalancing operation is either running or queued. \nEach mode entry (`add-brokers` or `remove-brokers`) includes one of the following: \n\n* Broker IDs for a current auto-rebalance. \n* Broker IDs for a queued auto-rebalance (if a previous rebalance is still in progress)."
                   description: The status of an auto-rebalancing triggered by a cluster scaling request.
               description: "The status of the Kafka and ZooKeeper clusters, and Topic Operator."

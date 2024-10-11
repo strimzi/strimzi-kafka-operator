@@ -36,8 +36,8 @@ public class KafkaAutoRebalanceConfiguration implements UnknownPropertyPreservin
     private LocalObjectReference template;
     private Map<String, Object> additionalProperties;
 
-    @Description("Mode for which running the auto-rebalancing on scaling, when brokers are added or removed. " +
-            "The supported modes are `add-brokers` and `remove-brokers`.\n")
+    @Description("Specifies the mode for automatically rebalancing when brokers are added or removed. " +
+            "Supported modes are `add-brokers` and `remove-brokers`. \n")
     @JsonProperty(required = true)
     public KafkaRebalanceMode getMode() {
         return mode;

@@ -35,10 +35,10 @@ public class KafkaAutoRebalanceStatus implements UnknownPropertyPreserving {
     private List<KafkaAutoRebalanceStatusBrokers> modes;
     private Map<String, Object> additionalProperties;
 
-    @Description("The current state of the auto-rebalancing operation. Possible values are: \n\n" +
-            "* Idle as the initial state when an auto-rebalancing is requested or as final state when it completes or fails.\n" +
-            "* RebalanceOnScaleDown if a rebalancing related to a scale down operation is running.\n" +
-            "* RebalanceOnScaleUp if a rebalancing related to a scale up operation is running.\n")
+    @Description("The current state of an auto-rebalancing operation. Possible values are: \n\n" +
+            "* `Idle` as the initial state when an auto-rebalancing is requested or as final state when it completes or fails.\n" +
+            "* `RebalanceOnScaleDown` if an auto-rebalance related to a scale-down operation is running.\n" +
+            "* `RebalanceOnScaleUp` if an auto-rebalance related to a scale-up operation is running.")
     public KafkaAutoRebalanceState getState() {
         return state;
     }
@@ -56,10 +56,10 @@ public class KafkaAutoRebalanceStatus implements UnknownPropertyPreserving {
         this.lastTransitionTime = lastTransitionTime;
     }
 
-    @Description("List of the modes for which there is an auto-rebalancing operation already running or queued. " +
-            "For each mode entry, which could be for add-brokers or remove-brokers, it contains either:" +
-            "- the brokers' IDs relevant to the current ongoing auto-rebalance, or" +
-            "- the brokers' IDs relevant to a queued auto-rebalance (if a previous auto-rebalance is still in progress)")
+    @Description("List of modes where an auto-rebalancing operation is either running or queued. \n" +
+            "Each mode entry (`add-brokers` or `remove-brokers`) includes one of the following: \n\n" +
+            "* Broker IDs for a current auto-rebalance. \n" +
+            "* Broker IDs for a queued auto-rebalance (if a previous rebalance is still in progress).")
     public List<KafkaAutoRebalanceStatusBrokers> getModes() {
         return modes;
     }
