@@ -20,11 +20,14 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.NamespaceManager;
+import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
+import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
@@ -79,18 +82,33 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).resource(kafkaTopic).create();
         }
 
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistentWithoutNodePools(testStorage.getNamespaceName(), testStorage.getClusterName(), 3, 3)
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaNodePoolResource.getBrokerPoolName(testStorage.getClusterName()), testStorage.getClusterName(), 3)
+                    .editSpec()
+                        .withNewPersistentClaimStorage()
+                            .withSize("1Gi")
+                            .withStorageClass(storageClassName)
+                        .endPersistentClaimStorage()
+                    .endSpec()
+                    .build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaNodePoolResource.getControllerPoolName(testStorage.getClusterName()), testStorage.getClusterName(), 3)
+                    .editSpec()
+                        .withNewPersistentClaimStorage()
+                            .withSize("1Gi")
+                            .withStorageClass(storageClassName)
+                        .endPersistentClaimStorage()
+                    .endSpec()
+                    .build())
+        );
+
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistentKRaft(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withNewPersistentClaimStorage()
                         .withSize("1Gi")
                     .endPersistentClaimStorage()
                 .endKafka()
-                .editZookeeper()
-                    .withNewPersistentClaimStorage()
-                        .withSize("1Gi")
-                    .endPersistentClaimStorage()
-                .endZookeeper()
             .endSpec()
             .build());
 
@@ -138,8 +156,14 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         LOGGER.info("Recreating Cluster Operator");
         recreateClusterOperator(testStorage.getNamespaceName());
 
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaNodePoolResource.getBrokerPoolName(testStorage.getClusterName()), testStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaNodePoolResource.getControllerPoolName(testStorage.getClusterName()), testStorage.getClusterName(), 3).build())
+        );
+
         LOGGER.info("Recreating Kafka cluster without Topic Operator");
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistentWithoutNodePools(testStorage.getNamespaceName(), testStorage.getClusterName(), 3, 3)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistentKRaft(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editSpec()
                 .withNewEntityOperator()
                 .endEntityOperator()
@@ -176,7 +200,27 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistentWithoutNodePools(testStorage.getNamespaceName(), testStorage.getClusterName(), 3, 3)
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaNodePoolResource.getBrokerPoolName(testStorage.getClusterName()), testStorage.getClusterName(), 3)
+                    .editSpec()
+                        .withNewPersistentClaimStorage()
+                            .withSize("1Gi")
+                            .withStorageClass(storageClassName)
+                        .endPersistentClaimStorage()
+                    .endSpec()
+                    .build(),
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaNodePoolResource.getControllerPoolName(testStorage.getClusterName()), testStorage.getClusterName(), 3)
+                    .editSpec()
+                        .withNewPersistentClaimStorage()
+                            .withSize("1Gi")
+                            .withStorageClass(storageClassName)
+                        .endPersistentClaimStorage()
+                    .endSpec()
+                    .build())
+        );
+
+        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistentKRaft(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withNewPersistentClaimStorage()
@@ -184,12 +228,6 @@ class NamespaceDeletionRecoveryST extends AbstractST {
                         .withStorageClass(storageClassName)
                     .endPersistentClaimStorage()
                 .endKafka()
-                .editZookeeper()
-                    .withNewPersistentClaimStorage()
-                        .withSize("1Gi")
-                        .withStorageClass(storageClassName)
-                    .endPersistentClaimStorage()
-                .endZookeeper()
             .endSpec()
             .build());
 
