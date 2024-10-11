@@ -34,6 +34,7 @@ public class PathBuilderTest {
                         CruiseControlParameters.DRY_RUN + "=false&" +
                         CruiseControlParameters.VERBOSE + "=true&" +
                         CruiseControlParameters.SKIP_HARD_GOAL_CHECK + "=false&" +
+                        CruiseControlParameters.STOP_ONGOING_EXECUTION + "=false&" +
                         CruiseControlParameters.EXCLUDED_TOPICS + "=test-.*&" +
                         CruiseControlParameters.GOALS + "=");
 
@@ -72,6 +73,7 @@ public class PathBuilderTest {
                 .withParameter(CruiseControlParameters.DRY_RUN, "false")
                 .withParameter(CruiseControlParameters.VERBOSE, "true")
                 .withParameter(CruiseControlParameters.SKIP_HARD_GOAL_CHECK, "false")
+                .withParameter(CruiseControlParameters.STOP_ONGOING_EXECUTION, "false")
                 .withParameter(CruiseControlParameters.EXCLUDED_TOPICS, "test-.*")
                 .withParameter(CruiseControlParameters.GOALS, GOALS)
                 .withParameter(CruiseControlParameters.REBALANCE_DISK, "false")
