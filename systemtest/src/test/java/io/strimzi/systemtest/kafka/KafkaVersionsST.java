@@ -4,12 +4,18 @@
  */
 package io.strimzi.systemtest.kafka;
 
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.api.kafka.model.user.acl.AclOperation;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -30,22 +36,34 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static io.strimzi.systemtest.TestTags.KAFKA_SMOKE;
 
 @Tag(KAFKA_SMOKE)
+@SuiteDoc(
+    description = @Desc("Verifies the basic functionality for each supported Kafka version."),
+    beforeTestSteps = {
+        @Step(value = "Deploy Cluster Operator with default installation.", expected = "Cluster Operator is deployed.")
+    },
+    labels = {
+        @Label(value = TestDocsLabels.KAFKA)
+    }
+)
 public class KafkaVersionsST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaVersionsST.class);
 
-    /**
-     * Test checking basic functionality for each supported Kafka version.
-     * Ensures that for every Kafka version:
-     *     - Kafka cluster is deployed without an issue
-     *       - with Topic Operator, User Operator, 3 Zookeeper and Kafka pods
-     *     - Topic Operator is working - because of the KafkaTopic creation
-     *     - User Operator is working - because of SCRAM-SHA, ACLs and overall KafkaUser creations
-     *     - Sending and receiving messages is working to PLAIN (with SCRAM-SHA) and TLS listeners
-     * @param testKafkaVersion TestKafkaVersion added for each iteration of the parametrized test
-     */
     @ParameterizedTest(name = "Kafka version: {0}.version()")
     @MethodSource("io.strimzi.systemtest.utils.TestKafkaVersion#getSupportedKafkaVersions")
+    @TestDoc(
+        description = @Desc("Tests the basic functionality for each supported Kafka version, ensuring that deployment, Topic Operator, User Operator, and message transmission via PLAIN and TLS listeners work correctly."),
+        steps = {
+            @Step(value = "Deploy Kafka cluster with specified version.", expected = "Kafka cluster is deployed without any issue."),
+            @Step(value = "Verify the Topic Operator creation.", expected = "Topic Operator is working correctly."),
+            @Step(value = "Verify the User Operator creation.", expected = "User Operator is working correctly with SCRAM-SHA and ACLs."),
+            @Step(value = "Send and receive messages via PLAIN with SCRAM-SHA.", expected = "Messages are sent and received successfully."),
+            @Step(value = "Send and receive messages via TLS.", expected = "Messages are sent and received successfully.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testKafkaWithVersion(final TestKafkaVersion testKafkaVersion) {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 

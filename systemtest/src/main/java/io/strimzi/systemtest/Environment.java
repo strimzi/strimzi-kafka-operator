@@ -145,7 +145,7 @@ public class Environment {
     public static final String STRIMZI_USE_KRAFT_IN_TESTS_ENV = "STRIMZI_USE_KRAFT_IN_TESTS";
 
     /**
-     * Controls whether tests should run with Node Pools or not
+     * Controls whether tests should run with KafkaNodePools or not
      */
     public static final String STRIMZI_USE_NODE_POOLS_IN_TESTS_ENV = "STRIMZI_USE_NODE_POOLS_IN_TESTS";
 

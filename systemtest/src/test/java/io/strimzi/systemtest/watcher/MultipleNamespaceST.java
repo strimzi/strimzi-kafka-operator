@@ -42,7 +42,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
     void setupEnvironment() {
         deployTestSpecificClusterOperator();
 
-        LOGGER.info("deploy all other resources (Kafka Cluster and Scrapper) for testing Namespaces");
+        LOGGER.info("deploy all other resources (Kafka cluster and Scrapper) for testing Namespaces");
         deployAdditionalGenericResourcesForAbstractNamespaceST();
     }
 }

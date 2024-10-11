@@ -4,11 +4,17 @@
  */
 package io.strimzi.systemtest.kafka.dynamicconfiguration;
 
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.Type;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
@@ -40,13 +46,20 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-/**
- * DynamicConfigurationSharedST is responsible for verify that if we change dynamic Kafka configuration it will not
- * trigger rolling update
- * Shared -> for each test case we same configuration of Kafka resource
- */
 @Tag(REGRESSION)
 @Tag(DYNAMIC_CONFIGURATION)
+@SuiteDoc(
+    description = @Desc("DynamicConfigurationSharedST is responsible for verifying that changing dynamic Kafka configuration will not trigger a rolling update. Shared -> for each test case we use the same Kafka resource configuration."),
+    beforeTestSteps = {
+        @Step(value = "Run Cluster Operator installation.", expected = "Cluster Operator is installed."),
+        @Step(value = "Deploy shared Kafka across all test cases.", expected = "Shared Kafka is deployed."),
+        @Step(value = "Deploy scraper pod.", expected = "Scraper pod is deployed.")
+    },
+    labels = {
+        @Label(value = TestDocsLabels.DYNAMIC_CONFIGURATION),
+        @Label(value = TestDocsLabels.KAFKA)
+    }
+)
 public class DynamicConfSharedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(DynamicConfSharedST.class);
@@ -56,6 +69,18 @@ public class DynamicConfSharedST extends AbstractST {
     private String scraperPodName;
     private static Random rng = new Random();
 
+    @TestDoc(
+        description = @Desc("This test dynamically selects and applies three Kafka dynamic configuration properties to verify that the changes do not trigger a rolling update in the Kafka cluster. It applies the configurations, waits for stability, and then verifies that the new configuration is applied both to the CustomResource (CR) and the running Kafka pods."),
+        steps = {
+            @Step(value = "Randomly choose three configuration properties for dynamic update.", expected = "Three configurations are selected without duplication."),
+            @Step(value = "Apply the chosen configuration properties to the Kafka CustomResource.", expected = "The configurations are applied successfully without triggering a rolling update."),
+            @Step(value = "Verify the applied configuration on both the Kafka CustomResource and the Kafka pods.", expected = "The applied configurations are correctly reflected in the Kafka CustomResource and the kafka pods.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.DYNAMIC_CONFIGURATION),
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     @TestFactory
     Iterator<DynamicTest> testDynConfiguration() {
 

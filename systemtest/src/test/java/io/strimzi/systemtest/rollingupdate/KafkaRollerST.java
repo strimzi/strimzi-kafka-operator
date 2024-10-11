@@ -391,18 +391,18 @@ public class KafkaRollerST extends AbstractST {
 
     /**
      * @description This test case verifies the rolling update behavior of Kafka controller nodes under specific conditions.
-     * It focuses on ensuring that changes in Kafka configuration and node pool properties affect only the intended node pools,
+     * It focuses on ensuring that changes in Kafka configuration and KafkaNodePool properties affect only the intended KafkaNodePools,
      * particularly the controller nodes, while leaving others like broker nodes unaffected.
      *
      * @steps
      *  1. - Assume that KRaft mode is enabled.
-     *  2. - Create and deploy a Kafka node pool with broker role (brokerPool) and another with controller role (controllerPool), each with 3 replicas.
+     *  2. - Create and deploy a KafkaNodePool with broker role (brokerPool) and another with controller role (controllerPool), each with 3 replicas.
      *  3. - Take snapshots of the broker and controller pods for later comparison.
      *  4. - Update a specific Kafka configuration that affects only controller nodes and verify the rolling update behavior.
      *     - Ensure that only controller nodes undergo a rolling update, while broker nodes remain unaffected.
      *  5. - Update a specific Kafka configuration that affects only broker nodes and verify the rolling update behavior.
      *     - Ensure that only broker nodes undergo a rolling update, while controller node remain unaffected.
-     *  6. - Introduce a change in the controller node pool, such as modifying pod affinity.
+     *  6. - Introduce a change in the controller KafkaNodePool, such as modifying pod affinity.
      *     - Observe and ensure that this change triggers another rolling update for the controller nodes.
      *  7. - Verify the rolling updates of controller nodes by comparing the snapshots taken before and after each configuration change.
      *
@@ -454,7 +454,7 @@ public class KafkaRollerST extends AbstractST {
 
         // 2nd Rolling update triggered by PodAffinity
 
-        // Modify pod affinity settings for the controller node pool
+        // Modify pod affinity settings for the controller KafkaNodePool
         // Pod Affinity is expecting a running pod on a node with topologyKey with labels specify by LabelSelector
         PodAffinity podAffinity = new PodAffinityBuilder()
             .addNewRequiredDuringSchedulingIgnoredDuringExecution()
@@ -481,7 +481,7 @@ public class KafkaRollerST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(),
             testStorage.getControllerSelector(), controllerPoolReplicas, controllerPoolPodsSnapshot);
 
-        // Verify that broker nodes do not roll due to the controller node pool affinity change
+        // Verify that broker nodes do not roll due to the controller KafkaNodePool affinity change
         RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), brokerPoolPodsSnapshot);
     }
 
@@ -492,7 +492,7 @@ public class KafkaRollerST extends AbstractST {
      *
      * @steps
      *  1. - Ensure that the environment is running in KRaft mode.
-     *  2. - Create and deploy a Kafka node pool with mixed roles (controller and broker), consisting of 6 replicas.
+     *  2. - Create and deploy a KafkaNodePool with mixed roles (controller and broker), consisting of 6 replicas.
      *  3. - Take a snapshot of the mixed-role pods for comparison before and after the configuration change.
      *  4. - Update a specific Kafka configuration targeting controller roles.
      *  5. - Observe and verify that all mixed-role nodes undergo a rolling update in response to the configuration change.

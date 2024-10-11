@@ -11,11 +11,17 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -38,11 +44,36 @@ import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 @Tag(REGRESSION)
+@SuiteDoc(
+    description = @Desc("This test suite verifies KafkaConnect using ConfigMap and EnvVar configuration."),
+    beforeTestSteps = {
+        @Step(value = "Deploy Cluster Operator across all namespaces, with custom configuration.", expected = "Cluster Operator is deployed.")
+    },
+    labels = {
+        @Label(value = TestDocsLabels.KAFKA)
+    }
+)
 public class ConfigProviderST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ConfigProviderST.class);
 
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Test to ensure Kafka Connect functions correctly using ConfigMap and EnvVar configuration."),
+        steps = {
+            @Step(value = "Create broker and controller KafkaNodePools.", expected = "Resources are created and are in ready state."),
+            @Step(value = "Create Kafka cluster.", expected = "Kafka cluster is ready"),
+            @Step(value = "Create ConfigMap for connector configuration.", expected = "ConfigMap with connector configuration is created."),
+            @Step(value = "Deploy Kafka Connect with external configuration from ConfigMap.", expected = "KafkaConnect is deployed with proper configuration."),
+            @Step(value = "Create necessary Role and RoleBinding for connector.", expected = "Role and RoleBinding are created and applied."),
+            @Step(value = "Deploy KafkaConnector.", expected = "KafkaConnector is successfully deployed."),
+            @Step(value = "Deploy Kafka clients.", expected = "Kafka clients are deployed and ready."),
+            @Step(value = "Send messages and verify they are written to sink file.", expected = "Messages are successfully written to the specified sink file.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testConnectWithConnectorUsingConfigAndEnvProvider() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String customFileSinkPath = "/tmp/my-own-path.txt";

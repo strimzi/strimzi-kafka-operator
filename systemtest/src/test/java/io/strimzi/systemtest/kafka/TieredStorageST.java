@@ -5,12 +5,18 @@
 package io.strimzi.systemtest.kafka;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.resources.NamespaceManager;
@@ -40,22 +46,22 @@ import java.util.Collections;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.TestTags.TIERED_STORAGE;
 
-/**
- * @description This test suite covers scenarios for Tiered Storage integration implemented within Strimzi.
- *
- * @steps
- *  1. - Create test namespace
- *  2. - Build Kafka image based on passed parameters like image full name, base image, Dockerfile path (via Kaniko or OpenShift build)
- *  3. - Deploy Minio in test namespace and init the client inside the Minio pod
- *  4. - Init bucket in Minio for purposes of these tests
- *  5. - Deploy Strimzi Cluster Operator
- *
- * @usecase
- *  - tiered-storage-integration
- */
 @MicroShiftNotSupported("We are using Kaniko and OpenShift builds to build Kafka image with TS. To make it working on Microshift we will invest much time with not much additional value.")
 @Tag(REGRESSION)
 @Tag(TIERED_STORAGE)
+@SuiteDoc(
+    description = @Desc("This test suite covers scenarios for Tiered Storage integration implemented within Strimzi."),
+    beforeTestSteps = {
+        @Step(value = "Create test namespace.", expected = "Namespace is created."),
+        @Step(value = "Build Kafka image based on passed parameters like image full name, base image, Dockerfile path (via Kaniko or OpenShift build), and include the Aiven Tiered Storage plugin from (<a href=\"https://github.com/Aiven-Open/tiered-storage-for-apache-kafka/tree/main\">tiered-storage-for-apache-kafka</a>).", expected = "Kafka image is built with the Aiven Tiered Storage plugin integrated."),
+        @Step(value = "Deploy Minio in test namespace and init the client inside the Minio pod.", expected = "Minio is deployed and client is initialized."),
+        @Step(value = "Init bucket in Minio for purposes of these tests.", expected = "Bucket is initialized in Minio."),
+        @Step(value = "Deploy Cluster Operator.", expected = "Cluster Operator is deployed.")
+    },
+    labels = {
+        @Label(value = TestDocsLabels.KAFKA)
+    }
+)
 public class TieredStorageST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(TieredStorageST.class);
 
@@ -65,21 +71,20 @@ public class TieredStorageST extends AbstractST {
     private static final String BUILT_IMAGE_TAG = "latest";
     private TestStorage suiteStorage;
 
-    /**
-     * @description This testcase is focused on testing of Tiered Storage integration implemented within Strimzi.
-     * The tests use Aiven Tiered Storage plugin - <a href="https://github.com/Aiven-Open/tiered-storage-for-apache-kafka/tree/main">...</a>
-     *
-     * @steps
-     *  1. - Deploys KafkaNodePool resource with Broker NodePool with PV of size 10Gi
-     *  2. - Deploys Kafka resource with configuration of Tiered Storage for Aiven plugin, pointing to Minio S3, and with image built in beforeAll
-     *  3. - Creates topic with enabled Tiered Storage sync with size of segments set to 10mb (this is needed for speedup the sync)
-     *  4. - Starts continuous producer to send data to Kafka
-     *  5. - Wait until Minio size is not empty (contains data from Kafka)
-     *
-     * @usecase
-     *  - tiered-storage-integration
-     */
     @ParallelTest
+    @TestDoc(
+        description = @Desc("This testcase is focused on testing of Tiered Storage integration implemented within Strimzi. The tests use Aiven Tiered Storage plugin (<a href=\"https://github.com/Aiven-Open/tiered-storage-for-apache-kafka/tree/main\">tiered-storage-for-apache-kafka</a>)."),
+        steps = {
+            @Step(value = "Deploys KafkaNodePool resource with PV of size 10Gi.", expected = "KafkaNodePool resource is deployed successfully with specified configuration."),
+            @Step(value = "Deploy Kafka CustomResource with Tiered Storage configuration pointing to Minio S3, using a built Kafka image. Reduce the `remote.log.manager.task.interval.ms` and `log.retention.check.interval.ms` to minimize delays during log uploads and deletions.", expected = "Kafka CustomResource is deployed successfully with optimized intervals to speed up log uploads and local log deletions."),
+            @Step(value = "Creates topic with enabled Tiered Storage sync with size of segments set to 10mb (this is needed to speed up the sync).", expected = "Topic is created successfully with Tiered Storage enabled and segment size of 10mb."),
+            @Step(value = "Starts continuous producer to send data to Kafka.", expected = "Continuous producer starts sending data to Kafka."),
+            @Step(value = "Wait until Minio size is not empty (contains data from Kafka).", expected = "Minio contains data from Kafka.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA)
+        }
+    )
     void testTieredStorageWithAivenPlugin() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
