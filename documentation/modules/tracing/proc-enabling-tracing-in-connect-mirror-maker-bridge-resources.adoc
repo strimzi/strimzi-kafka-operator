@@ -159,7 +159,7 @@ spec:
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
           value: "https://otlp-host:4317"
         - name: OTEL_EXPORTER_OTLP_CERTIFICATE
-          value: "/mnt/mysecret"
+          value: "/mnt/mysecret/my-certificate.crt"
       volumeMounts:
         - name: tracing-secret-volume
           mountPath: /mnt/mysecret   
@@ -173,9 +173,4 @@ spec:
   #...
 ----
 
-. Create or update the resource:
-+
-[source,shell,subs="+quotes"]
-----
-kubectl apply -f _<resource_configuration_file>_
-----
+. Apply the changes to the custom resource configuration.
