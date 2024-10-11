@@ -3901,7 +3901,7 @@ public class KafkaClusterZooBasedTest {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
-                        .withVersion("3.7.0")
+                        .withVersion("3.9.0")
                         .withConfig(config)
                     .endKafka()
                 .endSpec()
@@ -3921,7 +3921,7 @@ public class KafkaClusterZooBasedTest {
             KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, kafkaVersionChange, KafkaMetadataConfigurationState.PRE_MIGRATION, null, SHARED_ENV_PROVIDER);
         });
 
-        assertThat(ex.getMessage(), containsString("Migration cannot be performed with Kafka version 3.7-IV4, metadata version 3.7-IV4, inter.broker.protocol.version 3.6-IV2, log.message.format.version 3.6-IV2."));
+        assertThat(ex.getMessage(), containsString("Migration cannot be performed with Kafka version 3.9-IV0, metadata version 3.9-IV0, inter.broker.protocol.version 3.6-IV2, log.message.format.version 3.6-IV2."));
     }
 
     @ParallelTest
@@ -3930,7 +3930,7 @@ public class KafkaClusterZooBasedTest {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
-                        .withVersion("3.7.0")
+                        .withVersion("3.9.0")
                         .withMetadataVersion("3.6-IV2")
                         .withConfig(Map.of())
                     .endKafka()
@@ -3951,7 +3951,7 @@ public class KafkaClusterZooBasedTest {
             KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, kafkaVersionChange, KafkaMetadataConfigurationState.PRE_MIGRATION, null, SHARED_ENV_PROVIDER);
         });
 
-        assertThat(ex.getMessage(), containsString("Migration cannot be performed with Kafka version 3.7-IV4, metadata version 3.6-IV2, inter.broker.protocol.version 3.7-IV4, log.message.format.version 3.7-IV4."));
+        assertThat(ex.getMessage(), containsString("Migration cannot be performed with Kafka version 3.9-IV0, metadata version 3.6-IV2, inter.broker.protocol.version 3.9-IV0, log.message.format.version 3.9-IV0."));
     }
 
     @ParallelTest
@@ -3963,8 +3963,8 @@ public class KafkaClusterZooBasedTest {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
-                        .withVersion("3.7.0")
-                        .withMetadataVersion("3.7-IV4")
+                        .withVersion("3.9.0")
+                        .withMetadataVersion("3.9-IV0")
                         .withConfig(config)
                 .endKafka()
                 .endSpec()

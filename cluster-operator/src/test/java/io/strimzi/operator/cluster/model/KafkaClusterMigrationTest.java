@@ -231,8 +231,7 @@ public class KafkaClusterMigrationTest {
 
                 assertThat(configuration, containsString("listener.name.controlplane-9090"));
                 assertThat(configuration, containsString("listeners=CONTROLPLANE-9090://0.0.0.0:9090"));
-                // controllers never advertises listeners
-                assertThat(configuration, not(containsString("advertised.listeners")));
+                assertThat(configuration, containsString("advertised.listeners=CONTROLPLANE-9090://my-cluster-controllers-3.my-cluster-kafka-brokers.my-namespace.svc:9090"));
 
                 assertThat(configuration, containsString("controller.listener.names=CONTROLPLANE-9090"));
                 assertThat(configuration, containsString("controller.quorum.voters=3@my-cluster-controllers-3.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,4@my-cluster-controllers-4.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,5@my-cluster-controllers-5.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090"));

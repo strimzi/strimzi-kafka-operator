@@ -38,8 +38,8 @@
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:0.44.0-kafka-3.7.0
-    kafka: strimzi/kafka:0.44.0-kafka-3.7.0
+    zookeeper: strimzi/kafka:0.44.0-kafka-3.8.0
+    kafka: strimzi/kafka:0.44.0-kafka-3.8.0
     topicOperator: strimzi/operator:0.44.0
     userOperator: strimzi/operator:0.44.0
   deployKafkaVersion: 3.8.0
