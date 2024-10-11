@@ -21,26 +21,25 @@ public class KafkaVersionTestUtils {
 
     private static final Set<String> SUPPORTED_VERSIONS = new KafkaVersion.Lookup(Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap()).supportedVersions();
 
-    public static final String LATEST_KAFKA_VERSION = "3.8.1";
-    public static final String LATEST_FORMAT_VERSION = "3.8";
-    public static final String LATEST_PROTOCOL_VERSION = "3.8";
-    public static final String LATEST_METADATA_VERSION = "3.8-IV0";
+    public static final String LATEST_KAFKA_VERSION = "3.9.0";
+    public static final String LATEST_FORMAT_VERSION = "3.9";
+    public static final String LATEST_PROTOCOL_VERSION = "3.9";
+    public static final String LATEST_METADATA_VERSION = "3.9-IV0";
     public static final String LATEST_ZOOKEEPER_VERSION = "3.8.4";
     public static final String LATEST_CHECKSUM = "ABCD1234";
-    public static final String LATEST_THIRD_PARTY_VERSION = "3.8.x";
-    public static final String KAFKA_390_VERSION = "3.9.0";
+    public static final String LATEST_THIRD_PARTY_VERSION = "3.9.x";
     public static final String LATEST_KAFKA_IMAGE = KAFKA_IMAGE_STR + LATEST_KAFKA_VERSION;
     public static final String LATEST_KAFKA_CONNECT_IMAGE = KAFKA_CONNECT_IMAGE_STR + LATEST_KAFKA_VERSION;
     public static final String LATEST_KAFKA_MIRROR_MAKER_IMAGE = KAFKA_MIRROR_MAKER_IMAGE_STR + LATEST_KAFKA_VERSION;
     public static final String LATEST_KAFKA_MIRROR_MAKER_2_IMAGE = KAFKA_MIRROR_MAKER_2_IMAGE_STR + LATEST_KAFKA_VERSION;
 
-    public static final String PREVIOUS_KAFKA_VERSION = "3.7.1";
-    public static final String PREVIOUS_FORMAT_VERSION = "3.7";
-    public static final String PREVIOUS_PROTOCOL_VERSION = "3.7";
-    public static final String PREVIOUS_METADATA_VERSION = "3.7-IV4";
+    public static final String PREVIOUS_KAFKA_VERSION = "3.8.0";
+    public static final String PREVIOUS_FORMAT_VERSION = "3.8";
+    public static final String PREVIOUS_PROTOCOL_VERSION = "3.8";
+    public static final String PREVIOUS_METADATA_VERSION = "3.8-IV0";
     public static final String PREVIOUS_ZOOKEEPER_VERSION = "3.8.4";
     public static final String PREVIOUS_CHECKSUM = "ABCD1234";
-    public static final String PREVIOUS_THIRD_PARTY_VERSION = "3.7.x";
+    public static final String PREVIOUS_THIRD_PARTY_VERSION = "3.8.x";
     public static final String PREVIOUS_KAFKA_IMAGE = KAFKA_IMAGE_STR + PREVIOUS_KAFKA_VERSION;
     public static final String PREVIOUS_KAFKA_CONNECT_IMAGE = KAFKA_CONNECT_IMAGE_STR + PREVIOUS_KAFKA_VERSION;
     public static final String PREVIOUS_KAFKA_MIRROR_MAKER_IMAGE = KAFKA_MIRROR_MAKER_IMAGE_STR + PREVIOUS_KAFKA_VERSION;
