@@ -50,7 +50,7 @@ spec:
 kubectl annotate kafkaconnector my-source-connector strimzi.io/connector-offsets=list -n <namespace>
 ----
 +
-The annotation remains until either the list operation succeeds, or it is manually removed from the resource.
+The annotation remains until either the list operation succeeds or it is manually removed from the resource.
 
 . After the `KafkaConnector` resource is updated, use the following command to check if the config map with the offsets was created:
 +
@@ -66,8 +66,8 @@ kubectl get configmap my-connector-offsets -n <namespace>
 kubectl describe configmap my-connector-offsets -n <namespace>
 ----
 +
-Strimzi puts the offsets into the `offsets.json` property. 
-It doesn't overwrite any other properties when updating an existing config map.
+Strimzi puts the offset information into the `offsets.json` property. 
+This does not overwrite any other properties when updating an existing config map.
 +
 --
 .Example source connector offset list
@@ -100,7 +100,7 @@ data:
     } 
 ----
 <1> The owner reference pointing to the `KafkaConnector` resource for the source connector. 
-To provide a custom owner reference, create the config map in advance and set the owner reference.
+To provide a custom owner reference, create the config map in advance and set the owner reference. 
 <2> The source partition, represented by the filename `/data/myfile.txt` in this example for a file-based connector.
 <3> The last processed offset position in the source partition.
 --
@@ -129,7 +129,7 @@ data:
         {
           "partition": {
             "kafka_topic": "my-topic", # <2>
-              "kafka_partition": 2 # <3>
+            "kafka_partition": 2 # <3>
           },
           "offset": {
             "kafka_offset": 4 # <4>

@@ -43,7 +43,7 @@ spec:
 kubectl annotate kafkaconnector my-source-connector strimzi.io/connector-offsets=reset -n <namespace>
 ----
 +
-The annotation remains until either the reset operation succeeds, or it is manually removed from the resource.
+The annotation remains until either the reset operation succeeds or it is manually removed from the resource.
 
 . Check the changes by using the procedure to xref:proc-listing-connector-offsets-{context}[list connector offsets].
 +

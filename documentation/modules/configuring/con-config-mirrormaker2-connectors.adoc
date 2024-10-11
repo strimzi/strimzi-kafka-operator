@@ -247,11 +247,12 @@ Mismatched or missing settings cause issues with data replication or offset sync
 == Listing the offsets of MirrorMaker 2 connectors
 
 To list the offset positions of the internal MirrorMaker 2 connectors, use the same configuration that's used to manage Kafka Connect connectors.
+For more information on setting up the configuration and listing offsets, see xref:proc-listing-connector-offsets-{context}[].
 
 In this example, the `sourceConnector` configuration is updated to return the connector offset position.
 The offset information is written to a specified config map.
 
-.Example configuration for connector producers and consumers
+.Example configuration for MirrorMaker 2 connector
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaMirrorMaker2ApiVersion}
@@ -261,6 +262,11 @@ metadata:
 spec:
   version: {DefaultKafkaVersion}
   # ...
+  clusters:
+  - alias: "my-cluster-source"
+    bootstrapServers: my-cluster-source-kafka-bootstrap:9092
+  - alias: "my-cluster-target"
+    bootstrapServers: my-cluster-target-kafka-bootstrap:9092
   mirrors:
   - sourceCluster: "my-cluster-source"
     targetCluster: "my-cluster-target"
@@ -271,6 +277,61 @@ spec:
         # ...    
 ----
 
-For more information on setting up the configuration, see xref:proc-listing-connector-offsets-{context}[].
+You must apply the following annotations to the `KafkaMirrorMaker2` resource be able to manage connector offsets:
+
+* `strimzi.io/connector-offsets`
+* `strimzi.io/mirrormaker-connector`
+
+The `strimzi.io/mirrormaker-connector` annotation must be set to the name of the connector.
+These annotations remain until the operation succeeds or they are manually removed from the resource.
+
+MirrorMaker 2 connectors are named using the aliases of the source and target clusters, followed by the connector type: `<source_alias>&#45;&#62;<target_alias>.<connector_type>`.
+
+In the following example, the annotations are applied for a connector named `my-cluster-source&#45;&#62;my-cluster-target.MirrorSourceConnector`.
+
+.Example application of annotations for connector
+[source,shell]
+----
+kubectl annotate kafkamirrormaker2 my-mirror-maker-2 strimzi.io/connector-offsets=list strimzi.io/mirrormaker-connector="my-cluster-source->my-cluster-target.MirrorSourceConnector" -n kafka
+----
+
+The offsets are listed in the specified config map.
+Strimzi puts the offset information into a `.json` property named after the connector. 
+This does not overwrite any other properties when updating an existing config map.
+
+.Example source connector offset list
+[source,yaml,subs="+attributes"]
+----
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  # ...
+  ownerReferences: # <1>
+  - apiVersion: {KafkaMirrorMaker2ApiVersion}
+    blockOwnerDeletion: false
+    controller: false
+    kind: KafkaMirrorMaker2
+    name: my-mirror-maker2
+    uid: 637e3be7-bd96-43ab-abde-c55b4c4550e0
+data: 
+  my-cluster-source--my-cluster-target.MirrorSourceConnector.json: |- # <2>
+    {
+      "offsets": [
+        {
+          "partition": {
+            "cluster": "east-kafka",
+            "partition": 0,
+            "topic": "mirrormaker2-cluster-configs"
+          },
+          "offset": {
+            "offset": 0
+          }
+        }
+      ]
+    }
+----
+<1> The owner reference pointing to the `KafkaMirrorMaker2` resource. 
+To provide a custom owner reference, create the config map in advance and set the owner reference.
+<2> The `.json` property uses the connector name. Since `&#45;&#62;` characters are not allowed in config map keys, `&#45;&#62;` is changed to `--` in the connector name.
 
 NOTE: It is possible to use configuration to xref:proc-altering-connector-offsets-{context}[alter] or xref:proc-resetting-connector-offsets-{context}[reset] connector offsets, though this is rarely necessary.

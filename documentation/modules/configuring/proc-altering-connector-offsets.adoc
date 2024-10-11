@@ -55,19 +55,20 @@ kind: ConfigMap
 metadata:
   # ...
 data: 
-  offsets.json: |-
+  offsets.json: |- # <1>
     {
       "offsets" : [ {
         "partition" : {
           "filename" : "/data/myfile.txt"
         },
         "offset" : {
-          "position" : 15000 # <1>
+          "position" : 15000 # <2>
         }
       } ]
     } 
 ----
-<1> The updated offset position in the source partition.
+<1> Edits must be made within the `offsets.json` property. 
+<2> The updated offset position in the source partition.
 
 . Run the command to update the offset position by annotating the `KafkaConnector` resource:
 +
@@ -76,7 +77,7 @@ data:
 kubectl annotate kafkaconnector my-source-connector strimzi.io/connector-offsets=alter -n <namespace>
 ----
 +
-The annotation remains until either the update operation succeeds, or it is manually removed from the resource.
+The annotation remains until either the update operation succeeds or it is manually removed from the resource.
 
 . Check the changes by using the procedure to xref:proc-listing-connector-offsets-{context}[list connector offsets].
 
