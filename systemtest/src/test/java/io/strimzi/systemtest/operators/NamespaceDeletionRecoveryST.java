@@ -84,7 +84,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaNodePoolResource.getBrokerPoolName(testStorage.getClusterName()), testStorage.getClusterName(), 3)
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3)
                     .editSpec()
                         .withNewPersistentClaimStorage()
                             .withSize("1Gi")
@@ -92,7 +92,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
                         .endPersistentClaimStorage()
                     .endSpec()
                     .build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaNodePoolResource.getControllerPoolName(testStorage.getClusterName()), testStorage.getClusterName(), 3)
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3)
                     .editSpec()
                         .withNewPersistentClaimStorage()
                             .withSize("1Gi")
@@ -202,7 +202,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaNodePoolResource.getBrokerPoolName(testStorage.getClusterName()), testStorage.getClusterName(), 3)
+                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3)
                     .editSpec()
                         .withNewPersistentClaimStorage()
                             .withSize("1Gi")
@@ -210,7 +210,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
                         .endPersistentClaimStorage()
                     .endSpec()
                     .build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaNodePoolResource.getControllerPoolName(testStorage.getClusterName()), testStorage.getClusterName(), 3)
+                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3)
                     .editSpec()
                         .withNewPersistentClaimStorage()
                             .withSize("1Gi")
