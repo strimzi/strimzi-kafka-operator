@@ -566,16 +566,16 @@ class KafkaST extends AbstractST {
 
         // label key and values to be used as part of kafka CR
         final String firstKafkaLabelKey = "first-kafka-label-key";
-        final String firstKafkaLabelValue = "first-kafka-label-value.";
+        final String firstKafkaLabelValue = "first-kafka-label-value";
         final String secondKafkaLabelKey = "second-kafka-label-key";
-        final String secondKafkaLabelValue = "second-kafka-label-value.";
+        final String secondKafkaLabelValue = "second-kafka-label-value";
         final Map<String, String> customSpecifiedLabels = new HashMap<>();
         customSpecifiedLabels.put(firstKafkaLabelKey, firstKafkaLabelValue);
         customSpecifiedLabels.put(secondKafkaLabelKey, secondKafkaLabelValue);
 
         // label key and value used in addition for while creating kafka CR (as part of PVCs label and annotation)
         final String pvcLabelOrAnnotationKey = "pvc-label-annotation-key";
-        final String pvcLabelOrAnnotationValue = "pvc-label-annotation-value.";
+        final String pvcLabelOrAnnotationValue = "pvc-label-annotation-value";
         final Map<String, String> customSpecifiedLabelOrAnnotationPvc = new HashMap<>();
         customSpecifiedLabelOrAnnotationPvc.put(pvcLabelOrAnnotationKey, pvcLabelOrAnnotationValue);
 
@@ -761,7 +761,7 @@ class KafkaST extends AbstractST {
         // key-value pairs modification and addition of user specified labels for kafka CR metadata
         final String firstKafkaLabelValueModified = "first-kafka-label-value-modified";
         final String thirdKafkaLabelKey = "third-kafka-label-key";
-        final String thirdKafkaLabelValue = "third-kafka-label-value.";
+        final String thirdKafkaLabelValue = "third-kafka-label-value";
         customSpecifiedLabels.replace(firstKafkaLabelKey, firstKafkaLabelValueModified);
         customSpecifiedLabels.put(thirdKafkaLabelKey, thirdKafkaLabelValue);
         LOGGER.info("New values of labels which are to modify Kafka CR after their replacement and addition of new one are following {}", customSpecifiedLabels);
