@@ -11,13 +11,11 @@ Instrument tracers in Kafka clients for end-to-end tracking of messages.
 
 To set up distributed tracing, follow these procedures in order:
 
-* xref:proc-enabling-tracing-in-connect-mirror-maker-bridge-resources-{context}[Enable tracing for MirrorMaker, Kafka Connect, and the Kafka Bridge]
+* xref:proc-enabling-tracing-in-connect-mirror-maker-bridge-resources-{context}[Enable tracing for supported Kafka components]
 
-* Set up tracing for clients:
+* xref:proc-configuring-tracers-kafka-clients-{context}[Initialize a tracer for Kafka clients]
 
-** xref:proc-configuring-tracers-kafka-clients-{context}[Initialize a Jaeger tracer for Kafka clients]
-
-* Instrument clients with tracers:
+* Instrument clients with tracers, embedding telemetry-gathering functionality into the code:
 
 ** xref:proc-instrumenting-producers-consumers-for-tracing-{context}[Instrument producers and consumers for tracing]
 
@@ -25,25 +23,17 @@ To set up distributed tracing, follow these procedures in order:
 
 == Prerequisites
 
-Before setting up distributed tracing, make sure Jaeger backend components are deployed to your Kubernetes cluster. 
-We recommend using the Jaeger operator for deploying Jaeger on your Kubernetes cluster.
+Before setting up distributed tracing, make sure backend components are deployed to your Kubernetes cluster. 
 
+We recommend using the Jaeger operator for deploying Jaeger on your Kubernetes cluster.
 For deployment instructions, see the {JaegerDocs}.
 
-[NOTE]
-====
-Setting up tracing for applications and systems beyond Strimzi is outside the scope of this content. 
-====
+NOTE: Setting up tracing systems is outside the scope of this content. 
 
 include::../../modules/tracing/proc-enabling-tracing-in-connect-mirror-maker-bridge-resources.adoc[leveloffset=+1]
-
 include::../../modules/tracing/proc-configuring-tracers-kafka-clients.adoc[leveloffset=+1]
-
 include::../../modules/tracing/proc-instrumenting-producers-consumers-tracing.adoc[leveloffset=+1]
-
 include::../../modules/tracing/proc-instrumenting-kafka-streams-with-tracers.adoc[leveloffset=+1]
-
-include::../../modules/tracing/proc-enabling-tracing-type.adoc[leveloffset=+1]  
-
+include::../../modules/tracing/proc-enabling-tracing-type.adoc[leveloffset=+1]
 include::../../modules/tracing/ref-tracing-span-names.adoc[leveloffset=+1]
 
