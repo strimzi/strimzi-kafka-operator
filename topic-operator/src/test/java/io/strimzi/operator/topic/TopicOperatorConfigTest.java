@@ -4,34 +4,26 @@
  */
 package io.strimzi.operator.topic;
 
-import io.kroxylicious.testing.kafka.api.KafkaCluster;
-import io.kroxylicious.testing.kafka.common.SaslPlainAuth;
-import io.kroxylicious.testing.kafka.common.Tls;
-import io.kroxylicious.testing.kafka.junit5ext.KafkaClusterExtension;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.featuregates.FeatureGates;
-import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.common.config.SslConfigs;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@ExtendWith(KafkaClusterExtension.class)
 class TopicOperatorConfigTest {
     private static final String NAMESPACE = TopicOperatorTestUtil.namespaceName(TopicOperatorConfigTest.class);
 
     @Test
-    void shouldConnectWithPlaintextAndNotAuthn(KafkaCluster kc) throws ExecutionException, InterruptedException {
+    void shouldConnectWithPlaintextAndNotAuthn() {
         // given
         var config = TopicOperatorConfig.buildFromMap(Map.of(
-                TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), kc.getBootstrapServers(),
+                TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "my-kafka:9092",
                 TopicOperatorConfig.NAMESPACE.key(), NAMESPACE));
 
         // then
@@ -43,22 +35,18 @@ class TopicOperatorConfigTest {
         adminConfig.remove("client.id");
         assertEquals(Map.of(
                 "security.protocol", "PLAINTEXT",
-                "bootstrap.servers", kc.getBootstrapServers()), adminConfig);
-        Admin.create(adminConfig).describeCluster().clusterId().get();
+                "bootstrap.servers", "my-kafka:9092"), adminConfig);
     }
 
     @Test
-    void shouldConnectWithTls(
-                @Tls
-                KafkaCluster kc) throws ExecutionException, InterruptedException {
+    void shouldConnectWithTls() {
         // given
-        Map<String, Object> kafkaClientConfiguration = kc.getKafkaClientConfiguration();
         var config = TopicOperatorConfig.buildFromMap(Map.of(
-                TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), kc.getBootstrapServers(),
+                TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "my-kafka:9092",
                 TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
                 TopicOperatorConfig.TLS_ENABLED.key(), "true",
-                TopicOperatorConfig.TRUSTSTORE_LOCATION.key(), kafkaClientConfiguration.get(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG).toString(),
-                TopicOperatorConfig.TRUSTSTORE_PASSWORD.key(), kafkaClientConfiguration.get(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG).toString()));
+                TopicOperatorConfig.TRUSTSTORE_LOCATION.key(), "my/trusstore.p12",
+                TopicOperatorConfig.TRUSTSTORE_PASSWORD.key(), "123456"));
 
         // then
         assertEquals(NAMESPACE, config.namespace());
@@ -69,20 +57,17 @@ class TopicOperatorConfigTest {
         adminConfig.remove("client.id");
         assertEquals(Map.of(
                 "security.protocol", "SSL",
-                "bootstrap.servers", kc.getBootstrapServers(),
-                "ssl.truststore.location", kafkaClientConfiguration.get(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG).toString(),
-                "ssl.truststore.password", kafkaClientConfiguration.get(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG).toString(),
+                "bootstrap.servers", "my-kafka:9092",
+                "ssl.truststore.location", "my/trusstore.p12",
+                "ssl.truststore.password", "123456",
                 "ssl.endpoint.identification.algorithm", "HTTPS"), adminConfig);
-        Admin.create(adminConfig).describeCluster().clusterId().get();
     }
 
     @Test
-    void shouldConnectWithSaslPlain(
-                    @SaslPlainAuth(user = "foo", password = "foo")
-                    KafkaCluster kc) throws ExecutionException, InterruptedException {
+    void shouldConnectWithSaslPlain() {
         // given
         var config = TopicOperatorConfig.buildFromMap(Map.of(
-                TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), kc.getBootstrapServers(),
+                TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "my-kafka:9092",
                 TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
                 TopicOperatorConfig.SECURITY_PROTOCOL.key(), "SASL_PLAINTEXT",
                 TopicOperatorConfig.SASL_ENABLED.key(), "true",
@@ -100,27 +85,21 @@ class TopicOperatorConfigTest {
         adminConfig.remove("client.id");
         assertEquals(Map.of(
                 "security.protocol", "SASL_PLAINTEXT",
-                "bootstrap.servers", kc.getBootstrapServers(),
+                "bootstrap.servers", "my-kafka:9092",
                 "sasl.mechanism", "PLAIN",
                 "sasl.jaas.config", "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"foo\" password=\"foo\";"), adminConfig);
-
-        Admin.create(adminConfig).describeCluster().clusterId().get();
     }
 
     @Test
-    void shouldConnectWithSaslPlainWithTls(
-                    @Tls
-                    @SaslPlainAuth(user = "foo", password = "foo")
-                    KafkaCluster kc) throws ExecutionException, InterruptedException {
+    void shouldConnectWithSaslPlainWithTls() {
         // given
-        Map<String, Object> kafkaClientConfiguration = kc.getKafkaClientConfiguration("foo", "foo");
         var config = TopicOperatorConfig.buildFromMap(Map.of(
-                TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), kc.getBootstrapServers(),
+                TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "my-kafka:9092",
                 TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
                 TopicOperatorConfig.SECURITY_PROTOCOL.key(), "SASL_SSL",
                 TopicOperatorConfig.TLS_ENABLED.key(), "true",
-                TopicOperatorConfig.TRUSTSTORE_LOCATION.key(), kafkaClientConfiguration.get(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG).toString(),
-                TopicOperatorConfig.TRUSTSTORE_PASSWORD.key(), kafkaClientConfiguration.get(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG).toString(),
+                TopicOperatorConfig.TRUSTSTORE_LOCATION.key(), "my/trusstore.p12",
+                TopicOperatorConfig.TRUSTSTORE_PASSWORD.key(), "123456",
                 TopicOperatorConfig.SASL_ENABLED.key(), "true",
                 TopicOperatorConfig.SASL_MECHANISM.key(), "plain",
                 TopicOperatorConfig.SASL_USERNAME.key(), "foo",
@@ -136,14 +115,12 @@ class TopicOperatorConfigTest {
         adminConfig.remove("client.id");
         assertEquals(Map.of(
                 "security.protocol", "SASL_SSL",
-                "bootstrap.servers", kc.getBootstrapServers(),
+                "bootstrap.servers", "my-kafka:9092",
                 "sasl.mechanism", "PLAIN",
                 "sasl.jaas.config", "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"foo\" password=\"foo\";",
-                "ssl.truststore.location", kafkaClientConfiguration.get(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG).toString(),
-                "ssl.truststore.password", kafkaClientConfiguration.get(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG).toString(),
+                "ssl.truststore.location", "my/trusstore.p12",
+                "ssl.truststore.password", "123456",
                 "ssl.endpoint.identification.algorithm", "HTTPS"), adminConfig);
-
-        Admin.create(adminConfig).describeCluster().clusterId().get();
     }
 
     @Test

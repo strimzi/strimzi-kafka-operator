@@ -79,9 +79,12 @@ public class KafkaConnectorIT {
 
     @BeforeAll
     public static void before() throws IOException {
-        final Map<String, String> kafkaClusterConfiguration = new HashMap<>();
-        kafkaClusterConfiguration.put("zookeeper.connect", "zookeeper:2181");
-        cluster = new StrimziKafkaCluster(3, 1, kafkaClusterConfiguration);
+        cluster = new StrimziKafkaCluster.StrimziKafkaClusterBuilder()
+                .withKraft()
+                .withNumberOfBrokers(1)
+                .withInternalTopicReplicationFactor(1)
+                .withSharedNetwork()
+                .build();
         cluster.start();
 
         // Configure the Kubernetes Mock
@@ -109,10 +112,10 @@ public class KafkaConnectorIT {
                         .setEnabled(true)
         ));
 
-        // Start a 3 node connect cluster
+        // Start Connect cluster
         connectCluster = new ConnectCluster()
                 .usingBrokers(cluster.getBootstrapServers())
-                .addConnectNodes(3);
+                .addConnectNodes(1);
         connectCluster.startup();
     }
 
@@ -163,7 +166,7 @@ public class KafkaConnectorIT {
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
                 ClusterOperatorConfig.buildFromMap(Map.of(), KafkaVersionTestUtils.getKafkaVersionLookup()),
             connect -> new KafkaConnectApiImpl(vertx),
-            connectCluster.getPort(2)
+            connectCluster.getPort(0)
         ) { };
 
         Checkpoint async = context.checkpoint();
@@ -234,7 +237,7 @@ public class KafkaConnectorIT {
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
                 ClusterOperatorConfig.buildFromMap(Map.of(), KafkaVersionTestUtils.getKafkaVersionLookup()),
                 connect -> new KafkaConnectApiImpl(vertx),
-                connectCluster.getPort(2)
+                connectCluster.getPort(0)
         ) { };
 
         operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
@@ -284,7 +287,7 @@ public class KafkaConnectorIT {
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
                 ClusterOperatorConfig.buildFromMap(Map.of(), KafkaVersionTestUtils.getKafkaVersionLookup()),
                 connect -> new KafkaConnectApiImpl(vertx),
-                connectCluster.getPort(2)
+                connectCluster.getPort(0)
         ) { };
 
         operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
@@ -345,7 +348,7 @@ public class KafkaConnectorIT {
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
             ClusterOperatorConfig.buildFromMap(Map.of(), KafkaVersionTestUtils.getKafkaVersionLookup()),
             connect -> new KafkaConnectApiImpl(vertx),
-            connectCluster.getPort(2)
+            connectCluster.getPort(0)
         ) { };
 
         operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
@@ -395,7 +398,7 @@ public class KafkaConnectorIT {
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
             ClusterOperatorConfig.buildFromMap(Map.of(), KafkaVersionTestUtils.getKafkaVersionLookup()),
             connect -> new KafkaConnectApiImpl(vertx),
-            connectCluster.getPort(2)
+            connectCluster.getPort(0)
         ) { };
 
         operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
