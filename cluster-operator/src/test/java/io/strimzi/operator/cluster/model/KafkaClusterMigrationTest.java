@@ -132,13 +132,22 @@ public class KafkaClusterMigrationTest {
 
             assertThat(configuration, containsString("node.id=0"));
             // from ZK up to MIGRATION ...
-            if (state.isZooKeeperToMigration()) {
+            if (state.isZooKeeper()) {
                 // ... has ZooKeeper connection configured
                 assertThat(configuration, containsString("zookeeper.connect"));
                 // ... broker.id still set
                 assertThat(configuration, containsString("broker.id=0"));
                 // ... control plane is set as listener and advertised
                 assertThat(configuration, containsString("control.plane.listener.name=CONTROLPLANE-9090"));
+                assertThat(configuration, containsString("listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092"));
+                assertThat(configuration, containsString("advertised.listeners=CONTROLPLANE-9090://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9092"));
+            } else if (state.isZooKeeperToMigration()) {
+                // ... has ZooKeeper connection configured
+                assertThat(configuration, containsString("zookeeper.connect"));
+                // ... broker.id still set
+                assertThat(configuration, containsString("broker.id=0"));
+                // ... control plane is set as listener and advertised
+                assertThat(configuration, not(containsString("control.plane.listener.name=CONTROLPLANE-9090")));
                 assertThat(configuration, containsString("listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092"));
                 assertThat(configuration, containsString("advertised.listeners=CONTROLPLANE-9090://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9092"));
             } else {
