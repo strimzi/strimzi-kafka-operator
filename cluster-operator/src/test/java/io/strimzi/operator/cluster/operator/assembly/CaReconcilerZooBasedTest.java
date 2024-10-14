@@ -12,13 +12,13 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
-import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -47,10 +47,8 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -265,16 +263,13 @@ public class CaReconcilerZooBasedTest {
         }
 
         @Override
-        Future<Set<NodeRef>> getKafkaReplicas() {
-            Set<NodeRef> nodes = new HashSet<>();
-            nodes.add(ReconcilerUtils.nodeFromPod(podWithName("my-kafka-kafka-0")));
-            nodes.add(ReconcilerUtils.nodeFromPod(podWithName("my-kafka-kafka-1")));
-            nodes.add(ReconcilerUtils.nodeFromPod(podWithName("my-kafka-kafka-2")));
-            return Future.succeededFuture(nodes);
+        Future<List<StrimziPodSet>> updateKafkaPodCertAnnotations() {
+            //Response is ignored by rollKafka method in the mock
+            return Future.succeededFuture(List.of());
         }
 
         @Override
-        Future<Void> rollKafkaBrokers(Set<NodeRef> nodes, RestartReasons podRollReasons, TlsPemIdentity coTlsPemIdentity) {
+        Future<Void> rollKafka(List<StrimziPodSet> podSets, RestartReasons podRollReasons, TlsPemIdentity coTlsPemIdentity) {
             this.kPodRollReasons = podRollReasons;
             return Future.succeededFuture();
         }

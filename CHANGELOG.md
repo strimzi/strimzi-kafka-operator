@@ -13,6 +13,7 @@
   * after a scaling up, the operator triggers an auto-rebalancing for moving some of the existing partitions to the newly added brokers.
   * before scaling down, and if the brokers to remove are hosting partitions, the operator triggers an auto-rebalancing to these partitions off the brokers to make them free to be removed.
 * Strimzi Access Operator 0.1.0 added to the installation files and examples
+* Patch the StrimziPodSets before rolling the pods during CA certificate renewal.
 
 ### Changes, deprecations and removals
 

@@ -19,6 +19,8 @@ import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
+import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.OpenSslCertManager;
@@ -28,7 +30,7 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.ModelUtils;
-import io.strimzi.operator.cluster.model.NodeRef;
+import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -76,7 +78,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -1529,22 +1530,33 @@ public class CaReconcilerTest {
         StrimziPodSetOperator spsOps = supplier.strimziPodSetOperator;
         when(spsOps.getAsync(eq(NAMESPACE), eq(KafkaResources.zookeeperComponentName(NAME)))).thenReturn(Future.succeededFuture());
 
+        List<Pod> pods = new ArrayList<>();
+        // adding a terminating Cruise Control pod to test that it's skipped during the key generation check
+        Pod ccPod = podWithNameAndAnnotations("my-cluster-cruise-control", false, false, generationAnnotations);
+        ccPod.getMetadata().setDeletionTimestamp("2023-06-08T16:23:18Z");
+        pods.add(ccPod);
+        // adding Kafka pods with old CA cert and key generation
+        pods.add(podWithNameAndAnnotations("my-cluster-controllers-3", false, true, generationAnnotations));
+        pods.add(podWithNameAndAnnotations("my-cluster-controllers-4", false, true, generationAnnotations));
+        pods.add(podWithNameAndAnnotations("my-cluster-controllers-5", false, true, generationAnnotations));
+        pods.add(podWithNameAndAnnotations("my-cluster-brokers-0", true, false, generationAnnotations));
+        pods.add(podWithNameAndAnnotations("my-cluster-brokers-1", true, false, generationAnnotations));
+        pods.add(podWithNameAndAnnotations("my-cluster-brokers-2", true, false, generationAnnotations));
+
+        StrimziPodSet strimziPodSet = new StrimziPodSetBuilder()
+                .withNewMetadata()
+                    .withName(NAME)
+                .endMetadata()
+                .withNewSpec()
+                    .withPods(PodSetUtils.podsToMaps(pods))
+                .endSpec()
+                .build();
+
         PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(any(), any(Labels.class))).thenAnswer(i -> {
-            List<Pod> pods = new ArrayList<>();
-            // adding a terminating Cruise Control pod to test that it's skipped during the key generation check
-            Pod ccPod = podWithNameAndAnnotations("my-cluster-cruise-control", false, false, generationAnnotations);
-            ccPod.getMetadata().setDeletionTimestamp("2023-06-08T16:23:18Z");
-            pods.add(ccPod);
-            // adding Kafka pods with old CA cert and key generation
-            pods.add(podWithNameAndAnnotations("my-cluster-controllers-3", false, true, generationAnnotations));
-            pods.add(podWithNameAndAnnotations("my-cluster-controllers-4", false, true, generationAnnotations));
-            pods.add(podWithNameAndAnnotations("my-cluster-controllers-5", false, true, generationAnnotations));
-            pods.add(podWithNameAndAnnotations("my-cluster-brokers-0", true, false, generationAnnotations));
-            pods.add(podWithNameAndAnnotations("my-cluster-brokers-1", true, false, generationAnnotations));
-            pods.add(podWithNameAndAnnotations("my-cluster-brokers-2", true, false, generationAnnotations));
-            return Future.succeededFuture(pods);
-        });
+        when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
+
+        when(spsOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of(strimziPodSet)));
+        when(spsOps.batchReconcile(any(), eq(NAMESPACE), any(), any(Labels.class))).thenReturn(Future.succeededFuture());
 
         Map<String, Deployment> deps = new HashMap<>();
         deps.put("my-cluster-entity-operator", deploymentWithName("my-cluster-entity-operator"));
@@ -1560,6 +1572,14 @@ public class CaReconcilerTest {
         mockCaReconciler
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
+                    List<StrimziPodSet> podSets = mockCaReconciler.podSets;
+                    assertThat(podSets, hasSize(1));
+                    List<Pod> returnedPods = PodSetUtils.podSetToPods(podSets.get(0));
+                    for (Pod pod : returnedPods) {
+                        Map<String, String> podAnnotations = pod.getMetadata().getAnnotations();
+                        assertThat(podAnnotations, hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "1"));
+                        assertThat(podAnnotations, hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "1"));
+                    }
                     assertThat(mockCaReconciler.isClusterCaNeedFullTrust, is(true));
                     assertThat(mockCaReconciler.kPodRollReasons.contains(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED), is(true));
                     assertThat(mockCaReconciler.deploymentRollReason.size() == 3, is(true));
@@ -1571,6 +1591,7 @@ public class CaReconcilerTest {
     }
 
     static class MockCaReconciler extends CaReconciler {
+        List<StrimziPodSet> podSets;
         RestartReasons kPodRollReasons;
         List<String> deploymentRollReason = new ArrayList<>();
 
@@ -1587,19 +1608,8 @@ public class CaReconcilerTest {
         }
 
         @Override
-        Future<Set<NodeRef>> getKafkaReplicas() {
-            Set<NodeRef> nodes = new HashSet<>();
-            nodes.add(ReconcilerUtils.nodeFromPod(podWithName("my-cluster-brokers-0", true, false)));
-            nodes.add(ReconcilerUtils.nodeFromPod(podWithName("my-cluster-brokers-1", true, false)));
-            nodes.add(ReconcilerUtils.nodeFromPod(podWithName("my-cluster-brokers-2", true, false)));
-            nodes.add(ReconcilerUtils.nodeFromPod(podWithName("my-cluster-controllers-3", true, false)));
-            nodes.add(ReconcilerUtils.nodeFromPod(podWithName("my-cluster-controllers-4", true, false)));
-            nodes.add(ReconcilerUtils.nodeFromPod(podWithName("my-cluster-controllers-5", true, false)));
-            return Future.succeededFuture(nodes);
-        }
-
-        @Override
-        Future<Void> rollKafkaBrokers(Set<NodeRef> nodes, RestartReasons podRollReasons, TlsPemIdentity coTlsPemIdentity) {
+        Future<Void> rollKafka(List<StrimziPodSet> podSets, RestartReasons podRollReasons, TlsPemIdentity coTlsPemIdentity) {
+            this.podSets = podSets;
             this.kPodRollReasons = podRollReasons;
             return Future.succeededFuture();
         }
@@ -1621,11 +1631,7 @@ public class CaReconcilerTest {
         }
     }
 
-    public static Pod podWithName(String name, boolean broker, boolean controller) {
-        return podWithNameAndAnnotations(name, broker, controller, Map.of());
-    }
-
-    public static Pod podWithNameAndAnnotations(String name, boolean broker, boolean controller, Map<String, String> annotations) {
+    private static Pod podWithNameAndAnnotations(String name, boolean broker, boolean controller, Map<String, String> annotations) {
         return new PodBuilder()
                 .withNewMetadata()
                     .withName(name)
@@ -1639,7 +1645,7 @@ public class CaReconcilerTest {
                 .build();
     }
 
-    public static Deployment deploymentWithName(String name) {
+    private static Deployment deploymentWithName(String name) {
         return new DeploymentBuilder()
                 .withNewMetadata()
                     .withName(name)
