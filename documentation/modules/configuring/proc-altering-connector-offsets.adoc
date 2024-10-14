@@ -1,0 +1,98 @@
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='proc-altering-connector-offsets-{context}']
+= Altering connector offsets
+
+[role="_abstract"]
+To alter connector offsets using `KafkaConnector` resources, configure the resource to stop the connector and add `alterOffsets` configuration to specify the offset changes in a config map. 
+You can reuse the same config map used to xref:proc-listing-connector-offsets-{context}[list offsets].
+
+After the connector is stopped and the configuration is in place, annotate the `KafkaConnector` resource to apply the offset alteration, then restart the connector. 
+
+Altering connector offsets can be useful, for example, to skip a _poison_ record or replay a record.
+
+In this procedure, we alter the offset position for a source connector named `my-source-connector`.
+
+.Prerequisites
+
+* The Cluster Operator is running.
+
+.Procedure
+
+. Edit the `KafkaConnector` resource to stop the connector and include the `alterOffsets` configuration.
++
+.Example configuration to stop a connector and alter offsets
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaConnectorApiVersion}
+kind: KafkaConnector
+metadata:
+  name: my-source-connector
+  labels:
+    strimzi.io/cluster: my-connect-cluster
+spec:
+  state: stopped # <1>
+  alterOffsets:
+    fromConfigMap: # <2>
+      name: my-connector-offsets # <3>
+  # ... 
+----
+<1> Changes the state of the connector to `stopped`. The default state for the connector when this property is not set is `running`.
+<2> The reference to the config map that provides the update. 
+<3> The name of the config map, which is named `my-connector-offsets` in this example. 
+
+. Edit the config map to make the alteration.
++
+In this example, we're resetting the offset position for a source connector to 15000.
++
+.Example source connector offset list configuration
+[source,yaml,subs="+attributes"]
+----
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  # ...
+data: 
+  offsets.json: |- # <1>
+    {
+      "offsets" : [ {
+        "partition" : {
+          "filename" : "/data/myfile.txt"
+        },
+        "offset" : {
+          "position" : 15000 # <2>
+        }
+      } ]
+    } 
+----
+<1> Edits must be made within the `offsets.json` property. 
+<2> The updated offset position in the source partition.
+
+. Run the command to update the offset position by annotating the `KafkaConnector` resource:
++
+[source,shell]
+----
+kubectl annotate kafkaconnector my-source-connector strimzi.io/connector-offsets=alter -n <namespace>
+----
++
+The annotation remains until either the update operation succeeds or it is manually removed from the resource.
+
+. Check the changes by using the procedure to xref:proc-listing-connector-offsets-{context}[list connector offsets].
+
+. Restart the connector by changing the state to `running`.
++
+.Example configuration to start a connector
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaConnectorApiVersion}
+kind: KafkaConnector
+metadata:
+  name: my-source-connector
+  labels:
+    strimzi.io/cluster: my-connect-cluster
+spec:
+  state: running
+  # ... 
+----

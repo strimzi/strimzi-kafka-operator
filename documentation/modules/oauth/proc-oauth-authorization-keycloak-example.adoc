@@ -119,7 +119,7 @@ An affirmative policy means that at least one policy must be satisfied for a cli
 Groups:: `Groups` organize users and set permissions. 
 Groups can be linked to an LDAP identity provider and used to compartmentalize users, such as by region or department. 
 Users can be added to groups through a custom LDAP interface to manage permissions for Kafka resources.
-For more information on using KeyCloak's LDAP provider, see the the guide to {keycloak-admin-guide}.
+For more information on using KeyCloak's LDAP provider, see the guide to {keycloak-admin-guide}.
 
 Users:: `Users` define individual users. 
 In this example, `alice` (in the `ClusterManager` group) and `bob` (in `ClusterManager-my-cluster`) are created. 
