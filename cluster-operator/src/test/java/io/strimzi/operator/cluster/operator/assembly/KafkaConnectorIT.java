@@ -81,7 +81,7 @@ public class KafkaConnectorIT {
     public static void before() throws IOException {
         final Map<String, String> kafkaClusterConfiguration = new HashMap<>();
         kafkaClusterConfiguration.put("zookeeper.connect", "zookeeper:2181");
-        cluster = new StrimziKafkaCluster(3, 1, kafkaClusterConfiguration);
+        cluster = new StrimziKafkaCluster(3, 1, kafkaClusterConfiguration, null, true);
         cluster.start();
 
         // Configure the Kubernetes Mock

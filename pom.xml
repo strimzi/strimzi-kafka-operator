@@ -87,6 +87,13 @@
         </developer>
     </developers>
 
+    <repositories>
+        <repository>
+            <id>strimzi-snapshots</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+        </repository>
+    </repositories>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>17</maven.compiler.release>

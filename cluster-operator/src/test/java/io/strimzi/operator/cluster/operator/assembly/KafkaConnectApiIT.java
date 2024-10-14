@@ -73,7 +73,7 @@ public class KafkaConnectApiIT {
         vertx = Vertx.vertx();
         final Map<String, String> kafkaClusterConfiguration = new HashMap<>();
         kafkaClusterConfiguration.put("zookeeper.connect", "zookeeper:2181");
-        cluster = new StrimziKafkaCluster(3, 1, kafkaClusterConfiguration);
+        cluster = new StrimziKafkaCluster(3, 1, kafkaClusterConfiguration, null, true);
         cluster.start();
     }
 
