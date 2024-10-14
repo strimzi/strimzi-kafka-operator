@@ -22,7 +22,7 @@ If a template is not specified in the `autorebalance` configuration, the default
 You can apply the same template configuration for both scaling modes, use different configurations for each, or enable auto-rebalancing for only one mode.
 If `autorebalance` configuration is not set for a mode, auto-rebalancing will not occur for that mode.
 
-The template `KafkaRebalance` resource must include the `strimzi.io/rebalance: template` annotation. 
+The template `KafkaRebalance` resource must include the `strimzi.io/rebalance-template: true` annotation. 
 The template does not represent an actual rebalance request but holds the rebalancing configuration.
 During scaling, the Cluster Operator creates a `KafkaRebalance` resource based on this template, named `<cluster_name>-auto-rebalancing-<mode>`, where <mode> is either `add-brokers` or `remove-brokers`. 
 The Cluster Operator applies a finalizer (`strimzi.io/auto-rebalancing`) to prevent the resource's deletion during the rebalancing process.
@@ -41,7 +41,7 @@ A `modes` property lists the brokers being added or removed during the operation
 
 . Create a rebalancing template for the auto-rebalancing operation (if required).
 +
-Configure a `KafkaRebalance` resource with the `strimzi.io/rebalance: template` annotation.
+Configure a `KafkaRebalance` resource with the `strimzi.io/rebalance-template: true` annotation.
 The rebalance configuration template does not require `mode` and `brokers` properties unlike when xref:#proc-generating-optimization-proposals-str[when generating an optimization proposal for rebalancing]. 
 +
 .Example rebalancing template configuration 
@@ -52,7 +52,7 @@ kind: KafkaRebalance
 metadata:
   name: my-add-remove-brokers-rebalancing-template
   annotations:
-    strimzi.io/rebalance: template # <1>
+    strimzi.io/rebalance-template: true # <1>
 spec:
   goals:
     - CpuCapacityGoal
