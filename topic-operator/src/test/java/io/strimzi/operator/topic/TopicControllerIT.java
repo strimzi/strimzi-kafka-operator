@@ -413,31 +413,22 @@ class TopicControllerIT implements TestSeparator {
         return builder.build();
     }
 
-    static KafkaTopic[] managedKafkaTopics() {
+    static List<KafkaTopic> managedKafkaTopics() {
         var topicName = "topic" + System.nanoTime();
-        return new KafkaTopic[] {
-            kafkaTopic(NAMESPACE, topicName + "a", true, topicName + "a", 2, 1),
-            kafkaTopic(NAMESPACE, topicName + "b", true, null, 2, 1),
-            kafkaTopic(NAMESPACE, topicName + "c", true, topicName + "c".toUpperCase(Locale.ROOT), 2, 1),
-            kafkaTopic(NAMESPACE, topicName + "d", null, topicName + "d", 2, 1),
-            kafkaTopic(NAMESPACE, topicName + "e", null, null, 2, 1),
-            kafkaTopic(NAMESPACE, topicName + "f", null, topicName + "f".toUpperCase(Locale.ROOT), 2, 1),
-            // With a superset of the selector mappings
-            kafkaTopic(NAMESPACE, topicName + "g", Map.of("foo", "FOO", "bar", "BAR", "quux", "QUUX"), null, true, topicName + "g", 2, 1, null),
-        };
+
+        return List.of(
+                kafkaTopic(NAMESPACE, topicName + "a", true, topicName + "a", 2, 1),
+                kafkaTopic(NAMESPACE, topicName + "b", true, null, 2, 1),
+                kafkaTopic(NAMESPACE, topicName + "c", true, topicName + "c".toUpperCase(Locale.ROOT), 2, 1),
+                kafkaTopic(NAMESPACE, topicName + "d", null, topicName + "d", 2, 1),
+                kafkaTopic(NAMESPACE, topicName + "e", null, null, 2, 1),
+                kafkaTopic(NAMESPACE, topicName + "f", null, topicName + "f".toUpperCase(Locale.ROOT), 2, 1),
+                // With a superset of the selector mappings
+                kafkaTopic(NAMESPACE, topicName + "g", Map.of("foo", "FOO", "bar", "BAR", "quux", "QUUX"), null, true, topicName + "g", 2, 1, null)
+        );
     }
 
-    static KafkaTopic[] managedKafkaTopicsWithIllegalTopicNames() {
-        var topicName = "topic" + System.nanoTime();
-        return new KafkaTopic[] {
-            kafkaTopic(NAMESPACE, topicName + "a", true, "..", 2, 1),
-            kafkaTopic(NAMESPACE, topicName + "b", true, ".", 2, 1),
-            kafkaTopic(NAMESPACE, topicName + "c", null, topicName + "c{}", 2, 1),
-            kafkaTopic(NAMESPACE, topicName + "d", null, "x".repeat(256), 2, 1),
-        };
-    }
-
-    static KafkaTopic[] managedKafkaTopicsWithConfigs() {
+    static List<KafkaTopic> managedKafkaTopicsWithConfigs() {
         var topicName = "topic" + System.nanoTime();
         var configs = Map.of(
             TopicConfig.CLEANUP_POLICY_CONFIG, List.of("compact"), // list typed
@@ -447,32 +438,23 @@ class TopicControllerIT implements TestSeparator {
             TopicConfig.MIN_CLEANABLE_DIRTY_RATIO_CONFIG, 0.6, // double typed
             TopicConfig.UNCLEAN_LEADER_ELECTION_ENABLE_CONFIG, true // boolean typed
         );
-        return new KafkaTopic[] {
-            kafkaTopic(NAMESPACE, topicName + "a", SELECTOR, null, true, topicName + "a", 2, 1, configs),
-            kafkaTopic(NAMESPACE, topicName + "b", SELECTOR, null, true, null, 2, 1, configs),
-            kafkaTopic(NAMESPACE, topicName + "c", SELECTOR, null, true, topicName + "c".toUpperCase(Locale.ROOT), 2, 1, configs),
-            kafkaTopic(NAMESPACE, topicName + "d", SELECTOR, null, null, topicName + "d", 2, 1, configs),
-            kafkaTopic(NAMESPACE, topicName + "e", SELECTOR, null, null, null, 2, 1, configs),
-            kafkaTopic(NAMESPACE, topicName + "f", SELECTOR, null, null, topicName + "f".toUpperCase(Locale.ROOT), 2, 1, configs),
-        };
+        return List.of(
+                kafkaTopic(NAMESPACE, topicName + "a", SELECTOR, null, true, topicName + "a", 2, 1, configs),
+                kafkaTopic(NAMESPACE, topicName + "b", SELECTOR, null, true, null, 2, 1, configs),
+                kafkaTopic(NAMESPACE, topicName + "c", SELECTOR, null, true, topicName + "c".toUpperCase(Locale.ROOT), 2, 1, configs),
+                kafkaTopic(NAMESPACE, topicName + "d", SELECTOR, null, null, topicName + "d", 2, 1, configs),
+                kafkaTopic(NAMESPACE, topicName + "e", SELECTOR, null, null, null, 2, 1, configs),
+                kafkaTopic(NAMESPACE, topicName + "f", SELECTOR, null, null, topicName + "f".toUpperCase(Locale.ROOT), 2, 1, configs)
+        );
     }
 
-    static KafkaTopic[] unmanagedKafkaTopics() {
+    static List<KafkaTopic> unselectedKafkaTopics() {
         var topicName = "topic" + System.nanoTime();
-        return new KafkaTopic[] {
-            kafkaTopic(NAMESPACE, topicName + "a", false, topicName + "a", 2, 1),
-            kafkaTopic(NAMESPACE, topicName + "b", false, null, 2, 1),
-            kafkaTopic(NAMESPACE, topicName + "c", false, topicName + "c".toUpperCase(Locale.ROOT), 2, 1),
-        };
-    }
-
-    static KafkaTopic[] unselectedKafkaTopics() {
-        var topicName = "topic" + System.nanoTime();
-        return new KafkaTopic[] {
-            kafkaTopic(NAMESPACE, topicName + "-a", Map.of(), null, true, topicName + "-a", 2, 1, null),
-            kafkaTopic(NAMESPACE, topicName + "-b", Map.of("foo", "FOO"), null, true, topicName + "-b", 2, 1, null),
-            kafkaTopic(NAMESPACE, topicName + "-c", Map.of("quux", "QUUX"), null, true, null, 2, 1, null),
-        };
+        return List.of(
+                kafkaTopic(NAMESPACE, topicName + "-a", Map.of(), null, true, topicName + "-a", 2, 1, null),
+                kafkaTopic(NAMESPACE, topicName + "-b", Map.of("foo", "FOO"), null, true, topicName + "-b", 2, 1, null),
+                kafkaTopic(NAMESPACE, topicName + "-c", Map.of("quux", "QUUX"), null, true, null, 2, 1, null)
+        );
     }
 
     private void assertCreateSuccess(KafkaTopic kt, KafkaTopic reconciled) throws InterruptedException, ExecutionException, TimeoutException {
@@ -643,11 +625,14 @@ class TopicControllerIT implements TestSeparator {
         return created;
     }
 
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopics")
-    public void shouldCreateTopicInKafkaWhenManagedTopicCreatedInKube(KafkaTopic kt) throws ExecutionException, InterruptedException, TimeoutException {
+    @Test
+    public void shouldCreateTopicInKafkaWhenManagedTopicCreatedInKube() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
-        createTopicAndAssertSuccess(kafkaCluster, kt);
+        List<KafkaTopic> topics = managedKafkaTopics();
+
+        for (KafkaTopic kt : topics) {
+            createTopicAndAssertSuccess(kafkaCluster, kt);
+        }
     }
 
     @Test
@@ -704,144 +689,155 @@ class TopicControllerIT implements TestSeparator {
         assertCreateSuccess(kt, created, 4, 1, Map.of(TopicConfig.FLUSH_MS_CONFIG, "1000"));
     }
 
-    @ParameterizedTest
-    @MethodSource("unmanagedKafkaTopics")
-    public void shouldNotCreateTopicInKafkaWhenUnmanagedTopicCreatedInKube(KafkaTopic kafkaTopic) throws ExecutionException, InterruptedException {
+    @Test
+    public void shouldNotCreateTopicInKafkaWhenUnmanagedTopicCreatedInKube() throws ExecutionException, InterruptedException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        List<KafkaTopic> topics = List.of(
+                kafkaTopic(NAMESPACE, "unmanaged-topic-a", false, "unmanaged-topic-a", 2, 1),
+                kafkaTopic(NAMESPACE, "unmanaged-topic-b", false, null, 2, 1),
+                kafkaTopic(NAMESPACE, "unmanaged-topic-c", false, "unmanaged-topic-c".toUpperCase(Locale.ROOT), 2, 1)
+        );
 
-        createTopic(kafkaCluster, kafkaTopic);
-        assertNotExistsInKafka(TopicOperatorUtil.topicName(kafkaTopic));
+        for (KafkaTopic kafkaTopic : topics) {
+            createTopic(kafkaCluster, kafkaTopic);
+            assertNotExistsInKafka(TopicOperatorUtil.topicName(kafkaTopic));
+        }
     }
 
-    @ParameterizedTest
-    @MethodSource("unselectedKafkaTopics")
-    public void shouldNotCreateTopicInKafkaWhenUnselectedTopicCreatedInKube(KafkaTopic kt) throws ExecutionException, InterruptedException, TimeoutException {
+    @Test
+    public void shouldNotCreateTopicInKafkaWhenUnselectedTopicCreatedInKube() throws ExecutionException, InterruptedException, TimeoutException {
         // The difference between unmanaged and unselected is the former means the operator doesn't touch it
         // (presumably it's intended for another operator instance), but the latter does get a status update
 
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        List<KafkaTopic> topics = unselectedKafkaTopics();
 
-        // given
-        String ns = createNamespace(kt.getMetadata().getNamespace());
-        maybeStartOperator(topicOperatorConfig(ns, kafkaCluster));
-
-        // when
-
-        // then
-        try (var logCaptor = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
-            org.apache.logging.log4j.Level.DEBUG,
-            "Ignoring KafkaTopic .*? not selected by selector",
-            5L,
-            TimeUnit.SECONDS)) {
-            var created = Crds.topicOperation(kubernetesClient).resource(kt).create();
-            LOGGER.info("Test created KafkaTopic {} with resourceVersion {}",
-                created.getMetadata().getName(), TopicOperatorUtil.resourceVersion(created));
-        }
-        KafkaTopic kafkaTopic = Crds.topicOperation(kubernetesClient).inNamespace(ns).withName(kt.getMetadata().getName()).get();
-        assertNull(kafkaTopic.getStatus());
-    }
-
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopics")
-    public void shouldNotUpdateTopicInKafkaWhenKafkaTopicBecomesUnselected(KafkaTopic kt) throws ExecutionException, InterruptedException, TimeoutException {
-        startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
-
-        Map<String, String> unmatchedLabels = Map.of("foo", "FOO");
-        assertFalse(BatchingTopicController.matchesSelector(SELECTOR, unmatchedLabels));
-
-        // given
-        var expectedTopicName = TopicOperatorUtil.topicName(kt);
-        KafkaTopic unmanaged;
-        try (var logCaptor = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
-            org.apache.logging.log4j.Level.DEBUG,
-            "Ignoring KafkaTopic .*? not selected by selector",
-            5L,
-            TimeUnit.SECONDS)) {
-            createTopicAndAssertSuccess(kafkaCluster, kt);
-            assertTrue(operator.controller.topicRefs.containsKey(expectedTopicName)
-                    || operator.controller.topicRefs.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
-                "Expect selected resource to be present in topics map");
+        for (KafkaTopic kt : topics) {
+            // given
+            String ns = createNamespace(kt.getMetadata().getNamespace());
+            maybeStartOperator(topicOperatorConfig(ns, kafkaCluster));
 
             // when
-            LOGGER.debug("##Modifying");
-            unmanaged = TopicOperatorTestUtil.changeTopic(kubernetesClient, kt, theKt -> {
-                theKt.getMetadata().setLabels(unmatchedLabels);
-                theKt.getSpec().setPartitions(3);
-                return theKt;
-            });
 
             // then
-            LOGGER.debug("##Checking");
+            try (var logCaptor = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
+                    org.apache.logging.log4j.Level.DEBUG,
+                    "Ignoring KafkaTopic .*? not selected by selector",
+                    5L,
+                    TimeUnit.SECONDS)) {
+                var created = Crds.topicOperation(kubernetesClient).resource(kt).create();
+                LOGGER.info("Test created KafkaTopic {} with resourceVersion {}",
+                        created.getMetadata().getName(), TopicOperatorUtil.resourceVersion(created));
+            }
+            KafkaTopic kafkaTopic = Crds.topicOperation(kubernetesClient).inNamespace(ns).withName(kt.getMetadata().getName()).get();
+            assertNull(kafkaTopic.getStatus());
         }
-        assertNotNull(unmanaged.getMetadata().getFinalizers());
-        assertTrue(unmanaged.getMetadata().getFinalizers().contains(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
-        assertNotNull(unmanaged.getStatus().getTopicName(), "Expect status.topicName to be unchanged from post-creation state");
-
-        var topicDescription = awaitTopicDescription(expectedTopicName);
-        assertEquals(kt.getSpec().getPartitions(), numPartitions(topicDescription));
-        assertEquals(Set.of(kt.getSpec().getReplicas()), replicationFactors(topicDescription));
-        assertEquals(Map.of(), topicConfigMap(expectedTopicName));
-
-        Map<String, List<KubeRef>> topics = new HashMap<>(operator.controller.topicRefs);
-        assertFalse(topics.containsKey(expectedTopicName)
-                || topics.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
-            "Transition to a non-selected resource should result in removal from topics map: " + topics);
     }
 
-    @ParameterizedTest
-    @MethodSource("unselectedKafkaTopics")
-    public void shouldUpdateTopicInKafkaWhenKafkaTopicBecomesSelected(KafkaTopic kt) throws ExecutionException, InterruptedException, TimeoutException {
+    @Test
+    public void shouldNotUpdateTopicInKafkaWhenKafkaTopicBecomesUnselected() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        List<KafkaTopic> topics = managedKafkaTopics();
 
-        Map<String, String> unmatchedLabels = kt.getMetadata().getLabels();
-        assertFalse(BatchingTopicController.matchesSelector(SELECTOR, unmatchedLabels));
+        for (KafkaTopic kt : topics) {
+            Map<String, String> unmatchedLabels = Map.of("foo", "FOO");
+            assertFalse(BatchingTopicController.matchesSelector(SELECTOR, unmatchedLabels));
 
-        // given
-        var ns = createNamespace(kt.getMetadata().getNamespace());
-        var expectedTopicName = TopicOperatorUtil.topicName(kt);
-        maybeStartOperator(topicOperatorConfig(ns, kafkaCluster));
+            // given
+            var expectedTopicName = TopicOperatorUtil.topicName(kt);
+            KafkaTopic unmanaged;
+            try (var logCaptor = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
+                    org.apache.logging.log4j.Level.DEBUG,
+                    "Ignoring KafkaTopic .*? not selected by selector",
+                    5L,
+                    TimeUnit.SECONDS)) {
+                createTopicAndAssertSuccess(kafkaCluster, kt);
+                assertTrue(operator.controller.topicRefs.containsKey(expectedTopicName)
+                                || operator.controller.topicRefs.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
+                        "Expect selected resource to be present in topics map");
 
-        KafkaTopic created;
-        try (var logCaptor = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
-            org.apache.logging.log4j.Level.DEBUG,
-            "Ignoring KafkaTopic .*? not selected by selector",
-            5L,
-            TimeUnit.SECONDS)) {
-            created = Crds.topicOperation(kubernetesClient).resource(kt).create();
-            LOGGER.info("Test created KafkaTopic {} with resourceVersion {}",
-                created.getMetadata().getName(), TopicOperatorUtil.resourceVersion(created));
+                // when
+                LOGGER.debug("##Modifying");
+                unmanaged = TopicOperatorTestUtil.changeTopic(kubernetesClient, kt, theKt -> {
+                    theKt.getMetadata().setLabels(unmatchedLabels);
+                    theKt.getSpec().setPartitions(3);
+                    return theKt;
+                });
+
+                // then
+                LOGGER.debug("##Checking");
+            }
+            assertNotNull(unmanaged.getMetadata().getFinalizers());
+            assertTrue(unmanaged.getMetadata().getFinalizers().contains(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
+            assertNotNull(unmanaged.getStatus().getTopicName(), "Expect status.topicName to be unchanged from post-creation state");
+
+            var topicDescription = awaitTopicDescription(expectedTopicName);
+            assertEquals(kt.getSpec().getPartitions(), numPartitions(topicDescription));
+            assertEquals(Set.of(kt.getSpec().getReplicas()), replicationFactors(topicDescription));
+            assertEquals(Map.of(), topicConfigMap(expectedTopicName));
+
+            Map<String, List<KubeRef>> topicsRefs = new HashMap<>(operator.controller.topicRefs);
+            assertFalse(topicsRefs.containsKey(expectedTopicName)
+                            || topicsRefs.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
+                    "Transition to a non-selected resource should result in removal from topics map: " + topicsRefs);
         }
-        assertUnknownTopic(expectedTopicName);
-        assertNull(created.getStatus(), "Expect status not to be set");
-        assertTrue(created.getMetadata().getFinalizers().isEmpty());
-        assertFalse(operator.controller.topicRefs.containsKey(expectedTopicName)
-                || operator.controller.topicRefs.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
-            "Expect unselected resource to be absent from topics map");
+    }
 
-        // when
-        var managed = modifyTopicAndAwait(kt,
-            theKt -> {
-                theKt.getMetadata().setLabels(SELECTOR);
-                theKt.getSpec().setPartitions(3);
-                return theKt;
-            },
-            readyIsTrue());
+    @Test
+    public void shouldUpdateTopicInKafkaWhenKafkaTopicBecomesSelected() throws ExecutionException, InterruptedException, TimeoutException {
+        startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        List<KafkaTopic> topics = unselectedKafkaTopics();
 
-        // then
-        assertTrue(operator.controller.topicRefs.containsKey(expectedTopicName)
-                || operator.controller.topicRefs.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
-            "Expect selected resource to be present in topics map");
+        for (KafkaTopic kt : topics) {
+            Map<String, String> unmatchedLabels = kt.getMetadata().getLabels();
+            assertFalse(BatchingTopicController.matchesSelector(SELECTOR, unmatchedLabels));
 
-        assertNotNull(managed.getMetadata().getFinalizers());
-        assertTrue(managed.getMetadata().getFinalizers().contains(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
-        assertNotNull(managed.getStatus().getTopicName(), "Expect status.topicName to be unchanged from post-creation state");
-        var topicDescription = awaitTopicDescription(expectedTopicName);
-        assertEquals(3, numPartitions(topicDescription));
+            // given
+            var ns = createNamespace(kt.getMetadata().getNamespace());
+            var expectedTopicName = TopicOperatorUtil.topicName(kt);
+            maybeStartOperator(topicOperatorConfig(ns, kafkaCluster));
 
-        assertTrue(operator.controller.topicRefs.containsKey(expectedTopicName)
-                || operator.controller.topicRefs.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
-            "Expect selected resource to be present in topics map");
+            KafkaTopic created;
+            try (var logCaptor = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
+                    org.apache.logging.log4j.Level.DEBUG,
+                    "Ignoring KafkaTopic .*? not selected by selector",
+                    5L,
+                    TimeUnit.SECONDS)) {
+                created = Crds.topicOperation(kubernetesClient).resource(kt).create();
+                LOGGER.info("Test created KafkaTopic {} with resourceVersion {}",
+                        created.getMetadata().getName(), TopicOperatorUtil.resourceVersion(created));
+            }
+            assertUnknownTopic(expectedTopicName);
+            assertNull(created.getStatus(), "Expect status not to be set");
+            assertTrue(created.getMetadata().getFinalizers().isEmpty());
+            assertFalse(operator.controller.topicRefs.containsKey(expectedTopicName)
+                            || operator.controller.topicRefs.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
+                    "Expect unselected resource to be absent from topics map");
 
+            // when
+            var managed = modifyTopicAndAwait(kt,
+                    theKt -> {
+                        theKt.getMetadata().setLabels(SELECTOR);
+                        theKt.getSpec().setPartitions(3);
+                        return theKt;
+                    },
+                    readyIsTrue());
+
+            // then
+            assertTrue(operator.controller.topicRefs.containsKey(expectedTopicName)
+                            || operator.controller.topicRefs.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
+                    "Expect selected resource to be present in topics map");
+
+            assertNotNull(managed.getMetadata().getFinalizers());
+            assertTrue(managed.getMetadata().getFinalizers().contains(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
+            assertNotNull(managed.getStatus().getTopicName(), "Expect status.topicName to be unchanged from post-creation state");
+            var topicDescription = awaitTopicDescription(expectedTopicName);
+            assertEquals(3, numPartitions(topicDescription));
+
+            assertTrue(operator.controller.topicRefs.containsKey(expectedTopicName)
+                            || operator.controller.topicRefs.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
+                    "Expect selected resource to be present in topics map");
+        }
     }
 
     private void shouldUpdateTopicInKafkaWhenConfigChangedInKube(StrimziKafkaCluster kc,
@@ -871,121 +867,134 @@ class TopicControllerIT implements TestSeparator {
         assertEquals(expectedConfigs, topicConfigMap(expectedTopicName));
     }
 
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopicsWithConfigs")
-    public void shouldUpdateTopicInKafkaWhenStringConfigChangedInKube(KafkaTopic kt) throws ExecutionException, InterruptedException, TimeoutException {
+    @Test
+    public void shouldUpdateTopicInKafkaWhenStringConfigChangedInKube() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        List<KafkaTopic> topics = managedKafkaTopicsWithConfigs();
 
-        shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
-            TopicControllerIT::setSnappyCompression,
-            expectedCreateConfigs -> {
-                Map<String, String> expectedUpdatedConfigs = new HashMap<>(expectedCreateConfigs);
-                expectedUpdatedConfigs.put(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy");
-                return expectedUpdatedConfigs;
-            });
+        for (KafkaTopic kt : topics) {
+            shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
+                    TopicControllerIT::setSnappyCompression,
+                    expectedCreateConfigs -> {
+                        Map<String, String> expectedUpdatedConfigs = new HashMap<>(expectedCreateConfigs);
+                        expectedUpdatedConfigs.put(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy");
+                        return expectedUpdatedConfigs;
+                    });
+        }
     }
 
-
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopicsWithConfigs")
-    public void shouldUpdateTopicInKafkaWhenIntConfigChangedInKube(KafkaTopic kt) throws ExecutionException, InterruptedException, TimeoutException {
+    @Test
+    public void shouldUpdateTopicInKafkaWhenIntConfigChangedInKube() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        List<KafkaTopic> topics = managedKafkaTopicsWithConfigs();
 
-        shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
-            theKt -> {
-                theKt.getSpec().getConfig().put(TopicConfig.INDEX_INTERVAL_BYTES_CONFIG, 5678);
-                return theKt;
-            },
-            expectedCreateConfigs -> {
-                Map<String, String> expectedUpdatedConfigs = new HashMap<>(expectedCreateConfigs);
-                expectedUpdatedConfigs.put(TopicConfig.INDEX_INTERVAL_BYTES_CONFIG, "5678");
-                return expectedUpdatedConfigs;
-            });
+        for (KafkaTopic kt : topics) {
+            shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
+                    theKt -> {
+                        theKt.getSpec().getConfig().put(TopicConfig.INDEX_INTERVAL_BYTES_CONFIG, 5678);
+                        return theKt;
+                    },
+                    expectedCreateConfigs -> {
+                        Map<String, String> expectedUpdatedConfigs = new HashMap<>(expectedCreateConfigs);
+                        expectedUpdatedConfigs.put(TopicConfig.INDEX_INTERVAL_BYTES_CONFIG, "5678");
+                        return expectedUpdatedConfigs;
+                    });
+        }
     }
 
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopicsWithConfigs")
-    public void shouldUpdateTopicInKafkaWhenLongConfigChangedInKube(KafkaTopic kt) throws ExecutionException, InterruptedException, TimeoutException {
+    @Test
+    public void shouldUpdateTopicInKafkaWhenLongConfigChangedInKube() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        List<KafkaTopic> topics = managedKafkaTopicsWithConfigs();
 
-        shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
-            theKt -> {
-                theKt.getSpec().getConfig().put(TopicConfig.FLUSH_MS_CONFIG, 9876L);
-                return theKt;
-            },
-            expectedCreateConfigs -> {
-                Map<String, String> expectedUpdatedConfigs = new HashMap<>(expectedCreateConfigs);
-                expectedUpdatedConfigs.put(TopicConfig.FLUSH_MS_CONFIG, "9876");
-                return expectedUpdatedConfigs;
-            });
+        for (KafkaTopic kt : topics) {
+            shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
+                    theKt -> {
+                        theKt.getSpec().getConfig().put(TopicConfig.FLUSH_MS_CONFIG, 9876L);
+                        return theKt;
+                    },
+                    expectedCreateConfigs -> {
+                        Map<String, String> expectedUpdatedConfigs = new HashMap<>(expectedCreateConfigs);
+                        expectedUpdatedConfigs.put(TopicConfig.FLUSH_MS_CONFIG, "9876");
+                        return expectedUpdatedConfigs;
+                    });
+        }
     }
 
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopicsWithConfigs")
-    public void shouldUpdateTopicInKafkaWhenDoubleConfigChangedInKube(KafkaTopic kt) throws ExecutionException, InterruptedException, TimeoutException {
+    @Test
+    public void shouldUpdateTopicInKafkaWhenDoubleConfigChangedInKube() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        List<KafkaTopic> topics = managedKafkaTopicsWithConfigs();
 
-        shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
-            theKt -> {
-                theKt.getSpec().getConfig().put(TopicConfig.MIN_CLEANABLE_DIRTY_RATIO_CONFIG, 0.1);
-                return theKt;
-            },
-            expectedCreateConfigs -> {
-                Map<String, String> expectedUpdatedConfigs = new HashMap<>(expectedCreateConfigs);
-                expectedUpdatedConfigs.put(TopicConfig.MIN_CLEANABLE_DIRTY_RATIO_CONFIG, "0.1");
-                return expectedUpdatedConfigs;
-            });
+        for (KafkaTopic kt : topics) {
+            shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
+                    theKt -> {
+                        theKt.getSpec().getConfig().put(TopicConfig.MIN_CLEANABLE_DIRTY_RATIO_CONFIG, 0.1);
+                        return theKt;
+                    },
+                    expectedCreateConfigs -> {
+                        Map<String, String> expectedUpdatedConfigs = new HashMap<>(expectedCreateConfigs);
+                        expectedUpdatedConfigs.put(TopicConfig.MIN_CLEANABLE_DIRTY_RATIO_CONFIG, "0.1");
+                        return expectedUpdatedConfigs;
+                    });
+        }
     }
 
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopicsWithConfigs")
-    public void shouldUpdateTopicInKafkaWhenBooleanConfigChangedInKube(KafkaTopic kt) throws ExecutionException, InterruptedException, TimeoutException {
+    @Test
+    public void shouldUpdateTopicInKafkaWhenBooleanConfigChangedInKube() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        List<KafkaTopic> topics = managedKafkaTopicsWithConfigs();
 
-        shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
-            theKt -> {
-                theKt.getSpec().getConfig().put(TopicConfig.UNCLEAN_LEADER_ELECTION_ENABLE_CONFIG, false);
-                return theKt;
-            },
-            expectedCreateConfigs -> {
-                Map<String, String> expectedUpdatedConfigs = new HashMap<>(expectedCreateConfigs);
-                expectedUpdatedConfigs.put(TopicConfig.UNCLEAN_LEADER_ELECTION_ENABLE_CONFIG, "false");
-                return expectedUpdatedConfigs;
-            });
+        for (KafkaTopic kt : topics) {
+            shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
+                    theKt -> {
+                        theKt.getSpec().getConfig().put(TopicConfig.UNCLEAN_LEADER_ELECTION_ENABLE_CONFIG, false);
+                        return theKt;
+                    },
+                    expectedCreateConfigs -> {
+                        Map<String, String> expectedUpdatedConfigs = new HashMap<>(expectedCreateConfigs);
+                        expectedUpdatedConfigs.put(TopicConfig.UNCLEAN_LEADER_ELECTION_ENABLE_CONFIG, "false");
+                        return expectedUpdatedConfigs;
+                    });
+        }
     }
 
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopicsWithConfigs")
-    public void shouldUpdateTopicInKafkaWhenListConfigChangedInKube(KafkaTopic kt) throws ExecutionException, InterruptedException, TimeoutException {
+    @Test
+    public void shouldUpdateTopicInKafkaWhenListConfigChangedInKube() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        List<KafkaTopic> topics = managedKafkaTopicsWithConfigs();
 
-        shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
-            theKt -> {
-                theKt.getSpec().getConfig().put(TopicConfig.CLEANUP_POLICY_CONFIG, List.of("compact", "delete"));
-                return theKt;
-            },
-            expectedCreateConfigs -> {
-                Map<String, String> expectedUpdatedConfigs = new HashMap<>(expectedCreateConfigs);
-                expectedUpdatedConfigs.put(TopicConfig.CLEANUP_POLICY_CONFIG, "compact,delete");
-                return expectedUpdatedConfigs;
-            });
+        for (KafkaTopic kt : topics) {
+            shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
+                    theKt -> {
+                        theKt.getSpec().getConfig().put(TopicConfig.CLEANUP_POLICY_CONFIG, List.of("compact", "delete"));
+                        return theKt;
+                    },
+                    expectedCreateConfigs -> {
+                        Map<String, String> expectedUpdatedConfigs = new HashMap<>(expectedCreateConfigs);
+                        expectedUpdatedConfigs.put(TopicConfig.CLEANUP_POLICY_CONFIG, "compact,delete");
+                        return expectedUpdatedConfigs;
+                    });
+        }
     }
 
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopicsWithConfigs")
-    public void shouldUpdateTopicInKafkaWhenConfigRemovedInKube(KafkaTopic kt) throws ExecutionException, InterruptedException, TimeoutException {
+    @Test
+    public void shouldUpdateTopicInKafkaWhenConfigRemovedInKube() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        List<KafkaTopic> topics = managedKafkaTopicsWithConfigs();
 
-        shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
-            theKt -> {
-                theKt.getSpec().getConfig().remove(TopicConfig.UNCLEAN_LEADER_ELECTION_ENABLE_CONFIG);
-                return theKt;
-            },
-            expectedCreateConfigs -> {
-                Map<String, String> expectedUpdatedConfigs = new HashMap<>(expectedCreateConfigs);
-                expectedUpdatedConfigs.remove(TopicConfig.UNCLEAN_LEADER_ELECTION_ENABLE_CONFIG);
-                return expectedUpdatedConfigs;
-            });
+        for (KafkaTopic kt : topics) {
+            shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
+                    theKt -> {
+                        theKt.getSpec().getConfig().remove(TopicConfig.UNCLEAN_LEADER_ELECTION_ENABLE_CONFIG);
+                        return theKt;
+                    },
+                    expectedCreateConfigs -> {
+                        Map<String, String> expectedUpdatedConfigs = new HashMap<>(expectedCreateConfigs);
+                        expectedUpdatedConfigs.remove(TopicConfig.UNCLEAN_LEADER_ELECTION_ENABLE_CONFIG);
+                        return expectedUpdatedConfigs;
+                    });
+        }
     }
 
     @Test
@@ -1037,73 +1046,76 @@ class TopicControllerIT implements TestSeparator {
         }
     }
 
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopics")
-    public void shouldUpdateTopicInKafkaWhenPartitionsIncreasedInKube(KafkaTopic kt) throws ExecutionException, InterruptedException, TimeoutException {
+    @Test
+    public void shouldUpdateTopicInKafkaWhenPartitionsIncreasedInKube() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        List<KafkaTopic> topics = managedKafkaTopics();
 
-        // given
-        var expectedTopicName = TopicOperatorUtil.topicName(kt);
-        int specPartitions = kt.getSpec().getPartitions();
-        createTopicAndAssertSuccess(kafkaCluster, kt);
+        for (KafkaTopic kt : topics) {
+            // given
+            var expectedTopicName = TopicOperatorUtil.topicName(kt);
+            int specPartitions = kt.getSpec().getPartitions();
+            createTopicAndAssertSuccess(kafkaCluster, kt);
 
-        // when: partitions is increased
-        modifyTopicAndAwait(kt,
-            TopicControllerIT::incrementPartitions,
-            readyIsTrue());
+            // when: partitions is increased
+            modifyTopicAndAwait(kt,
+                    TopicControllerIT::incrementPartitions,
+                    readyIsTrue());
 
-        // then
-        var topicDescription = awaitTopicDescription(expectedTopicName);
-        assertEquals(specPartitions + 1, numPartitions(topicDescription));
-
+            // then
+            var topicDescription = awaitTopicDescription(expectedTopicName);
+            assertEquals(specPartitions + 1, numPartitions(topicDescription));
+        }
     }
 
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopics")
-    public void shouldFailDecreaseInPartitions(KafkaTopic kt) throws ExecutionException, InterruptedException, TimeoutException {
+    @Test
+    public void shouldFailDecreaseInPartitions() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        KafkaTopic kt = kafkaTopic(NAMESPACE, "fail-decrease-partition-count", true, "fail-decrease-partition-count", 2, 1);
 
         final int specPartitions = kt.getSpec().getPartitions();
         assertEquals(2, specPartitions);
         shouldFailOnModification(kafkaCluster, kt,
-            theKt -> {
-                theKt.getSpec().setPartitions(1);
-                return theKt;
-            },
-            operated -> {
-                assertEquals("Decreasing partitions not supported", assertExactlyOneCondition(operated).getMessage());
-                assertEquals(TopicOperatorException.Reason.NOT_SUPPORTED.value, assertExactlyOneCondition(operated).getReason());
-            },
-            theKt -> {
-                theKt.getSpec().setPartitions(specPartitions);
-                return theKt;
-            });
+                theKt -> {
+                    theKt.getSpec().setPartitions(1);
+                    return theKt;
+                },
+                operated -> {
+                    assertEquals("Decreasing partitions not supported", assertExactlyOneCondition(operated).getMessage());
+                    assertEquals(TopicOperatorException.Reason.NOT_SUPPORTED.value, assertExactlyOneCondition(operated).getReason());
+                },
+                theKt -> {
+                    theKt.getSpec().setPartitions(specPartitions);
+                    return theKt;
+                });
     }
 
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopics")
-    public void shouldFailDecreaseInPartitionsWithConfigChange(KafkaTopic kt) throws ExecutionException, InterruptedException, TimeoutException {
+    @Test
+    public void shouldFailDecreaseInPartitionsWithConfigChange() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        List<KafkaTopic> topics = managedKafkaTopics();
 
-        final int specPartitions = kt.getSpec().getPartitions();
-        assertEquals(2, specPartitions);
-        shouldFailOnModification(kafkaCluster, kt,
-            theKt ->
-                new KafkaTopicBuilder(theKt).editOrNewSpec().withPartitions(1).addToConfig(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy").endSpec().build(),
-            operated -> {
-                assertEquals("Decreasing partitions not supported", assertExactlyOneCondition(operated).getMessage());
-                assertEquals(TopicOperatorException.Reason.NOT_SUPPORTED.value, assertExactlyOneCondition(operated).getReason());
-                try {
-                    assertEquals("snappy", topicConfigMap(TopicOperatorUtil.topicName(kt)).get(TopicConfig.COMPRESSION_TYPE_CONFIG),
-                        "Expect the config to have been changed even if the #partitions couldn't be decreased");
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            },
-            theKt -> {
-                theKt.getSpec().setPartitions(specPartitions);
-                return theKt;
-            });
+        for (KafkaTopic kt : topics) {
+            final int specPartitions = kt.getSpec().getPartitions();
+            assertEquals(2, specPartitions);
+            shouldFailOnModification(kafkaCluster, kt,
+                    theKt ->
+                            new KafkaTopicBuilder(theKt).editOrNewSpec().withPartitions(1).addToConfig(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy").endSpec().build(),
+                    operated -> {
+                        assertEquals("Decreasing partitions not supported", assertExactlyOneCondition(operated).getMessage());
+                        assertEquals(TopicOperatorException.Reason.NOT_SUPPORTED.value, assertExactlyOneCondition(operated).getReason());
+                        try {
+                            assertEquals("snappy", topicConfigMap(TopicOperatorUtil.topicName(kt)).get(TopicConfig.COMPRESSION_TYPE_CONFIG),
+                                    "Expect the config to have been changed even if the #partitions couldn't be decreased");
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    },
+                    theKt -> {
+                        theKt.getSpec().setPartitions(specPartitions);
+                        return theKt;
+                    });
+        }
     }
 
     private static Condition assertExactlyOneCondition(KafkaTopic operated) {
@@ -1115,131 +1127,140 @@ class TopicControllerIT implements TestSeparator {
         return conditions.get(0);
     }
 
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopics")
-    public void shouldNotUpdateTopicInKafkaWhenUnmanagedTopicUpdatedInKube(KafkaTopic kt) throws ExecutionException, InterruptedException, TimeoutException {
+    @Test
+    public void shouldNotUpdateTopicInKafkaWhenUnmanagedTopicUpdatedInKube() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        List<KafkaTopic> topics = managedKafkaTopics();
 
-        // given
-        var expectedTopicName = TopicOperatorUtil.topicName(kt);
-        createTopicAndAssertSuccess(kafkaCluster, kt);
+        for (KafkaTopic kt : topics) {
+            // given
+            var expectedTopicName = TopicOperatorUtil.topicName(kt);
+            createTopicAndAssertSuccess(kafkaCluster, kt);
 
-        // when
-        var unmanaged = modifyTopicAndAwait(kt, theKt ->
-                new KafkaTopicBuilder(theKt)
-                    .editOrNewMetadata()
-                        .addToAnnotations(TopicOperatorUtil.MANAGED, "false")
-                    .endMetadata()
-                    .editOrNewSpec()
-                        .withPartitions(3)
-                    .endSpec()
-                    .build(),
-            new Predicate<>() {
-                @Override
-                public boolean test(KafkaTopic theKt) {
-                    return theKt.getStatus().getConditions().get(0).getType().equals("Unmanaged");
-                }
+            // when
+            var unmanaged = modifyTopicAndAwait(kt, theKt ->
+                            new KafkaTopicBuilder(theKt)
+                                    .editOrNewMetadata()
+                                    .addToAnnotations(TopicOperatorUtil.MANAGED, "false")
+                                    .endMetadata()
+                                    .editOrNewSpec()
+                                    .withPartitions(3)
+                                    .endSpec()
+                                    .build(),
+                    new Predicate<>() {
+                        @Override
+                        public boolean test(KafkaTopic theKt) {
+                            return theKt.getStatus().getConditions().get(0).getType().equals("Unmanaged");
+                        }
 
-                @Override
-                public String toString() {
-                    return "status=Unmanaged";
-                }
-            });
+                        @Override
+                        public String toString() {
+                            return "status=Unmanaged";
+                        }
+                    });
 
-        // then
-        assertNull(unmanaged.getStatus().getTopicName());
-        var topicDescription = awaitTopicDescription(expectedTopicName);
-        assertEquals(kt.getSpec().getPartitions(), numPartitions(topicDescription));
-        assertEquals(Set.of(kt.getSpec().getReplicas()), replicationFactors(topicDescription));
-        assertEquals(Map.of(), topicConfigMap(expectedTopicName));
-    }
-
-    @ParameterizedTest
-    @MethodSource({"managedKafkaTopics"})
-    public void shouldRestoreFinalizerIfRemoved(KafkaTopic kt) throws ExecutionException, InterruptedException, TimeoutException {
-        startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
-
-        // given
-        var created = createTopic(kafkaCluster, kt, TopicOperatorUtil.isManaged(kt) ? readyIsTrueOrFalse() : unmanagedIsTrueOrFalse());
-        if (TopicOperatorUtil.isManaged(kt)) {
-            assertCreateSuccess(kt, created);
+            // then
+            assertNull(unmanaged.getStatus().getTopicName());
+            var topicDescription = awaitTopicDescription(expectedTopicName);
+            assertEquals(kt.getSpec().getPartitions(), numPartitions(topicDescription));
+            assertEquals(Set.of(kt.getSpec().getReplicas()), replicationFactors(topicDescription));
+            assertEquals(Map.of(), topicConfigMap(expectedTopicName));
         }
-
-        // when: The finalizer is removed
-        LOGGER.debug("Removing finalizer");
-        var postUpdate = TopicOperatorTestUtil.changeTopic(kubernetesClient, created, theKt1 -> {
-            theKt1.getMetadata().getFinalizers().remove(KubernetesHandler.FINALIZER_STRIMZI_IO_TO);
-            return theKt1;
-        });
-        var postUpdateGeneration = postUpdate.getMetadata().getGeneration();
-        LOGGER.debug("Removed finalizer; generation={}", postUpdateGeneration);
-
-        // then: We expect the operator to revert the finalizer
-        waitUntil(postUpdate, theKt ->
-            theKt.getStatus().getObservedGeneration() >= postUpdateGeneration
-                && theKt.getMetadata().getFinalizers().contains(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
     }
 
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopics")
-    public void shouldDeleteTopicFromKafkaWhenManagedTopicDeletedFromKube(KafkaTopic kt) throws ExecutionException, InterruptedException, TimeoutException {
+    @Test
+    public void shouldRestoreFinalizerIfRemoved() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        List<KafkaTopic> topics = managedKafkaTopics();
 
-        // given
-        createTopicAndAssertSuccess(kafkaCluster, kt);
+        for (KafkaTopic kt : topics) {
+            // given
+            var created = createTopic(kafkaCluster, kt, TopicOperatorUtil.isManaged(kt) ? readyIsTrueOrFalse() : unmanagedIsTrueOrFalse());
+            if (TopicOperatorUtil.isManaged(kt)) {
+                assertCreateSuccess(kt, created);
+            }
 
-        // when
-        Crds.topicOperation(kubernetesClient).resource(kt).delete();
-        LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
-            kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
-        Resource<KafkaTopic> resource = Crds.topicOperation(kubernetesClient).resource(kt);
-        TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
+            // when: The finalizer is removed
+            LOGGER.debug("Removing finalizer");
+            var postUpdate = TopicOperatorTestUtil.changeTopic(kubernetesClient, created, theKt1 -> {
+                theKt1.getMetadata().getFinalizers().remove(KubernetesHandler.FINALIZER_STRIMZI_IO_TO);
+                return theKt1;
+            });
+            var postUpdateGeneration = postUpdate.getMetadata().getGeneration();
+            LOGGER.debug("Removed finalizer; generation={}", postUpdateGeneration);
 
-        // then
-        assertNotExistsInKafka(TopicOperatorUtil.topicName(kt));
-
+            // then: We expect the operator to revert the finalizer
+            waitUntil(postUpdate, theKt ->
+                    theKt.getStatus().getObservedGeneration() >= postUpdateGeneration
+                            && theKt.getMetadata().getFinalizers().contains(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
+        }
     }
 
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopics")
-    public void shouldNotDeleteTopicWhenTopicDeletionDisabledInKafka(KafkaTopic kt) throws ExecutionException, InterruptedException, TimeoutException {
+    @Test
+    public void shouldDeleteTopicFromKafkaWhenManagedTopicDeletedFromKube() throws ExecutionException, InterruptedException, TimeoutException {
+        startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        List<KafkaTopic> topics = managedKafkaTopics();
+
+        for (KafkaTopic kt : topics) {
+            // given
+            createTopicAndAssertSuccess(kafkaCluster, kt);
+
+            // when
+            Crds.topicOperation(kubernetesClient).resource(kt).delete();
+            LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
+                    kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
+            Resource<KafkaTopic> resource = Crds.topicOperation(kubernetesClient).resource(kt);
+            TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
+
+            // then
+            assertNotExistsInKafka(TopicOperatorUtil.topicName(kt));
+        }
+    }
+
+    @Test
+    public void shouldNotDeleteTopicWhenTopicDeletionDisabledInKafka() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false", "delete.topic.enable", "false"));
+        List<KafkaTopic> topics = managedKafkaTopics();
 
-        // given
-        createTopicAndAssertSuccess(kafkaCluster, kt);
+        for (KafkaTopic kt : topics) {
+            // given
+            createTopicAndAssertSuccess(kafkaCluster, kt);
 
-        // when
-        Crds.topicOperation(kubernetesClient).resource(kt).delete();
-        LOGGER.info("Test delete KafkaTopic {} with resourceVersion {}",
-            kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
-        Resource<KafkaTopic> resource = Crds.topicOperation(kubernetesClient).resource(kt);
-        var unready = TopicOperatorTestUtil.waitUntilCondition(resource, readyIsFalse());
+            // when
+            Crds.topicOperation(kubernetesClient).resource(kt).delete();
+            LOGGER.info("Test delete KafkaTopic {} with resourceVersion {}",
+                    kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
+            Resource<KafkaTopic> resource = Crds.topicOperation(kubernetesClient).resource(kt);
+            var unready = TopicOperatorTestUtil.waitUntilCondition(resource, readyIsFalse());
 
-        // then
-        Condition condition = assertExactlyOneCondition(unready);
-        assertEquals(TopicOperatorException.Reason.KAFKA_ERROR.value, condition.getReason());
-        assertEquals("org.apache.kafka.common.errors.TopicDeletionDisabledException: Topic deletion is disabled.",
-            condition.getMessage());
+            // then
+            Condition condition = assertExactlyOneCondition(unready);
+            assertEquals(TopicOperatorException.Reason.KAFKA_ERROR.value, condition.getReason());
+            assertEquals("org.apache.kafka.common.errors.TopicDeletionDisabledException: Topic deletion is disabled.",
+                    condition.getMessage());
+        }
     }
 
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopics")
-    public void shouldDeleteTopicFromKafkaWhenManagedTopicDeletedFromKubeAndFinalizersDisabled(KafkaTopic kt) throws ExecutionException, InterruptedException, TimeoutException {
+    @Test
+    public void shouldDeleteTopicFromKafkaWhenManagedTopicDeletedFromKubeAndFinalizersDisabled() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        List<KafkaTopic> topics = managedKafkaTopics();
 
-        // given
-        maybeStartOperator(topicOperatorConfig(kt.getMetadata().getNamespace(), kafkaCluster, false));
-        createTopicAndAssertSuccess(kafkaCluster, kt);
+        for (KafkaTopic kt : topics) {
+            // given
+            maybeStartOperator(topicOperatorConfig(kt.getMetadata().getNamespace(), kafkaCluster, false));
+            createTopicAndAssertSuccess(kafkaCluster, kt);
 
-        // when
-        Crds.topicOperation(kubernetesClient).resource(kt).delete();
-        LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
-            kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
-        Resource<KafkaTopic> resource = Crds.topicOperation(kubernetesClient).resource(kt);
-        TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
+            // when
+            Crds.topicOperation(kubernetesClient).resource(kt).delete();
+            LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
+                    kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
+            Resource<KafkaTopic> resource = Crds.topicOperation(kubernetesClient).resource(kt);
+            TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
 
-        // then
-        waitNotExistsInKafka(TopicOperatorUtil.topicName(kt));
+            // then
+            waitNotExistsInKafka(TopicOperatorUtil.topicName(kt));
+        }
     }
 
     private static TopicOperatorConfig topicOperatorConfig(String ns, StrimziKafkaCluster kafkaCluster) {
@@ -1264,114 +1285,115 @@ class TopicControllerIT implements TestSeparator {
             "all", false);
     }
 
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopics")
-    public void shouldNotDeleteTopicFromKafkaWhenManagedTopicDeletedFromKubeAndFinalizersDisabledButDeletionDisabledInKafka(KafkaTopic kt) throws ExecutionException, InterruptedException, TimeoutException {
+    @Test
+    public void shouldNotDeleteTopicFromKafkaWhenManagedTopicDeletedFromKubeAndFinalizersDisabledButDeletionDisabledInKafka() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false", "delete.topic.enable", "false"));
+        List<KafkaTopic> topics = managedKafkaTopics();
 
-        // given
-        maybeStartOperator(topicOperatorConfig(kt.getMetadata().getNamespace(), kafkaCluster, false));
-        createTopicAndAssertSuccess(kafkaCluster, kt);
+        for (KafkaTopic kt : topics) {
+            // given
+            maybeStartOperator(topicOperatorConfig(kt.getMetadata().getNamespace(), kafkaCluster, false));
+            createTopicAndAssertSuccess(kafkaCluster, kt);
 
-        postSyncBarrier();
+            postSyncBarrier();
 
-        // when
-        try (var logCaptor = LogCaptor.logMessageMatches(BatchingLoop.LoopRunnable.LOGGER,
-            Level.INFO,
-            "\\[Batch #[0-9]+\\] Batch reconciliation completed",
-            5L,
-            TimeUnit.SECONDS)) {
-            try (var logCaptor2 = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
-                Level.WARN,
-                "Unable to delete topic '" + TopicOperatorUtil.topicName(kt) + "' from Kafka because topic deletion is disabled on the Kafka controller.",
-                5L,
-                TimeUnit.SECONDS)) {
+            // when
+            try (var logCaptor = LogCaptor.logMessageMatches(BatchingLoop.LoopRunnable.LOGGER,
+                    Level.INFO,
+                    "\\[Batch #[0-9]+\\] Batch reconciliation completed",
+                    5L,
+                    TimeUnit.SECONDS)) {
+                try (var logCaptor2 = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
+                        Level.WARN,
+                        "Unable to delete topic '" + TopicOperatorUtil.topicName(kt) + "' from Kafka because topic deletion is disabled on the Kafka controller.",
+                        5L,
+                        TimeUnit.SECONDS)) {
 
-                Crds.topicOperation(kubernetesClient).resource(kt).delete();
-                LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
-                    kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
-                Resource<KafkaTopic> resource = Crds.topicOperation(kubernetesClient).resource(kt);
-                TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
+                    Crds.topicOperation(kubernetesClient).resource(kt).delete();
+                    LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
+                            kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
+                    Resource<KafkaTopic> resource = Crds.topicOperation(kubernetesClient).resource(kt);
+                    TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
+                }
             }
+
+            // then
+            awaitTopicDescription(TopicOperatorUtil.topicName(kt));
         }
-
-        // then
-        awaitTopicDescription(TopicOperatorUtil.topicName(kt));
     }
 
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopics")
-    public void shouldNotDeleteTopicFromKafkaWhenUnmanagedTopicDeletedFromKube(KafkaTopic kt) throws ExecutionException, InterruptedException, TimeoutException {
+    @Test
+    public void shouldNotDeleteTopicFromKafkaWhenUnmanagedTopicDeletedFromKube() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        List<KafkaTopic> topics = managedKafkaTopics();
 
-        // given
-        var expectedTopicName = TopicOperatorUtil.topicName(kt);
-        int specPartitions = kt.getSpec().getPartitions();
-        int specReplicas = kt.getSpec().getReplicas();
+        for (KafkaTopic kt : topics) {
+            // given
+            var expectedTopicName = TopicOperatorUtil.topicName(kt);
+            int specPartitions = kt.getSpec().getPartitions();
+            int specReplicas = kt.getSpec().getReplicas();
 
-        createTopicAndAssertSuccess(kafkaCluster, kt);
-        TopicOperatorTestUtil.changeTopic(kubernetesClient, kt, theKt -> {
-            return new KafkaTopicBuilder(theKt).editOrNewMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "false").endMetadata().build();
-        });
+            createTopicAndAssertSuccess(kafkaCluster, kt);
+            TopicOperatorTestUtil.changeTopic(kubernetesClient, kt, theKt -> {
+                return new KafkaTopicBuilder(theKt).editOrNewMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "false").endMetadata().build();
+            });
 
-        // when
-        Crds.topicOperation(kubernetesClient).resource(kt).delete();
-        LOGGER.info("Test created KafkaTopic {} with resourceVersion {}",
-            kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
-        Resource<KafkaTopic> resource = Crds.topicOperation(kubernetesClient).resource(kt);
-        TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
+            // when
+            Crds.topicOperation(kubernetesClient).resource(kt).delete();
+            LOGGER.info("Test created KafkaTopic {} with resourceVersion {}",
+                    kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
+            Resource<KafkaTopic> resource = Crds.topicOperation(kubernetesClient).resource(kt);
+            TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
 
-        // then
-        var topicDescription = awaitTopicDescription(expectedTopicName);
-        assertEquals(specPartitions, numPartitions(topicDescription));
-        assertEquals(Set.of(specReplicas), replicationFactors(topicDescription));
-        assertEquals(Map.of(), topicConfigMap(expectedTopicName));
+            // then
+            var topicDescription = awaitTopicDescription(expectedTopicName);
+            assertEquals(specPartitions, numPartitions(topicDescription));
+            assertEquals(Set.of(specReplicas), replicationFactors(topicDescription));
+            assertEquals(Map.of(), topicConfigMap(expectedTopicName));
+        }
     }
 
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopics")
-    public void shouldNotDeleteTopicWhenUnmanagedTopicDeletedAndFinalizersDisabled(KafkaTopic kt) throws ExecutionException, InterruptedException, TimeoutException {
+    @Test
+    public void shouldNotDeleteTopicWhenUnmanagedTopicDeletedAndFinalizersDisabled() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        List<KafkaTopic> topics = managedKafkaTopics();
 
-        // given
-        maybeStartOperator(topicOperatorConfig(kt.getMetadata().getNamespace(), kafkaCluster, false));
-        var expectedTopicName = TopicOperatorUtil.topicName(kt);
-        int specPartitions = kt.getSpec().getPartitions();
-        int specReplicas = kt.getSpec().getReplicas();
+        for (KafkaTopic kt : topics) {
+            // given
+            maybeStartOperator(topicOperatorConfig(kt.getMetadata().getNamespace(), kafkaCluster, false));
+            var expectedTopicName = TopicOperatorUtil.topicName(kt);
+            int specPartitions = kt.getSpec().getPartitions();
+            int specReplicas = kt.getSpec().getReplicas();
 
-        createTopicAndAssertSuccess(kafkaCluster, kt);
-        TopicOperatorTestUtil.changeTopic(kubernetesClient, kt, theKt ->
-            new KafkaTopicBuilder(theKt).editOrNewMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "false").endMetadata().build());
+            createTopicAndAssertSuccess(kafkaCluster, kt);
+            TopicOperatorTestUtil.changeTopic(kubernetesClient, kt, theKt ->
+                    new KafkaTopicBuilder(theKt).editOrNewMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "false").endMetadata().build());
 
-        Crds.topicOperation(kubernetesClient).resource(kt).delete();
-        LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}", kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
-        Resource<KafkaTopic> resource = Crds.topicOperation(kubernetesClient).resource(kt);
-        TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
+            Crds.topicOperation(kubernetesClient).resource(kt).delete();
+            LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}", kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
+            Resource<KafkaTopic> resource = Crds.topicOperation(kubernetesClient).resource(kt);
+            TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
 
-        // then
-        var topicDescription = awaitTopicDescription(expectedTopicName);
-        assertEquals(specPartitions, numPartitions(topicDescription));
-        assertEquals(Set.of(specReplicas), replicationFactors(topicDescription));
-        assertEquals(Map.of(), topicConfigMap(expectedTopicName));
-
-    }
-
-    static List<List<KafkaTopic>> collidingManagedTopics(String ns1, String ns2) {
-        return List.of(
-            // both use spec.topicName
-            List.of(kafkaTopic(ns1, "kt1", true, "collide", 1, 1),
-                kafkaTopic(ns2, "kt2", true, "collide", 1, 1)),
-            // only second uses spec.topicName
-            List.of(kafkaTopic(ns1, "kt1", true, null, 1, 1),
-                kafkaTopic(ns2, "kt2", true, "kt1", 1, 1)),
-            // only first uses spec.topicName
-            List.of(kafkaTopic(ns1, "kt1", true, "collide", 1, 1),
-                kafkaTopic(ns2, "collide", true, null, 1, 1))
-        );
+            // then
+            var topicDescription = awaitTopicDescription(expectedTopicName);
+            assertEquals(specPartitions, numPartitions(topicDescription));
+            assertEquals(Set.of(specReplicas), replicationFactors(topicDescription));
+            assertEquals(Map.of(), topicConfigMap(expectedTopicName));
+        }
     }
 
     static List<List<KafkaTopic>> collidingManagedTopics_sameNamespace() {
-        return collidingManagedTopics(NAMESPACE, NAMESPACE);
+        return List.of(
+                // both use spec.topicName
+                List.of(kafkaTopic(NAMESPACE, "kt1", true, "collide", 1, 1),
+                        kafkaTopic(NAMESPACE, "kt2", true, "collide", 1, 1)),
+                // only second uses spec.topicName
+                List.of(kafkaTopic(NAMESPACE, "kt1", true, null, 1, 1),
+                        kafkaTopic(NAMESPACE, "kt2", true, "kt1", 1, 1)),
+                // only first uses spec.topicName
+                List.of(kafkaTopic(NAMESPACE, "kt1", true, "collide", 1, 1),
+                        kafkaTopic(NAMESPACE, "collide", true, null, 1, 1))
+        );
     }
 
     @ParameterizedTest
@@ -1446,45 +1468,53 @@ class TopicControllerIT implements TestSeparator {
         assertEquals("org.apache.kafka.common.errors.InvalidConfigurationException: Unknown topic config name: unknown.config.parameter", condition.getMessage());
     }
 
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopicsWithIllegalTopicNames")
-    public void shouldFailCreationIfIllegalTopicName(KafkaTopic kt) throws ExecutionException, InterruptedException {
+    @Test
+    public void shouldFailCreationIfIllegalTopicName() throws ExecutionException, InterruptedException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        List<KafkaTopic> topics = List.of(
+                kafkaTopic(NAMESPACE, "invalid-topic-a", true, "..", 2, 1),
+                kafkaTopic(NAMESPACE, "invalid-topic-b", true, ".", 2, 1),
+                kafkaTopic(NAMESPACE, "invalid-topic-c", null, "invalid-topic-c{}", 2, 1),
+                kafkaTopic(NAMESPACE, "invalid-topic-d", null, "x".repeat(256), 2, 1)
+                );
 
-        // given
+        for (KafkaTopic kt: topics) {
+            // given
 
-        // when
-        var created = createTopic(kafkaCluster, kt);
+            // when
+            var created = createTopic(kafkaCluster, kt);
 
-        // then
-        assertTrue(readyIsFalse().test(created));
-        Condition condition = assertExactlyOneCondition(created);
-        assertEquals(TopicOperatorException.Reason.KAFKA_ERROR.value, condition.getReason());
-        assertTrue(condition.getMessage().startsWith("org.apache.kafka.common.errors.InvalidTopicException: Topic name is invalid:"),
-            condition.getMessage());
+            // then
+            assertTrue(readyIsFalse().test(created));
+            Condition condition = assertExactlyOneCondition(created);
+            assertEquals(TopicOperatorException.Reason.KAFKA_ERROR.value, condition.getReason());
+            assertTrue(condition.getMessage().startsWith("org.apache.kafka.common.errors.InvalidTopicException: Topic name is invalid:"),
+                    condition.getMessage());
+        }
     }
 
-
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopics")
-    public void shouldFailChangeToSpecTopicName(KafkaTopic kafkaTopic) throws ExecutionException, InterruptedException, TimeoutException {
+    @Test
+    public void shouldFailChangeToSpecTopicName() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        List<KafkaTopic> topics = managedKafkaTopics();
 
-        var expectedTopicName = TopicOperatorUtil.topicName(kafkaTopic);
-        shouldFailOnModification(kafkaCluster, kafkaTopic,
-            theKt -> {
-                theKt.getSpec().setTopicName("CHANGED-" + expectedTopicName);
-                return theKt;
-            },
-            operated -> {
-                assertEquals("Changing spec.topicName is not supported", assertExactlyOneCondition(operated).getMessage());
-                assertEquals(TopicOperatorException.Reason.NOT_SUPPORTED.value, assertExactlyOneCondition(operated).getReason());
-                assertEquals(expectedTopicName, operated.getStatus().getTopicName());
-            },
-            theKt -> {
-                theKt.getSpec().setTopicName(expectedTopicName);
-                return theKt;
-            });
+        for (KafkaTopic kafkaTopic : topics) {
+            var expectedTopicName = TopicOperatorUtil.topicName(kafkaTopic);
+            shouldFailOnModification(kafkaCluster, kafkaTopic,
+                    theKt -> {
+                        theKt.getSpec().setTopicName("CHANGED-" + expectedTopicName);
+                        return theKt;
+                    },
+                    operated -> {
+                        assertEquals("Changing spec.topicName is not supported", assertExactlyOneCondition(operated).getMessage());
+                        assertEquals(TopicOperatorException.Reason.NOT_SUPPORTED.value, assertExactlyOneCondition(operated).getReason());
+                        assertEquals(expectedTopicName, operated.getStatus().getTopicName());
+                    },
+                    theKt -> {
+                        theKt.getSpec().setTopicName(expectedTopicName);
+                        return theKt;
+                    });
+        }
     }
 
     private void shouldFailOnModification(StrimziKafkaCluster kc, KafkaTopic kt,
@@ -1529,25 +1559,25 @@ class TopicControllerIT implements TestSeparator {
         return waitUntil(edited, topicWasSyncedAndMatchesPredicate);
     }
 
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopics")
-    public void shouldFailChangeToRf(KafkaTopic kt) throws ExecutionException, InterruptedException, TimeoutException {
+    @Test
+    public void shouldFailChangeToRf() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        KafkaTopic kt = kafkaTopic(NAMESPACE, "fail-change-rf", true, "fail-change-rf", 2, 1);
 
         int specReplicas = kt.getSpec().getReplicas();
         shouldFailOnModification(kafkaCluster, kt,
-            theKt -> {
-                theKt.getSpec().setReplicas(specReplicas + 1);
-                return theKt;
-            },
-            operated -> {
-                assertEquals("Replication factor change not supported, but required for partitions [0, 1]", assertExactlyOneCondition(operated).getMessage());
-                assertEquals(TopicOperatorException.Reason.NOT_SUPPORTED.value, assertExactlyOneCondition(operated).getReason());
-            },
-            theKt -> {
-                theKt.getSpec().setReplicas(specReplicas);
-                return theKt;
-            });
+                theKt -> {
+                    theKt.getSpec().setReplicas(specReplicas + 1);
+                    return theKt;
+                },
+                operated -> {
+                    assertEquals("Replication factor change not supported, but required for partitions [0, 1]", assertExactlyOneCondition(operated).getMessage());
+                    assertEquals(TopicOperatorException.Reason.NOT_SUPPORTED.value, assertExactlyOneCondition(operated).getReason());
+                },
+                theKt -> {
+                    theKt.getSpec().setReplicas(specReplicas);
+                    return theKt;
+                });
     }
 
     @Test
@@ -1709,17 +1739,18 @@ class TopicControllerIT implements TestSeparator {
         return throttles;
     }
 
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopics")
-    public void shouldFailCreationIfNoTopicAuthz(KafkaTopic kt) throws ExecutionException, InterruptedException {
+    @Test
+    public void shouldFailCreationIfNoTopicAuthz() throws ExecutionException, InterruptedException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        KafkaTopic kt = kafkaTopic(NAMESPACE, "fail-crreation-if-no-topic-authz", true, "fail-creation-if-no-topic-authz", 2, 1);
         topicCreationFailsDueToAdminException(kt, kafkaCluster, new TopicAuthorizationException("not allowed"), "KafkaError");
     }
 
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopics")
-    public void shouldFailCreationIfNpe(KafkaTopic kt) throws ExecutionException, InterruptedException {
+    @Test
+    public void shouldFailCreationIfNpe() throws ExecutionException, InterruptedException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        KafkaTopic kt = kafkaTopic(NAMESPACE, "fail-creation-if-npe", true, "fail-creation-if-npe", 2, 1);
+
         topicCreationFailsDueToAdminException(kt, kafkaCluster, new NullPointerException(), "InternalError");
     }
 
@@ -1747,10 +1778,10 @@ class TopicControllerIT implements TestSeparator {
         assertEquals(exception.toString(), condition.getMessage());
     }
 
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopics")
-    public void shouldFailAlterConfigIfNoTopicAuthz(KafkaTopic kt) throws ExecutionException, InterruptedException, TimeoutException {
+    @Test
+    public void shouldFailAlterConfigIfNoTopicAuthz() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        KafkaTopic kt = kafkaTopic(NAMESPACE, "fail-after-config-if-no-topic-authz", true, "fail-after-config-if-no-topic-authz", 2, 1);
 
         var config = topicOperatorConfig(NAMESPACE, kafkaCluster);
         kafkaAdminClientOp = Mockito.spy(Admin.create(config.adminClientConfig()));
@@ -1762,9 +1793,7 @@ class TopicControllerIT implements TestSeparator {
         maybeStartOperator(config);
         createTopicAndAssertSuccess(kafkaCluster, kt);
 
-        var modified = modifyTopicAndAwait(kt,
-            TopicControllerIT::setSnappyCompression,
-            readyIsFalse());
+        var modified = modifyTopicAndAwait(kt, TopicControllerIT::setSnappyCompression, readyIsFalse());
         var condition = assertExactlyOneCondition(modified);
         assertEquals("KafkaError", condition.getReason());
         assertEquals("org.apache.kafka.common.errors.TopicAuthorizationException: not allowed", condition.getMessage());
@@ -1830,10 +1859,10 @@ class TopicControllerIT implements TestSeparator {
         return new KafkaTopicBuilder(kt).editOrNewSpec().addToConfig(TopicConfig.COMPRESSION_TYPE_CONFIG, gzip).endSpec().build();
     }
 
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopics")
-    public void shouldFailAddPartitionsIfNoTopicAuthz(KafkaTopic kt) throws ExecutionException, InterruptedException, TimeoutException {
+    @Test
+    public void shouldFailAddPartitionsIfNoTopicAuthz() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        KafkaTopic kt = kafkaTopic(NAMESPACE, "fail-add-partitions-if-no-topic-authz", true, "fail-add-partitions-if-no-topic-authz", 2, 1);
 
         var config = topicOperatorConfig(NAMESPACE, kafkaCluster);
         kafkaAdminClientOp = Mockito.spy(Admin.create(config.adminClientConfig()));
@@ -1846,8 +1875,8 @@ class TopicControllerIT implements TestSeparator {
         createTopicAndAssertSuccess(kafkaCluster, kt);
 
         var modified = modifyTopicAndAwait(kt,
-            TopicControllerIT::incrementPartitions,
-            readyIsFalse());
+                TopicControllerIT::incrementPartitions,
+                readyIsFalse());
         var condition = assertExactlyOneCondition(modified);
         assertEquals("KafkaError", condition.getReason());
         assertEquals("org.apache.kafka.common.errors.TopicAuthorizationException: not allowed", condition.getMessage());
@@ -1858,10 +1887,10 @@ class TopicControllerIT implements TestSeparator {
         return theKt;
     }
 
-    @ParameterizedTest
-    @MethodSource("managedKafkaTopics")
-    public void shouldFailDeleteIfNoTopicAuthz(KafkaTopic kt) throws ExecutionException, InterruptedException, TimeoutException {
+    @Test
+    public void shouldFailDeleteIfNoTopicAuthz() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
+        KafkaTopic kt = kafkaTopic(NAMESPACE, "fail-delete-if-no-topic-authz", true, "fail-delete-if-no-topic-authz", 2, 1);
 
         // given
         var config = topicOperatorConfig(NAMESPACE, kafkaCluster);
@@ -1877,7 +1906,7 @@ class TopicControllerIT implements TestSeparator {
         // when
         Crds.topicOperation(kubernetesClient).resource(kt).delete();
         LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
-            kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
+                kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
         Resource<KafkaTopic> resource = Crds.topicOperation(kubernetesClient).resource(kt);
         var deleted = TopicOperatorTestUtil.waitUntilCondition(resource, readyIsFalse());
 
