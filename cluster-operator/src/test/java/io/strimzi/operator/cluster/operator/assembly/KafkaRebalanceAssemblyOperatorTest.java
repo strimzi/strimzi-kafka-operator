@@ -1133,6 +1133,48 @@ public class KafkaRebalanceAssemblyOperatorTest {
         this.krNewToPendingProposalDelete(context, CruiseControlEndpoints.REMOVE_BROKER, kr);
     }
 
+    /**
+     * Tests the transition from 'Rebalancing' to 'NotReady' due to a user task not existing and an error
+     * on re-issuing the optimization proposal request
+     *
+     * 1. A new KafkaRebalance resource is created; it is in the Rebalancing state
+     * 2. The operator requests the status of the corresponding user task through the Cruise Control REST API
+     * 3. The user task doesn't exist anymore and the KafkaRebalance resource moves to the 'NotReady' state
+     */
+    @Test
+    public void testRebalancingToNotReadyRemoveBroker(VertxTestContext context) {
+        cruiseControlServer.setupUserTasktoEmpty();
+        cruiseControlServer.setupCCBrokerDoesNotExist(CruiseControlEndpoints.REMOVE_BROKER);
+
+        KafkaRebalance kr = new KafkaRebalanceBuilder(createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, REMOVE_BROKER_KAFKA_REBALANCE_SPEC, false))
+                .withNewStatus()
+                    .withObservedGeneration(1L)
+                    .withSessionId("test-session-id")
+                    .withConditions(new ConditionBuilder()
+                            .withType(KafkaRebalanceState.Rebalancing.name())
+                            .withStatus("True")
+                            .build())
+                .endStatus()
+                .build();
+
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).updateStatus();
+
+        crdCreateKafka();
+        crdCreateCruiseControlSecrets();
+
+        Checkpoint checkpoint = context.checkpoint();
+        krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    KafkaRebalance kr1 = Crds.kafkaRebalanceOperation(client).inNamespace(namespace).withName(kr.getMetadata().getName()).get();
+                    assertThat(kr1, StateMatchers.hasState());
+                    Condition condition = KafkaRebalanceUtils.rebalanceStateCondition(kr1.getStatus());
+                    assertThat(condition, StateMatchers.hasStateInCondition(KafkaRebalanceState.NotReady, IllegalArgumentException.class,
+                            "Some/all brokers specified don't exist"));
+                    checkpoint.flag();
+                })));
+    }
+
     private void krNewToPendingProposalDelete(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr) throws IOException, URISyntaxException {
         // Set up the rebalance endpoint with the number of pending calls before a response is received.
         cruiseControlServer.setupCCRebalanceResponse(1, endpoint);
