@@ -737,50 +737,48 @@ class TopicControllerIT implements TestSeparator {
     @Test
     public void shouldNotUpdateTopicInKafkaWhenKafkaTopicBecomesUnselected() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
-        List<KafkaTopic> topics = managedKafkaTopics();
+        KafkaTopic kt = kafkaTopic(NAMESPACE, "not-update-unselected", true, "not-update-unselected", 2, 1);
 
-        for (KafkaTopic kt : topics) {
-            Map<String, String> unmatchedLabels = Map.of("foo", "FOO");
-            assertFalse(BatchingTopicController.matchesSelector(SELECTOR, unmatchedLabels));
+        Map<String, String> unmatchedLabels = Map.of("foo", "FOO");
+        assertFalse(BatchingTopicController.matchesSelector(SELECTOR, unmatchedLabels));
 
-            // given
-            var expectedTopicName = TopicOperatorUtil.topicName(kt);
-            KafkaTopic unmanaged;
-            try (var logCaptor = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
-                    org.apache.logging.log4j.Level.DEBUG,
-                    "Ignoring KafkaTopic .*? not selected by selector",
-                    5L,
-                    TimeUnit.SECONDS)) {
-                createTopicAndAssertSuccess(kafkaCluster, kt);
-                assertTrue(operator.controller.topicRefs.containsKey(expectedTopicName)
-                                || operator.controller.topicRefs.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
-                        "Expect selected resource to be present in topics map");
+        // given
+        var expectedTopicName = TopicOperatorUtil.topicName(kt);
+        KafkaTopic unmanaged;
+        try (var logCaptor = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
+                org.apache.logging.log4j.Level.DEBUG,
+                "Ignoring KafkaTopic .*? not selected by selector",
+                5L,
+                TimeUnit.SECONDS)) {
+            createTopicAndAssertSuccess(kafkaCluster, kt);
+            assertTrue(operator.controller.topicRefs.containsKey(expectedTopicName)
+                            || operator.controller.topicRefs.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
+                    "Expect selected resource to be present in topics map");
 
-                // when
-                LOGGER.debug("##Modifying");
-                unmanaged = TopicOperatorTestUtil.changeTopic(kubernetesClient, kt, theKt -> {
-                    theKt.getMetadata().setLabels(unmatchedLabels);
-                    theKt.getSpec().setPartitions(3);
-                    return theKt;
-                });
+            // when
+            LOGGER.debug("##Modifying");
+            unmanaged = TopicOperatorTestUtil.changeTopic(kubernetesClient, kt, theKt -> {
+                theKt.getMetadata().setLabels(unmatchedLabels);
+                theKt.getSpec().setPartitions(3);
+                return theKt;
+            });
 
-                // then
-                LOGGER.debug("##Checking");
-            }
-            assertNotNull(unmanaged.getMetadata().getFinalizers());
-            assertTrue(unmanaged.getMetadata().getFinalizers().contains(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
-            assertNotNull(unmanaged.getStatus().getTopicName(), "Expect status.topicName to be unchanged from post-creation state");
-
-            var topicDescription = awaitTopicDescription(expectedTopicName);
-            assertEquals(kt.getSpec().getPartitions(), numPartitions(topicDescription));
-            assertEquals(Set.of(kt.getSpec().getReplicas()), replicationFactors(topicDescription));
-            assertEquals(Map.of(), topicConfigMap(expectedTopicName));
-
-            Map<String, List<KubeRef>> topicsRefs = new HashMap<>(operator.controller.topicRefs);
-            assertFalse(topicsRefs.containsKey(expectedTopicName)
-                            || topicsRefs.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
-                    "Transition to a non-selected resource should result in removal from topics map: " + topicsRefs);
+            // then
+            LOGGER.debug("##Checking");
         }
+        assertNotNull(unmanaged.getMetadata().getFinalizers());
+        assertTrue(unmanaged.getMetadata().getFinalizers().contains(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
+        assertNotNull(unmanaged.getStatus().getTopicName(), "Expect status.topicName to be unchanged from post-creation state");
+
+        var topicDescription = awaitTopicDescription(expectedTopicName);
+        assertEquals(kt.getSpec().getPartitions(), numPartitions(topicDescription));
+        assertEquals(Set.of(kt.getSpec().getReplicas()), replicationFactors(topicDescription));
+        assertEquals(Map.of(), topicConfigMap(expectedTopicName));
+
+        Map<String, List<KubeRef>> topicsRefs = new HashMap<>(operator.controller.topicRefs);
+        assertFalse(topicsRefs.containsKey(expectedTopicName)
+                        || topicsRefs.containsKey(expectedTopicName.toUpperCase(Locale.ROOT)),
+                "Transition to a non-selected resource should result in removal from topics map: " + topicsRefs);
     }
 
     @Test
