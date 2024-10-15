@@ -768,7 +768,12 @@ public class KafkaRebalanceAssemblyOperator
             // 1. Cruise Control restarted so resetting the state because the tasks queue is not persisted
             // 2. Task's retention time expired, or the cache has become full
             LOGGER.warnCr(reconciliation, "User task {} not found, going to generate a new proposal", sessionId);
-            requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder).onSuccess(p::complete);
+            requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder)
+                    .onSuccess(p::complete)
+                    .onFailure(e -> {
+                        LOGGER.errorCr(reconciliation, "Generating a new proposal failed", e);
+                        p.fail(e);
+                    });
             return;
         }
 
@@ -923,8 +928,8 @@ public class KafkaRebalanceAssemblyOperator
             apiClient.getUserTaskStatus(reconciliation, host, cruiseControlPort, sessionId)
                 .onSuccess(cruiseControlResponse -> handleUserTaskStatusResponse(reconciliation, cruiseControlResponse, p, sessionId, conditions, kafkaRebalance, configMapOperator, false, host, apiClient, rebalanceOptionsBuilder))
                 .onFailure(e -> {
-                    LOGGER.errorCr(reconciliation, "Cruise Control getting rebalance task status failed", e.getCause());
-                    p.fail(new CruiseControlRestException("Cruise Control getting rebalance task status failed"));
+                    LOGGER.errorCr(reconciliation, "Cruise Control getting rebalance task status failed", e);
+                    p.fail(e);
                 });
         }
         return p.future();
