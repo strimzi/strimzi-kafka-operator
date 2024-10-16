@@ -187,20 +187,20 @@ public class WorkloadUtils {
      * Patch a Strimzi PodSet to merge the provided annotations with the annotations on the Pod resources defined
      * in the PodSet
      *
-     * @param strimziPodSet Strimzi PodSet to patch
-     * @param annotations   Annotations to merge with the existing annotations
+     * @param strimziPodSet             Strimzi PodSet to patch
+     * @param annotationsToBeUpdated    Annotations to merge with the existing annotations
      *
      * @return Patched PodSet
      */
-    public static StrimziPodSet patchAnnotations(StrimziPodSet strimziPodSet, Map<String, String> annotations) {
+    public static StrimziPodSet patchAnnotations(StrimziPodSet strimziPodSet, Map<String, String> annotationsToBeUpdated) {
         List<Map<String, Object>> newPods = PodSetUtils.podSetToPods(strimziPodSet)
                 .stream()
                 .map(pod -> {
                     Map<String, String> updatedAnnotations = pod.getMetadata().getAnnotations();
-                    updatedAnnotations.putAll(annotations);
+                    updatedAnnotations.putAll(annotationsToBeUpdated);
                     return pod.edit()
                             .editMetadata()
-                            .withAnnotations(updatedAnnotations)
+                                .withAnnotations(updatedAnnotations)
                             .endMetadata()
                             .build();
                 })
