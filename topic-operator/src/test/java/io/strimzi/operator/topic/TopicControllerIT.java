@@ -155,7 +155,13 @@ class TopicControllerIT implements TestSeparator {
     }
 
     private void startKafkaCluster(int brokersNum, int internalTopicReplicationFactor, Map<String, String> additionalKafkaConfiguration)    {
-        kafkaCluster = new StrimziKafkaCluster(brokersNum, internalTopicReplicationFactor, additionalKafkaConfiguration, null, true);
+        kafkaCluster = new StrimziKafkaCluster.StrimziKafkaClusterBuilder()
+                .withKraft()
+                .withNumberOfBrokers(brokersNum)
+                .withInternalTopicReplicationFactor(internalTopicReplicationFactor)
+                .withAdditionalKafkaConfiguration(additionalKafkaConfiguration)
+                .withSharedNetwork()
+                .build();
         kafkaCluster.start();
     }
 

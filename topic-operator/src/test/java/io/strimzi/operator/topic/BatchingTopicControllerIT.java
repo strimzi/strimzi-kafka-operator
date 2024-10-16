@@ -103,7 +103,12 @@ class BatchingTopicControllerIT implements TestSeparator {
 
     @BeforeEach
     public void beforeEach() {
-        kafkaCluster = new StrimziKafkaCluster(2, 1, Map.of(), null, true);
+        kafkaCluster = new StrimziKafkaCluster.StrimziKafkaClusterBuilder()
+                .withKraft()
+                .withNumberOfBrokers(2)
+                .withInternalTopicReplicationFactor(1)
+                .withSharedNetwork()
+                .build();
         kafkaCluster.start();
         kafkaAdminClient = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers()));
     }

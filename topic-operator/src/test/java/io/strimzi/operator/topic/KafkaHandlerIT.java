@@ -55,7 +55,13 @@ public class KafkaHandlerIT implements TestSeparator {
 
     @BeforeEach
     public void beforeEach() {
-        kafkaCluster = new StrimziKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"), null, true);
+        kafkaCluster = new StrimziKafkaCluster.StrimziKafkaClusterBuilder()
+                .withKraft()
+                .withNumberOfBrokers(1)
+                .withInternalTopicReplicationFactor(1)
+                .withAdditionalKafkaConfiguration(Map.of("auto.create.topics.enable", "false"))
+                .withSharedNetwork()
+                .build();
         kafkaCluster.start();
     }
 

@@ -68,7 +68,12 @@ public class TopicOperatorMetricsIT implements TestSeparator {
         mockKube.start();
         kubernetesClient = mockKube.client();
 
-        kafkaCluster = new StrimziKafkaCluster(2, 1, Map.of(), null, true);
+        kafkaCluster = new StrimziKafkaCluster.StrimziKafkaClusterBuilder()
+                .withKraft()
+                .withNumberOfBrokers(1)
+                .withInternalTopicReplicationFactor(1)
+                .withSharedNetwork()
+                .build();
         kafkaCluster.start();
     }
 
