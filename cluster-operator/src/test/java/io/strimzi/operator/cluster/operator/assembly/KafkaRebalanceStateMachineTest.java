@@ -84,8 +84,8 @@ public class KafkaRebalanceStateMachineTest {
                     .withMode(KafkaRebalanceMode.REMOVE_DISKS)
                     .withMoveReplicasOffVolumes(
                             new BrokerAndVolumeIdsBuilder()
-                                    .withVolumeIds(1)
                                     .withBrokerId(0)
+                                    .withVolumeIds(1)
                                     .build())
                     .withBrokers(3)
                     .build();
