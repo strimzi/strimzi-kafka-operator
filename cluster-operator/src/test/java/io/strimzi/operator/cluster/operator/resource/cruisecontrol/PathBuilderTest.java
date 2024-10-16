@@ -32,6 +32,8 @@ public class PathBuilderTest {
                 CruiseControlEndpoints.REBALANCE + "?" +
                         CruiseControlParameters.JSON + "=true&" +
                         CruiseControlParameters.DRY_RUN + "=false&" +
+                        CruiseControlParameters.VERBOSE + "=true&" +
+                        CruiseControlParameters.SKIP_HARD_GOAL_CHECK + "=false&" +
                         CruiseControlParameters.EXCLUDED_TOPICS + "=test-.*&" +
                         CruiseControlParameters.GOALS + "=");
 
@@ -44,8 +46,6 @@ public class PathBuilderTest {
         }
 
         expectedQuery.append(URLEncoder.encode(goalStringBuilder.toString(), StandardCharsets.UTF_8) + "&");
-        expectedQuery.append(CruiseControlParameters.VERBOSE + "=true&");
-        expectedQuery.append(CruiseControlParameters.SKIP_HARD_GOAL_CHECK + "=false&");
         expectedQuery.append(CruiseControlParameters.REBALANCE_DISK + "=false");
 
         return expectedQuery.toString();
@@ -70,10 +70,10 @@ public class PathBuilderTest {
         String path = new PathBuilder(CruiseControlEndpoints.REBALANCE)
                 .withParameter(CruiseControlParameters.JSON, "true")
                 .withParameter(CruiseControlParameters.DRY_RUN, "false")
-                .withParameter(CruiseControlParameters.EXCLUDED_TOPICS, "test-.*")
-                .withParameter(CruiseControlParameters.GOALS, GOALS)
                 .withParameter(CruiseControlParameters.VERBOSE, "true")
                 .withParameter(CruiseControlParameters.SKIP_HARD_GOAL_CHECK, "false")
+                .withParameter(CruiseControlParameters.EXCLUDED_TOPICS, "test-.*")
+                .withParameter(CruiseControlParameters.GOALS, GOALS)
                 .withParameter(CruiseControlParameters.REBALANCE_DISK, "false")
                 .build();
 
