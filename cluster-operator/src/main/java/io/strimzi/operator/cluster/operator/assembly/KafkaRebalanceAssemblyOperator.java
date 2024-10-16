@@ -588,7 +588,7 @@ public class KafkaRebalanceAssemblyOperator
 
                     brokerStats.put(doubleLoadParameter.getKafkaRebalanceStatusKey(), doubleStats);
                 } else {
-                    LOGGER.warnOp("{} information was missing from the broker after load information",
+                    LOGGER.warnOp("{} information was missing from the broker before/after load information",
                             doubleLoadParameter.getKafkaRebalanceStatusKey());
                 }
 
