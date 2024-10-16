@@ -4502,7 +4502,7 @@ If not specified, the `full` mode is used by default.
 |A list of strategy class names used to determine the execution order for the replica movements in the generated optimization proposal. By default BaseReplicaMovementStrategy is used, which will execute the replica movements in the order that they were generated.
 |moveReplicasOffVolumes
 |xref:type-BrokerAndVolumeIds-{context}[`BrokerAndVolumeIds`] array
-|List of the brokers and the volumes corresponding to them whose replicas need to be moved.
+|List of brokers and their corresponding volumes from which replicas need to be moved.
 |====
 
 [id='type-BrokerAndVolumeIds-{context}']
@@ -4516,10 +4516,10 @@ Used in: xref:type-KafkaRebalanceSpec-{context}[`KafkaRebalanceSpec`]
 |Property |Property type |Description
 |brokerId
 |integer
-|ID's of the broker which contains the disk from which you want to move the the partition replicas from.
+|ID of the broker that contains the disk from which you want to move the partition replicas.
 |volumeIds
 |integer array
-|ID's of the disk from which the partition replicas need to be moved.
+|IDs of the disks from which the partition replicas need to be moved.
 |====
 
 [id='type-KafkaRebalanceStatus-{context}']

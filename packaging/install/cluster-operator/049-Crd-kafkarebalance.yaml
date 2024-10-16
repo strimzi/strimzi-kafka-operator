@@ -109,14 +109,14 @@ spec:
                   properties:
                     brokerId:
                       type: integer
-                      description: ID's of the broker which contains the disk from which you want to move the the partition replicas from.
+                      description: ID of the broker that contains the disk from which you want to move the partition replicas.
                     volumeIds:
                       type: array
                       minItems: 1
                       items:
                         type: integer
-                      description: ID's of the disk from which the partition replicas need to be moved.
-                description: List of the brokers and the volumes corresponding to them whose replicas need to be moved.
+                      description: IDs of the disks from which the partition replicas need to be moved.
+                description: List of brokers and their corresponding volumes from which replicas need to be moved.
             description: The specification of the Kafka rebalance.
           status:
             type: object
