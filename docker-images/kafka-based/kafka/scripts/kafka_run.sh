@@ -68,6 +68,13 @@ if [ "$USE_KRAFT" == "true" ]; then
   # Format the KRaft storage
   STRIMZI_CLUSTER_ID=$(cat "$KAFKA_HOME/custom-config/cluster.id")
   METADATA_VERSION=$(cat "$KAFKA_HOME/custom-config/metadata.version")
+  
+  # When disks are already formatted, we must reuse the previous cluster.id in addition to the --ignore-formatted flag. 
+  # This is required by the Kafka storage tool in order to check that cluster.id is the same across all broker disks.
+  # Getting the cluster.id from meta.properties also works when rebinding volumes from a previous Kafka cluster instance.
+  DISK_PATH="/var/lib/kafka/$(ls /var/lib/kafka | head -n1)/kafka-log$STRIMZI_BROKER_ID"
+  [[ -f $DISK_PATH/meta.properties ]] && STRIMZI_CLUSTER_ID="$(grep cluster.id "$DISK_PATH"/meta.properties | awk -F'=' '{print $2}')"
+  
   echo "Making sure the Kraft storage is formatted with cluster ID $STRIMZI_CLUSTER_ID and metadata version $METADATA_VERSION"
   # Using "=" to assign arguments for the Kafka storage tool to avoid issues if the generated
   # cluster ID starts with a "-". See https://issues.apache.org/jira/browse/KAFKA-15754.
