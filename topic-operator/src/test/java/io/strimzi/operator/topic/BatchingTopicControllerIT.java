@@ -105,7 +105,7 @@ class BatchingTopicControllerIT implements TestSeparator {
     public void beforeEach() {
         kafkaCluster = new StrimziKafkaCluster.StrimziKafkaClusterBuilder()
                 .withKraft()
-                .withNumberOfBrokers(2)
+                .withNumberOfBrokers(1)
                 .withInternalTopicReplicationFactor(1)
                 .withSharedNetwork()
                 .build();
@@ -238,14 +238,14 @@ class BatchingTopicControllerIT implements TestSeparator {
     @Test
     public void shouldHandleInterruptedExceptionFromListReassignments() throws ExecutionException, InterruptedException {
         var topicName = "my-topic";
-        kafkaAdminClient.createTopics(List.of(new NewTopic(topicName, 2, (short) 2))).all().get();
+        kafkaAdminClient.createTopics(List.of(new NewTopic(topicName, 2, (short) 1))).all().get();
 
         var adminSpy = Mockito.spy(kafkaAdminClient);
         var result = Mockito.mock(ListPartitionReassignmentsResult.class);
         Mockito.doReturn(interruptedFuture()).when(result).reassignments();
         Mockito.doReturn(result).when(adminSpy).listPartitionReassignments(any(Set.class));
         
-        var kafkaTopic = createKafkaTopic(topicName);
+        var kafkaTopic = createKafkaTopic(topicName, 2);
         assertOnUpdateThrowsInterruptedException(adminSpy, kafkaTopic);
     }
 
