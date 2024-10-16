@@ -1168,7 +1168,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
     /**
      * Tests the transition from 'Rebalancing' to 'NotReady' due to a user task not existing and an error
-     * on re-issuing the optimization proposal request (i.e. brokers don't exist during a "remove-broker")
+     * on re-issuing the optimization proposal request (i.e. brokers don't exist during the "remove-broker" operation)
      *
      * 1. A new KafkaRebalance resource is created; it is in the Rebalancing state
      * 2. The operator requests the status of the corresponding user task through the Cruise Control REST API
@@ -1194,7 +1194,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     }
 
     /**
-     * Tests the transition from 'PendingProposal' to 'NotReady' due to an error (i.e. brokers don't exist during a "remove-broker")
+     * Tests the transition from 'PendingProposal' to 'NotReady' due to an error (i.e. brokers don't exist during the "remove-broker" operation)
      * on re-issuing the optimization proposal request when applying the "strimzi.io/rebalance: refresh" annotation
      *
      * 1. A new KafkaRebalance resource is created; it is in the PendingProposal state
@@ -1209,7 +1209,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     }
 
     /**
-     * Tests the transition from 'PendingProposal' to 'NotReady' due to an error (i.e. brokers don't exist during a "remove-broker")
+     * Tests the transition from 'PendingProposal' to 'NotReady' due to an error (i.e. brokers don't exist during the "remove-broker" operation)
      * on re-issuing the optimization proposal request because the user task session ID is empty and status cannot be checked
      *
      * 1. A new KafkaRebalance resource is created; it is in the PendingProposal state
@@ -1224,7 +1224,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     }
 
     /**
-     * Tests the transition from 'Rebalancing' to 'NotReady' due to an error (i.e. brokers don't exist during a "remove-broker")
+     * Tests the transition from 'Rebalancing' to 'NotReady' due to an error (i.e. brokers don't exist during the "remove-broker" operation)
      * on re-issuing the optimization proposal request by applying the "strimzi.io/rebalance: refresh" annotation
      *
      * 1. A new KafkaRebalance resource is created; it is in the Rebalancing state
