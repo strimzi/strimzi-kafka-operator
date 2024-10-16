@@ -206,7 +206,7 @@ public class CruiseControlClientTest {
     @Test
     public void testCCRemoveBroker(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
-                .withBrokers(List.of(3, 4, 5))
+                .withBrokers(List.of(3))
                 .build();
         this.ccRebalance(vertx, context, 0, options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> {
@@ -218,8 +218,8 @@ public class CruiseControlClientTest {
     @Test
     public void testCCRemoveBrokerDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         BrokerAndVolumeIds brokerAndVolumeIds = new BrokerAndVolumeIdsBuilder()
-                .withVolumeIds(1, 2, 3)
                 .withBrokerId(0)
+                .withVolumeIds(1, 2, 3)
                 .build();
 
         RemoveDisksOptions options = new RemoveDisksOptions.RemoveDisksOptionsBuilder()
@@ -295,7 +295,7 @@ public class CruiseControlClientTest {
     @Test
     public void testCCRemoveBrokerNotEnoughValidWindowsException(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
-                .withBrokers(List.of(3, 4))
+                .withBrokers(List.of(3))
                 .build();
         this.ccRebalanceNotEnoughValidWindowsException(vertx, context, options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> assertThat(result.isNotEnoughDataForProposal(), is(true))

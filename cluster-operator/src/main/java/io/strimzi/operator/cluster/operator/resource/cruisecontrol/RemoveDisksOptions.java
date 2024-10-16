@@ -12,11 +12,11 @@ import java.util.List;
  * Rebalance options for removing disks from the Kafka cluster
  */
 public class RemoveDisksOptions extends AbstractRebalanceOptions {
-    /** list with the ids of the broker and volume ids */
+    /** list with the ID's of the broker and volumes which will be used by remove-disks endpoint */
     private final List<BrokerAndVolumeIds> brokerAndVolumeIds;
 
     /**
-     * @return  List of brokers and volume ids which will be used
+     * @return  List of brokers and volume ID's which will be used by remove-disks endpoint
      */
     public List<BrokerAndVolumeIds> getBrokersandVolumeIds() {
         return brokerAndVolumeIds;
@@ -46,9 +46,9 @@ public class RemoveDisksOptions extends AbstractRebalanceOptions {
         }
 
         /**
-         * List of broker and volume ids to be used
+         * List of broker and volume ID's to be used
          *
-         * @param brokerAndVolumeIdsList   List of broker and volume IDs
+         * @param brokerAndVolumeIdsList   List of broker and volume ID's
          *
          * @return  Instance of this builder
          */
