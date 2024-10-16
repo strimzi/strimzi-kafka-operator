@@ -733,7 +733,12 @@ public class KafkaRebalanceAssemblyOperator
 
         if (rebalanceAnnotation(kafkaRebalance) == KafkaRebalanceAnnotation.refresh) {
             LOGGER.infoCr(reconciliation, "Requesting a new proposal since refresh annotation is applied on the KafkaRebalance resource");
-            return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder);
+            requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder)
+                    .onSuccess(p::complete)
+                    .onFailure(e -> {
+                        LOGGER.errorCr(reconciliation, "Requesting a new proposal with refresh annotation failed", e);
+                        p.fail(e);
+                    });
         } else if (rebalanceAnnotation(kafkaRebalance) == KafkaRebalanceAnnotation.stop) {
             LOGGER.infoCr(reconciliation, "Stopping to request proposal or checking the status");
             p.complete(buildRebalanceStatus(null, KafkaRebalanceState.Stopped, StatusUtils.validate(reconciliation, kafkaRebalance)));
@@ -744,7 +749,12 @@ public class KafkaRebalanceAssemblyOperator
             String sessionId = kafkaRebalance.getStatus().getSessionId();
             if (sessionId == null) {
                 // sessionId can be null if the response to the previously issued request for a proposal was NotEnoughDataForProposal.
-                return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder);
+                requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder)
+                        .onSuccess(p::complete)
+                        .onFailure(e -> {
+                            LOGGER.errorCr(reconciliation, "Requesting a new proposal failed", e);
+                            p.fail(e);
+                        });
             } else {
                 apiClient.getUserTaskStatus(reconciliation, host, cruiseControlPort, sessionId)
                         .onSuccess(cruiseControlResponse -> handleUserTaskStatusResponse(reconciliation, cruiseControlResponse, p, sessionId, conditions, kafkaRebalance, configMapOperator, true, host, apiClient, rebalanceOptionsBuilder))
