@@ -556,7 +556,7 @@ public class CaReconciler {
                                 .flatMap(podSet -> ReconcilerUtils.nodesFromPodSet(podSet).stream())
                                 .collect(Collectors.toSet()));
                     } else {
-                        return Future.succeededFuture(new LinkedHashSet<>());
+                        return Future.succeededFuture(Set.of());
                     }
                 });
         
