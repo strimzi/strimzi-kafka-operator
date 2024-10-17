@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -71,9 +70,12 @@ public class KafkaConnectApiIT {
     @BeforeAll
     public static void before() throws IOException {
         vertx = Vertx.vertx();
-        final Map<String, String> kafkaClusterConfiguration = new HashMap<>();
-        kafkaClusterConfiguration.put("zookeeper.connect", "zookeeper:2181");
-        cluster = new StrimziKafkaCluster(3, 1, kafkaClusterConfiguration);
+        cluster = new StrimziKafkaCluster.StrimziKafkaClusterBuilder()
+                .withKraft()
+                .withNumberOfBrokers(1)
+                .withInternalTopicReplicationFactor(1)
+                .withSharedNetwork()
+                .build();
         cluster.start();
     }
 

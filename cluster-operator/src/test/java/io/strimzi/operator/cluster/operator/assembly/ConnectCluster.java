@@ -49,11 +49,11 @@ public class ConnectCluster {
             workerProps.put("value.converter", "org.apache.kafka.connect.json.JsonConverter");
             workerProps.put("value.converter.schemas.enable", "false");
             workerProps.put("offset.storage.topic", getClass().getSimpleName() + "-offsets");
-            workerProps.put("offset.storage.replication.factor", "3");
+            workerProps.put("offset.storage.replication.factor", "1");
             workerProps.put("config.storage.topic", getClass().getSimpleName() + "-config");
-            workerProps.put("config.storage.replication.factor", "3");
+            workerProps.put("config.storage.replication.factor", "1");
             workerProps.put("status.storage.topic", getClass().getSimpleName() + "-status");
-            workerProps.put("status.storage.replication.factor", "3");
+            workerProps.put("status.storage.replication.factor", "1");
             workerProps.put("bootstrap.servers", brokerList);
 
             CountDownLatch l = new CountDownLatch(1); // Indicates that the Kafka Connect cluster startup is finished (successfully or not)
