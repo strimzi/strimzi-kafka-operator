@@ -155,7 +155,7 @@ kubectl create -f install/cluster-operator -n my-project
 +
 [source,shell]
 ----
-kubectl apply -f <topic_configuration_file>
+kubectl apply -f <topic_configuration_file> -n my-project
 ----
 
 . Recreate all `KafkaUser` resources:
@@ -167,13 +167,43 @@ Ensure that the recreated secrets have exactly the same name, labels, and fields
 .. Apply the `KafkaUser` resource configuration:
 +
 [source,shell]
-kubectl apply -f <user_configuration_file>
+kubectl apply -f <user_configuration_file> -n my-project
 
-. Deploy the Kafka cluster using the original configuration for the `Kafka` resource:
+. Deploy the Kafka cluster using the original configuration for the `Kafka` resource.
+If it's a KRaft cluster, add the annotation `strimzi.io/pause-reconciliation="true"` to the YAML file. 
 +
 [source,shell]
 ----
 kubectl apply -f <kafka_resource_configuration>.yaml -n my-project
+----
+
+.. KRaft only: recover the `clusterId` value from one of the volumes by spinning up a temporary pod:
++
+[source,shell]
+----
+PVC_NAME="data-0-my-cluster-kafka-0"
+COMMAND="grep cluster.id /disk/kafka-log*/meta.properties | awk -F'=' '{print \$2}'"
+kubectl run tmp -itq --rm --restart "Never" --image "foo" --overrides "{\"spec\":
+  {\"containers\":[{\"name\":\"busybox\",\"image\":\"busybox\",\"command\":[\"/bin/sh\",
+  \"-c\",\"$COMMAND\"],\"volumeMounts\":[{\"name\":\"disk\",\"mountPath\":\"/disk\"}]}],
+  \"volumes\":[{\"name\":\"disk\",\"persistentVolumeClaim\":{\"claimName\":
+  \"$PVC_NAME\"}}]}}" -n my-project
+----
+
+.. KRaft only: edit the Kafka resource using the `--subresource status` flag and set the `clusterId`:
++
+[source,shell]
+----
+status:
+  clusterId: w2MRy6xsQEqqWQkhLvbTYg
+----
+
+.. KRaft only: unpause the Kafka resource reconciliation:
++
+[source,shell]
+----
+kubectl annotate kafka my-cluster strimzi.io/pause-reconciliation=false \
+  --overwrite -n my-project
 ----
 
 . Verify the recovery of the `KafkaTopic` resources:
