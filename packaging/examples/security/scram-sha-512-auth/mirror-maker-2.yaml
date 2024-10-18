@@ -4,7 +4,7 @@ metadata:
   name: cluster-a
 spec:
   kafka:
-    version: 3.8.0
+    version: 3.9.0
     replicas: 1
     listeners:
       - name: tls
@@ -21,7 +21,7 @@ spec:
       transaction.state.log.min.isr: 1
       default.replication.factor: 1
       min.insync.replicas: 1
-      inter.broker.protocol.version: "3.8"
+      inter.broker.protocol.version: "3.9"
     storage:
       type: jbod
       volumes:
@@ -46,7 +46,7 @@ metadata:
   name: cluster-b
 spec:
   kafka:
-    version: 3.8.0
+    version: 3.9.0
     replicas: 1
     listeners:
       - name: tls
@@ -63,7 +63,7 @@ spec:
       transaction.state.log.min.isr: 1
       default.replication.factor: 1
       min.insync.replicas: 1
-      inter.broker.protocol.version: "3.8"
+      inter.broker.protocol.version: "3.9"
     storage:
       type: jbod
       volumes:
@@ -218,7 +218,7 @@ kind: KafkaMirrorMaker2
 metadata:
   name: my-mirror-maker-2
 spec:
-  version: 3.8.0
+  version: 3.9.0
   replicas: 1
   connectCluster: "cluster-b" # Must be the target custer
   clusters:
