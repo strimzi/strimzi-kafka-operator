@@ -193,7 +193,7 @@ public class MockCruiseControl {
         JsonBody jsonError = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-Rebalance-NotEnoughValidWindows-error.json"));
         HttpRequest request = request();
 
-        if (verbose != null){
+        if (verbose != null) {
             request.withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.toString(), verbose));
         }
 
@@ -206,7 +206,7 @@ public class MockCruiseControl {
                 .withHeader(AUTH_HEADER)
                 .withSecure(true);
 
-    server
+        server
                 .when(request)
                 .respond(
                         response()
@@ -224,7 +224,7 @@ public class MockCruiseControl {
         JsonBody jsonError = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-Broker-not-exist.json"));
         HttpRequest request = request();
 
-        if (verbose != null){
+        if (verbose != null) {
             request.withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.toString(), verbose));
         }
 
