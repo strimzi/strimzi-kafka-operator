@@ -190,9 +190,9 @@ env:
 <3> Specifies the SASL properties to be set in JSON format. Only properties starting with `sasl.` are allowed.
 +
 .Example Dockerfile with external jars
-[source,shell,subs=+quotes]
+[source,shell,subs="+quotes,attributes"]
 ----
-FROM strimzi/operator:latest
+FROM {DockerTopicOperator}
 
 USER root
 
