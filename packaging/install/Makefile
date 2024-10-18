@@ -39,7 +39,6 @@ release:
 	$(CP) -r ./topic-operator $(RELEASE_PATH)/
 	$(CP) -r ./strimzi-admin $(RELEASE_PATH)/
 	$(CP) -r ./drain-cleaner $(RELEASE_PATH)/
-	$(CP) -r ./canary $(RELEASE_PATH)/
 
 java_build: crd_install
 java_install: java_build
