@@ -3,54 +3,35 @@
 // assembly-config.adoc
 
 [id='assembly-storage-{context}']
-= Configuring Kafka and ZooKeeper storage
+= Configuring Kafka storage
 
 [role="_abstract"]
-Strimzi provides flexibility in configuring the data storage options of Kafka and ZooKeeper. 
+Strimzi supports the following Kafka storage types: 
 
-The supported storage types are:
+Ephemeral storage:: Ephemeral storage is temporary and only persists while a pod is running. 
+When a pod is deleted, the data is lost, though data can be recovered in a highly available environment. 
+Due to its transient nature, ephemeral storage is only recommended for development and testing environments.
 
-* Ephemeral (Recommended for development only)
-* Persistent
-* JBOD (Kafka only; not available for ZooKeeper)
-* Tiered storage (Early access)
+Persistent storage:: Persistent storage retains data across pod restarts and system disruptions, making it ideal for production environments. 
 
-To configure storage, you specify `storage` properties in the custom resource of the component. 
-The storage type is set using the `storage.type` property.
-When using node pools, you can specify storage configuration unique to each node pool used in a Kafka cluster.
-The same storage properties available to the `Kafka` resource are also available to the `KafkaNodePool` pool resource.
-
-Tiered storage provides more flexibility for data management by leveraging the parallel use of storage types with different characteristics.
+JBOD storage:: JBOD storage allows you to configure your Kafka cluster to utilize multiple disks or volumes.
+Volumes can be ephemeral or persistent. 
+ 
+Tiered storage:: Tiered storage is an early access feature for Kafka, providing more flexibility for data management by leveraging the parallel use of storage types with different characteristics.
 For example, tiered storage might include the following:
-
++
 * Higher performance and higher cost block storage
 * Lower performance and lower cost object storage
 
-Tiered storage is an early access feature in Kafka.
-To configure tiered storage, you specify `tieredStorage` properties.
-Tiered storage is configured only at the cluster level using the `Kafka` custom resource. 
-
-The storage-related schema references provide more information on the storage configuration properties:
-
-* link:{BookURLConfiguring}#type-EphemeralStorage-reference[`EphemeralStorage` schema reference^]
-* link:{BookURLConfiguring}#type-PersistentClaimStorage-reference[`PersistentClaimStorage` schema reference^]
-* link:{BookURLConfiguring}#type-JbodStorage-reference[`JbodStorage` schema reference^]
-* link:{BookURLConfiguring}#type-TieredStorageCustom-reference[`TieredStorageCustom` schema reference^]
-
-WARNING: The storage type cannot be changed after a Kafka cluster is deployed.
+NOTE: The storage type cannot be changed after a Kafka cluster is deployed, though you can create and migrate to node pools with new storage specifications.
 
 include::../../modules/configuring/con-considerations-for-data-storage.adoc[leveloffset=+1]
 
-include::../../modules/configuring/ref-storage-ephemeral.adoc[leveloffset=+1]
-
-include::../../modules/configuring/ref-storage-persistent.adoc[leveloffset=+1]
-
-include::../../modules/configuring/proc-resizing-persistent-volumes.adoc[leveloffset=+1]
-
-include::../../modules/configuring/ref-storage-jbod.adoc[leveloffset=+1]
-
-include::../../modules/configuring/proc-adding-volumes-to-jbod-storage.adoc[leveloffset=+1]
-
-include::../../modules/configuring/proc-removing-volumes-from-jbod-storage.adoc[leveloffset=+1]
-
+//KRaft storage
+include::../../modules/configuring/con-config-storage-kraft.adoc[leveloffset=+1]
+include::../../modules/configuring/proc-managing-storage-node-pools.adoc[leveloffset=+2]
+include::../../modules/configuring/proc-managing-storage-affinity-node-pools.adoc[leveloffset=+2]
+//ZooKeeper storage
+include::../../modules/configuring/con-config-storage-zookeeper.adoc[leveloffset=+1]
+//tiered storage
 include::../../modules/configuring/ref-storage-tiered.adoc[leveloffset=+1]

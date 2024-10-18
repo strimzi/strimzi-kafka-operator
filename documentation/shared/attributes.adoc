@@ -64,7 +64,6 @@
 :oauth-demo-hydra: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/{OAuthVersion}/examples/docker#running-with-hydra-using-ssl-and-opaque-tokens[Using Hydra as the OAuth 2.0 authorization server^]
 
 // External links
-:aws-ebs: link:https://aws.amazon.com/ebs/[Amazon Elastic Block Store (EBS)^]
 :JavaServiceProvider: link:https://www.baeldung.com/java-spi[Java Service Provider Interface^]
 :JQTool: link:https://github.com/jqlang/jq[command line JSON parser tool^]
 :kubernetes-docs: link:https://kubernetes.io/docs/home/

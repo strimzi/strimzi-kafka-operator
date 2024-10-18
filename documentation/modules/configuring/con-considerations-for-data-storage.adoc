@@ -3,19 +3,20 @@
 // assembly-storage.adoc
 
 [id='considerations-for-data-storage-{context}']
-= Data storage considerations
+= Storage considerations
 
 [role="_abstract"]
-For Strimzi to work well, an efficient data storage infrastructure is essential.
-We strongly recommend using block storage.
-Strimzi is only tested for use with block storage. 
-File storage, such as NFS, is not tested and there is no guarantee it will work. 
+Efficient data storage is essential for Strimzi to operate effectively, and block storage is strongly recommended. 
+Strimzi has been tested only with block storage, and file storage solutions like NFS are not guaranteed to work. 
 
-Choose one of the following options for your block storage:
+Common block storage types supported by Kubernetes include:
 
-* A cloud-based block storage solution, such as {aws-ebs}
-* Persistent storage using {K8sLocalPersistentVolumes}
-* Storage Area Network (SAN) volumes accessed by a protocol such as _Fibre Channel_ or _iSCSI_
+* Cloud-based block storage solutions:
+** Amazon EBS (for AWS)
+** Azure Disk Storage (for Microsoft Azure)
+** Persistent Disk (for Google Cloud)
+* Persistent storage (for bare metal deployments) using {K8sLocalPersistentVolumes}
+* Storage Area Network (SAN) volumes accessed by protocols like Fibre Channel or iSCSI
 
 NOTE: Strimzi does not require Kubernetes raw block volumes.
 
@@ -28,9 +29,6 @@ Consider the underlying architecture and requirements of your deployment when ch
 For more information, refer to {ApacheKafkaFileSystem} in the Kafka documentation.
 
 == Disk usage
-Use separate disks for Apache Kafka and ZooKeeper.
-
 Solid-state drives (SSDs), though not essential, can improve the performance of Kafka in large clusters where data is sent to and received from multiple topics asynchronously.
-SSDs are particularly effective with ZooKeeper, which requires fast, low latency data access.
 
-NOTE: You do not need to provision replicated storage because Kafka and ZooKeeper both have built-in data replication.
+NOTE: Replicated storage is not required, as Kafka provides built-in data replication.

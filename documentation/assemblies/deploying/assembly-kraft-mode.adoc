@@ -30,6 +30,7 @@ Kafka uses this metadata to coordinate changes and manage the cluster effectivel
 
 Broker nodes act as observers, storing the metadata log passively to stay up-to-date with the cluster's state.
 Each node fetches updates to the log independently.
+If you are using JBOD storage, you can xref:con-storing-metadata-log-{context}[change the volume that stores the metadata log]. 
 
 NOTE: The KRaft metadata version used in the Kafka cluster must be supported by the Kafka version in use. 
 Both versions are managed through the `Kafka` resource configuration.
@@ -54,8 +55,6 @@ image::kraft-dual-role-quorum.png[KRaft cluster with nodes that combine roles]
 Currently, the KRaft mode in Strimzi has the following major limitations:
 
 * Scaling of KRaft controller nodes up or down is not supported.
-
-NOTE: If you are using JBOD storage, you can xref:ref-jbod-storage-str[change the volume that stores the metadata log]. 
 
 //migrating to KRaft
 include::../../modules/deploying/proc-deploy-migrate-kraft.adoc[leveloffset=+1]
