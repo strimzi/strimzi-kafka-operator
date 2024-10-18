@@ -2,8 +2,8 @@
 //
 // assembly-cluster-recovery-volume.adoc
 
-[id="proc-cluster-recovery-volume-{context}"]
-= Recovering a deleted KRaft based Kafka cluster
+[id="proc-cluster-recovery-volume-zk-{context}"]
+= Recovering a deleted ZooKeeper based Kafka cluster
 
 [role="_abstract"]
 This procedure describes how to recover a deleted cluster from persistent volumes (PVs) by recreating the original `PersistentVolumeClaim` (PVC) resources.
@@ -170,41 +170,10 @@ Ensure that the recreated secrets have exactly the same name, labels, and fields
 kubectl apply -f <user_configuration_file> -n my-project
 
 . Deploy the Kafka cluster using the original configuration for the `Kafka` resource.
-It's important to add the annotation `strimzi.io/pause-reconciliation="true"` to the YAML file.
 +
 [source,shell]
 ----
 kubectl apply -f <kafka_resource_configuration>.yaml -n my-project
-----
-
-.. Recover the original `clusterId` from logs or copies of the `Kafka` custom resource.
-Otherwise, you can retrieve it from one of the volumes by spinning up a temporary pod.
-+
-[source,shell]
-----
-PVC_NAME="data-0-my-cluster-kafka-0"
-COMMAND="grep cluster.id /disk/kafka-log*/meta.properties | awk -F'=' '{print \$2}'"
-kubectl run tmp -itq --rm --restart "Never" --image "foo" --overrides "{\"spec\":
-  {\"containers\":[{\"name\":\"busybox\",\"image\":\"busybox\",\"command\":[\"/bin/sh\",
-  \"-c\",\"$COMMAND\"],\"volumeMounts\":[{\"name\":\"disk\",\"mountPath\":\"/disk\"}]}],
-  \"volumes\":[{\"name\":\"disk\",\"persistentVolumeClaim\":{\"claimName\":
-  \"$PVC_NAME\"}}]}}" -n my-project
-----
-
-.. Edit the `Kafka` resource using the `--subresource status` flag to set the `clusterId` with the recovered value:
-+
-[source,shell]
-----
-status:
-  clusterId: w2MRy6xsQEqqWQkhLvbTYg
-----
-
-.. Unpause the Kafka resource reconciliation:
-+
-[source,shell]
-----
-kubectl annotate kafka my-cluster strimzi.io/pause-reconciliation=false \
-  --overwrite -n my-project
 ----
 
 . Verify the recovery of the `KafkaTopic` resources:
