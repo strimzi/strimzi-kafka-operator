@@ -19,6 +19,8 @@ import org.mockserver.configuration.ConfigurationProperties;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.matchers.Times;
 import org.mockserver.model.Header;
+import org.mockserver.model.HttpRequest;
+import org.mockserver.model.HttpResponse;
 import org.mockserver.model.JsonBody;
 import org.mockserver.model.Parameter;
 
@@ -186,21 +188,26 @@ public class MockCruiseControl {
     /**
      * Setup NotEnoughValidWindows error rebalance/add/remove broker response.
      */
-    public void setupCCRebalanceNotEnoughDataError(CruiseControlEndpoints endpoint) {
+    public void setupCCRebalanceNotEnoughDataError(CruiseControlEndpoints endpoint, String verbose) {
         // Rebalance response with no goal that returns an error
         JsonBody jsonError = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-Rebalance-NotEnoughValidWindows-error.json"));
+        HttpRequest request = request();
+
+        if (verbose != null) {
+            request.withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.toString(), verbose));
+        }
+
+        request
+                .withMethod("POST")
+                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
+                .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.toString(), "true|false"))
+                .withQueryStringParameter(buildBrokerParameters(endpoint))
+                .withPath(endpoint.toString())
+                .withHeader(AUTH_HEADER)
+                .withSecure(true);
 
         server
-                .when(
-                        request()
-                                .withMethod("POST")
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.toString(), "true|false"))
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.toString(), "true|false"))
-                                .withQueryStringParameter(buildBrokerIdParameter(endpoint))
-                                .withPath(endpoint.toString())
-                                .withHeader(AUTH_HEADER)
-                                .withSecure(true))
+                .when(request)
                 .respond(
                         response()
                                 .withStatusCode(500)
@@ -212,22 +219,26 @@ public class MockCruiseControl {
     /**
      * Setup broker doesn't exist error for add/remove broker response.
      */
-    public void setupCCBrokerDoesNotExist(CruiseControlEndpoints endpoint) {
+    public void setupCCBrokerDoesNotExist(CruiseControlEndpoints endpoint, String verbose) {
         // Add/remove broker response with no goal that returns an error
         JsonBody jsonError = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-Broker-not-exist.json"));
+        HttpRequest request = request();
+
+        if (verbose != null) {
+            request.withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.toString(), verbose));
+        }
+
+        request
+                .withMethod("POST")
+                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
+                .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.toString(), "true|false"))
+                .withQueryStringParameter(buildBrokerParameters(endpoint))
+                .withPath(endpoint.toString())
+                .withHeader(AUTH_HEADER)
+                .withSecure(true);
 
         server
-                .when(
-                        request()
-                                .withMethod("POST")
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.toString(), "true|false"))
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.toString(), "true|false"))
-                                .withQueryStringParameter(buildBrokerIdParameter(endpoint))
-                                .withPath(endpoint.toString())
-                                .withHeader(AUTH_HEADER)
-                                .withSecure(true)
-                )
+                .when(request)
                 .respond(
                         response()
                                 .withStatusCode(500)
@@ -239,77 +250,65 @@ public class MockCruiseControl {
     /**
      * Setup rebalance response with no response delay (for quicker tests).
      */
-    public void setupCCRebalanceResponse(int pendingCalls, CruiseControlEndpoints endpoint) throws IOException, URISyntaxException {
-        setupCCRebalanceResponse(pendingCalls, 0, endpoint);
+    public void setupCCRebalanceResponse(int pendingCalls, CruiseControlEndpoints endpoint, String verbose) throws IOException, URISyntaxException {
+        setupCCRebalanceResponse(pendingCalls, 0, endpoint, verbose);
     }
 
     /**
      * Setup rebalance response.
      */
-    public void setupCCRebalanceResponse(int pendingCalls, int responseDelay, CruiseControlEndpoints endpoint) {
-        // Rebalance in progress response with no goals set - non-verbose
-        JsonBody pendingJson = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-Rebalance-no-goals-in-progress.json"));
+    public void setupCCRebalanceResponse(int pendingCalls, int responseDelay, CruiseControlEndpoints endpoint, String verbose) {
+
+        HttpRequest request = request();
+        JsonBody json = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-Rebalance-no-goals-in-progress.json"));
+
+        if (verbose != null) {
+            request.withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.toString(), verbose));
+        }
+
+        request
+                .withMethod("POST")
+                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
+                .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.toString(), "true|false"))
+                .withQueryStringParameter(buildBrokerParameters(endpoint))
+                .withPath(endpoint.toString())
+                .withHeader(AUTH_HEADER)
+                .withSecure(true);
+
         server
-                .when(
-                        request()
-                                .withMethod("POST")
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.toString(), "true|false"))
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.toString(), "true|false"))
-                                .withQueryStringParameter(buildBrokerIdParameter(endpoint))
-                                .withPath(endpoint.toString())
-                                .withHeader(AUTH_HEADER)
-                                .withSecure(true),
+                .when(request,
                         Times.exactly(pendingCalls))
                 .respond(
                         response()
-                                .withBody(pendingJson)
+                                .withBody(json)
                                 .withHeaders(header("User-Task-ID", REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID))
                                 .withStatusCode(202)
                                 .withDelay(TimeUnit.SECONDS, responseDelay));
 
-        // Rebalance response with no goals set - non-verbose
-        JsonBody json = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-Rebalance-no-goals.json"));
+        HttpResponse response = response();
+
+        if (verbose == null) {
+            json = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-Rebalance-no-goals.json"));
+            response.withHeaders(header("User-Task-ID", REBALANCE_NO_GOALS_RESPONSE_UTID));
+        } else if (verbose.equals("true")) {
+            // Rebalance response with no goals set - verbose
+            json = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-Rebalance-no-goals-verbose.json"));
+            response.withHeaders(header("User-Task-ID", REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID));
+        } else if (verbose.equals("false") || verbose.equals("true|false")) {
+            // Rebalance response with no goals set - non-verbose parameter
+            json = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-Rebalance-no-goals.json"));
+            response.withHeaders(header("User-Task-ID", REBALANCE_NO_GOALS_RESPONSE_UTID));
+
+        }
+
+        response
+                .withBody(json)
+                .withDelay(TimeUnit.SECONDS, responseDelay);
 
         server
-                .when(
-                        request()
-                                .withMethod("POST")
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.toString(), "true|false"))
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.toString(), "false"))
-                                .withQueryStringParameter(buildBrokerIdParameter(endpoint))
-                                .withPath(endpoint.toString())
-                                .withHeader(AUTH_HEADER)
-                                .withSecure(true),
-                        Times.unlimited())
-                .respond(
-                        response()
-                                .withBody(json)
-                                .withHeaders(header("User-Task-ID", REBALANCE_NO_GOALS_RESPONSE_UTID))
-                                .withDelay(TimeUnit.SECONDS, responseDelay));
-
-        // Rebalance response with no goals set - verbose
-        JsonBody jsonVerbose = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-Rebalance-no-goals-verbose.json"));
-
-        server
-                .when(
-                        request()
-                                .withMethod("POST")
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.toString(), "true|false"))
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.toString(), "true"))
-                                .withQueryStringParameter(buildBrokerIdParameter(endpoint))
-                                .withPath(endpoint.toString())
-                                .withHeader(AUTH_HEADER)
-                                .withSecure(true))
-                .respond(
-                        response()
-                                .withBody(jsonVerbose)
-                                .withHeaders(header("User-Task-ID", REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID))
-                                .withDelay(TimeUnit.SECONDS, responseDelay));
+                .when(request, Times.unlimited())
+                .respond(response);
     }
-
 
     /**
      * Setup responses for various bad goal configurations possible on a rebalance request.
@@ -562,10 +561,14 @@ public class MockCruiseControl {
 
     }
 
-    private Parameter buildBrokerIdParameter(CruiseControlEndpoints endpoint) {
-        return CruiseControlEndpoints.ADD_BROKER.equals(endpoint) || CruiseControlEndpoints.REMOVE_BROKER.equals(endpoint) ?
-                Parameter.param(CruiseControlParameters.BROKER_ID.toString(), "[0-9]+(,[0-9]+)*") :
-                null;
+    private Parameter buildBrokerParameters(CruiseControlEndpoints endpoint) {
+        if (CruiseControlEndpoints.ADD_BROKER.equals(endpoint) || CruiseControlEndpoints.REMOVE_BROKER.equals(endpoint)) {
+            return Parameter.param(CruiseControlParameters.BROKER_ID.toString(), "[0-9]+(,[0-9]+)*");
+        } else if (CruiseControlEndpoints.REMOVE_DISKS.equals(endpoint)) {
+            return Parameter.param(CruiseControlParameters.BROKER_ID_AND_LOG_DIRS.toString(), "[0-9]+-/var/lib/kafka/data-[0-9]+/kafka-log[0-9]+(,[0-9]+-/var/lib/kafka/data-[0-9]+/kafka-log[0-9]+)*");
+        } else {
+            return null;
+        }
     }
 
     private static Header convertToHeader(HTTPHeader httpHeader) {
