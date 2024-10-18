@@ -23,6 +23,7 @@
   This change matches user expectations.
 * The External Configuration (`.spec.externalConfiguration`) in `KafkaConnect` and `KafkaMirrorMaker2` resources is deprecated and will be removed in the future.
   Please use the environment variables, additional volumes and volume mounts in Pod and container templates instead.
+* The Strimzi Canary installation files were removed based on the [_Strimzi proposal 086_](https://github.com/strimzi/proposals/blob/main/086-archive-canary.md) as the project was discontinued and archived.
 
 ## 0.43.0
 
