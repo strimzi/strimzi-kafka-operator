@@ -21,6 +21,8 @@ public abstract class AbstractRebalanceOptions {
     private final boolean skipHardGoalCheck;
     /** Sets whether the response should be JSON formatted or formatted for readability on the command line */
     private final boolean json;
+    /** Sets whether to stop the ongoing execution (if any) and start executing the given request. */
+    private final boolean stopOngoingExecution;
     /** A regular expression to specify topics that should not be considered for replica movement */
     private final String excludedTopics;
     /** The upper bound of ongoing replica movements going into/out of each broker */
@@ -68,6 +70,13 @@ public abstract class AbstractRebalanceOptions {
     }
 
     /**
+     * @return  True if stopping the ongoing execution (if any) and starting executing the given request. False otherwise.
+     */
+    public boolean isStopOngoingExecution() {
+        return stopOngoingExecution;
+    }
+
+    /**
      * @return  Excludes topics
      */
     public String getExcludedTopics() {
@@ -108,6 +117,7 @@ public abstract class AbstractRebalanceOptions {
         this.verbose = builder.verbose;
         this.skipHardGoalCheck = builder.skipHardGoalCheck;
         this.json = builder.json;
+        this.stopOngoingExecution = builder.stopOngoingExecution;
         this.excludedTopics = builder.excludedTopics;
         this.concurrentPartitionMovementsPerBroker = builder.concurrentPartitionMovementsPerBroker;
         this.concurrentLeaderMovements = builder.concurrentLeaderMovements;
@@ -127,6 +137,7 @@ public abstract class AbstractRebalanceOptions {
         private boolean verbose;
         private boolean skipHardGoalCheck;
         private boolean json;
+        private boolean stopOngoingExecution;
         private String excludedTopics;
         private int concurrentPartitionMovementsPerBroker;
         private int concurrentLeaderMovements;
@@ -138,6 +149,7 @@ public abstract class AbstractRebalanceOptions {
             goals = null;
             verbose = false;
             skipHardGoalCheck = false;
+            stopOngoingExecution = false;
             json = true;
             excludedTopics = null;
             concurrentPartitionMovementsPerBroker = 0;
@@ -180,6 +192,16 @@ public abstract class AbstractRebalanceOptions {
          */
         public B withSkipHardGoalCheck() {
             this.skipHardGoalCheck = true;
+            return self();
+        }
+
+        /**
+         * Stop the ongoing execution (if any) and start executing the given request
+         *
+         * @return  Instance of this builder
+         */
+        public B withStopOngoingExecution() {
+            this.stopOngoingExecution = true;
             return self();
         }
 
