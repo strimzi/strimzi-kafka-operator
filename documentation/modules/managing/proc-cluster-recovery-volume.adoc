@@ -36,12 +36,12 @@ Information is presented for PVs with data.
 [source,shell,subs="+quotes,attributes"]
 ----
 NAME                                          RECLAIMPOLICY  CLAIM
-pvc-5e9c5c7f-3317-11ea-a650-06e1eadd9a4c ...  Retain ...     my-project/data-0-my-cluster-broker-0
-pvc-5e9cc72d-3317-11ea-97b0-0aef8816c7ea ...  Retain ...     my-project/data-0-my-cluster-broker-1
-pvc-5ead43d1-3317-11ea-97b0-0aef8816c7ea ...  Retain ...     my-project/data-0-my-cluster-broker-2
-pvc-7e1f67f9-3317-11ea-a650-06e1eadd9a4c ...  Retain ...     my-project/data-0-my-cluster-controller-3
-pvc-7e21042e-3317-11ea-9786-02deaf9aa87e ...  Retain ...     my-project/data-0-my-cluster-controller-4
-pvc-7e226978-3317-11ea-97b0-0aef8816c7ea ...  Retain ...     my-project/data-0-my-cluster-controller-5
+pvc-5e9c5c7f-3317-11ea-a650-06e1eadd9a4c ...  Retain ...     myproject/data-0-my-cluster-broker-0
+pvc-5e9cc72d-3317-11ea-97b0-0aef8816c7ea ...  Retain ...     myproject/data-0-my-cluster-broker-1
+pvc-5ead43d1-3317-11ea-97b0-0aef8816c7ea ...  Retain ...     myproject/data-0-my-cluster-broker-2
+pvc-7e1f67f9-3317-11ea-a650-06e1eadd9a4c ...  Retain ...     myproject/data-0-my-cluster-controller-3
+pvc-7e21042e-3317-11ea-9786-02deaf9aa87e ...  Retain ...     myproject/data-0-my-cluster-controller-4
+pvc-7e226978-3317-11ea-97b0-0aef8816c7ea ...  Retain ...     myproject/data-0-my-cluster-controller-5
 ----
 +
 * `NAME` is the name of each PV.
@@ -52,10 +52,10 @@ pvc-7e226978-3317-11ea-97b0-0aef8816c7ea ...  Retain ...     my-project/data-0-m
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl create namespace my-project
+kubectl create namespace myproject
 ----
 +
-Here, we recreate the `my-project` namespace.
+Here, we recreate the `myproject` namespace.
 
 . Recreate the original PVC resource specifications, linking the PVCs to the appropriate PV:
 +
@@ -111,7 +111,7 @@ spec:
     *apiVersion: v1*
     *kind: PersistentVolumeClaim*
     *name: data-0-my-cluster-kafka-2*
-    *namespace: my-project*
+    *namespace: myproject*
     *resourceVersion: "39113"*
     *uid: 54be1c60-3319-11ea-97b0-0aef8816c7ea*
   nodeAffinity:
@@ -139,7 +139,7 @@ claimRef:
   apiVersion: v1
   kind: PersistentVolumeClaim
   name: data-0-my-cluster-broker-2
-  namespace: my-project
+  namespace: myproject
   resourceVersion: "39113"
   uid: 54be1c60-3319-11ea-97b0-0aef8816c7ea
 ----
@@ -148,14 +148,14 @@ claimRef:
 +
 [source,shell]
 ----
-kubectl create -f install/cluster-operator -n my-project
+kubectl create -f install/cluster-operator -n myproject
 ----
 
 . Recreate all `KafkaTopic` resources by applying the `KafkaTopic` resource configuration:
 +
 [source,shell]
 ----
-kubectl apply -f <topic_configuration_file> -n my-project
+kubectl apply -f <topic_configuration_file> -n myproject
 ----
 
 . Recreate all `KafkaUser` resources:
@@ -167,14 +167,14 @@ Ensure that the recreated secrets have exactly the same name, labels, and fields
 .. Apply the `KafkaUser` resource configuration:
 +
 [source,shell]
-kubectl apply -f <user_configuration_file> -n my-project
+kubectl apply -f <user_configuration_file> -n myproject
 
 . Deploy the Kafka cluster using the original configuration for the `Kafka` resource.
 It's important to add the annotation `strimzi.io/pause-reconciliation="true"` to the YAML file.
 +
 [source,shell]
 ----
-kubectl apply -f <kafka_resource_configuration>.yaml -n my-project
+kubectl apply -f <kafka_resource_configuration>.yaml -n myproject
 ----
 
 .. Recover the original `clusterId` from logs or copies of the `Kafka` custom resource.
@@ -188,7 +188,7 @@ kubectl run tmp -itq --rm --restart "Never" --image "foo" --overrides "{\"spec\"
   {\"containers\":[{\"name\":\"busybox\",\"image\":\"busybox\",\"command\":[\"/bin/sh\",
   \"-c\",\"$COMMAND\"],\"volumeMounts\":[{\"name\":\"disk\",\"mountPath\":\"/disk\"}]}],
   \"volumes\":[{\"name\":\"disk\",\"persistentVolumeClaim\":{\"claimName\":
-  \"$PVC_NAME\"}}]}}" -n my-project
+  \"$PVC_NAME\"}}]}}" -n myproject
 ----
 
 .. Edit the `Kafka` resource using the `--subresource status` flag to set the `clusterId` with the recovered value:
@@ -204,14 +204,14 @@ status:
 [source,shell]
 ----
 kubectl annotate kafka my-cluster strimzi.io/pause-reconciliation=false \
-  --overwrite -n my-project
+  --overwrite -n myproject
 ----
 
 . Verify the recovery of the `KafkaTopic` resources:
 +
 [source,shell]
 ----
-kubectl get kafkatopics -o wide -w -n my-project
+kubectl get kafkatopics -o wide -w -n myproject
 ----
 +
 .Kafka topic status
@@ -229,7 +229,7 @@ my-topic-3   my-cluster  10          3                  True
 +
 [source,shell]
 ----
-kubectl get kafkausers -o wide -w -n my-project
+kubectl get kafkausers -o wide -w -n myproject
 ----
 +
 .Kafka user status
