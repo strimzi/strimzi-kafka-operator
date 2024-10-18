@@ -45,7 +45,7 @@ include::assemblies/security/assembly-security.adoc[leveloffset=+1]
 //security context for all pods
 include::assemblies/configuring/assembly-security-providers.adoc[leveloffset=+1]
 //Scaling clusters
-include::modules/configuring/con-scaling-kafka-clusters.adoc[leveloffset=+1]
+include::assemblies/configuring/assembly-scaling-kafka-clusters.adoc[leveloffset=+1]
 //Using Cruise Control for rebalancing
 include::assemblies/cruise-control/assembly-cruise-control-concepts.adoc[leveloffset=+1]
 //Using Cruise Control for changing topic replication factor
