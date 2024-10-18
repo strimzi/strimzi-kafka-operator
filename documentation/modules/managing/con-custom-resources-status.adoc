@@ -13,55 +13,58 @@ The following table lists the custom resources that provide status information (
 For more information on the schemas, see the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
 
 .Custom resources that provide status information
-[cols="3*",options="header",stripes="none",separator=¦]
+[cols="1m,1m,1",options="header",stripes="none",separator=¦]
 |===
 
-m¦Strimzi resource
+¦Strimzi resource
 ¦Schema reference
 ¦Publishes status information on...
 
-m¦Kafka
-¦`KafkaStatus` schema reference
-¦The Kafka cluster, its listeners, and node pools
+¦Kafka
+¦KafkaStatus +
+ListenerStatus +
+UsedNodePoolStatus +
+KafkaAutoRebalanceStatus
+¦The Kafka cluster, its listeners, node pools, and any auto-rebalances on scaling
 
-m¦KafkaNodePool
-¦`KafkaNodePoolStatus` schema reference
+¦KafkaNodePool
+¦KafkaNodePoolStatus
 ¦The nodes in the node pool, their roles, and the associated Kafka cluster
 
-m¦KafkaTopic
-¦`KafkaTopicStatus` schema reference
+¦KafkaTopic
+¦KafkaTopicStatus
 ¦Kafka topics in the Kafka cluster
 
-m¦KafkaUser
-¦`KafkaUserStatus` schema reference
+¦KafkaUser
+¦KafkaUserStatus
 ¦Kafka users in the Kafka cluster
 
-m¦KafkaConnect
-¦`KafkaConnectStatus` schema reference
+¦KafkaConnect
+¦KafkaConnectStatus
 ¦The Kafka Connect cluster and connector plugins
 
-m¦KafkaConnector
-¦`KafkaConnectorStatus` schema reference
-¦`KafkaConnector` resources
+¦KafkaConnector
+¦KafkaConnectorStatus
+¦KafkaConnector resources
 
-m¦KafkaMirrorMaker2
-¦`KafkaMirrorMaker2Status` schema reference
+¦KafkaMirrorMaker2
+¦KafkaMirrorMaker2Status
 ¦The Kafka MirrorMaker 2 cluster and internal connectors
 
-m¦KafkaMirrorMaker
-¦`KafkaMirrorMakerStatus` schema reference
+¦KafkaMirrorMaker
+¦KafkaMirrorMakerStatus
 ¦The Kafka MirrorMaker cluster
 
-m¦KafkaBridge
-¦`KafkaBridgeStatus` schema reference
+¦KafkaBridge
+¦KafkaBridgeStatus
 ¦The Kafka Bridge
 
-m¦KafkaRebalance
-¦`KafkaRebalance` schema reference
+¦KafkaRebalance
+¦KafkaRebalanceStatus
 ¦The status and results of a rebalance
 
-m¦StrimziPodSet
-¦`StrimziPodSetStatus` schema reference
+¦StrimziPodSet
+¦StrimziPodSetStatus
 ¦The number of pods: being managed, using the current version, and in a ready state 
 
 |===
