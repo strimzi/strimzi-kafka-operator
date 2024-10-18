@@ -95,7 +95,12 @@ public enum CruiseControlParameters {
     /**
      * Skip rack awareness check
      */
-    SKIP_RACK_AWARENESS_CHECK("skip_rack_awareness_check");
+    SKIP_RACK_AWARENESS_CHECK("skip_rack_awareness_check"),
+
+    /**
+     * Stop the ongoing execution (if any) and start executing the given request
+     */
+    STOP_ONGOING_EXECUTION("stop_ongoing_execution");
 
     private final String key;
 

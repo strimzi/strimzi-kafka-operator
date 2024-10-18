@@ -867,7 +867,7 @@ public class KafkaRebalanceAssemblyOperator
                                                                       AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder) {
         if (Annotations.booleanAnnotation(kafkaRebalance, ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL, false)) {
             LOGGER.infoCr(reconciliation, "Auto-approval set on the KafkaRebalance resource");
-            return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, false, rebalanceOptionsBuilder);
+            return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, false, rebalanceOptionsBuilder, true);
         } else {
             KafkaRebalanceAnnotation rebalanceAnnotation = rebalanceAnnotation(kafkaRebalance);
             switch (rebalanceAnnotation) {
@@ -876,7 +876,7 @@ public class KafkaRebalanceAssemblyOperator
                     return configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName()).compose(loadmap -> Future.succeededFuture(new MapAndStatus<>(loadmap, buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), StatusUtils.validate(reconciliation, kafkaRebalance)))));
                 case approve:
                     LOGGER.debugCr(reconciliation, "Annotation {}={}", ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.approve);
-                    return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, false, rebalanceOptionsBuilder);
+                    return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, false, rebalanceOptionsBuilder, true);
                 case refresh:
                     LOGGER.debugCr(reconciliation, "Annotation {}={}", ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.refresh);
                     return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder);
@@ -1130,20 +1130,31 @@ public class KafkaRebalanceAssemblyOperator
     }
 
     private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> requestRebalance(Reconciliation reconciliation,
+                                                                                   String host, CruiseControlApi apiClient, KafkaRebalance kafkaRebalance,
+                                                                                   boolean dryrun, AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder,
+                                                                                   boolean stopOngoingExecution) {
+        return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, dryrun, rebalanceOptionsBuilder, null, stopOngoingExecution);
+    }
+
+    private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> requestRebalance(Reconciliation reconciliation,
                                                           String host, CruiseControlApi apiClient, KafkaRebalance kafkaRebalance,
                                                           boolean dryrun, AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder) {
-        return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, dryrun, rebalanceOptionsBuilder, null);
+        return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, dryrun, rebalanceOptionsBuilder, null, false);
     }
 
 
     private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> requestRebalance(Reconciliation reconciliation, String host, CruiseControlApi apiClient, KafkaRebalance kafkaRebalance,
                                                                                    boolean dryrun,
-                                                                                   AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder, String userTaskID) {
+                                                                                   AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder,
+                                                                                   String userTaskID, boolean stopOngoingExecution) {
 
-        LOGGER.infoCr(reconciliation, "Requesting Cruise Control rebalance [dryrun={}]", dryrun);
+        LOGGER.infoCr(reconciliation, "Requesting Cruise Control rebalance [dryrun={}] [stop_ongoing_execution={}]", dryrun, stopOngoingExecution);
         rebalanceOptionsBuilder.withVerboseResponse();
         if (!dryrun) {
             rebalanceOptionsBuilder.withFullRun();
+        }
+        if (stopOngoingExecution) {
+            rebalanceOptionsBuilder.withStopOngoingExecution();
         }
         // backward compatibility, no mode specified means "full"
         KafkaRebalanceMode mode = Optional.ofNullable(kafkaRebalance.getSpec())

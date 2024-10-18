@@ -101,7 +101,8 @@ public class PathBuilder {
         if (options != null) {
             PathBuilder builder = withParameter(CruiseControlParameters.DRY_RUN, String.valueOf(options.isDryRun()))
                     .withParameter(CruiseControlParameters.VERBOSE, String.valueOf(options.isVerbose()))
-                    .withParameter(CruiseControlParameters.SKIP_HARD_GOAL_CHECK, String.valueOf(options.isSkipHardGoalCheck()));
+                    .withParameter(CruiseControlParameters.SKIP_HARD_GOAL_CHECK, String.valueOf(options.isSkipHardGoalCheck()))
+                    .withParameter(CruiseControlParameters.STOP_ONGOING_EXECUTION, String.valueOf(options.isStopOngoingExecution()));
 
             if (options.getExcludedTopics() != null) {
                 builder.withParameter(CruiseControlParameters.EXCLUDED_TOPICS, options.getExcludedTopics());
