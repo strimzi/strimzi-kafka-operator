@@ -12,6 +12,8 @@ Tiered storage requires an implementation of Kafka's `RemoteStorageManager` inte
 Strimzi uses Kafka's https://github.com/apache/kafka/blob/trunk/storage/src/main/java/org/apache/kafka/server/log/remote/metadata/storage/TopicBasedRemoteLogMetadataManager.java[`TopicBasedRemoteLogMetadataManager`^] for Remote Log Metadata Management (RLMM) when custom tiered storage is enabled.
 The RLMM manages the metadata related to remote storage.  
 
+Tiered storage is configured only at the cluster level using the `Kafka` custom resource. 
+
 To use custom tiered storage, do the following:
 
 * Include a tiered storage plugin for Kafka in the Strimzi image by building a custom container image. 

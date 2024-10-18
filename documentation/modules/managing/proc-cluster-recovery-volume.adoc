@@ -19,7 +19,7 @@ WARNING: If the User Operator is enabled and Kafka users are not recreated, user
 In this procedure, it is essential that PVs are mounted into the correct PVC to avoid data corruption.
 A `volumeName` is specified for the PVC and this must match the name of the PV.
 
-For more information, see xref:ref-persistent-storage-{context}[Persistent storage].
+For more information, see xref:assembly-storage-{context}[].
 
 .Procedure
 

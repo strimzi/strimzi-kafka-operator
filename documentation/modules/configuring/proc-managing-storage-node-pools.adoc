@@ -12,6 +12,8 @@ Node pools simplify this process, because you can set up separate node pools tha
 In this procedure we create and manage storage for a node pool called `pool-a` containing three nodes.
 We show how to change the storage class (`volumes.class`) that defines the type of persistent storage it uses.
 You can use the same steps to change the storage size (`volumes.size`). 
+This approach is particularly useful if you want to reduce disk sizes.
+When increasing disk sizes, you have the option to xref:proc-resizing-persistent-volumes-{context}[dynamically resize persistent volumes].
 
 NOTE: We strongly recommend using block storage. Strimzi is only tested for use with block storage.
 
