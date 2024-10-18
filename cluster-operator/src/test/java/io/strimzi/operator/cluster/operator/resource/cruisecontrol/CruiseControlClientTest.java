@@ -439,7 +439,7 @@ public class CruiseControlClientTest {
     }
 
     private void ccRebalanceProposalNotReady(Vertx vertx, VertxTestContext context, int pendingCalls, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion) throws IOException, URISyntaxException {
-        if(endpoint == CruiseControlEndpoints.REMOVE_DISKS) {
+        if (endpoint == CruiseControlEndpoints.REMOVE_DISKS) {
             cruiseControlServer.setupCCRebalanceResponse(pendingCalls, endpoint, null);
         } else {
             cruiseControlServer.setupCCRebalanceResponse(pendingCalls, endpoint, "true|false");
@@ -481,7 +481,7 @@ public class CruiseControlClientTest {
     }
 
     private void ccBrokerDoesNotExist(Vertx vertx, VertxTestContext context, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<Throwable> assertion) throws IOException, URISyntaxException {
-        if(endpoint == CruiseControlEndpoints.REMOVE_DISKS) {
+        if (endpoint == CruiseControlEndpoints.REMOVE_DISKS) {
             cruiseControlServer.setupCCBrokerDoesNotExist(endpoint, null);
         } else {
             cruiseControlServer.setupCCBrokerDoesNotExist(endpoint, "true|false");
