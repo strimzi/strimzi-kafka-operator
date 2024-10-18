@@ -82,7 +82,7 @@ public class PathBuilder {
      *
      * @return  Instance of this builder
      */
-    public List<String> brokerAndVolumeIdsParameterList(List<BrokerAndVolumeIds> values) {
+    private List<String> brokerAndVolumeIdsParameterList(List<BrokerAndVolumeIds> values) {
 
         List<String> brokerandVolumeIds = new ArrayList<>(values.size());
         for (BrokerAndVolumeIds brokerAndVolumeIds : values) {

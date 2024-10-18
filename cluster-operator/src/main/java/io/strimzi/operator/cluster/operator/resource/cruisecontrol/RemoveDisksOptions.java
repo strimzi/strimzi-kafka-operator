@@ -9,7 +9,7 @@ import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIds;
 import java.util.List;
 
 /**
- * Rebalance options for removing disks from the Kafka cluster
+ * Rebalance options for removing disks from brokers within the Kafka cluster
  */
 public class RemoveDisksOptions extends AbstractRebalanceOptions {
     /** list with the ID's of the broker and volumes which will be used by remove-disks endpoint */

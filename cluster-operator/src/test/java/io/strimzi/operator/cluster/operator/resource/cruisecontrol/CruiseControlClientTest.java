@@ -325,7 +325,11 @@ public class CruiseControlClientTest {
     }
 
     private void ccRebalance(Vertx vertx, VertxTestContext context, int pendingCalls, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion) throws IOException, URISyntaxException {
-        cruiseControlServer.setupCCRebalanceResponse(pendingCalls, endpoint);
+        if (endpoint == CruiseControlEndpoints.REMOVE_DISKS) {
+            cruiseControlServer.setupCCRebalanceResponse(pendingCalls, endpoint, null);
+        } else {
+            cruiseControlServer.setupCCRebalanceResponse(pendingCalls, endpoint, "false");
+        }
 
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
@@ -353,7 +357,7 @@ public class CruiseControlClientTest {
                         })));
                 break;
             case REMOVE_DISKS:
-                client.removeBrokerDisksData(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveDisksOptions) options, null)
+                client.removeDisks(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveDisksOptions) options, null)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
@@ -362,7 +366,7 @@ public class CruiseControlClientTest {
     }
 
     private void ccRebalanceVerbose(Vertx vertx, VertxTestContext context, int pendingCalls, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion) throws IOException, URISyntaxException {
-        cruiseControlServer.setupCCRebalanceResponse(pendingCalls, endpoint);
+        cruiseControlServer.setupCCRebalanceResponse(pendingCalls, endpoint, "true");
 
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
@@ -393,7 +397,11 @@ public class CruiseControlClientTest {
     }
 
     private void ccRebalanceNotEnoughValidWindowsException(Vertx vertx, VertxTestContext context, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion) throws IOException, URISyntaxException {
-        cruiseControlServer.setupCCRebalanceNotEnoughDataError(endpoint);
+        if (endpoint == CruiseControlEndpoints.REMOVE_DISKS) {
+            cruiseControlServer.setupCCRebalanceNotEnoughDataError(endpoint, null);
+        } else {
+            cruiseControlServer.setupCCRebalanceNotEnoughDataError(endpoint, "true|false");
+        }
 
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
@@ -421,7 +429,7 @@ public class CruiseControlClientTest {
                         })));
                 break;
             case REMOVE_DISKS:
-                client.removeBrokerDisksData(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveDisksOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.removeDisks(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveDisksOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
@@ -431,7 +439,11 @@ public class CruiseControlClientTest {
     }
 
     private void ccRebalanceProposalNotReady(Vertx vertx, VertxTestContext context, int pendingCalls, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion) throws IOException, URISyntaxException {
-        cruiseControlServer.setupCCRebalanceResponse(pendingCalls, endpoint);
+        if(endpoint == CruiseControlEndpoints.REMOVE_DISKS) {
+            cruiseControlServer.setupCCRebalanceResponse(pendingCalls, endpoint, null);
+        } else {
+            cruiseControlServer.setupCCRebalanceResponse(pendingCalls, endpoint, "true|false");
+        }
 
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
@@ -459,7 +471,7 @@ public class CruiseControlClientTest {
                         })));
                 break;
             case REMOVE_DISKS:
-                client.removeBrokerDisksData(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveDisksOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.removeDisks(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveDisksOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
@@ -469,7 +481,11 @@ public class CruiseControlClientTest {
     }
 
     private void ccBrokerDoesNotExist(Vertx vertx, VertxTestContext context, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<Throwable> assertion) throws IOException, URISyntaxException {
-        cruiseControlServer.setupCCBrokerDoesNotExist(endpoint);
+        if(endpoint == CruiseControlEndpoints.REMOVE_DISKS) {
+            cruiseControlServer.setupCCBrokerDoesNotExist(endpoint, null);
+        } else {
+            cruiseControlServer.setupCCBrokerDoesNotExist(endpoint, "true|false");
+        }
 
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
@@ -490,7 +506,7 @@ public class CruiseControlClientTest {
                         })));
                 break;
             case REMOVE_DISKS:
-                client.removeBrokerDisksData(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveDisksOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
+                client.removeDisks(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveDisksOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
                         .onComplete(context.failing(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
