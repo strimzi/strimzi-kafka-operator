@@ -36,12 +36,12 @@ Information is presented for PVs with data.
 [source,shell,subs="+quotes,attributes"]
 ----
 NAME                                          RECLAIMPOLICY  CLAIM
-pvc-5e9c5c7f-3317-11ea-a650-06e1eadd9a4c ...  Retain ...     myproject/data-my-cluster-zookeeper-1
-pvc-5e9cc72d-3317-11ea-97b0-0aef8816c7ea ...  Retain ...     myproject/data-my-cluster-zookeeper-0
-pvc-5ead43d1-3317-11ea-97b0-0aef8816c7ea ...  Retain ...     myproject/data-my-cluster-zookeeper-2
-pvc-7e1f67f9-3317-11ea-a650-06e1eadd9a4c ...  Retain ...     myproject/data-0-my-cluster-kafka-0
-pvc-7e21042e-3317-11ea-9786-02deaf9aa87e ...  Retain ...     myproject/data-0-my-cluster-kafka-1
-pvc-7e226978-3317-11ea-97b0-0aef8816c7ea ...  Retain ...     myproject/data-0-my-cluster-kafka-2
+pvc-5e9c5c7f-3317-11ea-a650-06e1eadd9a4c ...  Retain ...     my-project/data-my-cluster-zookeeper-1
+pvc-5e9cc72d-3317-11ea-97b0-0aef8816c7ea ...  Retain ...     my-project/data-my-cluster-zookeeper-0
+pvc-5ead43d1-3317-11ea-97b0-0aef8816c7ea ...  Retain ...     my-project/data-my-cluster-zookeeper-2
+pvc-7e1f67f9-3317-11ea-a650-06e1eadd9a4c ...  Retain ...     my-project/data-0-my-cluster-kafka-0
+pvc-7e21042e-3317-11ea-9786-02deaf9aa87e ...  Retain ...     my-project/data-0-my-cluster-kafka-1
+pvc-7e226978-3317-11ea-97b0-0aef8816c7ea ...  Retain ...     my-project/data-0-my-cluster-kafka-2
 ----
 +
 * `NAME` is the name of each PV.
@@ -111,7 +111,7 @@ spec:
     *apiVersion: v1*
     *kind: PersistentVolumeClaim*
     *name: data-0-my-cluster-kafka-2*
-    *namespace: myproject*
+    *namespace: my-project*
     *resourceVersion: "39113"*
     *uid: 54be1c60-3319-11ea-97b0-0aef8816c7ea*
   nodeAffinity:
@@ -139,7 +139,7 @@ claimRef:
   apiVersion: v1
   kind: PersistentVolumeClaim
   name: data-0-my-cluster-kafka-2
-  namespace: myproject
+  namespace: my-project
   resourceVersion: "39113"
   uid: 54be1c60-3319-11ea-97b0-0aef8816c7ea
 ----
