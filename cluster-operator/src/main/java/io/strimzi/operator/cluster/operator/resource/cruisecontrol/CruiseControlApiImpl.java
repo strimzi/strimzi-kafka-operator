@@ -309,7 +309,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     }
 
     @Override
-    public Future<CruiseControlRebalanceResponse> removeBrokerDisksData(Reconciliation reconciliation, String host, int port, RemoveDisksOptions options, String userTaskId) {
+    public Future<CruiseControlRebalanceResponse> removeDisks(Reconciliation reconciliation, String host, int port, RemoveDisksOptions options, String userTaskId) {
         if (options == null && userTaskId == null) {
             return Future.failedFuture(
                     new IllegalArgumentException("Either remove disks options or user task ID should be supplied, both were null"));
