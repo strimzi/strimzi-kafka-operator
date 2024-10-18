@@ -177,7 +177,7 @@ If it's a KRaft cluster, add the annotation `strimzi.io/pause-reconciliation="tr
 kubectl apply -f <kafka_resource_configuration>.yaml -n my-project
 ----
 
-.. KRaft only: recover the `clusterId` value from one of the volumes by spinning up a temporary pod:
+.. KRaft only: Recover the the `clusterId` from logs or copies of the Kafka custom resource. Otherwise, you can get it from one of the volumes by spinning up a temporary pod:
 +
 [source,shell]
 ----
