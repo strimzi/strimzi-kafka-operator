@@ -90,7 +90,7 @@ public interface CruiseControlApi {
      *                   request.
      * @return A future for the rebalance response from the Cruise Control server containing details of the optimization.
      */
-    Future<CruiseControlRebalanceResponse> removeBrokerDisksData(Reconciliation reconciliation, String host, int port, RemoveDisksOptions options, String userTaskId);
+    Future<CruiseControlRebalanceResponse> removeDisks(Reconciliation reconciliation, String host, int port, RemoveDisksOptions options, String userTaskId);
 
     /**
      *  Get the state of a specific task (e.g. a rebalance) from the Cruise Control server.
