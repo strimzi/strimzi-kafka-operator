@@ -86,14 +86,14 @@ public class ConnectCluster {
     }
 
     private static void waitForAllServicesToStart(Connect connect, int seconds) {
-        while (!connect.isRunning() && seconds-- > 0) {
+        while (!connect.herder().isReady() && seconds-- > 0) {
             try {
                 TimeUnit.SECONDS.sleep(1);
             } catch (InterruptedException e) {
                 throw new ConnectException(e);
             }
         }
-        if (!connect.isRunning()) {
+        if (!connect.herder().isReady()) {
             throw new ConnectException(format("Connect failed to start."));
         }
     }

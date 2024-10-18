@@ -67,8 +67,8 @@ import static org.hamcrest.Matchers.equalTo;
 public class KafkaBrokerConfigurationBuilderTest {
     private final static NodeRef NODE_REF = new NodeRef("my-cluster-kafka-2", 2, "kafka", false, true);
 
-    private final static KafkaVersion KAFKA_3_8_0 = new KafkaVersion(KafkaVersionTestUtils.LATEST_KAFKA_VERSION, "", "", "", "", false, false, "");
-    private final static KafkaVersion KAFKA_3_9_0 = new KafkaVersion(KafkaVersionTestUtils.KAFKA_390_VERSION, "", "", "", "", false, false, "");
+    private final static KafkaVersion KAFKA_3_8_0 = new KafkaVersion(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION, "", "", "", "", false, false, "");
+    private final static KafkaVersion KAFKA_3_9_0 = new KafkaVersion(KafkaVersionTestUtils.LATEST_KAFKA_VERSION, "", "", "", "", false, false, "");
 
     @ParallelTest
     public void testBrokerId()  {
@@ -2781,11 +2781,16 @@ public class KafkaBrokerConfigurationBuilderTest {
                     .withListeners("my-cluster", KAFKA_3_8_0, "my-namespace", singletonList(listener), listenerId -> "my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
                     .build();
 
-            if (state.isZooKeeperToMigration()) {
+            if (state.isZooKeeper()) {
                 // control plane is set as listener and advertised up to migration ...
                 assertThat(configuration, containsString("listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092"));
                 assertThat(configuration, containsString("advertised.listeners=CONTROLPLANE-9090://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9092"));
                 assertThat(configuration, containsString("control.plane.listener.name=CONTROLPLANE-9090"));
+            } else if (state.isZooKeeperToMigration()) {
+                // control plane is set as listener and advertised up to migration ...
+                assertThat(configuration, containsString("listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092"));
+                assertThat(configuration, containsString("advertised.listeners=CONTROLPLANE-9090://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://my-cluster-brokers-0.my-cluster-kafka-brokers.my-namespace.svc:9092"));
+                assertThat(configuration, not(containsString("control.plane.listener.name=CONTROLPLANE-9090")));
             } else {
                 // ... it's removed when in post-migration because brokers are full KRaft-mode
                 assertThat(configuration, containsString("listeners=REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092"));

@@ -355,7 +355,7 @@ public class KafkaBrokerConfigurationBuilder {
         }
 
         // Control plane listener is on all ZooKeeper based brokers, needed during migration as well, when broker still using ZooKeeper but KRaft controllers are ready
-        if (node.broker() && kafkaMetadataConfigState.isZooKeeperToMigration()) {
+        if (node.broker() && kafkaMetadataConfigState.isZooKeeper()) {
             writer.println("control.plane.listener.name=" + CONTROL_PLANE_LISTENER_NAME);
         }
 
