@@ -191,12 +191,11 @@ kubectl run tmp -itq --rm --restart "Never" --image "foo" --overrides "{\"spec\"
   \"$PVC_NAME\"}}]}}" -n myproject
 ----
 
-.. Edit the `Kafka` resource using the `--subresource status` flag to set the `clusterId` with the recovered value:
+.. Edit the `Kafka` resource to set the `.status.clusterId` with the recovered value:
 +
 [source,shell]
 ----
-status:
-  clusterId: w2MRy6xsQEqqWQkhLvbTYg
+kubectl edit kafka <cluster-name> --subresource status -n myproject
 ----
 
 .. Unpause the Kafka resource reconciliation:
