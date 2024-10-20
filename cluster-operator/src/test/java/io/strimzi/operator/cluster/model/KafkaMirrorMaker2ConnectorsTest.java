@@ -150,23 +150,63 @@ public class KafkaMirrorMaker2ConnectorsTest {
                 "[Connect cluster alias (currently set to target) must match the target cluster alias third or both clusters must have the same bootstrap servers.]"));
     }
 
-
     @Test
     public void testClusterNotSameButBootstrapUrlSame() {
         KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder(KMM2)
                 .editSpec()
-                .withConnectCluster("source")
+                        .withConnectCluster("source")
                 .addToClusters(new KafkaMirrorMaker2ClusterSpecBuilder()
                         .withAlias("third")
                         .withBootstrapServers("source:9092")
                         .build())
                 .editMirror(0)
-                .withTargetCluster("third")
+                        .withTargetCluster("third")
                 .endMirror()
                 .endSpec()
                 .build();
 
         assertDoesNotThrow(() -> KafkaMirrorMaker2Connectors.validateConnectors(kmm2));
+    }
+
+    @Test
+    public void testSourceClusterNotConnectCluster() {
+        KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder(KMM2)
+                .editSpec()
+                        .withConnectCluster("target")
+                .addToClusters(new KafkaMirrorMaker2ClusterSpecBuilder()
+                        .withAlias("third")
+                        .withBootstrapServers("source:9092")
+                        .build())
+                .editMirror(0)
+                        .withTargetCluster("third")
+                .endMirror()
+                .endSpec()
+                .build();
+
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> KafkaMirrorMaker2Connectors.validateConnectors(kmm2));
+        assertThat(ex.getMessage(), is("KafkaMirrorMaker2 resource validation failed: " +
+                "[Connect cluster alias (currently set to target) must match the target cluster alias third or both clusters must have the same bootstrap servers.]"));
+    }
+
+    @Test
+    public void testMultipleMirrors() {
+        KafkaMirrorMaker2 kmm2CorrectAndIncorrectMirror = new KafkaMirrorMaker2Builder(KMM2)
+                .editSpec()
+                .addToClusters(new KafkaMirrorMaker2ClusterSpecBuilder()
+                        .withAlias("third")
+                        .withBootstrapServers("target:9092")
+                        .build())
+                .addToClusters(new KafkaMirrorMaker2ClusterSpecBuilder()
+                        .withAlias("fourth")
+                        .withBootstrapServers("target:9092")
+                        .build())
+                .addToMirrors(new KafkaMirrorMaker2MirrorSpecBuilder()
+                        .withSourceCluster("source")
+                        .withTargetCluster("fourth").build())
+                .endSpec()
+                .build();
+
+        assertDoesNotThrow(() -> KafkaMirrorMaker2Connectors.validateConnectors(kmm2CorrectAndIncorrectMirror));
     }
 
     @Test

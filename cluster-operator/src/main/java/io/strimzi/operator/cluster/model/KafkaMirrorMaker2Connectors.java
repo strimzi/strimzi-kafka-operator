@@ -18,7 +18,6 @@ import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ConnectorSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2MirrorSpec;
-import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Spec;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.InvalidResourceException;
@@ -27,14 +26,12 @@ import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.config.SslConfigs;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -119,9 +116,8 @@ public class KafkaMirrorMaker2Connectors {
                         errorMessages.add("Target cluster alias " + mirror.getTargetCluster() + " is used in a mirror definition, but cluster with this alias does not exist in cluster definitions");
                     }
 
-                    if (!mirror.getTargetCluster().equals(connectCluster) && !hasMatchingBootstrapServers(kafkaMirrorMaker2, connectCluster, mirror.getTargetCluster())) {
+                    if (!mirror.getTargetCluster().equals(connectCluster) && !hasMatchingBootstrapServers(kafkaMirrorMaker2.getSpec().getClusters(), connectCluster, mirror.getTargetCluster())) {
                         errorMessages.add("Connect cluster alias (currently set to " + connectCluster + ") must match the target cluster alias " + mirror.getTargetCluster() + " or both clusters must have the same bootstrap servers.");
-
                     }
                 }
 
@@ -331,17 +327,13 @@ public class KafkaMirrorMaker2Connectors {
         }
     }
 
-    private static boolean hasMatchingBootstrapServers(KafkaMirrorMaker2 kafkaMirrorMaker2, String connectClusterAlias, String targetClusterAlias) {
-        List<String> configs = Optional.ofNullable(kafkaMirrorMaker2)
-                .map(KafkaMirrorMaker2::getSpec)
-                .map(KafkaMirrorMaker2Spec::getClusters)
-                .orElse(Collections.emptyList())
+    private static boolean hasMatchingBootstrapServers(List<KafkaMirrorMaker2ClusterSpec> clusterList, String connectClusterAlias, String targetClusterAlias) {
+        List<String> configs = clusterList
                 .stream()
                 .filter(cluster -> connectClusterAlias.equals(cluster.getAlias()) || targetClusterAlias.equals(cluster.getAlias()))
                 .map(KafkaMirrorMaker2ClusterSpec::getBootstrapServers)
                 .toList();
 
         return configs.size() == 2 && configs.get(0).equals(configs.get(1));
-
     }
 }
