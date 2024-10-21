@@ -767,8 +767,6 @@ public class CruiseControlST extends AbstractST {
             KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setReplicas(initialReplicas));
         }
 
-        // TODO: ScaleDownPreventionCheck here is also preventionCheck (because no re-balance has happen) and there are still hosted partitions
-
         KafkaUtils.waitUntilKafkaHasExpectedAutoRebalanceModeAndBrokers(testStorage.getNamespaceName(), testStorage.getClusterName(),
             KafkaRebalanceMode.REMOVE_BROKERS,
             // brokers with [6, 7]
