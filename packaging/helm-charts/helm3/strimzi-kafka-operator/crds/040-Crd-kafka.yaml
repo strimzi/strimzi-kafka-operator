@@ -6331,7 +6331,6 @@ spec:
                           mode:
                             type: string
                             enum:
-                              - full
                               - add-brokers
                               - remove-brokers
                             description: "Specifies the mode for automatically rebalancing when brokers are added or removed. Supported modes are `add-brokers` and `remove-brokers`. \n"
@@ -8226,7 +8225,6 @@ spec:
                           mode:
                             type: string
                             enum:
-                              - full
                               - add-brokers
                               - remove-brokers
                             description: "Mode for which there is an auto-rebalancing operation in progress or queued, when brokers are added or removed. The possible modes are `add-brokers` and `remove-brokers`."

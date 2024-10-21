@@ -6,12 +6,12 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceMode;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceState;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatus;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatusBrokers;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatusBrokersBuilder;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatusBuilder;
-import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
 import io.strimzi.operator.common.model.StatusUtils;
@@ -100,7 +100,7 @@ public class KafkaRebalanceUtils {
             if (!addedBrokers.isEmpty()) {
                 kafkaAutoRebalanceStatusBuilder.withModes(
                         new KafkaAutoRebalanceStatusBrokersBuilder()
-                                .withMode(KafkaRebalanceMode.ADD_BROKERS)
+                                .withMode(KafkaAutoRebalanceMode.ADD_BROKERS)
                                 .withBrokers(kafkaAddedBrokerNodes.stream().toList())
                                 .build()
                 );
@@ -113,7 +113,7 @@ public class KafkaRebalanceUtils {
                 if (!addedBrokers.isEmpty()) {
                     builder.withModes(
                             new KafkaAutoRebalanceStatusBrokersBuilder()
-                                    .withMode(KafkaRebalanceMode.ADD_BROKERS)
+                                    .withMode(KafkaAutoRebalanceMode.ADD_BROKERS)
                                     .withBrokers(kafkaAddedBrokerNodes.stream().toList())
                                     .build()
                     );
@@ -126,17 +126,17 @@ public class KafkaRebalanceUtils {
 
                 // Merge the already stored brokers with new ones if the mode exists, or create a new mode
                 Optional<KafkaAutoRebalanceStatusBrokers> existingAddBrokersMode = kafkaAutoRebalanceStatus.getModes().stream()
-                        .filter(mode -> mode.getMode().equals(KafkaRebalanceMode.ADD_BROKERS))
+                        .filter(mode -> mode.getMode().equals(KafkaAutoRebalanceMode.ADD_BROKERS))
                         .findFirst();
 
                 if (existingAddBrokersMode.isPresent()) {
                     addedBrokers.addAll(existingAddBrokersMode.get().getBrokers());
-                    builder.editMatchingMode(m -> m.getMode().equals(KafkaRebalanceMode.ADD_BROKERS))
+                    builder.editMatchingMode(m -> m.getMode().equals(KafkaAutoRebalanceMode.ADD_BROKERS))
                             .withBrokers(addedBrokers.stream().toList())
                             .endMode();
                 } else if (!addedBrokers.isEmpty()) {
                     builder.addNewMode()
-                            .withMode(KafkaRebalanceMode.ADD_BROKERS)
+                            .withMode(KafkaAutoRebalanceMode.ADD_BROKERS)
                             .withBrokers(addedBrokers.stream().toList())
                             .endMode();
                 }

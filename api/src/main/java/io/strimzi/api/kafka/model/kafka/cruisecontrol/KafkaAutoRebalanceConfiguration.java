@@ -10,7 +10,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
-import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -32,18 +31,18 @@ import java.util.Map;
 @ToString
 public class KafkaAutoRebalanceConfiguration implements UnknownPropertyPreserving {
 
-    private KafkaRebalanceMode mode;
+    private KafkaAutoRebalanceMode mode;
     private LocalObjectReference template;
     private Map<String, Object> additionalProperties;
 
     @Description("Specifies the mode for automatically rebalancing when brokers are added or removed. " +
             "Supported modes are `add-brokers` and `remove-brokers`. \n")
     @JsonProperty(required = true)
-    public KafkaRebalanceMode getMode() {
+    public KafkaAutoRebalanceMode getMode() {
         return mode;
     }
 
-    public void setMode(KafkaRebalanceMode mode) {
+    public void setMode(KafkaAutoRebalanceMode mode) {
         this.mode = mode;
     }
 
