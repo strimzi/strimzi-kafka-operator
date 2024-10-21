@@ -499,15 +499,15 @@ public class KafkaRebalanceAssemblyOperator
      * from load parameter to an array of [after].
      * The load parameters included in the map are dictated by the values in he {@link CruiseControlLoadParameters} enum.
      *
-     * @param brokerLoadBeforeArray The JSONArray of broker load JSONObjects, for before the optimization proposal is applied,
+     * @param brokerLoadBeforeJson The JSONArray of broker load JSONObjects, for before the optimization proposal is applied,
      *                              returned by the Cruise Control rebalance endpoint.
-     * @param brokerLoadAfterArray The JSONArray of broker load JSONObjects, for after the optimization proposal is applied,
+     * @param brokerLoadAfterJson The JSONArray of broker load JSONObjects, for after the optimization proposal is applied,
      *                             returned by the Cruise Control rebalance endpoint.
      * @return A JsonObject linking from broker ID integer to a map of load parameter to [before, after, difference] arrays.
      */
-    protected static JsonObject parseLoadStats(JsonArray brokerLoadBeforeArray, JsonArray brokerLoadAfterArray) {
+    protected static JsonObject parseLoadStats(JsonArray brokerLoadBeforeJson, JsonArray brokerLoadAfterJson) {
 
-        if (brokerLoadBeforeArray == null && brokerLoadAfterArray == null) {
+        if (brokerLoadBeforeJson == null && brokerLoadAfterJson == null) {
             throw new IllegalArgumentException("The rebalance optimization proposal returned by Cruise Control did not contain broker load information");
         }
 
@@ -516,11 +516,11 @@ public class KafkaRebalanceAssemblyOperator
 
         Map<Integer, Map<String, Object>> loadBeforeMap = new HashMap<>();
 
-        if (brokerLoadBeforeArray != null && !brokerLoadBeforeArray.isEmpty()) {
-            loadBeforeMap = extractLoadParameters(brokerLoadBeforeArray);
+        if (brokerLoadBeforeJson != null && !brokerLoadBeforeJson.isEmpty()) {
+            loadBeforeMap = extractLoadParameters(brokerLoadBeforeJson);
         }
 
-        Map<Integer, Map<String, Object>> loadAfterMap = extractLoadParameters(brokerLoadAfterArray);
+        Map<Integer, Map<String, Object>> loadAfterMap = extractLoadParameters(brokerLoadAfterJson);
 
         if (!loadBeforeMap.isEmpty() && loadBeforeMap.size() != loadAfterMap.size()) {
             throw new IllegalArgumentException("Broker data was missing from the load before/after information");

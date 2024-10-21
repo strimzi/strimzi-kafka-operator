@@ -122,7 +122,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
                                     .withBrokerId(0)
                                     .withVolumeIds(1)
                                     .build())
-                    .withBrokers(3)
                     .build();
     private static final PlatformFeaturesAvailability PFA = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
     private static KubernetesClient client;

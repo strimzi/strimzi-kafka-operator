@@ -87,7 +87,6 @@ public class KafkaRebalanceStateMachineTest {
                                     .withBrokerId(0)
                                     .withVolumeIds(1)
                                     .build())
-                    .withBrokers(3)
                     .build();
 
     private static int cruiseControlPort;
