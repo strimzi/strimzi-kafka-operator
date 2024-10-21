@@ -660,7 +660,7 @@ public class KafkaUtils {
                                                            final String clusterName,
                                                            final KafkaAutoRebalanceState expectedState) {
         TestUtils.waitFor(
-            String.format("waiting for Kafka cluster '%s' in namespace '%s' and KafkaRebalance state: '%s'", clusterName, namespaceName, expectedState),
+            String.format("Kafka cluster %s/%s and KafkaRebalance state: '%s'", clusterName, namespaceName, expectedState),
             TestConstants.GLOBAL_POLL_INTERVAL,
             TestConstants.GLOBAL_TIMEOUT,
             () -> {
@@ -690,8 +690,8 @@ public class KafkaUtils {
                                                                             final KafkaRebalanceMode expectedKafkaAutoRebalanceMode,
                                                                             final List<Integer> scalingBrokers) {
         TestUtils.waitFor(
-            String.format("Waiting for Kafka cluster '%s' in namespace '%s' and KafkaRebalance mode '%s' with brokers %s",
-                clusterName, namespaceName, expectedKafkaAutoRebalanceMode, scalingBrokers),
+            String.format("Kafka cluster %s/%s and KafkaRebalance mode '%s' with brokers %s",
+                namespaceName, clusterName, expectedKafkaAutoRebalanceMode, scalingBrokers),
             TestConstants.GLOBAL_POLL_INTERVAL,
             TestConstants.GLOBAL_TIMEOUT,
             () -> {
