@@ -2,11 +2,11 @@
 //
 // assembly-cluster-recovery-volume.adoc
 
-[id="proc-cluster-recovery-volume-{context}"]
-= Recovering a deleted KRaft-based Kafka cluster
+[id="proc-cluster-recovery-volume-zk-{context}"]
+= Recovering a deleted ZooKeeper-based Kafka cluster
 
 [role="_abstract"]
-This procedure describes how to recover a deleted Kafka cluster operating in KRaft mode from persistent volumes (PVs) by recreating the original `PersistentVolumeClaim` (PVC) resources.
+This procedure describes how to recover a deleted Kafka cluster operating in a ZooKeeper-based environment from persistent volumes (PVs) by recreating the original `PersistentVolumeClaim` (PVC) resources.
 
 If the Topic Operator and User Operator are deployed, you can recover `KafkaTopic` and `KafkaUser` resources by recreating them. 
 It is important that you recreate the `KafkaTopic` resources with the same configurations, or the Topic Operator will try to update them in Kafka.
@@ -36,12 +36,12 @@ Information is presented for PVs with data.
 [source,shell,subs="+quotes,attributes"]
 ----
 NAME                                          RECLAIMPOLICY  CLAIM
-pvc-5e9c5c7f-3317-11ea-a650-06e1eadd9a4c ...  Retain ...     myproject/data-0-my-cluster-broker-0
-pvc-5e9cc72d-3317-11ea-97b0-0aef8816c7ea ...  Retain ...     myproject/data-0-my-cluster-broker-1
-pvc-5ead43d1-3317-11ea-97b0-0aef8816c7ea ...  Retain ...     myproject/data-0-my-cluster-broker-2
-pvc-7e1f67f9-3317-11ea-a650-06e1eadd9a4c ...  Retain ...     myproject/data-0-my-cluster-controller-3
-pvc-7e21042e-3317-11ea-9786-02deaf9aa87e ...  Retain ...     myproject/data-0-my-cluster-controller-4
-pvc-7e226978-3317-11ea-97b0-0aef8816c7ea ...  Retain ...     myproject/data-0-my-cluster-controller-5
+pvc-5e9c5c7f-3317-11ea-a650-06e1eadd9a4c ...  Retain ...     myproject/data-my-cluster-zookeeper-1
+pvc-5e9cc72d-3317-11ea-97b0-0aef8816c7ea ...  Retain ...     myproject/data-my-cluster-zookeeper-0
+pvc-5ead43d1-3317-11ea-97b0-0aef8816c7ea ...  Retain ...     myproject/data-my-cluster-zookeeper-2
+pvc-7e1f67f9-3317-11ea-a650-06e1eadd9a4c ...  Retain ...     myproject/data-0-my-cluster-kafka-0
+pvc-7e21042e-3317-11ea-9786-02deaf9aa87e ...  Retain ...     myproject/data-0-my-cluster-kafka-1
+pvc-7e226978-3317-11ea-97b0-0aef8816c7ea ...  Retain ...     myproject/data-0-my-cluster-kafka-2
 ----
 +
 * `NAME` is the name of each PV.
@@ -65,7 +65,7 @@ Here, we recreate the `myproject` namespace.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: data-0-my-cluster-broker-0
+  name: data-0-my-cluster-kafka-0
 spec:
   accessModes:
   - ReadWriteOnce
@@ -95,7 +95,7 @@ metadata:
   labels:
     failure-domain.beta.kubernetes.io/region: eu-west-1
     failure-domain.beta.kubernetes.io/zone: eu-west-1c
-  name: pvc-5ead43d1-3317-11ea-97b0-0aef8816c7ea
+  name: pvc-7e226978-3317-11ea-97b0-0aef8816c7ea
   resourceVersion: "39431"
   selfLink: /api/v1/persistentvolumes/pvc-7e226978-3317-11ea-97b0-0aef8816c7ea
   uid: 7efe6b0d-3317-11ea-a650-06e1eadd9a4c
@@ -138,7 +138,7 @@ In the example, the following properties are deleted:
 claimRef:
   apiVersion: v1
   kind: PersistentVolumeClaim
-  name: data-0-my-cluster-broker-2
+  name: data-0-my-cluster-kafka-2
   namespace: myproject
   resourceVersion: "39113"
   uid: 54be1c60-3319-11ea-97b0-0aef8816c7ea
@@ -170,40 +170,10 @@ Ensure that the recreated secrets have exactly the same name, labels, and fields
 kubectl apply -f <user_configuration_file> -n myproject
 
 . Deploy the Kafka cluster using the original configuration for the `Kafka` resource.
-Add the annotation `strimzi.io/pause-reconciliation="true"` to the original configuration for the `Kafka` resource, and then deploy the Kafka cluster using the updated configuration.
 +
 [source,shell]
 ----
 kubectl apply -f <kafka_resource_configuration>.yaml -n myproject
-----
-
-. Recover the original `clusterId` from logs or copies of the `Kafka` custom resource.
-Otherwise, you can retrieve it from one of the volumes by spinning up a temporary pod.
-+
-[source,shell]
-----
-PVC_NAME="data-0-my-cluster-kafka-0"
-COMMAND="grep cluster.id /disk/kafka-log*/meta.properties | awk -F'=' '{print \$2}'"
-kubectl run tmp -itq --rm --restart "Never" --image "foo" --overrides "{\"spec\":
-  {\"containers\":[{\"name\":\"busybox\",\"image\":\"busybox\",\"command\":[\"/bin/sh\",
-  \"-c\",\"$COMMAND\"],\"volumeMounts\":[{\"name\":\"disk\",\"mountPath\":\"/disk\"}]}],
-  \"volumes\":[{\"name\":\"disk\",\"persistentVolumeClaim\":{\"claimName\":
-  \"$PVC_NAME\"}}]}}" -n myproject
-----
-
-. Edit the `Kafka` resource to set the `.status.clusterId` with the recovered value:
-+
-[source,shell]
-----
-kubectl edit kafka <cluster-name> --subresource status -n myproject
-----
-
-. Unpause the `Kafka` resource reconciliation:
-+
-[source,shell]
-----
-kubectl annotate kafka my-cluster strimzi.io/pause-reconciliation=false \
-  --overwrite -n myproject
 ----
 
 . Verify the recovery of the `KafkaTopic` resources:

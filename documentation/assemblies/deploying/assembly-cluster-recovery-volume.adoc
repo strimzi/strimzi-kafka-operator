@@ -10,5 +10,7 @@ You can recover a Kafka cluster from persistent volumes (PVs) if they are still 
 
 //scenarios to recover from
 include::../../modules/managing/con-cluster-recovery-scenarios.adoc[leveloffset=+1]
-//procedure to recover a cluster from a PV
+//procedure to recover a KRaft based cluster from a PV
 include::../../modules/managing/proc-cluster-recovery-volume.adoc[leveloffset=+1]
+//procedure to recover a ZooKeeper based cluster from a PV
+include::../../modules/managing/proc-cluster-recovery-volume-zk.adoc[leveloffset=+1]
