@@ -116,8 +116,8 @@ public class KafkaMirrorMaker2Connectors {
                         errorMessages.add("Target cluster alias " + mirror.getTargetCluster() + " is used in a mirror definition, but cluster with this alias does not exist in cluster definitions");
                     }
 
-                    if (!mirror.getTargetCluster().equals(connectCluster)) {
-                        errorMessages.add("Connect cluster alias (currently set to " + connectCluster + ") has to be the same as the target cluster alias " + mirror.getTargetCluster());
+                    if (!mirror.getTargetCluster().equals(connectCluster) && !hasMatchingBootstrapServers(kafkaMirrorMaker2.getSpec().getClusters(), connectCluster, mirror.getTargetCluster())) {
+                        errorMessages.add("Connect cluster alias (currently set to " + connectCluster + ") must match the target cluster alias " + mirror.getTargetCluster() + " or both clusters must have the same bootstrap servers.");
                     }
                 }
 
@@ -325,5 +325,24 @@ public class KafkaMirrorMaker2Connectors {
         } else {
             return "PLAINTEXT";
         }
+    }
+
+    private static boolean hasMatchingBootstrapServers(List<KafkaMirrorMaker2ClusterSpec> clusterList, String connectClusterAlias, String targetClusterAlias) {
+        // Find the cluster for the connectClusterAlias
+        String connectClusterBootstrap = clusterList.stream()
+                .filter(cluster -> connectClusterAlias.equals(cluster.getAlias()))
+                .map(KafkaMirrorMaker2ClusterSpec::getBootstrapServers)
+                .findFirst()
+                .orElse(null);
+
+        // Find the cluster for the targetClusterAlias
+        String targetClusterBootstrap = clusterList.stream()
+                .filter(cluster -> targetClusterAlias.equals(cluster.getAlias()))
+                .map(KafkaMirrorMaker2ClusterSpec::getBootstrapServers)
+                .findFirst()
+                .orElse(null);
+
+        // Return true if both are found and have matching bootstrap servers
+        return connectClusterBootstrap != null && connectClusterBootstrap.equals(targetClusterBootstrap);
     }
 }
