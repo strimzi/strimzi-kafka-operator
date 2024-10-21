@@ -46,6 +46,8 @@ examples
 <5> xref:assembly-metrics-config-files-{context}[Metrics configuration], including Prometheus installation and Grafana dashboard files.
 <6> `Kafka` and `KafkaNodePool` custom resource configurations for a deployment of Kafka clusters that use ZooKeeper mode. Includes example configuration for an ephemeral or persistent single or multi-node deployment.
 <7> `Kafka` and `KafkaNodePool` configurations for a deployment of Kafka clusters that use KRaft (Kafka Raft metadata) mode.
-<8> `Kafka` custom resource with a deployment configuration for Cruise Control. Includes `KafkaRebalance` custom resources to generate optimization proposals from Cruise Control, with example configurations to use the default or user optimization goals.
+<8> `Kafka` and `KafkaRebalance` configurations for deploying and using Cruise Control to manage clusters. 
+`Kafka` configuration examples enable auto-rebalancing on scaling events and set default optimization goals.
+`KakaRebalance` configuration examples set user-provided optimization goals and generate optimization proposals in various supported modes.
 <9> `KafkaConnect` and `KafkaConnector` custom resource configuration for a deployment of Kafka Connect. Includes example configurations for a single or multi-node deployment.
 <10> `KafkaBridge` custom resource configuration for a deployment of Kafka Bridge.

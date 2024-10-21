@@ -29,7 +29,7 @@ For more information, see xref:proc-cruise-control-topic-replication-{context}[]
 
 NOTE: In-sync replicas are used in conjunction with the `acks` configuration for producer applications.
 The `acks` configuration determines the number of follower partitions a message must be replicated to before the message is acknowledged as successfully received.
-Replicas need to be reassigned when adding or removing brokers (see xref:con-scaling-kafka-clusters-str[]).
+Replicas need to be reassigned when adding or removing brokers (see xref:assembly-scaling-kafka-clusters-str[]).
 
 [role="_additional-resources"]
 .Additional resources
