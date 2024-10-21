@@ -328,12 +328,21 @@ public class KafkaMirrorMaker2Connectors {
     }
 
     private static boolean hasMatchingBootstrapServers(List<KafkaMirrorMaker2ClusterSpec> clusterList, String connectClusterAlias, String targetClusterAlias) {
-        List<String> configs = clusterList
-                .stream()
-                .filter(cluster -> connectClusterAlias.equals(cluster.getAlias()) || targetClusterAlias.equals(cluster.getAlias()))
+        // Find the cluster for the connectClusterAlias
+        String connectClusterBootstrap = clusterList.stream()
+                .filter(cluster -> connectClusterAlias.equals(cluster.getAlias()))
                 .map(KafkaMirrorMaker2ClusterSpec::getBootstrapServers)
-                .toList();
+                .findFirst()
+                .orElse(null);
 
-        return configs.size() == 2 && configs.get(0).equals(configs.get(1));
+        // Find the cluster for the targetClusterAlias
+        String targetClusterBootstrap = clusterList.stream()
+                .filter(cluster -> targetClusterAlias.equals(cluster.getAlias()))
+                .map(KafkaMirrorMaker2ClusterSpec::getBootstrapServers)
+                .findFirst()
+                .orElse(null);
+
+        // Return true if both are found and have matching bootstrap servers
+        return connectClusterBootstrap != null && connectClusterBootstrap.equals(targetClusterBootstrap);
     }
 }
