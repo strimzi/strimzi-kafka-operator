@@ -263,6 +263,26 @@ public class KafkaPool extends AbstractModel {
     }
 
     /**
+     * @return  Set of Kafka nodes that are going to be removed from the Kafka cluster
+     */
+    public Set<NodeRef> scaledDownNodes() {
+        return idAssignment.toBeRemoved()
+                .stream()
+                .map(this::nodeRef)
+                .collect(Collectors.toCollection(LinkedHashSet::new)); // we want this in deterministic order
+    }
+
+    /**
+     * @return  Set of Kafka nodes that are going to be added to the Kafka cluster
+     */
+    public Set<NodeRef> scaleUpNodes() {
+        return idAssignment.toBeAdded()
+                .stream()
+                .map(this::nodeRef)
+                .collect(Collectors.toCollection(LinkedHashSet::new)); // we want this in deterministic order
+    }
+
+    /**
      * Builds node reference from node ID
      *
      * @param nodeId    Node ID
@@ -314,20 +334,6 @@ public class KafkaPool extends AbstractModel {
                 .withLabelSelector(getSelectorLabels().toSelectorString())
                 .withConditions(warningConditions)
                 .build();
-    }
-
-    /**
-     * @return  the set of Kafka node IDs going to be removed from the Kafka cluster.
-     */
-    public Set<Integer> scaledDownNodes() {
-        return idAssignment.toBeRemoved();
-    }
-
-    /**
-     * @return  the set of Kafka node IDs going to be added to the Kafka cluster.
-     */
-    public Set<Integer> scaleUpNodes() {
-        return idAssignment.toBeAdded();
     }
 
     /**
