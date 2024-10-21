@@ -679,13 +679,13 @@ public class CruiseControlST extends AbstractST {
         resourceManager.createResourceWithoutWait(
             KafkaRebalanceTemplates.kafkaRebalance(testStorage.getNamespaceName(), testStorage.getClusterName())
                 .editMetadata()
-                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_REBALANCE, "template")
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_REBALANCE_TEMPLATE, "true")
                     .withName(scaleUpKafkaRebalanceTemplateName)
                 .endMetadata()
                 .build(),
             KafkaRebalanceTemplates.kafkaRebalance(testStorage.getNamespaceName(), testStorage.getClusterName())
                 .editMetadata()
-                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_REBALANCE, "template")
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_REBALANCE_TEMPLATE, "true")
                     .withName(scaleDownKafkaRebalanceTemplateName)
                 .endMetadata()
                 .build()
