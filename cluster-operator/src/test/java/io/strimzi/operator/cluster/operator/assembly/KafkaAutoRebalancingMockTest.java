@@ -88,7 +88,6 @@ public class KafkaAutoRebalancingMockTest {
     private static KubernetesClient client;
     private static MockKube3 mockKube;
     private String namespace;
-    private ResourceOperatorSupplier supplier;
     private StrimziPodSetController podSetController;
     private KafkaAssemblyOperator operator;
     private Admin admin;
@@ -195,7 +194,7 @@ public class KafkaAutoRebalancingMockTest {
         // getting the default admin client to mock it when needed for blocked nodes (on scale down)
         admin = ResourceUtils.adminClient();
 
-        supplier = new ResourceOperatorSupplier(vertx, client, null, ResourceUtils.adminClientProvider(admin), null,
+        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, client, null, ResourceUtils.adminClientProvider(admin), null,
                 ResourceUtils.kafkaAgentClientProvider(), ResourceUtils.metricsProvider(), null, PFA, 2_000);
 
         podSetController = new StrimziPodSetController(namespace, Labels.EMPTY, supplier.kafkaOperator, supplier.connectOperator, supplier.mirrorMaker2Operator, supplier.strimziPodSetOperator, supplier.podOperations, supplier.metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));
