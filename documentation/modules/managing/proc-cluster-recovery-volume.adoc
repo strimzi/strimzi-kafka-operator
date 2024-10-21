@@ -3,10 +3,10 @@
 // assembly-cluster-recovery-volume.adoc
 
 [id="proc-cluster-recovery-volume-{context}"]
-= Recovering a deleted KRaft based Kafka cluster
+= Recovering a deleted KRaft-based Kafka cluster
 
 [role="_abstract"]
-This procedure describes how to recover a deleted cluster from persistent volumes (PVs) by recreating the original `PersistentVolumeClaim` (PVC) resources.
+This procedure describes how to recover a deleted Kafka cluster operating in KRaft mode from persistent volumes (PVs) by recreating the original `PersistentVolumeClaim` (PVC) resources.
 
 If the Topic Operator and User Operator are deployed, you can recover `KafkaTopic` and `KafkaUser` resources by recreating them. 
 It is important that you recreate the `KafkaTopic` resources with the same configurations, or the Topic Operator will try to update them in Kafka.
@@ -170,14 +170,14 @@ Ensure that the recreated secrets have exactly the same name, labels, and fields
 kubectl apply -f <user_configuration_file> -n myproject
 
 . Deploy the Kafka cluster using the original configuration for the `Kafka` resource.
-It's important to add the annotation `strimzi.io/pause-reconciliation="true"` to the YAML file.
+Add the annotation `strimzi.io/pause-reconciliation="true"` to the original configuration for the `Kafka` resource, and then deploy the Kafka cluster using the updated configuration.
 +
 [source,shell]
 ----
 kubectl apply -f <kafka_resource_configuration>.yaml -n myproject
 ----
 
-.. Recover the original `clusterId` from logs or copies of the `Kafka` custom resource.
+. Recover the original `clusterId` from logs or copies of the `Kafka` custom resource.
 Otherwise, you can retrieve it from one of the volumes by spinning up a temporary pod.
 +
 [source,shell]
@@ -191,14 +191,14 @@ kubectl run tmp -itq --rm --restart "Never" --image "foo" --overrides "{\"spec\"
   \"$PVC_NAME\"}}]}}" -n myproject
 ----
 
-.. Edit the `Kafka` resource to set the `.status.clusterId` with the recovered value:
+. Edit the `Kafka` resource to set the `.status.clusterId` with the recovered value:
 +
 [source,shell]
 ----
 kubectl edit kafka <cluster-name> --subresource status -n myproject
 ----
 
-.. Unpause the Kafka resource reconciliation:
+. Unpause the `Kafka` resource reconciliation:
 +
 [source,shell]
 ----
