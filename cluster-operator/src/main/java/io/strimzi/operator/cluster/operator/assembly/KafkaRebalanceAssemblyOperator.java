@@ -276,7 +276,7 @@ public class KafkaRebalanceAssemblyOperator
                 if (brokerAndVolumeIds != null && !brokerAndVolumeIds.isEmpty()) {
                     ((RemoveDisksOptions.RemoveDisksOptionsBuilder) rebalanceOptionsBuilder).withBrokersandVolumeIds(brokerAndVolumeIds);
                 } else {
-                    throw new IllegalArgumentException("The brokers and volume ID's list is mandatory when using the " + mode.toValue() + " rebalancing mode");
+                    throw new IllegalArgumentException("The brokers and volume IDs list is mandatory when using the " + mode.toValue() + " rebalancing mode");
                 }
                 break;
             default:

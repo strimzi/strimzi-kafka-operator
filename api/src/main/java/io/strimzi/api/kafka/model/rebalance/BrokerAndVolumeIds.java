@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Configures the broker and Volume ID's for the remove-disks endpoint for Cruise Control
+ * Configures the broker and Volume IDs for the remove-disks endpoint for Cruise Control
  */
 @Buildable(
         editableEnabled = false,
