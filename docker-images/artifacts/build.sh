@@ -35,8 +35,6 @@ function third_party_libs {
         mkdir -p ./binaries/kafka-thirdparty-libs
         rm -f ./binaries/kafka-thirdparty-libs/${version_lib}.zip
         zip -j ./binaries/kafka-thirdparty-libs/${version_lib}.zip kafka-thirdparty-libs/${version_lib}/target/dependency/*
-#        mkdir -p ./binaries/kafka-thirdparty-libs/${version_lib}
-#        cp -v kafka-thirdparty-libs/${version_lib}/target/dependency/* ./binaries/kafka-thirdparty-libs/${version_lib}/
     done
 }
 
@@ -48,8 +46,6 @@ function cruise_control {
     mkdir -p ./binaries/kafka-thirdparty-libs
     rm -f ./binaries/kafka-thirdparty-libs/cc.zip
     zip -j ./binaries/kafka-thirdparty-libs/cc.zip kafka-thirdparty-libs/cc/target/dependency/*
-#    mkdir -p ./binaries/kafka-thirdparty-libs/cc
-#    cp -v kafka-thirdparty-libs/cc/target/dependency/* ./binaries/kafka-thirdparty-libs/cc/
 }
 
 function fetch_and_unpack_kafka_binaries {
