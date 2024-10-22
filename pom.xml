@@ -166,7 +166,7 @@
         <kroxylicious-testing.version>0.9.0</kroxylicious-testing.version>
         <kindcontainer.version>1.4.7</kindcontainer.version>
         <junit4.version>4.13.2</junit4.version>
-        <skodjob.test-frame.version>0.7.0</skodjob.test-frame.version>
+        <skodjob.test-frame.version>0.8.0</skodjob.test-frame.version>
         <skodjob-doc.version>0.3.0</skodjob-doc.version>
 
         <!-- properties to skip surefire tests during failsafe execution -->
