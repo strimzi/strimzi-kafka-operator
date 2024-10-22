@@ -1691,7 +1691,8 @@ public class CaReconcilerTest {
                         .toList();
                 for (Pod pod : returnedPods) {
                     Map<String, String> podAnnotations = pod.getMetadata().getAnnotations();
-                    assertThat(podAnnotations, hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "1"));
+                    // Expect that the CA key generation was updated. CA cert generations are updated by component reconcilers
+                    assertThat(podAnnotations, hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0"));
                     assertThat(podAnnotations, hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "1"));
                 }
             });

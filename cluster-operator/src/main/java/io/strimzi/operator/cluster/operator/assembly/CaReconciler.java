@@ -396,7 +396,7 @@ public class CaReconciler {
             TlsPemIdentity coTlsPemIdentity = new TlsPemIdentity(new PemTrustSet(clusterCa.caCertSecret()), PemAuthIdentity.clusterOperator(coSecret));
             return getZooKeeperReplicas()
                     .compose(replicas -> maybeRollZookeeper(replicas, podRollReasons, coTlsPemIdentity))
-                    .compose(i -> patchCaGenerationAndReturnNodes())
+                    .compose(i -> patchCaKeyGenerationAndReturnNodes())
                     .compose(nodes -> rollKafka(nodes, podRollReasons, coTlsPemIdentity))
                     .compose(i -> maybeRollDeploymentIfExists(KafkaResources.entityOperatorDeploymentName(reconciliation.name()), podRollReasons))
                     .compose(i -> maybeRollDeploymentIfExists(KafkaExporterResources.componentName(reconciliation.name()), podRollReasons))
@@ -528,7 +528,7 @@ public class CaReconciler {
         }
     }
 
-    /* test */ Future<Set<NodeRef>> patchCaGenerationAndReturnNodes() {
+    /* test */ Future<Set<NodeRef>> patchCaKeyGenerationAndReturnNodes() {
         Labels selectorLabels = Labels.EMPTY
                 .withStrimziKind(reconciliation.kind())
                 .withStrimziCluster(reconciliation.name())
@@ -540,12 +540,8 @@ public class CaReconciler {
                                 .stream()
                                 .map(podSet -> WorkloadUtils.patchAnnotations(
                                         podSet,
-                                        Map.of(
-                                                Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(clusterCa.caCertGeneration()),
-                                                Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(clusterCa.caKeyGeneration()),
-                                                Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, String.valueOf(clientsCa.caCertGeneration())
-                                        )))
-                                .toList();
+                                        Map.of(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(clusterCa.caKeyGeneration()))
+                                )).toList();
                         return strimziPodSetOperator.batchReconcile(
                                 reconciliation,
                                 reconciliation.namespace(),

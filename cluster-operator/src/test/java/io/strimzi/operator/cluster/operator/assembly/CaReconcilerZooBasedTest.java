@@ -264,7 +264,7 @@ public class CaReconcilerZooBasedTest {
         }
 
         @Override
-        Future<Set<NodeRef>> patchCaGenerationAndReturnNodes() {
+        Future<Set<NodeRef>> patchCaKeyGenerationAndReturnNodes() {
             //Response is ignored by rollKafka method in the mock
             return Future.succeededFuture(Set.of());
         }
