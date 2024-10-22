@@ -32,26 +32,6 @@
             <artifactId>spotbugs-annotations</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.kroxylicious.testing</groupId>
-            <artifactId>testing-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.kroxylicious.testing</groupId>
-            <artifactId>testing-junit5-extension</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.kroxylicious.testing</groupId>
-            <artifactId>testing-impl</artifactId>
-        </dependency>
-        <dependency>
-            <!-- Override since both kroxylicious.testing and strimzi-test-container have it as a dependency
-                 and inheriting the version from strimzi-test-container results in errors -->
-            <groupId>com.github.docker-java</groupId>
-            <artifactId>docker-java-api</artifactId>
-            <version>3.3.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>kubernetes-client</artifactId>
             <scope>runtime</scope>
@@ -99,6 +79,10 @@
         </dependency>
         <dependency>
             <groupId>io.strimzi</groupId>
+            <artifactId>strimzi-test-container</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.strimzi</groupId>
             <artifactId>test</artifactId>
             <scope>test</scope>
         </dependency>
@@ -130,11 +114,6 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-inline</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka_2.13</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -221,9 +200,6 @@
                                 <ignoredUnusedDeclaredDependency>io.fabric8:kubernetes-httpclient-jdk</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-slf4j-impl</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.mockito:mockito-inline</ignoredUnusedDeclaredDependency>
-                                <!-- required by kroxylicious.testing -->
-                                <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka_2.13</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>com.github.docker-java:docker-java-api</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                             <ignoredNonTestScopedDependencies>
                                 <ignoredNonTestScopedDependency>org.apache.logging.log4j:log4j-api</ignoredNonTestScopedDependency>

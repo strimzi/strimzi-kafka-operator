@@ -5,9 +5,6 @@
 package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.kroxylicious.testing.kafka.api.KafkaCluster;
-import io.kroxylicious.testing.kafka.common.BrokerCluster;
-import io.kroxylicious.testing.kafka.junit5ext.KafkaClusterExtension;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
@@ -26,6 +23,8 @@ import io.strimzi.operator.topic.model.ReconcilableTopic;
 import io.strimzi.operator.topic.model.Results;
 import io.strimzi.operator.topic.model.TopicOperatorException;
 import io.strimzi.operator.topic.model.TopicState;
+import io.strimzi.test.container.StrimziKafkaCluster;
+import io.strimzi.test.interfaces.TestSeparator;
 import io.strimzi.test.mockkube3.MockKube3;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
@@ -49,8 +48,8 @@ import org.apache.kafka.common.config.TopicConfig;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
@@ -76,13 +75,15 @@ import static org.mockito.Mockito.verifyNoInteractions;
  * This test is not intended to provide lots of coverage of the {@link BatchingTopicController}, 
  * rather it aims to cover some parts that a difficult to test via {@link TopicControllerIT}.
  */
-@ExtendWith(KafkaClusterExtension.class)
-class BatchingTopicControllerTest {
-    private static final String NAMESPACE = TopicOperatorTestUtil.namespaceName(BatchingTopicControllerTest.class);
+@SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
+class BatchingTopicControllerIT implements TestSeparator {
+    private static final String NAMESPACE = TopicOperatorTestUtil.namespaceName(BatchingTopicControllerIT.class);
 
     private static MockKube3 mockKube;
     private static KubernetesClient kubernetesClient;
-    private final Admin[] kafkaAdminClient = new Admin[] {null};
+
+    private StrimziKafkaCluster kafkaCluster;
+    private Admin kafkaAdminClient;
 
     @BeforeAll
     public static void beforeAll() {
@@ -100,12 +101,24 @@ class BatchingTopicControllerTest {
         mockKube.stop();
     }
 
+    @BeforeEach
+    public void beforeEach() {
+        kafkaCluster = new StrimziKafkaCluster.StrimziKafkaClusterBuilder()
+                .withKraft()
+                .withNumberOfBrokers(1)
+                .withInternalTopicReplicationFactor(1)
+                .withSharedNetwork()
+                .build();
+        kafkaCluster.start();
+        kafkaAdminClient = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers()));
+    }
+
     @AfterEach
     public void afterEach() {
-        if (kafkaAdminClient[0] != null) {
-            kafkaAdminClient[0].close();
-        }
         TopicOperatorTestUtil.cleanupNamespace(kubernetesClient, NAMESPACE);
+
+        kafkaAdminClient.close();
+        kafkaCluster.stop();
     }
 
     private static <T> KafkaFuture<T> interruptedFuture() throws ExecutionException, InterruptedException {
@@ -150,10 +163,9 @@ class BatchingTopicControllerTest {
     }
 
     @Test
-    public void shouldHandleInterruptedExceptionFromDescribeTopics(KafkaCluster cluster) throws ExecutionException, InterruptedException {
+    public void shouldHandleInterruptedExceptionFromDescribeTopics() throws ExecutionException, InterruptedException {
         var topicName = "my-topic";
-        kafkaAdminClient[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
-        var adminSpy = Mockito.spy(kafkaAdminClient[0]);
+        var adminSpy = Mockito.spy(kafkaAdminClient);
         var result = Mockito.mock(DescribeTopicsResult.class);
         Mockito.doReturn(interruptedFuture()).when(result).allTopicNames();
         Mockito.doReturn(Map.of(topicName, interruptedFuture())).when(result).topicNameValues();
@@ -164,10 +176,9 @@ class BatchingTopicControllerTest {
     }
 
     @Test
-    public void shouldHandleInterruptedExceptionFromDescribeConfigs(KafkaCluster cluster) throws ExecutionException, InterruptedException {
+    public void shouldHandleInterruptedExceptionFromDescribeConfigs() throws ExecutionException, InterruptedException {
         var topicName = "my-topic";
-        kafkaAdminClient[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
-        var adminSpy = Mockito.spy(kafkaAdminClient[0]);
+        var adminSpy = Mockito.spy(kafkaAdminClient);
         var result = Mockito.mock(DescribeConfigsResult.class);
         Mockito.doReturn(interruptedFuture()).when(result).all();
         Mockito.doReturn(Map.of(topicConfigResource(topicName), interruptedFuture())).when(result).values();
@@ -182,10 +193,9 @@ class BatchingTopicControllerTest {
     }
 
     @Test
-    public void shouldHandleInterruptedExceptionFromCreateTopics(KafkaCluster cluster) throws ExecutionException, InterruptedException {
+    public void shouldHandleInterruptedExceptionFromCreateTopics() throws ExecutionException, InterruptedException {
         var topicName = "my-topic";
-        kafkaAdminClient[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
-        var adminSpy = Mockito.spy(kafkaAdminClient[0]);
+        var adminSpy = Mockito.spy(kafkaAdminClient);
         var result = Mockito.mock(CreateTopicsResult.class);
         Mockito.doReturn(interruptedFuture()).when(result).all();
         Mockito.doReturn(Map.of(topicName, interruptedFuture())).when(result).values();
@@ -196,11 +206,10 @@ class BatchingTopicControllerTest {
     }
 
     @Test
-    public void shouldHandleInterruptedExceptionFromIncrementalAlterConfigs(KafkaCluster cluster) throws ExecutionException, InterruptedException {
+    public void shouldHandleInterruptedExceptionFromIncrementalAlterConfigs() throws ExecutionException, InterruptedException {
         var topicName = "my-topic";
-        kafkaAdminClient[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
-        kafkaAdminClient[0].createTopics(List.of(new NewTopic(topicName, 1, (short) 1).configs(Map.of(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy")))).all().get();
-        var adminSpy = Mockito.spy(kafkaAdminClient[0]);
+        kafkaAdminClient.createTopics(List.of(new NewTopic(topicName, 1, (short) 1).configs(Map.of(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy")))).all().get();
+        var adminSpy = Mockito.spy(kafkaAdminClient);
         var result = Mockito.mock(AlterConfigsResult.class);
         Mockito.doReturn(interruptedFuture()).when(result).all();
         Mockito.doReturn(Map.of(topicConfigResource(topicName), interruptedFuture())).when(result).values();
@@ -211,12 +220,11 @@ class BatchingTopicControllerTest {
     }
 
     @Test
-    public void shouldHandleInterruptedExceptionFromCreatePartitions(KafkaCluster cluster) throws ExecutionException, InterruptedException {
+    public void shouldHandleInterruptedExceptionFromCreatePartitions() throws ExecutionException, InterruptedException {
         var topicName = "my-topic";
-        kafkaAdminClient[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
-        kafkaAdminClient[0].createTopics(List.of(new NewTopic(topicName, 1, (short) 1))).all().get();
+        kafkaAdminClient.createTopics(List.of(new NewTopic(topicName, 1, (short) 1))).all().get();
 
-        var adminSpy = Mockito.spy(kafkaAdminClient[0]);
+        var adminSpy = Mockito.spy(kafkaAdminClient);
         var result = Mockito.mock(CreatePartitionsResult.class);
         Mockito.doReturn(interruptedFuture()).when(result).all();
         Mockito.doReturn(Map.of(topicName, interruptedFuture())).when(result).values();
@@ -226,35 +234,32 @@ class BatchingTopicControllerTest {
         assertOnUpdateThrowsInterruptedException(adminSpy, kafkaTopic);
     }
 
+    // Two brokers
     @Test
-    public void shouldHandleInterruptedExceptionFromListReassignments(
-            @BrokerCluster(numBrokers = 2)
-            KafkaCluster cluster) throws ExecutionException, InterruptedException {
+    public void shouldHandleInterruptedExceptionFromListReassignments() throws ExecutionException, InterruptedException {
         var topicName = "my-topic";
-        kafkaAdminClient[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
-        kafkaAdminClient[0].createTopics(List.of(new NewTopic(topicName, 2, (short) 2))).all().get();
+        kafkaAdminClient.createTopics(List.of(new NewTopic(topicName, 2, (short) 1))).all().get();
 
-        var adminSpy = Mockito.spy(kafkaAdminClient[0]);
+        var adminSpy = Mockito.spy(kafkaAdminClient);
         var result = Mockito.mock(ListPartitionReassignmentsResult.class);
         Mockito.doReturn(interruptedFuture()).when(result).reassignments();
         Mockito.doReturn(result).when(adminSpy).listPartitionReassignments(any(Set.class));
         
-        var kafkaTopic = createKafkaTopic(topicName);
+        var kafkaTopic = createKafkaTopic(topicName, 2);
         assertOnUpdateThrowsInterruptedException(adminSpy, kafkaTopic);
     }
 
     @Test
-    public void shouldHandleInterruptedExceptionFromDeleteTopics(KafkaCluster cluster) throws ExecutionException, InterruptedException {
+    public void shouldHandleInterruptedExceptionFromDeleteTopics() throws ExecutionException, InterruptedException {
         var topicName = "my-topic";
-        kafkaAdminClient[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
-        kafkaAdminClient[0].createTopics(List.of(new NewTopic(topicName, 1, (short) 1))).all().get();
+        kafkaAdminClient.createTopics(List.of(new NewTopic(topicName, 1, (short) 1))).all().get();
         createKafkaTopic(topicName);
         Crds.topicOperation(kubernetesClient).inNamespace(NAMESPACE).withName(topicName).edit(theKt -> 
             new KafkaTopicBuilder(theKt).editOrNewMetadata().addToFinalizers(KubernetesHandler.FINALIZER_STRIMZI_IO_TO).endMetadata().build());
         Crds.topicOperation(kubernetesClient).inNamespace(NAMESPACE).withName(topicName).delete();
         var withDeletionTimestamp = Crds.topicOperation(kubernetesClient).inNamespace(NAMESPACE).withName(topicName).get();
 
-        var adminSpy = Mockito.spy(kafkaAdminClient[0]);
+        var adminSpy = Mockito.spy(kafkaAdminClient);
         var result = Mockito.mock(DeleteTopicsResult.class);
         Mockito.doReturn(interruptedFuture()).when(result).all();
         Mockito.doReturn(Map.of(topicName, interruptedFuture())).when(result).topicNameValues();
@@ -524,15 +529,14 @@ class BatchingTopicControllerTest {
     }
 
     @Test
-    public void shouldIgnoreWithCruiseControlThrottleConfigInKafka(KafkaCluster cluster) throws InterruptedException, ExecutionException {
-        kafkaAdminClient[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
-        var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient[0]);
+    public void shouldIgnoreWithCruiseControlThrottleConfigInKafka() throws InterruptedException, ExecutionException {
+        var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient);
         var config = Mockito.mock(TopicOperatorConfig.class);
         Mockito.doReturn(NAMESPACE).when(config).namespace();
         Mockito.doReturn(true).when(config).cruiseControlEnabled();
 
         // setup topic in Kafka
-        kafkaAdminClient[0].createTopics(List.of(new NewTopic("my-topic", 2, (short) 1).configs(Map.of(
+        kafkaAdminClient.createTopics(List.of(new NewTopic("my-topic", 2, (short) 1).configs(Map.of(
             "leader.replication.throttled.replicas", "13:0,13:1,45:0,45:1",
             "follower.replication.throttled.replicas", "13:0,13:1,45:0,45:1"
         )))).all().get();
@@ -568,15 +572,14 @@ class BatchingTopicControllerTest {
     }
 
     @Test
-    public void shouldReconcileAndWarnWithThrottleConfigInKube(KafkaCluster cluster) throws InterruptedException, ExecutionException {
-        kafkaAdminClient[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
-        var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient[0]);
+    public void shouldReconcileAndWarnWithThrottleConfigInKube() throws InterruptedException, ExecutionException {
+        var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient);
         var config = Mockito.mock(TopicOperatorConfig.class);
         Mockito.doReturn(NAMESPACE).when(config).namespace();
         Mockito.doReturn(true).when(config).cruiseControlEnabled();
 
         // setup topic in Kafka
-        kafkaAdminClient[0].createTopics(List.of(new NewTopic("my-topic", 2, (short) 1).configs(Map.of(
+        kafkaAdminClient.createTopics(List.of(new NewTopic("my-topic", 2, (short) 1).configs(Map.of(
             "leader.replication.throttled.replicas", "13:0,13:1,45:0,45:1",
             "follower.replication.throttled.replicas", "13:0,13:1,45:0,45:1"
         )))).all().get();
@@ -647,9 +650,8 @@ class BatchingTopicControllerTest {
     
     @ParameterizedTest
     @ValueSource(strings = { "min.insync.replicas, compression.type" })
-    public void shouldIgnoreAndWarnWithAlterableConfigOnCreation(String alterableConfig, KafkaCluster cluster) throws InterruptedException {
-        kafkaAdminClient[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
-        var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient[0]);
+    public void shouldIgnoreAndWarnWithAlterableConfigOnCreation(String alterableConfig) throws InterruptedException {
+        var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient);
         var config = Mockito.mock(TopicOperatorConfig.class);
         Mockito.doReturn(NAMESPACE).when(config).namespace();
         Mockito.doReturn(alterableConfig).when(config).alterableTopicConfig();
@@ -699,15 +701,14 @@ class BatchingTopicControllerTest {
     
     @ParameterizedTest
     @ValueSource(strings = { "compression.type, max.message.bytes, message.timestamp.difference.max.ms, message.timestamp.type, retention.bytes, retention.ms" })
-    public void shouldReconcileWithAlterableConfigOnUpdate(String alterableConfig, KafkaCluster cluster) throws InterruptedException, ExecutionException {
-        kafkaAdminClient[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
-        var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient[0]);
+    public void shouldReconcileWithAlterableConfigOnUpdate(String alterableConfig) throws InterruptedException, ExecutionException {
+        var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient);
         var config = Mockito.mock(TopicOperatorConfig.class);
         Mockito.doReturn(NAMESPACE).when(config).namespace();
         Mockito.doReturn(alterableConfig).when(config).alterableTopicConfig();
 
         // setup topic in Kafka
-        kafkaAdminClient[0].createTopics(List.of(new NewTopic("my-topic", 2, (short) 1).configs(Map.of(
+        kafkaAdminClient.createTopics(List.of(new NewTopic("my-topic", 2, (short) 1).configs(Map.of(
             TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2"
         )))).all().get();
 
@@ -778,15 +779,14 @@ class BatchingTopicControllerTest {
     
     @ParameterizedTest
     @ValueSource(strings = { "ALL", "" })
-    public void shouldReconcileWithAllOrEmptyAlterableConfig(String alterableConfig, KafkaCluster cluster) throws InterruptedException, ExecutionException {
-        kafkaAdminClient[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
-        var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient[0]);
+    public void shouldReconcileWithAllOrEmptyAlterableConfig(String alterableConfig) throws InterruptedException, ExecutionException {
+        var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient);
         var config = Mockito.mock(TopicOperatorConfig.class);
         Mockito.doReturn(NAMESPACE).when(config).namespace();
         Mockito.doReturn(alterableConfig).when(config).alterableTopicConfig();
 
         // setup topic in Kafka
-        kafkaAdminClient[0].createTopics(List.of(new NewTopic("my-topic", 2, (short) 1).configs(Map.of(
+        kafkaAdminClient.createTopics(List.of(new NewTopic("my-topic", 2, (short) 1).configs(Map.of(
             TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy"
         )))).all().get();
 
@@ -824,15 +824,14 @@ class BatchingTopicControllerTest {
     
     @ParameterizedTest
     @ValueSource(strings = { "NONE" })
-    public void shouldIgnoreAndWarnWithNoneAlterableConfig(String alterableConfig, KafkaCluster cluster) throws InterruptedException, ExecutionException {
-        kafkaAdminClient[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
-        var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient[0]);
+    public void shouldIgnoreAndWarnWithNoneAlterableConfig(String alterableConfig) throws InterruptedException, ExecutionException {
+        var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient);
         var config = Mockito.mock(TopicOperatorConfig.class);
         Mockito.doReturn(NAMESPACE).when(config).namespace();
         Mockito.doReturn(alterableConfig).when(config).alterableTopicConfig();
 
         // setup topic in Kafka
-        kafkaAdminClient[0].createTopics(List.of(new NewTopic("my-topic", 2, (short) 1).configs(Map.of(
+        kafkaAdminClient.createTopics(List.of(new NewTopic("my-topic", 2, (short) 1).configs(Map.of(
             TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy"
         )))).all().get();
 
@@ -880,15 +879,14 @@ class BatchingTopicControllerTest {
     
     @ParameterizedTest
     @ValueSource(strings = { "invalid", "compression.type; cleanup.policy" })
-    public void shouldIgnoreAndWarnWithInvalidAlterableConfig(String alterableConfig, KafkaCluster cluster) throws InterruptedException, ExecutionException {
-        kafkaAdminClient[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
-        var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient[0]);
+    public void shouldIgnoreAndWarnWithInvalidAlterableConfig(String alterableConfig) throws InterruptedException, ExecutionException {
+        var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient);
         var config = Mockito.mock(TopicOperatorConfig.class);
         Mockito.doReturn(NAMESPACE).when(config).namespace();
         Mockito.doReturn(alterableConfig).when(config).alterableTopicConfig();
 
         // setup topic in Kafka
-        kafkaAdminClient[0].createTopics(List.of(new NewTopic("my-topic", 2, (short) 1).configs(Map.of(
+        kafkaAdminClient.createTopics(List.of(new NewTopic("my-topic", 2, (short) 1).configs(Map.of(
             TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy"
         )))).all().get();
 
