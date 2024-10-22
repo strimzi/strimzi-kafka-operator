@@ -17,8 +17,11 @@ import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaMetadataState;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceState;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatusBrokers;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
+import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
 import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.ConfigModels;
 import io.strimzi.kafka.config.model.Scope;
@@ -645,4 +648,68 @@ public class KafkaUtils {
     private static String buildDirectoryPath(int volumeId, int kafkaIndex) {
         return String.format("/var/lib/kafka/data-%d/kafka-log%d/__cluster_metadata-0", volumeId, kafkaIndex);
     }
+
+    /**
+     * Waits until the Kafka cluster in the given namespace the specified AutoRebalance state is set.
+     *
+     * @param namespaceName         The name of the Kubernetes namespace where the Kafka cluster resides.
+     * @param clusterName           The name of the Kafka cluster.
+     * @param expectedState         The expected {@link KafkaAutoRebalanceState} that is set.
+     */
+    public static void waitUntilKafkaHasAutoRebalanceState(final String namespaceName,
+                                                           final String clusterName,
+                                                           final KafkaAutoRebalanceState expectedState) {
+        TestUtils.waitFor(
+            String.format("Kafka cluster %s/%s and KafkaRebalance state: '%s'", clusterName, namespaceName, expectedState),
+            TestConstants.GLOBAL_POLL_INTERVAL,
+            TestConstants.GLOBAL_TIMEOUT,
+            () -> {
+                Kafka kafka = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get();
+                if (kafka == null || kafka.getStatus() == null) {
+                    return false; // Kafka cluster or its status is not available
+                }
+
+                final KafkaAutoRebalanceState currentState = kafka.getStatus().getAutoRebalance() != null
+                    ? kafka.getStatus().getAutoRebalance().getState() : null;
+
+                return currentState != null && currentState.equals(expectedState);
+            }
+        );
+    }
+
+    /**
+     * Waits until the Kafka cluster in the given namespace reaches the specified AutoRebalance mode and brokers.
+     *
+     * @param namespaceName                     The name of the Kubernetes namespace where the Kafka cluster resides.
+     * @param clusterName                       The name of the Kafka cluster.
+     * @param expectedKafkaAutoRebalanceMode    The expected {@link KafkaRebalanceMode} that the Kafka cluster should reach.
+     * @param scalingBrokers                    A list of expected broker IDs that the Kafka cluster should have in AutoRebalance state.
+     */
+    public static void waitUntilKafkaHasExpectedAutoRebalanceModeAndBrokers(final String namespaceName,
+                                                                            final String clusterName,
+                                                                            final KafkaRebalanceMode expectedKafkaAutoRebalanceMode,
+                                                                            final List<Integer> scalingBrokers) {
+        TestUtils.waitFor(
+            String.format("Kafka cluster %s/%s and KafkaRebalance mode '%s' with brokers %s",
+                namespaceName, clusterName, expectedKafkaAutoRebalanceMode, scalingBrokers),
+            TestConstants.GLOBAL_POLL_INTERVAL,
+            TestConstants.GLOBAL_TIMEOUT,
+            () -> {
+                final Kafka kafka = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get();
+                if (kafka == null || kafka.getStatus() == null || kafka.getStatus().getAutoRebalance() == null) {
+                    return false; // Kafka cluster, its status, or AutoRebalance status is not available
+                }
+
+                final List<KafkaAutoRebalanceStatusBrokers> autoRebalanceModeBrokersList = kafka.getStatus().getAutoRebalance().getModes();
+                if (autoRebalanceModeBrokersList == null) {
+                    return false;
+                }
+
+                return autoRebalanceModeBrokersList.stream()
+                    .anyMatch(modeBrokers -> modeBrokers.getMode().equals(expectedKafkaAutoRebalanceMode)
+                        && modeBrokers.getBrokers().equals(scalingBrokers));
+            }
+        );
+    }
+
 }
