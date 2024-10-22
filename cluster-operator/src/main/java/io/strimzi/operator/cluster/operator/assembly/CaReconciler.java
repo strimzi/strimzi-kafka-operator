@@ -575,6 +575,15 @@ public class CaReconciler {
                 false,
                 eventPublisher
         ).rollingRestart(pod -> {
+            if (podRollReasons.getReasons().size() == 1 && podRollReasons.contains(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED)) {
+                // Check if this pod has been rolled previously
+                int clusterCaKeyGeneration = clusterCa.keyGeneration();
+                int podClusterCaKeyGeneration = Annotations.intAnnotation(pod, Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, clusterCaKeyGeneration);
+                if (clusterCaKeyGeneration == podClusterCaKeyGeneration) {
+                    LOGGER.debugCr(reconciliation, "Not rolling Pod {} since the CA cert key generation is correct.", pod.getMetadata().getName());
+                    return RestartReasons.empty();
+                }
+            }
             LOGGER.debugCr(reconciliation, "Rolling Pod {} due to {}", pod.getMetadata().getName(), podRollReasons.getReasons());
             return podRollReasons;
         });
