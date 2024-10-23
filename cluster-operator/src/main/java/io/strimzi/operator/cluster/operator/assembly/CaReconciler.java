@@ -582,10 +582,14 @@ public class CaReconciler {
                 if (clusterCaKeyGeneration == podClusterCaKeyGeneration) {
                     LOGGER.debugCr(reconciliation, "Not rolling Pod {} since the CA cert key generation is correct.", pod.getMetadata().getName());
                     return RestartReasons.empty();
+                } else {
+                    LOGGER.debugCr(reconciliation, "Rolling Pod {} due to {}", pod.getMetadata().getName(), podRollReasons.getReasons());
+                    return podRollReasons;
                 }
+            } else {
+                LOGGER.debugCr(reconciliation, "Rolling Pod {} due to {}", pod.getMetadata().getName(), podRollReasons.getReasons());
+                return podRollReasons;
             }
-            LOGGER.debugCr(reconciliation, "Rolling Pod {} due to {}", pod.getMetadata().getName(), podRollReasons.getReasons());
-            return podRollReasons;
         });
     }
 
