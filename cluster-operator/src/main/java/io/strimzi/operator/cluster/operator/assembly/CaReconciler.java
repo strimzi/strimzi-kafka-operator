@@ -383,8 +383,7 @@ public class CaReconciler {
         RestartReasons podRollReasons = RestartReasons.empty();
 
         // cluster CA needs to be fully trusted
-        // it is coming from a cluster CA key replacement which didn't end successfully (i.e. CO stopped) and we need to continue from there
-        if (clusterCa.keyReplaced() || isClusterCaNeedFullTrust) {
+        if (isClusterCaNeedFullTrust) {
             podRollReasons.add(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED);
         }
 
@@ -574,23 +573,26 @@ public class CaReconciler {
                 null,
                 false,
                 eventPublisher
-        ).rollingRestart(pod -> {
-            if (podRollReasons.getReasons().size() == 1 && podRollReasons.contains(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED)) {
-                // Check if this pod has been rolled previously
-                int clusterCaKeyGeneration = clusterCa.keyGeneration();
-                int podClusterCaKeyGeneration = Annotations.intAnnotation(pod, Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, clusterCaKeyGeneration);
-                if (clusterCaKeyGeneration == podClusterCaKeyGeneration) {
-                    LOGGER.debugCr(reconciliation, "Not rolling Pod {} since the CA cert key generation is correct.", pod.getMetadata().getName());
-                    return RestartReasons.empty();
+        ).rollingRestart(shouldRollPodForChangedCaKey(reconciliation, podRollReasons, clusterCa.caKeyGeneration()));
+    }
+
+    /* test */ static Function<Pod, RestartReasons> shouldRollPodForChangedCaKey(Reconciliation reconciliation, RestartReasons podRollReasons, int clusterCaKeyGeneration) {
+        return pod -> {
+            RestartReasons reasonsToReturn = RestartReasons.empty();
+            for (RestartReason restartReason : podRollReasons.getReasons()) {
+                if (restartReason == RestartReason.CLUSTER_CA_CERT_KEY_REPLACED) {
+                    int podClusterCaKeyGeneration = Annotations.intAnnotation(pod, Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, clusterCaKeyGeneration);
+                    if (clusterCaKeyGeneration == podClusterCaKeyGeneration) {
+                        LOGGER.debugCr(reconciliation, "Not rolling Pod {} since the Cluster CA cert key generation is correct.", pod.getMetadata().getName());
+                    } else {
+                        reasonsToReturn.add(restartReason);
+                    }
                 } else {
-                    LOGGER.debugCr(reconciliation, "Rolling Pod {} due to {}", pod.getMetadata().getName(), podRollReasons.getReasons());
-                    return podRollReasons;
+                    reasonsToReturn.add(restartReason);
                 }
-            } else {
-                LOGGER.debugCr(reconciliation, "Rolling Pod {} due to {}", pod.getMetadata().getName(), podRollReasons.getReasons());
-                return podRollReasons;
             }
-        });
+            return reasonsToReturn;
+        };
     }
 
     // Entity Operator, Kafka Exporter, and Cruise Control are only rolled when the cluster CA cert key is replaced

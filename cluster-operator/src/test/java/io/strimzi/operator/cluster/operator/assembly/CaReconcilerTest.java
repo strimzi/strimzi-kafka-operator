@@ -83,6 +83,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.common.model.Ca.CA_CRT;
@@ -100,6 +101,8 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
@@ -1599,7 +1602,7 @@ public class CaReconcilerTest {
     }
 
     @Test
-    public void testCertAnnotationsPatchedWithClusterCAKeyNotTrusted(Vertx vertx, VertxTestContext context) {
+    public void testCertAnnotationsPatchedWithCAKeysNotTrusted(Vertx vertx, VertxTestContext context) {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .withNewEntityOperator()
@@ -1617,6 +1620,8 @@ public class CaReconcilerTest {
         SecretOperator secretOps = supplier.secretOperations;
         ArgumentCaptor<Secret> clusterCaCert = ArgumentCaptor.forClass(Secret.class);
         ArgumentCaptor<Secret> clusterCaKey = ArgumentCaptor.forClass(Secret.class);
+        ArgumentCaptor<Secret> clientsCaCert = ArgumentCaptor.forClass(Secret.class);
+        ArgumentCaptor<Secret> clientsCaKey = ArgumentCaptor.forClass(Secret.class);
         when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), clusterCaCert.capture())).thenAnswer(i -> {
             Secret s = clusterCaCert.getValue();
             s.getMetadata().setAnnotations(Map.of(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "1"));
@@ -1627,13 +1632,21 @@ public class CaReconcilerTest {
             s.getMetadata().setAnnotations(Map.of(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "1"));
             return Future.succeededFuture(ReconcileResult.created(s));
         });
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> {
+            Secret s = clientsCaCert.getValue();
+            s.getMetadata().setAnnotations(Map.of(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "1"));
+            return Future.succeededFuture(ReconcileResult.created(s));
+        });
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> {
+            Secret s = clientsCaKey.getValue();
+            s.getMetadata().setAnnotations(Map.of(Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "1"));
+            return Future.succeededFuture(ReconcileResult.created(s));
+        });
         when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterOperatorCertsSecretName(NAME)), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
         when(secretOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         Map<String, String> generationAnnotations =
-                Map.of(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0", Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "0");
+                Map.of(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0", Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "0", Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0");
 
         StrimziPodSetOperator spsOps = supplier.strimziPodSetOperator;
         when(spsOps.getAsync(eq(NAMESPACE), eq(KafkaResources.zookeeperComponentName(NAME)))).thenReturn(Future.succeededFuture());
@@ -1694,6 +1707,7 @@ public class CaReconcilerTest {
                     // Expect that the CA key generation was updated. CA cert generations are updated by component reconcilers
                     assertThat(podAnnotations, hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0"));
                     assertThat(podAnnotations, hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "1"));
+                    assertThat(podAnnotations, hasEntry(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0"));
                 }
             });
             async.flag();
@@ -1707,20 +1721,141 @@ public class CaReconcilerTest {
                 .onComplete(context.succeeding(c -> async.flag()));
     }
 
+    @Test
+    public void testCertAnnotationsNotPatchedWithCACertsUpdated(Vertx vertx, VertxTestContext context) {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                .withNewEntityOperator()
+                .endEntityOperator()
+                .withNewCruiseControl()
+                .endCruiseControl()
+                .withNewKafkaExporter()
+                .endKafkaExporter()
+                .endSpec()
+                .build();
+
+        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        SecretOperator secretOps = supplier.secretOperations;
+        ArgumentCaptor<Secret> clientsCaCert = ArgumentCaptor.forClass(Secret.class);
+        ArgumentCaptor<Secret> clusterCaCert = ArgumentCaptor.forClass(Secret.class);
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), clusterCaCert.capture())).thenAnswer(i -> {
+            Secret s = clusterCaCert.getValue();
+            s.getMetadata().setAnnotations(Map.of(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "1"));
+            return Future.succeededFuture(ReconcileResult.created(s));
+        });
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> {
+            Secret s = clientsCaCert.getValue();
+            s.getMetadata().setAnnotations(Map.of(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "1"));
+            return Future.succeededFuture(ReconcileResult.created(s));
+        });
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clusterOperatorCertsSecretName(NAME)), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+
+        Map<String, String> generationAnnotations =
+                Map.of(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0", Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "0", Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0");
+
+        StrimziPodSetOperator spsOps = supplier.strimziPodSetOperator;
+        when(spsOps.getAsync(eq(NAMESPACE), eq(KafkaResources.zookeeperComponentName(NAME)))).thenReturn(Future.succeededFuture());
+
+        List<Pod> pods = new ArrayList<>();
+
+        // adding Kafka pods with old CA cert and key generation
+        List<Pod> controllerPods = new ArrayList<>();
+        controllerPods.add(podWithNameAndAnnotations("my-cluster-controllers-3", false, true, generationAnnotations));
+        controllerPods.add(podWithNameAndAnnotations("my-cluster-controllers-4", false, true, generationAnnotations));
+        controllerPods.add(podWithNameAndAnnotations("my-cluster-controllers-5", false, true, generationAnnotations));
+        pods.addAll(controllerPods);
+
+        List<Pod> brokerPods = new ArrayList<>();
+        brokerPods.add(podWithNameAndAnnotations("my-cluster-brokers-0", true, false, generationAnnotations));
+        brokerPods.add(podWithNameAndAnnotations("my-cluster-brokers-1", true, false, generationAnnotations));
+        brokerPods.add(podWithNameAndAnnotations("my-cluster-brokers-2", true, false, generationAnnotations));
+        pods.addAll(brokerPods);
+
+        StrimziPodSet controllerPodSet = new StrimziPodSetBuilder()
+                .withNewMetadata()
+                .withName(NAME + "-controller")
+                .endMetadata()
+                .withNewSpec()
+                .withPods(PodSetUtils.podsToMaps(controllerPods))
+                .endSpec()
+                .build();
+
+        StrimziPodSet brokerPodSet = new StrimziPodSetBuilder()
+                .withNewMetadata()
+                .withName(NAME + "-broker")
+                .endMetadata()
+                .withNewSpec()
+                .withPods(PodSetUtils.podsToMaps(brokerPods))
+                .endSpec()
+                .build();
+
+        PodOperator mockPodOps = supplier.podOperations;
+        when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
+
+        when(spsOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of(controllerPodSet, brokerPodSet)));
+
+        DeploymentOperator depsOperator = supplier.deploymentOperations;
+        when(depsOperator.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
+
+        Checkpoint async = context.checkpoint(1);
+        when(spsOps.batchReconcile(any(), eq(NAMESPACE), any(), any(Labels.class))).thenReturn(Future.succeededFuture());
+
+        MockCaReconciler mockCaReconciler = new MockCaReconciler(reconciliation, kafka, new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup()).with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "1").build(),
+                supplier, vertx, CERT_MANAGER, PASSWORD_GENERATOR);
+        mockCaReconciler
+                .reconcile(Clock.systemUTC())
+                .onComplete(context.succeeding(c -> context.verify(() -> {
+                    verify(spsOps, never()).batchReconcile(any(), any(), any(), any(Labels.class));
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testShouldRollPod() {
+        RestartReasons restartReasons = RestartReasons.empty();
+        restartReasons.add(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED);
+        restartReasons.add(RestartReason.CLIENT_CA_CERT_KEY_REPLACED);
+
+        Function<Pod, RestartReasons> shouldRollFn = CaReconciler.shouldRollPodForChangedCaKey(Reconciliation.DUMMY_RECONCILIATION, restartReasons, 1);
+        Pod podNeedingClusterCaUpdate = podWithNameAndAnnotations("my-cluster-broker-0", true, false,
+                Map.of(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "0", Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "1"));
+        Pod podNeedingClientsCaUpdate = podWithNameAndAnnotations("my-cluster-broker-0", true, false,
+                Map.of(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "1", Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0"));
+        Pod podNeedingUpdate = podWithNameAndAnnotations("my-cluster-broker-0", true, false,
+                Map.of(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "0", Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0"));
+        Pod podNeedingNoUpdate = podWithNameAndAnnotations("my-cluster-broker-0", true, false,
+                Map.of(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "1", Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "1"));
+
+        RestartReasons clusterCaReasons = shouldRollFn.apply(podNeedingClusterCaUpdate);
+        assertThat(clusterCaReasons.getReasons(), hasSize(2));
+        assertThat(clusterCaReasons.contains(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED), is(true));
+        assertThat(clusterCaReasons.contains(RestartReason.CLIENT_CA_CERT_KEY_REPLACED), is(true));
+
+        RestartReasons clientsCaReasons = shouldRollFn.apply(podNeedingClientsCaUpdate);
+        assertThat(clientsCaReasons.getReasons(), hasSize(1));
+        assertThat(clientsCaReasons.contains(RestartReason.CLIENT_CA_CERT_KEY_REPLACED), is(true));
+
+        RestartReasons updateReasons = shouldRollFn.apply(podNeedingUpdate);
+        assertThat(updateReasons.getReasons(), hasSize(2));
+        assertThat(updateReasons.contains(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED), is(true));
+        assertThat(updateReasons.contains(RestartReason.CLIENT_CA_CERT_KEY_REPLACED), is(true));
+
+        RestartReasons noUpdateReasons = shouldRollFn.apply(podNeedingNoUpdate);
+        assertThat(noUpdateReasons.getReasons(), hasSize(1));
+        assertThat(noUpdateReasons.contains(RestartReason.CLIENT_CA_CERT_KEY_REPLACED), is(true));
+    }
+
     static class MockCaReconciler extends CaReconciler {
         RestartReasons kPodRollReasons;
         List<String> deploymentRollReason = new ArrayList<>();
 
         public MockCaReconciler(Reconciliation reconciliation, Kafka kafkaCr, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, Vertx vertx, CertManager certManager, PasswordGenerator passwordGenerator) {
             super(reconciliation, kafkaCr, config, supplier, vertx, certManager, passwordGenerator);
-        }
-
-        @Override
-        Future<Void> verifyClusterCaFullyTrustedAndUsed() {
-            // assuming the CA key is not trusted
-            this.isClusterCaNeedFullTrust = true;
-            this.isClusterCaFullyUsed = false;
-            return Future.succeededFuture();
         }
 
         @Override
