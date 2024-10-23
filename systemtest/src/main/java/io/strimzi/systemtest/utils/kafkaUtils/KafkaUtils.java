@@ -17,11 +17,11 @@ import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaMetadataState;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceMode;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceState;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatusBrokers;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
-import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
 import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.ConfigModels;
 import io.strimzi.kafka.config.model.Scope;
@@ -682,12 +682,12 @@ public class KafkaUtils {
      *
      * @param namespaceName                     The name of the Kubernetes namespace where the Kafka cluster resides.
      * @param clusterName                       The name of the Kafka cluster.
-     * @param expectedKafkaAutoRebalanceMode    The expected {@link KafkaRebalanceMode} that the Kafka cluster should reach.
+     * @param expectedKafkaAutoRebalanceMode    The expected {@link KafkaAutoRebalanceMode} that the Kafka cluster should reach.
      * @param scalingBrokers                    A list of expected broker IDs that the Kafka cluster should have in AutoRebalance state.
      */
     public static void waitUntilKafkaHasExpectedAutoRebalanceModeAndBrokers(final String namespaceName,
                                                                             final String clusterName,
-                                                                            final KafkaRebalanceMode expectedKafkaAutoRebalanceMode,
+                                                                            final KafkaAutoRebalanceMode expectedKafkaAutoRebalanceMode,
                                                                             final List<Integer> scalingBrokers) {
         TestUtils.waitFor(
             String.format("Kafka cluster %s/%s and KafkaRebalance mode '%s' with brokers %s",

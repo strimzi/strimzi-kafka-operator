@@ -20,6 +20,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceConfigurationBuilder;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceMode;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
@@ -698,11 +699,11 @@ public class CruiseControlST extends AbstractST {
                     .editCruiseControl()
                         .withAutoRebalance(
                             new KafkaAutoRebalanceConfigurationBuilder()
-                                .withMode(KafkaRebalanceMode.ADD_BROKERS)
+                                .withMode(KafkaAutoRebalanceMode.ADD_BROKERS)
                                 .withNewTemplate(scaleUpKafkaRebalanceTemplateName)
                                 .build(),
                             new KafkaAutoRebalanceConfigurationBuilder()
-                                .withMode(KafkaRebalanceMode.REMOVE_BROKERS)
+                                .withMode(KafkaAutoRebalanceMode.REMOVE_BROKERS)
                                 .withNewTemplate(scaleDownKafkaRebalanceTemplateName)
                                 .build())
                     .endCruiseControl()
@@ -732,12 +733,12 @@ public class CruiseControlST extends AbstractST {
         final int kafkaClusterPodIndex = initialReplicas + initialReplicas;
 
         KafkaUtils.waitUntilKafkaHasExpectedAutoRebalanceModeAndBrokers(testStorage.getNamespaceName(), testStorage.getClusterName(),
-            KafkaRebalanceMode.ADD_BROKERS,
+            KafkaAutoRebalanceMode.ADD_BROKERS,
             // brokers with [6, 7]
             Arrays.asList(kafkaClusterPodIndex, kafkaClusterPodIndex + 1));
 
         // check that KafkaRebalance <cluster-name>-auto-rebalancing-<mode> is created
-        KafkaRebalanceUtils.waitForKafkaRebalanceIsPresent(testStorage.getNamespaceName(), KafkaResources.autoRebalancingKafkaRebalanceResourceName(testStorage.getClusterName(), KafkaRebalanceMode.ADD_BROKERS));
+        KafkaRebalanceUtils.waitForKafkaRebalanceIsPresent(testStorage.getNamespaceName(), KafkaResources.autoRebalancingKafkaRebalanceResourceName(testStorage.getClusterName(), KafkaAutoRebalanceMode.ADD_BROKERS));
 
         // check that Kafka has `RebalanceOnScaleUp` in auto-rebalance status
         KafkaUtils.waitUntilKafkaHasAutoRebalanceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaAutoRebalanceState.RebalanceOnScaleUp);
@@ -752,7 +753,7 @@ public class CruiseControlST extends AbstractST {
         KafkaUtils.waitUntilKafkaHasAutoRebalanceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaAutoRebalanceState.Idle);
 
         // check that KafkaRebalance <cluster-name>-auto-rebalancing-<mode> is deleted
-        KafkaRebalanceUtils.waitForKafkaRebalanceIsDeleted(testStorage.getNamespaceName(), KafkaResources.autoRebalancingKafkaRebalanceResourceName(testStorage.getClusterName(), KafkaRebalanceMode.ADD_BROKERS));
+        KafkaRebalanceUtils.waitForKafkaRebalanceIsDeleted(testStorage.getNamespaceName(), KafkaResources.autoRebalancingKafkaRebalanceResourceName(testStorage.getClusterName(), KafkaAutoRebalanceMode.ADD_BROKERS));
 
         LOGGER.info("Checking that Topic: {} has replicas on one of the new brokers (or both)", testStorage.getTopicName());
         List<String> topicReplicas = KafkaTopicUtils.getKafkaTopicReplicasForEachPartition(testStorage.getNamespaceName(), testStorage.getTopicName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
@@ -768,12 +769,12 @@ public class CruiseControlST extends AbstractST {
         }
 
         KafkaUtils.waitUntilKafkaHasExpectedAutoRebalanceModeAndBrokers(testStorage.getNamespaceName(), testStorage.getClusterName(),
-            KafkaRebalanceMode.REMOVE_BROKERS,
+            KafkaAutoRebalanceMode.REMOVE_BROKERS,
             // brokers with [6, 7]
             Arrays.asList(kafkaClusterPodIndex, kafkaClusterPodIndex + 1));
 
         // check that KafkaRebalance <cluster-name>-auto-rebalancing-<mode> is created
-        KafkaRebalanceUtils.waitForKafkaRebalanceIsPresent(testStorage.getNamespaceName(), KafkaResources.autoRebalancingKafkaRebalanceResourceName(testStorage.getClusterName(), KafkaRebalanceMode.REMOVE_BROKERS));
+        KafkaRebalanceUtils.waitForKafkaRebalanceIsPresent(testStorage.getNamespaceName(), KafkaResources.autoRebalancingKafkaRebalanceResourceName(testStorage.getClusterName(), KafkaAutoRebalanceMode.REMOVE_BROKERS));
 
         // check that Kafka has `RebalanceOnScaleDown` in auto-rebalance status
         KafkaUtils.waitUntilKafkaHasAutoRebalanceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaAutoRebalanceState.RebalanceOnScaleDown);
@@ -787,7 +788,7 @@ public class CruiseControlST extends AbstractST {
         KafkaUtils.waitUntilKafkaHasAutoRebalanceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaAutoRebalanceState.Idle);
 
         // check that KafkaRebalance <cluster-name>-auto-rebalancing-<mode> is deleted
-        KafkaRebalanceUtils.waitForKafkaRebalanceIsDeleted(testStorage.getNamespaceName(), KafkaResources.autoRebalancingKafkaRebalanceResourceName(testStorage.getClusterName(), KafkaRebalanceMode.REMOVE_BROKERS));
+        KafkaRebalanceUtils.waitForKafkaRebalanceIsDeleted(testStorage.getNamespaceName(), KafkaResources.autoRebalancingKafkaRebalanceResourceName(testStorage.getClusterName(), KafkaAutoRebalanceMode.REMOVE_BROKERS));
     }
 
     @BeforeAll

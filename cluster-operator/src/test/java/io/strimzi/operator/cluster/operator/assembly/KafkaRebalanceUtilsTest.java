@@ -7,10 +7,10 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.strimzi.api.kafka.model.common.ConditionBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.KafkaStatusBuilder;
+import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceMode;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatus;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatusBrokersBuilder;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceStatusBuilder;
-import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatusBuilder;
@@ -102,7 +102,7 @@ public class KafkaRebalanceUtilsTest {
         assertThat(kafkaStatus.getAutoRebalance(), is(notNullValue()));
         assertThat(kafkaStatus.getAutoRebalance().getModes(), is(notNullValue()));
         assertThat(kafkaStatus.getAutoRebalance().getModes().size(), is(1));
-        assertThat(kafkaStatus.getAutoRebalance().getModes().get(0).getMode(), is(KafkaRebalanceMode.ADD_BROKERS));
+        assertThat(kafkaStatus.getAutoRebalance().getModes().get(0).getMode(), is(KafkaAutoRebalanceMode.ADD_BROKERS));
         assertThat(kafkaStatus.getAutoRebalance().getModes().get(0).getBrokers().stream().collect(Collectors.toSet()).equals(Set.of(3, 4)), is(true));
     }
 
@@ -123,7 +123,7 @@ public class KafkaRebalanceUtilsTest {
         assertThat(kafkaStatus.getAutoRebalance(), is(notNullValue()));
         assertThat(kafkaStatus.getAutoRebalance().getModes(), is(notNullValue()));
         assertThat(kafkaStatus.getAutoRebalance().getModes().size(), is(1));
-        assertThat(kafkaStatus.getAutoRebalance().getModes().get(0).getMode(), is(KafkaRebalanceMode.ADD_BROKERS));
+        assertThat(kafkaStatus.getAutoRebalance().getModes().get(0).getMode(), is(KafkaAutoRebalanceMode.ADD_BROKERS));
         assertThat(kafkaStatus.getAutoRebalance().getModes().get(0).getBrokers().stream().collect(Collectors.toSet()).equals(Set.of(3, 4)), is(true));
     }
 
@@ -133,7 +133,7 @@ public class KafkaRebalanceUtilsTest {
         KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus = new KafkaAutoRebalanceStatusBuilder()
                 .withModes(
                         new KafkaAutoRebalanceStatusBrokersBuilder()
-                                .withMode(KafkaRebalanceMode.ADD_BROKERS)
+                                .withMode(KafkaAutoRebalanceMode.ADD_BROKERS)
                                 .withBrokers(List.of(3, 4))
                                 .build()
                 )
@@ -142,7 +142,7 @@ public class KafkaRebalanceUtilsTest {
         assertThat(kafkaStatus.getAutoRebalance(), is(notNullValue()));
         assertThat(kafkaStatus.getAutoRebalance().getModes(), is(notNullValue()));
         assertThat(kafkaStatus.getAutoRebalance().getModes().size(), is(1));
-        assertThat(kafkaStatus.getAutoRebalance().getModes().get(0).getMode(), is(KafkaRebalanceMode.ADD_BROKERS));
+        assertThat(kafkaStatus.getAutoRebalance().getModes().get(0).getMode(), is(KafkaAutoRebalanceMode.ADD_BROKERS));
         assertThat(kafkaStatus.getAutoRebalance().getModes().get(0).getBrokers().stream().collect(Collectors.toSet()).equals(Set.of(3, 4)), is(true));
     }
 
@@ -152,7 +152,7 @@ public class KafkaRebalanceUtilsTest {
         KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus = new KafkaAutoRebalanceStatusBuilder()
                 .withModes(
                         new KafkaAutoRebalanceStatusBrokersBuilder()
-                                .withMode(KafkaRebalanceMode.ADD_BROKERS)
+                                .withMode(KafkaAutoRebalanceMode.ADD_BROKERS)
                                 .withBrokers(List.of(3, 4))
                                 .build()
                 )
@@ -161,7 +161,7 @@ public class KafkaRebalanceUtilsTest {
         assertThat(kafkaStatus.getAutoRebalance(), is(notNullValue()));
         assertThat(kafkaStatus.getAutoRebalance().getModes(), is(notNullValue()));
         assertThat(kafkaStatus.getAutoRebalance().getModes().size(), is(1));
-        assertThat(kafkaStatus.getAutoRebalance().getModes().get(0).getMode(), is(KafkaRebalanceMode.ADD_BROKERS));
+        assertThat(kafkaStatus.getAutoRebalance().getModes().get(0).getMode(), is(KafkaAutoRebalanceMode.ADD_BROKERS));
         assertThat(kafkaStatus.getAutoRebalance().getModes().get(0).getBrokers().stream().collect(Collectors.toSet()).equals(Set.of(3, 4, 5, 6)), is(true));
     }
 }
