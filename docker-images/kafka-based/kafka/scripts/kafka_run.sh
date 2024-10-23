@@ -108,16 +108,17 @@ else
   rm -f $KAFKA_READY $ZK_CONNECTED 2> /dev/null
 fi
 
-KEY_STORE=/tmp/kafka/cluster.keystore.p12
-TRUST_STORE=/tmp/kafka/cluster.truststore.p12
-
+# Generate the Kafka Agent configuration file
+echo ""
+echo "Preparing Kafka Agent configuration"
 rm -f /tmp/kafka-agent.properties
-tee /tmp/kafka-agent.properties <<EOF
-sslKeyStorePath=${KEY_STORE}
+cat <<EOF > /tmp/kafka-agent.properties
+sslKeyStorePath=/tmp/kafka/cluster.keystore.p12
 sslKeyStorePass=${CERTS_STORE_PASSWORD}
-sslTrustStorePath=${TRUST_STORE}
+sslTrustStorePath=/tmp/kafka/cluster.truststore.p12
 sslTrustStorePass=${CERTS_STORE_PASSWORD}
 EOF
+echo ""
 
 KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$KAFKA_HOME"/libs/kafka-agent*.jar)=$KAFKA_READY:$ZK_CONNECTED:/tmp/kafka-agent.properties"
 export KAFKA_OPTS
