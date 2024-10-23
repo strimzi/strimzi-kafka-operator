@@ -1,0 +1,43 @@
+// This assembly is included in the following assemblies:
+//
+// security/assembly-access-operator.adoc
+
+[id='proc-deploy-access-operator-{context}']
+= Deploying the Access Operator (early access)
+
+[role="_abstract"]
+This procedure shows how to deploy the Access Operator for access management of a Kafka cluster.
+You cannot use the Access Operator with a Kafka cluster that is not managed by the Cluster Operator.  
+
+.Prerequisites
+
+* Installation requires a Kubernetes user with `cluster-admin` role, such as `system:admin`.
+* The Access Operator installation files must be downloaded and extracted from Strimzi's link:https://github.com/strimzi/kafka-access-operator[`kafka-access-operator` GitHub repository^]. The installation files are contained in the `./install` directory.
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
+
+By default, the Access Operator is deployed in the `strimzi-access-operator` namespace. 
+To deploy the operator in a different namespace, update the `namespace` property in the installation files.
+
+.Procedure
+
+. Deploy the Access Operator using the installation files from the `install` directory:
++
+[source,shell]
+kubectl create -f ./install -n strimzi-access-operator
+
+. Check the status of the deployment:
++
+[source,shell,subs="+quotes"]
+----
+kubectl get deployments
+----
++
+.Output shows the deployment name and readiness
+[source,shell,subs="+quotes"]
+----
+NAME                     READY  UP-TO-DATE  AVAILABLE
+strimzi-access-operator  1/1    1           1
+----
++
+`READY` shows the number of replicas that are ready/expected.
+The deployment is successful when the `AVAILABLE` output shows `1`.
