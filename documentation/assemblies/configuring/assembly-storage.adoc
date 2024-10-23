@@ -6,7 +6,8 @@
 = Configuring Kafka storage
 
 [role="_abstract"]
-Strimzi supports the following Kafka storage types: 
+Strimzi supports different Kafka storage options.
+You can choose between the following basic types:
 
 Ephemeral storage:: Ephemeral storage is temporary and only persists while a pod is running. 
 When a pod is deleted, the data is lost, though data can be recovered in a highly available environment. 
@@ -14,16 +15,21 @@ Due to its transient nature, ephemeral storage is only recommended for developme
 
 Persistent storage:: Persistent storage retains data across pod restarts and system disruptions, making it ideal for production environments. 
 
-JBOD storage:: JBOD storage allows you to configure your Kafka cluster to utilize multiple disks or volumes.
-Volumes can be ephemeral or persistent. 
- 
-Tiered storage:: Tiered storage is an early access feature for Kafka, providing more flexibility for data management by leveraging the parallel use of storage types with different characteristics.
-For example, tiered storage might include the following:
-+
-* Higher performance and higher cost block storage
-* Lower performance and lower cost object storage
+JBOD (Just a Bunch of Disks) storage allows you to configure your Kafka cluster to use multiple disks or volumes as ephemeral or persistent storage. 
 
-NOTE: The storage type cannot be changed after a Kafka cluster is deployed, though you can create and migrate to node pools with new storage specifications.
+.JBOD storage (multiple volumes)
+When specifying JBOD storage, you must still decide between using ephemeral or persistent volumes for each disk. 
+Even if you start with only one volume, using JBOD allows for future scaling by adding more volumes as needed.
+
+NOTE: Persistent, ephemeral, and JBOD storage types cannot be changed after a Kafka cluster is deployed, though you can create and migrate to node pools with new storage specifications.
+
+.Tiered storage (advanced)
+
+Tiered storage, currently available as an early access feature, provides additional flexibility for managing Kafka data by combining different storage types with varying performance and cost characteristics. 
+It allows Kafka to offload older data to cheaper, long-term storage (such as object storage) while keeping recent, frequently accessed data on faster, more expensive storage (such as block storage).
+
+Tiered storage is an add-on capability. 
+After configuring storage (ephemeral, persistent, or JBOD) for Kafka nodes, you can configure tiered storage at the cluster level and enable it for specific topics using the `remote.storage.enable` topic-level configuration.
 
 include::../../modules/configuring/con-considerations-for-data-storage.adoc[leveloffset=+1]
 
