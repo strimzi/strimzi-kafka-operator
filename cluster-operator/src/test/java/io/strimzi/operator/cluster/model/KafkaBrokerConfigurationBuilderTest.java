@@ -67,8 +67,8 @@ import static org.hamcrest.Matchers.equalTo;
 public class KafkaBrokerConfigurationBuilderTest {
     private final static NodeRef NODE_REF = new NodeRef("my-cluster-kafka-2", 2, "kafka", false, true);
 
-    private final static KafkaVersion KAFKA_3_8_0 = new KafkaVersion(KafkaVersionTestUtils.LATEST_KAFKA_VERSION, "", "", "", "", false, false, "");
-    private final static KafkaVersion KAFKA_3_9_0 = new KafkaVersion(KafkaVersionTestUtils.KAFKA_390_VERSION, "", "", "", "", false, false, "");
+    private final static KafkaVersion KAFKA_3_8_0 = new KafkaVersion(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION, "", "", "", "", false, false, "");
+    private final static KafkaVersion KAFKA_3_9_0 = new KafkaVersion(KafkaVersionTestUtils.LATEST_KAFKA_VERSION, "", "", "", "", false, false, "");
 
     @ParallelTest
     public void testBrokerId()  {
