@@ -73,6 +73,24 @@ public class KafkaRebalanceCrdIT extends AbstractCrdIT {
     }
 
     @Test
+    void testKafkaRebalanceRemoveDisksWithEmptyVolumes() {
+        Throwable exception = assertThrows(
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaRebalance-remove-disks-with-empty-volumes.yaml"));
+
+        assertThat(exception.getMessage(), containsString("spec.moveReplicasOffVolumes[0].volumeIds: Invalid value: 0: spec.moveReplicasOffVolumes[0].volumeIds in body should have at least 1 items."));
+    }
+
+    @Test
+    void testKafkaRebalanceRemoveDisksWithEmptyBrokerAndVolumes() {
+        Throwable exception = assertThrows(
+                KubernetesClientException.class,
+                () -> createDeleteCustomResource("KafkaRebalance-remove-disks-with-empty-broker-and-volumes.yaml"));
+
+        assertThat(exception.getMessage(), containsString("spec.moveReplicasOffVolumes: Invalid value: 0: spec.moveReplicasOffVolumes in body should have at least 1 items."));
+    }
+
+    @Test
     void testKafkaRebalanceWrongMode() {
         Throwable exception = assertThrows(
                 KubernetesClientException.class,

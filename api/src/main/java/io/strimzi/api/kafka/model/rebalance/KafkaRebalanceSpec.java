@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.Spec;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.strimzi.crdgenerator.annotations.MinimumItems;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -22,25 +23,14 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "mode", "brokers", "moveReplicasOffVolumes", "goals", "skipHardGoalCheck", "rebalanceDisk", "excludedTopics", "concurrentPartitionMovementsPerBroker",
-    "concurrentIntraBrokerPartitionMovements", "concurrentLeaderMovements", "replicationThrottle", "replicaMovementStrategies" })
+@JsonPropertyOrder({ "mode", "brokers", "goals", "skipHardGoalCheck", "rebalanceDisk", "excludedTopics", "concurrentPartitionMovementsPerBroker",
+    "concurrentIntraBrokerPartitionMovements", "concurrentLeaderMovements", "replicationThrottle", "replicaMovementStrategies", "moveReplicasOffVolumes" })
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaRebalanceSpec extends Spec {
     // rebalancing modes
     private KafkaRebalanceMode mode = KafkaRebalanceMode.FULL;
     private List<Integer> brokers;
-
-    @Description("List of the brokers and the volumes corresponding to them whose replicas needs to be moved")
-    public List<BrokerAndVolumeIds> getMoveReplicasOffVolumes() {
-        return moveReplicasOffVolumes;
-    }
-
-    public void setMoveReplicasOffVolumes(List<BrokerAndVolumeIds> moveReplicasOffVolumes) {
-        this.moveReplicasOffVolumes = moveReplicasOffVolumes;
-    }
-
-    private List<BrokerAndVolumeIds> moveReplicasOffVolumes;
 
     // Optimization goal configurations
     private List<String> goals;
@@ -56,13 +46,15 @@ public class KafkaRebalanceSpec extends Spec {
     private int concurrentLeaderMovements;
     private long replicationThrottle;
     private List<String> replicaMovementStrategies;
+    private List<BrokerAndVolumeIds> moveReplicasOffVolumes;
 
     @Description("Mode to run the rebalancing. " +
             "The supported modes are `full`, `add-brokers`, `remove-brokers`.\n" +
             "If not specified, the `full` mode is used by default. \n\n" +
             "* `full` mode runs the rebalancing across all the brokers in the cluster.\n" +
             "* `add-brokers` mode can be used after scaling up the cluster to move some replicas to the newly added brokers.\n" +
-            "* `remove-brokers` mode can be used before scaling down the cluster to move replicas out of the brokers to be removed.\n")
+            "* `remove-brokers` mode can be used before scaling down the cluster to move replicas out of the brokers to be removed.\n" +
+            "* `remove-disks` mode can be used to move data across the volumes within the same broker\n")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public KafkaRebalanceMode getMode() {
         return mode;
@@ -176,5 +168,15 @@ public class KafkaRebalanceSpec extends Spec {
 
     public void setReplicaMovementStrategies(List<String> replicaMovementStrategies) {
         this.replicaMovementStrategies = replicaMovementStrategies;
+    }
+
+    @Description("List of brokers and their corresponding volumes from which replicas need to be moved.")
+    @MinimumItems(1)
+    public List<BrokerAndVolumeIds> getMoveReplicasOffVolumes() {
+        return moveReplicasOffVolumes;
+    }
+
+    public void setMoveReplicasOffVolumes(List<BrokerAndVolumeIds> moveReplicasOffVolumes) {
+        this.moveReplicasOffVolumes = moveReplicasOffVolumes;
     }
 }

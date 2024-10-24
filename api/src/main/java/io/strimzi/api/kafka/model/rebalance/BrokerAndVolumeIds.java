@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.MinimumItems;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -19,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Configures the brokerId and VolumeId for the remove-disks endpoint for Cruise Control
+ * Configures the broker and Volume ID's for the remove-disks endpoint for Cruise Control
  */
 @Buildable(
         editableEnabled = false,
@@ -35,7 +36,7 @@ public class BrokerAndVolumeIds implements UnknownPropertyPreserving {
     private List<Integer> volumeIds;
     private Map<String, Object> additionalProperties;
 
-    @Description("Id of the broker which contains the disk from which you want to move the the partition replicas from")
+    @Description("ID of the broker that contains the disk from which you want to move the partition replicas.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty("brokerId")
     public Integer getBrokerId() {
@@ -46,9 +47,10 @@ public class BrokerAndVolumeIds implements UnknownPropertyPreserving {
         this.brokerId = brokerId;
     }
 
-    @Description("Ids of the disk from which the partition replicas need to be moved")
+    @Description("IDs of the disks from which the partition replicas need to be moved.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty("volumeIds")
+    @MinimumItems(1)
     public List<Integer> getVolumeIds() {
         return volumeIds;
     }
