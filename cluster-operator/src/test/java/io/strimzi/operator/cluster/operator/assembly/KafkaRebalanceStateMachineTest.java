@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.common.Condition;
+import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIdsBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceBuilder;
@@ -75,6 +76,17 @@ public class KafkaRebalanceStateMachineTest {
     private static final KafkaRebalanceSpec REMOVE_BROKER_KAFKA_REBALANCE_SPEC =
             new KafkaRebalanceSpecBuilder()
                     .withMode(KafkaRebalanceMode.REMOVE_BROKERS)
+                    .withBrokers(3)
+                    .build();
+
+    private static final KafkaRebalanceSpec REMOVE_DISKS_KAFKA_REBALANCE_SPEC =
+            new KafkaRebalanceSpecBuilder()
+                    .withMode(KafkaRebalanceMode.REMOVE_DISKS)
+                    .withMoveReplicasOffVolumes(
+                            new BrokerAndVolumeIdsBuilder()
+                                    .withVolumeIds(1)
+                                    .withBrokerId(0)
+                                    .build())
                     .withBrokers(3)
                     .build();
 
@@ -257,6 +269,15 @@ public class KafkaRebalanceStateMachineTest {
         this.krNewToProposalReady(vertx, context, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance);
     }
 
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testNewToProposalReadyRebalance} for description
+     */
+    @Test
+    public void testNewToProposalReadyRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.New, null, null, REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
+        this.krNewToProposalReady(vertx, context, CruiseControlEndpoints.REMOVE_DISKS, kcRebalance);
+    }
+
     private void krNewToProposalReady(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
         cruiseControlServer.setupCCRebalanceResponse(0, endpoint);
 
@@ -296,6 +317,15 @@ public class KafkaRebalanceStateMachineTest {
     public void testNewWithNotEnoughDataRemoveBroker(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.New, null, null, REMOVE_BROKER_KAFKA_REBALANCE_SPEC, null, false);
         this.krNewWithNotEnoughData(vertx, context, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance);
+    }
+
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testNewWithNotEnoughDataRebalance} for description
+     */
+    @Test
+    public void testNewWithNotEnoughDataRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.New, null, null, REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
+        this.krNewWithNotEnoughData(vertx, context, CruiseControlEndpoints.REMOVE_DISKS, kcRebalance);
     }
 
     private void krNewWithNotEnoughData(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
@@ -339,6 +369,15 @@ public class KafkaRebalanceStateMachineTest {
     public void testNewToPendingProposalRemoveBroker(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.New, null, null, REMOVE_BROKER_KAFKA_REBALANCE_SPEC, null, false);
         this.krNewToPendingProposal(vertx, context, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance);
+    }
+
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testNewToPendingProposalRebalance} for description
+     */
+    @Test
+    public void testNewToPendingProposalRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.New, null, null, REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
+        this.krNewToPendingProposal(vertx, context, CruiseControlEndpoints.REMOVE_DISKS, kcRebalance);
     }
 
     private void krNewToPendingProposal(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
@@ -528,6 +567,15 @@ public class KafkaRebalanceStateMachineTest {
         this.krPendingProposalToProposalReady(vertx, context, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance);
     }
 
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testPendingProposalToProposalReadyRebalance} for description
+     */
+    @Test
+    public void testPendingProposalToProposalReadyRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.PendingProposal, null, null, REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
+        this.krPendingProposalToProposalReady(vertx, context, CruiseControlEndpoints.REMOVE_DISKS, kcRebalance);
+    }
+
     private void krPendingProposalToProposalReady(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
         cruiseControlServer.setupCCRebalanceResponse(0, endpoint);
 
@@ -567,6 +615,15 @@ public class KafkaRebalanceStateMachineTest {
     public void testPendingProposalToProposalReadyWithDelayRemoveBroker(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.PendingProposal, null, null, REMOVE_BROKER_KAFKA_REBALANCE_SPEC, null, false);
         this.krPendingProposalToProposalReadyWithDelay(vertx, context, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance);
+    }
+
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testPendingProposalToProposalReadyWithDelayRebalance} for description
+     */
+    @Test
+    public void testPendingProposalToProposalReadyWithDelayRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.PendingProposal, null, null, REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
+        this.krPendingProposalToProposalReadyWithDelay(vertx, context, CruiseControlEndpoints.REMOVE_DISKS, kcRebalance);
     }
 
     private void krPendingProposalToProposalReadyWithDelay(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
@@ -618,6 +675,15 @@ public class KafkaRebalanceStateMachineTest {
         this.krPendingProposalToStopped(vertx, context, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance);
     }
 
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testPendingProposalToStoppedRebalance} for description
+     */
+    @Test
+    public void testPendingProposalToStoppedRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.PendingProposal, null, "stop", REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
+        this.krPendingProposalToStopped(vertx, context, CruiseControlEndpoints.REMOVE_DISKS, kcRebalance);
+    }
+
     private void krPendingProposalToStopped(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
         // the number of pending calls doesn't have a real impact
         // the stop annotation is evaluated on the next step computation so the rebalance request will be stopped immediately
@@ -658,6 +724,15 @@ public class KafkaRebalanceStateMachineTest {
     public void testProposalReadyNoChangeRemoveBroker(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.ProposalReady, null, null, REMOVE_BROKER_KAFKA_REBALANCE_SPEC, null, false);
         this.krProposalReadyNoChange(vertx, context, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance);
+    }
+
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testProposalReadyNoChangeRebalance} for description
+     */
+    @Test
+    public void testProposalReadyNoChangeRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.ProposalReady, null, null, REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
+        this.krProposalReadyNoChange(vertx, context, CruiseControlEndpoints.REMOVE_DISKS, kcRebalance);
     }
 
     private void krProposalReadyNoChange(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
@@ -701,6 +776,15 @@ public class KafkaRebalanceStateMachineTest {
         this.krProposalReadyToPendingProposalWithNotEnoughData(vertx, context, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance);
     }
 
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testProposalReadyToPendingProposalWithNotEnoughDataRebalance} for description
+     */
+    @Test
+    public void testProposalReadyToPendingProposalWithNotEnoughDataRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.ProposalReady, null, "approve", REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
+        this.krProposalReadyToPendingProposalWithNotEnoughData(vertx, context, CruiseControlEndpoints.REMOVE_DISKS, kcRebalance);
+    }
+
     private void krProposalReadyToPendingProposalWithNotEnoughData(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
         cruiseControlServer.setupCCRebalanceNotEnoughDataError(endpoint);
 
@@ -740,6 +824,15 @@ public class KafkaRebalanceStateMachineTest {
     public void testProposalReadyToRebalancingWithPendingSummaryRemoveBroker(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.ProposalReady, null, "approve", REMOVE_BROKER_KAFKA_REBALANCE_SPEC, null, false);
         this.krProposalReadyToRebalancingWithPendingSummary(vertx, context, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance);
+    }
+
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testProposalReadyToRebalancingWithPendingSummaryRebalance} for description
+     */
+    @Test
+    public void testProposalReadyToRebalancingWithPendingSummaryRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.ProposalReady, null, "approve", REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
+        this.krProposalReadyToRebalancingWithPendingSummary(vertx, context, CruiseControlEndpoints.REMOVE_DISKS, kcRebalance);
     }
 
     private void krProposalReadyToRebalancingWithPendingSummary(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
@@ -783,6 +876,15 @@ public class KafkaRebalanceStateMachineTest {
         this.krProposalReadyToRebalancing(vertx, context, 0, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance);
     }
 
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testProposalReadyToRebalancingRebalance} for description
+     */
+    @Test
+    public void testProposalReadyToRebalancingRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.ProposalReady, null, "approve", REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
+        this.krProposalReadyToRebalancing(vertx, context, 0, CruiseControlEndpoints.REMOVE_DISKS, kcRebalance);
+    }
+
     private void krProposalReadyToRebalancing(Vertx vertx, VertxTestContext context, int pendingCalls, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
         cruiseControlServer.setupCCRebalanceResponse(pendingCalls, endpoint);
 
@@ -824,6 +926,15 @@ public class KafkaRebalanceStateMachineTest {
         this.krAutoApprovalProposalReadyToRebalancing(vertx, context, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance);
     }
 
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testAutoApprovalProposalReadyToRebalancingRebalance} for description
+     */
+    @Test
+    public void testAutoApprovalProposalReadyToRebalancingRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.ProposalReady, null, null, REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, true);
+        this.krAutoApprovalProposalReadyToRebalancing(vertx, context, CruiseControlEndpoints.REMOVE_DISKS, kcRebalance);
+    }
+
     private void krAutoApprovalProposalReadyToRebalancing(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
         cruiseControlServer.setupCCRebalanceResponse(0, endpoint);
 
@@ -862,6 +973,15 @@ public class KafkaRebalanceStateMachineTest {
     public void testProposalReadyRefreshNoChangeRemoveBroker(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.ProposalReady, null, "refresh", REMOVE_BROKER_KAFKA_REBALANCE_SPEC, null, false);
         this.krProposalReadyRefreshNoChange(vertx, context, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance);
+    }
+
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testProposalReadyRefreshNoChangeRebalance} for description
+     */
+    @Test
+    public void testProposalReadyRefreshNoChangeRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.ProposalReady, null, "refresh", REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
+        this.krProposalReadyRefreshNoChange(vertx, context, CruiseControlEndpoints.REMOVE_DISKS, kcRebalance);
     }
 
     private void krProposalReadyRefreshNoChange(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
@@ -905,6 +1025,15 @@ public class KafkaRebalanceStateMachineTest {
         this.krProposalReadyRefreshToPendingProposal(vertx, context, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance);
     }
 
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testProposalReadyRefreshToPendingProposalRebalance} for description
+     */
+    @Test
+    public void testProposalReadyRefreshToPendingProposalRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.ProposalReady, null, "refresh", REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
+        this.krProposalReadyRefreshToPendingProposal(vertx, context, CruiseControlEndpoints.REMOVE_DISKS, kcRebalance);
+    }
+
     private void krProposalReadyRefreshToPendingProposal(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
         cruiseControlServer.setupCCRebalanceResponse(1, endpoint);
 
@@ -944,6 +1073,15 @@ public class KafkaRebalanceStateMachineTest {
     public void testProposalReadyRefreshToPendingProposalNotEnoughDataRemoveBroker(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.ProposalReady, null, "refresh", REMOVE_BROKER_KAFKA_REBALANCE_SPEC, null, false);
         this.krProposalReadyRefreshToPendingProposalNotEnoughData(vertx, context, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance);
+    }
+
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testProposalReadyRefreshToPendingProposalNotEnoughDataRebalance} for description
+     */
+    @Test
+    public void testProposalReadyRefreshToPendingProposalNotEnoughDataRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.ProposalReady, null, "refresh", REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
+        this.krProposalReadyRefreshToPendingProposalNotEnoughData(vertx, context, CruiseControlEndpoints.REMOVE_DISKS, kcRebalance);
     }
 
     private void krProposalReadyRefreshToPendingProposalNotEnoughData(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
@@ -987,6 +1125,15 @@ public class KafkaRebalanceStateMachineTest {
         this.krRebalancingCompleted(vertx, context, kcRebalance);
     }
 
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testRebalancingCompletedRebalance} for description
+     */
+    @Test
+    public void testRebalancingCompletedRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.Rebalancing, MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID, null, REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
+        this.krRebalancingCompleted(vertx, context, kcRebalance);
+    }
+
     private void krRebalancingCompleted(Vertx vertx, VertxTestContext context, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
         cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 0);
 
@@ -1025,6 +1172,15 @@ public class KafkaRebalanceStateMachineTest {
     @Test
     public void testRebalancingPendingThenExecutionRemoveBroker(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.Rebalancing, MockCruiseControl.REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID, null, REMOVE_BROKER_KAFKA_REBALANCE_SPEC, null, false);
+        this.krRebalancingPendingThenExecution(vertx, context, 1, 1, kcRebalance);
+    }
+
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testRebalancingPendingThenExecutionRebalance} for description
+     */
+    @Test
+    public void testRebalancingPendingThenExecutionRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.Rebalancing, MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID, null, REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
         this.krRebalancingPendingThenExecution(vertx, context, 1, 1, kcRebalance);
     }
 
@@ -1074,6 +1230,15 @@ public class KafkaRebalanceStateMachineTest {
         this.krRebalancingToStopped(vertx, context, kcRebalance);
     }
 
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testRebalancingToStoppedRebalance} for description
+     */
+    @Test
+    public void testRebalancingToStoppedRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.Rebalancing, MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID, "stop", REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
+        this.krRebalancingToStopped(vertx, context, kcRebalance);
+    }
+
     private void krRebalancingToStopped(Vertx vertx, VertxTestContext context, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
         cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 0);
         cruiseControlServer.setupCCStopResponse();
@@ -1113,6 +1278,15 @@ public class KafkaRebalanceStateMachineTest {
     @Test
     public void testRebalancingCompletedWithErrorRemoveBroker(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.Rebalancing, MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID, null, REMOVE_BROKER_KAFKA_REBALANCE_SPEC, null, false);
+        this.krRebalancingCompletedWithError(vertx, context, kcRebalance);
+    }
+
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testRebalancingCompletedWithErrorRebalance} for description
+     */
+    @Test
+    public void testRebalancingCompletedWithErrorRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.Rebalancing, MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID, null, REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
         this.krRebalancingCompletedWithError(vertx, context, kcRebalance);
     }
 
@@ -1157,6 +1331,15 @@ public class KafkaRebalanceStateMachineTest {
         this.krStoppedRefreshToPendingProposal(vertx, context, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance);
     }
 
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testStoppedRefreshToPendingProposalRebalance} for description
+     */
+    @Test
+    public void testStoppedRefreshToPendingProposalRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.Stopped, null, "refresh", REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
+        this.krStoppedRefreshToPendingProposal(vertx, context, CruiseControlEndpoints.REMOVE_DISKS, kcRebalance);
+    }
+
     private void krStoppedRefreshToPendingProposal(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
         cruiseControlServer.setupCCRebalanceResponse(1, endpoint);
 
@@ -1196,6 +1379,15 @@ public class KafkaRebalanceStateMachineTest {
     public void testStoppedRefreshToProposalReadyRemoveBroker(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.Stopped, null, "refresh", REMOVE_BROKER_KAFKA_REBALANCE_SPEC, null, false);
         this.krStoppedRefreshToProposalReady(vertx, context, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance);
+    }
+
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testStoppedRefreshToProposalReadyRebalance} for description
+     */
+    @Test
+    public void testStoppedRefreshToProposalReadyRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.Stopped, null, "refresh", REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
+        this.krStoppedRefreshToProposalReady(vertx, context, CruiseControlEndpoints.REMOVE_DISKS, kcRebalance);
     }
 
     private void krStoppedRefreshToProposalReady(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
@@ -1239,6 +1431,15 @@ public class KafkaRebalanceStateMachineTest {
         this.krStoppedRefreshToPendingProposalNotEnoughData(vertx, context, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance);
     }
 
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testStoppedRefreshToPendingProposalNotEnoughDataRebalance} for description
+     */
+    @Test
+    public void testStoppedRefreshToPendingProposalNotEnoughDataRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.Stopped, null, "refresh", REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
+        this.krStoppedRefreshToPendingProposalNotEnoughData(vertx, context, CruiseControlEndpoints.REMOVE_DISKS, kcRebalance);
+    }
+
     private void krStoppedRefreshToPendingProposalNotEnoughData(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
         cruiseControlServer.setupCCRebalanceNotEnoughDataError(endpoint);
 
@@ -1278,6 +1479,15 @@ public class KafkaRebalanceStateMachineTest {
     public void testReadyRefreshToPendingProposalRemoveBroker(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.Ready, null, "refresh", REMOVE_BROKER_KAFKA_REBALANCE_SPEC, null, false);
         this.krReadyRefreshToPendingProposal(vertx, context, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance);
+    }
+
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testReadyRefreshToPendingProposalRebalance} for description
+     */
+    @Test
+    public void testReadyRefreshToPendingProposalRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.Ready, null, "refresh", REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
+        this.krReadyRefreshToPendingProposal(vertx, context, CruiseControlEndpoints.REMOVE_DISKS, kcRebalance);
     }
 
     private void krReadyRefreshToPendingProposal(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
@@ -1321,6 +1531,15 @@ public class KafkaRebalanceStateMachineTest {
         this.krReadyRefreshToProposalReady(vertx, context, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance);
     }
 
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testReadyRefreshToProposalReadyRebalance} for description
+     */
+    @Test
+    public void testReadyRefreshToProposalReadyRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.Ready, null, "refresh", REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
+        this.krReadyRefreshToProposalReady(vertx, context, CruiseControlEndpoints.REMOVE_DISKS, kcRebalance);
+    }
+
     private void krReadyRefreshToProposalReady(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
         cruiseControlServer.setupCCRebalanceResponse(0, endpoint);
 
@@ -1360,6 +1579,15 @@ public class KafkaRebalanceStateMachineTest {
     public void testReadyRefreshToPendingProposalNotEnoughData(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.Ready, null, "refresh", REMOVE_BROKER_KAFKA_REBALANCE_SPEC, null, false);
         this.krReadyRefreshToPendingProposalNotEnoughData(vertx, context, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance);
+    }
+
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testReadyRefreshToPendingProposalNotEnoughDataRebalance} for description
+     */
+    @Test
+    public void testReadyRefreshToPendingProposalNotEnoughDataRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.Ready, null, "refresh", REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
+        this.krReadyRefreshToPendingProposalNotEnoughData(vertx, context, CruiseControlEndpoints.REMOVE_DISKS, kcRebalance);
     }
 
     private void krReadyRefreshToPendingProposalNotEnoughData(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
@@ -1403,6 +1631,15 @@ public class KafkaRebalanceStateMachineTest {
         this.krNotReadyRefreshToPendingProposal(vertx, context, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance);
     }
 
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testNotReadyRefreshToPendingProposalRebalance} for description
+     */
+    @Test
+    public void testNotReadyRefreshToPendingProposalRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.NotReady, null, "refresh", REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
+        this.krNotReadyRefreshToPendingProposal(vertx, context, CruiseControlEndpoints.REMOVE_DISKS, kcRebalance);
+    }
+
     private void krNotReadyRefreshToPendingProposal(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
         cruiseControlServer.setupCCRebalanceResponse(1, endpoint);
 
@@ -1442,6 +1679,15 @@ public class KafkaRebalanceStateMachineTest {
     public void testNotReadyRefreshToProposalReadyRemoveBroker(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.NotReady, null, "refresh", REMOVE_BROKER_KAFKA_REBALANCE_SPEC, null, false);
         this.krNotReadyRefreshToProposalReady(vertx, context, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance);
+    }
+
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testNotReadyRefreshToProposalReadyRebalance} for description
+     */
+    @Test
+    public void testNotReadyRefreshToProposalReadyRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.NotReady, null, "refresh", REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
+        this.krNotReadyRefreshToProposalReady(vertx, context, CruiseControlEndpoints.REMOVE_DISKS, kcRebalance);
     }
 
     private void krNotReadyRefreshToProposalReady(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
@@ -1485,6 +1731,15 @@ public class KafkaRebalanceStateMachineTest {
         this.krNotReadyRefreshToPendingProposalNotEnoughData(vertx, context, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance);
     }
 
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testNotReadyRefreshToPendingProposalNotEnoughDataRebalance} for description
+     */
+    @Test
+    public void testNotReadyRefreshToPendingProposalNotEnoughDataRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.NotReady, null, "refresh", REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
+        this.krNotReadyRefreshToPendingProposalNotEnoughData(vertx, context, CruiseControlEndpoints.REMOVE_DISKS, kcRebalance);
+    }
+
     private void krNotReadyRefreshToPendingProposalNotEnoughData(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
         cruiseControlServer.setupCCRebalanceNotEnoughDataError(endpoint);
 
@@ -1526,6 +1781,15 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     /**
+     * See the {@link KafkaRebalanceStateMachineTest#testProposalReadyWithWrongAnnotationRebalance} for description
+     */
+    @Test
+    public void testProposalReadyWithWrongAnnotationRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.ProposalReady, null, "wrong", REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
+        this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.REMOVE_DISKS, kcRebalance, KafkaRebalanceState.ProposalReady);
+    }
+
+    /**
      * Tests the stay on `Ready` when there is a wrong annotation
      *
      * 1. A new KafkaRebalance resource is created and annotated with an "unknown" annotation; it is in the Ready state
@@ -1554,6 +1818,15 @@ public class KafkaRebalanceStateMachineTest {
     public void testReadyWithWrongAnnotationRemoveBroker(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.Ready, null, "approve", REMOVE_BROKER_KAFKA_REBALANCE_SPEC, null, false);
         this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance, KafkaRebalanceState.Ready);
+    }
+
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testReadyWithWrongAnnotationRebalance} for description
+     */
+    @Test
+    public void testReadyWithWrongAnnotationRemoveBrokerRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.Ready, null, "approve", REMOVE_DISKS_KAFKA_REBALANCE_SPEC, null, false);
+        this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.REMOVE_DISKS, kcRebalance, KafkaRebalanceState.Ready);
     }
 
     private void testStateWithWrongAnnotation(Vertx vertx, VertxTestContext context,
@@ -1597,6 +1870,15 @@ public class KafkaRebalanceStateMachineTest {
     public void testReadyAfterCruiseControlRetriableConnectionExceptionRemoveBroker(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.Ready, null, null, REMOVE_BROKER_KAFKA_REBALANCE_SPEC, CRUISE_CONTROL_RETRIABLE_CONNECTION_EXCEPTION, false);
         this.testStateWithException(vertx, context, 0, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance, KafkaRebalanceState.NotReady);
+    }
+
+    /**
+     * See the {@link KafkaRebalanceStateMachineTest#testReadyAfterCruiseControlRetriableConnectionExceptionRebalance} for description
+     */
+    @Test
+    public void testReadyAfterCruiseControlRetriableConnectionExceptionRemoveDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.Ready, null, null, REMOVE_DISKS_KAFKA_REBALANCE_SPEC, CRUISE_CONTROL_RETRIABLE_CONNECTION_EXCEPTION, false);
+        this.testStateWithException(vertx, context, 0, CruiseControlEndpoints.REMOVE_DISKS, kcRebalance, KafkaRebalanceState.NotReady);
     }
 
 

@@ -2031,7 +2031,7 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 |Property |Property type |Description
 |mode
 |string (one of [remove-brokers, add-brokers])
-|Specifies the mode for automatically rebalancing when brokers are added or removed. Supported modes are `add-brokers` and `remove-brokers`. 
+|Specifies the mode for automatically rebalancing when brokers are added or removed. Supported modes are `add-brokers` and `remove-brokers`.
 
 |template
 |xref:type-LocalObjectReference-{context}[`LocalObjectReference`]
@@ -4461,7 +4461,7 @@ Used in: xref:type-KafkaRebalance-{context}[`KafkaRebalance`]
 |====
 |Property |Property type |Description
 |mode
-|string (one of [remove-brokers, full, add-brokers])
+|string (one of [remove-disks, remove-brokers, full, add-brokers])
 |Mode to run the rebalancing. The supported modes are `full`, `add-brokers`, `remove-brokers`.
 If not specified, the `full` mode is used by default. 
 
@@ -4472,6 +4472,9 @@ If not specified, the `full` mode is used by default.
 |brokers
 |integer array
 |The list of newly added brokers in case of scaling up or the ones to be removed in case of scaling down to use for rebalancing. This list can be used only with rebalancing mode `add-brokers` and `removed-brokers`. It is ignored with `full` mode.
+|moveReplicasOffVolumes
+|xref:type-BrokerAndVolumeIds-{context}[`BrokerAndVolumeIds`] array
+|List of the brokers and the volumes corresponding to them whose replicas needs to be moved.
 |goals
 |string array
 |A list of goals, ordered by decreasing priority, to use for generating and executing the rebalance proposal. The supported goals are available at https://github.com/linkedin/cruise-control#goals. If an empty goals list is provided, the goals declared in the default.goals Cruise Control configuration parameter are used.
@@ -4499,6 +4502,23 @@ If not specified, the `full` mode is used by default.
 |replicaMovementStrategies
 |string array
 |A list of strategy class names used to determine the execution order for the replica movements in the generated optimization proposal. By default BaseReplicaMovementStrategy is used, which will execute the replica movements in the order that they were generated.
+|====
+
+[id='type-BrokerAndVolumeIds-{context}']
+= `BrokerAndVolumeIds` schema reference
+
+Used in: xref:type-KafkaRebalanceSpec-{context}[`KafkaRebalanceSpec`]
+
+
+[cols="2,2,3a",options="header"]
+|====
+|Property |Property type |Description
+|brokerId
+|integer
+|Id of the broker which contains the disk from which you want to move the the partition replicas from.
+|volumeIds
+|integer array
+|Ids of the disk from which the partition replicas need to be moved.
 |====
 
 [id='type-KafkaRebalanceStatus-{context}']
