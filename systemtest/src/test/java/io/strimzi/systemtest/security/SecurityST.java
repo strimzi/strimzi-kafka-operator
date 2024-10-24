@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.common.CertificateAuthorityBuilder;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
@@ -124,7 +125,33 @@ class SecurityST extends AbstractST {
                 KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
             )
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
+
+        KafkaBuilder kafkaBuilder = KafkaTemplates.kafkaEphemeral(testStorage.getNamespaceName(), testStorage.getClusterName(), 3);
+
+        if (!Environment.isKRaftModeEnabled()) {
+            // in order to make the connection work on FIPS-enabled cluster, we need to enable TLSv1.3 on the ZooKeeper side
+            // Note, this cipherSuites comes from ZK master branch, where some cipher suites are missing in v3.8.4 branch:
+            // https://github.com/apache/zookeeper/blob/837f86cc713a5e4ce56e1f75eeb335093ca18821/zookeeper-server/src/main/java/org/apache/zookeeper/common/X509Util.java#L142
+            String tlsV13CipherSuites = "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256," +
+                    "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256," +
+                    "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA," +
+                    "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA," +
+                    "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,TLS_AES_256_GCM_SHA384,TLS_AES_128_GCM_SHA256,TLS_CHACHA20_POLY1305_SHA256";
+
+            kafkaBuilder = kafkaBuilder
+                    .editSpec()
+                        .editOrNewZookeeper()
+                            .addToConfig("ssl.protocol", "TLSv1.3")
+                            .addToConfig("ssl.quorum.protocol", "TLSv1.3")
+                            .addToConfig("ssl.enabledProtocols", "TLSv1.3,TLSv1.2")
+                            .addToConfig("ssl.quorum.enabledProtocols", "TLSv1.3,TLSv1.2")
+                            .addToConfig("ssl.ciphersuites", tlsV13CipherSuites)
+                            .addToConfig("ssl.quorum.ciphersuites", tlsV13CipherSuites)
+                        .endZookeeper()
+                    .endSpec();
+        }
+
+        resourceManager.createResourceWithWait(kafkaBuilder.build());
 
         String brokerPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
 
