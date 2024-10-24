@@ -854,6 +854,74 @@ public class KafkaRebalanceAssemblyOperatorTest {
     }
 
     /**
+     * Tests the transition from 'New' to 'Ready'
+     * The rebalance proposal is auto approved and the resource moves to 'Rebalancing'.
+     * Then the Rebalancing KafkaRebalance is refreshed and a moved to 'ProposalReady' again.
+     * Then the ProposalReady KafkaRebalance moves to Rebalancing again and finally to 'Ready'
+     *
+     * 1. A new KafkaRebalance resource is created with auto-approval annotation set; it is in the 'New' state
+     * 2. The operator requests a rebalance proposal through the Cruise Control REST API
+     * 3. The rebalance proposal is ready on the first call
+     * 4. The KafkaRebalance resource transitions to the 'ProposalReady' state
+     * 5. The operator requests the rebalance operation through the Cruise Control REST API
+     * 6. The rebalance operation is not done immediately; the operator starts polling the Cruise Control REST API
+     * 7. The KafkaRebalance resource moves to the 'Rebalancing' state
+     * 8. The KafkaRebalance resource is annotated with 'strimzi.io/rebalance=refresh' while the rebalancing is still in progress
+     * 9. The operator stops polling the Cruise Control REST API and requests a stop execution
+     * 10. The operator requests a new rebalance proposal through the Cruise Control REST API
+     * 11. The KafkaRebalance resource transitions to the 'ProposalReady' state again
+     * 12. The operator requests the rebalance operation through the Cruise Control REST API
+     * 13. The rebalance operation is not done immediately; the operator starts polling the Cruise Control REST API
+     * 14. The KafkaRebalance resource moves to the 'Rebalancing' state again
+     * 15. The rebalance operation is done
+     * 16. The KafkaRebalance resource moves to the 'Ready' state
+     */
+    @Test
+    public void krNewToProposalReadyToRebalancingToRefresh(VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, REMOVE_BROKER_KAFKA_REBALANCE_SPEC, true);
+
+        // Set up the rebalance and user tasks endpoints with the number of pending calls before a response is received.
+        cruiseControlServer.setupCCRebalanceResponse(0, CruiseControlEndpoints.REMOVE_BROKER);
+        cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 0);
+        cruiseControlServer.setupCCStopResponse();
+
+        Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
+        crdCreateKafka();
+        crdCreateCruiseControlSecrets();
+
+        Checkpoint checkpoint = context.checkpoint();
+        krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()))
+                // the resource moved from 'New' to 'ProposalReady' directly (no pending calls in the Mock server)
+                .onComplete(context.succeeding(v ->
+                        assertState(context, client, namespace, kr.getMetadata().getName(), KafkaRebalanceState.ProposalReady)))
+                .compose(v -> krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName())))
+                .onComplete(context.succeeding(v -> {
+                    // the resource moved from ProposalReady to Rebalancing on auto approval
+                    assertState(context, client, namespace, kr.getMetadata().getName(), KafkaRebalanceState.Rebalancing);
+                }))
+                .compose(v -> {
+                    // apply the "refresh" annotation to the resource in the Rebalancing state
+                    annotate(client, namespace, kr.getMetadata().getName(), KafkaRebalanceAnnotation.refresh);
+                    return krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()));
+                })
+                .onComplete(context.succeeding(v -> {
+                    // the resource moved from Rebalancing to ProposalReady due to refresh annotation
+                    assertState(context, client, namespace, kr.getMetadata().getName(), KafkaRebalanceState.ProposalReady);
+                }))
+                .compose(v -> krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName())))
+                .onComplete(context.succeeding(v -> {
+                    // the resource moved from ProposalReady to Rebalancing
+                    assertState(context, client, namespace, kr.getMetadata().getName(), KafkaRebalanceState.Rebalancing);
+                }))
+                .compose(v -> krao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName())))
+                .onComplete(context.succeeding(v -> {
+                    // the resource moved from Rebalancing to Ready
+                    assertState(context, client, namespace, kr.getMetadata().getName(), KafkaRebalanceState.Ready);
+                    checkpoint.flag();
+                }));
+    }
+
+    /**
      * Tests the transition from 'New' to 'NotReady' due to "missing hard goals" error
      *
      * 1. A new KafkaRebalance resource is created with some specified not hard goals; it is in the 'New' state
