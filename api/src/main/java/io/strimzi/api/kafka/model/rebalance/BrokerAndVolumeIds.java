@@ -5,7 +5,6 @@
 package io.strimzi.api.kafka.model.rebalance;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
@@ -38,7 +37,6 @@ public class BrokerAndVolumeIds implements UnknownPropertyPreserving {
 
     @Description("ID of the broker that contains the disk from which you want to move the partition replicas.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonProperty("brokerId")
     public Integer getBrokerId() {
         return brokerId;
     }
@@ -49,7 +47,6 @@ public class BrokerAndVolumeIds implements UnknownPropertyPreserving {
 
     @Description("IDs of the disks from which the partition replicas need to be moved.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonProperty("volumeIds")
     @MinimumItems(1)
     public List<Integer> getVolumeIds() {
         return volumeIds;
