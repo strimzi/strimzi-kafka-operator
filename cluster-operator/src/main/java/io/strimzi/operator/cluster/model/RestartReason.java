@@ -29,11 +29,6 @@ public enum RestartReason {
     CA_CERT_RENEWED("CA certificate renewed"),
 
     /**
-     * Clients CA private key was replaced
-     */
-    CLIENT_CA_CERT_KEY_REPLACED("Trust new clients CA certificate signed by new key"),
-
-    /**
      * Cluster CA private key was replaced
      */
     CLUSTER_CA_CERT_KEY_REPLACED("Trust new cluster CA certificate signed by new key"),

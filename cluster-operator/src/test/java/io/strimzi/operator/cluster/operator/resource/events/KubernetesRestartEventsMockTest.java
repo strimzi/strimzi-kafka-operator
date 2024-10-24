@@ -19,6 +19,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.api.ResourceAnnotations;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
@@ -37,6 +38,7 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaMetadataConfigurationState;
@@ -105,7 +107,6 @@ import static io.strimzi.operator.cluster.model.AbstractModel.clusterCaKeySecret
 import static io.strimzi.operator.cluster.model.RestartReason.CA_CERT_HAS_OLD_GENERATION;
 import static io.strimzi.operator.cluster.model.RestartReason.CA_CERT_REMOVED;
 import static io.strimzi.operator.cluster.model.RestartReason.CA_CERT_RENEWED;
-import static io.strimzi.operator.cluster.model.RestartReason.CLIENT_CA_CERT_KEY_REPLACED;
 import static io.strimzi.operator.cluster.model.RestartReason.CLUSTER_CA_CERT_KEY_REPLACED;
 import static io.strimzi.operator.cluster.model.RestartReason.CONFIG_CHANGE_REQUIRES_RESTART;
 import static io.strimzi.operator.cluster.model.RestartReason.FILE_SYSTEM_RESIZE_NEEDED;
@@ -397,38 +398,11 @@ public class KubernetesRestartEventsMockTest {
     }
 
     @Test
-    void testEventEmittedWhenClientCaCertKeyReplaced(Vertx vertx, VertxTestContext context) {
-        // Turn off cert authority generation to cause reconciliation to roll pods
-        Kafka kafkaWithoutClientCaGen = new KafkaBuilder(kafka)
-                .editSpec()
-                    .editOrNewClientsCa()
-                        .withGenerateCertificateAuthority(false)
-                    .endClientsCa()
-                .endSpec()
-                .build();
-
-        // Bump ca cert generation to make it look newer than pod knows of
-        patchClusterSecretWithAnnotation(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "100000");
-
-        CaReconciler reconciler = new CaReconciler(reconciliation, kafkaWithoutClientCaGen, clusterOperatorConfig, supplier, vertx, mockCertManager, passwordGenerator);
-        reconciler.reconcile(Clock.systemUTC()).onComplete(verifyEventPublished(CLIENT_CA_CERT_KEY_REPLACED, context));
-    }
-
-    @Test
     void testEventEmittedWhenClusterCaCertKeyReplaced(Vertx vertx, VertxTestContext context) {
-        //Turn off cert authority generation to cause reconciliation to roll pods
-        Kafka kafkaWithoutClusterCaGen = new KafkaBuilder(kafka)
-                .editSpec()
-                    .editOrNewClusterCa()
-                        .withGenerateCertificateAuthority(false)
-                    .endClusterCa()
-                .endSpec()
-                .build();
+        // Annotate Cluster CA key secret with force-renew annotation
+        patchSecretWithForceReplaceAnnotation(AbstractModel.clusterCaKeySecretName(CLUSTER_NAME));
 
-        // Bump ca cert generation to make it look newer than pod knows of
-        patchClusterSecretWithAnnotation(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "100001");
-
-        CaReconciler reconciler = new CaReconciler(reconciliation, kafkaWithoutClusterCaGen, clusterOperatorConfig, supplier, vertx, mockCertManager, passwordGenerator);
+        CaReconciler reconciler = new CaReconciler(reconciliation, kafka, clusterOperatorConfig, supplier, vertx, mockCertManager, passwordGenerator);
         reconciler.reconcile(Clock.systemUTC()).onComplete(verifyEventPublished(CLUSTER_CA_CERT_KEY_REPLACED, context));
     }
 
@@ -733,9 +707,9 @@ public class KubernetesRestartEventsMockTest {
         );
     }
 
-    private void patchClusterSecretWithAnnotation(String annotation, String value) {
-        Secret brokerSecret = client.secrets().inNamespace(namespace).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get();
-        Secret patchedSecret = modifySecretWithAnnotation(brokerSecret, annotation, value);
+    private void patchSecretWithForceReplaceAnnotation(String secretName) {
+        Secret secret = client.secrets().inNamespace(namespace).withName(secretName).get();
+        Secret patchedSecret = modifySecretWithAnnotation(secret, ResourceAnnotations.ANNO_STRIMZI_IO_FORCE_REPLACE, "true");
 
         client.secrets().resource(patchedSecret).update();
     }

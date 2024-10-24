@@ -208,7 +208,7 @@ public class CaReconciler {
         return reconcileCas(clock)
                 .compose(i -> verifyClusterCaFullyTrustedAndUsed())
                 .compose(i -> reconcileClusterOperatorSecret(clock))
-                .compose(i -> rollingUpdateForNewCaKey())
+                .compose(i -> rollingUpdateForNewClusterCaKey())
                 .compose(i -> maybeRemoveOldClusterCaCertificates())
                 .map(i -> new CaReconciliationResult(clusterCa, clientsCa));
     }
@@ -376,31 +376,19 @@ public class CaReconciler {
 
     /**
      * Perform a rolling update of the cluster so that CA certificates get added to their truststores, or expired CA
-     * certificates get removed from their truststores. Note this is only necessary when the CA certificate has changed
-     * due to a new CA key. It is not necessary when the CA certificate is replace while retaining the existing key.
+     * certificates get removed from their truststores. Note this is only necessary when the Cluster CA certificate has changed
+     * due to a new CA key. It is not necessary when the CA certificate is replaced while retaining the existing key.
      */
-    Future<Void> rollingUpdateForNewCaKey() {
-        RestartReasons podRollReasons = RestartReasons.empty();
-
-        // cluster CA needs to be fully trusted
-        // it is coming from a cluster CA key replacement which didn't end successfully (i.e. CO stopped) and we need to continue from there
-        if (clusterCa.keyReplaced() || isClusterCaNeedFullTrust) {
-            podRollReasons.add(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED);
-        }
-
-        if (clientsCa.keyReplaced()) {
-            podRollReasons.add(RestartReason.CLIENT_CA_CERT_KEY_REPLACED);
-        }
-
-        if (podRollReasons.shouldRestart()) {
+    Future<Void> rollingUpdateForNewClusterCaKey() {
+        if (isClusterCaNeedFullTrust) {
             TlsPemIdentity coTlsPemIdentity = new TlsPemIdentity(new PemTrustSet(clusterCa.caCertSecret()), PemAuthIdentity.clusterOperator(coSecret));
             return getZooKeeperReplicas()
-                    .compose(replicas -> maybeRollZookeeper(replicas, podRollReasons, coTlsPemIdentity))
-                    .compose(i -> patchCaGenerationAndReturnNodes())
-                    .compose(nodes -> rollKafka(nodes, podRollReasons, coTlsPemIdentity))
-                    .compose(i -> maybeRollDeploymentIfExists(KafkaResources.entityOperatorDeploymentName(reconciliation.name()), podRollReasons))
-                    .compose(i -> maybeRollDeploymentIfExists(KafkaExporterResources.componentName(reconciliation.name()), podRollReasons))
-                    .compose(i -> maybeRollDeploymentIfExists(CruiseControlResources.componentName(reconciliation.name()), podRollReasons));
+                    .compose(replicas -> rollZookeeper(replicas, coTlsPemIdentity))
+                    .compose(i -> patchClusterCaKeyGenerationAndReturnNodes())
+                    .compose(nodes -> rollKafka(nodes, coTlsPemIdentity))
+                    .compose(i -> maybeRollDeploymentIfExists(KafkaResources.entityOperatorDeploymentName(reconciliation.name())))
+                    .compose(i -> maybeRollDeploymentIfExists(KafkaExporterResources.componentName(reconciliation.name())))
+                    .compose(i -> maybeRollDeploymentIfExists(CruiseControlResources.componentName(reconciliation.name())));
         } else {
             return Future.succeededFuture();
         }
@@ -499,36 +487,29 @@ public class CaReconciler {
     }
 
     /**
-     * Checks whether the ZooKeeper cluster needs ot be rolled to trust the new CA private key. ZooKeeper uses only the
-     * Cluster CA and not the Clients CA. So the rolling happens only when Cluster CA private key changed.
+     * Rolls the ZooKeeper cluster to trust the new Cluster CA private key.
      *
      * @param replicas              Current number of ZooKeeper replicas
-     * @param podRestartReasons     List of reasons to restart the pods
      * @param coTlsPemIdentity      Trust set and identity for TLS client authentication for connecting to ZooKeeper
      *
-     * @return  Future which completes when this step is done either by rolling the ZooKeeper cluster or by deciding
-     *          that no rolling is needed.
+     * @return  Future which completes when the ZooKeeper cluster has been rolled.
      */
-    /* test */ Future<Void> maybeRollZookeeper(int replicas, RestartReasons podRestartReasons, TlsPemIdentity coTlsPemIdentity) {
-        if (podRestartReasons.contains(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED)) {
-            Labels zkSelectorLabels = Labels.EMPTY
-                    .withStrimziKind(reconciliation.kind())
-                    .withStrimziCluster(reconciliation.name())
-                    .withStrimziName(KafkaResources.zookeeperComponentName(reconciliation.name()));
+    /* test */ Future<Void> rollZookeeper(int replicas, TlsPemIdentity coTlsPemIdentity) {
+        Labels zkSelectorLabels = Labels.EMPTY
+                .withStrimziKind(reconciliation.kind())
+                .withStrimziCluster(reconciliation.name())
+                .withStrimziName(KafkaResources.zookeeperComponentName(reconciliation.name()));
 
-            Function<Pod, List<String>> rollZkPodAndLogReason = pod -> {
-                List<String> reason = List.of(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED.getDefaultNote());
-                LOGGER.debugCr(reconciliation, "Rolling Pod {} to {}", pod.getMetadata().getName(), reason);
-                return reason;
-            };
-            return new ZooKeeperRoller(podOperator, zookeeperLeaderFinder, operationTimeoutMs)
-                    .maybeRollingUpdate(reconciliation, replicas, zkSelectorLabels, rollZkPodAndLogReason, coTlsPemIdentity);
-        } else {
-            return Future.succeededFuture();
-        }
+        Function<Pod, List<String>> rollZkPodAndLogReason = pod -> {
+            List<String> reason = List.of(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED.getDefaultNote());
+            LOGGER.debugCr(reconciliation, "Rolling Pod {} to {}", pod.getMetadata().getName(), reason);
+            return reason;
+        };
+        return new ZooKeeperRoller(podOperator, zookeeperLeaderFinder, operationTimeoutMs)
+                .maybeRollingUpdate(reconciliation, replicas, zkSelectorLabels, rollZkPodAndLogReason, coTlsPemIdentity);
     }
 
-    /* test */ Future<Set<NodeRef>> patchCaGenerationAndReturnNodes() {
+    /* test */ Future<Set<NodeRef>> patchClusterCaKeyGenerationAndReturnNodes() {
         Labels selectorLabels = Labels.EMPTY
                 .withStrimziKind(reconciliation.kind())
                 .withStrimziCluster(reconciliation.name())
@@ -540,12 +521,8 @@ public class CaReconciler {
                                 .stream()
                                 .map(podSet -> WorkloadUtils.patchAnnotations(
                                         podSet,
-                                        Map.of(
-                                                Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(clusterCa.caCertGeneration()),
-                                                Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(clusterCa.caKeyGeneration()),
-                                                Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, String.valueOf(clientsCa.caCertGeneration())
-                                        )))
-                                .toList();
+                                        Map.of(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(clusterCa.caKeyGeneration()))
+                                )).toList();
                         return strimziPodSetOperator.batchReconcile(
                                 reconciliation,
                                 reconciliation.namespace(),
@@ -561,7 +538,7 @@ public class CaReconciler {
         
     }
 
-    /* test */ Future<Void> rollKafka(Set<NodeRef> nodes, RestartReasons podRollReasons, TlsPemIdentity coTlsPemIdentity) {
+    /* test */ Future<Void> rollKafka(Set<NodeRef> nodes, TlsPemIdentity coTlsPemIdentity) {
         return new KafkaRoller(
                 reconciliation,
                 vertx,
@@ -578,19 +555,25 @@ public class CaReconciler {
                 null,
                 false,
                 eventPublisher
-        ).rollingRestart(pod -> {
-            LOGGER.debugCr(reconciliation, "Rolling Pod {} due to {}", pod.getMetadata().getName(), podRollReasons.getReasons());
-            return podRollReasons;
-        });
+        ).rollingRestart(shouldRollPodForChangedCaKey(reconciliation, clusterCa.caKeyGeneration()));
     }
 
-    // Entity Operator, Kafka Exporter, and Cruise Control are only rolled when the cluster CA cert key is replaced
-    Future<Void> maybeRollDeploymentIfExists(String deploymentName, RestartReasons podRollReasons) {
-        if (podRollReasons.contains(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED)) {
-            return rollDeploymentIfExists(deploymentName, RestartReason.CLUSTER_CA_CERT_KEY_REPLACED.getDefaultNote());
-        } else {
-            return Future.succeededFuture();
-        }
+    /* test */ static Function<Pod, RestartReasons> shouldRollPodForChangedCaKey(Reconciliation reconciliation, int clusterCaKeyGeneration) {
+        return pod -> {
+            int podClusterCaKeyGeneration = Annotations.intAnnotation(pod, Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, clusterCaKeyGeneration);
+            if (clusterCaKeyGeneration == podClusterCaKeyGeneration) {
+                LOGGER.debugCr(reconciliation, "Not rolling Pod {} since the Cluster CA cert key generation is correct.", pod.getMetadata().getName());
+                return RestartReasons.empty();
+            } else {
+                RestartReasons podRollReasons = RestartReasons.of(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED);
+                LOGGER.debugCr(reconciliation, "Rolling Pod {} due to {}", pod.getMetadata().getName(), podRollReasons.getReasons());
+                return podRollReasons;
+            }
+        };
+    }
+
+    Future<Void> maybeRollDeploymentIfExists(String deploymentName) {
+        return rollDeploymentIfExists(deploymentName, RestartReason.CLUSTER_CA_CERT_KEY_REPLACED.getDefaultNote());
     }
 
     /**
