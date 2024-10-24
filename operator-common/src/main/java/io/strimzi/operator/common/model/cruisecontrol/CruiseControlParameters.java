@@ -95,7 +95,12 @@ public enum CruiseControlParameters {
     /**
      * Skip rack awareness check
      */
-    SKIP_RACK_AWARENESS_CHECK("skip_rack_awareness_check");
+    SKIP_RACK_AWARENESS_CHECK("skip_rack_awareness_check"),
+
+    /**
+     * Remove Disk
+     */
+    BROKER_ID_AND_LOG_DIRS("brokerid_and_logdirs");
 
     private final String key;
 

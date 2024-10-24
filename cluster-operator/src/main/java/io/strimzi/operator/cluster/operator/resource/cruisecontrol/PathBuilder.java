@@ -4,10 +4,12 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
+import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIds;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlParameters;
 
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -71,6 +73,23 @@ public class PathBuilder {
             throw new RuntimeException(e.getMessage());
         }
         return this;
+    }
+
+    /**
+     * Converts the list of broker and volume IDs to a list of string
+     *
+     * @param values    List of parameter value
+     *
+     * @return  Instance of this builder
+     */
+    private List<String> brokerAndVolumeIdsParameterList(List<BrokerAndVolumeIds> values) {
+
+        List<String> brokerandVolumeIds = new ArrayList<>(values.size());
+        for (BrokerAndVolumeIds brokerAndVolumeIds : values) {
+            brokerAndVolumeIds.getVolumeIds().forEach(volumeId -> brokerandVolumeIds.add(brokerAndVolumeIds.getBrokerId() + "-/var/lib/kafka/data-" + volumeId + "/kafka-log" + brokerAndVolumeIds.getBrokerId()));
+        }
+
+        return brokerandVolumeIds;
     }
 
     private void addIfNotZero(PathBuilder builder, CruiseControlParameters param, long value) {
@@ -150,6 +169,22 @@ public class PathBuilder {
         if (options != null) {
             return withAbstractRebalanceParameters(options)
                     .withParameter(CruiseControlParameters.BROKER_ID, options.getBrokers().stream().map(String::valueOf).collect(Collectors.joining(",")));
+        } else {
+            return this;
+        }
+    }
+
+    /**
+     * Adds remove disks options to the path
+     *
+     * @param options   Remove-disks options
+     *
+     * @return  Instance of this builder
+     */
+    public PathBuilder withRemoveBrokerDisksParameters(RemoveDisksOptions options) {
+        if (options != null) {
+            return withParameter(CruiseControlParameters.DRY_RUN, String.valueOf(options.isDryRun())).
+                    withParameter(CruiseControlParameters.BROKER_ID_AND_LOG_DIRS, brokerAndVolumeIdsParameterList(options.getBrokersandVolumeIds()));
         } else {
             return this;
         }
