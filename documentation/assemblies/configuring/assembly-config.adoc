@@ -98,9 +98,10 @@ include::../../modules/configuring/proc-moving-node-pools.adoc[leveloffset=+2]
 include::../../modules/configuring/con-config-node-pool-roles.adoc[leveloffset=+2]
 include::../../modules/configuring/proc-splitting-node-pool-roles.adoc[leveloffset=+2]
 include::../../modules/configuring/proc-joining-node-pool-roles.adoc[leveloffset=+2]
-include::../../modules/configuring/proc-managing-storage-node-pools.adoc[leveloffset=+2]
-include::../../modules/configuring/proc-managing-storage-affinity-node-pools.adoc[leveloffset=+2]
 include::../../modules/configuring/proc-migrating-clusters-node-pools.adoc[leveloffset=+2]
+
+//configuring storage
+include::assembly-storage.adoc[leveloffset=+1]
 
 //`Kafka` config for operators
 include::../../modules/configuring/ref-kafka-entity-operator.adoc[leveloffset=+1]
@@ -170,9 +171,6 @@ include::../../modules/configuring/con-config-mirrormaker.adoc[leveloffset=+1]
 
 //`KafkaBridge` resource config
 include::../../modules/configuring/con-config-kafka-bridge.adoc[leveloffset=+1]
-
-//configuring Kafka and ZooKeeper storage
-include::../../assemblies/configuring/assembly-storage.adoc[leveloffset=+1]
 
 //configuring CPU and memory resources and limits
 include::../../modules/configuring/con-config-resources.adoc[leveloffset=+1]
