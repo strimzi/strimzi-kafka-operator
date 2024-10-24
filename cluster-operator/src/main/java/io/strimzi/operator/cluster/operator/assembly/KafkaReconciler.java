@@ -292,11 +292,17 @@ public class KafkaReconciler {
 
     private Future<Void> updateKafkaAutoRebalanceStatus(KafkaStatus kafkaStatus) {
         // gather all the desired brokers' ids across the entire cluster accounting all node pools
-        Set<Integer> desired = kafka.nodes().stream().filter(NodeRef::broker).map(NodeRef::nodeId).collect(Collectors.toSet());
+        Set<Integer> desiredBrokers = kafka.nodes().stream().filter(NodeRef::broker).map(NodeRef::nodeId).collect(Collectors.toSet());
+
+        // gather all the added brokers' ids across the entire cluster accounting all node pools
+        Set<Integer> addedBrokers = kafka.addedNodes().stream().filter(NodeRef::broker).map(NodeRef::nodeId).collect(Collectors.toSet());
+
         // if added brokers list contains all desired, it's a newly created cluster so there are no actual scaled up brokers.
         // when added brokers list has fewer nodes than desired, it actually containes the new ones for scaling up
-        Set<Integer> scaledUpBrokerNodes = kafka.addedBrokerNodes().containsAll(desired) ? Set.of() : kafka.addedBrokerNodes();
+        Set<Integer> scaledUpBrokerNodes = addedBrokers.containsAll(desiredBrokers) ? Set.of() : addedBrokers;
+
         KafkaRebalanceUtils.updateKafkaAutoRebalanceStatus(kafkaStatus, kafkaAutoRebalanceStatus, scaledUpBrokerNodes);
+
         return Future.succeededFuture();
     }
 
@@ -848,12 +854,13 @@ public class KafkaReconciler {
     }
 
     /**
-     * Create or update the StrimziPodSet for the Kafka cluster.
-     * If the StrimziPodSet is updated with additional pods (Kafka cluster scaled up), it's the StrimziPodSet controller
-     * taking care of reconciling within this method and starting up the new nodes.
+     * Create or update the StrimziPodSet for the Kafka cluster. If the StrimziPodSet is updated with additional pods
+     * (Kafka cluster scaled up), it's the StrimziPodSet controller taking care of starting up the new nodes. But this
+     * method will wait for the new nodes to get ready.
+     *
      * The opposite (Kafka cluster scaled down) is handled by a dedicated scaleDown() method instead.
      *
-     * @return  Future which completes when the PodSet is created, updated or deleted
+     * @return  Future which completes when the PodSet is created, updated or deleted and any new Pods reach the Ready state
      */
     protected Future<Map<String, ReconcileResult<StrimziPodSet>>> podSet() {
         return strimziPodSetOperator
@@ -862,6 +869,22 @@ public class KafkaReconciler {
                         reconciliation.namespace(),
                         kafka.generatePodSets(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, this::podSetPodAnnotations),
                         kafka.getSelectorLabels()
+                )
+                .compose(podSetDiff -> waitForNewNodes().map(podSetDiff));
+    }
+
+    /**
+     * Waits for new nodes (pods) to get into a Ready state
+     *
+     * @return  Future that completes when all the new nodes are ready
+     */
+    private Future<Void> waitForNewNodes() {
+        return ReconcilerUtils
+                .podsReady(
+                        reconciliation,
+                        podOperator,
+                        operationTimeoutMs,
+                        kafka.addedNodes().stream().map(NodeRef::podName).toList()
                 );
     }
 
