@@ -672,7 +672,11 @@ public class CruiseControlST extends AbstractST {
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
                 KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), initialReplicas).build(),
-                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), initialReplicas).build()
+                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), initialReplicas)
+                    .editMetadata()
+                        .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[100-103]"))
+                    .endMetadata()
+                    .build()
             )
         );
 
@@ -729,12 +733,11 @@ public class CruiseControlST extends AbstractST {
             KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setReplicas(scaleTo));
         }
 
-        // 3 brokers + 3 controllers/zk
-        final int kafkaClusterPodIndex = initialReplicas + initialReplicas;
+        final int kafkaClusterPodIndex = initialReplicas;
 
         KafkaUtils.waitUntilKafkaHasExpectedAutoRebalanceModeAndBrokers(testStorage.getNamespaceName(), testStorage.getClusterName(),
             KafkaAutoRebalanceMode.ADD_BROKERS,
-            // brokers with [6, 7]
+            // brokers with [3, 4]
             Arrays.asList(kafkaClusterPodIndex, kafkaClusterPodIndex + 1));
 
         // check that KafkaRebalance <cluster-name>-auto-rebalancing-<mode> is created
@@ -757,7 +760,8 @@ public class CruiseControlST extends AbstractST {
 
         LOGGER.info("Checking that Topic: {} has replicas on one of the new brokers (or both)", testStorage.getTopicName());
         List<String> topicReplicas = KafkaTopicUtils.getKafkaTopicReplicasForEachPartition(testStorage.getNamespaceName(), testStorage.getTopicName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
-        assertTrue(topicReplicas.stream().anyMatch(line -> line.contains("6") || line.contains("7")));
+
+        assertTrue(topicReplicas.stream().anyMatch(line -> line.contains("3") || line.contains("4")));
 
         LOGGER.info("Scaling Kafka down to {}", initialReplicas);
 
@@ -770,7 +774,7 @@ public class CruiseControlST extends AbstractST {
 
         KafkaUtils.waitUntilKafkaHasExpectedAutoRebalanceModeAndBrokers(testStorage.getNamespaceName(), testStorage.getClusterName(),
             KafkaAutoRebalanceMode.REMOVE_BROKERS,
-            // brokers with [6, 7]
+            // brokers with [3, 4]
             Arrays.asList(kafkaClusterPodIndex, kafkaClusterPodIndex + 1));
 
         // check that KafkaRebalance <cluster-name>-auto-rebalancing-<mode> is created
