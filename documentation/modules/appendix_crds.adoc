@@ -2031,7 +2031,7 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 |Property |Property type |Description
 |mode
 |string (one of [remove-brokers, add-brokers])
-|Specifies the mode for automatically rebalancing when brokers are added or removed. Supported modes are `add-brokers` and `remove-brokers`.
+|Specifies the mode for automatically rebalancing when brokers are added or removed. Supported modes are `add-brokers` and `remove-brokers`. 
 
 |template
 |xref:type-LocalObjectReference-{context}[`LocalObjectReference`]
