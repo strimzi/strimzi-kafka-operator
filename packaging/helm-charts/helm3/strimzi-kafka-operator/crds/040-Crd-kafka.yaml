@@ -6333,6 +6333,7 @@ spec:
                             enum:
                               - add-brokers
                               - remove-brokers
+                              - remove-disks
                             description: "Specifies the mode for automatically rebalancing when brokers are added or removed. Supported modes are `add-brokers` and `remove-brokers`. \n"
                           template:
                             type: object

@@ -78,8 +78,8 @@ public interface CruiseControlApi {
     Future<CruiseControlRebalanceResponse> removeBroker(Reconciliation reconciliation, String host, int port, RemoveBrokerOptions options, String userTaskId);
 
     /**
-     * Send a request to the Cruise Control server to perform a cluster rebalance when moving replicas off volumes of a broker.
-     * This method allows to move replicas from the volumes of a broker and move to the other volumes in the same broker.
+     * Send a request to the Cruise Control server to perform a cluster rebalance when moving replicas off a broker's volumes.
+     * This method allows moving replicas from a broker's volumes to other volumes within the same broker.
      *
      * @param reconciliation The reconciliation marker
      * @param host The address of the Cruise Control server.

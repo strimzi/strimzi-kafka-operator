@@ -279,24 +279,6 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                 .withParameter(CruiseControlParameters.JSON, "true")
                 .withAddBrokerParameters(options)
                 .build();
-        HttpClientOptions httpOptions = getHttpClientOptions();
-
-        return HttpClientUtils.withHttpClient(vertx, httpOptions, (httpClient, result) -> {
-            httpClient.request(HttpMethod.POST, port, host, path, request -> internalRebalance(reconciliation, host, port, path, userTaskId, request, result));
-        });
-    }
-
-    @Override
-    public Future<CruiseControlRebalanceResponse> removeBrokerDisksData(Reconciliation reconciliation, String host, int port, RemoveDisksOptions options, String userTaskId) {
-        if (options == null && userTaskId == null) {
-            return Future.failedFuture(
-                    new IllegalArgumentException("Either remove broker options or user task ID should be supplied, both were null"));
-        }
-
-        String path = new PathBuilder(CruiseControlEndpoints.REMOVE_DISKS)
-                .withParameter(CruiseControlParameters.JSON, "true")
-                .withRemoveBrokerDisksParameters(options)
-                .build();
 
         HttpClientOptions httpOptions = getHttpClientOptions();
 
@@ -316,6 +298,26 @@ public class CruiseControlApiImpl implements CruiseControlApi {
         String path = new PathBuilder(CruiseControlEndpoints.REMOVE_BROKER)
                 .withParameter(CruiseControlParameters.JSON, "true")
                 .withRemoveBrokerParameters(options)
+                .build();
+
+        HttpClientOptions httpOptions = getHttpClientOptions();
+
+        return HttpClientUtils.withHttpClient(vertx, httpOptions, (httpClient, result) -> {
+            LOGGER.debugCr(reconciliation, "Sending POST request to {} with userTaskID {}", path, userTaskId);
+            httpClient.request(HttpMethod.POST, port, host, path, request -> internalRebalance(reconciliation, host, port, path, userTaskId, request, result));
+        });
+    }
+
+    @Override
+    public Future<CruiseControlRebalanceResponse> removeBrokerDisksData(Reconciliation reconciliation, String host, int port, RemoveDisksOptions options, String userTaskId) {
+        if (options == null && userTaskId == null) {
+            return Future.failedFuture(
+                    new IllegalArgumentException("Either remove disks options or user task ID should be supplied, both were null"));
+        }
+
+        String path = new PathBuilder(CruiseControlEndpoints.REMOVE_DISKS)
+                .withParameter(CruiseControlParameters.JSON, "true")
+                .withRemoveBrokerDisksParameters(options)
                 .build();
 
         HttpClientOptions httpOptions = getHttpClientOptions();
@@ -390,9 +392,12 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                                 statusJson.put(CruiseControlRebalanceKeys.SUMMARY.getKey(),
                                                         originalResponse.getJsonObject(CruiseControlRebalanceKeys.SUMMARY.getKey()));
                                                 // Extract the load before/after information for the brokers
-                                                statusJson.put(
-                                                        CruiseControlRebalanceKeys.LOAD_BEFORE_OPTIMIZATION.getKey(),
-                                                        originalResponse.getJsonObject(CruiseControlRebalanceKeys.LOAD_BEFORE_OPTIMIZATION.getKey()));
+                                                JsonObject jsonObject = originalResponse.getJsonObject(CruiseControlRebalanceKeys.LOAD_BEFORE_OPTIMIZATION.getKey());
+                                                if (jsonObject != null) {
+                                                    statusJson.put(
+                                                            CruiseControlRebalanceKeys.LOAD_BEFORE_OPTIMIZATION.getKey(),
+                                                            originalResponse.getJsonObject(CruiseControlRebalanceKeys.LOAD_BEFORE_OPTIMIZATION.getKey()));
+                                                }
                                                 statusJson.put(
                                                         CruiseControlRebalanceKeys.LOAD_AFTER_OPTIMIZATION.getKey(),
                                                         originalResponse.getJsonObject(CruiseControlRebalanceKeys.LOAD_AFTER_OPTIMIZATION.getKey()));
