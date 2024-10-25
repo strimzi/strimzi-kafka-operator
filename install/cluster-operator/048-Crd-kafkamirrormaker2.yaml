@@ -336,6 +336,30 @@ spec:
                               type: integer
                               description: "The maximum number of connector restarts that the operator will try. If the connector remains in a failed state after reaching this limit, it must be restarted manually by the user. Defaults to an unlimited number of restarts."
                           description: Automatic restart of connector and tasks configuration.
+                        listOffsets:
+                          type: object
+                          properties:
+                            toConfigMap:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                              description: Reference to the ConfigMap where the list of offsets will be written to.
+                          required:
+                          - toConfigMap
+                          description: Configuration for listing offsets.
+                        alterOffsets:
+                          type: object
+                          properties:
+                            fromConfigMap:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                              description: Reference to the ConfigMap where the new offsets are stored.
+                          required:
+                          - fromConfigMap
+                          description: Configuration for altering offsets.
                       description: The specification of the Kafka MirrorMaker 2 source connector.
                     heartbeatConnector:
                       type: object
@@ -368,6 +392,30 @@ spec:
                               type: integer
                               description: "The maximum number of connector restarts that the operator will try. If the connector remains in a failed state after reaching this limit, it must be restarted manually by the user. Defaults to an unlimited number of restarts."
                           description: Automatic restart of connector and tasks configuration.
+                        listOffsets:
+                          type: object
+                          properties:
+                            toConfigMap:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                              description: Reference to the ConfigMap where the list of offsets will be written to.
+                          required:
+                          - toConfigMap
+                          description: Configuration for listing offsets.
+                        alterOffsets:
+                          type: object
+                          properties:
+                            fromConfigMap:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                              description: Reference to the ConfigMap where the new offsets are stored.
+                          required:
+                          - fromConfigMap
+                          description: Configuration for altering offsets.
                       description: The specification of the Kafka MirrorMaker 2 heartbeat connector.
                     checkpointConnector:
                       type: object
@@ -400,6 +448,30 @@ spec:
                               type: integer
                               description: "The maximum number of connector restarts that the operator will try. If the connector remains in a failed state after reaching this limit, it must be restarted manually by the user. Defaults to an unlimited number of restarts."
                           description: Automatic restart of connector and tasks configuration.
+                        listOffsets:
+                          type: object
+                          properties:
+                            toConfigMap:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                              description: Reference to the ConfigMap where the list of offsets will be written to.
+                          required:
+                          - toConfigMap
+                          description: Configuration for listing offsets.
+                        alterOffsets:
+                          type: object
+                          properties:
+                            fromConfigMap:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                              description: Reference to the ConfigMap where the new offsets are stored.
+                          required:
+                          - fromConfigMap
+                          description: Configuration for altering offsets.
                       description: The specification of the Kafka MirrorMaker 2 checkpoint connector.
                     topicsPattern:
                       type: string
@@ -1253,7 +1325,6 @@ spec:
                               configMap: {}
                               emptyDir: {}
                               persistentVolumeClaim: {}
-                            required: []
                         description: Additional volumes that can be mounted to the pod.
                     description: Template for Kafka Connect `Pods`.
                   apiService:
@@ -1336,6 +1407,48 @@ spec:
                             value:
                               type: string
                               description: The environment variable value.
+                            valueFrom:
+                              type: object
+                              properties:
+                                secretKeyRef:
+                                  type: object
+                                  properties:
+                                    key:
+                                      type: string
+                                    name:
+                                      type: string
+                                    optional:
+                                      type: boolean
+                                  description: Reference to a key in a secret.
+                                configMapKeyRef:
+                                  type: object
+                                  properties:
+                                    key:
+                                      type: string
+                                    name:
+                                      type: string
+                                    optional:
+                                      type: boolean
+                                  description: Reference to a key in a config map.
+                              oneOf:
+                              - properties:
+                                  secretKeyRef: {}
+                                required:
+                                - secretKeyRef
+                              - properties:
+                                  configMapKeyRef: {}
+                                required:
+                                - configMapKeyRef
+                              description: Reference to the secret or config map property to which the environment variable is set.
+                          oneOf:
+                          - properties:
+                              value: {}
+                            required:
+                            - value
+                          - properties:
+                              valueFrom: {}
+                            required:
+                            - valueFrom
                         description: Environment variables which should be applied to the container.
                       securityContext:
                         type: object
@@ -1437,6 +1550,48 @@ spec:
                             value:
                               type: string
                               description: The environment variable value.
+                            valueFrom:
+                              type: object
+                              properties:
+                                secretKeyRef:
+                                  type: object
+                                  properties:
+                                    key:
+                                      type: string
+                                    name:
+                                      type: string
+                                    optional:
+                                      type: boolean
+                                  description: Reference to a key in a secret.
+                                configMapKeyRef:
+                                  type: object
+                                  properties:
+                                    key:
+                                      type: string
+                                    name:
+                                      type: string
+                                    optional:
+                                      type: boolean
+                                  description: Reference to a key in a config map.
+                              oneOf:
+                              - properties:
+                                  secretKeyRef: {}
+                                required:
+                                - secretKeyRef
+                              - properties:
+                                  configMapKeyRef: {}
+                                required:
+                                - configMapKeyRef
+                              description: Reference to the secret or config map property to which the environment variable is set.
+                          oneOf:
+                          - properties:
+                              value: {}
+                            required:
+                            - value
+                          - properties:
+                              valueFrom: {}
+                            required:
+                            - valueFrom
                         description: Environment variables which should be applied to the container.
                       securityContext:
                         type: object
@@ -2163,7 +2318,6 @@ spec:
                               configMap: {}
                               emptyDir: {}
                               persistentVolumeClaim: {}
-                            required: []
                         description: Additional volumes that can be mounted to the pod.
                     description: Template for Kafka Connect Build `Pods`. The build pod is used only on Kubernetes.
                   buildContainer:
@@ -2180,6 +2334,48 @@ spec:
                             value:
                               type: string
                               description: The environment variable value.
+                            valueFrom:
+                              type: object
+                              properties:
+                                secretKeyRef:
+                                  type: object
+                                  properties:
+                                    key:
+                                      type: string
+                                    name:
+                                      type: string
+                                    optional:
+                                      type: boolean
+                                  description: Reference to a key in a secret.
+                                configMapKeyRef:
+                                  type: object
+                                  properties:
+                                    key:
+                                      type: string
+                                    name:
+                                      type: string
+                                    optional:
+                                      type: boolean
+                                  description: Reference to a key in a config map.
+                              oneOf:
+                              - properties:
+                                  secretKeyRef: {}
+                                required:
+                                - secretKeyRef
+                              - properties:
+                                  configMapKeyRef: {}
+                                required:
+                                - configMapKeyRef
+                              description: Reference to the secret or config map property to which the environment variable is set.
+                          oneOf:
+                          - properties:
+                              value: {}
+                            required:
+                            - value
+                          - properties:
+                              valueFrom: {}
+                            required:
+                            - valueFrom
                         description: Environment variables which should be applied to the container.
                       securityContext:
                         type: object
@@ -2359,6 +2555,15 @@ spec:
                                 optional:
                                   type: boolean
                               description: Reference to a key in a ConfigMap.
+                          oneOf:
+                          - properties:
+                              secretKeyRef: {}
+                            required:
+                            - secretKeyRef
+                          - properties:
+                              configMapKeyRef: {}
+                            required:
+                            - configMapKeyRef
                           description: Value of the environment variable which will be passed to the Kafka Connect pods. It can be passed either as a reference to Secret or ConfigMap field. The field has to specify exactly one Secret or ConfigMap.
                       required:
                       - name
@@ -2414,6 +2619,15 @@ spec:
                             optional:
                               type: boolean
                           description: Reference to a key in a ConfigMap. Exactly one Secret or ConfigMap has to be specified.
+                      oneOf:
+                      - properties:
+                          secret: {}
+                        required:
+                        - secret
+                      - properties:
+                          configMap: {}
+                        required:
+                        - configMap
                       required:
                       - name
                     description: Makes data from a Secret or ConfigMap available in the Kafka Connect pods as volumes.

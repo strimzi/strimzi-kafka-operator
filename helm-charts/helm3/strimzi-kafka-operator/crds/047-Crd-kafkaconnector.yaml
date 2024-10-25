@@ -92,6 +92,30 @@ spec:
                     - stopped
                     - running
                   description: The state the connector should be in. Defaults to running.
+                listOffsets:
+                  type: object
+                  properties:
+                    toConfigMap:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                      description: Reference to the ConfigMap where the list of offsets will be written to.
+                  required:
+                    - toConfigMap
+                  description: Configuration for listing offsets.
+                alterOffsets:
+                  type: object
+                  properties:
+                    fromConfigMap:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                      description: Reference to the ConfigMap where the new offsets are stored.
+                  required:
+                    - fromConfigMap
+                  description: Configuration for altering offsets.
               description: The specification of the Kafka Connector.
             status:
               type: object

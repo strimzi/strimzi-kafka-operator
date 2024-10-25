@@ -1108,7 +1108,6 @@ spec:
                               configMap: {}
                               emptyDir: {}
                               persistentVolumeClaim: {}
-                            required: []
                         description: Additional volumes that can be mounted to the pod.
                     description: Template for Kafka Connect `Pods`.
                   apiService:
@@ -1191,6 +1190,48 @@ spec:
                             value:
                               type: string
                               description: The environment variable value.
+                            valueFrom:
+                              type: object
+                              properties:
+                                secretKeyRef:
+                                  type: object
+                                  properties:
+                                    key:
+                                      type: string
+                                    name:
+                                      type: string
+                                    optional:
+                                      type: boolean
+                                  description: Reference to a key in a secret.
+                                configMapKeyRef:
+                                  type: object
+                                  properties:
+                                    key:
+                                      type: string
+                                    name:
+                                      type: string
+                                    optional:
+                                      type: boolean
+                                  description: Reference to a key in a config map.
+                              oneOf:
+                              - properties:
+                                  secretKeyRef: {}
+                                required:
+                                - secretKeyRef
+                              - properties:
+                                  configMapKeyRef: {}
+                                required:
+                                - configMapKeyRef
+                              description: Reference to the secret or config map property to which the environment variable is set.
+                          oneOf:
+                          - properties:
+                              value: {}
+                            required:
+                            - value
+                          - properties:
+                              valueFrom: {}
+                            required:
+                            - valueFrom
                         description: Environment variables which should be applied to the container.
                       securityContext:
                         type: object
@@ -1292,6 +1333,48 @@ spec:
                             value:
                               type: string
                               description: The environment variable value.
+                            valueFrom:
+                              type: object
+                              properties:
+                                secretKeyRef:
+                                  type: object
+                                  properties:
+                                    key:
+                                      type: string
+                                    name:
+                                      type: string
+                                    optional:
+                                      type: boolean
+                                  description: Reference to a key in a secret.
+                                configMapKeyRef:
+                                  type: object
+                                  properties:
+                                    key:
+                                      type: string
+                                    name:
+                                      type: string
+                                    optional:
+                                      type: boolean
+                                  description: Reference to a key in a config map.
+                              oneOf:
+                              - properties:
+                                  secretKeyRef: {}
+                                required:
+                                - secretKeyRef
+                              - properties:
+                                  configMapKeyRef: {}
+                                required:
+                                - configMapKeyRef
+                              description: Reference to the secret or config map property to which the environment variable is set.
+                          oneOf:
+                          - properties:
+                              value: {}
+                            required:
+                            - value
+                          - properties:
+                              valueFrom: {}
+                            required:
+                            - valueFrom
                         description: Environment variables which should be applied to the container.
                       securityContext:
                         type: object
@@ -2018,7 +2101,6 @@ spec:
                               configMap: {}
                               emptyDir: {}
                               persistentVolumeClaim: {}
-                            required: []
                         description: Additional volumes that can be mounted to the pod.
                     description: Template for Kafka Connect Build `Pods`. The build pod is used only on Kubernetes.
                   buildContainer:
@@ -2035,6 +2117,48 @@ spec:
                             value:
                               type: string
                               description: The environment variable value.
+                            valueFrom:
+                              type: object
+                              properties:
+                                secretKeyRef:
+                                  type: object
+                                  properties:
+                                    key:
+                                      type: string
+                                    name:
+                                      type: string
+                                    optional:
+                                      type: boolean
+                                  description: Reference to a key in a secret.
+                                configMapKeyRef:
+                                  type: object
+                                  properties:
+                                    key:
+                                      type: string
+                                    name:
+                                      type: string
+                                    optional:
+                                      type: boolean
+                                  description: Reference to a key in a config map.
+                              oneOf:
+                              - properties:
+                                  secretKeyRef: {}
+                                required:
+                                - secretKeyRef
+                              - properties:
+                                  configMapKeyRef: {}
+                                required:
+                                - configMapKeyRef
+                              description: Reference to the secret or config map property to which the environment variable is set.
+                          oneOf:
+                          - properties:
+                              value: {}
+                            required:
+                            - value
+                          - properties:
+                              valueFrom: {}
+                            required:
+                            - valueFrom
                         description: Environment variables which should be applied to the container.
                       securityContext:
                         type: object
@@ -2214,6 +2338,15 @@ spec:
                                 optional:
                                   type: boolean
                               description: Reference to a key in a ConfigMap.
+                          oneOf:
+                          - properties:
+                              secretKeyRef: {}
+                            required:
+                            - secretKeyRef
+                          - properties:
+                              configMapKeyRef: {}
+                            required:
+                            - configMapKeyRef
                           description: Value of the environment variable which will be passed to the Kafka Connect pods. It can be passed either as a reference to Secret or ConfigMap field. The field has to specify exactly one Secret or ConfigMap.
                       required:
                       - name
@@ -2269,6 +2402,15 @@ spec:
                             optional:
                               type: boolean
                           description: Reference to a key in a ConfigMap. Exactly one Secret or ConfigMap has to be specified.
+                      oneOf:
+                      - properties:
+                          secret: {}
+                        required:
+                        - secret
+                      - properties:
+                          configMap: {}
+                        required:
+                        - configMap
                       required:
                       - name
                     description: Makes data from a Secret or ConfigMap available in the Kafka Connect pods as volumes.

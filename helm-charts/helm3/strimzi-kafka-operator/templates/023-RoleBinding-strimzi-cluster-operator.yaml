@@ -1,6 +1,10 @@
-{{- if .Values.rbac.create }}
+{{- if .Values.rbac.create -}}
 {{- $root := . -}}
-{{- range append .Values.watchNamespaces .Release.Namespace }}
+{{- $watchNamespaces := .Values.watchNamespaces -}}
+{{- if $root.Values.watchAnyNamespace }}
+  {{- $watchNamespaces = list -}}  
+{{- end }}
+{{- range append $watchNamespaces .Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 {{- if $root.Values.watchAnyNamespace }}

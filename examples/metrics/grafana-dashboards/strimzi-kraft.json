@@ -1075,6 +1075,89 @@
     },
     {
       "datasource": "${DS_PROMETHEUS}",
+      "description": "The role of the node in KRaft",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": null,
+            "filterable": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 23
+      },
+      "id": 122,
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Pod Name"
+          }
+        ]
+      },
+      "pluginVersion": "7.4.5",
+      "targets": [
+        {
+          "expr": "max(kafka_server_raftmetrics_current_state) by (kubernetes_pod_name, current_state)",
+          "format": "table",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Current Raft State",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Value": true
+            },
+            "indexByName": {
+              "Time": 0,
+              "Value": 3,
+              "current_state": 2,
+              "kubernetes_pod_name": 1
+            },
+            "renameByName": {
+              "current_state": "Current State",
+              "kubernetes_pod_name": "Pod Name"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
       "description": "The current quorum leader's id; -1 indicates unknown",
       "fieldConfig": {
         "defaults": {
@@ -1134,8 +1217,8 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
-        "x": 0,
+        "w": 6,
+        "x": 6,
         "y": 23
       },
       "id": 104,
@@ -1228,8 +1311,8 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
-        "x": 8,
+        "w": 6,
+        "x": 12,
         "y": 23
       },
       "id": 105,
@@ -1322,8 +1405,8 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
-        "x": 16,
+        "w": 6,
+        "x": 18,
         "y": 23
       },
       "id": 113,
