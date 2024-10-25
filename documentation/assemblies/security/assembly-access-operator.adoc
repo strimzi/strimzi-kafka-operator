@@ -3,14 +3,13 @@
 // security/assembly-security.adoc
 
 [id='assembly-access-operator-{context}']
-= Using the Access Operator to manage client connections (early access)
+= Using the Access Operator to manage client connections
 
 [role="_abstract"]
-The Strimzi Access Operator simplifies how applications connect to a Kafka cluster managed by the Cluster Operator. 
+The Strimzi Access Operator is an optional feature that simplifies the sharing of Kafka connection information and credentials between namespaces
+
 The Access Operator is deployed separately and manages the distribution of connection details, which are stored as a `Secret` resource. 
 The secret contains cluster connection details and optional user credentials, and can be referenced by applications across different namespaces.
-
-WARNING: The Access Operator is an early access feature and is not recommended for production environments.
 
 //Procedure for deployment of Access Operator
 include::../../modules/deploying/proc-deploy-access-operator.adoc[leveloffset=+1]

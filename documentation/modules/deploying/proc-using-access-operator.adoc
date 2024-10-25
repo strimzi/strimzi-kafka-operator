@@ -3,7 +3,7 @@
 // security/assembly-access-operator.adoc
 
 [id='proc-using-access-operator-{context}']
-= Using the Access Operator (early access)
+= Using the Access Operator
 
 [role="_abstract"]
 This procedure shows how to use the Access Operator to manage access to a Kafka cluster.
@@ -25,7 +25,7 @@ If no listener is specified it will choose according to these rules:
 * A Kafka cluster deployed  using a `Kafka` resource and managed by the Cluster Operator.
 * `KafkaUser` resources must be created for any users needing authentication to the Kafka cluster.
 
-Example `KafkaAccess` resource specifications are contained in the `./examples` directory of Strimzi's link:https://github.com/strimzi/kafka-access-operator[`kafka-access-operator` GitHub repository^].
+Example `KafkaAccess` resource specifications are contained in the `./examples` directory of the latest release archive (`{ReleaseFile}`) from the {ReleaseDownload}.
 
 .Procedure
 
