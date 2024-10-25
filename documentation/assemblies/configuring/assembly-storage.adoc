@@ -19,9 +19,11 @@ JBOD (Just a Bunch of Disks) storage allows you to configure your Kafka cluster 
 
 .JBOD storage (multiple volumes)
 When specifying JBOD storage, you must still decide between using ephemeral or persistent volumes for each disk. 
-Even if you start with only one volume, using JBOD allows for future scaling by adding more volumes as needed.
+Even if you start with only one volume, using JBOD allows for future scaling by adding more volumes as needed, and that is why it is always recommended.
 
-NOTE: Persistent, ephemeral, and JBOD storage types cannot be changed after a Kafka cluster is deployed, though you can create and migrate to node pools with new storage specifications.
+NOTE: Persistent, ephemeral, and JBOD storage types cannot be changed after a Kafka cluster is deployed. 
+However, you can add or remove volumes of different types from the JBOD storage.
+You can also create and migrate to node pools with new storage specifications.
 
 .Tiered storage (advanced)
 
