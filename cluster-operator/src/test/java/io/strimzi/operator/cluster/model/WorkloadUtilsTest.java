@@ -36,7 +36,6 @@ import io.strimzi.api.kafka.model.common.template.ResourceTemplateBuilder;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
-import io.strimzi.api.kafka.model.podset.StrimziPodSetBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;
@@ -362,44 +361,6 @@ public class WorkloadUtilsTest {
         assertThat(podNames, hasItems("my-cluster-nodes-10", "my-cluster-nodes-11", "my-cluster-nodes-12"));
         assertThat(sps.getSpec().getPods().size(), is(3));
         assertThat(sps.getSpec().getPods().stream().map(pod -> PodSetUtils.mapToPod(pod).getMetadata().getName()).toList(), hasItems("my-cluster-nodes-10", "my-cluster-nodes-11", "my-cluster-nodes-12"));
-    }
-
-    @Test
-    public void testPatchPodAnnotations() {
-        Map<String, String> annotations = Map.of("anno-1", "value-1", "anno-2", "value-2", "anno-3", "value-3");
-        List<Pod> pods = new ArrayList<>();
-        pods.add(new PodBuilder()
-                .withNewMetadata()
-                    .withName("pod-0")
-                    .withNamespace(NAMESPACE)
-                    .withAnnotations(annotations)
-                .endMetadata()
-                .build()
-        );
-        pods.add(new PodBuilder()
-                .withNewMetadata()
-                    .withName("pod-1")
-                    .withNamespace(NAMESPACE)
-                    .withAnnotations(annotations)
-                .endMetadata()
-                .build()
-        );
-
-        StrimziPodSet sps = new StrimziPodSetBuilder()
-                .withNewMetadata()
-                    .withName("my-sps")
-                    .withNamespace(NAMESPACE)
-                .endMetadata()
-                .withNewSpec()
-                    .withPods(PodSetUtils.podsToMaps(pods))
-                .endSpec()
-                .build();
-
-        List<Pod> resultPods = PodSetUtils.podSetToPods(WorkloadUtils.patchAnnotations(sps, Map.of("anno-2", "value-2a", "anno-4", "value-4")));
-        assertThat(resultPods.size(), is(2));
-        Map<String, String> expectedAnnotations = Map.of("anno-1", "value-1", "anno-2", "value-2a", "anno-3", "value-3", "anno-4", "value-4");
-        assertThat(resultPods.get(0).getMetadata().getAnnotations(), is(expectedAnnotations));
-        assertThat(resultPods.get(1).getMetadata().getAnnotations(), is(expectedAnnotations));
     }
 
     //////////////////////////////////////////////////

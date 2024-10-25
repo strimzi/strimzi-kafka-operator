@@ -47,6 +47,7 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -264,13 +265,16 @@ public class CaReconcilerZooBasedTest {
         }
 
         @Override
-        Future<Set<NodeRef>> patchCaGenerationAndReturnNodes() {
-            //Response is ignored by rollKafka method in the mock
-            return Future.succeededFuture(Set.of());
+        Future<Set<NodeRef>> getKafkaReplicas() {
+            Set<NodeRef> nodes = new HashSet<>();
+            nodes.add(ReconcilerUtils.nodeFromPod(podWithName("my-kafka-kafka-0")));
+            nodes.add(ReconcilerUtils.nodeFromPod(podWithName("my-kafka-kafka-1")));
+            nodes.add(ReconcilerUtils.nodeFromPod(podWithName("my-kafka-kafka-2")));
+            return Future.succeededFuture(nodes);
         }
 
         @Override
-        Future<Void> rollKafka(Set<NodeRef> nodes, RestartReasons podRollReasons, TlsPemIdentity coTlsPemIdentity) {
+        Future<Void> rollKafkaBrokers(Set<NodeRef> nodes, RestartReasons podRollReasons, TlsPemIdentity coTlsPemIdentity) {
             this.kPodRollReasons = podRollReasons;
             return Future.succeededFuture();
         }
