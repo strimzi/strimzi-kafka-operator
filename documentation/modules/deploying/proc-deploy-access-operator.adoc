@@ -23,7 +23,7 @@ To deploy the operator in a different namespace, update the `namespace` property
 . Deploy the Access Operator using the installation files from the `install` directory:
 +
 [source,shell]
-kubectl create -f ./install
+kubectl create -f ./install/access-operator
 
 . Check the status of the deployment:
 +
