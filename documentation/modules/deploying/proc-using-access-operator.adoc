@@ -1,0 +1,132 @@
+// This assembly is included in the following assemblies:
+//
+// security/assembly-access-operator.adoc
+
+[id='proc-using-access-operator-{context}']
+= Using the Access Operator
+
+[role="_abstract"]
+This procedure shows how to use the Access Operator to manage access to a Kafka cluster.
+The Access Operator simplifies access management by creating a binding `Secret` containing the connection details for a Kafka cluster and optional user credentials.
+
+Kafka instances and Kafka users are specified in a `KafkaAccess` resource.
+Optionally, a listener to connect to the Kafka cluster can also be specified. 
+The operator will look up the Kafka instance and users specified in the `KafkaAccess` resource to create a secret with the details required for connection.
+Any authentication credentials required by a user to connect to Kafka are also added to the secret. 
+If no listener is specified it will choose according to these rules: 
+
+* If only one listener is configured in the `Kafka` resource, that listener is selected.
+* If multiple listeners are configured, the operator selects one with the appropriate security based on `tls` and `authentication` properties in the `Kafka` and `KafkaUser` resources.
+* If multiple listeners with appropriate security are available, the operator selects an internal listener, if present.
+* If multiple internal listeners with appropriate security are available, the operator selects the first listener alphabetically by name.
+
+.Prerequisites
+
+* A Kafka cluster deployed  using a `Kafka` resource and managed by the Cluster Operator.
+* `KafkaUser` resources must be created for any users needing authentication to the Kafka cluster.
+
+Example `KafkaAccess` resource specifications are contained in the `./examples` directory of the latest release archive (`{ReleaseFile}`) from the {ReleaseDownload}.
+
+.Procedure
+
+. Configure a `KafkaAccess` custom resource to bind your applications to the Kafka cluster. 
++
+** Specify the name of the `Kafka` resource to connect to the Kafka cluster.
+** (Optional) Specify the name of the listener used to connect to the Kafka cluster.
+** (Optional) Specify the `KafkaUser` resources representing users requiring access to the Kafka cluster.
++
+Make sure the name, namespace and listener in the `KafkaAccess` custom resource match those of your Kafka instance.
++
+.Example access configuration
+[source,yaml]
+----
+apiVersion: access.strimzi.io/v1alpha1
+kind: KafkaAccess
+metadata:
+  name: my-kafka-access
+spec:
+  kafka:
+    name: my-cluster
+    namespace: kafka
+    listener: tls
+  user:
+    kind: KafkaUser
+    apiGroup: kafka.strimzi.io
+    name: my-user
+    namespace: kafka
+----
+
+. Create the `KafkaAccess` resource in Kubernetes:
++
+[source,shell]
+----
+kubectl apply -f <kafka_access_config_file> -n strimzi-access-operator
+----
+
+. Check the status of the `KafkaAccess` custom resource: 
++
+[source,shell]
+----
+kubectl get kafkaaccess my-kafka-access -o yaml
+----
++
+The status of the resource is updated once the operator creates the binding `Secret`. 
++
+.Status shows binding secret created 
+[source,yaml]
+----
+# ...
+status: 
+  binding: 
+    name: 
+      kafka-binding
+----
+
+. Inspect the created binding secret: 
++ 
+[source,shell]
+kubectl get secret kafka-binding -o yaml
++
+The secret contains connection details and user credentials in various formats to accommodate the requirements of different development environments and applications. 
+The user credentials included depend on the authentication method specified for the `KafkaUser` resource. 
+For example, SCRAM-SHA-512 credentials are provided if that type of authentication is used.
++
+.Example binding secret
+[source,yaml]
+----
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kafka-binding
+type: servicebinding.io/kafka
+data:
+  type: kafka
+  provider: strimzi
+  # Kafka cluster connection properties # <1>
+  bootstrap.servers: my-cluster-kafka-bootstrap:9092
+  bootstrap-servers: my-cluster-kafka-bootstrap:9092  
+  bootstrapServers: my-cluster-kafka-bootstrap:9092
+  # Security protocol option # <2>
+  security.protocol: SSL
+  securityProtocol: SSL
+  # TLS enabled
+  ssl.truststore.crt: my-cluster-cluster-ca-cert # <3>
+  # SCRAM-SHA-512 authentication properties # <4>
+  username: admin
+  password: password
+  sasl.jaas.config: com.example.ScramLoginModule required;
+  sasl.mechanism: SCRAM-SHA-512
+  saslMechanism: SCRAM-SHA-512
+  # mTLS authentication properties # <5>
+  ssl.keystore.crt: user.crt
+  ssl.keystore.key: user.key
+----
+<1> Comma-separated host:port connection details for Kafka clusters.
+<2> The security protocol used for communication with Kafka, which can be `PLAINTEXT`, `SSL`, `SASL_PLAINTEXT` or `SASL_SSL`.
+<3> The Strimzi cluster CA certificate if TLS is enabled.
+<4> Credentials for SCRAM-SHA-512 client authentication.
+<5> Credentials for mTLs client authentication. 
+
+. Make the secret available to your application. 
++ 
+Applications can reference the secret directly, or you can inject it into an application's environment using an operator to implement the link:https://servicebinding.io/spec/core/1.0.0/[Service Binding specification].
