@@ -24,7 +24,6 @@ import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
-import io.strimzi.operator.cluster.model.WorkloadUtils;
 import io.strimzi.operator.cluster.operator.resource.KafkaAgentClientProvider;
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -56,11 +55,11 @@ import io.vertx.core.Vertx;
 
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Class used for reconciliation of Cluster and Client CAs. This class contains both the steps of the CA reconciliation
@@ -396,8 +395,8 @@ public class CaReconciler {
             TlsPemIdentity coTlsPemIdentity = new TlsPemIdentity(new PemTrustSet(clusterCa.caCertSecret()), PemAuthIdentity.clusterOperator(coSecret));
             return getZooKeeperReplicas()
                     .compose(replicas -> maybeRollZookeeper(replicas, podRollReasons, coTlsPemIdentity))
-                    .compose(i -> patchCaGenerationAndReturnNodes())
-                    .compose(nodes -> rollKafka(nodes, podRollReasons, coTlsPemIdentity))
+                    .compose(i -> getKafkaReplicas())
+                    .compose(nodes -> rollKafkaBrokers(nodes, podRollReasons, coTlsPemIdentity))
                     .compose(i -> maybeRollDeploymentIfExists(KafkaResources.entityOperatorDeploymentName(reconciliation.name()), podRollReasons))
                     .compose(i -> maybeRollDeploymentIfExists(KafkaExporterResources.componentName(reconciliation.name()), podRollReasons))
                     .compose(i -> maybeRollDeploymentIfExists(CruiseControlResources.componentName(reconciliation.name()), podRollReasons));
@@ -528,40 +527,27 @@ public class CaReconciler {
         }
     }
 
-    /* test */ Future<Set<NodeRef>> patchCaGenerationAndReturnNodes() {
+    /* test */ Future<Set<NodeRef>> getKafkaReplicas() {
         Labels selectorLabels = Labels.EMPTY
                 .withStrimziKind(reconciliation.kind())
                 .withStrimziCluster(reconciliation.name())
                 .withStrimziName(KafkaResources.kafkaComponentName(reconciliation.name()));
+
         return strimziPodSetOperator.listAsync(reconciliation.namespace(), selectorLabels)
                 .compose(podSets -> {
+                    Set<NodeRef> nodes = new LinkedHashSet<>();
+
                     if (podSets != null) {
-                        List<StrimziPodSet> updatedPodSets = podSets
-                                .stream()
-                                .map(podSet -> WorkloadUtils.patchAnnotations(
-                                        podSet,
-                                        Map.of(
-                                                Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(clusterCa.caCertGeneration()),
-                                                Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(clusterCa.caKeyGeneration()),
-                                                Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, String.valueOf(clientsCa.caCertGeneration())
-                                        )))
-                                .toList();
-                        return strimziPodSetOperator.batchReconcile(
-                                reconciliation,
-                                reconciliation.namespace(),
-                                updatedPodSets,
-                                selectorLabels
-                        ).map(i -> updatedPodSets.stream()
-                                .flatMap(podSet -> ReconcilerUtils.nodesFromPodSet(podSet).stream())
-                                .collect(Collectors.toSet()));
-                    } else {
-                        return Future.succeededFuture(Set.of());
+                        for (StrimziPodSet podSet : podSets) {
+                            nodes.addAll(ReconcilerUtils.nodesFromPodSet(podSet));
+                        }
                     }
+
+                    return Future.succeededFuture(nodes);
                 });
-        
     }
 
-    /* test */ Future<Void> rollKafka(Set<NodeRef> nodes, RestartReasons podRollReasons, TlsPemIdentity coTlsPemIdentity) {
+    /* test */ Future<Void> rollKafkaBrokers(Set<NodeRef> nodes, RestartReasons podRollReasons, TlsPemIdentity coTlsPemIdentity) {
         return new KafkaRoller(
                 reconciliation,
                 vertx,
