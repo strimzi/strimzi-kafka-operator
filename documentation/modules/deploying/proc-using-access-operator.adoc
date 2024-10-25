@@ -16,7 +16,7 @@ Any authentication credentials required by a user to connect to Kafka are also a
 If no listener is specified it will choose according to these rules: 
 
 * If only one listener is configured in the `Kafka` resource, that listener is selected.
-* If multiple listeners are configured, the operator selects one with the appropriate security based on tls and authentication properties in the `Kafka` and `KafkaUser` resources.
+* If multiple listeners are configured, the operator selects one with the appropriate security based on `tls` and `authentication` properties in the `Kafka` and `KafkaUser` resources.
 * If multiple listeners with appropriate security are available, the operator selects an internal listener, if present.
 * If multiple internal listeners with appropriate security are available, the operator selects the first listener alphabetically by name.
 
@@ -33,7 +33,7 @@ Example `KafkaAccess` resource specifications are contained in the `./examples` 
 +
 ** Specify the name of the `Kafka` resource to connect to the Kafka cluster.
 ** (Optional) Specify the name of the listener used to connect to the Kafka cluster.
-** Specify the `KafkaUser` resources representing users requiring access to the Kafka cluster.
+** (Optional) Specify the `KafkaUser` resources representing users requiring access to the Kafka cluster.
 +
 Make sure the name, namespace and listener in the `KafkaAccess` custom resource match those of your Kafka instance.
 +
@@ -87,7 +87,9 @@ status:
 [source,shell]
 kubectl get secret kafka-binding -o yaml
 +
-The secret contains connection details and user credentials in various formats to accommodate the requirements of different development environments and applications.
+The secret contains connection details and user credentials in various formats to accommodate the requirements of different development environments and applications. 
+The user credentials included depend on the authentication method specified for the `KafkaUser` resource. 
+For example, SCRAM-SHA-512 credentials are provided if that type of authentication is used.
 +
 .Example binding secret
 [source,yaml]

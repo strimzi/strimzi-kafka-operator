@@ -23,7 +23,7 @@ To deploy the operator in a different namespace, update the `namespace` property
 . Deploy the Access Operator using the installation files from the `install` directory:
 +
 [source,shell]
-kubectl create -f ./install -n strimzi-access-operator
+kubectl create -f ./install
 
 . Check the status of the deployment:
 +
