@@ -2,6 +2,7 @@
 
 ## 0.45.0
 
+* Add support for Kafka 3.8.1
 
 ## 0.44.0
 
