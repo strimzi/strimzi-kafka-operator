@@ -21,7 +21,7 @@ SECRETS_OPT="hidden"
 # sed non-printable text delimiter
 SD=$(echo -en "\001") && readonly SD
 # sed sensitive information filter expression
-SE="s${SD}^\(\s*.*\password\s*:\s*\).*${SD}\1\<hidden>'${SD}; s${SD}^\(\s*.*\.key\s*:\s*\).*${SD}\1\<hidden>${SD}" && readonly SE
+SE="s${SD}^\(\s*\(.*\.\)\{0,1\}password\(\..*\)\{0,1\}\s*:\s*\).*${SD}\1\'<hidden>'${SD}; s${SD}^\(\s*\(.*\.\)\{0,1\}key\(\..*\)\{0,1\}\s*:\s*\).*${SD}\1\'<hidden>'${SD}" && readonly SE
 
 error() {
   echo "$@" 1>&2 && exit 1
