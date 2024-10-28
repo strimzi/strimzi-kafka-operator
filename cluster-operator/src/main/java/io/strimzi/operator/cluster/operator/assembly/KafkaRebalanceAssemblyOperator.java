@@ -803,11 +803,22 @@ public class KafkaRebalanceAssemblyOperator
                         .onSuccess(cruiseControlResponse -> handleUserTaskStatusResponse(reconciliation, cruiseControlResponse, p, sessionId, conditions, kafkaRebalance, configMapOperator, true, host, apiClient, rebalanceOptionsBuilder))
                         .onFailure(e -> {
                             LOGGER.errorCr(reconciliation, "Cruise Control getting rebalance proposal status failed", e.getCause());
-                            p.fail(new CruiseControlRestException("Cruise Control getting rebalance proposal status failed"));
+                            handleUserTaskStatusError(reconciliation, p, kafkaRebalance, conditions, e);
                         });
             }
         }
         return p.future();
+    }
+
+    private void handleUserTaskStatusError(Reconciliation reconciliation, Promise<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> p, KafkaRebalance kafkaRebalance, Set<Condition> conditions, Throwable e) {
+        String servletFullErrorPattern = "There are already \\d+ active user tasks, which has reached the servlet capacity.";
+        if (e.getMessage().matches(".*" + servletFullErrorPattern + ".*")) {
+            LOGGER.warnCr(reconciliation, "The maximum number of active user tasks that can run concurrently has reached. You may consider adjusting CC's configuration, \"max.active.user.tasks\".");
+            configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
+                    .onSuccess(loadmap -> p.complete(new MapAndStatus<>(loadmap, buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))));
+        } else {
+            p.fail(e);
+        }
     }
 
     private void handleUserTaskStatusResponse(Reconciliation reconciliation, CruiseControlResponse cruiseControlResponse,
@@ -987,7 +998,7 @@ public class KafkaRebalanceAssemblyOperator
                 .onSuccess(cruiseControlResponse -> handleUserTaskStatusResponse(reconciliation, cruiseControlResponse, p, sessionId, conditions, kafkaRebalance, configMapOperator, false, host, apiClient, rebalanceOptionsBuilder))
                 .onFailure(e -> {
                     LOGGER.errorCr(reconciliation, "Cruise Control getting rebalance task status failed", e);
-                    p.fail(e);
+                    handleUserTaskStatusError(reconciliation, p, kafkaRebalance, conditions, e);
                 });
         }
         return p.future();

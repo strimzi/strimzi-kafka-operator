@@ -57,6 +57,7 @@ import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.Cruise
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -1294,6 +1295,50 @@ public class KafkaRebalanceStateMachineTest {
 
         checkTransition(vertx, context,
                 KafkaRebalanceState.Rebalancing, KafkaRebalanceState.NotReady,
+                kcRebalance)
+                .onComplete(result -> checkOptimizationResults(result, context, true));
+    }
+
+    @Test
+    public void testGetUserTasksReturnError(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.Rebalancing, MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID, null, REMOVE_BROKER_KAFKA_REBALANCE_SPEC, null, false);
+        cruiseControlServer.setupCCUserTasksToReturnError(500, "Some error");
+
+        CruiseControlApi client = new CruiseControlApiImpl(vertx, HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS, MockCruiseControl.CC_SECRET, MockCruiseControl.CC_API_SECRET, true, true);
+        KafkaRebalanceAssemblyOperator kcrao = new KafkaRebalanceAssemblyOperator(vertx,  ResourceUtils.supplierWithMocks(true), ResourceUtils.dummyClusterOperatorConfig(), cruiseControlPort) {
+            @Override
+            public String cruiseControlHost(String clusterName, String clusterNamespace) {
+                return HOST;
+            }
+        };
+
+        Reconciliation recon = new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME);
+
+        kcrao.computeNextStatus(recon, HOST, client, kcRebalance, KafkaRebalanceState.Rebalancing, null)
+                .onComplete(mapAndStatusAsyncResult -> {
+                    assertTrue(mapAndStatusAsyncResult.failed());
+                    context.completeNow();
+                });
+    }
+
+    @Test
+    public void testGetUserTasksForRebalancingReturnServletFullError(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.Rebalancing, MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID, null, REMOVE_BROKER_KAFKA_REBALANCE_SPEC, null, false);
+        cruiseControlServer.setupCCUserTasksToReturnError(500, "Error processing POST request '/remove_broker' due to: 'There are already 5 active user tasks, which has reached the servlet capacity'.");
+
+        checkTransition(vertx, context,
+                KafkaRebalanceState.Rebalancing, KafkaRebalanceState.Rebalancing,
+                kcRebalance)
+                .onComplete(result -> checkOptimizationResults(result, context, true));
+    }
+
+    @Test
+    public void testGetUserTasksForProposalReturnServletFullError(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.PendingProposal, MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID, null, REMOVE_BROKER_KAFKA_REBALANCE_SPEC, null, false);
+        cruiseControlServer.setupCCUserTasksToReturnError(500, "Error processing POST request '/remove_broker' due to: 'There are already 5 active user tasks, which has reached the servlet capacity'.");
+
+        checkTransition(vertx, context,
+                KafkaRebalanceState.PendingProposal, KafkaRebalanceState.PendingProposal,
                 kcRebalance)
                 .onComplete(result -> checkOptimizationResults(result, context, true));
     }

@@ -515,6 +515,25 @@ public class MockCruiseControl {
                                 .withDelay(TimeUnit.SECONDS, 0));
     }
 
+    public void setupCCUserTasksToReturnError(int statusCode, String errorMessage) throws IOException, URISyntaxException {
+        // This simulates asking for the status of a task that has Complete with error and fetch_completed_task=true
+        JsonBody errorJson = new JsonBody("{\"errorMessage\":\"" + errorMessage + "\"}");
+        server
+                .when(
+                        request()
+                                .withMethod("GET")
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.FETCH_COMPLETE.toString(), "true"))
+                                .withPath(CruiseControlEndpoints.USER_TASKS.toString())
+                                .withHeader(AUTH_HEADER)
+                                .withSecure(true))
+                .respond(
+                        response()
+                                .withBody(errorJson)
+                                .withStatusCode(statusCode)
+                                .withDelay(TimeUnit.SECONDS, 0));
+    }
+
     /**
      * Setup response when user task is not found
      */
