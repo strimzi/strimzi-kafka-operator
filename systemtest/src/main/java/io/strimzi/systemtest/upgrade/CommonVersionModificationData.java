@@ -15,7 +15,6 @@ public class CommonVersionModificationData {
     private String fromExamples;
     private String fromUrl;
     private String fromKafkaVersionsUrl;
-    private String toKafkaVersionsUrl;
     private String toVersion;
     private String toExamples;
     private String toUrl;
@@ -52,14 +51,6 @@ public class CommonVersionModificationData {
 
     public void setFromKafkaVersionsUrl(String fromKafkaVersionsUrl) {
         this.fromKafkaVersionsUrl = fromKafkaVersionsUrl;
-    }
-
-    public String getToKafkaVersionsUrl() {
-        return toKafkaVersionsUrl;
-    }
-
-    public void setToKafkaVersionsUrl(String toKafkaVersionsUrl) {
-        this.toKafkaVersionsUrl = toKafkaVersionsUrl;
     }
 
     public String getToVersion() {
