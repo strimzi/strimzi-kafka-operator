@@ -6,6 +6,7 @@
 #  fromUrl: String - url, from which examples are downloaded
 #  toUrl: String - url, from which examples are downloaded during downgrade and replace the original ones
 #  fromKafkaVersionsUrl: String - url, from which kafka-versions.yaml is downloaded
+#  toKafkaVersionsUrl: String - url, from which kafka-versions.yaml is downloaded - for version we are downgrading to
 #  additionalTopics: int - number of additional topics, which will be created
 #  oldestKafka: String - version of Kafka, used in initial deployment of Kafka CR
 #  imagesAfterOperations:  Strings - images that corresponding pods should contain. They are checked after downgrade
@@ -36,6 +37,7 @@
   fromUrl: HEAD
   toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.43.0/strimzi-0.43.0.zip
   fromKafkaVersionsUrl: HEAD
+  toKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.43.0/kafka-versions.yaml
   additionalTopics: 2
   imagesAfterOperations:
     zookeeper: strimzi/kafka:0.43.0-kafka-3.7.0

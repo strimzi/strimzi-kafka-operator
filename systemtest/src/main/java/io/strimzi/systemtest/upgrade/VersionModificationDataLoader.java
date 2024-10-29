@@ -167,18 +167,29 @@ public class VersionModificationDataLoader {
         VersionModificationDataLoader dataLoader = new VersionModificationDataLoader(ModificationType.BUNDLE_DOWNGRADE);
         List<Arguments> parameters = new LinkedList<>();
 
-        List<TestKafkaVersion> testKafkaVersions = TestKafkaVersion.getSupportedKafkaVersions();
-        TestKafkaVersion testKafkaVersion = testKafkaVersions.get(0);
-
-        // Generate procedures for upgrade
-        UpgradeKafkaVersion procedures = new UpgradeKafkaVersion(testKafkaVersion.version());
-
         dataLoader.getBundleUpgradeOrDowngradeDataList().forEach(downgradeData -> {
             if (isKRaft && skipTestCaseIfWrongFeatureGatesAreUsedInKRaft(downgradeData)) {
                 // if we are running KRaft upgrade/downgrade tests and we are setting "wrong" feature gates in the upgrade/downgrade YAML
                 // we should skip this scenario
                 return;
             }
+
+            TestKafkaVersion olderKafkaVersion;
+            String deployKafkaVersion = downgradeData.getDeployKafkaVersion();
+
+            try {
+                List<TestKafkaVersion> testKafkaVersions = TestKafkaVersion.parseKafkaVersionsFromUrl(downgradeData.getToKafkaVersionsUrl());
+                olderKafkaVersion = TestKafkaVersion.getSupportedKafkaVersionsFromAllVersions(testKafkaVersions)
+                    .stream()
+                    .filter(testKafkaVersion -> !testKafkaVersion.version().equals(deployKafkaVersion))
+                    .findFirst()
+                    .get();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            // Generate procedures for upgrade
+            UpgradeKafkaVersion procedures = new UpgradeKafkaVersion(olderKafkaVersion.version());
 
             downgradeData.setProcedures(procedures);
 
