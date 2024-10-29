@@ -35,8 +35,8 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.AddBrokerOpti
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlRebalanceResponse;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlResponse;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlRestException;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlUserTasksResponse;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RebalanceOptions;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RemoveBrokerOptions;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RemoveDisksOptions;
@@ -803,30 +803,27 @@ public class KafkaRebalanceAssemblyOperator
                         .onSuccess(cruiseControlResponse -> handleUserTaskStatusResponse(reconciliation, cruiseControlResponse, p, sessionId, conditions, kafkaRebalance, configMapOperator, true, host, apiClient, rebalanceOptionsBuilder))
                         .onFailure(e -> {
                             LOGGER.errorCr(reconciliation, "Cruise Control getting rebalance proposal status failed", e.getCause());
-                            handleUserTaskStatusError(reconciliation, p, kafkaRebalance, conditions, e);
+                            p.fail(new CruiseControlRestException("Cruise Control getting rebalance proposal status failed"));
                         });
             }
         }
         return p.future();
     }
 
-    private void handleUserTaskStatusError(Reconciliation reconciliation, Promise<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> p, KafkaRebalance kafkaRebalance, Set<Condition> conditions, Throwable e) {
-        String servletFullErrorPattern = "There are already \\d+ active user tasks, which has reached the servlet capacity.";
-        if (e.getMessage().matches(".*" + servletFullErrorPattern + ".*")) {
-            LOGGER.warnCr(reconciliation, "The maximum number of active user tasks that can run concurrently has reached. You may consider adjusting CC's configuration, \"max.active.user.tasks\".");
-            configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
-                    .onSuccess(loadmap -> p.complete(new MapAndStatus<>(loadmap, buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))));
-        } else {
-            p.fail(e);
-        }
-    }
-
-    private void handleUserTaskStatusResponse(Reconciliation reconciliation, CruiseControlResponse cruiseControlResponse,
+    private void handleUserTaskStatusResponse(Reconciliation reconciliation, CruiseControlUserTasksResponse cruiseControlResponse,
                                               Promise<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> p, String sessionId,
                                               Set<Condition> conditions, KafkaRebalance kafkaRebalance,
                                               ConfigMapOperator configMapOperator, boolean dryRun,
                                               String host, CruiseControlApi apiClient,
                                               AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder) {
+        if (cruiseControlResponse.isMaxActiveUserTasksReached()) {
+            LOGGER.warnCr(reconciliation, "The maximum number of active user tasks that can run concurrently has reached therefore will retry getting user tasks in the next reconciliation. " +
+                    "If this occurs often, consider increasing the value for max.active.user.tasks configuration.");
+            configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
+                    .onSuccess(loadmap -> p.complete(new MapAndStatus<>(loadmap, buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))));
+            return;
+        }
+
         if (cruiseControlResponse.getJson().isEmpty()) {
             // This may happen if:
             // 1. Cruise Control restarted so resetting the state because the tasks queue is not persisted
@@ -998,7 +995,7 @@ public class KafkaRebalanceAssemblyOperator
                 .onSuccess(cruiseControlResponse -> handleUserTaskStatusResponse(reconciliation, cruiseControlResponse, p, sessionId, conditions, kafkaRebalance, configMapOperator, false, host, apiClient, rebalanceOptionsBuilder))
                 .onFailure(e -> {
                     LOGGER.errorCr(reconciliation, "Cruise Control getting rebalance task status failed", e);
-                    handleUserTaskStatusError(reconciliation, p, kafkaRebalance, conditions, e);
+                    p.fail(e);
                 });
         }
         return p.future();

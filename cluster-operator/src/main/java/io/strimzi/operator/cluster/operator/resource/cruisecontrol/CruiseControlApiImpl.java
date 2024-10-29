@@ -330,7 +330,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
     @Override
     @SuppressWarnings("deprecation")
-    public Future<CruiseControlResponse> getUserTaskStatus(Reconciliation reconciliation, String host, int port, String userTaskId) {
+    public Future<CruiseControlUserTasksResponse> getUserTaskStatus(Reconciliation reconciliation, String host, int port, String userTaskId) {
 
         PathBuilder pathBuilder = new PathBuilder(CruiseControlEndpoints.USER_TASKS)
                         .withParameter(CruiseControlParameters.JSON, "true")
@@ -365,7 +365,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                         // This may happen if:
                                         // 1. Cruise Control restarted so resetting the state because the tasks queue is not persisted
                                         // 2. Task's retention time expired, or the cache has become full
-                                        result.complete(new CruiseControlResponse(userTaskID, statusJson));
+                                        result.complete(new CruiseControlUserTasksResponse(userTaskID, statusJson));
                                     } else {
                                         JsonObject jsonUserTask = userTasks.getJsonObject(0);
                                         String taskStatusStr = jsonUserTask.getString(STATUS_KEY);
@@ -409,7 +409,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                             default:
                                                 throw new IllegalStateException("Unexpected user task status: " + taskStatus);
                                         }
-                                        result.complete(new CruiseControlResponse(userTaskID, statusJson));
+                                        result.complete(new CruiseControlUserTasksResponse(userTaskID, statusJson));
                                     }
                                 });
                             } else if (response.result().statusCode() == 500) {
@@ -423,8 +423,15 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                     } else {
                                         errorString = json.toString();
                                     }
-                                    result.fail(new CruiseControlRestException(
-                                            "Error for request: " + host + ":" + port + path + ". Server returned: " + errorString));
+                                    if (errorString.matches(".*" + "There are already \\d+ active user tasks, which has reached the servlet capacity." + ".*")) {
+                                        LOGGER.debugCr(reconciliation, errorString);
+                                        CruiseControlUserTasksResponse ccResponse = new CruiseControlUserTasksResponse(userTaskID, json);
+                                        ccResponse.setMaxActiveUserTasksReached(true);
+                                        result.complete(ccResponse);
+                                    } else {
+                                        result.fail(new CruiseControlRestException(
+                                                "Error for request: " + host + ":" + port + path + ". Server returned: " + errorString));
+                                    }
                                 });
                             } else {
                                 result.fail(new CruiseControlRestException(
