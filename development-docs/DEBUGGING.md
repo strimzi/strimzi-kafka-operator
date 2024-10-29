@@ -60,16 +60,16 @@ Start tailing the operator pod (to make sure it's waiting for the debugger to at
 You can now start the remote debug session from your IDE.
 
 
-## Remote debugging the Kafka Broker
+## Remote debugging the Kafka Broker and Cruise Control
 
-Kafka Broker pods are defined through the 'my-cluster-kafka' StatefulSet which is created by Strimzi Kafka Operator.
+Kafka broker pods are defined through the StrimziPodSet custom resource which is created by Strimzi Kafka Operator.
+Cruise Control pods are created by using a Deployment resource instead.
 
-In order to activate the remote debugging we need to get the Kafka Broker to run with remote debugging agent activated.
+In order to activate the remote debugging we need to get the Kafka broker or Cruise Control to run with remote debugging agent activated.
 
-This can be achieved by adding the following to your Kafka CR cluster definition:
+For Kafka broker, this can be achieved by adding the following to your Kafka CR cluster definition under the `spec.kafka` field:
 
 ```
-
 spec:
   kafka:
     ...
@@ -86,7 +86,27 @@ spec:
           value: "y"
         - name: JAVA_DEBUG_PORT
           value: "5005"
+```
 
+A similar configuration can be used to enable remote debugging for Cruise Control by adding the following to your Kafka CR cluster definition under the `spec.cruiseControl` field:
+
+```
+spec:
+  cruiseControl:
+    ...
+
+    livenessProbe:
+      initialDelaySeconds: 3600
+      timeoutSeconds: 3600
+    template:
+      cruiseControlContainer:
+        env:
+        - name: KAFKA_DEBUG
+          value: "y"
+        - name: DEBUG_SUSPEND_FLAG
+          value: "y"
+        - name: JAVA_DEBUG_PORT
+          value: "5005"
 ```
 
 We also need to open the specified port (5005 in this case) to be reachable from your host machine:
@@ -97,13 +117,17 @@ If you want to map to a different local port use the LOCAL:REMOTE format, for ex
 
     kubectl port-forward my-cluster-kafka-0 8787:5005
 
+The same applies for Cruise Control by using the Deployment:
+
+    kubectl port-forward deployments/my-cluster-cruise-control 5005
+
 All you now have to do is deploy the new Kafka cluster definition, configure remote debugging in your favourite IDE, telling it to connect to localhost:5005, and start your debug session.
 
-With `DEBUG_SUSPEND_FLAG` set to 'y', the Kafka Broker process will wait during startup for remote debugger (IDE) to connect before continuing with JVM start up.
+With `DEBUG_SUSPEND_FLAG` set to 'y', the Kafka Broker or Cruise Control process will wait during startup for remote debugger (IDE) to connect before continuing with JVM start up.
 
-In Kafka CR we have adjusted the probes to prevent Kubernetes from killing the broker whose execution is suspended due to a breakpoint.
+In Kafka CR we have adjusted the probes to prevent Kubernetes from killing the broker or cruise control whose execution is suspended due to a breakpoint.
 
-Before remotely connecting with your IDE you'll want to start tailing the `my-cluster-kafka-0` broker pod:
+Before remotely connecting with your IDE you'll want to start tailing the `my-cluster-kafka-0` broker pod or the corresponding Cruise Control pod:
 
     kubectl logs my-cluster-kafka-0 -f
 
