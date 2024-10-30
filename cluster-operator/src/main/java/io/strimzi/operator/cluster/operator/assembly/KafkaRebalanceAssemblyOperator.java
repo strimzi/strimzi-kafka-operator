@@ -1129,16 +1129,9 @@ public class KafkaRebalanceAssemblyOperator
                 && kafka.getStatus().getConditions().stream().anyMatch(condition -> condition.getType().equals("Ready") && condition.getStatus().equals("True"));
     }
 
-    private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> requestRebalance(Reconciliation reconciliation,
-                                                          String host, CruiseControlApi apiClient, KafkaRebalance kafkaRebalance,
-                                                          boolean dryrun, AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder) {
-        return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, dryrun, rebalanceOptionsBuilder, null);
-    }
-
-
     private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> requestRebalance(Reconciliation reconciliation, String host, CruiseControlApi apiClient, KafkaRebalance kafkaRebalance,
                                                                                    boolean dryrun,
-                                                                                   AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder, String userTaskID) {
+                                                                                   AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder) {
 
         LOGGER.infoCr(reconciliation, "Requesting Cruise Control rebalance [dryrun={}]", dryrun);
         rebalanceOptionsBuilder.withVerboseResponse();
@@ -1153,13 +1146,13 @@ public class KafkaRebalanceAssemblyOperator
         Future<CruiseControlRebalanceResponse> future;
         switch (mode) {
             case ADD_BROKERS:
-                future = apiClient.addBroker(reconciliation, host, cruiseControlPort, ((AddBrokerOptions.AddBrokerOptionsBuilder) rebalanceOptionsBuilder).build(), userTaskID);
+                future = apiClient.addBroker(reconciliation, host, cruiseControlPort, ((AddBrokerOptions.AddBrokerOptionsBuilder) rebalanceOptionsBuilder).build(), null);
                 break;
             case REMOVE_BROKERS:
-                future = apiClient.removeBroker(reconciliation, host, cruiseControlPort, ((RemoveBrokerOptions.RemoveBrokerOptionsBuilder) rebalanceOptionsBuilder).build(), userTaskID);
+                future = apiClient.removeBroker(reconciliation, host, cruiseControlPort, ((RemoveBrokerOptions.RemoveBrokerOptionsBuilder) rebalanceOptionsBuilder).build(), null);
                 break;
             default:
-                future = apiClient.rebalance(reconciliation, host, cruiseControlPort, ((RebalanceOptions.RebalanceOptionsBuilder) rebalanceOptionsBuilder).build(), userTaskID);
+                future = apiClient.rebalance(reconciliation, host, cruiseControlPort, ((RebalanceOptions.RebalanceOptionsBuilder) rebalanceOptionsBuilder).build(), null);
                 break;
         }
         return future.map(response -> handleRebalanceResponse(reconciliation, kafkaRebalance, dryrun, response));
