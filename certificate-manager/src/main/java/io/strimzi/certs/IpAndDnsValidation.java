@@ -35,7 +35,7 @@ public class IpAndDnsValidation {
     }
 
     // Pattern used to normalize the segments of the IPv6 address
-    private static final Pattern IPV6_LEADING_ZEROS_TRIMMING = Pattern.compile("(^|:)0+([\\da-f]+)(:|$)");
+    private static final Pattern IPV6_LEADING_ZEROS_TRIMMING = Pattern.compile("(?<=^|:)0+(?=[\\da-f]+)");
 
     /**
      * Returns true if the name is a valid DNS name or a wildcard DNS name. That means that it matches the DNS_NAME
@@ -131,9 +131,7 @@ public class IpAndDnsValidation {
         // Make it lowercase
         normalized = normalized.toLowerCase(Locale.ENGLISH);
 
-        // Remove leading zeros (this intentionally runs twice, because I do not know how to write a better REGEX which would do everything in one go)
-        normalized = IPV6_LEADING_ZEROS_TRIMMING.matcher(normalized).replaceAll("$1$2$3");
-        normalized = IPV6_LEADING_ZEROS_TRIMMING.matcher(normalized).replaceAll("$1$2$3");
+        normalized = IPV6_LEADING_ZEROS_TRIMMING.matcher(normalized).replaceAll("");
 
         // return the normalized IPv6 address
         return normalized;
