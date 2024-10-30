@@ -268,10 +268,12 @@ public class HashLoginServiceApiCredentialsTest {
     public void testGenerateCoManagedApiCredentials() {
         PasswordGenerator mockPasswordGenerator = new PasswordGenerator(10, "a", "a");
 
-        // Test that credentials from previous secret are reused
+        // Given an existing cruiseControlApi secret test that CO credentials are reused and user-managed credentials are deleted
         Map<String, String> map1 = Map.of("cruise-control.authFile",
                 encodeToBase64("rebalance-operator: password,ADMIN\n" +
-                                     "healthcheck: password,USER"));
+                        "healthcheck: password,USER\n" +
+                        "userOne: passwordOne, USER\n" +
+                        "userTwo: passwordOne, VIEWER"));
         Map<String, HashLoginServiceApiCredentials.UserEntry> entries = new HashMap<>();
         HashLoginServiceApiCredentials.generateCoManagedApiCredentials(entries, mockPasswordGenerator, createSecret(map1));
         assertThat(entries.get("rebalance-operator").username(), is("rebalance-operator"));
@@ -281,6 +283,10 @@ public class HashLoginServiceApiCredentialsTest {
         assertThat(entries.get("healthcheck").username(), is("healthcheck"));
         assertThat(entries.get("healthcheck").password(), is("password"));
         assertThat(entries.get("healthcheck").role(), is(HashLoginServiceApiCredentials.Role.USER));
+
+        assertThat(entries.size(),  is(2));
+        assertThat(entries.get("userOne"),  is(nullValue()));
+        assertThat(entries.get("userTwo"),  is(nullValue()));
 
         // Test malformed secret credentials with blank password for user throws error
         final Map<String, String> map2 = Map.of("cruise-control.authFile",

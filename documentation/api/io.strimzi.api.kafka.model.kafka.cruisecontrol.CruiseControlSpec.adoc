@@ -193,7 +193,7 @@ spec:
   cruiseControl:
     # ...
     apiUsers:
-      type: hashloginservice
+      type: hashLoginService
       valueFrom:
         secretKeyRef:
           name: cruise-control-api-users-secret
