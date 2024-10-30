@@ -30,18 +30,18 @@
 #    kafkaKRaftAfter: path to Kafka and KafkaNodePool resources (KRaft mode), collected in one file, in the version of Strimzi, to which we are doing the downgrade
 # --- Structure ---
 - fromVersion: HEAD
-  toVersion: 0.43.0
+  toVersion: 0.44.0
   fromExamples: HEAD
-  toExamples: strimzi-0.43.0
+  toExamples: strimzi-0.44.0
   fromUrl: HEAD
-  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.43.0/strimzi-0.43.0.zip
+  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.44.0/strimzi-0.44.0.zip
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:0.43.0-kafka-3.7.0
-    kafka: strimzi/kafka:0.43.0-kafka-3.7.0
-    topicOperator: strimzi/operator:0.43.0
-    userOperator: strimzi/operator:0.43.0
+    zookeeper: strimzi/kafka:0.44.0-kafka-3.7.0
+    kafka: strimzi/kafka:0.44.0-kafka-3.7.0
+    topicOperator: strimzi/operator:0.44.0
+    userOperator: strimzi/operator:0.44.0
   deployKafkaVersion: 3.8.0
   client:
     continuousClientsMessages: 400
