@@ -10,7 +10,7 @@ watchAnyNamespace: false
 
 defaultImageRegistry: quay.io
 defaultImageRepository: strimzi
-defaultImageTag: 0.43.0
+defaultImageTag: 0.44.0
 
 image:
   registry: ""
@@ -181,3 +181,5 @@ labelsExclusionPattern: ""
 generateNetworkPolicy: true
 # Override the value for Connect build timeout
 connectBuildTimeoutMs: 300000
+# Controls whether Strimzi generates pod disruption budget resources (By default true)
+generatePodDisruptionBudget: true

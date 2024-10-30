@@ -19,3 +19,5 @@ This folder contains different examples of Strimzi custom resources and demonstr
     * JMX Trans deployment
 * [Security](./security)
     * Deployments of Kafka, Kafka Connect and HTTP Bridge using TLS encryption, authentication and authorization
+* [Kafka Access examples](./kafka-access)
+    * Examples of the `KafkaAccess` resources for the Strimzi Access Operator

@@ -202,6 +202,12 @@ data:
     - pattern: "kafka.server<type=raft-metrics><>(.+-total|.+-max):"
       name: kafka_server_raftmetrics_$1
       type: COUNTER
+    - pattern: "kafka.server<type=raft-metrics><>(current-state): (.+)"
+      name: kafka_server_raftmetrics_$1
+      value: 1
+      type: UNTYPED
+      labels:
+        $1: "$2"
     - pattern: "kafka.server<type=raft-metrics><>(.+):"
       name: kafka_server_raftmetrics_$1
       type: GAUGE
