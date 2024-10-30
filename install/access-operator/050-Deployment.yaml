@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: strimzi-access-operator
+  labels:
+    app: strimzi-access-operator
+  namespace: strimzi-access-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: strimzi-access-operator
+      strimzi.io/kind: access-operator
+  template:
+    metadata:
+      labels:
+        app: strimzi-access-operator
+        strimzi.io/kind: access-operator
+    spec:
+      serviceAccountName: strimzi-access-operator
+      volumes:
+        - name: strimzi-tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Mi
+      containers:
+        - name: access-operator
+          image: quay.io/strimzi/access-operator:0.1.0
+          ports:
+            - containerPort: 8080
+              name: http
+          args:
+            - /opt/strimzi/bin/access_operator_run.sh
+          volumeMounts:
+            - name: strimzi-tmp
+              mountPath: /tmp
+          resources:
+            limits:
+              memory: 256Mi
+              cpu: 500m
+            requests:
+              memory: 256Mi
+              cpu: 100m
+          livenessProbe:
+            httpGet:
+              path: /healthy
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+  strategy:
+    type: Recreate

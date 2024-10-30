@@ -1,0 +1,20 @@
+# The operator will look up the Kafka instance specified and
+# create a secret with the details to connect to the listener specified.
+# It will also look up the KafkaUser specified and check it has the correct
+# authentication mechanism to connect to the listener. If so it will add the
+# user credentials to the secret it creates.
+# If no listener is specified it will choose one based on the user authentication.
+apiVersion: access.strimzi.io/v1alpha1
+kind: KafkaAccess
+metadata:
+  name: my-kafka-access
+spec:
+  kafka:
+    name: my-cluster
+    namespace: kafka
+    listener: tls
+  user:
+    kind: KafkaUser
+    apiGroup: kafka.strimzi.io
+    name: my-user
+    namespace: kafka
