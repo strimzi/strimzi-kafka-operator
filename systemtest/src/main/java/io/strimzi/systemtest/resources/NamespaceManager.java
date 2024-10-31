@@ -135,13 +135,18 @@ public class NamespaceManager {
     }
 
     /**
-     * Overloads {@link #createNamespaceAndPrepare(String, CollectorElement)} - with {@code CollectorElement} set to {@code null},
-     * so the Namespace will not be added into the {@link #MAP_WITH_SUITE_NAMESPACES}.
+     * Overloads {@link #createNamespaceAndPrepare(String, CollectorElement)}, but it creates a new {@link CollectorElement} for
+     * test class and test method automatically. The {@link CollectorElement} is needed for {@link io.strimzi.systemtest.logs.TestLogCollector} to
+     * correctly collect logs from all the Namespaces -> even those that are created manually in the test cases.
      *
      * @param namespaceName name of Namespace that should be created
      */
     public void createNamespaceAndPrepare(String namespaceName) {
-        createNamespaceAndPrepare(namespaceName, null);
+        final String testSuiteName = ResourceManager.getTestContext().getRequiredTestClass().getName();
+        final String testCaseName = ResourceManager.getTestContext().getTestMethod().orElse(null) == null ?
+            "" : ResourceManager.getTestContext().getRequiredTestMethod().getName();
+
+        createNamespaceAndPrepare(namespaceName, new CollectorElement(testSuiteName, testCaseName));
     }
 
     /**
