@@ -91,6 +91,7 @@
         <repository>
             <id>kafka-staging</id>
             <url>https://repository.apache.org/content/groups/staging/</url>
+            <!-- Try to force cache with silly update -->
         </repository>
     </repositories>
 
