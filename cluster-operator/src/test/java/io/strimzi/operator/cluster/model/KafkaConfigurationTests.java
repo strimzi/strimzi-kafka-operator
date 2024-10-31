@@ -131,4 +131,26 @@ public class KafkaConfigurationTests {
         assertNoError("group.consumer.migration.policy", "Upgrade");
         assertConfigError("group.consumer.migration.policy", "wrong_option", "group.consumer.migration.policy has value 'wrong_option' which is not one of the allowed values (case-insensitive): [DISABLED, DOWNGRADE, UPGRADE, BIDIRECTIONAL]");
     }
+
+    @ParallelTest
+    public void testRemoteStorageCopierThreadPoolSize() {
+        assertNoError("remote.log.manager.copier.thread.pool.size", "9");
+        assertNoError("remote.log.manager.copier.thread.pool.size", "-1");
+        assertNoError("remote.log.manager.copier.thread.pool.size", "1");
+        assertNoError("remote.log.manager.copier.thread.pool.size", "10");
+        assertNoError("remote.log.manager.copier.thread.pool.size", "16");
+        assertConfigError("remote.log.manager.copier.thread.pool.size", "0", "remote.log.manager.copier.thread.pool.size has value '0' which does not match the required pattern: [1-9]{1}[0-9]*|-1");
+        assertConfigError("remote.log.manager.copier.thread.pool.size", "-5", "remote.log.manager.copier.thread.pool.size has value '-5' which does not match the required pattern: [1-9]{1}[0-9]*|-1");
+    }
+
+    @ParallelTest
+    public void testRemoteStorageExpirationThreadPoolSize() {
+        assertNoError("remote.log.manager.expiration.thread.pool.size", "9");
+        assertNoError("remote.log.manager.expiration.thread.pool.size", "-1");
+        assertNoError("remote.log.manager.expiration.thread.pool.size", "1");
+        assertNoError("remote.log.manager.expiration.thread.pool.size", "10");
+        assertNoError("remote.log.manager.expiration.thread.pool.size", "16");
+        assertConfigError("remote.log.manager.expiration.thread.pool.size", "0", "remote.log.manager.expiration.thread.pool.size has value '0' which does not match the required pattern: [1-9]{1}[0-9]*|-1");
+        assertConfigError("remote.log.manager.expiration.thread.pool.size", "-5", "remote.log.manager.expiration.thread.pool.size has value '-5' which does not match the required pattern: [1-9]{1}[0-9]*|-1");
+    }
 }
