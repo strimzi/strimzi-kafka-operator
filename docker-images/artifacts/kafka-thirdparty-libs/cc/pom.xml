@@ -31,18 +31,6 @@
             <groupId>com.linkedin.cruisecontrol</groupId>
             <artifactId>cruise-control</artifactId>
             <version>${cruise-control.version}</version>
-            <!-- The exclusion is needed because of https://github.com/linkedin/cruise-control/issues/2174.
-                 It can be removed once it is fixed and released in new Cruise Control version. -->
-            <exclusions>
-                <exclusion>
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-classic</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-core</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
     </dependencies>
 </project>
