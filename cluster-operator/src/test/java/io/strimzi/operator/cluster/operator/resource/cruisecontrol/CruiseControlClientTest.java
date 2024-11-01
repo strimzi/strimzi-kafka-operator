@@ -13,21 +13,16 @@ import io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatu
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import static io.strimzi.operator.cluster.JSONObjectMatchers.hasEntry;
@@ -37,9 +32,9 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@ExtendWith(VertxExtension.class)
 public class CruiseControlClientTest {
 
     private static final String HOST = "localhost";
@@ -76,38 +71,32 @@ public class CruiseControlClientTest {
         }
     }
 
-    private CruiseControlApi cruiseControlClientProvider(Vertx vertx) {
-        return new CruiseControlApiImpl(vertx, HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS, MockCruiseControl.CC_SECRET, MockCruiseControl.CC_API_SECRET, API_AUTH_ENABLED, API_SSL_ENABLED);
+    private CruiseControlApi cruiseControlClientProvider() {
+        return new CruiseControlApiImpl(HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS, MockCruiseControl.CC_SECRET, MockCruiseControl.CC_API_SECRET, API_AUTH_ENABLED, API_SSL_ENABLED);
     }
 
     @Test
-    public void testGetCCState(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+    public void testGetCCState() {
         cruiseControlServer.setupCCStateResponse();
 
-        CruiseControlApi client = cruiseControlClientProvider(vertx);
-
-        Checkpoint checkpoint = context.checkpoint();
+        CruiseControlApi client = cruiseControlClientProvider();
         client.getCruiseControlState(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, false)
-            .onComplete(context.succeeding(result -> context.verify(() -> {
-                assertThat(result.getJson().getJsonObject("ExecutorState"),
-                        hasEntry("state", "NO_TASK_IN_PROGRESS"));
-                checkpoint.flag();
-            })));
+                .whenComplete((result, ex) -> assertThat(result.getJson().getJsonObject("ExecutorState"),
+                        hasEntry("state", "NO_TASK_IN_PROGRESS"))).join();
     }
 
     @Test
-    public void testCCRebalance(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+    public void testCCRebalance() throws IOException, URISyntaxException {
         RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder().build();
-        this.ccRebalance(vertx, context, 0, options, CruiseControlEndpoints.REBALANCE,
-                result -> {
-                    assertThat(result.getUserTaskId(), is(MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID));
-                    assertThat(result.getJson(), hasKeys("summary", "goalSummary", "loadAfterOptimization"));
-                });
+        this.ccRebalance(0, options, CruiseControlEndpoints.REBALANCE, result -> {
+            assertThat(result.getUserTaskId(), is(MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID));
+            assertThat(result.getJson(), hasKeys("summary", "goalSummary", "loadAfterOptimization"));
+        });
     }
     @Test
-    public void testCCRebalanceVerbose(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+    public void testCCRebalanceVerbose() throws IOException, URISyntaxException {
         RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder().withVerboseResponse().build();
-        this.ccRebalanceVerbose(vertx, context, 0, options, CruiseControlEndpoints.REBALANCE,
+        this.ccRebalanceVerbose(0, options, CruiseControlEndpoints.REBALANCE,
                 result -> {
                     assertThat(result.getUserTaskId(), is(MockCruiseControl.REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID));
                     assertThat(result.getJson(), hasKeys("summary", "goalSummary", "proposals", "loadAfterOptimization", "loadBeforeOptimization"));
@@ -115,43 +104,41 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCRebalanceNotEnoughValidWindowsException(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+    public void testCCRebalanceNotEnoughValidWindowsException() throws IOException, URISyntaxException {
         RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder().build();
-        this.ccRebalanceNotEnoughValidWindowsException(vertx, context, options, CruiseControlEndpoints.REBALANCE,
+        this.ccRebalanceNotEnoughValidWindowsException(options, CruiseControlEndpoints.REBALANCE,
                 result -> assertThat(result.isNotEnoughDataForProposal(), is(true))
         );
     }
 
     @Test
-    public void testCCRebalanceProposalNotReady(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+    public void testCCRebalanceProposalNotReady() throws IOException, URISyntaxException {
         RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder().build();
-        this.ccRebalanceProposalNotReady(vertx, context, 1, options, CruiseControlEndpoints.REBALANCE,
+        this.ccRebalanceProposalNotReady(1, options, CruiseControlEndpoints.REBALANCE,
                 result ->  assertThat(result.isProposalStillCalculating(), is(true))
         );
     }
 
     @Test
-    public void testCCGetRebalanceUserTask(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+    public void testCCGetRebalanceUserTask() throws IOException, URISyntaxException {
 
         cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 0);
 
-        CruiseControlApi client = cruiseControlClientProvider(vertx);
+        CruiseControlApi client = cruiseControlClientProvider();
         String userTaskID = MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID;
 
-        Checkpoint checkpoint = context.checkpoint();
-        client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID).onComplete(context.succeeding(result -> {
-            context.verify(() -> assertThat(result.getUserTaskId(), is(MockCruiseControl.USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID)));
-            context.verify(() -> assertThat(result.getJson().getJsonObject(CruiseControlRebalanceKeys.SUMMARY.getKey()), is(notNullValue())));
-            checkpoint.flag();
-        }));
+        client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID).whenComplete((result, ex) -> {
+            assertThat(result.getUserTaskId(), is(MockCruiseControl.USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID));
+            assertThat(result.getJson().getJsonObject(CruiseControlRebalanceKeys.SUMMARY.getKey()), is(notNullValue()));
+        }).join();
     }
 
     @Test
-    public void testCCAddBroker(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+    public void testCCAddBroker() throws IOException, URISyntaxException {
         AddBrokerOptions options = new AddBrokerOptions.AddBrokerOptionsBuilder()
                 .withBrokers(List.of(3))
                 .build();
-        this.ccRebalance(vertx, context, 0, options, CruiseControlEndpoints.ADD_BROKER,
+        this.ccRebalance(0, options, CruiseControlEndpoints.ADD_BROKER,
                 result -> {
                     assertThat(result.getUserTaskId(), is(MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID));
                     assertThat(result.getJson(), hasKeys("summary", "goalSummary", "loadAfterOptimization"));
@@ -159,12 +146,12 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCAddBrokerVerbose(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+    public void testCCAddBrokerVerbose() throws IOException, URISyntaxException {
         AddBrokerOptions options = new AddBrokerOptions.AddBrokerOptionsBuilder()
                 .withVerboseResponse()
                 .withBrokers(List.of(3))
                 .build();
-        this.ccRebalanceVerbose(vertx, context, 0, options, CruiseControlEndpoints.ADD_BROKER,
+        this.ccRebalanceVerbose(0, options, CruiseControlEndpoints.ADD_BROKER,
                 result -> {
                     assertThat(result.getUserTaskId(), is(MockCruiseControl.REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID));
                     assertThat(result.getJson(), hasKeys("summary", "goalSummary", "proposals", "loadAfterOptimization", "loadBeforeOptimization"));
@@ -172,31 +159,31 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCAddBrokerNotEnoughValidWindowsException(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+    public void testCCAddBrokerNotEnoughValidWindowsException() throws IOException, URISyntaxException {
         AddBrokerOptions options = new AddBrokerOptions.AddBrokerOptionsBuilder()
                 .withBrokers(List.of(3))
                 .build();
-        this.ccRebalanceNotEnoughValidWindowsException(vertx, context, options, CruiseControlEndpoints.ADD_BROKER,
+        this.ccRebalanceNotEnoughValidWindowsException(options, CruiseControlEndpoints.ADD_BROKER,
                 result -> assertThat(result.isNotEnoughDataForProposal(), is(true))
         );
     }
 
     @Test
-    public void testCCAddBrokerProposalNotReady(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+    public void testCCAddBrokerProposalNotReady() throws IOException, URISyntaxException {
         AddBrokerOptions options = new AddBrokerOptions.AddBrokerOptionsBuilder()
                 .withBrokers(List.of(3))
                 .build();
-        this.ccRebalanceProposalNotReady(vertx, context, 1, options, CruiseControlEndpoints.ADD_BROKER,
+        this.ccRebalanceProposalNotReady(1, options, CruiseControlEndpoints.ADD_BROKER,
                 result -> assertThat(result.isProposalStillCalculating(), is(true))
         );
     }
 
     @Test
-    public void testCCAddBrokerDoesNotExist(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+    public void testCCAddBrokerDoesNotExist() throws IOException, URISyntaxException {
         AddBrokerOptions options = new AddBrokerOptions.AddBrokerOptionsBuilder()
                 .withBrokers(List.of(3))
                 .build();
-        this.ccBrokerDoesNotExist(vertx, context, options, CruiseControlEndpoints.ADD_BROKER,
+        this.ccBrokerDoesNotExist(options, CruiseControlEndpoints.ADD_BROKER,
                 result -> {
                     assertThat(result, instanceOf(IllegalArgumentException.class));
                     assertTrue(result.getMessage().contains("Some/all brokers specified don't exist"));
@@ -204,11 +191,11 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCRemoveBroker(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+    public void testCCRemoveBroker() throws IOException, URISyntaxException {
         RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
                 .withBrokers(List.of(3))
                 .build();
-        this.ccRebalance(vertx, context, 0, options, CruiseControlEndpoints.REMOVE_BROKER,
+        this.ccRebalance(0, options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> {
                     assertThat(result.getUserTaskId(), is(MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID));
                     assertThat(result.getJson(), hasKeys("summary", "goalSummary", "loadAfterOptimization"));
@@ -216,7 +203,7 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCRemoveBrokerDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+    public void testCCRemoveBrokerDisks() throws IOException, URISyntaxException {
         BrokerAndVolumeIds brokerAndVolumeIds = new BrokerAndVolumeIdsBuilder()
                 .withBrokerId(0)
                 .withVolumeIds(1, 2, 3)
@@ -225,7 +212,7 @@ public class CruiseControlClientTest {
         RemoveDisksOptions options = new RemoveDisksOptions.RemoveDisksOptionsBuilder()
                 .withBrokersandVolumeIds(List.of(brokerAndVolumeIds))
                 .build();
-        this.ccRebalance(vertx, context, 0, options, CruiseControlEndpoints.REMOVE_DISKS,
+        this.ccRebalance(0, options, CruiseControlEndpoints.REMOVE_DISKS,
                 result -> {
                     assertThat(result.getUserTaskId(), is(MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID));
                     assertThat(result.getJson(), hasKeys("summary", "goalSummary", "loadAfterOptimization"));
@@ -233,7 +220,7 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCMoveReplicasOffVolumesProposalNotReady(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+    public void testCCMoveReplicasOffVolumesProposalNotReady() throws IOException, URISyntaxException {
         BrokerAndVolumeIds brokerAndVolumeIds = new BrokerAndVolumeIdsBuilder()
                 .withVolumeIds(1)
                 .withBrokerId(0)
@@ -242,13 +229,13 @@ public class CruiseControlClientTest {
         RemoveDisksOptions options = new RemoveDisksOptions.RemoveDisksOptionsBuilder()
                 .withBrokersandVolumeIds(List.of(brokerAndVolumeIds))
                 .build();
-        this.ccRebalanceProposalNotReady(vertx, context, 1, options, CruiseControlEndpoints.REMOVE_DISKS,
+        this.ccRebalanceProposalNotReady(1, options, CruiseControlEndpoints.REMOVE_DISKS,
                 result -> assertThat(result.isProposalStillCalculating(), is(true))
         );
     }
 
     @Test
-    public void testCCMoveReplicasOffVolumesNotEnoughValidWindowsException(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+    public void testCCMoveReplicasOffVolumesNotEnoughValidWindowsException() throws IOException, URISyntaxException {
         BrokerAndVolumeIds brokerAndVolumeIds = new BrokerAndVolumeIdsBuilder()
                 .withVolumeIds(1)
                 .withBrokerId(0)
@@ -257,13 +244,13 @@ public class CruiseControlClientTest {
         RemoveDisksOptions options = new RemoveDisksOptions.RemoveDisksOptionsBuilder()
                 .withBrokersandVolumeIds(List.of(brokerAndVolumeIds))
                 .build();
-        this.ccRebalanceNotEnoughValidWindowsException(vertx, context, options, CruiseControlEndpoints.REMOVE_DISKS,
+        this.ccRebalanceNotEnoughValidWindowsException(options, CruiseControlEndpoints.REMOVE_DISKS,
                 result -> assertThat(result.isNotEnoughDataForProposal(), is(true))
         );
     }
 
     @Test
-    public void testCCMoveReplicasOffVolumesBrokerDoesNotExist(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+    public void testCCMoveReplicasOffVolumesBrokerDoesNotExist() throws IOException, URISyntaxException {
         BrokerAndVolumeIds brokerAndVolumeIds = new BrokerAndVolumeIdsBuilder()
                 .withVolumeIds(1)
                 .withBrokerId(0)
@@ -272,7 +259,7 @@ public class CruiseControlClientTest {
         RemoveDisksOptions options = new RemoveDisksOptions.RemoveDisksOptionsBuilder()
                 .withBrokersandVolumeIds(List.of(brokerAndVolumeIds))
                 .build();
-        this.ccBrokerDoesNotExist(vertx, context, options, CruiseControlEndpoints.REMOVE_DISKS,
+        this.ccBrokerDoesNotExist(options, CruiseControlEndpoints.REMOVE_DISKS,
                 result -> {
                     assertThat(result, instanceOf(IllegalArgumentException.class));
                     assertTrue(result.getMessage().contains("Some/all brokers specified don't exist"));
@@ -280,12 +267,12 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCRemoveBrokerVerbose(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+    public void testCCRemoveBrokerVerbose() throws IOException, URISyntaxException {
         RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
                 .withVerboseResponse()
                 .withBrokers(List.of(3))
                 .build();
-        this.ccRebalanceVerbose(vertx, context, 0, options, CruiseControlEndpoints.REMOVE_BROKER,
+        this.ccRebalanceVerbose(0, options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> {
                     assertThat(result.getUserTaskId(), is(MockCruiseControl.REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID));
                     assertThat(result.getJson(), hasKeys("summary", "goalSummary", "proposals", "loadAfterOptimization", "loadBeforeOptimization"));
@@ -293,224 +280,187 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCRemoveBrokerNotEnoughValidWindowsException(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+    public void testCCRemoveBrokerNotEnoughValidWindowsException() throws IOException, URISyntaxException {
         RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
                 .withBrokers(List.of(3))
                 .build();
-        this.ccRebalanceNotEnoughValidWindowsException(vertx, context, options, CruiseControlEndpoints.REMOVE_BROKER,
+        this.ccRebalanceNotEnoughValidWindowsException(options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> assertThat(result.isNotEnoughDataForProposal(), is(true))
         );
     }
 
     @Test
-    public void testCCRemoveBrokerProposalNotReady(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+    public void testCCRemoveBrokerProposalNotReady() throws IOException, URISyntaxException {
         RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
                 .withBrokers(List.of(3))
                 .build();
-        this.ccRebalanceProposalNotReady(vertx, context, 1, options, CruiseControlEndpoints.REMOVE_BROKER,
+        this.ccRebalanceProposalNotReady(1, options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> assertThat(result.isProposalStillCalculating(), is(true))
         );
     }
 
     @Test
-    public void testCCRemoveBrokerDoesNotExist(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+    public void testCCRemoveBrokerDoesNotExist() throws IOException, URISyntaxException {
         RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
                 .withBrokers(List.of(3))
                 .build();
-        this.ccBrokerDoesNotExist(vertx, context, options, CruiseControlEndpoints.REMOVE_BROKER,
+        this.ccBrokerDoesNotExist(options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> {
-                    assertThat(result, instanceOf(IllegalArgumentException.class));
-                    assertTrue(result.getMessage().contains("Some/all brokers specified don't exist"));
+                    assertThat(result.getCause(), instanceOf(IllegalArgumentException.class));
+                    assertTrue(result.getCause().getMessage().contains("Some/all brokers specified don't exist"));
                 });
     }
 
-    private void ccRebalance(Vertx vertx, VertxTestContext context, int pendingCalls, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion) throws IOException, URISyntaxException {
+    private void ccRebalance(int pendingCalls, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion) throws IOException, URISyntaxException {
         if (endpoint == CruiseControlEndpoints.REMOVE_DISKS) {
             cruiseControlServer.setupCCRebalanceResponse(pendingCalls, endpoint, null);
         } else {
             cruiseControlServer.setupCCRebalanceResponse(pendingCalls, endpoint, "false");
         }
 
-        CruiseControlApi client = cruiseControlClientProvider(vertx);
-
-        Checkpoint checkpoint = context.checkpoint();
+        CruiseControlApi client = cruiseControlClientProvider();
         switch (endpoint) {
             case REBALANCE:
                 client.rebalance(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RebalanceOptions) options, null)
-                        .onComplete(context.succeeding(result -> context.verify(() -> {
+                        .whenComplete((result, ex) -> {
                             assertion.accept(result);
-                            checkpoint.flag();
-                        })));
+                        }).join();
                 break;
             case ADD_BROKER:
                 client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (AddBrokerOptions) options, null)
-                        .onComplete(context.succeeding(result -> context.verify(() -> {
+                        .whenComplete((result, ex) -> {
                             assertion.accept(result);
-                            checkpoint.flag();
-                        })));
+                        }).join();
                 break;
             case REMOVE_BROKER:
                 client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveBrokerOptions) options, null)
-                        .onComplete(context.succeeding(result -> context.verify(() -> {
+                        .whenComplete((result, ex) -> {
                             assertion.accept(result);
-                            checkpoint.flag();
-                        })));
+                        }).join();
                 break;
             case REMOVE_DISKS:
                 client.removeDisks(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveDisksOptions) options, null)
-                        .onComplete(context.succeeding(result -> context.verify(() -> {
+                        .whenComplete((result, ex) -> {
                             assertion.accept(result);
-                            checkpoint.flag();
-                        })));
+                        }).join();
         }
     }
 
-    private void ccRebalanceVerbose(Vertx vertx, VertxTestContext context, int pendingCalls, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion) throws IOException, URISyntaxException {
+    private void ccRebalanceVerbose(int pendingCalls, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion) throws IOException, URISyntaxException {
         cruiseControlServer.setupCCRebalanceResponse(pendingCalls, endpoint, "true");
 
-        CruiseControlApi client = cruiseControlClientProvider(vertx);
-
-        Checkpoint checkpoint = context.checkpoint();
+        CruiseControlApi client = cruiseControlClientProvider();
         switch (endpoint) {
             case REBALANCE:
                 client.rebalance(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RebalanceOptions) options, null)
-                        .onComplete(context.succeeding(result -> context.verify(() -> {
+                        .whenComplete((result, ex) -> {
                             assertion.accept(result);
-                            checkpoint.flag();
-                        })));
+                        }).join();
                 break;
             case ADD_BROKER:
                 client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (AddBrokerOptions) options, null)
-                        .onComplete(context.succeeding(result -> context.verify(() -> {
+                        .whenComplete((result, ex) -> {
                             assertion.accept(result);
-                            checkpoint.flag();
-                        })));
+                        }).join();
                 break;
             case REMOVE_BROKER:
                 client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveBrokerOptions) options, null)
-                        .onComplete(context.succeeding(result -> context.verify(() -> {
+                        .whenComplete((result, ex) -> {
                             assertion.accept(result);
-                            checkpoint.flag();
-                        })));
+                        }).join();
                 break;
         }
     }
 
-    private void ccRebalanceNotEnoughValidWindowsException(Vertx vertx, VertxTestContext context, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion) throws IOException, URISyntaxException {
+    private void ccRebalanceNotEnoughValidWindowsException(AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion) throws IOException, URISyntaxException {
         if (endpoint == CruiseControlEndpoints.REMOVE_DISKS) {
             cruiseControlServer.setupCCRebalanceNotEnoughDataError(endpoint, null);
         } else {
             cruiseControlServer.setupCCRebalanceNotEnoughDataError(endpoint, "true|false");
         }
 
-        CruiseControlApi client = cruiseControlClientProvider(vertx);
+        CruiseControlApi client = cruiseControlClientProvider();
 
-        Checkpoint checkpoint = context.checkpoint();
         switch (endpoint) {
             case REBALANCE:
                 client.rebalance(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RebalanceOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
-                        .onComplete(context.succeeding(result -> context.verify(() -> {
+                        .whenComplete((result, ex) -> {
                             assertion.accept(result);
-                            checkpoint.flag();
-                        })));
+                        }).join();
                 break;
             case ADD_BROKER:
                 client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (AddBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
-                        .onComplete(context.succeeding(result -> context.verify(() -> {
+                        .whenComplete((result, ex) -> {
                             assertion.accept(result);
-                            checkpoint.flag();
-                        })));
+                        }).join();
                 break;
             case REMOVE_BROKER:
                 client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
-                        .onComplete(context.succeeding(result -> context.verify(() -> {
+                        .whenComplete((result, ex) -> {
                             assertion.accept(result);
-                            checkpoint.flag();
-                        })));
+                        }).join();
                 break;
             case REMOVE_DISKS:
                 client.removeDisks(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveDisksOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
-                        .onComplete(context.succeeding(result -> context.verify(() -> {
+                        .whenComplete((result, ex) -> {
                             assertion.accept(result);
-                            checkpoint.flag();
-                        })));
+                        }).join();
                 break;
         }
     }
 
-    private void ccRebalanceProposalNotReady(Vertx vertx, VertxTestContext context, int pendingCalls, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion) throws IOException, URISyntaxException {
+    private void ccRebalanceProposalNotReady(int pendingCalls, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion) throws IOException, URISyntaxException {
         if (endpoint == CruiseControlEndpoints.REMOVE_DISKS) {
             cruiseControlServer.setupCCRebalanceResponse(pendingCalls, endpoint, null);
         } else {
             cruiseControlServer.setupCCRebalanceResponse(pendingCalls, endpoint, "true|false");
         }
 
-        CruiseControlApi client = cruiseControlClientProvider(vertx);
+        CruiseControlApi client = cruiseControlClientProvider();
 
-        Checkpoint checkpoint = context.checkpoint();
         switch (endpoint) {
             case REBALANCE:
                 client.rebalance(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RebalanceOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
-                        .onComplete(context.succeeding(result -> context.verify(() -> {
-                            assertion.accept(result);
-                            checkpoint.flag();
-                        })));
+                        .whenComplete((result, ex) -> assertion.accept(result)).join();
                 break;
             case ADD_BROKER:
                 client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (AddBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
-                        .onComplete(context.succeeding(result -> context.verify(() -> {
-                            assertion.accept(result);
-                            checkpoint.flag();
-                        })));
+                        .whenComplete((result, ex) -> assertion.accept(result)).join();
                 break;
             case REMOVE_BROKER:
                 client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
-                        .onComplete(context.succeeding(result -> context.verify(() -> {
-                            assertion.accept(result);
-                            checkpoint.flag();
-                        })));
+                        .whenComplete((result, ex) -> assertion.accept(result)).join();
                 break;
             case REMOVE_DISKS:
                 client.removeDisks(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveDisksOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
-                        .onComplete(context.succeeding(result -> context.verify(() -> {
+                        .whenComplete((result, ex) -> {
                             assertion.accept(result);
-                            checkpoint.flag();
-                        })));
+                        }).join();
                 break;
         }
     }
 
-    private void ccBrokerDoesNotExist(Vertx vertx, VertxTestContext context, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<Throwable> assertion) throws IOException, URISyntaxException {
+    private void ccBrokerDoesNotExist(AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<Throwable> assertion) throws IOException, URISyntaxException {
         if (endpoint == CruiseControlEndpoints.REMOVE_DISKS) {
             cruiseControlServer.setupCCBrokerDoesNotExist(endpoint, null);
         } else {
             cruiseControlServer.setupCCBrokerDoesNotExist(endpoint, "true|false");
         }
 
-        CruiseControlApi client = cruiseControlClientProvider(vertx);
+        CruiseControlApi client = cruiseControlClientProvider();
 
-        Checkpoint checkpoint = context.checkpoint();
         switch (endpoint) {
             case ADD_BROKER:
-                client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (AddBrokerOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
-                        .onComplete(context.failing(result -> context.verify(() -> {
-                            assertion.accept(result);
-                            checkpoint.flag();
-                        })));
+                assertThrows(Exception.class, client.addBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (AddBrokerOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
+                        .whenComplete((result, ex) -> assertion.accept(ex))::join);
                 break;
             case REMOVE_BROKER:
-                client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveBrokerOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
-                        .onComplete(context.failing(result -> context.verify(() -> {
-                            assertion.accept(result);
-                            checkpoint.flag();
-                        })));
+                assertThrows(Exception.class, client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveBrokerOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
+                        .whenComplete((result, ex) -> assertion.accept(ex))::join);
                 break;
             case REMOVE_DISKS:
-                client.removeDisks(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveDisksOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
-                        .onComplete(context.failing(result -> context.verify(() -> {
-                            assertion.accept(result);
-                            checkpoint.flag();
-                        })));
+                assertThrows(Exception.class, client.removeDisks(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveDisksOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
+                        .whenComplete((result, ex) -> assertion.accept(ex))::join);
                 break;
             default:
                 throw new IllegalArgumentException("The " + endpoint + " endpoint is invalid for this test");
@@ -518,122 +468,103 @@ public class CruiseControlClientTest {
     }
 
     @Test
-    public void testCCUserTaskNoDelay(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
-        runTest(vertx, context, MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID, 0);
+    public void testCCUserTaskNoDelay() throws IOException, URISyntaxException {
+        runTest(MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID, 0);
     }
 
     @Test
-    public void testCCUserTaskNoDelayVerbose(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
-        runTest(vertx, context, MockCruiseControl.REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID, 0);
+    public void testCCUserTaskNoDelayVerbose() throws IOException, URISyntaxException {
+        runTest(MockCruiseControl.REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID, 0);
     }
 
     @Test
-    public void testCCUserTaskDelay(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
-        runTest(vertx, context, MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID, 3);
+    public void testCCUserTaskDelay() throws IOException, URISyntaxException {
+        runTest(MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID, 3);
     }
 
     @Test
-    public void testCCUserTaskDelayVerbose(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
-        runTest(vertx, context, MockCruiseControl.REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID, 3);
+    public void testCCUserTaskDelayVerbose() throws IOException, URISyntaxException {
+        runTest(MockCruiseControl.REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID, 3);
     }
 
     @Test
-    public void testMockCCServerPendingCallsOverride(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
-        CruiseControlApi client = cruiseControlClientProvider(vertx);
+    public void testMockCCServerPendingCallsOverride() throws IOException, URISyntaxException {
+        CruiseControlApi client = cruiseControlClientProvider();
         String userTaskID = MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID;
 
         int pendingCalls1 = 2;
-        Checkpoint firstPending = context.checkpoint(pendingCalls1);
         int pendingCalls2 = 4;
-        Checkpoint secondPending = context.checkpoint(pendingCalls2);
-
-        //When last checkpoint is flagged, then test is marked as completed, so create another checkpoint
-        //for test end to prevent premature test success
-        Checkpoint completeTest = context.checkpoint();
 
         cruiseControlServer.setupCCUserTasksResponseNoGoals(0, pendingCalls1);
 
-        Future<CruiseControlUserTasksResponse> statusFuture = client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID);
+        CompletableFuture<CruiseControlUserTasksResponse> statusFuture = client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID);
 
         for (int i = 1; i <= pendingCalls1; i++) {
-            statusFuture = statusFuture.compose(response -> {
-                context.verify(() -> assertThat(
+            statusFuture = statusFuture.thenCompose(response -> {
+                assertThat(
                     response.getJson().getString("Status"),
-                    is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()))
-                );
-                firstPending.flag();
+                    is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()));
                 return client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID);
             });
         }
 
-        statusFuture = statusFuture.compose(response -> {
-            context.verify(() -> assertThat(
+        statusFuture = statusFuture.thenCompose(response -> {
+            assertThat(
                 response.getJson().getString("Status"),
-                is(CruiseControlUserTaskStatus.COMPLETED.toString()))
-            );
-            return Future.succeededFuture(response);
+                is(CruiseControlUserTaskStatus.COMPLETED.toString()));
+            return CompletableFuture.completedFuture(response);
         });
 
-        statusFuture = statusFuture.compose(response -> {
+        statusFuture = statusFuture.thenCompose(response -> {
             try {
                 cruiseControlServer.reset();
                 cruiseControlServer.setupCCUserTasksResponseNoGoals(0, pendingCalls2);
             } catch (IOException | URISyntaxException e) {
-                return Future.failedFuture(e);
+                return CompletableFuture.failedFuture(e);
             }
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
         });
 
-        statusFuture = statusFuture.compose(ignore -> client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID));
+        statusFuture = statusFuture.thenCompose(ignore -> client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID));
 
         for (int i = 1; i <= pendingCalls2; i++) {
-            statusFuture = statusFuture.compose(response -> {
-                context.verify(() -> assertThat(
+            statusFuture = statusFuture.thenCompose(response -> {
+                assertThat(
                     response.getJson().getString("Status"),
-                    is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()))
-                );
-                secondPending.flag();
+                    is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()));
                 return client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID);
             });
         }
 
-        statusFuture.compose(response -> {
-            context.verify(() -> assertThat(
+        statusFuture.thenCompose(response -> {
+            assertThat(
                 response.getJson().getString("Status"),
-                is(CruiseControlUserTaskStatus.COMPLETED.toString()))
-            );
-            return Future.succeededFuture(response);
-        }).onComplete(context.succeeding(result -> completeTest.flag()));
+                is(CruiseControlUserTaskStatus.COMPLETED.toString()));
+            return CompletableFuture.completedFuture(response);
+        }).join();
     }
 
-    private void runTest(Vertx vertx, VertxTestContext context, String userTaskID, int pendingCalls) throws IOException, URISyntaxException {
+    private void runTest(String userTaskID, int pendingCalls) throws IOException, URISyntaxException {
         cruiseControlServer.setupCCUserTasksResponseNoGoals(0, pendingCalls);
 
-        CruiseControlApi client = cruiseControlClientProvider(vertx);
+        CruiseControlApi client = cruiseControlClientProvider();
 
-        Future<CruiseControlUserTasksResponse> statusFuture = client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID);
-
-        // One interaction is always expected at the end of the test, hence the +1
-        Checkpoint expectedInteractions = context.checkpoint(pendingCalls + 1);
+        CompletableFuture<CruiseControlUserTasksResponse> statusFuture = client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID);
 
         for (int i = 1; i <= pendingCalls; i++) {
-            statusFuture = statusFuture.compose(response -> {
-                context.verify(() -> assertThat(
+            statusFuture = statusFuture.thenCompose(response -> {
+                assertThat(
                     response.getJson().getString("Status"),
-                    is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()))
-                );
-                expectedInteractions.flag();
+                    is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()));
                 return client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID);
             });
         }
 
-        statusFuture.compose(response -> {
-            context.verify(() -> assertThat(
-                response.getJson().getString("Status"),
-                is(CruiseControlUserTaskStatus.COMPLETED.toString()))
-            );
-            expectedInteractions.flag();
-            return Future.succeededFuture(response);
+        statusFuture.thenCompose(response -> {
+            assertThat(
+                    response.getJson().getString("Status"),
+                    is(CruiseControlUserTaskStatus.COMPLETED.toString()));
+            return CompletableFuture.completedFuture(response);
         });
     }
 }
