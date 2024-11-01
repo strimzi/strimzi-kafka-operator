@@ -3,7 +3,8 @@
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
-
+import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIds;
+import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIdsBuilder;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
@@ -103,7 +104,6 @@ public class CruiseControlClientTest {
                     assertThat(result.getJson(), hasKeys("summary", "goalSummary", "loadAfterOptimization"));
                 });
     }
-
     @Test
     public void testCCRebalanceVerbose(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder().withVerboseResponse().build();
@@ -206,12 +206,76 @@ public class CruiseControlClientTest {
     @Test
     public void testCCRemoveBroker(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
-                .withBrokers(List.of(3))
+                .withBrokers(List.of(3, 4, 5))
                 .build();
         this.ccRebalance(vertx, context, 0, options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> {
                     assertThat(result.getUserTaskId(), is(MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID));
                     assertThat(result.getJson(), hasKeys("summary", "goalSummary", "loadAfterOptimization"));
+                });
+    }
+
+    @Test
+    public void testCCRemoveBrokerDisks(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        BrokerAndVolumeIds brokerAndVolumeIds = new BrokerAndVolumeIdsBuilder()
+                .withVolumeIds(1, 2, 3)
+                .withBrokerId(0)
+                .build();
+
+        RemoveDisksOptions options = new RemoveDisksOptions.RemoveDisksOptionsBuilder()
+                .withBrokersandVolumeIds(List.of(brokerAndVolumeIds))
+                .build();
+        this.ccRebalance(vertx, context, 0, options, CruiseControlEndpoints.REMOVE_DISKS,
+                result -> {
+                    assertThat(result.getUserTaskId(), is(MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID));
+                    assertThat(result.getJson(), hasKeys("summary", "goalSummary", "loadAfterOptimization"));
+                });
+    }
+
+    @Test
+    public void testCCMoveReplicasOffVolumesProposalNotReady(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        BrokerAndVolumeIds brokerAndVolumeIds = new BrokerAndVolumeIdsBuilder()
+                .withVolumeIds(1)
+                .withBrokerId(0)
+                .build();
+
+        RemoveDisksOptions options = new RemoveDisksOptions.RemoveDisksOptionsBuilder()
+                .withBrokersandVolumeIds(List.of(brokerAndVolumeIds))
+                .build();
+        this.ccRebalanceProposalNotReady(vertx, context, 1, options, CruiseControlEndpoints.REMOVE_DISKS,
+                result -> assertThat(result.isProposalStillCalculating(), is(true))
+        );
+    }
+
+    @Test
+    public void testCCMoveReplicasOffVolumesNotEnoughValidWindowsException(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        BrokerAndVolumeIds brokerAndVolumeIds = new BrokerAndVolumeIdsBuilder()
+                .withVolumeIds(1)
+                .withBrokerId(0)
+                .build();
+
+        RemoveDisksOptions options = new RemoveDisksOptions.RemoveDisksOptionsBuilder()
+                .withBrokersandVolumeIds(List.of(brokerAndVolumeIds))
+                .build();
+        this.ccRebalanceNotEnoughValidWindowsException(vertx, context, options, CruiseControlEndpoints.REMOVE_DISKS,
+                result -> assertThat(result.isNotEnoughDataForProposal(), is(true))
+        );
+    }
+
+    @Test
+    public void testCCMoveReplicasOffVolumesBrokerDoesNotExist(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        BrokerAndVolumeIds brokerAndVolumeIds = new BrokerAndVolumeIdsBuilder()
+                .withVolumeIds(1)
+                .withBrokerId(0)
+                .build();
+
+        RemoveDisksOptions options = new RemoveDisksOptions.RemoveDisksOptionsBuilder()
+                .withBrokersandVolumeIds(List.of(brokerAndVolumeIds))
+                .build();
+        this.ccBrokerDoesNotExist(vertx, context, options, CruiseControlEndpoints.REMOVE_DISKS,
+                result -> {
+                    assertThat(result, instanceOf(IllegalArgumentException.class));
+                    assertTrue(result.getMessage().contains("Some/all brokers specified don't exist"));
                 });
     }
 
@@ -231,7 +295,7 @@ public class CruiseControlClientTest {
     @Test
     public void testCCRemoveBrokerNotEnoughValidWindowsException(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
-                .withBrokers(List.of(3))
+                .withBrokers(List.of(3, 4))
                 .build();
         this.ccRebalanceNotEnoughValidWindowsException(vertx, context, options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> assertThat(result.isNotEnoughDataForProposal(), is(true))
@@ -288,6 +352,12 @@ public class CruiseControlClientTest {
                             checkpoint.flag();
                         })));
                 break;
+            case REMOVE_DISKS:
+                client.removeBrokerDisksData(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveDisksOptions) options, null)
+                        .onComplete(context.succeeding(result -> context.verify(() -> {
+                            assertion.accept(result);
+                            checkpoint.flag();
+                        })));
         }
     }
 
@@ -350,6 +420,13 @@ public class CruiseControlClientTest {
                             checkpoint.flag();
                         })));
                 break;
+            case REMOVE_DISKS:
+                client.removeBrokerDisksData(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveDisksOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                        .onComplete(context.succeeding(result -> context.verify(() -> {
+                            assertion.accept(result);
+                            checkpoint.flag();
+                        })));
+                break;
         }
     }
 
@@ -381,6 +458,13 @@ public class CruiseControlClientTest {
                             checkpoint.flag();
                         })));
                 break;
+            case REMOVE_DISKS:
+                client.removeBrokerDisksData(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveDisksOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                        .onComplete(context.succeeding(result -> context.verify(() -> {
+                            assertion.accept(result);
+                            checkpoint.flag();
+                        })));
+                break;
         }
     }
 
@@ -400,6 +484,13 @@ public class CruiseControlClientTest {
                 break;
             case REMOVE_BROKER:
                 client.removeBroker(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveBrokerOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
+                        .onComplete(context.failing(result -> context.verify(() -> {
+                            assertion.accept(result);
+                            checkpoint.flag();
+                        })));
+                break;
+            case REMOVE_DISKS:
+                client.removeBrokerDisksData(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, (RemoveDisksOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
                         .onComplete(context.failing(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();

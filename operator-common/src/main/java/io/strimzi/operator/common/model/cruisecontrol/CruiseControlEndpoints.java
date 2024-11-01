@@ -41,7 +41,12 @@ public enum CruiseControlEndpoints {
     /**
      * Topic configuration
      */
-    TOPIC_CONFIGURATION("/kafkacruisecontrol/topic_configuration");
+    TOPIC_CONFIGURATION("/kafkacruisecontrol/topic_configuration"),
+
+    /**
+     * Remove disks
+     */
+    REMOVE_DISKS("/kafkacruisecontrol/remove_disks");
 
     private final String path;
 

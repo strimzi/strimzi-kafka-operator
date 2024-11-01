@@ -22,7 +22,7 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "mode", "brokers", "goals", "skipHardGoalCheck", "rebalanceDisk", "excludedTopics", "concurrentPartitionMovementsPerBroker",
+@JsonPropertyOrder({ "mode", "brokers", "moveReplicasOffVolumes", "goals", "skipHardGoalCheck", "rebalanceDisk", "excludedTopics", "concurrentPartitionMovementsPerBroker",
     "concurrentIntraBrokerPartitionMovements", "concurrentLeaderMovements", "replicationThrottle", "replicaMovementStrategies" })
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
@@ -30,6 +30,17 @@ public class KafkaRebalanceSpec extends Spec {
     // rebalancing modes
     private KafkaRebalanceMode mode = KafkaRebalanceMode.FULL;
     private List<Integer> brokers;
+
+    @Description("List of the brokers and the volumes corresponding to them whose replicas needs to be moved")
+    public List<BrokerAndVolumeIds> getMoveReplicasOffVolumes() {
+        return moveReplicasOffVolumes;
+    }
+
+    public void setMoveReplicasOffVolumes(List<BrokerAndVolumeIds> moveReplicasOffVolumes) {
+        this.moveReplicasOffVolumes = moveReplicasOffVolumes;
+    }
+
+    private List<BrokerAndVolumeIds> moveReplicasOffVolumes;
 
     // Optimization goal configurations
     private List<String> goals;

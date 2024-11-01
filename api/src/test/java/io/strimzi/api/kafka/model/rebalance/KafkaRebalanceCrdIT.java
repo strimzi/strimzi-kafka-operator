@@ -68,6 +68,11 @@ public class KafkaRebalanceCrdIT extends AbstractCrdIT {
     }
 
     @Test
+    void testKafkaRebalanceRemoveDisks() {
+        createDeleteCustomResource("KafkaRebalance-remove-disks.yaml");
+    }
+
+    @Test
     void testKafkaRebalanceWrongMode() {
         Throwable exception = assertThrows(
                 KubernetesClientException.class,

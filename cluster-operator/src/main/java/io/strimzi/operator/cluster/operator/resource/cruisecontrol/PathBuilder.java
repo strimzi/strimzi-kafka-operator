@@ -4,10 +4,12 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
+import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIds;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlParameters;
 
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -73,6 +75,32 @@ public class PathBuilder {
         return this;
     }
 
+    /**
+     * Adds parameter with multiple values to the path
+     *
+     * @param param     Cruise Control parameter
+     * @param values    List of parameter value
+     *
+     * @return  Instance of this builder
+     */
+    public PathBuilder withBrokerAndVolumeIdParameter(CruiseControlParameters param, List<BrokerAndVolumeIds> values) {
+        if (!firstParam) {
+            constructedPath += "&";
+        } else {
+            firstParam = false;
+        }
+        List<String> brokerandVolumeIds = new ArrayList<>(values.size());
+        for (BrokerAndVolumeIds brokerAndVolumeIds : values) {
+            brokerAndVolumeIds.getVolumeIds().forEach(volumeId -> brokerandVolumeIds.add(brokerAndVolumeIds.getBrokerId() + "-/var/lib/kafka/data-" + volumeId + "/kafka-log" + brokerAndVolumeIds.getBrokerId()));
+        }
+        try {
+            constructedPath += param.asList(brokerandVolumeIds);
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+        return this;
+    }
+
     private void addIfNotZero(PathBuilder builder, CruiseControlParameters param, long value) {
         if (value > 0) {
             builder.withParameter(param, String.valueOf(value));
@@ -89,6 +117,8 @@ public class PathBuilder {
     public PathBuilder withRebalanceParameters(RebalanceOptions options) {
         if (options != null) {
             PathBuilder builder = withAbstractRebalanceParameters(options)
+                    .withParameter(CruiseControlParameters.VERBOSE, String.valueOf(options.isVerbose()))
+                    .withParameter(CruiseControlParameters.SKIP_HARD_GOAL_CHECK, String.valueOf(options.isSkipHardGoalCheck()))
                     .withParameter(CruiseControlParameters.REBALANCE_DISK, String.valueOf(options.isRebalanceDisk()));
             addIfNotZero(builder, CruiseControlParameters.CONCURRENT_INTRA_PARTITION_MOVEMENTS, options.getConcurrentIntraBrokerPartitionMovements());
             return builder;
@@ -99,10 +129,7 @@ public class PathBuilder {
 
     private PathBuilder withAbstractRebalanceParameters(AbstractRebalanceOptions options) {
         if (options != null) {
-            PathBuilder builder = withParameter(CruiseControlParameters.DRY_RUN, String.valueOf(options.isDryRun()))
-                    .withParameter(CruiseControlParameters.VERBOSE, String.valueOf(options.isVerbose()))
-                    .withParameter(CruiseControlParameters.SKIP_HARD_GOAL_CHECK, String.valueOf(options.isSkipHardGoalCheck()));
-
+            PathBuilder builder = withParameter(CruiseControlParameters.DRY_RUN, String.valueOf(options.isDryRun()));
             if (options.getExcludedTopics() != null) {
                 builder.withParameter(CruiseControlParameters.EXCLUDED_TOPICS, options.getExcludedTopics());
             }
@@ -133,6 +160,8 @@ public class PathBuilder {
     public PathBuilder withAddBrokerParameters(AddBrokerOptions options) {
         if (options != null) {
             return withAbstractRebalanceParameters(options)
+                    .withParameter(CruiseControlParameters.VERBOSE, String.valueOf(options.isVerbose()))
+                    .withParameter(CruiseControlParameters.SKIP_HARD_GOAL_CHECK, String.valueOf(options.isSkipHardGoalCheck()))
                     .withParameter(CruiseControlParameters.BROKER_ID, options.getBrokers().stream().map(String::valueOf).collect(Collectors.joining(",")));
         } else {
             return this;
@@ -149,7 +178,25 @@ public class PathBuilder {
     public PathBuilder withRemoveBrokerParameters(RemoveBrokerOptions options) {
         if (options != null) {
             return withAbstractRebalanceParameters(options)
+                    .withParameter(CruiseControlParameters.VERBOSE, String.valueOf(options.isVerbose()))
+                    .withParameter(CruiseControlParameters.SKIP_HARD_GOAL_CHECK, String.valueOf(options.isSkipHardGoalCheck()))
                     .withParameter(CruiseControlParameters.BROKER_ID, options.getBrokers().stream().map(String::valueOf).collect(Collectors.joining(",")));
+        } else {
+            return this;
+        }
+    }
+
+    /**
+     * Adds remove disks options to the path
+     *
+     * @param options   Remove-disks options
+     *
+     * @return  Instance of this builder
+     */
+    public PathBuilder withRemoveBrokerDisksParameters(RemoveDisksOptions options) {
+        if (options != null) {
+            return withAbstractRebalanceParameters(options)
+                    .withBrokerAndVolumeIdParameter(CruiseControlParameters.BROKER_ID_AND_LOG_DIRS, options.getBrokersandVolumeIds());
         } else {
             return this;
         }

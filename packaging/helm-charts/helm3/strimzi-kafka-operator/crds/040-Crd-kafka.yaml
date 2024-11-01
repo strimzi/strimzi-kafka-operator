@@ -8227,6 +8227,7 @@ spec:
                             enum:
                               - add-brokers
                               - remove-brokers
+                              - remove-disks
                             description: "Mode for which there is an auto-rebalancing operation in progress or queued, when brokers are added or removed. The possible modes are `add-brokers` and `remove-brokers`."
                           brokers:
                             type: array
