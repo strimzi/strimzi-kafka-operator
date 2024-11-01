@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaList;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
+import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIds;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceBuilder;
@@ -38,6 +39,7 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControl
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlRestException;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RebalanceOptions;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RemoveBrokerOptions;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RemoveDisksOptions;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.AbstractWatchableStatusedNamespacedResourceOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
@@ -140,7 +142,7 @@ import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE_A
  *    |-----------→|               |                   |
  * </code></pre>
  */
-@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:CyclomaticComplexity"})
 public class KafkaRebalanceAssemblyOperator
        extends AbstractOperator<KafkaRebalance, KafkaRebalanceSpec, KafkaRebalanceStatus, AbstractWatchableStatusedNamespacedResourceOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList, Resource<KafkaRebalance>>> {
 
@@ -248,6 +250,9 @@ public class KafkaRebalanceAssemblyOperator
         List<Integer> brokers = Optional.ofNullable(kafkaRebalanceSpec)
                 .map(kr -> kr.getBrokers())
                 .orElse(null);
+        List<BrokerAndVolumeIds> brokerAndVolumeIds = Optional.ofNullable(kafkaRebalanceSpec)
+                .map(kr -> kr.getMoveReplicasOffVolumes())
+                .orElse(null);
 
         switch (mode) {
             case ADD_BROKERS:
@@ -264,6 +269,14 @@ public class KafkaRebalanceAssemblyOperator
                     ((RemoveBrokerOptions.RemoveBrokerOptionsBuilder) rebalanceOptionsBuilder).withBrokers(brokers);
                 } else {
                     throw new IllegalArgumentException("The brokers list is mandatory when using the " + mode.toValue() + " rebalancing mode");
+                }
+                break;
+            case REMOVE_DISKS:
+                rebalanceOptionsBuilder = new RemoveDisksOptions.RemoveDisksOptionsBuilder();
+                if (brokerAndVolumeIds != null && !brokerAndVolumeIds.isEmpty()) {
+                    ((RemoveDisksOptions.RemoveDisksOptionsBuilder) rebalanceOptionsBuilder).withBrokersandVolumeIds(brokerAndVolumeIds);
+                } else {
+                    throw new IllegalArgumentException("The brokers and volume IDs list is mandatory when using the " + mode.toValue() + " rebalancing mode");
                 }
                 break;
             default:
@@ -481,37 +494,55 @@ public class KafkaRebalanceAssemblyOperator
 
     /**
      * Converts the supplied before and after broker load arrays into a map linking from broker ID integer to a map linking
-     * from load parameter to an array of [before, after, difference]. The load parameters included in the map are dictated
-     * by the values in he {@link CruiseControlLoadParameters} enum.
+     * from load parameter to an array of [before, after, difference] if verbose was enabled with the request
+     * In case verbose was disabled, we only convert the after load array into map linking from broker ID integer to a map linking
+     * from load parameter to an array of [after].
+     * The load parameters included in the map are dictated by the values in he {@link CruiseControlLoadParameters} enum.
      *
-     * @param brokerLoadBeforeArray The JSONArray of broker load JSONObjects, for before the optimization proposal is applied,
+     * @param brokerLoadBeforeJson The JSONArray of broker load JSONObjects, for before the optimization proposal is applied,
      *                              returned by the Cruise Control rebalance endpoint.
-     * @param brokerLoadAfterArray The JSONArray of broker load JSONObjects, for after the optimization proposal is applied,
+     * @param brokerLoadAfterJson The JSONArray of broker load JSONObjects, for after the optimization proposal is applied,
      *                             returned by the Cruise Control rebalance endpoint.
      * @return A JsonObject linking from broker ID integer to a map of load parameter to [before, after, difference] arrays.
      */
-    protected static JsonObject parseLoadStats(JsonArray brokerLoadBeforeArray, JsonArray brokerLoadAfterArray) {
+    protected static JsonObject parseLoadStats(JsonArray brokerLoadBeforeJson, JsonArray brokerLoadAfterJson) {
+
+        if (brokerLoadBeforeJson == null && brokerLoadAfterJson == null) {
+            throw new IllegalArgumentException("The rebalance optimization proposal returned by Cruise Control did not contain broker load information");
+        }
 
         // There is no guarantee that the brokers are in the same order in both the before and after arrays.
         // Therefore we need to convert them into maps indexed by broker ID so we can align them later for the comparison.
-        Map<Integer, Map<String, Object>> loadBeforeMap = extractLoadParameters(brokerLoadBeforeArray);
-        Map<Integer, Map<String, Object>> loadAfterMap = extractLoadParameters(brokerLoadAfterArray);
 
-        if (loadBeforeMap.size() != loadAfterMap.size()) {
+        Map<Integer, Map<String, Object>> loadBeforeMap = new HashMap<>();
+
+        if (brokerLoadBeforeJson != null && !brokerLoadBeforeJson.isEmpty()) {
+            loadBeforeMap = extractLoadParameters(brokerLoadBeforeJson);
+        }
+
+        Map<Integer, Map<String, Object>> loadAfterMap = extractLoadParameters(brokerLoadAfterJson);
+
+        if (!loadBeforeMap.isEmpty() && loadBeforeMap.size() != loadAfterMap.size()) {
             throw new IllegalArgumentException("Broker data was missing from the load before/after information");
         }
 
         JsonObject brokersStats = new JsonObject();
 
-        for (Map.Entry<Integer, Map<String, Object>> loadBeforeEntry : loadBeforeMap.entrySet()) {
-            Map<String, Object> brokerBefore = loadBeforeEntry.getValue();
-            Map<String, Object> brokerAfter = loadAfterMap.get(loadBeforeEntry.getKey());
+        for (Map.Entry<Integer, Map<String, Object>> loadAfterEntry : loadAfterMap.entrySet()) {
+
+            Map<String, Object> brokerBefore = new HashMap<>();
+
+            if (!loadBeforeMap.isEmpty()) {
+                brokerBefore = loadBeforeMap.get(loadAfterEntry.getKey());
+            }
+
+            Map<String, Object> brokerAfter = loadAfterEntry.getValue();
 
             JsonObject brokerStats = new JsonObject();
 
             for (CruiseControlLoadParameters intLoadParameter : CruiseControlLoadParameters.getIntegerParameters()) {
 
-                if (brokerBefore.containsKey(intLoadParameter.getKafkaRebalanceStatusKey()) &&
+                if (!brokerBefore.isEmpty() && brokerBefore.containsKey(intLoadParameter.getKafkaRebalanceStatusKey()) &&
                         brokerAfter.containsKey(intLoadParameter.getKafkaRebalanceStatusKey())) {
 
                     int intBeforeStat = (int) brokerBefore.get(intLoadParameter.getKafkaRebalanceStatusKey());
@@ -525,11 +556,17 @@ public class KafkaRebalanceAssemblyOperator
                     intStats.put("diff", intDiff);
 
                     brokerStats.put(intLoadParameter.getKafkaRebalanceStatusKey(), intStats);
+                } else if (brokerBefore.isEmpty() &&
+                        brokerAfter.containsKey(intLoadParameter.getKafkaRebalanceStatusKey())) {
+                    int intAfterStat = (int) brokerAfter.get(intLoadParameter.getKafkaRebalanceStatusKey());
+                    JsonObject intStats = new JsonObject();
+                    intStats.put("after", intAfterStat);
+
+                    brokerStats.put(intLoadParameter.getKafkaRebalanceStatusKey(), intStats);
                 } else {
                     LOGGER.warnOp("{} information was missing from the broker before/after load information",
                             intLoadParameter.getKafkaRebalanceStatusKey());
                 }
-
             }
 
             for (CruiseControlLoadParameters doubleLoadParameter : CruiseControlLoadParameters.getDoubleParameters()) {
@@ -547,6 +584,13 @@ public class KafkaRebalanceAssemblyOperator
                     doubleStats.put("diff", doubleDiff);
 
                     brokerStats.put(doubleLoadParameter.getKafkaRebalanceStatusKey(), doubleStats);
+                } else if (brokerBefore.isEmpty() &&
+                        brokerAfter.containsKey(doubleLoadParameter.getKafkaRebalanceStatusKey())) {
+                    double doubleAfterStat = (double) brokerAfter.get(doubleLoadParameter.getKafkaRebalanceStatusKey());
+                    JsonObject doubleStats = new JsonObject();
+                    doubleStats.put("after", doubleAfterStat);
+
+                    brokerStats.put(doubleLoadParameter.getKafkaRebalanceStatusKey(), doubleStats);
                 } else {
                     LOGGER.warnOp("{} information was missing from the broker before/after load information",
                             doubleLoadParameter.getKafkaRebalanceStatusKey());
@@ -554,7 +598,7 @@ public class KafkaRebalanceAssemblyOperator
 
             }
 
-            brokersStats.put(String.valueOf(loadBeforeEntry.getKey()), brokerStats);
+            brokersStats.put(String.valueOf(loadAfterEntry.getKey()), brokerStats);
         }
 
         return brokersStats;
@@ -596,18 +640,17 @@ public class KafkaRebalanceAssemblyOperator
      */
     protected static MapAndStatus<ConfigMap, Map<String, Object>> processOptimizationProposal(KafkaRebalance kafkaRebalance, JsonObject proposalJson) {
 
-        JsonArray brokerLoadBeforeOptimization;
-        JsonArray brokerLoadAfterOptimization;
-        if (proposalJson.containsKey(CruiseControlRebalanceKeys.LOAD_BEFORE_OPTIMIZATION.getKey()) &&
-                proposalJson.containsKey(CruiseControlRebalanceKeys.LOAD_AFTER_OPTIMIZATION.getKey())) {
+        JsonArray brokerLoadBeforeOptimization = null;
+        JsonArray brokerLoadAfterOptimization = null;
+        if (proposalJson.containsKey(CruiseControlRebalanceKeys.LOAD_BEFORE_OPTIMIZATION.getKey())) {
             brokerLoadBeforeOptimization = proposalJson
                     .getJsonObject(CruiseControlRebalanceKeys.LOAD_BEFORE_OPTIMIZATION.getKey())
                     .getJsonArray(CruiseControlRebalanceKeys.BROKERS.getKey());
+        }
+        if (proposalJson.containsKey(CruiseControlRebalanceKeys.LOAD_AFTER_OPTIMIZATION.getKey())) {
             brokerLoadAfterOptimization = proposalJson
                     .getJsonObject(CruiseControlRebalanceKeys.LOAD_AFTER_OPTIMIZATION.getKey())
                     .getJsonArray(CruiseControlRebalanceKeys.BROKERS.getKey());
-        } else {
-            throw new IllegalArgumentException("The rebalance optimization proposal returned by Cruise Control did not contain broker load information");
         }
 
         JsonObject beforeAndAfterBrokerLoad = parseLoadStats(
@@ -1134,14 +1177,18 @@ public class KafkaRebalanceAssemblyOperator
                                                                                    AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder) {
 
         LOGGER.infoCr(reconciliation, "Requesting Cruise Control rebalance [dryrun={}]", dryrun);
-        rebalanceOptionsBuilder.withVerboseResponse();
-        if (!dryrun) {
-            rebalanceOptionsBuilder.withFullRun();
-        }
+
         // backward compatibility, no mode specified means "full"
         KafkaRebalanceMode mode = Optional.ofNullable(kafkaRebalance.getSpec())
                 .map(spec -> spec.getMode())
                 .orElse(KafkaRebalanceMode.FULL);
+
+        if (mode != KafkaRebalanceMode.REMOVE_DISKS) {
+            rebalanceOptionsBuilder.withVerboseResponse();
+        }
+        if (!dryrun) {
+            rebalanceOptionsBuilder.withFullRun();
+        }
 
         Future<CruiseControlRebalanceResponse> future;
         switch (mode) {
@@ -1150,6 +1197,9 @@ public class KafkaRebalanceAssemblyOperator
                 break;
             case REMOVE_BROKERS:
                 future = apiClient.removeBroker(reconciliation, host, cruiseControlPort, ((RemoveBrokerOptions.RemoveBrokerOptionsBuilder) rebalanceOptionsBuilder).build(), null);
+                break;
+            case REMOVE_DISKS:
+                future = apiClient.removeDisks(reconciliation, host, cruiseControlPort, ((RemoveDisksOptions.RemoveDisksOptionsBuilder) rebalanceOptionsBuilder).build(), null);
                 break;
             default:
                 future = apiClient.rebalance(reconciliation, host, cruiseControlPort, ((RebalanceOptions.RebalanceOptionsBuilder) rebalanceOptionsBuilder).build(), null);

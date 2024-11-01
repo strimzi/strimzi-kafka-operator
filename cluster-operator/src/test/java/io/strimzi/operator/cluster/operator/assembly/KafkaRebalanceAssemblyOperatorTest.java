@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIdsBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceBuilder;
@@ -111,6 +112,16 @@ public class KafkaRebalanceAssemblyOperatorTest {
             new KafkaRebalanceSpecBuilder()
                     .withMode(KafkaRebalanceMode.REMOVE_BROKERS)
                     .withBrokers(3)
+                    .build();
+
+    private static final KafkaRebalanceSpec REMOVE_DISKS_KAFKA_REBALANCE_SPEC =
+            new KafkaRebalanceSpecBuilder()
+                    .withMode(KafkaRebalanceMode.REMOVE_DISKS)
+                    .withMoveReplicasOffVolumes(
+                            new BrokerAndVolumeIdsBuilder()
+                                    .withBrokerId(0)
+                                    .withVolumeIds(1)
+                                    .build())
                     .build();
     private static final PlatformFeaturesAvailability PFA = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
     private static KubernetesClient client;
@@ -245,7 +256,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToProposalReadyRebalance(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToProposalReady(context, CruiseControlEndpoints.REBALANCE, kr);
+        this.krNewToProposalReady(context, CruiseControlEndpoints.REBALANCE, kr, "true");
     }
 
     /**
@@ -254,7 +265,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToProposalReadyAddBroker(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, ADD_BROKER_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToProposalReady(context, CruiseControlEndpoints.ADD_BROKER, kr);
+        this.krNewToProposalReady(context, CruiseControlEndpoints.ADD_BROKER, kr, "true");
     }
 
     /**
@@ -263,12 +274,21 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToProposalReadyRemoveBroker(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, REMOVE_BROKER_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToProposalReady(context, CruiseControlEndpoints.REMOVE_BROKER, kr);
+        this.krNewToProposalReady(context, CruiseControlEndpoints.REMOVE_BROKER, kr, "true");
     }
 
-    private void krNewToProposalReady(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr) throws IOException, URISyntaxException {
+    /**
+     * See the {@link KafkaRebalanceAssemblyOperatorTest#testNewToProposalReadyRebalance} for description
+     */
+    @Test
+    public void testNewToProposalReadyRemoveDisks(VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, REMOVE_DISKS_KAFKA_REBALANCE_SPEC, false);
+        this.krNewToProposalReady(context, CruiseControlEndpoints.REMOVE_DISKS, kr, null);
+    }
+
+    private void krNewToProposalReady(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr, String verbose) throws IOException, URISyntaxException {
         // Set up the rebalance endpoint with the number of pending calls before a response is received.
-        cruiseControlServer.setupCCRebalanceResponse(0, endpoint);
+        cruiseControlServer.setupCCRebalanceResponse(0, endpoint, verbose);
 
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
         crdCreateKafka();
@@ -328,7 +348,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                     cruiseControlServer.reset();
                     try {
                         // Set up the rebalance endpoint with the number of pending calls before a response is received.
-                        cruiseControlServer.setupCCRebalanceResponse(0, CruiseControlEndpoints.REBALANCE);
+                        cruiseControlServer.setupCCRebalanceResponse(0, CruiseControlEndpoints.REBALANCE, "true");
                     } catch (IOException | URISyntaxException e) {
                         context.failNow(e);
                     }
@@ -364,7 +384,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToPendingProposalToProposalReadyRebalance(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToPendingProposalToProposalReady(context, CruiseControlEndpoints.REBALANCE, kr);
+        this.krNewToPendingProposalToProposalReady(context, CruiseControlEndpoints.REBALANCE, kr, "true");
     }
 
     /**
@@ -373,7 +393,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToPendingProposalToProposalReadyAddBroker(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, ADD_BROKER_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToPendingProposalToProposalReady(context, CruiseControlEndpoints.ADD_BROKER, kr);
+        this.krNewToPendingProposalToProposalReady(context, CruiseControlEndpoints.ADD_BROKER, kr, "true");
     }
 
     /**
@@ -382,12 +402,21 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToPendingProposalToProposalReadyRemoveBroker(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, REMOVE_BROKER_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToPendingProposalToProposalReady(context, CruiseControlEndpoints.REMOVE_BROKER, kr);
+        this.krNewToPendingProposalToProposalReady(context, CruiseControlEndpoints.REMOVE_BROKER, kr, "true");
     }
 
-    private void krNewToPendingProposalToProposalReady(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr) throws IOException, URISyntaxException {
+    /**
+     * See the {@link KafkaRebalanceAssemblyOperatorTest#testNewToPendingProposalToProposalReadyRebalance} for description
+     */
+    @Test
+    public void testNewToPendingProposalToProposalReadyRemoveDisks(VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, REMOVE_DISKS_KAFKA_REBALANCE_SPEC, false);
+        this.krNewToPendingProposalToProposalReady(context, CruiseControlEndpoints.REMOVE_DISKS, kr, null);
+    }
+
+    private void krNewToPendingProposalToProposalReady(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr, String verbose) throws IOException, URISyntaxException {
         // Set up the rebalance endpoint with the number of pending calls before a response is received.
-        cruiseControlServer.setupCCRebalanceResponse(1, endpoint);
+        cruiseControlServer.setupCCRebalanceResponse(1, endpoint, verbose);
         cruiseControlServer.setupCCUserTasksResponseNoGoals(1, 0);
 
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
@@ -438,7 +467,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToPendingProposalToStoppedRebalance(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToPendingProposalToStopped(context, CruiseControlEndpoints.REBALANCE, kr);
+        this.krNewToPendingProposalToStopped(context, CruiseControlEndpoints.REBALANCE, kr, "true");
     }
 
     /**
@@ -447,7 +476,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToPendingProposalToStoppedAddBroker(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, ADD_BROKER_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToPendingProposalToStopped(context, CruiseControlEndpoints.ADD_BROKER, kr);
+        this.krNewToPendingProposalToStopped(context, CruiseControlEndpoints.ADD_BROKER, kr, "true");
     }
 
     /**
@@ -456,12 +485,21 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToPendingProposalToStoppedRemoveBroker(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, REMOVE_BROKER_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToPendingProposalToStopped(context, CruiseControlEndpoints.REMOVE_BROKER, kr);
+        this.krNewToPendingProposalToStopped(context, CruiseControlEndpoints.REMOVE_BROKER, kr, "true");
     }
 
-    private void krNewToPendingProposalToStopped(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr) throws IOException, URISyntaxException {
+    /**
+     * See the {@link KafkaRebalanceAssemblyOperatorTest#testNewToPendingProposalToStoppedRebalance} for description
+     */
+    @Test
+    public void testNewToPendingProposalToStoppedRemoveDisks(VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, REMOVE_DISKS_KAFKA_REBALANCE_SPEC, false);
+        this.krNewToPendingProposalToStopped(context, CruiseControlEndpoints.REMOVE_DISKS, kr, null);
+    }
+
+    private void krNewToPendingProposalToStopped(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr, String verbose) throws IOException, URISyntaxException {
         // Set up the rebalance endpoint with the number of pending calls before a response is received.
-        cruiseControlServer.setupCCRebalanceResponse(5, endpoint);
+        cruiseControlServer.setupCCRebalanceResponse(5, endpoint, verbose);
 
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
         crdCreateKafka();
@@ -508,7 +546,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToPendingProposalToStoppedAndRefreshRebalance(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToPendingProposalToStoppedAndRefresh(context, CruiseControlEndpoints.REBALANCE, kr);
+        this.krNewToPendingProposalToStoppedAndRefresh(context, CruiseControlEndpoints.REBALANCE, kr, "true");
     }
 
     /**
@@ -517,7 +555,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToPendingProposalToStoppedAndRefreshAddBroker(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, ADD_BROKER_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToPendingProposalToStoppedAndRefresh(context, CruiseControlEndpoints.ADD_BROKER, kr);
+        this.krNewToPendingProposalToStoppedAndRefresh(context, CruiseControlEndpoints.ADD_BROKER, kr, "true");
     }
 
     /**
@@ -526,12 +564,21 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToPendingProposalToStoppedAndRefreshRemoveBroker(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, REMOVE_BROKER_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToPendingProposalToStoppedAndRefresh(context, CruiseControlEndpoints.REMOVE_BROKER, kr);
+        this.krNewToPendingProposalToStoppedAndRefresh(context, CruiseControlEndpoints.REMOVE_BROKER, kr, "true");
     }
 
-    private void krNewToPendingProposalToStoppedAndRefresh(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr) throws IOException, URISyntaxException {
+    /**
+     * See the {@link KafkaRebalanceAssemblyOperatorTest#testNewToPendingProposalToStoppedAndRefreshRebalance} for description
+     */
+    @Test
+    public void testNewToPendingProposalToStoppedAndRefreshRemoveDisks(VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, REMOVE_DISKS_KAFKA_REBALANCE_SPEC, false);
+        this.krNewToPendingProposalToStoppedAndRefresh(context, CruiseControlEndpoints.REMOVE_DISKS, kr, null);
+    }
+
+    private void krNewToPendingProposalToStoppedAndRefresh(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr, String verbose) throws IOException, URISyntaxException {
         // Set up the rebalance endpoint with the number of pending calls before a response is received.
-        cruiseControlServer.setupCCRebalanceResponse(2, endpoint);
+        cruiseControlServer.setupCCRebalanceResponse(2, endpoint, verbose);
         cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 0);
 
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
@@ -595,7 +642,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToProposalReadyToRebalancingToReadyRebalance(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToProposalReadyToRebalancingToReady(context, CruiseControlEndpoints.REBALANCE, kr);
+        this.krNewToProposalReadyToRebalancingToReady(context, CruiseControlEndpoints.REBALANCE, kr, "true");
     }
 
     /**
@@ -604,7 +651,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToProposalReadyToRebalancingToReadyAddBroker(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, ADD_BROKER_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToProposalReadyToRebalancingToReady(context, CruiseControlEndpoints.ADD_BROKER, kr);
+        this.krNewToProposalReadyToRebalancingToReady(context, CruiseControlEndpoints.ADD_BROKER, kr, "true");
     }
 
     /**
@@ -613,7 +660,16 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToProposalReadyToRebalancingToReadyRemoveBroker(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, REMOVE_BROKER_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToProposalReadyToRebalancingToReady(context, CruiseControlEndpoints.REMOVE_BROKER, kr);
+        this.krNewToProposalReadyToRebalancingToReady(context, CruiseControlEndpoints.REMOVE_BROKER, kr, "true");
+    }
+
+    /**
+     * See the {@link KafkaRebalanceAssemblyOperatorTest#testNewToProposalReadyToRebalancingToReadyRebalance} for description
+     */
+    @Test
+    public void testNewToProposalReadyToRebalancingToReadyRemoveDisks(VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, REMOVE_DISKS_KAFKA_REBALANCE_SPEC, false);
+        this.krNewToProposalReadyToRebalancingToReady(context, CruiseControlEndpoints.REMOVE_DISKS, kr, null);
     }
 
     /**
@@ -634,7 +690,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testAutoApprovalNewToProposalReadyToRebalancingToReadyRebalance(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, true);
-        this.krNewToProposalReadyToRebalancingToReady(context, CruiseControlEndpoints.REBALANCE, kr);
+        this.krNewToProposalReadyToRebalancingToReady(context, CruiseControlEndpoints.REBALANCE, kr, "true");
     }
 
     /**
@@ -643,7 +699,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testAutoApprovalNewToProposalReadyToRebalancingToReadyAddBroker(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, ADD_BROKER_KAFKA_REBALANCE_SPEC, true);
-        this.krNewToProposalReadyToRebalancingToReady(context, CruiseControlEndpoints.ADD_BROKER, kr);
+        this.krNewToProposalReadyToRebalancingToReady(context, CruiseControlEndpoints.ADD_BROKER, kr, "true");
     }
 
     /**
@@ -652,12 +708,21 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testAutoApprovalNewToReadyRemoveBroker(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, REMOVE_BROKER_KAFKA_REBALANCE_SPEC, true);
-        this.krNewToProposalReadyToRebalancingToReady(context, CruiseControlEndpoints.REMOVE_BROKER, kr);
+        this.krNewToProposalReadyToRebalancingToReady(context, CruiseControlEndpoints.REMOVE_BROKER, kr, "true");
     }
 
-    private void krNewToProposalReadyToRebalancingToReady(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr) throws IOException, URISyntaxException {
+    /**
+     * See the {@link KafkaRebalanceAssemblyOperatorTest#testAutoApprovalNewToProposalReadyToRebalancingToReadyRebalance} for description
+     */
+    @Test
+    public void testAutoApprovalNewToReadyRemoveDisks(VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, REMOVE_DISKS_KAFKA_REBALANCE_SPEC, true);
+        this.krNewToProposalReadyToRebalancingToReady(context, CruiseControlEndpoints.REMOVE_DISKS, kr, null);
+    }
+
+    private void krNewToProposalReadyToRebalancingToReady(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr, String verbose) throws IOException, URISyntaxException {
         // Set up the rebalance and user tasks endpoints with the number of pending calls before a response is received.
-        cruiseControlServer.setupCCRebalanceResponse(0, endpoint);
+        cruiseControlServer.setupCCRebalanceResponse(0, endpoint, verbose);
         cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 0);
 
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
@@ -708,7 +773,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToProposalReadyToReconciliationPausedRebalance(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToProposalReadyToReconciliationPaused(context, CruiseControlEndpoints.REBALANCE, kr);
+        this.krNewToProposalReadyToReconciliationPaused(context, CruiseControlEndpoints.REBALANCE, kr, "true");
     }
 
     /**
@@ -717,7 +782,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToProposalReadyToReconciliationPausedAddBroker(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, ADD_BROKER_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToProposalReadyToReconciliationPaused(context, CruiseControlEndpoints.ADD_BROKER, kr);
+        this.krNewToProposalReadyToReconciliationPaused(context, CruiseControlEndpoints.ADD_BROKER, kr, "true");
     }
 
     /**
@@ -726,12 +791,21 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToProposalReadyToReconciliationPausedRemoveBroker(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, REMOVE_BROKER_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToProposalReadyToReconciliationPaused(context, CruiseControlEndpoints.REMOVE_BROKER, kr);
+        this.krNewToProposalReadyToReconciliationPaused(context, CruiseControlEndpoints.REMOVE_BROKER, kr, "true");
     }
 
-    private void krNewToProposalReadyToReconciliationPaused(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr) throws IOException, URISyntaxException {
+    /**
+     * See the {@link KafkaRebalanceAssemblyOperatorTest#testNewToProposalReadyToReconciliationPausedRebalance} for description
+     */
+    @Test
+    public void testNewToProposalReadyToReconciliationPausedRemoveDisks(VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, REMOVE_DISKS_KAFKA_REBALANCE_SPEC, false);
+        this.krNewToProposalReadyToReconciliationPaused(context, CruiseControlEndpoints.REMOVE_DISKS, kr, null);
+    }
+
+    private void krNewToProposalReadyToReconciliationPaused(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr, String verbose) throws IOException, URISyntaxException {
         // Set up the rebalance and user tasks endpoints with the number of pending calls before a response is received.
-        cruiseControlServer.setupCCRebalanceResponse(0, endpoint);
+        cruiseControlServer.setupCCRebalanceResponse(0, endpoint, verbose);
         cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 0);
 
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
@@ -787,7 +861,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToProposalReadyToRebalancingToReadyThenRefreshRebalance(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToProposalReadyToRebalancingToReadyThenRefresh(context, CruiseControlEndpoints.REBALANCE, kr);
+        this.krNewToProposalReadyToRebalancingToReadyThenRefresh(context, CruiseControlEndpoints.REBALANCE, kr, "true");
     }
 
     /**
@@ -796,7 +870,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToProposalReadyToRebalancingToReadyThenRefreshAddBroker(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, ADD_BROKER_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToProposalReadyToRebalancingToReadyThenRefresh(context, CruiseControlEndpoints.ADD_BROKER, kr);
+        this.krNewToProposalReadyToRebalancingToReadyThenRefresh(context, CruiseControlEndpoints.ADD_BROKER, kr, "true");
     }
 
     /**
@@ -805,12 +879,21 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToProposalReadyToRebalancingToReadyThenRefreshRemoveBroker(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, REMOVE_BROKER_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToProposalReadyToRebalancingToReadyThenRefresh(context, CruiseControlEndpoints.REMOVE_BROKER, kr);
+        this.krNewToProposalReadyToRebalancingToReadyThenRefresh(context, CruiseControlEndpoints.REMOVE_BROKER, kr, "true");
     }
 
-    private void krNewToProposalReadyToRebalancingToReadyThenRefresh(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr) throws IOException, URISyntaxException {
+    /**
+     * See the {@link KafkaRebalanceAssemblyOperatorTest#testNewToProposalReadyToRebalancingToReadyThenRefreshRebalance} for description
+     */
+    @Test
+    public void testNewToProposalReadyToRebalancingToReadyThenRefreshRemoveDisks(VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, REMOVE_DISKS_KAFKA_REBALANCE_SPEC, false);
+        this.krNewToProposalReadyToRebalancingToReadyThenRefresh(context, CruiseControlEndpoints.REMOVE_DISKS, kr, null);
+    }
+
+    private void krNewToProposalReadyToRebalancingToReadyThenRefresh(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr, String verbose) throws IOException, URISyntaxException {
         // Set up the rebalance and user tasks endpoints with the number of pending calls before a response is received.
-        cruiseControlServer.setupCCRebalanceResponse(0, endpoint);
+        cruiseControlServer.setupCCRebalanceResponse(0, endpoint, verbose);
         cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 0);
 
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
@@ -978,7 +1061,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
     private void krNewToProposalReadySkipHardGoals(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr) throws IOException, URISyntaxException {
         // Set up the rebalance endpoint with the number of pending calls before a response is received.
-        cruiseControlServer.setupCCRebalanceResponse(0, endpoint);
+        cruiseControlServer.setupCCRebalanceResponse(0, endpoint, "true");
 
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
         crdCreateKafka();
@@ -1072,7 +1155,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                     cruiseControlServer.reset();
                     try {
                         // Set up the rebalance endpoint with the number of pending calls before a response is received.
-                        cruiseControlServer.setupCCRebalanceResponse(0, endpoint);
+                        cruiseControlServer.setupCCRebalanceResponse(0, endpoint, "true");
                     } catch (IOException | URISyntaxException e) {
                         context.failNow(e);
                     }
@@ -1112,7 +1195,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToPendingProposalDeleteRebalance(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToPendingProposalDelete(context, CruiseControlEndpoints.REBALANCE, kr);
+        this.krNewToPendingProposalDelete(context, CruiseControlEndpoints.REBALANCE, kr, "true");
     }
 
     /**
@@ -1121,7 +1204,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToPendingProposalDeleteAddBroker(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, ADD_BROKER_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToPendingProposalDelete(context, CruiseControlEndpoints.ADD_BROKER, kr);
+        this.krNewToPendingProposalDelete(context, CruiseControlEndpoints.ADD_BROKER, kr, "true");
     }
 
     /**
@@ -1130,12 +1213,21 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToPendingProposalDeleteRemoveBroker(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, REMOVE_BROKER_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToPendingProposalDelete(context, CruiseControlEndpoints.REMOVE_BROKER, kr);
+        this.krNewToPendingProposalDelete(context, CruiseControlEndpoints.REMOVE_BROKER, kr, "true");
     }
 
-    private void krNewToPendingProposalDelete(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr) throws IOException, URISyntaxException {
+    /**
+     * See the {@link KafkaRebalanceAssemblyOperatorTest#testNewToPendingProposalDeleteRebalance} for description
+     */
+    @Test
+    public void testNewToPendingProposalDeleteRemoveDisks(VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, REMOVE_DISKS_KAFKA_REBALANCE_SPEC, false);
+        this.krNewToPendingProposalDelete(context, CruiseControlEndpoints.REMOVE_DISKS, kr, null);
+    }
+
+    private void krNewToPendingProposalDelete(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr, String verbose) throws IOException, URISyntaxException {
         // Set up the rebalance endpoint with the number of pending calls before a response is received.
-        cruiseControlServer.setupCCRebalanceResponse(1, endpoint);
+        cruiseControlServer.setupCCRebalanceResponse(1, endpoint, verbose);
         cruiseControlServer.setupCCUserTasksResponseNoGoals(1, 0);
 
         Crds.kafkaRebalanceOperation(client).inNamespace(namespace).resource(kr).create();
@@ -1178,7 +1270,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testRebalancingToNotReadyRemoveBroker(VertxTestContext context) {
         cruiseControlServer.setupUserTasktoEmpty();
-        cruiseControlServer.setupCCBrokerDoesNotExist(CruiseControlEndpoints.REMOVE_BROKER);
+        cruiseControlServer.setupCCBrokerDoesNotExist(CruiseControlEndpoints.REMOVE_BROKER, "true");
         this.krToNotReadyRemoveBrokers(context, "test-session-id", false, KafkaRebalanceState.Rebalancing);
     }
 
@@ -1189,7 +1281,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testPendingProposalToNotReadyRemoveBroker(VertxTestContext context) {
         cruiseControlServer.setupUserTasktoEmpty();
-        cruiseControlServer.setupCCBrokerDoesNotExist(CruiseControlEndpoints.REMOVE_BROKER);
+        cruiseControlServer.setupCCBrokerDoesNotExist(CruiseControlEndpoints.REMOVE_BROKER, "true");
         this.krToNotReadyRemoveBrokers(context, "test-session-id", false, KafkaRebalanceState.PendingProposal);
     }
 
@@ -1204,7 +1296,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     @Timeout(value = 60, timeUnit = TimeUnit.MINUTES)
     public void testPendingProposalToNotReadyRemoveBrokerWithRefresh(VertxTestContext context) {
-        cruiseControlServer.setupCCBrokerDoesNotExist(CruiseControlEndpoints.REMOVE_BROKER);
+        cruiseControlServer.setupCCBrokerDoesNotExist(CruiseControlEndpoints.REMOVE_BROKER, "true");
         this.krToNotReadyRemoveBrokers(context, "test-session-id", true, KafkaRebalanceState.PendingProposal);
     }
 
@@ -1219,7 +1311,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     @Timeout(value = 60, timeUnit = TimeUnit.MINUTES)
     public void testPendingProposalToNotReadyRemoveBrokerWithNoSessionId(VertxTestContext context) {
-        cruiseControlServer.setupCCBrokerDoesNotExist(CruiseControlEndpoints.REMOVE_BROKER);
+        cruiseControlServer.setupCCBrokerDoesNotExist(CruiseControlEndpoints.REMOVE_BROKER, "true");
         this.krToNotReadyRemoveBrokers(context, null, false, KafkaRebalanceState.PendingProposal);
     }
 
@@ -1235,7 +1327,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Timeout(value = 60, timeUnit = TimeUnit.MINUTES)
     public void testRebalancingToNotReadyRemoveBrokerWithRefresh(VertxTestContext context) {
         cruiseControlServer.setupCCStopResponse();
-        cruiseControlServer.setupCCBrokerDoesNotExist(CruiseControlEndpoints.REMOVE_BROKER);
+        cruiseControlServer.setupCCBrokerDoesNotExist(CruiseControlEndpoints.REMOVE_BROKER, "true");
         this.krToNotReadyRemoveBrokers(context, "test-session-id", true, KafkaRebalanceState.Rebalancing);
     }
 
@@ -1296,7 +1388,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToProposalReadyToRebalancingToStoppedRebalance(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToProposalReadyToRebalancingToStopped(context, CruiseControlEndpoints.REBALANCE, kr);
+        this.krNewToProposalReadyToRebalancingToStopped(context, CruiseControlEndpoints.REBALANCE, kr, "true");
     }
 
     /**
@@ -1305,7 +1397,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToProposalReadyToRebalancingToStoppedAddBroker(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, ADD_BROKER_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToProposalReadyToRebalancingToStopped(context, CruiseControlEndpoints.ADD_BROKER, kr);
+        this.krNewToProposalReadyToRebalancingToStopped(context, CruiseControlEndpoints.ADD_BROKER, kr, "true");
     }
 
     /**
@@ -1315,12 +1407,22 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Timeout(value = 60, timeUnit = TimeUnit.MINUTES)
     public void testNewToProposalReadyToRebalancingToStoppedRemoveBroker(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, REMOVE_BROKER_KAFKA_REBALANCE_SPEC, false);
-        this.krNewToProposalReadyToRebalancingToStopped(context, CruiseControlEndpoints.REMOVE_BROKER, kr);
+        this.krNewToProposalReadyToRebalancingToStopped(context, CruiseControlEndpoints.REMOVE_BROKER, kr, "true");
     }
 
-    private void krNewToProposalReadyToRebalancingToStopped(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr) throws IOException, URISyntaxException {
+    /**
+     * See the {@link KafkaRebalanceAssemblyOperatorTest#testNewToProposalReadyToRebalancingToStoppedRebalance} for description
+     */
+    @Test
+    public void testNewToProposalReadyToRebalancingToStoppedRemoveDisks(VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, REMOVE_DISKS_KAFKA_REBALANCE_SPEC, false);
+        this.krNewToProposalReadyToRebalancingToStopped(context, CruiseControlEndpoints.REMOVE_DISKS, kr, null);
+    }
+
+
+    private void krNewToProposalReadyToRebalancingToStopped(VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kr, String verbose) throws IOException, URISyntaxException {
         // Set up the rebalance and user tasks endpoints with the number of pending calls before a response is received.
-        cruiseControlServer.setupCCRebalanceResponse(0, endpoint);
+        cruiseControlServer.setupCCRebalanceResponse(0, endpoint, verbose);
         cruiseControlServer.setupCCUserTasksResponseNoGoals(0, 2);
         cruiseControlServer.setupCCStopResponse();
 
@@ -1517,7 +1619,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testRebalanceUsesUnknownProperty(VertxTestContext context) throws IOException, URISyntaxException {
         // Set up the rebalance endpoint with the number of pending calls before a response is received.
-        cruiseControlServer.setupCCRebalanceResponse(0, CruiseControlEndpoints.REBALANCE);
+        cruiseControlServer.setupCCRebalanceResponse(0, CruiseControlEndpoints.REBALANCE, "true");
 
         String rebalanceString = "apiVersion: kafka.strimzi.io/v1beta2\n" +
                 "kind: KafkaRebalance\n" +
@@ -1619,7 +1721,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 .compose(v -> {
                     try {
                         // Set up the rebalance endpoint with the number of pending calls before a response is received.
-                        cruiseControlServer.setupCCRebalanceResponse(0, CruiseControlEndpoints.REBALANCE);
+                        cruiseControlServer.setupCCRebalanceResponse(0, CruiseControlEndpoints.REBALANCE, "true");
                     } catch (IOException | URISyntaxException e) {
                         context.failNow(e);
                     }
@@ -1646,7 +1748,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
     @Test
     public void shouldGenerateNewProposalWhenUserTaskNotFound(VertxTestContext context) throws IOException, URISyntaxException {
-        cruiseControlServer.setupCCRebalanceResponse(2, CruiseControlEndpoints.REBALANCE);
+        cruiseControlServer.setupCCRebalanceResponse(2, CruiseControlEndpoints.REBALANCE, "true");
 
         KafkaRebalance kr = new KafkaRebalanceBuilder(createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, true))
                 .withNewStatus()
@@ -1718,7 +1820,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     public void testCruiseControlTimingOut(VertxTestContext context) {
         // Set up the rebalance endpoint with the number of pending calls before a response is received
         // and with a delay on response higher than the client timeout to test timing out
-        cruiseControlServer.setupCCRebalanceResponse(0, 10, CruiseControlEndpoints.REBALANCE);
+        cruiseControlServer.setupCCRebalanceResponse(0, 10, CruiseControlEndpoints.REBALANCE, "true");
 
         KafkaRebalance kr =
                 createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false);
