@@ -223,7 +223,13 @@ public class HashLoginServiceApiCredentials {
         if (secret != null) {
             if (secret.getData().containsKey(AUTH_FILE_KEY)) {
                 String credentialsAsString = Util.decodeFromBase64(secret.getData().get(AUTH_FILE_KEY));
-                entries.putAll(parseEntriesFromString(credentialsAsString));
+                for (Map.Entry<String, UserEntry> entry : parseEntriesFromString(credentialsAsString).entrySet()) {
+                    String key = entry.getKey();
+                    UserEntry value = entry.getValue();
+                    if (key.equals(REBALANCE_OPERATOR_USERNAME) || key.equals(HEALTHCHECK_USERNAME)) {
+                        entries.put(key, value);
+                    }
+                }
             }
         }
 
