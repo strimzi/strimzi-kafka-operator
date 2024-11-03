@@ -775,8 +775,10 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                     service.getSpec().setLoadBalancerClass(loadBalancerClass);
                 }
 
-                service.getSpec().setAllocateLoadBalancerNodePorts(
-                        ListenersUtils.allocateLoadBalancerNodePorts(listener));
+                Boolean allocateLoadBalancerNodePorts = ListenersUtils.allocateLoadBalancerNodePorts(listener);
+                if (allocateLoadBalancerNodePorts != null) {
+                    service.getSpec().setAllocateLoadBalancerNodePorts(allocateLoadBalancerNodePorts);
+                }
             }
 
             if (KafkaListenerType.NODEPORT == listener.getType()) {
@@ -864,8 +866,10 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                                 service.getSpec().setLoadBalancerClass(loadBalancerClass);
                             }
 
-                            service.getSpec().setAllocateLoadBalancerNodePorts(
-                                    ListenersUtils.allocateLoadBalancerNodePorts(listener));
+                            Boolean allocateLoadBalancerNodePorts = ListenersUtils.allocateLoadBalancerNodePorts(listener);
+                            if (allocateLoadBalancerNodePorts != null) {
+                                service.getSpec().setAllocateLoadBalancerNodePorts(allocateLoadBalancerNodePorts);
+                            }
                         }
 
                         if (KafkaListenerType.NODEPORT == listener.getType()) {

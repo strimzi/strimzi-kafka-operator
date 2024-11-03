@@ -787,7 +787,7 @@ public class ListenersUtils {
      * @param listener Listener for which to allocate NodePorts
      * @return         Whether to allocate NodePorts for Service
      */
-    public static boolean allocateLoadBalancerNodePorts(GenericKafkaListener listener) {
+    public static Boolean allocateLoadBalancerNodePorts(GenericKafkaListener listener) {
         if (listener.getConfiguration() != null) {
             return listener.getConfiguration().getAllocateLoadBalancerNodePorts();
         } else {

@@ -58,7 +58,7 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
     private String hostTemplate;
     private String advertisedHostTemplate;
     private Map<String, Object> additionalProperties;
-    private Boolean allocateLoadBalancerNodePorts = true;
+    private Boolean allocateLoadBalancerNodePorts;
 
     @Description("Reference to the `Secret` which holds the certificate and private key pair which will be used for this listener. " +
             "The certificate can optionally contain the whole chain. " +
