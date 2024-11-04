@@ -278,10 +278,11 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         // Delete specific StorageClass if present from previous
         kubeClient().getClient().storage().v1().storageClasses().withName(storageClassName).delete();
 
+        final String storageClassKubernetesIo = "storageclass.kubernetes.io/is-default-class";
         // Get default StorageClass and change reclaim policy
         StorageClass defaultStorageClass =  kubeClient().getClient().storage().v1().storageClasses().list().getItems().stream().filter(sg -> {
             Map<String, String> annotations = sg.getMetadata().getAnnotations();
-            return annotations.get("storageclass.kubernetes.io/is-default-class").equals("true");
+            return annotations != null && annotations.containsKey(storageClassKubernetesIo) && annotations.get(storageClassKubernetesIo).equals("true");
         }).findFirst().get();
 
         StorageClass retainStorageClass = new StorageClassBuilder(defaultStorageClass)
