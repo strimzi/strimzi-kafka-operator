@@ -25,6 +25,7 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.ClientsCa;
@@ -52,6 +53,7 @@ import java.util.Map;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -143,6 +145,10 @@ public class KafkaReconcilerUpgradeDowngradeTest {
         ArgumentCaptor<StrimziPodSet> spsCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
         when(mockSpsOps.reconcile(any(), any(), any(), spsCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.patched(new StrimziPodSet())));
 
+        // Mock Pod operations
+        PodOperator mockPodOps = supplier.podOperations;
+        when(mockPodOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+
         // Run the test
         KafkaReconciler reconciler = new MockKafkaReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
@@ -184,6 +190,10 @@ public class KafkaReconcilerUpgradeDowngradeTest {
         when(mockSpsOps.batchReconcile(any(), any(), any(), any())).thenCallRealMethod();
         ArgumentCaptor<StrimziPodSet> spsCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
         when(mockSpsOps.reconcile(any(), any(), any(), spsCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.patched(new StrimziPodSet())));
+
+        // Mock Pod operations
+        PodOperator mockPodOps = supplier.podOperations;
+        when(mockPodOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         // Run the test
         KafkaReconciler reconciler = new MockKafkaReconciler(
@@ -236,6 +246,10 @@ public class KafkaReconcilerUpgradeDowngradeTest {
         when(mockSpsOps.batchReconcile(any(), any(), any(), any())).thenCallRealMethod();
         ArgumentCaptor<StrimziPodSet> spsCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
         when(mockSpsOps.reconcile(any(), any(), any(), spsCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.patched(new StrimziPodSet())));
+
+        // Mock Pod operations
+        PodOperator mockPodOps = supplier.podOperations;
+        when(mockPodOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         // Run the test
         KafkaReconciler reconciler = new MockKafkaReconciler(
