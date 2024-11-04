@@ -244,6 +244,13 @@ public class AbstractUpgradeST extends AbstractST {
         logPodImages(clusterOperatorNamespaceName, coSelector);
     }
 
+    /**
+     * Logs images of Pods' containers in the specified {@param namespaceName}. Each image is logged per each label selector.
+     *
+     * @param namespaceName the name of the Kubernetes namespace where the pods are located
+     * @param labelSelectors optional array of {@link LabelSelector} objects used to filter pods based on labels.
+     *                       If no selectors are provided, no Pods are selected.
+     */
     protected void logPodImages(String namespaceName, LabelSelector... labelSelectors) {
         Arrays.stream(labelSelectors)
             .parallel()

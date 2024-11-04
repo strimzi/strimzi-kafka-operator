@@ -91,13 +91,13 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         // Upgrade CO
         changeClusterOperator(CO_NAMESPACE, testStorage.getNamespaceName(),  acrossUpgradeData);
 
-        logPodImages(CO_NAMESPACE);
+        logPodImages(CO_NAMESPACE, coSelector);
 
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), controllerSelector, 3, zooSnapshot);
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), brokerSelector, 3, kafkaSnapshot);
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoSnapshot);
 
-        logPodImages(CO_NAMESPACE);
+        logPodImages(CO_NAMESPACE, coSelector);
         checkAllComponentsImages(testStorage.getNamespaceName(), acrossUpgradeData);
 
         // Verify that Pods are stable
@@ -124,10 +124,10 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
 
         // Upgrade CO
         changeClusterOperator(CO_NAMESPACE, TEST_SUITE_NAMESPACE, acrossUpgradeData);
-        logPodImages(CO_NAMESPACE);
+        logPodImages(CO_NAMESPACE, coSelector);
         //  Upgrade kafka
         changeKafkaVersion(TEST_SUITE_NAMESPACE, acrossUpgradeData);
-        logPodImages(TEST_SUITE_NAMESPACE);
+        logPodImages(TEST_SUITE_NAMESPACE, coSelector);
         checkAllComponentsImages(TEST_SUITE_NAMESPACE, acrossUpgradeData);
         // Verify that Pods are stable
         PodUtils.verifyThatRunningPodsAreStable(TEST_SUITE_NAMESPACE, clusterName);
@@ -152,10 +152,10 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         eoPods = DeploymentUtils.waitTillDepHasRolled(TEST_SUITE_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
 
         LOGGER.info("Rolling to new images has finished!");
-        logPodImages(CO_NAMESPACE);
+        logPodImages(CO_NAMESPACE, coSelector);
         //  Upgrade kafka
         changeKafkaVersion(testStorage.getNamespaceName(), acrossUpgradeData);
-        logPodImages(CO_NAMESPACE);
+        logPodImages(CO_NAMESPACE, coSelector);
         checkAllComponentsImages(TEST_SUITE_NAMESPACE, acrossUpgradeData);
         // Verify that Pods are stable
         PodUtils.verifyThatRunningPodsAreStable(TEST_SUITE_NAMESPACE, clusterName);
