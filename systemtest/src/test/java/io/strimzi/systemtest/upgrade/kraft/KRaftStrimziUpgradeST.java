@@ -127,12 +127,12 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
 
         waitForKafkaClusterRollingUpdate(testStorage.getNamespaceName());
 
-        logPodImages(CO_NAMESPACE);
+        logPodImages(CO_NAMESPACE, coSelector);
 
         // Upgrade kafka
         changeKafkaVersion(testStorage.getNamespaceName(), acrossUpgradeData, true);
 
-        logPodImages(CO_NAMESPACE);
+        logPodImages(CO_NAMESPACE, coSelector);
 
         checkAllComponentsImages(testStorage.getNamespaceName(), acrossUpgradeData);
 
@@ -162,7 +162,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         eoPods = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
 
         LOGGER.info("Rolling to new images has finished!");
-        logPodImages(CO_NAMESPACE);
+        logPodImages(CO_NAMESPACE, coSelector);
 
         // Upgrade kafka
         changeKafkaVersion(testStorage.getNamespaceName(), acrossUpgradeData);
