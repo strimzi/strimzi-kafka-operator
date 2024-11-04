@@ -817,8 +817,8 @@ public class KafkaRebalanceAssemblyOperator
                                               String host, CruiseControlApi apiClient,
                                               AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder) {
         if (cruiseControlResponse.isMaxActiveUserTasksReached()) {
-            LOGGER.warnCr(reconciliation, "The maximum number of active user tasks that can run concurrently has reached therefore will retry getting user tasks in the next reconciliation. " +
-                    "If this occurs often, consider increasing the value for max.active.user.tasks configuration.");
+            LOGGER.warnCr(reconciliation, "The maximum number of active user tasks that Cruise Control can run concurrently has been reached, therefore will retry getting user tasks in the next reconciliation. " +
+                    "If this occurs often, consider increasing the value for max.active.user.tasks in the Cruise Control configuration.");
             configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
                     .onSuccess(loadmap -> p.complete(new MapAndStatus<>(loadmap, buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))));
             return;
