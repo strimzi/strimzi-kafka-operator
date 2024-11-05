@@ -314,6 +314,7 @@ public class ListenersValidatorTest {
                     .withIpFamilies(IpFamily.IPV4, IpFamily.IPV6)
                     .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                     .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
+                    .withAllocateLoadBalancerNodePorts(false)
                     .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
                     .withPublishNotReadyAddresses(true)
                     .withHostTemplate("my-host-{nodeId}")
@@ -397,6 +398,7 @@ public class ListenersValidatorTest {
                     .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
                     .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
                     .withPublishNotReadyAddresses(true)
+                    .withAllocateLoadBalancerNodePorts(false)
                     .withHostTemplate("my-host-{nodeId}")
                     .withAdvertisedHostTemplate("my-advertised-host-{nodeId}")
                     .withNewBootstrap()
@@ -438,7 +440,8 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure bootstrap.host because it is not Route or Ingress based listener",
                 "listener " + name + " cannot configure bootstrap.loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure brokers[].host because it is not Route or Ingress based listener",
-                "listener " + name + " cannot configure brokers[].loadBalancerIP because it is not LoadBalancer based listener"
+                "listener " + name + " cannot configure brokers[].loadBalancerIP because it is not LoadBalancer based listener",
+                "listener " + name + " cannot configure allocateLoadBalancerNodePorts because it is not LoadBalancer based listener"
         );
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
@@ -480,6 +483,7 @@ public class ListenersValidatorTest {
                     .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
                     .withIpFamilies(IpFamily.IPV4, IpFamily.IPV6)
                     .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
+                    .withAllocateLoadBalancerNodePorts(false)
                     .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
                     .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
                     .withPublishNotReadyAddresses(true)
@@ -528,7 +532,8 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure bootstrap.loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure bootstrap.nodePort because it is not NodePort based listener",
                 "listener " + name + " cannot configure brokers[].loadBalancerIP because it is not LoadBalancer based listener",
-                "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener"
+                "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener",
+                "listener " + name + " cannot configure allocateLoadBalancerNodePorts because it is not LoadBalancer based listener"
         );
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, THREE_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
@@ -586,6 +591,7 @@ public class ListenersValidatorTest {
                     .withLoadBalancerSourceRanges(List.of("10.0.0.0/8", "130.211.204.1/32"))
                     .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
                     .withPublishNotReadyAddresses(true)
+                    .withAllocateLoadBalancerNodePorts(false)
                     .withHostTemplate("my-host-{nodeId}")
                     .withAdvertisedHostTemplate("my-advertised-host-{nodeId}")
                     .withNewBootstrap()
@@ -627,7 +633,8 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure bootstrap.loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure bootstrap.nodePort because it is not NodePort based listener",
                 "listener " + name + " cannot configure brokers[].loadBalancerIP because it is not LoadBalancer based listener",
-                "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener"
+                "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener",
+                "listener " + name + " cannot configure allocateLoadBalancerNodePorts because it is not LoadBalancer based listener"
         );
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));
@@ -849,6 +856,7 @@ public class ListenersValidatorTest {
                     .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
                     .withPublishNotReadyAddresses(true)
                     .withHostTemplate("my-host-{nodeId}")
+                    .withAllocateLoadBalancerNodePorts(false)
                     .withAdvertisedHostTemplate("my-advertised-host-{nodeId}")
                     .withNewBootstrap()
                         .withAlternativeNames(List.of("my-name-1", "my-name-2"))
@@ -892,7 +900,8 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener",
                 "listener " + name + " cannot configure class because it is not an Ingress or LoadBalancer based listener",
                 "listener " + name + " cannot configure bootstrap.host because it is not Route or Ingress based listener",
-                "listener " + name + " cannot configure brokers[].host because it is not Route or Ingress based listener"
+                "listener " + name + " cannot configure brokers[].host because it is not Route or Ingress based listener",
+                "listener " + name + " cannot configure allocateLoadBalancerNodePorts because it is not LoadBalancer based listener"
         );
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(Reconciliation.DUMMY_RECONCILIATION, TWO_NODES, listeners), containsInAnyOrder(expectedErrors.toArray()));

@@ -123,6 +123,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -152,6 +153,14 @@ public class KafkaClusterTest {
                                     .withPort(9093)
                                     .withType(KafkaListenerType.INTERNAL)
                                     .withTls(true)
+                                    .build(),
+                            new GenericKafkaListenerBuilder()
+                                    .withName("lb")
+                                    .withPort(9094)
+                                    .withType(KafkaListenerType.LOADBALANCER)
+                                    .withNewConfiguration()
+                                        .withAllocateLoadBalancerNodePorts(false)
+                                    .endConfiguration()
                                     .build())
                 .endKafka()
             .endSpec()
@@ -196,18 +205,18 @@ public class KafkaClusterTest {
             .endSpec()
             .build();
     private final static Map<Integer, Map<String, String>> ADVERTISED_HOSTNAMES = Map.of(
-            3, Map.of("PLAIN_9092", "mixed-3", "TLS_9093", "mixed-3"),
-            4, Map.of("PLAIN_9092", "mixed-4", "TLS_9093", "mixed-4"),
-            5, Map.of("PLAIN_9092", "broker-5", "TLS_9093", "broker-5"),
-            6, Map.of("PLAIN_9092", "broker-6", "TLS_9093", "broker-6"),
-            7, Map.of("PLAIN_9092", "broker-7", "TLS_9093", "broker-7")
+            3, Map.of("PLAIN_9092", "mixed-3", "TLS_9093", "mixed-3", "LB_9094", "mixed-3"),
+            4, Map.of("PLAIN_9092", "mixed-4", "TLS_9093", "mixed-4", "LB_9094", "mixed-4"),
+            5, Map.of("PLAIN_9092", "broker-5", "TLS_9093", "broker-5", "LB_9094", "broker-5"),
+            6, Map.of("PLAIN_9092", "broker-6", "TLS_9093", "broker-6", "LB_9094", "broker-6"),
+            7, Map.of("PLAIN_9092", "broker-7", "TLS_9093", "broker-7", "LB_9094", "broker-7")
     );
     private final static Map<Integer, Map<String, String>> ADVERTISED_PORTS = Map.of(
-            3, Map.of("PLAIN_9092", "9092", "TLS_9093", "10003"),
-            4, Map.of("PLAIN_9092", "9092", "TLS_9093", "10004"),
-            5, Map.of("PLAIN_9092", "9092", "TLS_9093", "10005"),
-            6, Map.of("PLAIN_9092", "9092", "TLS_9093", "10006"),
-            7, Map.of("PLAIN_9092", "9092", "TLS_9093", "10007")
+            3, Map.of("PLAIN_9092", "9092", "TLS_9093", "10003", "LB_9094", "9094"),
+            4, Map.of("PLAIN_9092", "9092", "TLS_9093", "10004", "LB_9094", "9094"),
+            5, Map.of("PLAIN_9092", "9092", "TLS_9093", "10005", "LB_9094", "9094"),
+            6, Map.of("PLAIN_9092", "9092", "TLS_9093", "10006", "LB_9094", "9094"),
+            7, Map.of("PLAIN_9092", "9092", "TLS_9093", "10007", "LB_9094", "9094")
     );
 
     private static final List<KafkaPool> POOLS = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
@@ -832,6 +841,7 @@ public class KafkaClusterTest {
         assertThat(clusterIp.getSpec().getIpFamilyPolicy(), is(nullValue()));
         assertThat(clusterIp.getSpec().getIpFamilies(), is(nullValue()));
         assertThat(clusterIp.getSpec().getPublishNotReadyAddresses(), is(nullValue()));
+        assertThat(clusterIp.getSpec().getAllocateLoadBalancerNodePorts(), is(nullValue()));
         
         assertThat(clusterIp.getMetadata().getAnnotations(), hasKey("strimzi.io/discovery"));        
         JsonArray annotation = new JsonArray(clusterIp.getMetadata().getAnnotations().get("strimzi.io/discovery"));
@@ -850,6 +860,27 @@ public class KafkaClusterTest {
         assertThat(clusterIp.getMetadata().getLabels().get(Labels.STRIMZI_DISCOVERY_LABEL), is("true"));
 
         TestUtils.checkOwnerReference(clusterIp, KAFKA);
+    }
+
+    @ParallelTest
+    public void testGenerateExternalBootstrapServices() {
+        List<Service> services = KC.generateExternalBootstrapServices();
+
+        assertThat(services, hasSize(1));
+        Service service = services.get(0);
+
+        assertThat(service.getSpec().getAllocateLoadBalancerNodePorts(), is(false));
+    }
+
+    @ParallelTest
+    public void testGeneratePerPodServices() {
+        List<Service> services = KC.generatePerPodServices();
+
+        assertThat(services, hasSize(5));
+        assertThat(services.stream()
+                        .filter(s -> !s.getSpec().getAllocateLoadBalancerNodePorts())
+                        .collect(Collectors.toList()),
+                hasSize(5));
     }
 
     @ParallelTest
@@ -1125,16 +1156,16 @@ public class KafkaClusterTest {
         config = KC.generatePerBrokerConfiguration(4, ADVERTISED_HOSTNAMES, ADVERTISED_PORTS);
         assertThat(config, CoreMatchers.containsString("node.id=4"));
         assertThat(config, CoreMatchers.containsString("log.dirs=/var/lib/kafka/data-0/kafka-log4"));
-        assertThat(config, CoreMatchers.containsString("\nlisteners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092,TLS-9093://0.0.0.0:9093\n"));
-        assertThat(config, CoreMatchers.containsString("advertised.listeners=REPLICATION-9091://foo-mixed-4.foo-kafka-brokers.test.svc:9091,PLAIN-9092://mixed-4:9092,TLS-9093://mixed-4:10004\n"));
+        assertThat(config, CoreMatchers.containsString("\nlisteners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092,TLS-9093://0.0.0.0:9093,LB-9094://0.0.0.0:9094\n"));
+        assertThat(config, CoreMatchers.containsString("advertised.listeners=REPLICATION-9091://foo-mixed-4.foo-kafka-brokers.test.svc:9091,PLAIN-9092://mixed-4:9092,TLS-9093://mixed-4:10004,LB-9094://mixed-4:9094\n"));
         assertThat(config, CoreMatchers.containsString("process.roles=broker,controller\n"));
         assertThat(config, CoreMatchers.containsString("controller.quorum.voters=0@foo-controllers-0.foo-kafka-brokers.test.svc.cluster.local:9090,1@foo-controllers-1.foo-kafka-brokers.test.svc.cluster.local:9090,2@foo-controllers-2.foo-kafka-brokers.test.svc.cluster.local:9090,3@foo-mixed-3.foo-kafka-brokers.test.svc.cluster.local:9090,4@foo-mixed-4.foo-kafka-brokers.test.svc.cluster.local:9090\n"));
 
         config = KC.generatePerBrokerConfiguration(6, ADVERTISED_HOSTNAMES, ADVERTISED_PORTS);
         assertThat(config, CoreMatchers.containsString("node.id=6"));
         assertThat(config, CoreMatchers.containsString("log.dirs=/var/lib/kafka/data-0/kafka-log6"));
-        assertThat(config, CoreMatchers.containsString("\nlisteners=REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092,TLS-9093://0.0.0.0:9093\n"));
-        assertThat(config, CoreMatchers.containsString("advertised.listeners=REPLICATION-9091://foo-brokers-6.foo-kafka-brokers.test.svc:9091,PLAIN-9092://broker-6:9092,TLS-9093://broker-6:10006\n"));
+        assertThat(config, CoreMatchers.containsString("\nlisteners=REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092,TLS-9093://0.0.0.0:9093,LB-9094://0.0.0.0:9094\n"));
+        assertThat(config, CoreMatchers.containsString("advertised.listeners=REPLICATION-9091://foo-brokers-6.foo-kafka-brokers.test.svc:9091,PLAIN-9092://broker-6:9092,TLS-9093://broker-6:10006,LB-9094://broker-6:9094\n"));
         assertThat(config, CoreMatchers.containsString("process.roles=broker\n"));
         assertThat(config, CoreMatchers.containsString("controller.quorum.voters=0@foo-controllers-0.foo-kafka-brokers.test.svc.cluster.local:9090,1@foo-controllers-1.foo-kafka-brokers.test.svc.cluster.local:9090,2@foo-controllers-2.foo-kafka-brokers.test.svc.cluster.local:9090,3@foo-mixed-3.foo-kafka-brokers.test.svc.cluster.local:9090,4@foo-mixed-4.foo-kafka-brokers.test.svc.cluster.local:9090\n"));
     }
@@ -1164,7 +1195,7 @@ public class KafkaClusterTest {
                 assertThat(cm.getData().get(LoggingModel.LOG4J1_CONFIG_MAP_KEY), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), CoreMatchers.containsString("process.roles=broker\n"));
-                assertThat(cm.getData().get(KafkaCluster.BROKER_LISTENERS_FILENAME), is("PLAIN_9092 TLS_9093"));
+                assertThat(cm.getData().get(KafkaCluster.BROKER_LISTENERS_FILENAME), is("PLAIN_9092 TLS_9093 LB_9094"));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_METADATA_STATE_FILENAME), is("4"));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CLUSTER_ID_FILENAME), is("dummy-cluster-id"));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_METADATA_VERSION_FILENAME), is(KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE.metadataVersion()));
@@ -1173,7 +1204,7 @@ public class KafkaClusterTest {
                 assertThat(cm.getData().get(LoggingModel.LOG4J1_CONFIG_MAP_KEY), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), CoreMatchers.containsString("process.roles=broker,controller\n"));
-                assertThat(cm.getData().get(KafkaCluster.BROKER_LISTENERS_FILENAME), is("PLAIN_9092 TLS_9093"));
+                assertThat(cm.getData().get(KafkaCluster.BROKER_LISTENERS_FILENAME), is("PLAIN_9092 TLS_9093 LB_9094"));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_METADATA_STATE_FILENAME), is("4"));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CLUSTER_ID_FILENAME), is("dummy-cluster-id"));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_METADATA_VERSION_FILENAME), is(KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE.metadataVersion()));
