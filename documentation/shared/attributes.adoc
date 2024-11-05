@@ -135,7 +135,7 @@
 :PodSecurityProvidersConfig: link:https://github.com/strimzi/strimzi-kafka-operator/blob/main/api/src/main/resources/META-INF/services/io.strimzi.plugin.security.profiles.PodSecurityProvider[Provider configuration file^]
 
 //OpenShift documentation
-:OpenShiftDocs: link:https://docs.openshift.com[OpenShift documentation^]
+:OpenShiftDocs: link:https://docs.redhat.com/en/documentation/openshift_container_platform/[OpenShift documentation^]
 
 // Container image names and repositories
 :DockerOrg: quay.io/strimzi
