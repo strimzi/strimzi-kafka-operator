@@ -16,17 +16,16 @@ You can deploy Strimzi on Kubernetes {KubernetesVersion} using one of the follow
 
 |xref:deploy-tasks_str[Deployment files (YAML files)]
 a|xref:downloads-{context}[Download the deployment files] to manually deploy Strimzi components.
+For the greatest flexibility, choose this method.
 
 |xref:deploying-strimzi-from-operator-hub-str[OperatorHub.io]
 |Deploy the Strimzi Cluster operator through the OperatorHub.io, then deploy Strimzi components using custom resources.
+This method provides a standard configuration and allows you to take advantage of automatic updates.
 
 ifdef::Section[]
 |xref:deploying-cluster-operator-helm-chart-str[Helm chart]
 |Use a Helm chart to deploy the Cluster Operator, then deploy Strimzi components using custom resources.
+Helm charts provide a convenient way to manage the installation of applications.
 endif::Section[]
 
 |===
-
-For the greatest flexibility, choose the installation artifacts method.
-The OperatorHub.io method provides a standard configuration and allows you to take advantage of automatic updates.
-Helm charts provide a convenient way to manage the installation of applications.
