@@ -1349,6 +1349,27 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     /**
+     * Tests the transition from 'Rebalancing' to 'ProposalReady' when refresh
+     *
+     * 1. A new KafkaRebalance resource is created and annotated with strimzi.io/rebalance=refresh; it is in the Rebalancing state
+     * 2. The operator calls the /stop_proposal_execution to stop the ongoing rebalance execution
+     * 3. The operator sends a request for a new proposal
+     * 4. The operator computes the next state on the proposal via the Cruise Control REST API
+     * 5. The rebalance proposal is ready on the first call
+     * 6. The KafkaRebalance resource moves to the 'ProposalReady' state
+     */
+    @Test
+    public void testRebalancingToRefreshProposalReady(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.Rebalancing, "", "refresh", REMOVE_BROKER_KAFKA_REBALANCE_SPEC, null, false);
+        cruiseControlServer.setupCCStopResponse();
+        cruiseControlServer.setupCCRebalanceResponse(0, CruiseControlEndpoints.REMOVE_BROKER, "true");
+        checkTransition(vertx, context,
+                KafkaRebalanceState.Rebalancing, KafkaRebalanceState.ProposalReady,
+                kcRebalance)
+                .onComplete(result -> checkOptimizationResults(result, context, false));
+    }
+
+    /**
      * Tests the transition from 'Stopped' to 'ProposalReady' when refresh
      *
      * 1. A new KafkaRebalance resource is created and annotated with strimzi.io/rebalance=refresh; it is in the Stopped state
