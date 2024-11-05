@@ -46,6 +46,16 @@ Limits can be overridden by xref:con-configuring-client-quotas-str[user-specific
 * CPU utilization limits for each client can be set as a percentage of the network threads and I/O threads on a per-broker basis.
 * The number of concurrent partition creation and deletion operations (mutations) allowed per second can be set on a per-broker basis.
 
+.Impact on internal users
+When using the default Kafka quotas plugin, quotas are applied to all users, including internal users such as the Topic Operator or Cruise Control. 
+This means that internal users can hit the set quotas, potentially affecting their operations. 
+For example, configuring a controller mutation rate quota may result in the Topic Operator being throttled during topic creation or deletion operations.
+Cruise Control and its metrics reporter also require sufficient produce and fetch rates to conduct rebalances, depending on the scale and configuration of the Kafka cluster.
+To prevent issues for Cruise Control, you might start with a rate of at least 1 KB/s for its producers and consumers in small clusters, such as three brokers with moderate traffic, and adjust as needed for larger or more active clusters.
+
+Unlike the Strimzi Quotas plugin, where internal users can be excluded using the `excludedPrincipals` option, the Kafka quotas plugin does not have an exclusion mechanism.
+If you want to avoid unduly limiting internal users, consider tuning the quotas effectively or using the Strimzi Quotas plugin where exclusion is possible.
+
 .Prerequisites
 
 * The Cluster Operator that manages the Kafka cluster is running.
@@ -103,9 +113,6 @@ spec:
 <2> Sets the controller mutation rate to 50 operations per second.
 
 . Apply the changes to the `Kafka` configuration.
-
-NOTE: `minAvailableBytesPerVolume` and `minAvailableRatioPerVolume` are mutually exclusive.
-This means that only one of these parameters should be configured.
 
 NOTE: Additional options can be configured in the `spec.kafka.config` section.
 The full list of supported options can be found in the https://github.com/strimzi/kafka-quotas-plugin?tab=readme-ov-file#properties-and-their-defaults[plugin documentation].
