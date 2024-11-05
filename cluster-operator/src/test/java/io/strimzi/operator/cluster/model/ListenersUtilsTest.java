@@ -207,7 +207,6 @@ public class ListenersUtilsTest {
                 .withLoadBalancerSourceRanges(asList("10.0.0.0/8", "130.211.204.1/32"))
                 .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
                 .withPublishNotReadyAddresses(false)
-                .withAllocateLoadBalancerNodePorts(false)
                 .withNewBootstrap()
                     .withAlternativeNames(asList("my-lb-1", "my-lb-2"))
                     .withLoadBalancerIP("130.211.204.1")
@@ -765,16 +764,25 @@ public class ListenersUtilsTest {
 
     @ParallelTest
     public void testAllocateLoadBalancerNodePorts() {
-        assertThat(internalListeners.stream()
-                        .filter(l -> ListenersUtils.allocateLoadBalancerNodePorts(l) == null ||
-                                     ListenersUtils.allocateLoadBalancerNodePorts(l))
-                        .collect(Collectors.toList()),
-                hasSize(4));
-        assertThat(allListeners.stream()
-                        .filter(l -> ListenersUtils.allocateLoadBalancerNodePorts(l) == null ||
-                                ListenersUtils.allocateLoadBalancerNodePorts(l))
-                        .collect(Collectors.toList()),
-                hasSize(13));
-        assertThat(ListenersUtils.allocateLoadBalancerNodePorts(newLoadBalancer2), is(false));
+        GenericKafkaListener lbListenerWithNodePorts = new GenericKafkaListenerBuilder(newLoadBalancer)
+                .editConfiguration()
+                    .withAllocateLoadBalancerNodePorts(true)
+                .endConfiguration()
+                .build();
+
+        GenericKafkaListener lbListenerWithoutNodePorts = new GenericKafkaListenerBuilder(newLoadBalancer)
+                .editConfiguration()
+                    .withAllocateLoadBalancerNodePorts(false)
+                .endConfiguration()
+                .build();
+
+        GenericKafkaListener lbListenerWithoutConfiguration = new GenericKafkaListenerBuilder(newLoadBalancer)
+                .withConfiguration(null)
+                .build();
+
+        assertThat(ListenersUtils.allocateLoadBalancerNodePorts(lbListenerWithNodePorts), is(true));
+        assertThat(ListenersUtils.allocateLoadBalancerNodePorts(lbListenerWithoutNodePorts), is(false));
+        assertThat(ListenersUtils.allocateLoadBalancerNodePorts(lbListenerWithoutConfiguration), is(true));
+        assertThat(ListenersUtils.allocateLoadBalancerNodePorts(newLoadBalancer2), is(nullValue()));
     }
 }

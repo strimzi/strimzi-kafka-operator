@@ -52,6 +52,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.oneOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -1011,6 +1012,7 @@ public class KafkaClusterListenersTest {
         assertThat(bootstrapServices.get(0).getSpec().getLoadBalancerIP(), is(nullValue()));
         assertThat(bootstrapServices.get(0).getSpec().getExternalTrafficPolicy(), is("Cluster"));
         assertThat(bootstrapServices.get(0).getSpec().getLoadBalancerSourceRanges(), is(List.of()));
+        assertThat(bootstrapServices.get(0).getSpec().getAllocateLoadBalancerNodePorts(), is(true));
         TestUtils.checkOwnerReference(bootstrapServices.get(0), KAFKA);
 
         // Check per pod services
@@ -1039,6 +1041,7 @@ public class KafkaClusterListenersTest {
             assertThat(service.getSpec().getLoadBalancerIP(), is(nullValue()));
             assertThat(service.getSpec().getExternalTrafficPolicy(), is("Cluster"));
             assertThat(service.getSpec().getLoadBalancerSourceRanges(), is(List.of()));
+            assertThat(service.getSpec().getAllocateLoadBalancerNodePorts(), is(true));
         }
     }
 
@@ -1091,6 +1094,7 @@ public class KafkaClusterListenersTest {
         // Check external bootstrap service
         Service ext = kc.generateExternalBootstrapServices().get(0);
         assertThat(ext.getSpec().getExternalTrafficPolicy(), is(ExternalTrafficPolicy.LOCAL.toValue()));
+        assertThat(ext.getSpec().getAllocateLoadBalancerNodePorts(), is(nullValue()));
 
         // Check per pod services
         List<Service> services = kc.generatePerPodServices();
@@ -1098,6 +1102,7 @@ public class KafkaClusterListenersTest {
 
         for (Service service : services)    {
             assertThat(service.getSpec().getExternalTrafficPolicy(), is(ExternalTrafficPolicy.LOCAL.toValue()));
+            assertThat(service.getSpec().getAllocateLoadBalancerNodePorts(), is(nullValue()));
         }
     }
 
@@ -1131,6 +1136,40 @@ public class KafkaClusterListenersTest {
 
         for (Service service : services)    {
             assertThat(service.getSpec().getExternalTrafficPolicy(), is(ExternalTrafficPolicy.CLUSTER.toValue()));
+        }
+    }
+
+    @ParallelTest
+    public void testExternalLoadBalancerAllocateNodePorts() {
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                        .withName("lb1")
+                                        .withType(KafkaListenerType.LOADBALANCER)
+                                        .withPort(9094)
+                                        .withNewConfiguration()
+                                            .withAllocateLoadBalancerNodePorts(false)
+                                        .endConfiguration()
+                                        .build())
+                .endKafka()
+                .endSpec()
+                .build();
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_BROKERS, POOL_MIXED), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+
+        List<Service> externalServices = kc.generateExternalBootstrapServices();
+        assertThat(externalServices, hasSize(1));
+        assertThat(externalServices.get(0).getSpec().getAllocateLoadBalancerNodePorts(), is(false));
+        assertThat(externalServices.get(0).getSpec().getPorts(), hasSize(1));
+        assertThat(externalServices.get(0).getSpec().getPorts().get(0).getTargetPort().getIntVal(), is(9094));
+
+        List<Service> perPodServices = kc.generatePerPodServices();
+        assertThat(perPodServices, hasSize(5));
+        for (Service service : perPodServices) {
+            assertThat(service.getSpec().getAllocateLoadBalancerNodePorts(), is(false));
+            assertThat(service.getSpec().getPorts(), hasSize(1));
+            assertThat(service.getSpec().getPorts().get(0).getTargetPort().getIntVal(), is(9094));
         }
     }
 
