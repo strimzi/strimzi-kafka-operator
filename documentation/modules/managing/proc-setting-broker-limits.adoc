@@ -50,13 +50,13 @@ Limits can be overridden by xref:con-configuring-client-quotas-str[user-specific
 When using the default Kafka quotas plugin, quotas are applied to all users. 
 This includes internal users such as the Topic Operator and Cruise Control, which may impact their operations.
 
+Unlike the Strimzi Quotas plugin, where internal users can be excluded using the `excludedPrincipals` option, the Kafka quotas plugin does not provide an exclusion mechanism.
+To avoid unduly limiting internal users when using the Strimzi Quotas plugin, consider tuning the quotas effectively.
+
 For example, configuring a controller mutation rate quota may result in the Topic Operator being throttled during topic creation or deletion operations.
 Monitoring of relevant controller and broker metrics can help track the rate of operations on topics.
 Cruise Control and its metrics reporter also require sufficient produce and fetch rates to conduct rebalances, depending on the scale and configuration of the Kafka cluster.
 To prevent issues for Cruise Control, you might start with a rate of at least 1 KB/s for its producers and consumers in small clusters, such as three brokers with moderate traffic, and adjust as needed for larger or more active clusters.
-
-Unlike the Strimzi Quotas plugin, where internal users can be excluded using the `excludedPrincipals` option, the Kafka quotas plugin does not have an exclusion mechanism.
-If you want to avoid unduly limiting internal users, consider tuning the quotas effectively or using the Strimzi Quotas plugin where exclusion is possible.
 
 .Prerequisites
 
