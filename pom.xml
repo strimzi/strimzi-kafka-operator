@@ -134,7 +134,7 @@
         <vertx-junit5.version>4.5.10</vertx-junit5.version>
         <kafka.version>3.8.1</kafka.version>
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
-        <zookeeper.version>3.8.4</zookeeper.version>
+        <zookeeper.version>3.9.3</zookeeper.version>
         <snappy.version>1.1.10.5</snappy.version>
         <slf4j.version>1.7.36</slf4j.version>
         <log4j.version>2.17.2</log4j.version>
