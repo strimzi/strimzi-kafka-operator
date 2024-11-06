@@ -553,7 +553,7 @@ public class CruiseControlClientTest {
 
         cruiseControlServer.setupCCUserTasksResponseNoGoals(0, pendingCalls1);
 
-        Future<CruiseControlResponse> statusFuture = client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID);
+        Future<CruiseControlUserTasksResponse> statusFuture = client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID);
 
         for (int i = 1; i <= pendingCalls1; i++) {
             statusFuture = statusFuture.compose(response -> {
@@ -611,7 +611,7 @@ public class CruiseControlClientTest {
 
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
-        Future<CruiseControlResponse> statusFuture = client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID);
+        Future<CruiseControlUserTasksResponse> statusFuture = client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID);
 
         // One interaction is always expected at the end of the test, hence the +1
         Checkpoint expectedInteractions = context.checkpoint(pendingCalls + 1);

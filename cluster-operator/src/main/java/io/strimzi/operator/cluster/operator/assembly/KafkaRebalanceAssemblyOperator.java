@@ -35,8 +35,8 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.AddBrokerOpti
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlRebalanceResponse;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlResponse;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlRestException;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlUserTasksResponse;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RebalanceOptions;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RemoveBrokerOptions;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RemoveDisksOptions;
@@ -810,12 +810,20 @@ public class KafkaRebalanceAssemblyOperator
         return p.future();
     }
 
-    private void handleUserTaskStatusResponse(Reconciliation reconciliation, CruiseControlResponse cruiseControlResponse,
+    private void handleUserTaskStatusResponse(Reconciliation reconciliation, CruiseControlUserTasksResponse cruiseControlResponse,
                                               Promise<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> p, String sessionId,
                                               Set<Condition> conditions, KafkaRebalance kafkaRebalance,
                                               ConfigMapOperator configMapOperator, boolean dryRun,
                                               String host, CruiseControlApi apiClient,
                                               AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder) {
+        if (cruiseControlResponse.isMaxActiveUserTasksReached()) {
+            LOGGER.warnCr(reconciliation, "The maximum number of active user tasks that Cruise Control can run concurrently has been reached, therefore will retry getting user tasks in the next reconciliation. " +
+                    "If this occurs often, consider increasing the value for max.active.user.tasks in the Cruise Control configuration.");
+            configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
+                    .onSuccess(loadmap -> p.complete(new MapAndStatus<>(loadmap, buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))));
+            return;
+        }
+
         if (cruiseControlResponse.getJson().isEmpty()) {
             // This may happen if:
             // 1. Cruise Control restarted so resetting the state because the tasks queue is not persisted
