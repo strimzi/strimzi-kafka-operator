@@ -75,7 +75,7 @@ public class CaReconciler {
     /* test */ final DeploymentOperator deploymentOperator;
     private final StrimziPodSetOperator strimziPodSetOperator;
     private final SecretOperator secretOperator;
-    private final PodOperator podOperator;
+    /* test */ final PodOperator podOperator;
     private final AdminClientProvider adminClientProvider;
     private final KafkaAgentClientProvider kafkaAgentClientProvider;
     private final ZookeeperLeaderFinder zookeeperLeaderFinder;
@@ -548,8 +548,14 @@ public class CaReconciler {
     }
 
     /* test */ Future<Void> rollKafkaBrokers(Set<NodeRef> nodes, RestartReasons podRollReasons, TlsPemIdentity coTlsPemIdentity) {
-        return new KafkaRoller(
-                reconciliation,
+        return createKafkaRoller(nodes, coTlsPemIdentity).rollingRestart(pod -> {
+            LOGGER.debugCr(reconciliation, "Rolling Pod {} due to {}", pod.getMetadata().getName(), podRollReasons.getReasons());
+            return podRollReasons;
+        });
+    }
+
+    /* test */ KafkaRoller createKafkaRoller(Set<NodeRef> nodes, TlsPemIdentity coTlsPemIdentity) {
+        return new KafkaRoller(reconciliation,
                 vertx,
                 podOperator,
                 1_000,
@@ -563,15 +569,11 @@ public class CaReconciler {
                 null,
                 null,
                 false,
-                eventPublisher
-        ).rollingRestart(pod -> {
-            LOGGER.debugCr(reconciliation, "Rolling Pod {} due to {}", pod.getMetadata().getName(), podRollReasons.getReasons());
-            return podRollReasons;
-        });
+                eventPublisher);
     }
 
     // Entity Operator, Kafka Exporter, and Cruise Control are only rolled when the cluster CA cert key is replaced
-    Future<Void> maybeRollDeploymentIfExists(String deploymentName, RestartReasons podRollReasons) {
+    private Future<Void> maybeRollDeploymentIfExists(String deploymentName, RestartReasons podRollReasons) {
         if (podRollReasons.contains(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED)) {
             return rollDeploymentIfExists(deploymentName, RestartReason.CLUSTER_CA_CERT_KEY_REPLACED.getDefaultNote());
         } else {
@@ -587,7 +589,7 @@ public class CaReconciler {
      *
      * @return  Succeeded future if it succeeded, failed otherwise.
      */
-    Future<Void> rollDeploymentIfExists(String deploymentName, String reason)  {
+    /* test */ Future<Void> rollDeploymentIfExists(String deploymentName, String reason)  {
         return deploymentOperator.getAsync(reconciliation.namespace(), deploymentName)
                 .compose(dep -> {
                     if (dep != null) {
@@ -603,7 +605,7 @@ public class CaReconciler {
      * Remove older cluster CA certificates if present in the corresponding Secret after a renewal by replacing the
      * corresponding CA private key.
      */
-    Future<Void> maybeRemoveOldClusterCaCertificates() {
+    /* test */ Future<Void> maybeRemoveOldClusterCaCertificates() {
         // if the new CA certificate is used to sign all server certificates
         if (isClusterCaFullyUsed) {
             LOGGER.debugCr(reconciliation, "Maybe there are old cluster CA certificates to remove");
