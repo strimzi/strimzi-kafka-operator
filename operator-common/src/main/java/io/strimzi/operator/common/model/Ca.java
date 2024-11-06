@@ -54,7 +54,6 @@ import static java.time.temporal.ChronoField.NANO_OF_SECOND;
 import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 import static java.time.temporal.ChronoField.YEAR;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 
@@ -525,12 +524,15 @@ public abstract class Ca {
         int caKeyGeneration = keyGeneration();
 
         if (!generateCa) {
-            certData = caCertSecret != null ? caCertSecret.getData() : emptyMap();
-            keyData = caKeySecret != null ? singletonMap(CA_KEY, caKeySecret.getData().get(CA_KEY)) : emptyMap();
+            if (caCertSecret == null || caKeySecret == null)   {
+                throw new InvalidResourceException(this + " should not be generated, but the secrets were not found.");
+            }
+            certData = caCertSecret.getData();
+            keyData = singletonMap(CA_KEY, caKeySecret.getData().get(CA_KEY));
             renewalType = hasCaCertGenerationChanged(existingServerSecrets) ? RenewalType.REPLACE_KEY : RenewalType.NOOP;
             caCertsRemoved = false;
         } else {
-            this.renewalType = shouldCreateOrRenew(currentCert, namespace, clusterName, maintenanceWindowSatisfied);
+            this.renewalType = shouldCreateOrRenew(currentCert, maintenanceWindowSatisfied);
             LOGGER.debugCr(reconciliation, "{} renewalType {}", this, renewalType);
 
             switch (renewalType) {
@@ -636,7 +638,7 @@ public abstract class Ca {
             .withOrganizationName(IO_STRIMZI).build();
     }
 
-    private RenewalType shouldCreateOrRenew(X509Certificate currentCert, String namespace, String clusterName, boolean maintenanceWindowSatisfied) {
+    private RenewalType shouldCreateOrRenew(X509Certificate currentCert, boolean maintenanceWindowSatisfied) {
         String reason = null;
         RenewalType renewalType = RenewalType.NOOP;
         if (caKeySecret == null
@@ -685,50 +687,15 @@ public abstract class Ca {
             }
         }
 
-        logRenewalState(currentCert, namespace, clusterName, renewalType, reason);
-        return renewalType;
-    }
-
-    private void logRenewalState(X509Certificate currentCert, String namespace, String clusterName, RenewalType renewalType, String reason) {
         switch (renewalType) {
-            case REPLACE_KEY:
-            case RENEW_CERT:
-            case CREATE:
-                if (generateCa) {
+            case REPLACE_KEY, RENEW_CERT, CREATE ->
                     LOGGER.debugCr(reconciliation, "{}: {}: {}", this, renewalType.preDescription(caKeySecretName, caCertSecretName), reason);
-                } else {
+            case POSTPONED ->
                     LOGGER.warnCr(reconciliation, "{}: {}: {}", this, renewalType.preDescription(caKeySecretName, caCertSecretName), reason);
-                }
-                break;
-            case POSTPONED:
-                LOGGER.warnCr(reconciliation, "{}: {}: {}", this, renewalType.preDescription(caKeySecretName, caCertSecretName), reason);
-                break;
-            case NOOP:
-                LOGGER.debugCr(reconciliation, "{}: The CA certificate in secret {} already exists and does not need renewing", this, caCertSecretName);
-                break;
+            case NOOP ->
+                    LOGGER.debugCr(reconciliation, "{}: The CA certificate in secret {} already exists and does not need renewing", this, caCertSecretName);
         }
-        if (!generateCa) {
-            if (renewalType.equals(RenewalType.RENEW_CERT)) {
-                LOGGER.warnCr(reconciliation, "The certificate (data.{}) in Secret {} in namespace {} needs to be renewed " +
-                                "and it is not configured to automatically renew. This needs to be manually updated before that date. " +
-                                "Alternatively, configure Kafka.spec.tlsCertificates.generateCertificateAuthority=true in the Kafka resource with name {} in namespace {}.",
-                        CA_CRT.replace(".", "\\."), this.caCertSecretName, namespace,
-                        currentCert.getNotAfter());
-            } else if (renewalType.equals(RenewalType.REPLACE_KEY)) {
-                LOGGER.warnCr(reconciliation, "The private key (data.{}) in Secret {} in namespace {} needs to be renewed " +
-                                "and it is not configured to automatically renew. This needs to be manually updated before that date. " +
-                                "Alternatively, configure Kafka.spec.tlsCertificates.generateCertificateAuthority=true in the Kafka resource with name {} in namespace {}.",
-                        CA_KEY.replace(".", "\\."), this.caKeySecretName, namespace,
-                        currentCert.getNotAfter());
-            } else if (caCertSecret == null) {
-                LOGGER.warnCr(reconciliation, "The certificate (data.{}) in Secret {} and the private key (data.{}) in Secret {} in namespace {} " +
-                                "needs to be configured with a Base64 encoded PEM-format certificate. " +
-                                "Alternatively, configure Kafka.spec.tlsCertificates.generateCertificateAuthority=true in the Kafka resource with name {} in namespace {}.",
-                        CA_CRT.replace(".", "\\."), this.caCertSecretName,
-                        CA_KEY.replace(".", "\\."), this.caKeySecretName, namespace,
-                        clusterName, namespace);
-            }
-        }
+        return renewalType;
     }
 
     /**
