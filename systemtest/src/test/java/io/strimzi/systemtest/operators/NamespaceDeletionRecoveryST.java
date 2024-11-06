@@ -9,6 +9,8 @@ import io.fabric8.kubernetes.api.model.PersistentVolume;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.storage.StorageClass;
 import io.fabric8.kubernetes.api.model.storage.StorageClassBuilder;
+import io.fabric8.kubernetes.client.dsl.base.PatchContext;
+import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.entityoperator.EntityOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
@@ -45,7 +47,6 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.RECOVERY;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -201,13 +202,11 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         );
 
         // Edit the Kafka resource to set the .status.clusterId with the recovered value
-        cmdKubeClient().exec(
-            "patch", "kafka", testStorage.getClusterName(),
-            "-n", testStorage.getNamespaceName(),
-            "--type", "merge",
-            "--subresource", "status",
-            "-p", "{\"status\": {\"clusterId\": \"" + oldClusterId + "\"}}"
-        );
+        KafkaResource.kafkaClient()
+            .inNamespace(testStorage.getNamespaceName())
+            .withName(testStorage.getClusterName())
+            .subresource("status")
+            .patch(PatchContext.of(PatchType.JSON_MERGE), String.format("{\"status\": {\"clusterId\": \"%s\"}}", oldClusterId));
 
         //  Unpause the Kafka resource reconciliation
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
