@@ -3,7 +3,7 @@
 // assembly-cruise-control-concepts.adoc
 
 [id='proc-configuring-deploying-cruise-control-{context}']
-= Configuring and deploying Cruise Control with Kafka
+= Deploying Cruise Control with Kafka
 
 [role="_abstract"]
 Configure a `Kafka` resource to deploy Cruise Control alongside a Kafka cluster.
@@ -137,12 +137,12 @@ my-cluster-cruise-control 1/1    1           1
 `READY` shows the number of replicas that are ready/expected.
 The deployment is successful when the `AVAILABLE` output shows `1`.
 
-[discrete]
-== Auto-created topics
+[id='proc-cruise-control-auto-created-topics-{context}']
+== Auto-created Cruise Control topics
 
 The following table shows the three topics that are automatically created when Cruise Control is deployed. These topics are required for Cruise Control to work properly and must not be deleted or changed. You can change the name of the topic using the specified configuration option.
 
-.Auto-created topics
+.Topics created when Cruise Control is deployed
 [cols="1m,1m,1,3",options="header",stripes="none",separator=¦]
 |===
 
@@ -174,7 +174,3 @@ NOTE: If the names of the auto-created topics are changed in a Kafka cluster tha
 
 .What to do next
 After configuring and deploying Cruise Control, you can xref:proc-generating-optimization-proposals-{context}[generate optimization proposals].
-
-[role="_additional-resources"]
-.Additional resources
-* xref:con-optimization-goals-{context}[Optimization goals overview]

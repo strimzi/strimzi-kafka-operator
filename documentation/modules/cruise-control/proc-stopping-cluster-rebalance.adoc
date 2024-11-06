@@ -4,7 +4,7 @@
 
 [id='proc-stopping-cluster-rebalance-{context}']
 
-= Stopping a cluster rebalance
+= Stopping rebalances
 
 Once started, a cluster rebalance operation might take some time to complete and affect the overall performance of the Kafka cluster.
 
@@ -16,8 +16,6 @@ If further rebalancing is required, you should generate a new optimization propo
 NOTE: The performance of the Kafka cluster in the intermediate (stopped) state might be worse than in the initial state.
 
 .Prerequisites
-
-* You have xref:proc-approving-optimization-proposal-{context}[approved the optimization proposal] by annotating the `KafkaRebalance` custom resource with `approve`.
 
 * The status of the `KafkaRebalance` custom resource is `Rebalancing`.
 

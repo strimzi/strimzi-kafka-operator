@@ -6,7 +6,7 @@
 = Generating optimization proposals
 
 [role="_abstract"]
-When you create or update a `KafkaRebalance` resource, Cruise Control generates an xref:con-optimization-proposals-{context}[optimization proposal] for the Kafka cluster based on the configured xref:con-optimization-goals-{context}[optimization goals].
+When you create or update a `KafkaRebalance` resource, Cruise Control generates an optimization proposal for the Kafka cluster based on a set of optimization goals.
 Analyze the information in the optimization proposal and decide whether to approve it.
 You can use the results of the optimization proposal to rebalance your Kafka cluster.
 
