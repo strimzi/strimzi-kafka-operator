@@ -32,6 +32,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -178,6 +180,39 @@ public final class VertxUtil {
 
             return Future.succeededFuture();
         }
+    }
+
+    /**
+     * Converts a {@link CompletableFuture} to a Vert.x {@link io.vertx.core.Future}.
+     *
+     * Unlike {@code Future.fromCompletionStage()}, this method provides customized handling
+     * of exceptions when the {@code CompletableFuture} completes exceptionally.
+     *
+     * If the {@code CompletableFuture} completes with an exception, this method extracts the
+     * root cause (instead of wrapping it in a {@code CompletionException}) and fails the
+     * Vert.x {@code Future} with the underlying exception. This allows for more precise
+     * error handling by avoiding the generic {@code CompletionException} wrapper.
+     *
+     * @param cf    the {@code CompletableFuture} to convert
+     *
+     * @return      Vert.x {@code Future} that reflects the same result or exception
+     *
+     * @param <T>   Return type of the future
+     */
+    public static <T> Future<T> completableFutureToVertxFuture(CompletableFuture<T> cf) {
+        Promise<T> promise = Promise.promise();
+        cf.whenComplete((result, exception) -> {
+            if (exception != null) {
+                if (exception instanceof CompletionException && exception.getCause() != null) {
+                    promise.fail(exception.getCause());
+                } else {
+                    promise.fail(exception);
+                }
+            } else {
+                promise.complete(result);
+            }
+        });
+        return promise.future();
     }
 
     /**
