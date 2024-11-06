@@ -182,7 +182,7 @@ listeners:
 # ...
 ----
 
-Instead of specifying the `host` property for every broker, you can also use an `hostTemplate` to generate them automatically.
+Instead of specifying the `host` property for every broker, you can also use a `hostTemplate` to generate them automatically.
 The `hostTemplate` supports the following variables:
 
 * The `{nodeId}` variable is replaced with the ID of the Kafka node to which the template is applied.
