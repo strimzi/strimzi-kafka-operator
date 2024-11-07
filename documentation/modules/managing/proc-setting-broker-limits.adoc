@@ -10,8 +10,6 @@
 This procedure describes how to set throughput and storage limits on brokers in your Kafka cluster.
 Enable a quota plugin and configure limits using `quotas` properties in the `Kafka` resource.
 
-.Quota plugins
-
 There are two types of quota plugins available:
 
 * The `strimzi` type enables the _Strimzi Quotas_ plugin.
@@ -46,12 +44,9 @@ Limits can be overridden by xref:con-configuring-client-quotas-str[user-specific
 * CPU utilization limits for each client can be set as a percentage of the network threads and I/O threads on a per-broker basis.
 * The number of concurrent partition creation and deletion operations (mutations) allowed per second can be set on a per-broker basis.
 
-.Impact on internal users
 When using the default Kafka quotas plugin, quotas are applied to all users. 
 This includes internal users such as the Topic Operator and Cruise Control, which may impact their operations.
-
-Unlike the Strimzi Quotas plugin, where internal users can be excluded using the `excludedPrincipals` option, the Kafka quotas plugin does not provide an exclusion mechanism.
-To avoid unduly limiting internal users when using the Strimzi Quotas plugin, consider tuning the quotas effectively.
+To avoid unduly limiting internal users, consider tuning the quotas effectively.
 
 For example, configuring a controller mutation rate quota may result in the Topic Operator being throttled during topic creation or deletion operations.
 Monitoring of relevant controller and broker metrics can help track the rate of operations on topics.
