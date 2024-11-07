@@ -791,7 +791,7 @@ public class ListenersUtils {
         if (listener.getConfiguration() != null) {
             return listener.getConfiguration().getAllocateLoadBalancerNodePorts();
         } else {
-            return true;
+            return null;
         }
     }
 }
