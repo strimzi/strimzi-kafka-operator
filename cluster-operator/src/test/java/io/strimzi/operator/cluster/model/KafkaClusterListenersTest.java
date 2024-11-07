@@ -1012,7 +1012,7 @@ public class KafkaClusterListenersTest {
         assertThat(bootstrapServices.get(0).getSpec().getLoadBalancerIP(), is(nullValue()));
         assertThat(bootstrapServices.get(0).getSpec().getExternalTrafficPolicy(), is("Cluster"));
         assertThat(bootstrapServices.get(0).getSpec().getLoadBalancerSourceRanges(), is(List.of()));
-        assertThat(bootstrapServices.get(0).getSpec().getAllocateLoadBalancerNodePorts(), is(true));
+        assertThat(bootstrapServices.get(0).getSpec().getAllocateLoadBalancerNodePorts(), is(nullValue()));
         TestUtils.checkOwnerReference(bootstrapServices.get(0), KAFKA);
 
         // Check per pod services
@@ -1041,7 +1041,7 @@ public class KafkaClusterListenersTest {
             assertThat(service.getSpec().getLoadBalancerIP(), is(nullValue()));
             assertThat(service.getSpec().getExternalTrafficPolicy(), is("Cluster"));
             assertThat(service.getSpec().getLoadBalancerSourceRanges(), is(List.of()));
-            assertThat(service.getSpec().getAllocateLoadBalancerNodePorts(), is(true));
+            assertThat(service.getSpec().getAllocateLoadBalancerNodePorts(), is(nullValue()));
         }
     }
 

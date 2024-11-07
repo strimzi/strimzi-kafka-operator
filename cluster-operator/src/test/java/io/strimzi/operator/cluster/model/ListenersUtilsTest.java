@@ -782,7 +782,7 @@ public class ListenersUtilsTest {
 
         assertThat(ListenersUtils.allocateLoadBalancerNodePorts(lbListenerWithNodePorts), is(true));
         assertThat(ListenersUtils.allocateLoadBalancerNodePorts(lbListenerWithoutNodePorts), is(false));
-        assertThat(ListenersUtils.allocateLoadBalancerNodePorts(lbListenerWithoutConfiguration), is(true));
+        assertThat(ListenersUtils.allocateLoadBalancerNodePorts(lbListenerWithoutConfiguration), is(nullValue()));
         assertThat(ListenersUtils.allocateLoadBalancerNodePorts(newLoadBalancer2), is(nullValue()));
     }
 }
