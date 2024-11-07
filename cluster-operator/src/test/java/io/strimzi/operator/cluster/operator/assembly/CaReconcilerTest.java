@@ -1730,15 +1730,8 @@ public class CaReconcilerTest {
         mockCaReconciler
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
-                    // When user is managing CA a cert renewal implies a key replacement
-                    assertThat("Kafka restart reasons", mockCaReconciler.kafkaRestartReasons, aMapWithSize(6));
-                    mockCaReconciler.kafkaRestartReasons.forEach((podName, restartReasons) -> {
-                        assertThat("Restart reasons for pod " + podName, restartReasons.getReasons(), hasSize(1));
-                        assertThat("Restart reasons for pod " + podName, restartReasons.contains(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED), is(true));
-                    });
-                    assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, aMapWithSize(3));
-                    mockCaReconciler.deploymentRestartReasons.forEach((deploymentName, restartReason) ->
-                            assertThat("Deployment restart reason for " + deploymentName, restartReason.equals(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED.getDefaultNote()), is(true)));
+                    assertThat("Kafka restart reasons", mockCaReconciler.kafkaRestartReasons, anEmptyMap());
+                    assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, anEmptyMap());
                     async.flag();
                 })));
     }

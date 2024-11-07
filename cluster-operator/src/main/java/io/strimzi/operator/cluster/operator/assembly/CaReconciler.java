@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -234,8 +233,6 @@ public class CaReconciler {
                     Secret clusterCaKeySecret = null;
                     Secret clientsCaCertSecret = null;
                     Secret clientsCaKeySecret = null;
-                    List<HasMetadata> clusterCaSecrets = new ArrayList<>();
-                    List<HasMetadata> clientsCaSecrets = new ArrayList<>();
 
                     for (Secret secret : clusterSecrets) {
                         String secretName = secret.getMetadata().getName();
@@ -247,13 +244,6 @@ public class CaReconciler {
                             clientsCaCertSecret = secret;
                         } else if (secretName.equals(clientsCaKeyName)) {
                             clientsCaKeySecret = secret;
-                        } else if (secretName.equals(KafkaResources.kafkaSecretName(reconciliation.name()))) {
-                            clusterCaSecrets.add(secret);
-                            clientsCaSecrets.add(secret);
-                        } else if (secretName.equals(KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()))) {
-                            // The CO certificate is excluded as it is renewed in a separate cycle
-                        } else {
-                            clusterCaSecrets.add(secret);
                         }
                     }
 
@@ -266,7 +256,6 @@ public class CaReconciler {
                             reconciliation.namespace(), caLabels,
                             clusterCaCertLabels, clusterCaCertAnnotations,
                             clusterCaConfig != null && !clusterCaConfig.isGenerateSecretOwnerReference() ? null : ownerRef,
-                            clusterCaSecrets,
                             Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
 
                     clientsCa = new ClientsCa(reconciliation, certManager,
@@ -280,7 +269,6 @@ public class CaReconciler {
                     clientsCa.createRenewOrReplace(reconciliation.namespace(),
                             caLabels, Map.of(), Map.of(),
                             clientsCaConfig != null && !clientsCaConfig.isGenerateSecretOwnerReference() ? null : ownerRef,
-                            clientsCaSecrets,
                             Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
 
                     return null;
