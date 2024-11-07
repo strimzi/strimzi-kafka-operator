@@ -4,6 +4,8 @@
 
 * Add support for Kafka 3.8.1
 * Ability to move data between JBOD disks using Cruise Control.
+* Only roll pods once for ClientsCa cert renewal.
+  This change also means the restart reason ClientCaCertKeyReplaced is removed and either CaCertRenewed or CaCertHasOldGeneration will be used.
 
 ## 0.44.0
 

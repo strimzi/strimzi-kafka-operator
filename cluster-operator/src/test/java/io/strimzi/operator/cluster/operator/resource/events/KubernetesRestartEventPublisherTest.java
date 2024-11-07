@@ -112,9 +112,9 @@ class KubernetesRestartEventPublisherTest {
             }
         };
 
-        Set<String> expectedReasons = Set.of("ClientCaCertKeyReplaced", "ClusterCaCertKeyReplaced");
+        Set<String> expectedReasons = Set.of("FileSystemResizeNeeded", "ClusterCaCertKeyReplaced");
 
-        RestartReasons reasons = new RestartReasons().add(RestartReason.CLIENT_CA_CERT_KEY_REPLACED)
+        RestartReasons reasons = new RestartReasons().add(RestartReason.FILE_SYSTEM_RESIZE_NEEDED)
                                                      .add(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED);
 
         capturingPublisher.publishRestartEvents(mockPod, reasons);

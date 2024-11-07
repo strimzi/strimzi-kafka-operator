@@ -225,7 +225,7 @@ public class CaReconcilerZooBasedTest {
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
                     assertThat(mockCaReconciler.isClusterCaNeedFullTrust, is(true));
-                    assertThat(mockCaReconciler.zkPodRestartReasons.contains(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED), is(true));
+                    assertThat(mockCaReconciler.zkPodRestartReason, is(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED.getDefaultNote()));
                     assertThat(mockCaReconciler.kPodRollReasons.contains(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED), is(true));
                     assertThat(mockCaReconciler.deploymentRollReason.size() == 3, is(true));
                     for (String reason: mockCaReconciler.deploymentRollReason) {
@@ -237,7 +237,7 @@ public class CaReconcilerZooBasedTest {
 
     static class MockCaReconciler extends CaReconciler {
 
-        RestartReasons zkPodRestartReasons;
+        String zkPodRestartReason;
         RestartReasons kPodRollReasons;
         List<String> deploymentRollReason = new ArrayList<>();
 
@@ -259,8 +259,8 @@ public class CaReconcilerZooBasedTest {
         }
 
         @Override
-        Future<Void> maybeRollZookeeper(int replicas, RestartReasons podRestartReasons, TlsPemIdentity coTlsPemIdentity) {
-            this.zkPodRestartReasons = podRestartReasons;
+        Future<Void> rollZookeeper(int replicas, String restartReason, TlsPemIdentity coTlsPemIdentity) {
+            this.zkPodRestartReason = restartReason;
             return Future.succeededFuture();
         }
 
