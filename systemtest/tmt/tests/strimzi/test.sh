@@ -27,6 +27,9 @@ echo "Using container org '$DOCKER_ORG'"
 echo "Using container tag '$DOCKER_TAG'"
 echo "Using CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN=$CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN"
 
+# Prepare upgrade files
+./.azure/scripts/setup_upgrade.sh
+
 mvn compile -pl config-model-generator -DskipTests -Dmaven.javadoc.skip=true --no-transfer-progress
 mvn verify -pl systemtest -P ${TEST_PROFILE} \
     $([[ "${TEST_GROUPS}" != "" ]] && echo "-Dgroups=${TEST_GROUPS}" || echo "") \

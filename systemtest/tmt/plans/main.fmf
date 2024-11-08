@@ -93,11 +93,6 @@ prepare:
     script: |
       ./.azure/scripts/setup-helm.sh
 
-  - name: Setup upgrade
-    how: shell
-    script: |
-      ./.azure/scripts/setup_upgrade.sh
-
   - name: Install shellcheck
     how: shell
     script: |
