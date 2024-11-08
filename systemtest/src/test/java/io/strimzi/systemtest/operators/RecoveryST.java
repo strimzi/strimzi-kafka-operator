@@ -42,6 +42,7 @@ import java.util.Map;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.generateRandomNameOfKafka;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
 class RecoveryST extends AbstractST {
@@ -156,6 +157,8 @@ class RecoveryST extends AbstractST {
 
     @BeforeEach
     void setup() {
+        assumeTrue(Environment.isKRaftModeEnabled() && Environment.isKafkaNodePoolsEnabled());
+
         this.clusterOperator = this.clusterOperator.defaultInstallation()
             .withReconciliationInterval(TestConstants.CO_OPERATION_TIMEOUT_SHORT)
             .createInstallation()
