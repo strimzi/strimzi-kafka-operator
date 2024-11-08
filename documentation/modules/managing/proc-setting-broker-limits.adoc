@@ -44,12 +44,13 @@ Limits can be overridden by xref:con-configuring-client-quotas-str[user-specific
 * CPU utilization limits for each client can be set as a percentage of the network threads and I/O threads on a per-broker basis.
 * The number of concurrent partition creation and deletion operations (mutations) allowed per second can be set on a per-broker basis.
 
-When using the default Kafka quotas plugin, quotas are applied to all users. 
+When using the default Kafka quotas plugin, the default quotas (if set) are applied to all users. 
 This includes internal users such as the Topic Operator and Cruise Control, which may impact their operations.
 To avoid unduly limiting internal users, consider tuning the quotas effectively.
 
-For example, configuring a controller mutation rate quota may result in the Topic Operator being throttled during topic creation or deletion operations.
-Monitoring of relevant controller and broker metrics can help track the rate of operations on topics.
+For example, a quota automatically applied to the Topic Operator by the Kafka quotas plugin could constrain the controller mutation rate, potentially throttling topic creation or deletion operations. 
+Therefore, it is important to understand the minimal quotas required by the Topic Operator to function correctly and explicitly set appropriate quotas to avoid such issues. 
+Monitoring relevant controller and broker metrics can help track and optimize the rate of operations on topics.
 Cruise Control and its metrics reporter also require sufficient produce and fetch rates to conduct rebalances, depending on the scale and configuration of the Kafka cluster.
 To prevent issues for Cruise Control, you might start with a rate of at least 1 KB/s for its producers and consumers in small clusters, such as three brokers with moderate traffic, and adjust as needed for larger or more active clusters.
 
