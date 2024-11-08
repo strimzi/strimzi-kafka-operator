@@ -17,6 +17,7 @@ Cruise Control also provides a REST API for client interactions, which Strimzi u
 
 * Generating optimization proposals from optimization goals
 * Rebalancing a Kafka cluster based on an optimization proposal
+* Changing topic replication factor
 
 NOTE: Other Cruise Control features are not currently supported, including self healing, notifications, and write-your-own goals.
 
@@ -28,16 +29,18 @@ They are categorized as follows:
 
 * *Hard goals* are preset and mandatory for a proposal to succeed.
 * *Soft goals* are optional and can be set aside if hard goals are met.
-* *Main goals* are inherited from Cruise Control, some preset as hard goals, used by default.
-* *Default goals* are the same as main goals by default but customizable.
+* *Main goals* are inherited from Cruise Control and typically used as the default set of goals, with some preset as hard goals.
+The goals can be customized to specify a subset of all available goals provided by Cruise Control.
+* *Default goals* refer to the goals used by default when generating proposals. 
+They match the main goals unless specifically set by the user.
 * *User-provided goals* are a subset of default goals configured for specific proposals.
 
 Configure optimization goals in the `Kafka` and `KafkaRebalance` custom resources.
 
-* `Kafka` resource for default, hard, and main goals.
-** Default goals: `Kafka.spec.cruiseControl.config.default.goals`
+* `Kafka` resource for hard, main, and default goals.
 ** Hard goals: `Kafka.spec.cruiseControl.config.hard.goals`
 ** Main goals: `Kafka.spec.cruiseControl.config.goals`
+** Default goals: `Kafka.spec.cruiseControl.config.default.goals`
 * `KafkaRebalance` resource for user-provided goals.
 ** User-Provided goals: `KafkaRebalance.spec.goals`
 
@@ -206,7 +209,7 @@ Metrics for partition topics and modeling the impact of rebalances are collected
 . Load Monitor collects the metrics from Kafka brokers, including CPU, disk, and network utilization data.
 . Anomaly Detector continuously monitors the collected metrics to identify anomalies, such as broker failures or disk capacity issues, that could impact cluster stability.
 . Analyzer processes the collected metrics and constructs a _workload model_ of the current state of the Kafka cluster. 
-It generates an optimization proposal based on configured goals (and constraints) such as balancing partition distribution across brokers, which is sent to the status of the `KafkaRebalance` resource.
+Based on configured goals and capacities, it generates an optimization proposal for balancing partition distribution across brokers, which is reflected in the status of the `KafkaRebalance` resource.
 . The optimization proposal is approved or rejected (manually or automatically) based on its alignment with cluster management goals.
 . If approved, the Executor applies the optimization proposal to rebalance the Kafka cluster. 
 This involves reassigning partitions and redistributing workload across brokers according to the approved proposal.
@@ -301,6 +304,7 @@ Intra-broker rebalancing moves data between disks on the same broker when you ar
 Such information can be useful even if you don't go ahead and approve the proposal.
 
 You might reject an optimization proposal, or delay its approval, because of the additional load on a Kafka cluster when rebalancing.
+If the proposal is delayed for too long, the cluster load may change significantly, so it may be better to request a new proposal.
 
 In the following example, the proposal suggests the rebalancing of data between separate brokers.
 The rebalance involves the movement of 55 partition replicas, totaling 12MB of data, across the brokers.
@@ -344,7 +348,7 @@ Status:
 ----
 
 The proposal will also move 24 partition leaders to different brokers.
-This requires a change to the ZooKeeper configuration, which has a low impact on performance.
+This requires a change to the cluster metadata, which has a low impact on performance.
 
 The balancedness scores are measurements of the overall balance of the Kafka cluster before and after the optimization proposal is approved.
 A balancedness score is based on optimization goals.

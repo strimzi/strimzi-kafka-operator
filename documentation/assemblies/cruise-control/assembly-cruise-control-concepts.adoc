@@ -10,7 +10,7 @@ Cruise Control is an open-source system for Kafka that monitors broker loads and
 Rebalances help with running a more balanced Kafka cluster that uses brokers more efficiently.
 
 As Kafka clusters evolve, some brokers may become overloaded while others remain underutilized. 
-Cruise Control addresses this imbalance by modeling resource utilization--CPU, disk, network load--and generating optimization proposals  (that you can approve or reject) for balanced partition assignments based on configurable optimization goals.
+Cruise Control addresses this imbalance by modeling resource utilization at the replica level--including, CPU, disk, network load--and generating optimization proposals (which you can approve or reject) for balanced partition assignments based on configurable optimization goals.
 
 Optimization proposals are configured and generated using a `KafkaRebalance` resource. 
 You can configure the resource using an annotation so that optimization proposals are approved automatically or manually.
