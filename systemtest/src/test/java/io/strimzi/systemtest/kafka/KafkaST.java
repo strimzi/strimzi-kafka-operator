@@ -1121,7 +1121,9 @@ class KafkaST extends AbstractST {
 
         PersistentClaimStorage vol0 = new PersistentClaimStorageBuilder().withId(0).withSize("1Gi").withDeleteClaim(true).build();
         PersistentClaimStorage vol1 = new PersistentClaimStorageBuilder().withId(1).withSize("1Gi").withDeleteClaim(true).build();
+        PersistentClaimStorage vol2 = new PersistentClaimStorageBuilder().withId(1).withSize("5Gi").withDeleteClaim(true).build();
         PersistentClaimStorage vol1Modified = new PersistentClaimStorageBuilder().withId(1).withSize("5Gi").withDeleteClaim(true).build();
+        PersistentClaimStorage vol2Modified = new PersistentClaimStorageBuilder().withId(1).withSize("1Gi").withDeleteClaim(true).build();
 
         resourceManager.createResourceWithWait(
             NodePoolsConverter.convertNodePoolsIfNeeded(
@@ -1130,7 +1132,7 @@ class KafkaST extends AbstractST {
                     .withStorage(
                         new JbodStorageBuilder()
                             // add two small volumes
-                            .addToVolumes(vol0, vol1)
+                            .addToVolumes(vol0, vol1, vol2)
                             .build())
                     .endSpec()
                     .build(),
@@ -1143,7 +1145,7 @@ class KafkaST extends AbstractST {
                     .withStorage(
                         new JbodStorageBuilder()
                             // add two small volumes
-                            .addToVolumes(vol0, vol1)
+                            .addToVolumes(vol0, vol1, vol2)
                             .build())
                 .endKafka()
             .endSpec()
@@ -1183,7 +1185,7 @@ class KafkaST extends AbstractST {
                 JbodStorage storage = (JbodStorage) kafkaNodePool.getSpec().getStorage();
 
                 // set modified volume
-                storage.setVolumes(List.of(vol0, vol1Modified));
+                storage.setVolumes(List.of(vol0, vol1Modified, vol2Modified));
 
                 // override storage
                 kafkaNodePool.getSpec().setStorage(storage);
@@ -1193,7 +1195,7 @@ class KafkaST extends AbstractST {
                 JbodStorage storage = (JbodStorage) kafka.getSpec().getKafka().getStorage();
 
                 // set modified volume
-                storage.setVolumes(List.of(vol0, vol1Modified));
+                storage.setVolumes(List.of(vol0, vol1Modified, vol2Modified));
 
                 // override storage
                 kafka.getSpec().getKafka().setStorage(storage);
@@ -1210,6 +1212,12 @@ class KafkaST extends AbstractST {
             testStorage,
             "data-" + vol0.getId() + "-" + testStorage.getClusterName() + "-",
             vol0.getSize());
+        // and volume with index 2 did not change its size either
+        PersistentVolumeClaimUtils.waitUntilSpecificPvcSizeChange(
+            testStorage,
+            "data-" + vol2Modified.getId() + "-" + testStorage.getClusterName() + "-",
+            vol2.getSize());
+
 
         resourceManager.createResourceWithWait(clients.consumerStrimzi());
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);

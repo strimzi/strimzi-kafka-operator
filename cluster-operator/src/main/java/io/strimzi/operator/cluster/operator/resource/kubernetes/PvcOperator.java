@@ -6,15 +6,18 @@ package io.strimzi.operator.cluster.operator.resource.kubernetes;
 
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimList;
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
+import java.util.Map;  
 import java.util.regex.Pattern;
 
 /**
@@ -101,5 +104,14 @@ public class PvcOperator extends AbstractNamespacedResourceOperator<KubernetesCl
         desired.getSpec().setAccessModes(current.getSpec().getAccessModes());
         desired.getSpec().setSelector(current.getSpec().getSelector());
         desired.getSpec().setDataSource(current.getSpec().getDataSource());
+
+
+        Map<String, Quantity> desiredRequests = desired.getSpec().getResources().getRequests();
+        Map<String, Quantity> currentRequests = current.getSpec().getResources().getRequests();
+
+        if (desiredRequests.containsKey("storage") && currentRequests.containsKey("storage") && 
+            StorageUtils.convertToMillibytes(desiredRequests.get("storage")) < StorageUtils.convertToMillibytes(currentRequests.get("storage"))) {
+            desired.getSpec().getResources().setRequests(currentRequests);
+        }
     }
 }
