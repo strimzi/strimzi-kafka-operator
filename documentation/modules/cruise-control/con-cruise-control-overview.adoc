@@ -29,8 +29,8 @@ They are categorized as follows:
 
 * *Hard goals* are preset and must be satisfied for a proposal to succeed.
 * *Soft goals* are objectives that are prioritized during optimization as much as possible, without preventing a proposal from being created if all hard goals are satisfied.
-* *Main goals* are inherited from Cruise Control and typically used as the default set of goals, with some preset as hard goals.
-The goals can be customized to specify a subset of all available goals provided by Cruise Control.
+* *Main goals* contain the list of goals that can be used by Cruise Control operations (all built-in goals by default).
+This list can be customized to specify a subset of all available goals, including any custom goals.
 * *Default goals* refer to the goals used by default when generating proposals. 
 They match the main goals unless specifically set by the user.
 * *User-provided goals* are a subset of default goals configured for specific proposals.
