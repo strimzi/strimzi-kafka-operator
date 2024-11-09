@@ -92,7 +92,7 @@ public class KafkaConfigurationTests {
     @ParallelTest
     public void invalidVersion() {
         assertConfigError("inter.broker.protocol.version", "dclncswn",
-                "inter.broker.protocol.version has value 'dclncswn' which does not match the required pattern: \\Q0.8.0\\E(\\.[0-9]+)*|\\Q0.8.0\\E|\\Q0.8.1\\E(\\.[0-9]+)*|\\Q0.8.1\\E|\\Q0.8.2\\E(\\.[0-9]+)*|\\Q0.8.2\\E|\\Q0.9.0\\E(\\.[0-9]+)*|\\Q0.9.0\\E|\\Q0.10.0\\E(\\.[0-9]+)*|\\Q0.10.0-IV0\\E|\\Q0.10.0-IV1\\E|\\Q0.10.1\\E(\\.[0-9]+)*|\\Q0.10.1-IV0\\E|\\Q0.10.1-IV1\\E|\\Q0.10.1-IV2\\E|\\Q0.10.2\\E(\\.[0-9]+)*|\\Q0.10.2-IV0\\E|\\Q0.11.0\\E(\\.[0-9]+)*|\\Q0.11.0-IV0\\E|\\Q0.11.0-IV1\\E|\\Q0.11.0-IV2\\E|\\Q1.0\\E(\\.[0-9]+)*|\\Q1.0-IV0\\E|\\Q1.1\\E(\\.[0-9]+)*|\\Q1.1-IV0\\E|\\Q2.0\\E(\\.[0-9]+)*|\\Q2.0-IV0\\E|\\Q2.0-IV1\\E|\\Q2.1\\E(\\.[0-9]+)*|\\Q2.1-IV0\\E|\\Q2.1-IV1\\E|\\Q2.1-IV2\\E|\\Q2.2\\E(\\.[0-9]+)*|\\Q2.2-IV0\\E|\\Q2.2-IV1\\E|\\Q2.3\\E(\\.[0-9]+)*|\\Q2.3-IV0\\E|\\Q2.3-IV1\\E|\\Q2.4\\E(\\.[0-9]+)*|\\Q2.4-IV0\\E|\\Q2.4-IV1\\E|\\Q2.5\\E(\\.[0-9]+)*|\\Q2.5-IV0\\E|\\Q2.6\\E(\\.[0-9]+)*|\\Q2.6-IV0\\E|\\Q2.7\\E(\\.[0-9]+)*|\\Q2.7-IV0\\E|\\Q2.7-IV1\\E|\\Q2.7-IV2\\E|\\Q2.8\\E(\\.[0-9]+)*|\\Q2.8-IV0\\E|\\Q2.8-IV1\\E|\\Q3.0\\E(\\.[0-9]+)*|\\Q3.0-IV0\\E|\\Q3.0-IV1\\E|\\Q3.1\\E(\\.[0-9]+)*|\\Q3.1-IV0\\E|\\Q3.2\\E(\\.[0-9]+)*|\\Q3.2-IV0\\E|\\Q3.3\\E(\\.[0-9]+)*|\\Q3.3-IV0\\E|\\Q3.3-IV1\\E|\\Q3.3-IV2\\E|\\Q3.3-IV3\\E|\\Q3.4\\E(\\.[0-9]+)*|\\Q3.4-IV0\\E|\\Q3.5\\E(\\.[0-9]+)*|\\Q3.5-IV0\\E|\\Q3.5-IV1\\E|\\Q3.5-IV2\\E|\\Q3.6\\E(\\.[0-9]+)*|\\Q3.6-IV0\\E|\\Q3.6-IV1\\E|\\Q3.6-IV2\\E|\\Q3.7\\E(\\.[0-9]+)*|\\Q3.7-IV0\\E|\\Q3.7-IV1\\E|\\Q3.7-IV2\\E|\\Q3.7-IV3\\E|\\Q3.7-IV4\\E|\\Q3.8\\E(\\.[0-9]+)*|\\Q3.8-IV0\\E|\\Q3.9\\E(\\.[0-9]+)*|\\Q3.9-IV0\\E");
+                "inter.broker.protocol.version has value 'dclncswn' which does not match the required pattern: \\Q0.8.0\\E(\\.[0-9]+)*|\\Q0.8.0\\E|\\Q0.8.1\\E(\\.[0-9]+)*|\\Q0.8.1\\E|\\Q0.8.2\\E(\\.[0-9]+)*|\\Q0.8.2\\E|\\Q0.9.0\\E(\\.[0-9]+)*|\\Q0.9.0\\E|\\Q0.10.0\\E(\\.[0-9]+)*|\\Q0.10.0-IV0\\E|\\Q0.10.0-IV1\\E|\\Q0.10.1\\E(\\.[0-9]+)*|\\Q0.10.1-IV0\\E|\\Q0.10.1-IV1\\E|\\Q0.10.1-IV2\\E|\\Q0.10.2\\E(\\.[0-9]+)*|\\Q0.10.2-IV0\\E|\\Q0.11.0\\E(\\.[0-9]+)*|\\Q0.11.0-IV0\\E|\\Q0.11.0-IV1\\E|\\Q0.11.0-IV2\\E|\\Q1.0\\E(\\.[0-9]+)*|\\Q1.0-IV0\\E|\\Q1.1\\E(\\.[0-9]+)*|\\Q1.1-IV0\\E|\\Q2.0\\E(\\.[0-9]+)*|\\Q2.0-IV0\\E|\\Q2.0-IV1\\E|\\Q2.1\\E(\\.[0-9]+)*|\\Q2.1-IV0\\E|\\Q2.1-IV1\\E|\\Q2.1-IV2\\E|\\Q2.2\\E(\\.[0-9]+)*|\\Q2.2-IV0\\E|\\Q2.2-IV1\\E|\\Q2.3\\E(\\.[0-9]+)*|\\Q2.3-IV0\\E|\\Q2.3-IV1\\E|\\Q2.4\\E(\\.[0-9]+)*|\\Q2.4-IV0\\E|\\Q2.4-IV1\\E|\\Q2.5\\E(\\.[0-9]+)*|\\Q2.5-IV0\\E|\\Q2.6\\E(\\.[0-9]+)*|\\Q2.6-IV0\\E|\\Q2.7\\E(\\.[0-9]+)*|\\Q2.7-IV0\\E|\\Q2.7-IV1\\E|\\Q2.7-IV2\\E|\\Q2.8\\E(\\.[0-9]+)*|\\Q2.8-IV0\\E|\\Q2.8-IV1\\E|\\Q3.0\\E(\\.[0-9]+)*|\\Q3.0-IV0\\E|\\Q3.0-IV1\\E|\\Q3.1\\E(\\.[0-9]+)*|\\Q3.1-IV0\\E|\\Q3.2\\E(\\.[0-9]+)*|\\Q3.2-IV0\\E|\\Q3.3\\E(\\.[0-9]+)*|\\Q3.3-IV0\\E|\\Q3.3-IV1\\E|\\Q3.3-IV2\\E|\\Q3.3-IV3\\E|\\Q3.4\\E(\\.[0-9]+)*|\\Q3.4-IV0\\E|\\Q3.5\\E(\\.[0-9]+)*|\\Q3.5-IV0\\E|\\Q3.5-IV1\\E|\\Q3.5-IV2\\E|\\Q3.6\\E(\\.[0-9]+)*|\\Q3.6-IV0\\E|\\Q3.6-IV1\\E|\\Q3.6-IV2\\E|\\Q3.7\\E(\\.[0-9]+)*|\\Q3.7-IV0\\E|\\Q3.7-IV1\\E|\\Q3.7-IV2\\E|\\Q3.7-IV3\\E|\\Q3.7-IV4\\E|\\Q3.8\\E(\\.[0-9]+)*|\\Q3.8-IV0\\E|\\Q3.9\\E(\\.[0-9]+)*|\\Q3.9-IV0\\E|\\Q4.0\\E(\\.[0-9]+)*|\\Q4.0-IV0\\E|\\Q4.0-IV1\\E");
     }
 
     @ParallelTest
@@ -130,5 +130,27 @@ public class KafkaConfigurationTests {
         assertNoError("group.consumer.migration.policy", "downgrade");
         assertNoError("group.consumer.migration.policy", "Upgrade");
         assertConfigError("group.consumer.migration.policy", "wrong_option", "group.consumer.migration.policy has value 'wrong_option' which is not one of the allowed values (case-insensitive): [DISABLED, DOWNGRADE, UPGRADE, BIDIRECTIONAL]");
+    }
+
+    @ParallelTest
+    public void testRemoteStorageCopierThreadPoolSize() {
+        assertNoError("remote.log.manager.copier.thread.pool.size", "9");
+        assertNoError("remote.log.manager.copier.thread.pool.size", "-1");
+        assertNoError("remote.log.manager.copier.thread.pool.size", "1");
+        assertNoError("remote.log.manager.copier.thread.pool.size", "10");
+        assertNoError("remote.log.manager.copier.thread.pool.size", "16");
+        assertConfigError("remote.log.manager.copier.thread.pool.size", "0", "remote.log.manager.copier.thread.pool.size has value '0' which does not match the required pattern: [1-9]{1}[0-9]*|-1");
+        assertConfigError("remote.log.manager.copier.thread.pool.size", "-5", "remote.log.manager.copier.thread.pool.size has value '-5' which does not match the required pattern: [1-9]{1}[0-9]*|-1");
+    }
+
+    @ParallelTest
+    public void testRemoteStorageExpirationThreadPoolSize() {
+        assertNoError("remote.log.manager.expiration.thread.pool.size", "9");
+        assertNoError("remote.log.manager.expiration.thread.pool.size", "-1");
+        assertNoError("remote.log.manager.expiration.thread.pool.size", "1");
+        assertNoError("remote.log.manager.expiration.thread.pool.size", "10");
+        assertNoError("remote.log.manager.expiration.thread.pool.size", "16");
+        assertConfigError("remote.log.manager.expiration.thread.pool.size", "0", "remote.log.manager.expiration.thread.pool.size has value '0' which does not match the required pattern: [1-9]{1}[0-9]*|-1");
+        assertConfigError("remote.log.manager.expiration.thread.pool.size", "-5", "remote.log.manager.expiration.thread.pool.size has value '-5' which does not match the required pattern: [1-9]{1}[0-9]*|-1");
     }
 }

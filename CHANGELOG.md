@@ -2,7 +2,8 @@
 
 ## 0.45.0
 
-* Add support for Kafka 3.8.1
+* Add support for Kafka 3.9.0 and 3.8.1. 
+  Remove support for Kafka 3.7.0 and 3.7.1
 * Ability to move data between JBOD disks using Cruise Control.
 
 ## 0.44.0
