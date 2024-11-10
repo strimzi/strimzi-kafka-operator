@@ -486,6 +486,12 @@ spec:
                               advertisedHostTemplate:
                                 type: string
                                 description: "Configures the template for generating the advertised hostnames of the individual brokers. Valid placeholders that you can use in the template are `{nodeId}` and `{nodePodName}`."
+                              allocateLoadBalancerNodePorts:
+                                type: boolean
+                                description: |-
+                                  Configures whether to allocate NodePort automatically for the `Service` with type `LoadBalancer`.
+                                  This is a one to one with the `spec.allocateLoadBalancerNodePorts` configuration in the `Service` type
+                                  For `loadbalancer` listeners only.
                             description: Additional listener configuration.
                           networkPolicyPeers:
                             type: array

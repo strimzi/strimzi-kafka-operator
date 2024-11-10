@@ -31,7 +31,7 @@ import java.util.Map;
 @JsonPropertyOrder({"brokerCertChainAndKey", "class", "preferredAddressType", "externalTrafficPolicy",
     "loadBalancerSourceRanges", "bootstrap", "brokers", "ipFamilyPolicy", "ipFamilies", "createBootstrapService",
     "finalizers", "useServiceDnsDomain", "maxConnections", "maxConnectionCreationRate", "preferredNodePortAddressType",
-    "publishNotReadyAddresses", "hostTemplate", "advertisedHostTemplate"})
+    "publishNotReadyAddresses", "hostTemplate", "advertisedHostTemplate", "allocateLoadBalancerNodePorts"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,
@@ -58,6 +58,7 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
     private String hostTemplate;
     private String advertisedHostTemplate;
     private Map<String, Object> additionalProperties;
+    private Boolean allocateLoadBalancerNodePorts;
 
     @Description("Reference to the `Secret` which holds the certificate and private key pair which will be used for this listener. " +
             "The certificate can optionally contain the whole chain. " +
@@ -280,6 +281,19 @@ public class GenericKafkaListenerConfiguration implements UnknownPropertyPreserv
     public void setAdvertisedHostTemplate(String advertisedHostTemplate) {
         this.advertisedHostTemplate = advertisedHostTemplate;
     }
+
+    @Description("Configures whether to allocate NodePort automatically for the `Service` with type `LoadBalancer`.\n" +
+            "This is a one to one with the `spec.allocateLoadBalancerNodePorts` configuration in the `Service` type\n" +
+            "For `loadbalancer` listeners only.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Boolean getAllocateLoadBalancerNodePorts() {
+        return allocateLoadBalancerNodePorts;
+    }
+
+    public void setAllocateLoadBalancerNodePorts(Boolean allocateLoadBalancerNodePorts) {
+        this.allocateLoadBalancerNodePorts = allocateLoadBalancerNodePorts;
+    }
+
 
     @Override
     public Map<String, Object> getAdditionalProperties() {

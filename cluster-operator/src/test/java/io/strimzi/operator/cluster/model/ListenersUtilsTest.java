@@ -761,4 +761,28 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.advertisedPortFromOverrideOrParameter(listener, 0, 12345), is("12345"));
         assertThat(ListenersUtils.advertisedPortFromOverrideOrParameter(listener, 0, 12345), is("12345"));
     }
+
+    @ParallelTest
+    public void testAllocateLoadBalancerNodePorts() {
+        GenericKafkaListener lbListenerWithNodePorts = new GenericKafkaListenerBuilder(newLoadBalancer)
+                .editConfiguration()
+                    .withAllocateLoadBalancerNodePorts(true)
+                .endConfiguration()
+                .build();
+
+        GenericKafkaListener lbListenerWithoutNodePorts = new GenericKafkaListenerBuilder(newLoadBalancer)
+                .editConfiguration()
+                    .withAllocateLoadBalancerNodePorts(false)
+                .endConfiguration()
+                .build();
+
+        GenericKafkaListener lbListenerWithoutConfiguration = new GenericKafkaListenerBuilder(newLoadBalancer)
+                .withConfiguration(null)
+                .build();
+
+        assertThat(ListenersUtils.allocateLoadBalancerNodePorts(lbListenerWithNodePorts), is(true));
+        assertThat(ListenersUtils.allocateLoadBalancerNodePorts(lbListenerWithoutNodePorts), is(false));
+        assertThat(ListenersUtils.allocateLoadBalancerNodePorts(lbListenerWithoutConfiguration), is(nullValue()));
+        assertThat(ListenersUtils.allocateLoadBalancerNodePorts(newLoadBalancer2), is(nullValue()));
+    }
 }

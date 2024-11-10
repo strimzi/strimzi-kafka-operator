@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.api.kafka.model.common.template.ExternalTrafficPolicy;
 import io.strimzi.api.kafka.model.common.template.IpFamily;
 import io.strimzi.api.kafka.model.common.template.IpFamilyPolicy;
@@ -779,5 +780,19 @@ public class ListenersUtils {
                     .map(GenericKafkaListenerConfigurationBroker::getExternalIPs)
                     .findAny()
                     .orElse(null) : null;
+    }
+
+    /**
+     * Returns whether to allocate NodePorts for LoadBalancer Service type
+     *
+     * @param listener Listener for which to allocate NodePorts
+     * @return         Whether to allocate NodePorts for Service
+     */
+    @SuppressFBWarnings(value = {"NP_BOOLEAN_RETURN_NULL"}, justification = "Null is being checked by the caller, so " +
+                                                                            "the Service defaults can takeover properly")
+    public static Boolean allocateLoadBalancerNodePorts(GenericKafkaListener listener) {
+        return listener.getConfiguration() != null ?
+                listener.getConfiguration().getAllocateLoadBalancerNodePorts() :
+                null;
     }
 }

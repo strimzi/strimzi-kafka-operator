@@ -509,6 +509,11 @@ This property is used to select the preferred address type, which is checked fir
 |advertisedHostTemplate
 |string
 |Configures the template for generating the advertised hostnames of the individual brokers. Valid placeholders that you can use in the template are `{nodeId}` and `{nodePodName}`.
+|allocateLoadBalancerNodePorts
+|boolean
+|Configures whether to allocate NodePort automatically for the `Service` with type `LoadBalancer`.
+This is a one to one with the `spec.allocateLoadBalancerNodePorts` configuration in the `Service` type
+For `loadbalancer` listeners only.
 |====
 
 [id='type-CertAndKeySecretSource-{context}']
