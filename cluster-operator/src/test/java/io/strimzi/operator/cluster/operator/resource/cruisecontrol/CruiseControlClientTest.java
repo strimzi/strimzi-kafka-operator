@@ -565,6 +565,6 @@ public class CruiseControlClientTest {
                     response.getJson().getString("Status"),
                     is(CruiseControlUserTaskStatus.COMPLETED.toString()));
             return CompletableFuture.completedFuture(response);
-        });
+        }).join();
     }
 }

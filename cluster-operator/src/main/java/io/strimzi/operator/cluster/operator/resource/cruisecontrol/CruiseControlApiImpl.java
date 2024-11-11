@@ -18,11 +18,9 @@ import io.strimzi.operator.common.model.cruisecontrol.CruiseControlHeaders;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlParameters;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlRebalanceKeys;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatus;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.PemTrustOptions;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
@@ -52,7 +50,6 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     private final long idleTimeout;
     private final boolean apiSslEnabled;
     private final HTTPHeader authHttpHeader;
-    private final PemTrustOptions pto;
     private final PemTrustSet pemTrustSet;
     private final HttpClient httpClient;
     /**
@@ -68,7 +65,6 @@ public class CruiseControlApiImpl implements CruiseControlApi {
         this.idleTimeout = idleTimeout;
         this.apiSslEnabled = apiSslEnabled;
         this.authHttpHeader = getAuthHttpHeader(apiAuthEnabled, ccApiSecret);
-        this.pto = new PemTrustOptions().addCertValue(Buffer.buffer(Util.decodeBase64FieldFromSecret(ccSecret, "cruise-control.crt")));
         this.pemTrustSet = new PemTrustSet(ccSecret);
         this.httpClient = buildHttpClient();
     }
