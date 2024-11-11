@@ -114,9 +114,9 @@ spec:
 +
 NOTE: The following steps and the steps to approve or stop a rebalance are the same regardless of the rebalance mode you are using.
 
-. To configure _user-provided optimization goals_ instead of using the default goals, add the `goals` property and enter one or more goals.
+. To configure proposal-specific optimization goals instead of using the default goals, add the `goals` property and enter one or more goals.
 +
-In the following example, rack awareness and replica capacity are configured as user-provided optimization goals:
+In the following example, rack awareness and replica capacity are configured as proposal-specific optimization goals:
 +
 [source,yaml,subs="attributes+"]
 ----

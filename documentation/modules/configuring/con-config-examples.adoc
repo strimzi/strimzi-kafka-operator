@@ -48,6 +48,6 @@ examples
 <7> `Kafka` and `KafkaNodePool` configurations for a deployment of Kafka clusters that use KRaft (Kafka Raft metadata) mode.
 <8> `Kafka` and `KafkaRebalance` configurations for deploying and using Cruise Control to manage clusters. 
 `Kafka` configuration examples enable auto-rebalancing on scaling events and set default optimization goals.
-`KakaRebalance` configuration examples set user-provided optimization goals and generate optimization proposals in various supported modes.
+`KakaRebalance` configuration examples set proposal-specific optimization goals and generate optimization proposals in various supported modes.
 <9> `KafkaConnect` and `KafkaConnector` custom resource configuration for a deployment of Kafka Connect. Includes example configurations for a single or multi-node deployment.
 <10> `KafkaBridge` custom resource configuration for a deployment of Kafka Bridge.

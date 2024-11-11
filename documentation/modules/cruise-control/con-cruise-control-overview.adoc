@@ -33,7 +33,7 @@ They are categorized as follows:
 This list can be customized to specify a subset of all available goals, including any custom goals.
 * *Default goals* refer to the goals used by default when generating proposals. 
 They match the main goals unless specifically set by the user.
-* *User-provided goals* are a subset of default goals configured for specific proposals.
+* *Proposal-specific goals* are a subset of default goals configured for specific proposals.
 
 Configure optimization goals in the `Kafka` and `KafkaRebalance` custom resources.
 
@@ -41,8 +41,8 @@ Configure optimization goals in the `Kafka` and `KafkaRebalance` custom resource
 ** Hard goals: `Kafka.spec.cruiseControl.config.hard.goals`
 ** Main goals: `Kafka.spec.cruiseControl.config.goals`
 ** Default goals: `Kafka.spec.cruiseControl.config.default.goals`
-* `KafkaRebalance` resource for user-provided goals.
-** User-Provided goals: `KafkaRebalance.spec.goals`
+* `KafkaRebalance` resource for proposal-specific goals.
+** Proposal-specific goals: `KafkaRebalance.spec.goals`
 
 === Hard and soft goals
 
@@ -81,7 +81,7 @@ Configure main goals in `Kafka.spec.cruiseControl.config.goals`:
 === Default goals
 
 Cruise Control uses default goals to generate an optimization proposal. 
-You can override default goals by setting user-provided optimization goals in a `KafkaRebalance` resource.
+You can override default goals by setting proposal-specific optimization goals in a `KafkaRebalance` resource.
 
 If `default.goals` is not specified in the Cruise Control deployment configuration, main goals are used as default goals. 
 The optimization proposal is then generated using these main goals.
@@ -91,15 +91,15 @@ Configure default goals in `Kafka.spec.cruiseControl.config.default.goals`:
 * To use main goals as default, omit the `default.goals` property.
 * To modify default goals, specify a subset of main goals in the `default.goals` property.
 
-=== User-provided goals
+=== Proposal-specific goals
 
-User-provided optimization goals narrow down the configured default goals for specific optimization proposals.
+Proposal-specific optimization goals narrow down the configured default goals for specific optimization proposals.
 
-Configure user-provided goals in `KafkaRebalance.spec.goals`:
+Configure proposal-specific goals in `KafkaRebalance.spec.goals`:
 
 * Specify a subset of main optimization goals for customization.
 
-For example, you can optimize topic leader replica distribution across the Kafka cluster without considering disk capacity or utilization by defining a single user-provided goal.
+For example, you can optimize topic leader replica distribution across the Kafka cluster without considering disk capacity or utilization by defining a single proposal-specific goal.
 
 === Goals order of priority
 
@@ -168,10 +168,10 @@ spec:
       # ...
 ----
 
-IMPORTANT: Ensure that the main `goals`, `default.goals`, and (unless `skipHardGoalCheck` is set to `true`) user-provided `spec.goals` include all hard goals specified in `hard.goals` to avoid errors when generating optimization proposals. 
-Hard goals must be included as a subset in the main, default, and user-provided goals.
+IMPORTANT: Ensure that the main `goals`, `default.goals`, and (unless `skipHardGoalCheck` is set to `true`) proposal-specific `spec.goals` include all hard goals specified in `hard.goals` to avoid errors when generating optimization proposals. 
+Hard goals must be included as a subset in the main, default, and proposal-specific goals.
 
-.Example `KafkaRebalance` configuration for user-provided goals
+.Example `KafkaRebalance` configuration for proposal-specific goals
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaRebalanceApiVersion}
@@ -189,10 +189,10 @@ spec:
 
 === Skipping hard goal checks
 
-If `skipHardGoalCheck: true` is specified in the `KafkaRebalance` custom resource, Cruise Control does not verify that the user-provided goals include all the configured hard goals. 
+If `skipHardGoalCheck: true` is specified in the `KafkaRebalance` custom resource, Cruise Control does not verify that the proposal-specific goals include all the configured hard goals. 
 This allows for more flexibility in generating optimization proposals, but may lead to proposals that do not satisfy all hard goals.
 
-However, any hard goals included in the user-provided goals will still be treated as hard goals by Cruise Control, even with `skipHardGoalCheck: true`.
+However, any hard goals included in the proposal-specific goals will still be treated as hard goals by Cruise Control, even with `skipHardGoalCheck: true`.
 
 [id='con-optimization-proposals-{context}']
 == Optimization proposals
@@ -410,7 +410,7 @@ The following table explains the properties contained in the optimization propos
 onDemandBalancednessScoreAfter
 | A measurement of the overall _balancedness_ of a Kafka Cluster, before and after the optimization proposal was generated.
 
-The score is calculated by subtracting the sum of the `BalancednessScore` of each violated soft goal from 100. Cruise Control assigns a `BalancednessScore` to every optimization goal based on several factors, including priority--the goal's position in the list of `default.goals` or user-provided goals.
+The score is calculated by subtracting the sum of the `BalancednessScore` of each violated soft goal from 100. Cruise Control assigns a `BalancednessScore` to every optimization goal based on several factors, including priority--the goal's position in the list of `default.goals` or proposal-specific goals.
 
 The `Before` score is based on the current configuration of the Kafka cluster.
 The `After` score is based on the generated optimization proposal.
