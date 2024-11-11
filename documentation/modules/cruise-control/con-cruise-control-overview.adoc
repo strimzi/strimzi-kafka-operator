@@ -27,22 +27,38 @@ Optimization goals define objectives for rebalancing, such as distributing topic
 
 They are categorized as follows:
 
+* *Main goals* are a list of goals supported by the Cruise Control instance and used in its operations. 
+By default, this list includes all built-in goals. 
+For a goal to be used in other categories, such as default or hard goals, it must first be listed in main goals. 
+To prevent a goal’s usage, remove it from this list.
 * *Hard goals* are preset and must be satisfied for a proposal to succeed.
 * *Soft goals* are objectives that are prioritized during optimization as much as possible, without preventing a proposal from being created if all hard goals are satisfied.
-* *Main goals* contain the list of goals that can be used by Cruise Control operations (all built-in goals by default).
-This list can be customized to specify a subset of all available goals, including any custom goals.
 * *Default goals* refer to the goals used by default when generating proposals. 
 They match the main goals unless specifically set by the user.
 * *Proposal-specific goals* are a subset of default goals configured for specific proposals.
 
 Configure optimization goals in the `Kafka` and `KafkaRebalance` custom resources.
 
-* `Kafka` resource for hard, main, and default goals.
-** Hard goals: `Kafka.spec.cruiseControl.config.hard.goals`
+* `Kafka` resource for main, hard, and default goals.
 ** Main goals: `Kafka.spec.cruiseControl.config.goals`
+** Hard goals: `Kafka.spec.cruiseControl.config.hard.goals`
 ** Default goals: `Kafka.spec.cruiseControl.config.default.goals`
 * `KafkaRebalance` resource for proposal-specific goals.
 ** Proposal-specific goals: `KafkaRebalance.spec.goals`
+
+=== Main goals
+
+Main goals are predefined and available to all users in Cruise Control. 
+Goals not listed as main goals cannot be used in Cruise Control operations.
+Some main goals are preset as hard goals.
+
+To simplify configuration, use the inherited main goals unless you need to exclude specific goals from `KafkaRebalance` resources. 
+You can adjust the priority order in the default optimization goals configuration.
+
+Configure main goals in `Kafka.spec.cruiseControl.config.goals`:
+
+* To accept inherited main goals, omit the `goals` property.
+* To modify main goals, specify the goals in descending priority order in the `goals` property.
 
 === Hard and soft goals
 
@@ -63,20 +79,6 @@ Configure hard goals in your Cruise Control deployment using `Kafka.spec.cruiseC
 * To exclude a hard goal, ensure it's not in either `default.goals` or `hard.goals`.
 
 Increasing the number of configured hard goals will reduce the likelihood of Cruise Control generating optimization proposals.
-
-=== Main goals
-
-Main goals are predefined and available to all users in Cruise Control. 
-Goals not listed as main goals cannot be used in Cruise Control operations.
-Some main goals are preset as hard goals.
-
-To simplify configuration, use the inherited main goals unless you need to exclude specific goals from `KafkaRebalance` resources. 
-You can adjust the priority order in the default optimization goals configuration.
-
-Configure main goals in `Kafka.spec.cruiseControl.config.goals`:
-
-* To accept inherited main goals, omit the `goals` property.
-* To modify main goals, specify the goals in descending priority order in the `goals` property.
 
 === Default goals
 
