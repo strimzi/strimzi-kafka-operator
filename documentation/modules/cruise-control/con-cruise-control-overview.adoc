@@ -208,10 +208,11 @@ With Cruise Control deployed for use in Strimzi, the process to generate and app
 This resource triggers Cruise Control to initiate the optimization process.
 . Strimzi Metrics Reporter runs in Kafka brokers, collecting raw metrics and publishing them to a dedicated Kafka topic (`strimzi.cruisecontrol.metrics`).
 Metrics for partition topics and modeling the impact of rebalances are collected in other xref:proc-cruise-control-auto-created-topics-{context}[topics automatically created when Cruise Control is deployed]. 
-. Load Monitor collects the metrics from Kafka brokers, including CPU, disk, and network utilization data.
-. Anomaly Detector continuously monitors the collected metrics to identify anomalies, such as broker failures or disk capacity issues, that could impact cluster stability.
-. Analyzer processes the collected metrics and constructs a _workload model_ of the current state of the Kafka cluster. 
-Based on configured goals and capacities, it generates an optimization proposal for balancing partition distribution across brokers, which is reflected in the status of the `KafkaRebalance` resource.
+. Load Monitor collects the metrics from Kafka brokers, including CPU, disk, and network utilization data, and sends load data to the Analyzer and Anomaly Detector.
+. Anomaly Detector continuously monitors the health and performance of the Kafka cluster, checking for things like broker failures or disk capacity issues, that could impact cluster stability.
+. Analyzer processes the collected metrics and anomalies to construct a _workload model_ of the current state of the Kafka cluster. 
+Based on configured goals and capacities, it generates an optimization proposal for balancing partition distribution across brokers.
+Through the REST API, a summary of the proposal is reflected in the status of the `KafkaRebalance` resource.
 . The optimization proposal is approved or rejected (manually or automatically) based on its alignment with cluster management goals.
 . If approved, the Executor applies the optimization proposal to rebalance the Kafka cluster. 
 This involves reassigning partitions and redistributing workload across brokers according to the approved proposal.
@@ -248,11 +249,11 @@ By using the `add-brokers` mode immediately after adding brokers to the cluster,
 You specify the new brokers as a list using the `spec.brokers` property of the `KafkaRebalance` custom resource.
 
 `remove-brokers` mode:: The `remove-brokers` mode is used before scaling down a Kafka cluster by removing one or more brokers.
-If you scale down a Kafka cluster, brokers are shut down even if they host replicas.
-This can lead to under-replicated partitions and possibly result in some partitions being under their minimum ISR (in-sync replicas).
-To avoid this potential problem, the `remove-brokers` mode moves replicas off the brokers that are going to be removed.
+The `remove-brokers` mode moves replicas off the brokers that are going to be removed.
 When these brokers are not hosting replicas anymore, you can safely run the scaling down operation.
 You specify the brokers you're removing as a list in the `spec.brokers` property in the `KafkaRebalance` custom resource.
+
+NOTE: Brokers are shut down even if they host replicas when xref:con-skipping-scale-down-checks-{context}[checks are skipped on scale-down operations].
 
 In general, use the `full` rebalance mode to rebalance a Kafka cluster by spreading the load across brokers.
 Use the `add-brokers` and `remove-brokers` modes only if you want to scale your cluster up or down and rebalance the replicas accordingly.
