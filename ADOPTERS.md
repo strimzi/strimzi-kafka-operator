@@ -25,6 +25,8 @@
     * Use Strimzi to provide Kafka as a Service in Open Source platform [Cozystack](https://cozystack.io)
 * [Reddit](https://www.reddit.com/r/RedditEng/)
     * Use Strimzi to run their Kafka fleet of 500 brokers, data replication with Mirror Maker and CDC pipelines with Kafka Connect. 
+* [Alauda](https://www.alauda.io/)
+    * Use Strimzi to provide Kafka as a Service on a cloud native platform
 
 Are you currently using Strimzi in production?
 Please let us know by adding your company name and, if you want, a description of your use case to this document!
