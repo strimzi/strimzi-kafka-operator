@@ -27,42 +27,43 @@ Optimization goals define objectives for rebalancing, such as distributing topic
 
 They are categorized as follows:
 
-* *Main goals* are a list of goals supported by the Cruise Control instance and used in its operations. 
-By default, this list includes all built-in goals. 
-For a goal to be used in other categories, such as default or hard goals, it must first be listed in main goals. 
+* *Supported goals* are a list of goals supported by the Cruise Control instance that can be used in its operations. 
+By default, this list includes all goals included with Cruise Control. 
+For a goal to be used in other categories, such as default or hard goals, it must first be listed in supported goals. 
 To prevent a goal’s usage, remove it from this list.
 * *Hard goals* are preset and must be satisfied for a proposal to succeed.
-* *Soft goals* are objectives that are prioritized during optimization as much as possible, without preventing a proposal from being created if all hard goals are satisfied.
+* *Soft goals* are preset goals with objectives that are prioritized during optimization as much as possible, without preventing a proposal from being created if all hard goals are satisfied.
+
 * *Default goals* refer to the goals used by default when generating proposals. 
-They match the main goals unless specifically set by the user.
+They match the supported goals unless specifically set by the user.
 * *Proposal-specific goals* are a subset of default goals configured for specific proposals.
 
 Configure optimization goals in the `Kafka` and `KafkaRebalance` custom resources.
 
-* `Kafka` resource for main, hard, and default goals.
-** Main goals: `Kafka.spec.cruiseControl.config.goals`
+* `Kafka` resource for supported, hard, and default goals.
+** Supported goals: `Kafka.spec.cruiseControl.config.goals`
 ** Hard goals: `Kafka.spec.cruiseControl.config.hard.goals`
 ** Default goals: `Kafka.spec.cruiseControl.config.default.goals`
 * `KafkaRebalance` resource for proposal-specific goals.
 ** Proposal-specific goals: `KafkaRebalance.spec.goals`
 
-=== Main goals
+=== Supported goals
 
-Main goals are predefined and available to all users in Cruise Control. 
-Goals not listed as main goals cannot be used in Cruise Control operations.
-Some main goals are preset as hard goals.
+Supported goals are predefined and available to use for generating Cruise Control optimization proposals. 
+Goals not listed as supported goals cannot be used in Cruise Control operations.
+Some supported goals are preset as hard goals.
 
-To simplify configuration, use the inherited main goals unless you need to exclude specific goals from `KafkaRebalance` resources. 
+To simplify configuration, use the inherited supported goals unless you need to exclude specific goals from `KafkaRebalance` resources. 
 You can adjust the priority order in the default optimization goals configuration.
 
-Configure main goals in `Kafka.spec.cruiseControl.config.goals`:
+Configure supported goals in `Kafka.spec.cruiseControl.config.goals`:
 
-* To accept inherited main goals, omit the `goals` property.
-* To modify main goals, specify the goals in descending priority order in the `goals` property.
+* To accept inherited supported goals, omit the `goals` property.
+* To modify supported goals, specify the goals in descending priority order in the `goals` property.
 
 === Hard and soft goals
 
-Hard goals are mandatory and must be satisfied for optimization proposals to be generated. 
+Hard goals must be satisfied for optimization proposals to be generated. 
 Soft goals are best-effort objectives that Cruise Control tries to meet after all hard goals are satisfied.
 The classification of hard and soft goals is fixed in Cruise Control code and cannot be changed.
 
@@ -70,7 +71,7 @@ Cruise Control first prioritizes satisfying hard goals, and then addresses soft 
 A proposal meeting all hard goals is valid, even if it violates some soft goals. 
 
 For example, a soft goal might be to evenly distribute a topic's replicas. 
-Cruise Control will ignore this if it conflicts with hard goals.
+Cruise Control continues to generate an optimization proposal even if the soft goal isn't completely satisfied.
 
 Configure hard goals in your Cruise Control deployment using `Kafka.spec.cruiseControl.config.hard.goals`:
 
@@ -85,21 +86,20 @@ Increasing the number of configured hard goals will reduce the likelihood of Cru
 Cruise Control uses default goals to generate an optimization proposal. 
 You can override default goals by setting proposal-specific optimization goals in a `KafkaRebalance` resource.
 
-If `default.goals` is not specified in the Cruise Control deployment configuration, main goals are used as default goals. 
-The optimization proposal is then generated using these main goals.
+If `default.goals` is not specified in the Cruise Control deployment configuration, Strimzi configures `default.goals` to the list of goals specified in `config.goals`. 
+
+The optimization proposal based on this goals list is then generated and cached..
 
 Configure default goals in `Kafka.spec.cruiseControl.config.default.goals`:
 
-* To use main goals as default, omit the `default.goals` property.
-* To modify default goals, specify a subset of main goals in the `default.goals` property.
+* To use supported goals as default, omit the `default.goals` property.
+* To modify default goals, specify a subset of supported goals in the `default.goals` property.
 
 === Proposal-specific goals
 
-Proposal-specific optimization goals narrow down the configured default goals for specific optimization proposals.
+Proposal-specific optimization goals support the creation of optimization proposals based on a specific list of goals.
 
-Configure proposal-specific goals in `KafkaRebalance.spec.goals`:
-
-* Specify a subset of main optimization goals for customization.
+Configure proposal-specific goals in `KafkaRebalance.spec.goals`, specifying a subset of supported optimization goals for customization.
 
 For example, you can optimize topic leader replica distribution across the Kafka cluster without considering disk capacity or utilization by defining a single proposal-specific goal.
 
@@ -107,7 +107,7 @@ For example, you can optimize topic leader replica distribution across the Kafka
 
 Unless you change the Cruise Control xref:proc-configuring-deploying-cruise-control-{context}[deployment configuration], Strimzi inherits goals from Cruise Control, in descending priority order.
 
-The following list shows main goals inherited by Strimzi from Cruise Control in descending priority order.
+The following list shows supported goals inherited by Strimzi from Cruise Control in descending priority order.
 Goals labeled as hard are mandatory constraints that must be satisfied for optimization proposals.
 
 * `RackAwareGoal` (hard)
@@ -170,8 +170,8 @@ spec:
       # ...
 ----
 
-IMPORTANT: Ensure that the main `goals`, `default.goals`, and (unless `skipHardGoalCheck` is set to `true`) proposal-specific `spec.goals` include all hard goals specified in `hard.goals` to avoid errors when generating optimization proposals. 
-Hard goals must be included as a subset in the main, default, and proposal-specific goals.
+IMPORTANT: Ensure that the supported `goals`, `default.goals`, and (unless `skipHardGoalCheck` is set to `true`) proposal-specific `spec.goals` include all hard goals specified in `hard.goals` to avoid errors when generating optimization proposals. 
+Hard goals must be included as a subset in the supported, default, and proposal-specific goals.
 
 .Example `KafkaRebalance` configuration for proposal-specific goals
 [source,yaml,subs="attributes+"]

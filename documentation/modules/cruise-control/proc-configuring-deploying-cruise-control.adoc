@@ -103,7 +103,7 @@ spec:
 <1> Capacity limits for broker resources.
 <2> Overrides set network capacity limits for specific brokers when running on nodes with heterogeneous network resources.
 <3> Cruise Control configuration. Standard Cruise Control configuration may be provided, restricted to those properties not managed directly by Strimzi.
-<4> Optimization goals configuration, which can include configuration for default optimization goals (`default.goals`), main optimization goals (`goals`), and hard goals (`hard.goals`).
+<4> Optimization goals configuration, which can include configuration for default optimization goals (`default.goals`), supported optimization goals (`goals`), and hard goals (`hard.goals`).
 <5> CORS enabled and configured for read-only access to the Cruise Control API.
 <6> Requests for reservation of supported resources, currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
 <7> Cruise Control loggers and log levels added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom Log4j configuration must be placed under the `log4j.properties` key in the ConfigMap. Cruise Control has a single logger named `rootLogger.level`. You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
