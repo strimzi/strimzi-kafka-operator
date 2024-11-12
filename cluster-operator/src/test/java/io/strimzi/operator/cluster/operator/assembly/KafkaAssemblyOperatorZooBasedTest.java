@@ -22,6 +22,7 @@ import io.fabric8.openshift.api.model.RouteStatus;
 import io.fabric8.openshift.api.model.RouteStatusBuilder;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.common.InlineLogging;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptions;
@@ -129,6 +130,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
@@ -758,6 +760,10 @@ public class KafkaAssemblyOperatorZooBasedTest {
 
                 assertThat(status.getOperatorLastSuccessfulVersion(), is(KafkaAssemblyOperator.OPERATOR_VERSION));
 
+                Condition zooRemovalWarning = status.getConditions().stream().filter(c -> "ZooKeeperRemoval".equals(c.getReason())).findFirst().orElse(null);
+                assertThat(zooRemovalWarning, is(notNullValue()));
+                assertThat(zooRemovalWarning.getMessage(), is("Support for ZooKeeper-based Apache Kafka clusters will be removed in the next Strimzi release (0.46.0). Please migrate to KRaft."));
+
                 async.flag();
             })));
     }
@@ -1273,6 +1279,10 @@ public class KafkaAssemblyOperatorZooBasedTest {
 
                 assertThat(status.getOperatorLastSuccessfulVersion(), is(KafkaAssemblyOperator.OPERATOR_VERSION));
                 assertThat(status.getKafkaVersion(), is(VERSIONS.defaultVersion().version()));
+
+                Condition zooRemovalWarning = status.getConditions().stream().filter(c -> "ZooKeeperRemoval".equals(c.getReason())).findFirst().orElse(null);
+                assertThat(zooRemovalWarning, is(notNullValue()));
+                assertThat(zooRemovalWarning.getMessage(), is("Support for ZooKeeper-based Apache Kafka clusters will be removed in the next Strimzi release (0.46.0). Please migrate to KRaft."));
 
                 async.flag();
             })));

@@ -255,6 +255,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 return Future.failedFuture(e);
             }
         } else {
+            // Add warning about upcoming ZooKeeper removal
+            LOGGER.warnCr(reconcileState.reconciliation, "Support for ZooKeeper-based Apache Kafka clusters will be removed in the next Strimzi release (0.46.0). Please migrate to KRaft.");
+            StatusUtils.addConditionsToStatus(reconcileState.kafkaStatus, Set.of(StatusUtils.buildWarningCondition("ZooKeeperRemoval", "Support for ZooKeeper-based Apache Kafka clusters will be removed in the next Strimzi release (0.46.0). Please migrate to KRaft.")));
+
             // Validates the properties required for a ZooKeeper based Kafka cluster
             try {
                 KRaftUtils.validateKafkaCrForZooKeeper(reconcileState.kafkaAssembly.getSpec(), nodePoolsEnabled);
