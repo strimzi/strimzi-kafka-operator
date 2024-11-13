@@ -53,9 +53,6 @@ Supported goals are predefined and available to use for generating Cruise Contro
 Goals not listed as supported goals cannot be used in Cruise Control operations.
 Some supported goals are preset as hard goals.
 
-To simplify configuration, use the inherited supported goals unless you need to exclude specific goals from `KafkaRebalance` resources. 
-You can adjust the priority order in the default optimization goals configuration.
-
 Configure supported goals in `Kafka.spec.cruiseControl.config.goals`:
 
 * To accept inherited supported goals, omit the `goals` property.
@@ -86,14 +83,15 @@ Increasing the number of configured hard goals will reduce the likelihood of Cru
 Cruise Control uses default goals to generate an optimization proposal. 
 You can override default goals by setting proposal-specific optimization goals in a `KafkaRebalance` resource.
 
-If `default.goals` is not specified in the Cruise Control deployment configuration, Strimzi configures `default.goals` to the list of goals specified in `config.goals`. 
+If `default.goals` is not specified in the Cruise Control deployment configuration, Strimzi configures `default.goals` to the list of supported goals specified in `goals`. 
 
-The optimization proposal based on this goals list is then generated and cached..
+The optimization proposal based on this supported goals list is then generated and cached.
 
 Configure default goals in `Kafka.spec.cruiseControl.config.default.goals`:
 
 * To use supported goals as default, omit the `default.goals` property.
-* To modify default goals, specify a subset of supported goals in the `default.goals` property.
+* To modify default goals, specify a subset of supported goals in the `default.goals` property. +
+You can adjust the priority order in the default goals configuration.
 
 === Proposal-specific goals
 
@@ -111,7 +109,7 @@ The following list shows supported goals inherited by Strimzi from Cruise Contro
 Goals labeled as hard are mandatory constraints that must be satisfied for optimization proposals.
 
 * `RackAwareGoal` (hard)
-* `MinTopicLeadersPerBrokerGoal`
+* `MinTopicLeadersPerBrokerGoal` (hard)
 * `ReplicaCapacityGoal` (hard)
 * `DiskCapacityGoal` (hard)
 * `NetworkInboundCapacityGoal` (hard)
@@ -127,7 +125,7 @@ Goals labeled as hard are mandatory constraints that must be satisfied for optim
 * `LeaderReplicaDistributionGoal`
 * `LeaderBytesInDistributionGoal`
 * `PreferredLeaderElectionGoal`
-* `IntraBrokerDiskCapacityGoal`
+* `IntraBrokerDiskCapacityGoal` (hard)
 * `IntraBrokerDiskUsageDistributionGoal`
 
 Resource distribution goals are subject to link:{BookURLConfiguring}#property-cruise-control-broker-capacity-reference[capacity limits^] on broker resources.
@@ -205,13 +203,13 @@ You can approve or reject proposals and rerun them with adjusted goals if needed
 With Cruise Control deployed for use in Strimzi, the process to generate and approve an optimization proposal is as follows:
 
 . Create a `KafkaRebalance` resource specifying optimization goals and any specific configurations. 
-This resource triggers Cruise Control to initiate the optimization process.
-. Strimzi Metrics Reporter runs in Kafka brokers, collecting raw metrics and publishing them to a dedicated Kafka topic (`strimzi.cruisecontrol.metrics`).
-Metrics for partition topics and modeling the impact of rebalances are collected in other xref:proc-cruise-control-auto-created-topics-{context}[topics automatically created when Cruise Control is deployed]. 
-. Load Monitor collects the metrics from Kafka brokers, including CPU, disk, and network utilization data, and sends load data to the Analyzer and Anomaly Detector.
+This resource triggers Cruise Control to initiate the optimization proposal generation process.
+. A Cruise Control Metrics Reporter runs in every Kafka broker, collecting raw metrics and publishing them to a dedicated Kafka topic (`strimzi.cruisecontrol.metrics`).
+Metrics for brokers, topics, and partitions are aggregated, sampled, and stored in other xref:proc-cruise-control-auto-created-topics-{context}[topics automatically created when Cruise Control is deployed]. 
+. Load Monitor collects, processes, and stores the metrics as a _workload model_--including CPU, disk, and network utilization data--which is used by the Analyzer and Anomaly Detector.
 . Anomaly Detector continuously monitors the health and performance of the Kafka cluster, checking for things like broker failures or disk capacity issues, that could impact cluster stability.
-. Analyzer processes the collected metrics and anomalies to construct a _workload model_ of the current state of the Kafka cluster. 
-Based on configured goals and capacities, it generates an optimization proposal for balancing partition distribution across brokers.
+. Analyzer creates optimization proposals based on the workload model from the Load Monitor. 
+Based on configured goals and capacities, it generates an optimization proposal for balancing partitions across brokers.
 Through the REST API, a summary of the proposal is reflected in the status of the `KafkaRebalance` resource.
 . The optimization proposal is approved or rejected (manually or automatically) based on its alignment with cluster management goals.
 . If approved, the Executor applies the optimization proposal to rebalance the Kafka cluster. 
@@ -220,8 +218,8 @@ This involves reassigning partitions and redistributing workload across brokers 
 .Cruise Control optimization process
 image:kafka-concepts-cruise-control.png[Cruise Control process]
 
-Optimization proposals comprise separate partition reassignment commands.
-When you approve a proposal, the Cruise Control server applies these commands to the Kafka cluster.
+Optimization proposals comprise a list of partition reassignment mappings.
+When you approve a proposal, the Cruise Control server applies these partition reassignments to the Kafka cluster.
 
 A partition reassignment command consists of either of the following types of operations:
 
