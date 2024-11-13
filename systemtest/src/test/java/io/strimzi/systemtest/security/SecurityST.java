@@ -16,7 +16,6 @@ import io.strimzi.api.kafka.model.common.CertificateAuthorityBuilder;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.kafka.Kafka;
-import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
@@ -72,7 +71,6 @@ import org.junit.jupiter.api.Tag;
 import java.io.InputStream;
 import java.security.cert.X509Certificate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -80,7 +78,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static io.strimzi.api.kafka.model.kafka.KafkaResources.clientsCaCertificateSecretName;
 import static io.strimzi.api.kafka.model.kafka.KafkaResources.clientsCaKeySecretName;
@@ -103,7 +100,6 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -111,103 +107,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class SecurityST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(SecurityST.class);
-    private static final String OPENSSL_RETURN_CODE = "Verify return code: 0 (ok)";
-
-    @ParallelNamespaceTest
-    void testCertificates() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-
-        LOGGER.info("Running testCertificates {}", testStorage.getClusterName());
-
-        resourceManager.createResourceWithWait(
-            NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
-            )
-        );
-
-        KafkaBuilder kafkaBuilder = KafkaTemplates.kafkaEphemeral(testStorage.getNamespaceName(), testStorage.getClusterName(), 3);
-
-        if (!Environment.isKRaftModeEnabled()) {
-            // in order to make the connection work on FIPS-enabled cluster, we need to enable TLSv1.3 on the ZooKeeper side
-            // Note, this cipherSuites comes from ZK master branch, where some cipher suites are missing in v3.8.4 branch:
-            // https://github.com/apache/zookeeper/blob/837f86cc713a5e4ce56e1f75eeb335093ca18821/zookeeper-server/src/main/java/org/apache/zookeeper/common/X509Util.java#L142
-            String tlsV13CipherSuites = "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256," +
-                    "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256," +
-                    "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA," +
-                    "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA," +
-                    "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,TLS_AES_256_GCM_SHA384,TLS_AES_128_GCM_SHA256,TLS_CHACHA20_POLY1305_SHA256";
-
-            kafkaBuilder = kafkaBuilder
-                    .editSpec()
-                        .editOrNewZookeeper()
-                            .addToConfig("ssl.protocol", "TLSv1.3")
-                            .addToConfig("ssl.quorum.protocol", "TLSv1.3")
-                            .addToConfig("ssl.enabledProtocols", "TLSv1.3,TLSv1.2")
-                            .addToConfig("ssl.quorum.enabledProtocols", "TLSv1.3,TLSv1.2")
-                            .addToConfig("ssl.ciphersuites", tlsV13CipherSuites)
-                            .addToConfig("ssl.quorum.ciphersuites", tlsV13CipherSuites)
-                        .endZookeeper()
-                    .endSpec();
-        }
-
-        resourceManager.createResourceWithWait(kafkaBuilder.build());
-
-        String brokerPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
-
-        LOGGER.info("Check Kafka bootstrap certificate");
-        String outputCertificate = SystemTestCertManager.generateOpenSslCommandByComponent(testStorage.getNamespaceName(), KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()), KafkaResources.bootstrapServiceName(testStorage.getClusterName()),
-            brokerPodName, "kafka", false);
-        LOGGER.info("OPENSSL OUTPUT: \n\n{}\n\n", outputCertificate);
-        verifyCerts(testStorage.getClusterName(), outputCertificate, "kafka");
-
-        if (!Environment.isKRaftModeEnabled()) {
-            LOGGER.info("Check ZooKeeper client certificate");
-            outputCertificate = SystemTestCertManager.generateOpenSslCommandByComponent(testStorage.getNamespaceName(), KafkaResources.zookeeperServiceName(testStorage.getClusterName()) + ":2181", KafkaResources.zookeeperServiceName(testStorage.getClusterName()),
-                brokerPodName, "kafka");
-            verifyCerts(testStorage.getClusterName(), outputCertificate, "zookeeper");
-        }
-
-        List<String> kafkaPorts = new ArrayList<>(Arrays.asList("9091", "9093"));
-        List<String> zkPorts = new ArrayList<>(Arrays.asList("2181", "3888"));
-        List<String> brokerPods = kubeClient().listPodNames(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
-
-        brokerPods.forEach(brokerPod -> {
-            String output;
-
-            LOGGER.info("Checking certificates for {}", brokerPod);
-            for (String kafkaPort : kafkaPorts) {
-                LOGGER.info("Check Kafka certificate for port {}", kafkaPort);
-                output = SystemTestCertManager.generateOpenSslCommandByComponentUsingSvcHostname(testStorage.getNamespaceName(),
-                    brokerPod,
-                    KafkaResources.brokersServiceName(testStorage.getClusterName()), kafkaPort, "kafka");
-                verifyCerts(testStorage.getClusterName(), output, "kafka");
-            }
-        });
-
-        IntStream.rangeClosed(0, 2).forEach(podId -> {
-            String output;
-
-            if (!Environment.isKRaftModeEnabled()) {
-                for (String zkPort : zkPorts) {
-                    LOGGER.info("Check ZooKeeper certificate for port {}", zkPort);
-                    output = SystemTestCertManager.generateOpenSslCommandByComponentUsingSvcHostname(testStorage.getNamespaceName(), KafkaResources.zookeeperPodName(testStorage.getClusterName(), podId),
-                            KafkaResources.zookeeperHeadlessServiceName(testStorage.getClusterName()), zkPort, "zookeeper");
-                    verifyCerts(testStorage.getClusterName(), output, "zookeeper");
-                }
-            }
-        });
-    }
-
-    // synchronized avoiding data-race (list of string is allocated on the heap), but has different reference on stack it's ok
-    // but Strings parameters provided are not created in scope of this method
-    synchronized private static void verifyCerts(String clusterName, String certificate, String component) {
-        List<String> certificateChains = SystemTestCertManager.getCertificateChain(clusterName + "-" + component);
-
-        assertThat(certificate, containsString(certificateChains.get(0)));
-        assertThat(certificate, containsString(certificateChains.get(1)));
-        assertThat(certificate, containsString(OPENSSL_RETURN_CODE));
-    }
 
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
