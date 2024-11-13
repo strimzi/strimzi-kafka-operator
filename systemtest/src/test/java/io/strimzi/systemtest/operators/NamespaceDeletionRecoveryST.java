@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.operators;
 
-import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolume;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.storage.StorageClass;
@@ -129,7 +128,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
      *
      **/
     @IsolatedTest("We need for each test case its own Cluster Operator")
-    void testTopicNotAvailable()  {
+    void testTopicNotAvailable() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         prepareEnvironmentForRecovery(testStorage);
 
@@ -150,9 +149,8 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             .getStatus()
             .getClusterId();
 
-        final Map<String, String> kafkaLabels = KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), testStorage.getBrokerPoolName(), ProcessRoles.BROKER).getMatchLabels();
-        final String kafkaPodName = kubeClient().listPods(testStorage.getNamespaceName(), new LabelSelectorBuilder()
-            .withMatchLabels(kafkaLabels).build()).get(0).getMetadata().getName();
+        final String kafkaPodName = kubeClient().listPods(testStorage.getNamespaceName(),
+            KafkaNodePoolResource.getLabelSelector(testStorage.getClusterName(), testStorage.getBrokerPoolName(), ProcessRoles.BROKER)).get(0).getMetadata().getName();
 
         LOGGER.info("Currently present Topics inside Kafka: {}/{} are: {}", testStorage.getNamespaceName(), kafkaPodName,
             KafkaCmdClient.listTopicsUsingPodCli(testStorage.getNamespaceName(), kafkaPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName())));
