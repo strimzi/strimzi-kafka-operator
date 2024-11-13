@@ -8,8 +8,8 @@
 
 ### Major changes, deprecations and removals
 
-* **Strimzi 0.45 is the last minor Strimzi version with support for ZooKeeper-based Apache Kafka clusters and Mirror Maker 1 deployments.**
-  **Please make sure to migrate to KRaft and Mirror Maker 2 before upgrading to Strimzi 0.46 or newer.**
+* **Strimzi 0.45 is the last minor Strimzi version with support for ZooKeeper-based Apache Kafka clusters and MirrorMaker 1 deployments.**
+  **Please make sure to migrate to KRaft and MirrorMaker 2 before upgrading to Strimzi 0.46 or newer.**
 
 ## 0.44.0
 

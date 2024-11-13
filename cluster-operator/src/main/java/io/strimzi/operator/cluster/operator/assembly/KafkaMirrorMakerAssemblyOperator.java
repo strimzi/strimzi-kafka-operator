@@ -127,8 +127,8 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                         StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaMirrorMakerStatus, reconciliationResult.cause());
 
                         // Add warning about Mirror Maker 1 being deprecated and removed soon
-                        LOGGER.warnCr(reconciliation, "Mirror Maker 1 is deprecated and will be removed in the next Strimzi release (0.46.0). Please migrate to Mirror Maker 2.");
-                        StatusUtils.addConditionsToStatus(kafkaMirrorMakerStatus, Set.of(StatusUtils.buildWarningCondition("MirrorMaker1Deprecation", "Mirror Maker 1 is deprecated and will be removed in the next Strimzi release (0.46.0). Please migrate to Mirror Maker 2.")));
+                        LOGGER.warnCr(reconciliation, "MirrorMaker 1 is deprecated and will be removed in the next Strimzi release (0.46.0). Please migrate to MirrorMaker 2.");
+                        StatusUtils.addConditionsToStatus(kafkaMirrorMakerStatus, Set.of(StatusUtils.buildWarningCondition("MirrorMaker1Deprecation", "MirrorMaker 1 is deprecated and will be removed in the next Strimzi release (0.46.0). Please migrate to MirrorMaker 2.")));
 
                         kafkaMirrorMakerStatus.setReplicas(mirror.getReplicas());
                         kafkaMirrorMakerStatus.setLabelSelector(mirror.getSelectorLabels().toSelectorString());
