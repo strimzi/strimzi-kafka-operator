@@ -11,8 +11,8 @@ These settings control the movement of partition replicas and leadership, as wel
 == Selecting replica movement strategies
 
 Cluster rebalance performance is also influenced by the _replica movement strategy_ that is applied to the batches of partition reassignment commands.
-By default, Cruise Control uses the `BaseReplicaMovementStrategy`, which applies the commands in the order they were generated.
-However, if large partition reassignments are handled early, this strategy may delay other reassignments.
+By default, Cruise Control uses the `BaseReplicaMovementStrategy`, which applies the reassignments in the order they were generated.
+However, this strategy could lead to the delay of other partition reassignments if large partition reassignments are generated then ordered first. 
 
 Cruise Control provides four alternative replica movement strategies that can be applied to optimization proposals:
 
@@ -42,7 +42,7 @@ Cruise Control does not perform inter-broker and intra-broker balancing at the s
 You can set the following rebalance tuning options when configuring Cruise Control or individual rebalances:
 
 * Set Cruise Control server configurations in `Kafka.spec.cruiseControl.config` in the `Kafka` resource.
-* Set individual rebalances in `KafkaRebalance.spec` in the `KafkaRebalance` resource.
+* Set proposal-specific configurations in `KafkaRebalance.spec` in the `KafkaRebalance` resource.
 
 .Rebalance configuration tuning properties
 [cols="4m,4m,1,2",options="header"]

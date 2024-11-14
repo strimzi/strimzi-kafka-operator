@@ -36,7 +36,7 @@ To prevent a goal’s usage, remove it from this list.
 
 * *Default goals* refer to the goals used by default when generating proposals. 
 They match the supported goals unless specifically set by the user.
-* *Proposal-specific goals* are a subset of default goals configured for specific proposals.
+* *Proposal-specific goals* are a subset of supported goals configured for specific proposals.
 
 Configure optimization goals in the `Kafka` and `KafkaRebalance` custom resources.
 
@@ -81,7 +81,6 @@ Increasing the number of configured hard goals will reduce the likelihood of Cru
 === Default goals
 
 Cruise Control uses default goals to generate an optimization proposal. 
-You can override default goals by setting proposal-specific optimization goals in a `KafkaRebalance` resource.
 
 If `default.goals` is not specified in the Cruise Control deployment configuration, Strimzi configures `default.goals` to the list of supported goals specified in `goals`. 
 
@@ -96,6 +95,7 @@ You can adjust the priority order in the default goals configuration.
 === Proposal-specific goals
 
 Proposal-specific optimization goals support the creation of optimization proposals based on a specific list of goals.
+If proposal-specific goals are not set in the `KafkaRebalance` resource, then default goals are used
 
 Configure proposal-specific goals in `KafkaRebalance.spec.goals`, specifying a subset of supported optimization goals for customization.
 
@@ -221,7 +221,7 @@ image:kafka-concepts-cruise-control.png[Cruise Control process]
 Optimization proposals comprise a list of partition reassignment mappings.
 When you approve a proposal, the Cruise Control server applies these partition reassignments to the Kafka cluster.
 
-A partition reassignment command consists of either of the following types of operations:
+A partition reassignment consists of either of the following types of operations:
 
 * Partition movement: Involves transferring the partition replica and its data to a new location. Partition movements can take one of two forms:
 ** Inter-broker movement: The partition replica is moved to a log directory on a different broker.
@@ -229,8 +229,8 @@ A partition reassignment command consists of either of the following types of op
 
 * Leadership movement: Involves switching the leader of the partition's replicas.
 
-Cruise Control issues partition reassignment commands to the Kafka cluster in batches.
-The performance of the cluster during the rebalance is affected by the number of each type of movement contained in each batch.
+Cruise Control issues partition reassignments to the Kafka cluster in batches.
+The performance of the cluster during the rebalance is affected by the number and magnitude of each type of movement contained in each batch.
 
 [id='con-optimization-proposals-modes-{context}']
 === Rebalancing modes
@@ -292,7 +292,7 @@ kubectl get kafkarebalance <kafka_rebalance_resource_name> -n <namespace> -o jso
 
 Use the summary to decide whether to approve or reject an optimization proposal.
 
-Approving an optimization proposal:: You approve the optimization proposal by setting the `strimzi.io/rebalance` annotation of the `KafkaRebalance` resource to `approve`.
+Approving an optimization proposal:: You xref:proc-approving-optimization-proposal-{context}[approve the optimization] proposal by setting the `strimzi.io/rebalance` annotation of the `KafkaRebalance` resource to `approve`.
 Cruise Control applies the proposal to the Kafka cluster and starts a cluster rebalance operation.
 Rejecting an optimization proposal:: If you choose not to approve an optimization proposal,
 you can xref:proc-generating-optimization-proposals-str[change the optimization goals] or xref:con-rebalance-{context}[update any of the rebalance performance tuning options], and then generate another proposal.
@@ -309,12 +309,14 @@ If the proposal is delayed for too long, the cluster load may change significant
 
 In the following example, the proposal suggests the rebalancing of data between separate brokers.
 The rebalance involves the movement of 55 partition replicas, totaling 12MB of data, across the brokers.
-Though the inter-broker movement of partition replicas has a high impact on performance, the total amount of data is not large.
-If the total data was much larger, you could reject the proposal, or time when to approve the rebalance to limit the impact on the performance of the Kafka cluster.
+The proposal will also move 24 partition leaders to different brokers.
+This requires a change to the cluster metadata, which has a low impact on performance.
 
-Rebalance performance tuning options can help reduce the impact of data movement.
-If you can extend the rebalance period, you can divide the rebalance into smaller batches.
-Fewer data movements at a single time reduces the load on the cluster.
+The balancedness scores are measurements of the overall balance of the Kafka cluster before and after the optimization proposal is approved.
+A balancedness score is based on optimization goals.
+If all goals are satisfied, the score is 100.
+The score is reduced for each goal that will not be met.
+Compare the balancedness scores to see whether the Kafka cluster is less balanced than it could be following a rebalance.
 
 .Example optimization proposal summary
 [source,yaml]
@@ -348,41 +350,12 @@ Status:
   Session Id:                             a4f833bd-2055-4213-bfdd-ad21f95bf184
 ----
 
-The proposal will also move 24 partition leaders to different brokers.
-This requires a change to the cluster metadata, which has a low impact on performance.
+Though the inter-broker movement of partition replicas has a high impact on performance, the total amount of data is not large.
+If the total data was much larger, you could reject the proposal, or time when to approve the rebalance to limit the impact on the performance of the Kafka cluster.
 
-The balancedness scores are measurements of the overall balance of the Kafka cluster before and after the optimization proposal is approved.
-A balancedness score is based on optimization goals.
-If all goals are satisfied, the score is 100.
-The score is reduced for each goal that will not be met.
-Compare the balancedness scores to see whether the Kafka cluster is less balanced than it could be following a rebalance.
-
-=== Automatically approving an optimization proposal
-
-To save time, you can automate the process of approving optimization proposals.
-With automation, when you generate an optimization proposal it goes straight into a cluster rebalance.
-
-To enable the optimization proposal auto-approval mechanism, create the `KafkaRebalance` resource with the `strimzi.io/rebalance-auto-approval` annotation set to `true`.
-If the annotation is not set or set to `false`, the optimization proposal requires manual approval.
-
-.Example rebalance request with auto-approval mechanism enabled
-[source,yaml,subs="+attributes"]
-----
-apiVersion: {KafkaRebalanceApiVersion}
-kind: KafkaRebalance
-metadata:
-  name: my-rebalance
-  labels:
-    strimzi.io/cluster: my-cluster
-  annotations:
-    strimzi.io/rebalance-auto-approval: "true"
-spec:
-  mode: # any mode
-  # ...
-----
-
-You can still check the status when automatically approving an optimization proposal.
-The status of the `KafkaRebalance` resource moves to `Ready` when the rebalance is complete.
+xref:con-rebalance-{context}[Rebalance performance tuning options] can help reduce the impact of data movement.
+If you can extend the rebalance period, you can divide the rebalance into smaller batches.
+Fewer data movements at a single time reduces the load on the cluster.
 
 === Optimization proposal summary properties
 
@@ -413,8 +386,8 @@ onDemandBalancednessScoreAfter
 
 The score is calculated by subtracting the sum of the `BalancednessScore` of each violated soft goal from 100. Cruise Control assigns a `BalancednessScore` to every optimization goal based on several factors, including priority--the goal's position in the list of `default.goals` or proposal-specific goals.
 
-The `Before` score is based on the current configuration of the Kafka cluster.
-The `After` score is based on the generated optimization proposal.
+The `Before` score is based on the workload model of the Kafka cluster.
+The `After` score is based on the predicted workload model after applying the generated optimization proposal.
 
 | intraBrokerDataToMoveMB
 | The sum of the size of each partition replica that will be moved between disks on the same broker (see also `numIntraBrokerReplicaMovements`).
@@ -446,12 +419,39 @@ These topics are excluded from the calculation of partition replica/leader movem
 
 |===
 
+=== Automatically approving an optimization proposal
+
+To save time, you can automate the process of approving optimization proposals.
+With automation, when you generate an optimization proposal it goes straight into a cluster rebalance.
+
+To enable the optimization proposal auto-approval mechanism, create the `KafkaRebalance` resource with the `strimzi.io/rebalance-auto-approval` annotation set to `true`.
+If the annotation is not set or set to `false`, the optimization proposal requires manual approval.
+
+.Example rebalance request with auto-approval mechanism enabled
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaRebalanceApiVersion}
+kind: KafkaRebalance
+metadata:
+  name: my-rebalance
+  labels:
+    strimzi.io/cluster: my-cluster
+  annotations:
+    strimzi.io/rebalance-auto-approval: "true"
+spec:
+  mode: # any mode
+  # ...
+----
+
+You can still check the status when automatically approving an optimization proposal.
+The status of the `KafkaRebalance` resource moves to `Ready` when the rebalance is complete.
+
 === Comparing broker load data
 
 Broker load data provides insights into current and anticipated usage of resources following a rebalance.
 The data is stored in a `ConfigMap` (with the same name as the `KafkaRebalance` resource) as a JSON formatted string
 
-When a Kafka rebalance proposal reaches the `ProposalReady` state, Cruise Control generates a `ConfigMap` (named after the `KafkaRebalance` custom resource) containing a JSON string of broker metrics. 
+When a Kafka rebalance proposal reaches the `ProposalReady` state, Strimzi creates a `ConfigMap` (named after the `KafkaRebalance` custom resource) containing a JSON string of broker metrics generated from Cruise Control. 
 Each broker has a set of key metrics represented by three values:
 
 * The current metric value before the optimization proposal is applied
