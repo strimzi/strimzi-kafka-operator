@@ -248,6 +248,33 @@ public class KafkaTopicUtils {
             .collect(Collectors.toList());
     }
 
+    /**
+     * Waits for the topic replicas to be moved to the specified brokers.
+     *
+     * @param namespaceName   The Kubernetes namespace in which the KafkaTopic resides.
+     * @param topicName       The name of the KafkaTopic.
+     * @param scraperPodName  The name of the pod used to scrape Kafka metrics.
+     * @param bootstrapServer The bootstrap server address.
+     * @param brokerIds       A list of broker IDs where replicas should be moved.
+     */
+    public static void waitForTopicReplicasOnBrokers(String namespaceName, String topicName, String scraperPodName, String bootstrapServer, List<String> brokerIds) {
+        LOGGER.info("Waiting for topic replicas of {} to be moved to brokers {}", topicName, brokerIds);
+        TestUtils.waitFor(
+            "Wait for topic replicas to be on the specified brokers",
+            TestConstants.GLOBAL_POLL_INTERVAL,
+            TestConstants.GLOBAL_TIMEOUT,
+            () -> {
+                List<String> topicReplicas = KafkaTopicUtils.getKafkaTopicReplicasForEachPartition(
+                    namespaceName,
+                    topicName,
+                    scraperPodName,
+                    bootstrapServer
+                );
+                return topicReplicas.stream().anyMatch(line -> brokerIds.stream().anyMatch(line::contains));
+            }
+        );
+    }
+
     public static void waitForTopicWithPrefixDeletion(String namespaceName, String topicPrefix) {
         TestUtils.waitFor("deletion of all topics with prefix: " + topicPrefix, TestConstants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
             () -> {
