@@ -29,6 +29,7 @@ import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration;
+import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.AbstractRebalanceOptions;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.AddBrokerOptions;
@@ -198,7 +199,7 @@ public class KafkaRebalanceAssemblyOperator
      */
     public CruiseControlApi cruiseControlClientProvider(Secret ccSecret, Secret ccApiSecret,
                                                            boolean apiAuthEnabled, boolean apiSslEnabled) {
-        return new CruiseControlApiImpl(vertx, HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS, ccSecret, ccApiSecret, apiAuthEnabled, apiSslEnabled);
+        return new CruiseControlApiImpl(HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS, ccSecret, ccApiSecret, apiAuthEnabled, apiSslEnabled);
     }
 
     /**
@@ -799,7 +800,7 @@ public class KafkaRebalanceAssemblyOperator
                             p.fail(e);
                         });
             } else {
-                apiClient.getUserTaskStatus(reconciliation, host, cruiseControlPort, sessionId)
+                VertxUtil.completableFutureToVertxFuture(apiClient.getUserTaskStatus(reconciliation, host, cruiseControlPort, sessionId))
                         .onSuccess(cruiseControlResponse -> handleUserTaskStatusResponse(reconciliation, cruiseControlResponse, p, sessionId, conditions, kafkaRebalance, configMapOperator, true, host, apiClient, rebalanceOptionsBuilder))
                         .onFailure(e -> {
                             LOGGER.errorCr(reconciliation, "Cruise Control getting rebalance proposal status failed", e.getCause());
@@ -966,7 +967,7 @@ public class KafkaRebalanceAssemblyOperator
         String sessionId = kafkaRebalance.getStatus().getSessionId();
         if (rebalanceAnnotation(kafkaRebalance) == KafkaRebalanceAnnotation.stop) {
             LOGGER.infoCr(reconciliation, "Stopping current Cruise Control rebalance user task");
-            apiClient.stopExecution(reconciliation, host, cruiseControlPort)
+            VertxUtil.completableFutureToVertxFuture(apiClient.stopExecution(reconciliation, host, cruiseControlPort))
                 .onSuccess(r -> p.complete(buildRebalanceStatus(null, KafkaRebalanceState.Stopped, StatusUtils.validate(reconciliation, kafkaRebalance))))
                 .onFailure(e -> {
                     LOGGER.errorCr(reconciliation, "Cruise Control stopping execution failed", e.getCause());
@@ -974,7 +975,7 @@ public class KafkaRebalanceAssemblyOperator
                 });
         } else if (rebalanceAnnotation(kafkaRebalance) == KafkaRebalanceAnnotation.refresh) {
             LOGGER.infoCr(reconciliation, "Stopping current Cruise Control rebalance user task since refresh annotation is applied on the KafkaRebalance resource and requesting a new proposal");
-            apiClient.stopExecution(reconciliation, host, cruiseControlPort)
+            VertxUtil.completableFutureToVertxFuture(apiClient.stopExecution(reconciliation, host, cruiseControlPort))
                     .onSuccess(r -> {
                         requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder)
                                 .onSuccess(p::complete)
@@ -991,7 +992,7 @@ public class KafkaRebalanceAssemblyOperator
             LOGGER.infoCr(reconciliation, "Getting Cruise Control rebalance user task status");
             Set<Condition> conditions = StatusUtils.validate(reconciliation, kafkaRebalance);
             validateAnnotation(reconciliation, conditions, KafkaRebalanceState.Rebalancing, rebalanceAnnotation(kafkaRebalance), kafkaRebalance);
-            apiClient.getUserTaskStatus(reconciliation, host, cruiseControlPort, sessionId)
+            VertxUtil.completableFutureToVertxFuture(apiClient.getUserTaskStatus(reconciliation, host, cruiseControlPort, sessionId))
                 .onSuccess(cruiseControlResponse -> handleUserTaskStatusResponse(reconciliation, cruiseControlResponse, p, sessionId, conditions, kafkaRebalance, configMapOperator, false, host, apiClient, rebalanceOptionsBuilder))
                 .onFailure(e -> {
                     LOGGER.errorCr(reconciliation, "Cruise Control getting rebalance task status failed", e);
@@ -1201,16 +1202,16 @@ public class KafkaRebalanceAssemblyOperator
         Future<CruiseControlRebalanceResponse> future;
         switch (mode) {
             case ADD_BROKERS:
-                future = apiClient.addBroker(reconciliation, host, cruiseControlPort, ((AddBrokerOptions.AddBrokerOptionsBuilder) rebalanceOptionsBuilder).build(), null);
+                future = VertxUtil.completableFutureToVertxFuture(apiClient.addBroker(reconciliation, host, cruiseControlPort, ((AddBrokerOptions.AddBrokerOptionsBuilder) rebalanceOptionsBuilder).build(), null));
                 break;
             case REMOVE_BROKERS:
-                future = apiClient.removeBroker(reconciliation, host, cruiseControlPort, ((RemoveBrokerOptions.RemoveBrokerOptionsBuilder) rebalanceOptionsBuilder).build(), null);
+                future = VertxUtil.completableFutureToVertxFuture(apiClient.removeBroker(reconciliation, host, cruiseControlPort, ((RemoveBrokerOptions.RemoveBrokerOptionsBuilder) rebalanceOptionsBuilder).build(), null));
                 break;
             case REMOVE_DISKS:
-                future = apiClient.removeDisks(reconciliation, host, cruiseControlPort, ((RemoveDisksOptions.RemoveDisksOptionsBuilder) rebalanceOptionsBuilder).build(), null);
+                future = VertxUtil.completableFutureToVertxFuture(apiClient.removeDisks(reconciliation, host, cruiseControlPort, ((RemoveDisksOptions.RemoveDisksOptionsBuilder) rebalanceOptionsBuilder).build(), null));
                 break;
             default:
-                future = apiClient.rebalance(reconciliation, host, cruiseControlPort, ((RebalanceOptions.RebalanceOptionsBuilder) rebalanceOptionsBuilder).build(), null);
+                future = VertxUtil.completableFutureToVertxFuture(apiClient.rebalance(reconciliation, host, cruiseControlPort, ((RebalanceOptions.RebalanceOptionsBuilder) rebalanceOptionsBuilder).build(), null));
                 break;
         }
         return future.map(response -> handleRebalanceResponse(reconciliation, kafkaRebalance, dryrun, response));

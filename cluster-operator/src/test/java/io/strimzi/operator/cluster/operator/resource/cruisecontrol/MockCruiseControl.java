@@ -128,7 +128,7 @@ public class MockCruiseControl {
      * Setup state responses in mock server.
      */
     public void setupCCStateResponse() {
-        // Non-verbose response
+        // Verbose/Non-verbose response
         JsonBody jsonProposalNotReady = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-State-proposal-not-ready.json"));
 
         server
@@ -145,7 +145,6 @@ public class MockCruiseControl {
                                 .withBody(jsonProposalNotReady)
                                 .withHeaders(header("User-Task-ID", STATE_PROPOSAL_NOT_READY_RESPONSE))
                                 .withDelay(TimeUnit.SECONDS, 0));
-
 
         // Non-verbose response
         JsonBody json = new JsonBody(ReadWriteUtils.readFileFromResources(getClass(), "/" + CC_JSON_ROOT + "CC-State.json"));

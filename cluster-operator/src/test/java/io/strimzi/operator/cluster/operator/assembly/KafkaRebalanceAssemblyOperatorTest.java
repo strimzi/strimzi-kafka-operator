@@ -38,6 +38,7 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControl
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.MockCruiseControl;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.TimeoutException;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
@@ -48,7 +49,6 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube3.MockKube3;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
-import io.vertx.core.impl.NoStackTraceTimeoutException;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.Timeout;
 import io.vertx.junit5.VertxExtension;
@@ -206,7 +206,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
             @Override
             public CruiseControlApi cruiseControlClientProvider(Secret ccSecret, Secret ccApiSecret, boolean apiAuthEnabled, boolean apiSslEnabled) {
-                return new CruiseControlApiImpl(vertx, 1, ccSecret, ccApiSecret, true, true);
+                return new CruiseControlApiImpl(1, ccSecret, ccApiSecret, true, true);
             }
         };
     }
@@ -1903,7 +1903,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
             .onComplete(context.succeeding(v -> {
                 // the resource moved from New to NotReady (mocked Cruise Control didn't reply on time)
                 assertState(context, client, namespace, RESOURCE_NAME,
-                        KafkaRebalanceState.NotReady, NoStackTraceTimeoutException.class,
+                        KafkaRebalanceState.NotReady, TimeoutException.class,
                         "The timeout period of 1000ms has been exceeded while executing POST");
                 checkpoint.flag();
             }));
@@ -1938,7 +1938,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 // the resource moved from 'New' to 'NotReady' (mocked Cruise Control not reachable)
                 assertState(context, client, namespace, RESOURCE_NAME,
                         KafkaRebalanceState.NotReady, CruiseControlRetriableConnectionException.class,
-                        "Connection refused");
+                        "java.net.ConnectException");
                 checkpoint.flag();
             }));
     }
