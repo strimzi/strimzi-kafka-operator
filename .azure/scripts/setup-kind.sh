@@ -91,7 +91,7 @@ function updateDockerDaemonConfiguration() {
     # We need to add such host to insecure-registry (as localhost is default)
     echo $1 | sudo tee /etc/docker/daemon.json
     # we need to restart docker service to propagate configuration
-    systemctl restart docker
+    sudo systemctl restart docker
 }
 
 : '
