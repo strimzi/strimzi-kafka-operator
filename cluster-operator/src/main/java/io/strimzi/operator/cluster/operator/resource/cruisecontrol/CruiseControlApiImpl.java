@@ -76,11 +76,9 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                 .withParameter(CruiseControlParameters.JSON, "true")
                 .build();
 
-        HttpRequest.Builder builder;
-        builder = HttpRequest.newBuilder()
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(String.format("%s://%s:%d%s", apiSslEnabled ? "https" : "http", host, port, path)))
                 .GET();
-
 
         if (authHttpHeader != null) {
             builder.header(authHttpHeader.getName(), authHttpHeader.getValue());
@@ -156,11 +154,9 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     }
 
     private CompletableFuture<CruiseControlRebalanceResponse> internalRebalance(Reconciliation reconciliation, String host, int port, String path, String userTaskId) {
-        HttpRequest.Builder builder;
-        builder = HttpRequest.newBuilder()
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(String.format("%s://%s:%d%s", apiSslEnabled ? "https" : "http", host, port, path)))
                 .POST(HttpRequest.BodyPublishers.noBody());
-
 
         if (authHttpHeader != null) {
             builder.header(authHttpHeader.getName(), authHttpHeader.getValue());
@@ -246,7 +242,6 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
     @Override
     public CompletableFuture<CruiseControlRebalanceResponse> rebalance(Reconciliation reconciliation, String host, int port, RebalanceOptions options, String userTaskId) {
-
         if (options == null && userTaskId == null) {
             return CompletableFuture.failedFuture(
                     new IllegalArgumentException("Either rebalance options or user task ID should be supplied, both were null"));
@@ -308,7 +303,6 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     @Override
     @SuppressWarnings("deprecation")
     public CompletableFuture<CruiseControlUserTasksResponse> getUserTaskStatus(Reconciliation reconciliation, String host, int port, String userTaskId) {
-
         PathBuilder pathBuilder = new PathBuilder(CruiseControlEndpoints.USER_TASKS)
                         .withParameter(CruiseControlParameters.JSON, "true")
                         .withParameter(CruiseControlParameters.FETCH_COMPLETE, "true");
@@ -319,8 +313,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
         String path = pathBuilder.build();
 
-        HttpRequest.Builder builder;
-        builder = HttpRequest.newBuilder()
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(String.format("%s://%s:%d%s", apiSslEnabled ? "https" : "http", host, port, path)))
                 .GET();
 
@@ -425,20 +418,17 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                 .exceptionally(ex -> {
                     throw httpExceptionHandler(ex, request.method(), idleTimeout);
                 });
-
     }
 
     @Override
     @SuppressWarnings("deprecation")
     public CompletableFuture<CruiseControlResponse> stopExecution(Reconciliation reconciliation, String host, int port) {
-
         String path = new PathBuilder(CruiseControlEndpoints.STOP)
                         .withParameter(CruiseControlParameters.JSON, "true").build();
-        HttpRequest.Builder builder;
-        builder = HttpRequest.newBuilder()
+
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(String.format("%s://%s:%d%s", apiSslEnabled ? "https" : "http", host, port, path)))
                 .POST(HttpRequest.BodyPublishers.noBody());
-
 
         if (authHttpHeader != null) {
             builder.header(authHttpHeader.getName(), authHttpHeader.getValue());
@@ -477,7 +467,6 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                 .exceptionally(ex -> {
                     throw httpExceptionHandler(ex, request.method(), idleTimeout);
                 });
-
     }
 
     private RuntimeException httpExceptionHandler(Throwable ex, String requestMethod, long timeout) {
