@@ -22,66 +22,18 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.ArrayList;
-import java.util.List;
 
 import static io.strimzi.systemtest.security.SystemTestCertAndKeyBuilder.endEntityCertBuilder;
 import static io.strimzi.systemtest.security.SystemTestCertAndKeyBuilder.intermediateCaCertBuilder;
 import static io.strimzi.systemtest.security.SystemTestCertAndKeyBuilder.rootCaCertBuilder;
 import static io.strimzi.systemtest.security.SystemTestCertAndKeyBuilder.strimziCaCertBuilder;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Arrays.asList;
 
 public class SystemTestCertManager {
 
-    private static final String KAFKA_CERT_FILE_PATH = "/opt/kafka/broker-certs/";
-    private static final String ZK_CERT_FILE_PATH = "/opt/kafka/zookeeper-node-certs/";
-    private static final String CA_FILE_PATH = "/opt/kafka/cluster-ca-certs/ca.crt";
     static final String STRIMZI_ROOT_CA = "C=CZ, L=Prague, O=Strimzi, CN=StrimziRootCA";
     static final String STRIMZI_INTERMEDIATE_CA = "C=CZ, L=Prague, O=Strimzi, CN=StrimziIntermediateCA";
     static final String STRIMZI_END_SUBJECT = "C=CZ, L=Prague, O=Strimzi, CN=kafka.strimzi.io";
-
-    private static List<String> generateBaseSSLCommand(String server, String caFilePath, String hostname) {
-        return new ArrayList<>(asList("echo -n | openssl",
-                "s_client",
-                "-connect", server,
-                "-showcerts",
-                "-CAfile", caFilePath,
-                "-verify_hostname", hostname
-        ));
-    }
-
-    public static String generateOpenSslCommandByComponentUsingSvcHostname(String namespaceName, String podName, String hostname, String port, String component) {
-        return generateOpenSslCommandByComponent(namespaceName, podName + "." + hostname + ":" + port,
-                podName + "." + hostname + "." + namespaceName + ".svc.cluster.local", podName, component, true);
-    }
-
-    public static String generateOpenSslCommandByComponent(String namespaceName, String server, String hostname, String podName, String component) {
-        return generateOpenSslCommandByComponent(namespaceName, server, hostname, podName, component, true);
-    }
-
-    public static String generateOpenSslCommandByComponent(String namespaceName, String server, String hostname, String podName, String component, boolean withCertAndKey) {
-        String path = component.equals("kafka") ? KAFKA_CERT_FILE_PATH : ZK_CERT_FILE_PATH;
-        List<String> cmd = generateBaseSSLCommand(server, CA_FILE_PATH, hostname);
-
-        if (withCertAndKey) {
-            cmd.add("-cert " + path + podName + ".crt");
-            cmd.add("-key " + path + podName + ".key");
-        }
-
-        return cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c", String.join(" ", cmd)).out();
-    }
-
-    public static List<String> getCertificateChain(String certificateName) {
-        return new ArrayList<>(asList(
-                "s:O = io.strimzi, CN = " + certificateName + "\n" +
-                "   i:O = io.strimzi, CN = cluster-ca",
-                "Server certificate\n" +
-                "subject=O = io.strimzi, CN = " + certificateName + "\n" +
-                "issuer=O = io.strimzi, CN = cluster-ca"
-        ));
-    }
 
     public static SystemTestCertAndKey generateRootCaCertAndKey() {
         return rootCaCertBuilder()
