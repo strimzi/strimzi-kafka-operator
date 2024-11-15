@@ -3,40 +3,24 @@
 // assembly-cruise-control-concepts.adoc
 
 [id='con-rebalance-{context}']
+= Tuning options for rebalances
 
-= Rebalance performance tuning overview
+Configuration options allow you to fine-tune cluster rebalance performance. 
+These settings control the movement of partition replicas and leadership, as well as the bandwidth allocated for rebalances.
 
-You can adjust several performance tuning options for cluster rebalances.
-These options control how partition replicas and leadership movements in a rebalance are executed, as well as the bandwidth that is allocated to a rebalance operation.
-
-== Partition reassignment commands
-
-xref:con-optimization-proposals-{context}[Optimization proposals] are comprised of separate partition reassignment commands.
-When you xref:proc-approving-optimization-proposal-{context}[approve] a proposal, the Cruise Control server applies these commands to the Kafka cluster.
-
-A partition reassignment command consists of either of the following types of operations:
-
-* Partition movement: Involves transferring the partition replica and its data to a new location. Partition movements can take one of two forms:
-    ** Inter-broker movement: The partition replica is moved to a log directory on a different broker.
-    ** Intra-broker movement: The partition replica is moved to a different log directory on the same broker.
-
-* Leadership movement: This involves switching the leader of the partition's replicas.
-
-Cruise Control issues partition reassignment commands to the Kafka cluster in batches.
-The performance of the cluster during the rebalance is affected by the number of each type of movement contained in each batch.
-
-== Replica movement strategies
+== Selecting replica movement strategies
 
 Cluster rebalance performance is also influenced by the _replica movement strategy_ that is applied to the batches of partition reassignment commands.
-By default, Cruise Control uses the `BaseReplicaMovementStrategy`, which simply applies the commands in the order they were generated.
-However, if there are some very large partition reassignments early in the proposal, this strategy can slow down the application of the other reassignments.
+By default, Cruise Control uses the `BaseReplicaMovementStrategy`, which applies the reassignments in the order they were generated.
+However, this strategy could lead to the delay of other partition reassignments if large partition reassignments are generated then ordered first. 
 
 Cruise Control provides four alternative replica movement strategies that can be applied to optimization proposals:
 
-* `PrioritizeSmallReplicaMovementStrategy`: Order reassignments in order of ascending size.
-* `PrioritizeLargeReplicaMovementStrategy`: Order reassignments in order of descending size.
-* `PostponeUrpReplicaMovementStrategy`: Prioritize reassignments for replicas of partitions which have no out-of-sync replicas.
-* `PrioritizeMinIsrWithOfflineReplicasStrategy`: Prioritize reassignments with (At/Under)MinISR partitions with offline replicas.  This strategy will only work if `cruiseControl.config.concurrency.adjuster.min.isr.check.enabled` is set to `true` in the `Kafka` custom resource's spec.
+* `PrioritizeSmallReplicaMovementStrategy`: Reassign smaller partitions first.
+* `PrioritizeLargeReplicaMovementStrategy`: Reassign larger partitions first.
+* `PostponeUrpReplicaMovementStrategy`: Prioritize partitions without out-of-sync replicas.
+* `PrioritizeMinIsrWithOfflineReplicasStrategy`: Prioritize reassignments for partitions at or below their minimum in-sync replicas (MinISR) with offline replicas. +
+Set `cruiseControl.config.concurrency.adjuster.min.isr.check.enabled` to `true` in the `Kafka` resource to enable this strategy.
 
 These strategies can be configured as a sequence.
 The first strategy attempts to compare two partition reassignments using its internal logic.
@@ -44,26 +28,23 @@ If the reassignments are equivalent, then it passes them to the next strategy in
 
 == Intra-broker disk balancing
 
-Moving a large amount of data between disks on the same broker has less impact than between separate brokers.
-If you are running a Kafka deployment that uses JBOD storage with multiple disks on the same broker, Cruise Control can balance partitions between the disks.
+Intra-broker balancing shifts data between disks on the same broker, useful for deployments with JBOD storage and multiple disks. 
+This type of balancing incurs less network overhead than inter-broker balancing.
 
-NOTE: If you are using JBOD storage with a single disk, intra-broker disk balancing will result in a proposal with 0 partition movements since there are no disks to balance between.
+NOTE: If you are using JBOD storage with a single disk, intra-broker disk balancing will result in a proposal with 0 partition movements since there are no disks to balance.
 
-To perform an intra-broker disk balance, set `rebalanceDisk` to `true` under the `KafkaRebalance.spec`.
-When setting `rebalanceDisk` to `true`, do not set a `goals` field in the `KafkaRebalance.spec`, as Cruise Control will automatically set the intra-broker goals and ignore the inter-broker goals.
+To enable intra-broker balancing, set `rebalanceDisk` to `true` in `KafkaRebalance.spec`. 
+When this is enabled, do not specify a `goals` field, as Cruise Control will automatically configure intra-broker goals and disregard inter-broker goals.
 Cruise Control does not perform inter-broker and intra-broker balancing at the same time.
 
-== Rebalance tuning options
+== Rebalance tuning
 
-Cruise Control provides several configuration options for tuning the rebalance parameters discussed above.
-You can set these tuning options when xref:proc-configuring-deploying-cruise-control-{context}[configuring and deploying Cruise Control with Kafka] or xref:proc-generating-optimization-proposals-{context}[optimization proposal] levels:
+You can set the following rebalance tuning options when configuring Cruise Control or individual rebalances:
 
-* The Cruise Control server setting can be set in the Kafka custom resource under `Kafka.spec.cruiseControl.config`.
-* The individual rebalance performance configurations can be set under `KafkaRebalance.spec`.
+* Set Cruise Control server configurations in `Kafka.spec.cruiseControl.config` in the `Kafka` resource.
+* Set proposal-specific configurations in `KafkaRebalance.spec` in the `KafkaRebalance` resource.
 
-The relevant configurations are summarized in the following table.
-
-.Rebalance performance tuning configuration
+.Rebalance configuration tuning properties
 [cols="4m,4m,1,2",options="header"]
 |===
 | Cruise Control properties

@@ -5,17 +5,25 @@
 [id='cruise-control-concepts-{context}']
 = Using Cruise Control for cluster rebalancing
 
-include::../../modules/cruise-control/con-cruise-control-description.adoc[leveloffset=+1]
+[role="_abstract"]
+Cruise Control is an open-source application designed to run alongside Kafka to help optimize use of cluster resources by doing the following:
+
+* Monitoring cluster workload
+* Rebalancing partitions based on predefined constraints
+
+Cruise Control operations help with running a more balanced Kafka cluster that uses brokers more efficiently.
+
+As Kafka clusters evolve, some brokers may become overloaded while others remain underutilized. 
+Cruise Control addresses this imbalance by modeling resource utilization at the replica level--including, CPU, disk, network load--and generating optimization proposals (which you can approve or reject) for balanced partition assignments based on configurable optimization goals.
+
+Optimization proposals are configured and generated using a `KafkaRebalance` resource. 
+You can configure the resource using an annotation so that optimization proposals are approved automatically or manually.
 
 NOTE: Strimzi provides xref:config-examples-{context}[example configuration files for Cruise Control].
 
+//overview and concepts
 include::../../modules/cruise-control/con-cruise-control-overview.adoc[leveloffset=+1]
-
-include::../../modules/cruise-control/con-optimization-goals.adoc[leveloffset=+1]
-
-include::../../modules/cruise-control/con-optimization-proposals.adoc[leveloffset=+1]
-
-include::../../modules/cruise-control/con-rebalance-performance.adoc[leveloffset=+1]
+include::../../modules/cruise-control/con-rebalance-performance.adoc[leveloffset=+2]
 
 include::../../modules/cruise-control/proc-configuring-deploying-cruise-control.adoc[leveloffset=+1]
 

@@ -3,21 +3,22 @@
 // assembly-cruise-control-concepts.adoc
 
 [id='proc-fixing-problems-with-kafkarebalance-{context}']
+= Troubleshooting and refreshing rebalances
 
-= Fixing problems with a `KafkaRebalance` resource
+[role="_abstract"]
+When creating a `KafkaRebalance` resource or interacting with Cruise Control, errors are reported in the resource status, along with guidance on how to fix them.
+In such cases, the resource transitions to the `NotReady` state.
 
-If an issue occurs when creating a `KafkaRebalance` resource or interacting with Cruise Control, the error is reported in the resource status, along with details of how to fix it.
-The resource also moves to the `NotReady` state.
+To continue with a cluster rebalance operation, you must rectify any configuration issues in the `KafkaRebalance` resource or address any problems with the Cruise Control deployment. 
 
-To continue with the cluster rebalance operation, you must fix the problem in the `KafkaRebalance` resource itself or with the overall Cruise Control deployment.
-Problems might include the following:
+Common issues include the following:
 
-* A misconfigured parameter in the `KafkaRebalance` resource.
+* Misconfigured parameters in the `KafkaRebalance` resource.
 * The `strimzi.io/cluster` label for specifying the Kafka cluster in the `KafkaRebalance` resource is missing.
 * The Cruise Control server is not deployed as the `cruiseControl` property in the `Kafka` resource is missing.
 * The Cruise Control server is not reachable.
 
-After fixing the issue, you need to add the `refresh` annotation to the `KafkaRebalance` resource.
+After fixing any issues, you need to add the `refresh` annotation to the `KafkaRebalance` resource.
 During a “refresh”, a new optimization proposal is requested from the Cruise Control server.
 
 .Prerequisites
@@ -52,8 +53,3 @@ kubectl describe kafkarebalance _rebalance-cr-name_
 ----
 
 . Wait until the status changes to `PendingProposal`, or directly to `ProposalReady`.
-
-[role="_additional-resources"]
-.Additional resources
-
-* xref:con-optimization-proposals-{context}[]

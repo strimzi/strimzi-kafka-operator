@@ -6,7 +6,7 @@
 = Generating optimization proposals
 
 [role="_abstract"]
-When you create or update a `KafkaRebalance` resource, Cruise Control generates an xref:con-optimization-proposals-{context}[optimization proposal] for the Kafka cluster based on the configured xref:con-optimization-goals-{context}[optimization goals].
+When you create or update a `KafkaRebalance` resource, Cruise Control generates an optimization proposal for the Kafka cluster based on a set of optimization goals.
 Analyze the information in the optimization proposal and decide whether to approve it.
 You can use the results of the optimization proposal to rebalance your Kafka cluster.
 
@@ -114,9 +114,9 @@ spec:
 +
 NOTE: The following steps and the steps to approve or stop a rebalance are the same regardless of the rebalance mode you are using.
 
-. To configure _user-provided optimization goals_ instead of using the default goals, add the `goals` property and enter one or more goals.
+. To configure proposal-specific optimization goals instead of using the default goals, add the `goals` property and enter one or more goals.
 +
-In the following example, rack awareness and replica capacity are configured as user-provided optimization goals:
+In the following example, rack awareness and replica capacity are configured as proposal-specific optimization goals:
 +
 [source,yaml,subs="attributes+"]
 ----
