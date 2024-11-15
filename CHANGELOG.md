@@ -6,6 +6,11 @@
   Remove support for Kafka 3.7.0 and 3.7.1
 * Ability to move data between JBOD disks using Cruise Control.
 
+### Major changes, deprecations and removals
+
+* **Strimzi 0.45 is the last minor Strimzi version with support for ZooKeeper-based Apache Kafka clusters and MirrorMaker 1 deployments.**
+  **Please make sure to migrate to KRaft and MirrorMaker 2 before upgrading to Strimzi 0.46 or newer.**
+
 ## 0.44.0
 
 * Add the "Unmanaged" KafkaTopic status update.

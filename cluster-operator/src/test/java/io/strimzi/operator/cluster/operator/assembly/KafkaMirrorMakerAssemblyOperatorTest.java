@@ -178,7 +178,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 assertThat(mm.getStatus().getConditions().get(1).getType(), is("Warning"));
                 assertThat(mm.getStatus().getConditions().get(1).getReason(), is("MirrorMaker1Deprecation"));
                 assertThat(mm.getStatus().getConditions().get(1).getStatus(), is("True"));
-                assertThat(mm.getStatus().getConditions().get(1).getMessage(), is("Mirror Maker 1 is deprecated and will be removed in Apache Kafka 4.0.0. Please migrate to Mirror Maker 2."));
+                assertThat(mm.getStatus().getConditions().get(1).getMessage(), is("MirrorMaker 1 is deprecated and will be removed in the next Strimzi release (0.46.0). Please migrate to MirrorMaker 2."));
 
                 async.flag();
             })));
@@ -656,7 +656,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 assertThat(mm.getStatus().getConditions().get(1).getType(), is("Warning"));
                 assertThat(mm.getStatus().getConditions().get(1).getReason(), is("MirrorMaker1Deprecation"));
                 assertThat(mm.getStatus().getConditions().get(1).getStatus(), is("True"));
-                assertThat(mm.getStatus().getConditions().get(1).getMessage(), is("Mirror Maker 1 is deprecated and will be removed in Apache Kafka 4.0.0. Please migrate to Mirror Maker 2."));
+                assertThat(mm.getStatus().getConditions().get(1).getMessage(), is("MirrorMaker 1 is deprecated and will be removed in the next Strimzi release (0.46.0). Please migrate to MirrorMaker 2."));
 
                 async.flag();
             })));
@@ -716,7 +716,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                     assertThat(mm.getStatus().getConditions().get(1).getType(), is("Warning"));
                     assertThat(mm.getStatus().getConditions().get(1).getReason(), is("MirrorMaker1Deprecation"));
                     assertThat(mm.getStatus().getConditions().get(1).getStatus(), is("True"));
-                    assertThat(mm.getStatus().getConditions().get(1).getMessage(), is("Mirror Maker 1 is deprecated and will be removed in Apache Kafka 4.0.0. Please migrate to Mirror Maker 2."));
+                    assertThat(mm.getStatus().getConditions().get(1).getMessage(), is("MirrorMaker 1 is deprecated and will be removed in the next Strimzi release (0.46.0). Please migrate to MirrorMaker 2."));
 
                     async.flag();
                 })));
