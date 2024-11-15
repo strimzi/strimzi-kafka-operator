@@ -28,18 +28,16 @@ Cruise Control will then apply the optimization proposal to the Kafka cluster, r
 Perform these steps for the optimization proposal that you want to approve.
 
 . Unless the optimization proposal is newly generated, check that it is based on current information about the state of the Kafka cluster.
-To do so, refresh the optimization proposal to make sure it uses the latest cluster metrics:
-
-.. Annotate the `KafkaRebalance` resource in Kubernetes with `strimzi.io/rebalance=refresh`:
+To do so, annotate the `KafkaRebalance` resource to refresh the optimization proposal and make sure it uses the latest cluster metrics:
 +
-[source,shell,subs="+quotes"]
+[source,shell]
 ----
 kubectl annotate kafkarebalance <kafka_rebalance_resource_name> strimzi.io/rebalance="refresh"
 ----
 
 . Wait for the status of the optimization proposal to change to `ProposalReady`:
 +
-[source,shell,subs="+quotes"]
+[source,shell]
 ----
 kubectl get kafkarebalance -o wide -w -n <namespace>
 ----
@@ -51,22 +49,20 @@ kubectl get kafkarebalance -o wide -w -n <namespace>
 +
 When the status changes to `ProposalReady`, the optimization proposal is ready to approve.
 
-. Approve the optimization proposal that you want Cruise Control to apply.
+. Annotate the `KafkaRebalance` resource to approve the optimization proposal:
 +
-Annotate the `KafkaRebalance` resource in Kubernetes with `strimzi.io/rebalance=approve`:
-+
-[source,shell,subs="+quotes"]
+[source,shell]
 ----
-kubectl annotate kafkarebalance _<kafka_rebalance_resource_name>_ strimzi.io/rebalance="approve"
+kubectl annotate kafkarebalance <kafka_rebalance_resource_name> strimzi.io/rebalance="approve"
 ----
 
 . The Cluster Operator detects the annotated resource and instructs Cruise Control to rebalance the Kafka cluster.
 
 . Wait for the status of the optimization proposal to change to `Ready`:
 +
-[source,shell,subs="+quotes"]
+[source,shell]
 ----
-kubectl get kafkarebalance -o wide -w -n _<namespace>_
+kubectl get kafkarebalance -o wide -w -n <namespace>
 ----
 +
 --

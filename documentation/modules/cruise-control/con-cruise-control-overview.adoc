@@ -12,12 +12,12 @@ Load Monitor:: Load Monitor collects the metrics and analyzes cluster workload d
 Analyzer:: Analyzer generates optimization proposals based on collected data and configured goals.
 Anomaly Detector:: Anomaly Detector identifies and reports irregularities in cluster behavior.
 Executor:: Executor applies approved optimization proposals to the cluster.
-
-Cruise Control also provides a REST API for client interactions, which Strimzi uses to support these features:
-
+REST API:: Cruise Control provides a REST API for client interactions, which Strimzi uses to support these features:
++
 * Generating optimization proposals from optimization goals
 * Rebalancing a Kafka cluster based on an optimization proposal
 * Changing topic replication factor
+* Reassigning partitions between JBOD disks
 
 NOTE: Other Cruise Control features are not currently supported, including self healing, notifications, and write-your-own goals.
 
@@ -235,7 +235,7 @@ The performance of the cluster during the rebalance is affected by the number an
 [id='con-optimization-proposals-modes-{context}']
 === Rebalancing modes
 
-Proposals for rebalances can be generated in three modes, which are specified using the `spec.mode` property of the `KafkaRebalance` custom resource.
+Proposals for rebalances can be generated in four modes, which are specified using the `spec.mode` property of the `KafkaRebalance` custom resource.
 
 `full` mode:: The `full` mode runs a full rebalance by moving replicas across all the brokers in the cluster.
 This is the default mode if the `spec.mode` property is not defined in the `KafkaRebalance` custom resource.
@@ -250,6 +250,9 @@ You specify the new brokers as a list using the `spec.brokers` property of the `
 The `remove-brokers` mode moves replicas off the brokers that are going to be removed.
 When these brokers are not hosting replicas anymore, you can safely run the scaling down operation.
 You specify the brokers you're removing as a list in the `spec.brokers` property in the `KafkaRebalance` custom resource.
+
+`remove-disks` mode:: The `remove-disks` mode is used specifically to reassign partitions between JBOD disks used for storage on the same broker.
+You specify a list of broker IDs with corresponding volume IDs for partition reassignment. 
 
 NOTE: Brokers are shut down even if they host replicas when xref:con-skipping-scale-down-checks-{context}[checks are skipped on scale-down operations].
 

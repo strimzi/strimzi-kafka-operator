@@ -10,7 +10,7 @@ When you create or update a `KafkaRebalance` resource, Cruise Control generates 
 Analyze the information in the optimization proposal and decide whether to approve it.
 You can use the results of the optimization proposal to rebalance your Kafka cluster.
 
-You can run the optimization proposal in one of the following modes:
+This procedure covers using the following modes for generating optimization proposals related to rebalances:
 
 * `full` (default)
 * `add-brokers`

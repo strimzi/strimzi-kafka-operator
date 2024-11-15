@@ -1,0 +1,339 @@
+[id='proc-cruise-control-moving-data-{context}']
+= Using Cruise Control to reassign partitions on JBOD disks
+
+[role="_abstract"]
+If you are using JBOD storage and have Cruise Control installed with Strimzi, you can move reassign partitions and move data between the JBOD disks used for storage on the same broker.
+This capability also allows you to remove JBOD disks without data loss.
+
+To reassign partitions, configure a `KafkaRebalance` resource in `remove-disks` mode and specify a list of broker IDs with corresponding volume IDs for partition reassignment. 
+Cruise Control generates an optimization proposal based on the configuration and reassigns the partitions when approved manually or automatically. 
+
+Use the Kafka `kafka-log-dirs.sh` tool to check information about Kafka topic partitions and their location on brokers before and after moving them.
+Use an interactive pod to avoid running the tool within the broker container and causing any disruptions.
+
+.Prerequisites
+
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
+* xref:proc-configuring-deploying-cruise-control-str[Cruise Control is deployed with Kafka.]
+* Kafka operates in KRaft mode and brokers use JBOD storage.
+* More than one JBOD disk must be configured on the broker. 
+For more information on configuring Kafka storage, see xref:assembly-storage-str[].
+
+In this procedure, we use a Kafka cluster named `my-cluster`, which is deployed to the `my-project` namespace with node pools and Cruise Control enabled.
+
+.Example Kafka cluster configuration
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+  namespace: my-project
+  annotations:
+    strimzi.io/node-pools: enabled
+spec:
+  kafka:
+    # ...
+  cruiseControl: {}
+    # ...
+----
+
+A node pool named `pool-a` is configured with three broker replicas that use three JBOD storage volumes.
+In the procedure, we show how partitions are reassigned from volume 1 and 2 to volume 0. 
+
+.Example node pool configuration with JBOD storage
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaNodePoolApiVersion}
+kind: KafkaNodePool
+metadata:
+  name: pool-a
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  replicas: 3
+  roles:
+    - broker
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 2000Gi
+        deleteClaim: false
+      - id: 1
+        type: persistent-claim
+        size: 2000Gi
+        deleteClaim: false
+      - id: 2
+        type: persistent-claim
+        size: 2000Gi
+        deleteClaim: false
+  # ...
+----
+
+.Procedure
+
+. Run a new interactive pod container using the Kafka image to connect to a running Kafka broker.
++
+[source,shell,subs="+quotes,attributes"]
+----
+kubectl run --restart=Never --image={DockerKafkaImageCurrent} helper-pod -- /bin/sh -c "sleep 3600"
+----
++
+In this procedure, we use a pod named `helper-pod`.
+
+. Check the partition replica data on broker 0 by opening a terminal inside the interactive pod and running the Kafka `kafka-log-dirs.sh` tool:
++
+[source,shell]
+----
+kubectl exec -n myproject -ti my-cluster-pool-a-0 bin/kafka-log-dirs.sh --describe --bootstrap-server my-cluster-kafka-bootstrap:9092 --broker-list 0,1,2 --topic-list my-topic
+----
++
+`my-cluster-pool-a-0` is the pod name for broker 0.
+The tool returns topic information for each log directory.
+The JBOD volumes used for log directories are mounted at `/var/lib/kafka/data-<volume_id>/kafka-log<pod_id>`.
++
+.Example output data for each log directory
+[source,shell]
+----
+{
+  "brokers": [
+    {
+      "broker": 0, # <1>
+      "logDirs": [
+        {
+          "partitions": [ # <2>
+            {
+              "partition": "my-topic-5",
+              "size": 0,
+              "offsetLag": 0,
+              "isFuture": false
+            },
+            {
+              "partition": "my-topic-2",
+              "size": 0,
+              "offsetLag": 0,
+              "isFuture": false
+            }
+          ],
+          "error": null, # <3>
+          "logDir": "/var/lib/kafka/data-2/kafka-log0" # <4>
+        },
+        {
+          "partitions": [
+            {
+              "partition": "my-topic-0",
+              "size": 0,
+              "offsetLag": 0,
+              "isFuture": false
+            },
+            {
+              "partition": "my-topic-3",
+              "size": 0,
+              "offsetLag": 0,
+              "isFuture": false
+            }
+          ],
+          "error": null,
+          "logDir": "/var/lib/kafka/data-0/kafka-log0"
+        },
+        {
+          "partitions": [
+            {
+              "partition": "my-topic-4",
+              "size": 0,
+              "offsetLag": 0,
+              "isFuture": false
+            },
+            {
+              "partition": "my-topic-1",
+              "size": 0,
+              "offsetLag": 0,
+              "isFuture": false
+            }
+          ],
+          "error": null,
+          "logDir": "/var/lib/kafka/data-1/kafka-log0"
+        }
+      ]
+    }
+----
+<1> The broker ID.
+<2> Partition details: name, size, offset lag. The (`isFuture`) property indicates that the partition is moving between log directories when showing as `true`. 
+<3> If `error` is not `null`, there is an issue with the disk hosting the log directory.
+<4> The path and name of the log directory.
+
+. Create a `KafkaRebalance` resource in `remove-disks` mode, listing the brokers and volume IDs to reassign partitions from.
+Without specific configuration, the default rebalance goals are used. 
++
+.Example Cruise Control configuration
+[source,shell]
+----
+apiVersion: {KafkaRebalanceApiVersion}
+kind: KafkaRebalance
+metadata:
+  name: my-rebalance
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  mode: remove-disks
+  moveReplicasOffVolumes:
+    - brokerId: 0 # <1> 
+      volumeIds: [1, 2] # <2>
+----
+<1> The broker from which to reassign partitions.
+<2> The volume IDs to reassign partitions from.
++
+In this example, `my-rebalance` reassigns partitions from volumes with IDs 1 and 2 on broker 0.
+
+. (Optional) To approve the optimization proposal automatically, set the `strimzi.io/rebalance-auto-approval` annotation to `true`:
++
+----
+apiVersion: {KafkaRebalanceApiVersion}
+kind: KafkaRebalance
+metadata:
+  name: my-rebalance
+  labels:
+    strimzi.io/cluster: my-cluster
+  annotations:
+    strimzi.io/rebalance-auto-approval: "true"  
+spec:
+  mode: remove-disks
+  moveReplicasOffVolumes:
+    - brokerId: 0
+      volumeIds: [1, 2]
+----
+
+. Apply the `KafkaRebalance` configuration.
+
+. If manually approving, wait for the status of the proposal to move to `ProposalReady` before approving the changes.
+
+.. Check the summary of the changes in the `KafkaRebalance` status:
++
+[source,shell]
+----
+kubectl get kafkarebalance my-rebalance -n my-project -o yaml
+----
++
+.Example summary of changes
+[source,shell]
+----
+apiVersion: {KafkaRebalanceApiVersion}
+kind: KafkaRebalance
+metadata:
+  name: my-rebalance
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  mode: remove-disks
+  moveReplicasOffVolumes:
+    - brokerId: 0 
+      volumeIds: [1, 2]
+status:
+  - lastTransitionTime: "2024-11-13T06:55:42.217794891Z"
+    status: "True"
+    type: ProposalReady
+  observedGeneration: 1
+  optimizationResult:
+    afterBeforeLoadConfigMap: my-rebalance
+    dataToMoveMB: 0
+    excludedBrokersForLeadership: []
+    excludedBrokersForReplicaMove: []
+    excludedTopics: []
+    intraBrokerDataToMoveMB: 0
+    monitoredPartitionsPercentage: 100
+    numIntraBrokerReplicaMovements: 26
+    numLeaderMovements: 0
+    numReplicaMovements: 0
+    onDemandBalancednessScoreAfter: 100
+    onDemandBalancednessScoreBefore: 0
+    provisionRecommendation: ""
+    provisionStatus: UNDECIDED
+    recentWindows: 1
+  sessionId: 24537b9c-a315-4715-8e86-01481e914771        
+----
++
+NOTE: The summary only shows the changes after optimization, not the load before optimization.
+
+.. Annotate the `KafkaRebalance` resource to approve the changes:
++
+[source,shell,subs="+quotes"]
+----
+kubectl annotate kafkarebalance my-rebalance strimzi.io/rebalance="approve"
+----
+
+. Wait for the status of the proposal to change to `Ready`.
+
+. Use the Kafka `kafka-log-dirs.sh` tool again to verify data movement.
++
+In this example, the log directories for volumes 1 and 2 no longer have partitions assigned to them and volume 0 holds partitions for six topics, indicating that the partitions have been successfully reassigned.
++
+.Example output data following reassignment of partitions
+[source,shell]
+----
+{
+  "brokers": [
+    {
+      "broker": 0,
+      "logDirs": [
+        {
+          "partitions": [],
+          "error": null,
+          "logDir": "/var/lib/kafka/data-2/kafka-log0"
+        },
+        {
+          "partitions": [
+            {
+              "partition": "my-topic-4",
+              "size": 0,
+              "offsetLag": 0,
+              "isFuture": false
+            },
+            {
+              "partition": "my-topic-5",
+              "size": 0,
+              "offsetLag": 0,
+              "isFuture": false
+            },
+            {
+              "partition": "my-topic-0",
+              "size": 0,
+              "offsetLag": 0,
+              "isFuture": false
+            },
+            {
+              "partition": "my-topic-1",
+              "size": 0,
+              "offsetLag": 0,
+              "isFuture": false
+            },
+            {
+              "partition": "my-topic-2",
+              "size": 0,
+              "offsetLag": 0,
+              "isFuture": false
+            },
+            {
+              "partition": "my-topic-3",
+              "size": 0,
+              "offsetLag": 0,
+              "isFuture": false
+            }
+          ],
+          "error": null,
+          "logDir": "/var/lib/kafka/data-0/kafka-log0"
+        },
+        {
+          "partitions": [],
+          "error": null,
+          "logDir": "/var/lib/kafka/data-1/kafka-log0"
+        }
+      ]
+    }
+----
+
+
+
+
+
