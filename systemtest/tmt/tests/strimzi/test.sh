@@ -30,6 +30,10 @@ echo "Using CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN=$CONNECT_IMAGE_WITH_FILE_SINK_PL
 # Prepare upgrade files
 ./.azure/scripts/setup_upgrade.sh
 
+docker images
+du -h .
+docker stats --no-stream
+
 mvn compile -pl config-model-generator -DskipTests -Dmaven.javadoc.skip=true --no-transfer-progress
 mvn verify -pl systemtest -P ${TEST_PROFILE} \
     $([[ "${TEST_GROUPS}" != "" ]] && echo "-Dgroups=${TEST_GROUPS}" || echo "") \
@@ -40,3 +44,7 @@ mvn verify -pl systemtest -P ${TEST_PROFILE} \
     -Djunit.jupiter.execution.parallel.enabled="${PARALLELISM_ENABLED}" \
     -Djunit.jupiter.execution.parallel.config.fixed.parallelism="${PARALLEL_TEST_COUNT}" \
     --no-transfer-progress
+
+docker images
+du -h .
+docker stats --no-stream
