@@ -771,10 +771,8 @@ public class CruiseControlST extends AbstractST {
         // check that KafkaRebalance <cluster-name>-auto-rebalancing-<mode> is deleted
         KafkaRebalanceUtils.waitForKafkaRebalanceIsDeleted(testStorage.getNamespaceName(), KafkaResources.autoRebalancingKafkaRebalanceResourceName(testStorage.getClusterName(), KafkaAutoRebalanceMode.ADD_BROKERS));
 
-        LOGGER.info("Checking that Topic: {} has replicas on one of the new brokers (or both)", testStorage.getTopicName());
-        List<String> topicReplicas = KafkaTopicUtils.getKafkaTopicReplicasForEachPartition(testStorage.getNamespaceName(), testStorage.getTopicName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
-
-        assertTrue(topicReplicas.stream().anyMatch(line -> line.contains("3") || line.contains("4")));
+        KafkaTopicUtils.waitForTopicReplicasOnBrokers(testStorage.getNamespaceName(), testStorage.getTopicName(),
+            scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), Arrays.asList("3", "4"));
 
         LOGGER.info("Scaling Kafka down to {}", initialReplicas);
 
