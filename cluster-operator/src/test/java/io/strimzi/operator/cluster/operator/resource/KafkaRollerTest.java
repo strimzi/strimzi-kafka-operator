@@ -167,8 +167,7 @@ public class KafkaRollerTest {
         AdminClientProvider mock = mock(AdminClientProvider.class);
         when(mock.createControllerAdminClient(anyString(), any(), any())).thenThrow(new RuntimeException("An error while try to create an admin client with bootstrap controllers"));
 
-        KafkaVersion versionSupportsTalkingToControllers = new KafkaVersion("3.9.0", "", "", "", "", false, false, "");
-        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addKraftPodNames(0, 0, 1), podOps, versionSupportsTalkingToControllers,
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addKraftPodNames(0, 0, 1), podOps, KafkaVersionTestUtils.getLatestVersion(),
                 noException(), null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true),
                 true, mock, mockKafkaAgentClientProvider(), true, null, -1);
@@ -185,7 +184,8 @@ public class KafkaRollerTest {
         AdminClientProvider mock = mock(AdminClientProvider.class);
         when(mock.createAdminClient(anyString(), any(), any())).thenThrow(new RuntimeException("An error while try to create an admin client with bootstrap brokers"));
 
-        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addKraftPodNames(0, 0, 1), podOps, KafkaVersionTestUtils.getLatestVersion(),
+        KafkaVersion oldKafkaVersion = new KafkaVersion("3.8.1", "", "", "", "", false, false, "");
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addKraftPodNames(0, 0, 1), podOps, oldKafkaVersion,
                 noException(), null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true),
                 true, mock, mockKafkaAgentClientProvider(), true, null, -1);
