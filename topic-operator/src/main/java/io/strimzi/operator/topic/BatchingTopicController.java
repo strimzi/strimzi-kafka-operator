@@ -820,13 +820,15 @@ public class BatchingTopicController {
         for (ReconcilableTopic reconcilableTopic : reconcilableTopics) {
             var topicConfig = reconcilableTopic.kt().getSpec().getConfig();
             if (topicConfig != null) {
-                Integer topicMinIsr = (Integer) topicConfig.get(KafkaHandler.MIN_INSYNC_REPLICAS);
-                var minIsr = topicMinIsr != null ? topicMinIsr : clusterMinIsr.map(Integer::parseInt).orElse(1);
+                var topicMinIsr = topicConfig.get(KafkaHandler.MIN_INSYNC_REPLICAS);
+                var configuredMinIsr = topicMinIsr != null 
+                    ? Integer.parseInt(TopicOperatorUtil.configValueAsString(KafkaHandler.MIN_INSYNC_REPLICAS, topicMinIsr))
+                    : clusterMinIsr.map(Integer::parseInt).orElse(1);
                 var targetRf = reconcilableTopic.kt().getSpec().getReplicas();
-                if (targetRf < minIsr) {
+                if (targetRf < configuredMinIsr) {
                     LOGGER.warnCr(reconcilableTopic.reconciliation(),
                         "The target replication factor ({}) is below the configured {} ({})",
-                        targetRf, KafkaHandler.MIN_INSYNC_REPLICAS, minIsr);
+                        targetRf, KafkaHandler.MIN_INSYNC_REPLICAS, configuredMinIsr);
                 }
             }
         }
