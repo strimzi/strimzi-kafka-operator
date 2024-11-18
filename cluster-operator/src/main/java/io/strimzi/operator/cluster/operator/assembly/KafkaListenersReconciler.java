@@ -157,15 +157,15 @@ public class KafkaListenersReconciler {
         List<Route> routes = new ArrayList<>(kafka.generateExternalBootstrapRoutes());
         routes.addAll(kafka.generateExternalRoutes());
 
-        if (routes.size() > 0) {
-            if (pfa.hasRoutes()) {
-                return routeOperator.batchReconcile(reconciliation, reconciliation.namespace(), routes, kafka.getSelectorLabels()).map((Void) null);
-            } else {
+        if (pfa.hasRoutes()) {
+            return routeOperator.batchReconcile(reconciliation, reconciliation.namespace(), routes, kafka.getSelectorLabels()).map((Void) null);
+        } else {
+            if (!routes.isEmpty()) {
                 LOGGER.warnCr(reconciliation, "The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster {} using routes is not possible.", reconciliation.name());
                 return Future.failedFuture("The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster " + reconciliation.name() + " using routes is not possible.");
+            } else {
+                return Future.succeededFuture();
             }
-        } else {
-            return Future.succeededFuture();
         }
     }
 
