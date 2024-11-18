@@ -207,7 +207,7 @@ public class CaReconciler {
         return reconcileCas(clock)
                 .compose(i -> verifyClusterCaFullyTrustedAndUsed())
                 .compose(i -> reconcileClusterOperatorSecret(clock))
-                .compose(i -> rollingUpdateForNewCaKey())
+                .compose(i -> maybeRollingUpdateForNewClusterCaKey())
                 .compose(i -> maybeRemoveOldClusterCaCertificates())
                 .map(i -> new CaReconciliationResult(clusterCa, clientsCa));
     }
@@ -374,13 +374,18 @@ public class CaReconciler {
     }
 
     /**
-     * Perform a rolling update of the cluster so that CA certificates get added to their truststores, or expired CA
-     * certificates get removed from their truststores. Note this is only necessary when the Cluster CA certificate has changed
-     * due to a new CA key. It is not necessary when the CA certificate is renewed while retaining the existing key.
+     * Maybe perform a rolling update of the cluster to update the CA certificates in component truststores.
+     * This is only necessary when the Cluster CA certificate has changed due to a new CA key.
+     * It is not necessary when the CA certificate is renewed while retaining the existing key.
+     *
+     * If Strimzi did not replace the CA key during the current reconciliation, {@code isClusterCaNeedFullTrust} is used to:
+     *      * continue from a previous CA key replacement which didn't end successfully (i.e. CO stopped)
+     *      * track key replacements when the user is managing the CA
+     *
+     * @return Future which completes when this step is done, either by rolling the cluster or by deciding
+     *         that no rolling is needed.
      */
-    Future<Void> rollingUpdateForNewCaKey() {
-        // cluster CA needs to be fully trusted
-        // it is coming from a cluster CA key replacement which didn't end successfully (i.e. CO stopped) and we need to continue from there
+    Future<Void> maybeRollingUpdateForNewClusterCaKey() {
         if (clusterCa.keyReplaced() || isClusterCaNeedFullTrust) {
             String restartReason = RestartReason.CLUSTER_CA_CERT_KEY_REPLACED.getDefaultNote();
             TlsPemIdentity coTlsPemIdentity = new TlsPemIdentity(new PemTrustSet(clusterCa.caCertSecret()), PemAuthIdentity.clusterOperator(coSecret));
