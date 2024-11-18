@@ -847,11 +847,17 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             return Future.succeededFuture(conditions);
         }
 
+        LOGGER.infoCr(reconciliation, "Altering offsets of connector {}", connectorName);
+
         String configMapNamespace = resource.getMetadata().getNamespace();
         String configMapName = alterOffsetsConfig.get().getFromConfigMap().getName();
         return verifyConnectorStopped(reconciliation, host, apiClient, connectorName)
                 .compose(v -> getOffsetsForAlterRequest(configMapNamespace, configMapName, getConnectorOffsetsConfigMapEntryKey(connectorName)))
                 .compose(offsets -> apiClient.alterConnectorOffsets(reconciliation, host, port, connectorName, offsets))
+                .compose(v -> {
+                    LOGGER.infoCr(reconciliation, "Offsets of connector {} were altered", connectorName);
+                    return Future.succeededFuture();
+                })
                 .compose(v -> removeConnectorOffsetsAnnotations(reconciliation, resource))
                 .map(v -> conditions)
                 .otherwise(throwable -> {
@@ -908,8 +914,14 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      */
     @SuppressWarnings({ "rawtypes" })
     private Future<List<Condition>> resetConnectorOffsets(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, List<Condition> conditions) {
+        LOGGER.infoCr(reconciliation, "Resetting offsets of connector {}", connectorName);
+
         return verifyConnectorStopped(reconciliation, host, apiClient, connectorName)
                 .compose(v -> apiClient.resetConnectorOffsets(reconciliation, host, port, connectorName))
+                .compose(v -> {
+                    LOGGER.infoCr(reconciliation, "Offsets of connector {} were reset", connectorName);
+                    return Future.succeededFuture();
+                })
                 .compose(v -> removeConnectorOffsetsAnnotations(reconciliation, resource))
                 .map(v -> conditions)
                 .otherwise(throwable -> {
