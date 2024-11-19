@@ -50,13 +50,16 @@ import java.util.stream.Stream;
  */
 public class KafkaHandler {
     static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaHandler.class);
-
-    /** Default value for partitions and replicas. */
-    public static final int BROKER_DEFAULT = -1;
+    
     /** Kafka configuration for auto create topic. */
     public static final String AUTO_CREATE_TOPICS_ENABLE = "auto.create.topics.enable";
     /** Kafka configuration for min insync replicas. */
     public static final String MIN_INSYNC_REPLICAS = "min.insync.replicas";
+
+    /** Default value for partitions and replicas. */
+    public static final int DEFAULT_PARTITIONS_REPLICAS = -1;
+    /** Default value for min.insync.replicas. */
+    public static final int DEFAULT_MIN_ISR = 1;
     
     private final TopicOperatorConfig config;
     private final TopicOperatorMetricsHolder metricsHolder;

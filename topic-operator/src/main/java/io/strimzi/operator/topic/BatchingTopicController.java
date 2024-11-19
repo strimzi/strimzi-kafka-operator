@@ -684,11 +684,11 @@ public class BatchingTopicController {
         Reconciliation reconciliation, KafkaTopic kafkaTopic, int currentNumPartitions
     ) {
         var requested = kafkaTopic.getSpec() == null || kafkaTopic.getSpec().getPartitions() == null
-            ? KafkaHandler.BROKER_DEFAULT : kafkaTopic.getSpec().getPartitions();
+            ? KafkaHandler.DEFAULT_PARTITIONS_REPLICAS : kafkaTopic.getSpec().getPartitions();
         if (requested > currentNumPartitions) {
             LOGGER.debugCr(reconciliation, "Partition increase from {} to {}", currentNumPartitions, requested);
             return Either.ofRight(NewPartitions.increaseTo(requested));
-        } else if (requested != KafkaHandler.BROKER_DEFAULT && requested < currentNumPartitions) {
+        } else if (requested != KafkaHandler.DEFAULT_PARTITIONS_REPLICAS && requested < currentNumPartitions) {
             LOGGER.debugCr(reconciliation, "Partition decrease from {} to {}", currentNumPartitions, requested);
             return Either.ofLeft(new TopicOperatorException.NotSupported("Decreasing partitions not supported"));
         } else {
@@ -823,7 +823,7 @@ public class BatchingTopicController {
                 var topicMinIsr = topicConfig.get(KafkaHandler.MIN_INSYNC_REPLICAS);
                 var configuredMinIsr = topicMinIsr != null 
                     ? Integer.parseInt(TopicOperatorUtil.configValueAsString(KafkaHandler.MIN_INSYNC_REPLICAS, topicMinIsr))
-                    : clusterMinIsr.map(Integer::parseInt).orElse(1);
+                    : clusterMinIsr.map(Integer::parseInt).orElse(KafkaHandler.DEFAULT_MIN_ISR);
                 var targetRf = reconcilableTopic.kt().getSpec().getReplicas();
                 if (targetRf < configuredMinIsr) {
                     LOGGER.warnCr(reconcilableTopic.reconciliation(),
