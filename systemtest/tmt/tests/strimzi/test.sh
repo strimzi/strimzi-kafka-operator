@@ -33,6 +33,7 @@ echo "Using CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN=$CONNECT_IMAGE_WITH_FILE_SINK_PL
 docker images
 du -h .
 docker stats --no-stream
+df -h
 
 mvn compile -pl config-model-generator -DskipTests -Dmaven.javadoc.skip=true --no-transfer-progress
 mvn verify -pl systemtest -P ${TEST_PROFILE} \
@@ -48,4 +49,4 @@ mvn verify -pl systemtest -P ${TEST_PROFILE} \
 docker images
 du -h .
 docker stats --no-stream
-df
+df -h
