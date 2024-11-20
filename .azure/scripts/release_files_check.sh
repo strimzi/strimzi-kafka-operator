@@ -7,65 +7,31 @@ SHA1SUM=sha1sum
 
 RETURN_CODE=0
 
-# Helm Charts
-CHECKSUM="$(make --no-print-directory checksum_helm)"
+ITEMS=("install" "examples" "Helm Charts")
+CHECKSUM_VARS=("INSTALL_CHECKSUM" "EXAMPLES_CHECKSUM" "HELM_CHART_CHECKSUM")
+MAKE_TARGETS=("checksum_install" "checksum_examples" "checksum_helm")
+DIRECTORIES=("./install" "./examples" "./helm-charts")
+PACKAGING_DIRS=("./packaging/install" "./packaging/examples" "./packaging/helm-charts")
 
-if [ "$CHECKSUM" != "$HELM_CHART_CHECKSUM" ]; then
-  echo "ERROR checksum of ./helm-charts does not match expected"
-  echo "expected ${HELM_CHART_CHECKSUM}"
-  echo "found ${CHECKSUM}"
-  echo "if your changes are not related to a release please check your changes into"
-  echo "./packaging/helm-charts"
-  echo "instead of ./helm-charts"
-  echo ""
-  echo "if this is part of a release instead update the checksum i.e."
-  echo "HELM_CHART_CHECKSUM=\"${HELM_CHART_CHECKSUM}\""
-  echo "->"
-  echo "HELM_CHART_CHECKSUM=\"${CHECKSUM}\""
-  RETURN_CODE=$((RETURN_CODE+1))
-else
-  echo "checksum of ./helm-charts/ matches expected checksum => OK"
-fi
+for i in "${!ITEMS[@]}"; do
+  NAME="${ITEMS[$i]}"
+  CHECKSUM_VAR="${CHECKSUM_VARS[$i]}"
+  MAKE_TARGET="${MAKE_TARGETS[$i]}"
+  DIRECTORY="${DIRECTORIES[$i]}"
+  PACKAGING_DIR="${PACKAGING_DIRS[$i]}"
 
+  CHECKSUM="$(make --no-print-directory $MAKE_TARGET)"
+  EXPECTED_CHECKSUM="${!CHECKSUM_VAR}"
 
-# install
-CHECKSUM="$(make --no-print-directory checksum_install)"
-
-if [ "$CHECKSUM" != "$INSTALL_CHECKSUM" ]; then
-  echo "ERROR checksum of ./install does not match expected"
-  echo "expected ${INSTALL_CHECKSUM}"
-  echo "found ${CHECKSUM}"
-  echo "if your changes are not related to a release please check your changes into"
-  echo "./packaging/install"
-  echo "instead of ./install"
-  echo ""
-  echo "if this is part of a release instead update the checksum i.e."
-  echo "INSTALL_CHECKSUM=\"${INSTALL_CHECKSUM}\""
-  echo "->"
-  echo "INSTALL_CHECKSUM=\"${CHECKSUM}\""
-  RETURN_CODE=$((RETURN_CODE+1))
-else
-  echo "checksum of ./install/ matches expected checksum => OK"
-fi
-
-# examples
-CHECKSUM="$(make --no-print-directory checksum_examples)"
-
-if [ "$CHECKSUM" != "$EXAMPLES_CHECKSUM" ]; then
-  echo "ERROR checksum of ./install does not match expected"
-  echo "expected ${EXAMPLES_CHECKSUM}"
-  echo "found ${CHECKSUM}"
-  echo "if your changes are not related to a release please check your changes into"
-  echo "./packaging/examples"
-  echo "instead of ./examples"
-  echo ""
-  echo "if this is part of a release instead update the checksum i.e."
-  echo "EXAMPLES_CHECKSUM=\"${EXAMPLES_CHECKSUM}\""
-  echo "->"
-  echo "EXAMPLES_CHECKSUM=\"${CHECKSUM}\""
-  RETURN_CODE=$((RETURN_CODE+1))
-else
-  echo "checksum of ./examples/ matches expected checksum => OK"
-fi
+  if [ "$CHECKSUM" != "$EXPECTED_CHECKSUM" ]; then
+    echo "ERROR: Checksums of $DIRECTORY do not match."
+    echo "    Expected: ${EXPECTED_CHECKSUM}"
+    echo "    Actual: ${CHECKSUM}"
+    echo "If your changes to $DIRECTORY are related to a new release, please update the checksums. Otherwise, please change only the files in the $PACKAGING_DIR directory. "
+    RETURN_CODE=$((RETURN_CODE+1))
+  else
+    echo "Checksums of $DIRECTORY match => OK"
+  fi
+done
 
 exit $RETURN_CODE
