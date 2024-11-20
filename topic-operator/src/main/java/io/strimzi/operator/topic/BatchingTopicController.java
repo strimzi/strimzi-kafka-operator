@@ -684,11 +684,11 @@ public class BatchingTopicController {
         Reconciliation reconciliation, KafkaTopic kafkaTopic, int currentNumPartitions
     ) {
         var requested = kafkaTopic.getSpec() == null || kafkaTopic.getSpec().getPartitions() == null
-            ? KafkaHandler.DEFAULT_PARTITIONS_REPLICAS : kafkaTopic.getSpec().getPartitions();
+            ? KafkaHandler.DEFAULT_PARTITIONS : kafkaTopic.getSpec().getPartitions();
         if (requested > currentNumPartitions) {
             LOGGER.debugCr(reconciliation, "Partition increase from {} to {}", currentNumPartitions, requested);
             return Either.ofRight(NewPartitions.increaseTo(requested));
-        } else if (requested != KafkaHandler.DEFAULT_PARTITIONS_REPLICAS && requested < currentNumPartitions) {
+        } else if (requested != KafkaHandler.DEFAULT_PARTITIONS && requested < currentNumPartitions) {
             LOGGER.debugCr(reconciliation, "Partition decrease from {} to {}", currentNumPartitions, requested);
             return Either.ofLeft(new TopicOperatorException.NotSupported("Decreasing partitions not supported"));
         } else {

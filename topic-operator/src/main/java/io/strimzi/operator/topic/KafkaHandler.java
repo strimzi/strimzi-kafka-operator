@@ -56,8 +56,8 @@ public class KafkaHandler {
     /** Kafka configuration for min insync replicas. */
     public static final String MIN_INSYNC_REPLICAS = "min.insync.replicas";
 
-    /** Default value for partitions and replicas. */
-    public static final int DEFAULT_PARTITIONS_REPLICAS = -1;
+    /** Default value for partitions. */
+    public static final int DEFAULT_PARTITIONS = -1;
     /** Default value for min.insync.replicas. */
     public static final int DEFAULT_MIN_ISR = 1;
     
