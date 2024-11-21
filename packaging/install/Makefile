@@ -5,7 +5,7 @@ include ../../Makefile.os
 RELEASE_VERSION ?= latest
 RELEASE_PATH ?= ../../strimzi-$(RELEASE_VERSION)/$(PROJECT_NAME)
 
-crd_install_helm3:
+crd_install:
 	$(CP) ./cluster-operator/043-Crd-kafkatopic.yaml ./topic-operator/04-Crd-kafkatopic.yaml
 	$(CP) ./cluster-operator/044-Crd-kafkauser.yaml ./user-operator/04-Crd-kafkauser.yaml
 	$(CP) ./cluster-operator/040-Crd-kafka.yaml ../helm-charts/helm3/strimzi-kafka-operator/crds/040-Crd-kafka.yaml
@@ -23,14 +23,13 @@ crd_install_helm3:
 	yq eval -i '.metadata.labels.component="kafkaconnects.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/041-Crd-kafkaconnect.yaml
 	yq eval -i '.metadata.labels.component="stirmzipodsets.core.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/042-Crd-strimzipodset.yaml
 	yq eval -i '.metadata.labels.component="kafkatopics.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/043-Crd-kafkatopic.yaml
-	yq eval -i '.metadata.labels.component="kafkausers.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/044-Crd-kafkauser.yaml 
-	yq eval -i '.metadata.labels.component="kafkamirrormakers.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/045-Crd-kafkamirrormaker.yaml 
-	yq eval -i '.metadata.labels.component="kafkabridges.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/046-Crd-kafkabridge.yaml 
-	yq eval -i '.metadata.labels.component="kafkaconnectors.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/047-Crd-kafkaconnector.yaml 
-	yq eval -i '.metadata.labels.component="kafkamirrormaker2.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/048-Crd-kafkamirrormaker2.yaml 
-	yq eval -i '.metadata.labels.component="kafkarebalances.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/049-Crd-kafkarebalance.yaml 
-
-crd_install: crd_install_helm3
+	yq eval -i '.metadata.labels.component="kafkausers.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/044-Crd-kafkauser.yaml
+	yq eval -i '.metadata.labels.component="kafkamirrormakers.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/045-Crd-kafkamirrormaker.yaml
+	yq eval -i '.metadata.labels.component="kafkabridges.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/046-Crd-kafkabridge.yaml
+	yq eval -i '.metadata.labels.component="kafkaconnectors.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/047-Crd-kafkaconnector.yaml
+	yq eval -i '.metadata.labels.component="kafkamirrormaker2.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/048-Crd-kafkamirrormaker2.yaml
+	yq eval -i '.metadata.labels.component="kafkarebalances.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/049-Crd-kafkarebalance.yaml
+	yq eval -i '.metadata.labels.component="kafkanodepools.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/04A-Crd-kafkanodepool.yaml
 
 release:
 	mkdir -p $(RELEASE_PATH)
