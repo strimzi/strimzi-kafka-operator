@@ -205,7 +205,7 @@ public abstract class Ca {
         NOOP() {
             @Override
             public String preDescription(String keySecretName, String certSecretName) {
-                return "noop";
+                return "CA key (in " + keySecretName + ") and certificate (in " + certSecretName + ") already exist and do not need replacing or renewing";
             }
             @Override
             public String postDescription(String keySecretName, String certSecretName) {
@@ -322,6 +322,10 @@ public abstract class Ca {
               String caCertSecretName, Secret caCertSecret,
               String caKeySecretName, Secret caKeySecret,
               int validityDays, int renewalDays, boolean generateCa, CertificateExpirationPolicy policy) {
+        if (!generateCa && (caCertSecret == null || caKeySecret == null))   {
+            throw new InvalidResourceException(caName() + " should not be generated, but the secrets were not found.");
+        }
+
         this.reconciliation = reconciliation;
         this.commonName = commonName;
         this.caCertSecret = caCertSecret;
@@ -337,6 +341,8 @@ public abstract class Ca {
         this.renewalType = RenewalType.NOOP;
         this.clock = Clock.systemUTC();
     }
+
+    protected abstract String caName();
 
     /**
      * Sets the clock to some specific value. This method is useful in testing. But it has to be public because of how
@@ -498,7 +504,6 @@ public abstract class Ca {
      * expired secrets were removed from the Secret.
      *
      * @param namespace                     The namespace containing the cluster.
-     * @param clusterName                   The name of the cluster.
      * @param labels                        The labels of the {@code Secrets} created.
      * @param additionalLabels              The additional labels of the {@code Secrets} created.
      * @param additionalAnnotations         The additional annotations of the {@code Secrets} created.
@@ -509,7 +514,6 @@ public abstract class Ca {
      */
     public void createRenewOrReplace(
             String namespace,
-            String clusterName,
             Map<String, String> labels,
             Map<String, String> additionalLabels,
             Map<String, String> additionalAnnotations,
@@ -524,9 +528,6 @@ public abstract class Ca {
         int caKeyGeneration = keyGeneration();
 
         if (!generateCa) {
-            if (caCertSecret == null || caKeySecret == null)   {
-                throw new InvalidResourceException(this + " should not be generated, but the secrets were not found.");
-            }
             certData = caCertSecret.getData();
             keyData = singletonMap(CA_KEY, caKeySecret.getData().get(CA_KEY));
             renewalType = hasCaCertGenerationChanged(existingServerSecrets) ? RenewalType.REPLACE_KEY : RenewalType.NOOP;
@@ -688,13 +689,12 @@ public abstract class Ca {
         }
 
         switch (renewalType) {
-            case REPLACE_KEY, RENEW_CERT, CREATE ->
+            case REPLACE_KEY, RENEW_CERT, CREATE, NOOP ->
                     LOGGER.debugCr(reconciliation, "{}: {}: {}", this, renewalType.preDescription(caKeySecretName, caCertSecretName), reason);
             case POSTPONED ->
                     LOGGER.warnCr(reconciliation, "{}: {}: {}", this, renewalType.preDescription(caKeySecretName, caCertSecretName), reason);
-            case NOOP ->
-                    LOGGER.debugCr(reconciliation, "{}: The CA certificate in secret {} already exists and does not need renewing", this, caCertSecretName);
         }
+
         return renewalType;
     }
 
@@ -734,7 +734,7 @@ public abstract class Ca {
     }
 
     /**
-     * True if the last call to {@link #createRenewOrReplace(String, String, Map, Map, Map, OwnerReference, List, boolean)}
+     * True if the last call to {@link #createRenewOrReplace(String, Map, Map, Map, OwnerReference, List, boolean)}
      * resulted in expired certificates being removed from the CA {@code Secret}.
      * @return Whether any expired certificates were removed.
      */
@@ -743,7 +743,7 @@ public abstract class Ca {
     }
 
     /**
-     * True if the last call to {@link #createRenewOrReplace(String, String, Map, Map, Map, OwnerReference, List, boolean)}
+     * True if the last call to {@link #createRenewOrReplace(String, Map, Map, Map, OwnerReference, List, boolean)}
      * resulted in a renewed CA certificate.
      * @return Whether the certificate was renewed.
      */
@@ -752,7 +752,7 @@ public abstract class Ca {
     }
 
     /**
-     * True if the last call to {@link #createRenewOrReplace(String, String, Map, Map, Map, OwnerReference, List, boolean)}
+     * True if the last call to {@link #createRenewOrReplace(String, Map, Map, Map, OwnerReference, List, boolean)}
      * resulted in a replaced CA key.
      * @return Whether the key was replaced.
      */

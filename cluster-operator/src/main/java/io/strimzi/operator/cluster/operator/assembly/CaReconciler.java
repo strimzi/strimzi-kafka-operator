@@ -263,7 +263,7 @@ public class CaReconciler {
                             ModelUtils.getRenewalDays(clusterCaConfig),
                             clusterCaConfig == null || clusterCaConfig.isGenerateCertificateAuthority(), clusterCaConfig != null ? clusterCaConfig.getCertificateExpirationPolicy() : null);
                     clusterCa.createRenewOrReplace(
-                            reconciliation.namespace(), reconciliation.name(), caLabels,
+                            reconciliation.namespace(), caLabels,
                             clusterCaCertLabels, clusterCaCertAnnotations,
                             clusterCaConfig != null && !clusterCaConfig.isGenerateSecretOwnerReference() ? null : ownerRef,
                             clusterCaSecrets,
@@ -277,7 +277,7 @@ public class CaReconciler {
                             ModelUtils.getRenewalDays(clientsCaConfig),
                             clientsCaConfig == null || clientsCaConfig.isGenerateCertificateAuthority(),
                             clientsCaConfig != null ? clientsCaConfig.getCertificateExpirationPolicy() : null);
-                    clientsCa.createRenewOrReplace(reconciliation.namespace(), reconciliation.name(),
+                    clientsCa.createRenewOrReplace(reconciliation.namespace(),
                             caLabels, Map.of(), Map.of(),
                             clientsCaConfig != null && !clientsCaConfig.isGenerateSecretOwnerReference() ? null : ownerRef,
                             clientsCaSecrets,

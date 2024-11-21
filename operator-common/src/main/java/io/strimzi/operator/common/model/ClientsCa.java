@@ -46,4 +46,9 @@ public class ClientsCa extends Ca {
     public String toString() {
         return "clients-ca";
     }
+
+    @Override
+    protected String caName() {
+        return "Clients CA";
+    }
 }

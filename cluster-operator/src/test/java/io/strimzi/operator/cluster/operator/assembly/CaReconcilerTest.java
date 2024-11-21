@@ -327,7 +327,7 @@ public class CaReconcilerTest {
         reconcileCa(vertx, certificateAuthority, certificateAuthority)
             .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(InvalidResourceException.class));
-                assertThat(e.getMessage(), is("cluster-ca should not be generated, but the secrets were not found."));
+                assertThat(e.getMessage(), is("Cluster CA should not be generated, but the secrets were not found."));
                 async.flag();
             })));
     }

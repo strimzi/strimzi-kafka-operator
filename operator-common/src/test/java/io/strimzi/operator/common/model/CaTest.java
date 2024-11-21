@@ -48,6 +48,11 @@ class CaTest {
         protected String caCertGenerationAnnotation() {
             return "mock";
         }
+
+        @Override
+        protected String caName() {
+            return "Mock CA";
+        }
     }
 
     private Ca ca;
@@ -64,7 +69,7 @@ class CaTest {
     @Test
     @DisplayName("Should return certificate expiration date as epoch when certificate is present")
     void shouldReturnCertificateExpirationDateEpoch() {
-        ca.createRenewOrReplace("mock", "mock", emptyMap(), emptyMap(), emptyMap(), null, List.of(), true);
+        ca.createRenewOrReplace("mock", emptyMap(), emptyMap(), emptyMap(), null, List.of(), true);
 
         Instant inOneYear = Clock.offset(now, oneYear).instant();
         long expectedEpoch = inOneYear.truncatedTo(ChronoUnit.SECONDS).toEpochMilli();
