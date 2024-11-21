@@ -5,6 +5,8 @@
 * Add support for Kafka 3.9.0 and 3.8.1. 
   Remove support for Kafka 3.7.0 and 3.7.1
 * Ability to move data between JBOD disks using Cruise Control.
+* Only roll pods once for ClientsCa cert renewal.
+  This change also means the restart reason ClientCaCertKeyReplaced is removed and either CaCertRenewed or CaCertHasOldGeneration will be used.
 
 ### Major changes, deprecations and removals
 

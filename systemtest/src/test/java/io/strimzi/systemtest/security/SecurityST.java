@@ -290,7 +290,7 @@ class SecurityST extends AbstractST {
     @Tag("ClientsCaKeys")
     void testAutoReplaceClientsCaKeysTriggeredByAnno() {
         autoReplaceSomeKeysTriggeredByAnno(
-                2,
+                1,
                 false,
                 true,
                 false,

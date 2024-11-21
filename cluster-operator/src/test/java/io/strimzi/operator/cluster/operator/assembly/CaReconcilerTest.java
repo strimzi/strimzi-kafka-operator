@@ -1788,11 +1788,8 @@ public class CaReconcilerTest {
         mockCaReconciler
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
-                    assertThat("Kafka restart reasons", mockCaReconciler.kafkaRestartReasons, aMapWithSize(6));
-                    mockCaReconciler.kafkaRestartReasons.forEach((podName, restartReasons) -> {
-                        assertThat("Restart reasons for pod " + podName, restartReasons.getReasons(), hasSize(1));
-                        assertThat("Restart reasons for pod " + podName, restartReasons.contains(RestartReason.CLIENT_CA_CERT_KEY_REPLACED), is(true));
-                    });
+                    // We rely on KafkaReconciler to roll pods for ClientsCa renewal
+                    assertThat("Kafka restart reasons", mockCaReconciler.kafkaRestartReasons, anEmptyMap());
                     assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, anEmptyMap());
                     async.flag();
                 })));
@@ -1971,11 +1968,8 @@ public class CaReconcilerTest {
         mockCaReconciler
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
-                    assertThat("Kafka restart reasons", mockCaReconciler.kafkaRestartReasons, aMapWithSize(6));
-                    mockCaReconciler.kafkaRestartReasons.forEach((podName, restartReasons) -> {
-                        assertThat("Restart reasons for pod " + podName, restartReasons.getReasons(), hasSize(1));
-                        assertThat("Restart reasons for pod " + podName, restartReasons.contains(RestartReason.CLIENT_CA_CERT_KEY_REPLACED), is(true));
-                    });
+                    // We rely on KafkaReconciler to roll pods for ClientsCa renewal
+                    assertThat("Kafka restart reasons", mockCaReconciler.kafkaRestartReasons, anEmptyMap());
                     assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, anEmptyMap());
                     async.flag();
                 })));
@@ -2040,12 +2034,7 @@ public class CaReconcilerTest {
         mockCaReconciler
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
-                    // When user is managing CA a cert renewal implies a key replacement
-                    assertThat("Kafka restart reasons", mockCaReconciler.kafkaRestartReasons, aMapWithSize(6));
-                    mockCaReconciler.kafkaRestartReasons.forEach((podName, restartReasons) -> {
-                        assertThat("Restart reasons for pod " + podName, restartReasons.getReasons(), hasSize(1));
-                        assertThat("Restart reasons for pod " + podName, restartReasons.contains(RestartReason.CLIENT_CA_CERT_KEY_REPLACED), is(true));
-                    });
+                    assertThat("Kafka restart reasons", mockCaReconciler.kafkaRestartReasons, anEmptyMap());
                     assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, anEmptyMap());
                     async.flag();
                 })));
@@ -2115,11 +2104,11 @@ public class CaReconcilerTest {
         }
 
         @Override
-        Future<Void> rollDeploymentIfExists(String deploymentName, String reason) {
+        Future<Void> rollDeploymentIfExists(String deploymentName, RestartReason reason) {
             return deploymentOperator.getAsync(reconciliation.namespace(), deploymentName)
                     .compose(dep -> {
                         if (dep != null) {
-                            this.deploymentRestartReasons.put(deploymentName, reason);
+                            this.deploymentRestartReasons.put(deploymentName, reason.getDefaultNote());
                         }
                         return Future.succeededFuture();
                     });

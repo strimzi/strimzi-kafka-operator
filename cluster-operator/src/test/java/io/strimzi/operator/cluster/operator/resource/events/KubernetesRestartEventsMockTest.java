@@ -105,7 +105,6 @@ import static io.strimzi.operator.cluster.model.AbstractModel.clusterCaKeySecret
 import static io.strimzi.operator.cluster.model.RestartReason.CA_CERT_HAS_OLD_GENERATION;
 import static io.strimzi.operator.cluster.model.RestartReason.CA_CERT_REMOVED;
 import static io.strimzi.operator.cluster.model.RestartReason.CA_CERT_RENEWED;
-import static io.strimzi.operator.cluster.model.RestartReason.CLIENT_CA_CERT_KEY_REPLACED;
 import static io.strimzi.operator.cluster.model.RestartReason.CLUSTER_CA_CERT_KEY_REPLACED;
 import static io.strimzi.operator.cluster.model.RestartReason.CONFIG_CHANGE_REQUIRES_RESTART;
 import static io.strimzi.operator.cluster.model.RestartReason.FILE_SYSTEM_RESIZE_NEEDED;
@@ -394,24 +393,6 @@ public class KubernetesRestartEventsMockTest {
                 new KafkaMetadataStateManager(reconciliation, kafka));
 
         reconciler.reconcile(new KafkaStatus(), Clock.systemUTC()).onComplete(verifyEventPublished(CA_CERT_RENEWED, context));
-    }
-
-    @Test
-    void testEventEmittedWhenClientCaCertKeyReplaced(Vertx vertx, VertxTestContext context) {
-        // Turn off cert authority generation to cause reconciliation to roll pods
-        Kafka kafkaWithoutClientCaGen = new KafkaBuilder(kafka)
-                .editSpec()
-                    .editOrNewClientsCa()
-                        .withGenerateCertificateAuthority(false)
-                    .endClientsCa()
-                .endSpec()
-                .build();
-
-        // Bump ca cert generation to make it look newer than pod knows of
-        patchClusterSecretWithAnnotation(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "100000");
-
-        CaReconciler reconciler = new CaReconciler(reconciliation, kafkaWithoutClientCaGen, clusterOperatorConfig, supplier, vertx, mockCertManager, passwordGenerator);
-        reconciler.reconcile(Clock.systemUTC()).onComplete(verifyEventPublished(CLIENT_CA_CERT_KEY_REPLACED, context));
     }
 
     @Test

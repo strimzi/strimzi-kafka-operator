@@ -25,9 +25,6 @@ a|Event
 |CaCertRenewed
 |CA certificates have been renewed, and the pod is restarted to run with the updated certificates.
 
-|ClientCaCertKeyReplaced
-|The key used to sign clients CA certificates has been replaced, and the pod is being restarted as part of the CA renewal process.
-
 |ClusterCaCertKeyReplaced
 |The key used to sign the cluster's CA certificates has been replaced, and the pod is being restarted as part of the CA renewal process.
 
