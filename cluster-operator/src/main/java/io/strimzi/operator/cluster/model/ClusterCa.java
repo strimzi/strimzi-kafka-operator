@@ -93,6 +93,11 @@ public class ClusterCa extends Ca {
         return "cluster-ca";
     }
 
+    @Override
+    protected String caName() {
+        return "Cluster CA";
+    }
+
     /**
      * Prepares the Cruise Control certificate. It either reuses the existing certificate, renews it or generates new
      * certificate if needed.

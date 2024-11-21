@@ -54,7 +54,6 @@ import static java.time.temporal.ChronoField.NANO_OF_SECOND;
 import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 import static java.time.temporal.ChronoField.YEAR;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 
@@ -206,7 +205,7 @@ public abstract class Ca {
         NOOP() {
             @Override
             public String preDescription(String keySecretName, String certSecretName) {
-                return "noop";
+                return "CA key (in " + keySecretName + ") and certificate (in " + certSecretName + ") already exist and do not need replacing or renewing";
             }
             @Override
             public String postDescription(String keySecretName, String certSecretName) {
@@ -323,6 +322,10 @@ public abstract class Ca {
               String caCertSecretName, Secret caCertSecret,
               String caKeySecretName, Secret caKeySecret,
               int validityDays, int renewalDays, boolean generateCa, CertificateExpirationPolicy policy) {
+        if (!generateCa && (caCertSecret == null || caKeySecret == null))   {
+            throw new InvalidResourceException(caName() + " should not be generated, but the secrets were not found.");
+        }
+
         this.reconciliation = reconciliation;
         this.commonName = commonName;
         this.caCertSecret = caCertSecret;
@@ -338,6 +341,8 @@ public abstract class Ca {
         this.renewalType = RenewalType.NOOP;
         this.clock = Clock.systemUTC();
     }
+
+    protected abstract String caName();
 
     /**
      * Sets the clock to some specific value. This method is useful in testing. But it has to be public because of how
@@ -499,7 +504,6 @@ public abstract class Ca {
      * expired secrets were removed from the Secret.
      *
      * @param namespace                     The namespace containing the cluster.
-     * @param clusterName                   The name of the cluster.
      * @param labels                        The labels of the {@code Secrets} created.
      * @param additionalLabels              The additional labels of the {@code Secrets} created.
      * @param additionalAnnotations         The additional annotations of the {@code Secrets} created.
@@ -510,7 +514,6 @@ public abstract class Ca {
      */
     public void createRenewOrReplace(
             String namespace,
-            String clusterName,
             Map<String, String> labels,
             Map<String, String> additionalLabels,
             Map<String, String> additionalAnnotations,
@@ -525,12 +528,12 @@ public abstract class Ca {
         int caKeyGeneration = keyGeneration();
 
         if (!generateCa) {
-            certData = caCertSecret != null ? caCertSecret.getData() : emptyMap();
-            keyData = caKeySecret != null ? singletonMap(CA_KEY, caKeySecret.getData().get(CA_KEY)) : emptyMap();
+            certData = caCertSecret.getData();
+            keyData = singletonMap(CA_KEY, caKeySecret.getData().get(CA_KEY));
             renewalType = hasCaCertGenerationChanged(existingServerSecrets) ? RenewalType.REPLACE_KEY : RenewalType.NOOP;
             caCertsRemoved = false;
         } else {
-            this.renewalType = shouldCreateOrRenew(currentCert, namespace, clusterName, maintenanceWindowSatisfied);
+            this.renewalType = shouldCreateOrRenew(currentCert, maintenanceWindowSatisfied);
             LOGGER.debugCr(reconciliation, "{} renewalType {}", this, renewalType);
 
             switch (renewalType) {
@@ -636,7 +639,7 @@ public abstract class Ca {
             .withOrganizationName(IO_STRIMZI).build();
     }
 
-    private RenewalType shouldCreateOrRenew(X509Certificate currentCert, String namespace, String clusterName, boolean maintenanceWindowSatisfied) {
+    private RenewalType shouldCreateOrRenew(X509Certificate currentCert, boolean maintenanceWindowSatisfied) {
         String reason = null;
         RenewalType renewalType = RenewalType.NOOP;
         if (caKeySecret == null
@@ -685,50 +688,14 @@ public abstract class Ca {
             }
         }
 
-        logRenewalState(currentCert, namespace, clusterName, renewalType, reason);
-        return renewalType;
-    }
-
-    private void logRenewalState(X509Certificate currentCert, String namespace, String clusterName, RenewalType renewalType, String reason) {
         switch (renewalType) {
-            case REPLACE_KEY:
-            case RENEW_CERT:
-            case CREATE:
-                if (generateCa) {
+            case REPLACE_KEY, RENEW_CERT, CREATE, NOOP ->
                     LOGGER.debugCr(reconciliation, "{}: {}: {}", this, renewalType.preDescription(caKeySecretName, caCertSecretName), reason);
-                } else {
+            case POSTPONED ->
                     LOGGER.warnCr(reconciliation, "{}: {}: {}", this, renewalType.preDescription(caKeySecretName, caCertSecretName), reason);
-                }
-                break;
-            case POSTPONED:
-                LOGGER.warnCr(reconciliation, "{}: {}: {}", this, renewalType.preDescription(caKeySecretName, caCertSecretName), reason);
-                break;
-            case NOOP:
-                LOGGER.debugCr(reconciliation, "{}: The CA certificate in secret {} already exists and does not need renewing", this, caCertSecretName);
-                break;
         }
-        if (!generateCa) {
-            if (renewalType.equals(RenewalType.RENEW_CERT)) {
-                LOGGER.warnCr(reconciliation, "The certificate (data.{}) in Secret {} in namespace {} needs to be renewed " +
-                                "and it is not configured to automatically renew. This needs to be manually updated before that date. " +
-                                "Alternatively, configure Kafka.spec.tlsCertificates.generateCertificateAuthority=true in the Kafka resource with name {} in namespace {}.",
-                        CA_CRT.replace(".", "\\."), this.caCertSecretName, namespace,
-                        currentCert.getNotAfter());
-            } else if (renewalType.equals(RenewalType.REPLACE_KEY)) {
-                LOGGER.warnCr(reconciliation, "The private key (data.{}) in Secret {} in namespace {} needs to be renewed " +
-                                "and it is not configured to automatically renew. This needs to be manually updated before that date. " +
-                                "Alternatively, configure Kafka.spec.tlsCertificates.generateCertificateAuthority=true in the Kafka resource with name {} in namespace {}.",
-                        CA_KEY.replace(".", "\\."), this.caKeySecretName, namespace,
-                        currentCert.getNotAfter());
-            } else if (caCertSecret == null) {
-                LOGGER.warnCr(reconciliation, "The certificate (data.{}) in Secret {} and the private key (data.{}) in Secret {} in namespace {} " +
-                                "needs to be configured with a Base64 encoded PEM-format certificate. " +
-                                "Alternatively, configure Kafka.spec.tlsCertificates.generateCertificateAuthority=true in the Kafka resource with name {} in namespace {}.",
-                        CA_CRT.replace(".", "\\."), this.caCertSecretName,
-                        CA_KEY.replace(".", "\\."), this.caKeySecretName, namespace,
-                        clusterName, namespace);
-            }
-        }
+
+        return renewalType;
     }
 
     /**
@@ -767,7 +734,7 @@ public abstract class Ca {
     }
 
     /**
-     * True if the last call to {@link #createRenewOrReplace(String, String, Map, Map, Map, OwnerReference, List, boolean)}
+     * True if the last call to {@link #createRenewOrReplace(String, Map, Map, Map, OwnerReference, List, boolean)}
      * resulted in expired certificates being removed from the CA {@code Secret}.
      * @return Whether any expired certificates were removed.
      */
@@ -776,7 +743,7 @@ public abstract class Ca {
     }
 
     /**
-     * True if the last call to {@link #createRenewOrReplace(String, String, Map, Map, Map, OwnerReference, List, boolean)}
+     * True if the last call to {@link #createRenewOrReplace(String, Map, Map, Map, OwnerReference, List, boolean)}
      * resulted in a renewed CA certificate.
      * @return Whether the certificate was renewed.
      */
@@ -785,7 +752,7 @@ public abstract class Ca {
     }
 
     /**
-     * True if the last call to {@link #createRenewOrReplace(String, String, Map, Map, Map, OwnerReference, List, boolean)}
+     * True if the last call to {@link #createRenewOrReplace(String, Map, Map, Map, OwnerReference, List, boolean)}
      * resulted in a replaced CA key.
      * @return Whether the key was replaced.
      */

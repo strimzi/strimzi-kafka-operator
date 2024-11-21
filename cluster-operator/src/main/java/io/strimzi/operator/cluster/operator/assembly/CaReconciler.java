@@ -45,7 +45,6 @@ import io.strimzi.operator.common.auth.PemTrustSet;
 import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.ClientsCa;
-import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -258,23 +257,17 @@ public class CaReconciler {
                         }
                     }
 
-                    // When we are not supposed to generate the CA, but it does not exist, we should just throw an error
-                    checkCustomCaSecret(clusterCaConfig, clusterCaCertSecret, clusterCaKeySecret, "Cluster CA");
-
                     clusterCa = new ClusterCa(reconciliation, certManager, passwordGenerator, reconciliation.name(), clusterCaCertSecret,
                             clusterCaKeySecret,
                             ModelUtils.getCertificateValidity(clusterCaConfig),
                             ModelUtils.getRenewalDays(clusterCaConfig),
                             clusterCaConfig == null || clusterCaConfig.isGenerateCertificateAuthority(), clusterCaConfig != null ? clusterCaConfig.getCertificateExpirationPolicy() : null);
                     clusterCa.createRenewOrReplace(
-                            reconciliation.namespace(), reconciliation.name(), caLabels,
+                            reconciliation.namespace(), caLabels,
                             clusterCaCertLabels, clusterCaCertAnnotations,
                             clusterCaConfig != null && !clusterCaConfig.isGenerateSecretOwnerReference() ? null : ownerRef,
                             clusterCaSecrets,
                             Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
-
-                    // When we are not supposed to generate the CA, but it does not exist, we should just throw an error
-                    checkCustomCaSecret(clientsCaConfig, clientsCaCertSecret, clientsCaKeySecret, "Clients CA");
 
                     clientsCa = new ClientsCa(reconciliation, certManager,
                             passwordGenerator, clientsCaCertName,
@@ -284,7 +277,7 @@ public class CaReconciler {
                             ModelUtils.getRenewalDays(clientsCaConfig),
                             clientsCaConfig == null || clientsCaConfig.isGenerateCertificateAuthority(),
                             clientsCaConfig != null ? clientsCaConfig.getCertificateExpirationPolicy() : null);
-                    clientsCa.createRenewOrReplace(reconciliation.namespace(), reconciliation.name(),
+                    clientsCa.createRenewOrReplace(reconciliation.namespace(),
                             caLabels, Map.of(), Map.of(),
                             clientsCaConfig != null && !clientsCaConfig.isGenerateSecretOwnerReference() ? null : ownerRef,
                             clientsCaSecrets,
@@ -319,22 +312,6 @@ public class CaReconciler {
 
                     return caUpdatePromise.future();
                 });
-    }
-
-    /**
-     * Utility method for checking the Secret existence when custom CA is used. The custom CA is configured but the
-     * secrets do not exist, it will throw InvalidConfigurationException.
-     *
-     * @param ca            The CA Configuration from the Custom Resource
-     * @param certSecret    Secret with the certificate public key
-     * @param keySecret     Secret with the certificate private key
-     * @param caDescription The name of the CA for which this check is executed ("Cluster CA" or "Clients CA" - used
-     *                      in the exception message)
-     */
-    private void checkCustomCaSecret(CertificateAuthority ca, Secret certSecret, Secret keySecret, String caDescription)   {
-        if (ca != null && !ca.isGenerateCertificateAuthority() && (certSecret == null || keySecret == null))   {
-            throw new InvalidResourceException(caDescription + " should not be generated, but the secrets were not found.");
-        }
     }
 
     /**

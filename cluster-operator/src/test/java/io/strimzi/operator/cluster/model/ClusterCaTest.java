@@ -41,7 +41,7 @@ public class ClusterCaTest {
 
         ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(clock), new PasswordGenerator(10, "a", "a"), cluster, null, null);
         clusterCa.setClock(clock);
-        clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), emptyMap(), emptyMap(), null, List.of(), true);
+        clusterCa.createRenewOrReplace(namespace, emptyMap(), emptyMap(), emptyMap(), null, List.of(), true);
         assertThat(clusterCa.caCertSecret().getData().size(), is(3));
 
         // force key replacement so certificate renewal ...
@@ -56,7 +56,7 @@ public class ClusterCaTest {
 
         clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(clock), new PasswordGenerator(10, "a", "a"), cluster, clusterCa.caCertSecret(), caKeySecretWithReplaceAnno);
         clusterCa.setClock(clock);
-        clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), emptyMap(), emptyMap(), null, List.of(), true);
+        clusterCa.createRenewOrReplace(namespace, emptyMap(), emptyMap(), emptyMap(), null, List.of(), true);
         assertThat(clusterCa.caCertSecret().getData().size(), is(4));
         assertThat(clusterCa.caCertSecret().getData().containsKey("ca-2023-03-23T09-00-00Z.crt"), is(true));
 
@@ -66,7 +66,7 @@ public class ClusterCaTest {
 
         clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), cluster, clusterCa.caCertSecret(), clusterCa.caKeySecret());
         clusterCa.setClock(clock);
-        clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), emptyMap(), emptyMap(), null, List.of(), true);
+        clusterCa.createRenewOrReplace(namespace, emptyMap(), emptyMap(), emptyMap(), null, List.of(), true);
         assertThat(clusterCa.caCertSecret().getData().size(), is(3));
         assertThat(clusterCa.caCertSecret().getData().containsKey("ca-2023-03-23T09-00-00Z.crt"), is(false));
     }
@@ -79,7 +79,7 @@ public class ClusterCaTest {
 
         ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(clock), new PasswordGenerator(10, "a", "a"), cluster, null, null);
         clusterCa.setClock(clock);
-        clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), emptyMap(), emptyMap(), null, List.of(), true);
+        clusterCa.createRenewOrReplace(namespace, emptyMap(), emptyMap(), emptyMap(), null, List.of(), true);
 
         // check certificate expiration out of the renewal period, certificate is not expiring
         instantExpected = "2023-02-15T09:00:00Z";
@@ -102,7 +102,7 @@ public class ClusterCaTest {
 
         ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(clock), new PasswordGenerator(10, "a", "a"), cluster, null, null);
         clusterCa.setClock(clock);
-        clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), emptyMap(), emptyMap(), null, List.of(), true);
+        clusterCa.createRenewOrReplace(namespace, emptyMap(), emptyMap(), emptyMap(), null, List.of(), true);
         assertThat(clusterCa.caCertSecret().getData().size(), is(3));
 
         // force key replacement so certificate renewal ...
@@ -117,7 +117,7 @@ public class ClusterCaTest {
 
         clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(clock), new PasswordGenerator(10, "a", "a"), cluster, clusterCa.caCertSecret(), caKeySecretWithReplaceAnno);
         clusterCa.setClock(clock);
-        clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), emptyMap(), emptyMap(), null, List.of(), true);
+        clusterCa.createRenewOrReplace(namespace, emptyMap(), emptyMap(), emptyMap(), null, List.of(), true);
         assertThat(clusterCa.caCertSecret().getData().size(), is(4));
         assertThat(clusterCa.caCertSecret().getData().containsKey("ca-2023-03-23T09-00-00Z.crt"), is(true));
 
