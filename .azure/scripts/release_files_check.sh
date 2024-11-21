@@ -27,7 +27,7 @@ for i in "${!ITEMS[@]}"; do
     echo "ERROR: Checksums of $DIRECTORY do not match."
     echo "    Expected: ${EXPECTED_CHECKSUM}"
     echo "    Actual: ${CHECKSUM}"
-    echo "If your changes to $DIRECTORY are related to a new release, please update the checksums. Otherwise, please change only the files in the $PACKAGING_DIR directory. "
+    echo "If your changes to $DIRECTORY are related to a new release, please update the checksums. Otherwise, please change only the files in the $PACKAGING_DIR directory."
     RETURN_CODE=$((RETURN_CODE+1))
   else
     echo "Checksums of $DIRECTORY match => OK"
