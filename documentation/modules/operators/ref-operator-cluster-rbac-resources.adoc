@@ -32,6 +32,7 @@ The Cluster Operator must be able to do the following:
 * Allow Strimzi to discover the failure domain of a `Node` by creating a `ClusterRoleBinding`.
 
 When using rack-aware partition assignment, broker pods need to access information about the `Node` they are running on, such as the Availability Zone in Amazon AWS. 
+Similarly, when using `NodePort` type listeners, broker pods need to advertise the address of the `Node` they are running on.
 Since a `Node` is a cluster-scoped resource, this access must be granted through a `ClusterRoleBinding`, not a namespace-scoped `RoleBinding`.
 
 The following sections describe the RBAC resources required by the Cluster Operator.
