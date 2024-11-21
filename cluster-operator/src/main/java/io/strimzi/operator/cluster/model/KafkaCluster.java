@@ -75,6 +75,7 @@ import io.strimzi.operator.cluster.model.jmx.SupportsJmx;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.logging.SupportsLogging;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
+import io.strimzi.operator.cluster.model.metrics.StrimziReporterMetricsModel;
 import io.strimzi.operator.cluster.model.metrics.SupportsMetrics;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
@@ -222,6 +223,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     private JmxModel jmx;
     private CruiseControlMetricsReporter ccMetricsReporter;
     private MetricsModel metrics;
+    private StrimziReporterMetricsModel strimziMetrics;
     private LoggingModel logging;
     private QuotasPlugin quotas;
     /* test */ KafkaConfiguration configuration;
@@ -1281,6 +1283,9 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         // Metrics port is enabled on all node types regardless their role
         if (metrics.isEnabled()) {
             ports.add(ContainerUtils.createContainerPort(MetricsModel.METRICS_PORT_NAME, MetricsModel.METRICS_PORT));
+        }
+        else if (strimziMetrics.isEnabled()) {
+            ports.add(ContainerUtils.createContainerPort(StrimziReporterMetricsModel.METRICS_PORT_NAME, StrimziReporterMetricsModel.METRICS_PORT));
         }
 
         // JMX port is enabled on all node types regardless their role

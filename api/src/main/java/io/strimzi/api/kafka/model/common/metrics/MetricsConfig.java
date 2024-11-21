@@ -23,6 +23,7 @@ import java.util.Map;
         property = "type")
 @JsonSubTypes({
     @JsonSubTypes.Type(name = JmxPrometheusExporterMetrics.TYPE_JMX_EXPORTER, value = JmxPrometheusExporterMetrics.class),
+    @JsonSubTypes.Type(name = StrimziReporterMetrics.TYPE_STRIMZI_REPORTER_METRICS, value = StrimziReporterMetrics.class)
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
@@ -30,7 +31,7 @@ import java.util.Map;
 public abstract class MetricsConfig implements UnknownPropertyPreserving {
     private Map<String, Object> additionalProperties;
 
-    @Description("Metrics type. Only 'jmxPrometheusExporter' supported currently.")
+    @Description("Metrics type. Currently supports 'strimziReporterMetrics' and 'jmxPrometheusExporter'.")
     public abstract String getType();
 
     @Override

@@ -17,6 +17,7 @@
 
     <properties>
         <strimzi-oauth.version>0.15.0</strimzi-oauth.version>
+        <strimzi-metrics-reporter.version>0.1.0</strimzi-metrics-reporter.version>
         <jayway-json-path.version>2.9.0</jayway-json-path.version>
         <cruise-control.version>2.5.141</cruise-control.version>
         <opa-authorizer.version>1.5.1</opa-authorizer.version>
@@ -35,6 +36,10 @@
     </properties>
 
     <repositories>
+        <repository>
+            <id>staging</id>
+            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1231/</url>
+        </repository>
         <repository>
             <id>cruise-control</id>
             <url>https://linkedin.jfrog.io/artifactory/cruise-control/</url>
@@ -325,6 +330,27 @@
                     <artifactId>jackson-databind</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <!-- Metrics Reporter -->
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>metrics-reporter</artifactId>
+            <version>${strimzi-metrice-reporter.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.prometheus</groupId>
+            <artifactId>prometheus-metrics-model</artifactId>
+            <version>${prometheus.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.prometheus</groupId>
+            <artifactId>prometheus-metrics-instrumentation-jvm</artifactId>
+            <version>${prometheus.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.prometheus</groupId>
+            <artifactId>prometheus-metrics-exporter-httpserver</artifactId>
+            <version>${prometheus.version}</version>
         </dependency>
         <!-- Open Policy Authorization plugin -->
         <dependency>
