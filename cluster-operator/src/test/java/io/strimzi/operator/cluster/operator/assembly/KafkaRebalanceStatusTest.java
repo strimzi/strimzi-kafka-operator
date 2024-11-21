@@ -6,7 +6,10 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceBuilder;
@@ -15,8 +18,6 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceSpecBuilder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlLoadParameters;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlRebalanceKeys;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
@@ -27,6 +28,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class KafkaRebalanceStatusTest {
 
@@ -34,6 +36,7 @@ public class KafkaRebalanceStatusTest {
     private static final String RESOURCE_NAME = "my-rebalance";
     private static final String CLUSTER_NAMESPACE = "cruise-control-namespace";
     private static final String CLUSTER_NAME = "kafka-cruise-control-test-cluster";
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
 
     private KafkaRebalance createKafkaRebalance(String namespace, String clusterName, String resourceName,
@@ -48,33 +51,36 @@ public class KafkaRebalanceStatusTest {
                 .build();
     }
 
-    public static JsonObject buildOptimizationProposal() {
+    public static JsonNode buildOptimizationProposal() {
+        ObjectNode proposal = OBJECT_MAPPER.createObjectNode();
 
-        JsonObject proposal = new JsonObject();
+        ObjectNode summary = OBJECT_MAPPER.createObjectNode();
 
-        JsonObject summary = new JsonObject();
+        ObjectNode brokersBeforeObject = OBJECT_MAPPER.createObjectNode();
+        ArrayNode brokerLoadBeforeArray = OBJECT_MAPPER.createArrayNode();
 
-        JsonObject brokersBeforeObject = new JsonObject();
-        JsonArray brokerLoadBeforeArray = new JsonArray();
-        JsonObject brokerOneBefore = new JsonObject();
+        ObjectNode brokerOneBefore = OBJECT_MAPPER.createObjectNode();
         brokerOneBefore.put(CruiseControlRebalanceKeys.BROKER_ID.getKey(), BROKER_ONE_KEY);
         brokerOneBefore.put(CruiseControlLoadParameters.CPU_PERCENTAGE.getCruiseControlKey(), 10.0);
         brokerOneBefore.put(CruiseControlLoadParameters.REPLICAS.getCruiseControlKey(), 10);
-        brokerLoadBeforeArray.add(brokerOneBefore);
-        brokersBeforeObject.put(CruiseControlRebalanceKeys.BROKERS.getKey(), brokerLoadBeforeArray);
 
-        JsonObject brokersAfterObject = new JsonObject();
-        JsonArray brokerLoadAfterArray = new JsonArray();
-        JsonObject brokerOneAfter = new JsonObject();
+        brokerLoadBeforeArray.add(brokerOneBefore);
+        brokersBeforeObject.set(CruiseControlRebalanceKeys.BROKERS.getKey(), brokerLoadBeforeArray);
+
+        ObjectNode brokersAfterObject = OBJECT_MAPPER.createObjectNode();
+        ArrayNode brokerLoadAfterArray = OBJECT_MAPPER.createArrayNode();
+
+        ObjectNode brokerOneAfter = OBJECT_MAPPER.createObjectNode();
         brokerOneAfter.put(CruiseControlRebalanceKeys.BROKER_ID.getKey(), BROKER_ONE_KEY);
         brokerOneAfter.put(CruiseControlLoadParameters.CPU_PERCENTAGE.getCruiseControlKey(), 20.0);
         brokerOneAfter.put(CruiseControlLoadParameters.REPLICAS.getCruiseControlKey(), 5);
-        brokerLoadAfterArray.add(brokerOneAfter);
-        brokersAfterObject.put(CruiseControlRebalanceKeys.BROKERS.getKey(), brokerLoadAfterArray);
 
-        proposal.put(CruiseControlRebalanceKeys.SUMMARY.getKey(), summary);
-        proposal.put(CruiseControlRebalanceKeys.LOAD_BEFORE_OPTIMIZATION.getKey(), brokersBeforeObject);
-        proposal.put(CruiseControlRebalanceKeys.LOAD_AFTER_OPTIMIZATION.getKey(), brokersAfterObject);
+        brokerLoadAfterArray.add(brokerOneAfter);
+        brokersAfterObject.set(CruiseControlRebalanceKeys.BROKERS.getKey(), brokerLoadAfterArray);
+
+        proposal.set(CruiseControlRebalanceKeys.SUMMARY.getKey(), summary);
+        proposal.set(CruiseControlRebalanceKeys.LOAD_BEFORE_OPTIMIZATION.getKey(), brokersBeforeObject);
+        proposal.set(CruiseControlRebalanceKeys.LOAD_AFTER_OPTIMIZATION.getKey(), brokersAfterObject);
 
         return proposal;
 
@@ -83,10 +89,10 @@ public class KafkaRebalanceStatusTest {
     @Test
     public void testLoadParamExtract() {
 
-        JsonObject proposal = buildOptimizationProposal();
+        JsonNode proposal = buildOptimizationProposal();
 
-        JsonArray loadBeforeArray = proposal.getJsonObject(CruiseControlRebalanceKeys.LOAD_BEFORE_OPTIMIZATION.getKey())
-                .getJsonArray(CruiseControlRebalanceKeys.BROKERS.getKey());
+        ArrayNode loadBeforeArray = (ArrayNode) proposal.get(CruiseControlRebalanceKeys.LOAD_BEFORE_OPTIMIZATION.getKey())
+                .get(CruiseControlRebalanceKeys.BROKERS.getKey());
 
         Map<Integer, Map<String, Object>> output = KafkaRebalanceAssemblyOperator.extractLoadParameters(loadBeforeArray);
 
@@ -99,40 +105,39 @@ public class KafkaRebalanceStatusTest {
     @Test
     public void testCreateLoadMap() {
 
-        JsonObject proposal = buildOptimizationProposal();
+        JsonNode proposal = buildOptimizationProposal();
 
-        JsonArray loadBeforeArray = proposal.getJsonObject(CruiseControlRebalanceKeys.LOAD_BEFORE_OPTIMIZATION.getKey())
-                .getJsonArray(CruiseControlRebalanceKeys.BROKERS.getKey());
-        JsonArray loadAfterArray = proposal.getJsonObject(CruiseControlRebalanceKeys.LOAD_AFTER_OPTIMIZATION.getKey())
-                .getJsonArray(CruiseControlRebalanceKeys.BROKERS.getKey());
+        ArrayNode loadBeforeArray = (ArrayNode) proposal.get(CruiseControlRebalanceKeys.LOAD_BEFORE_OPTIMIZATION.getKey())
+                .get(CruiseControlRebalanceKeys.BROKERS.getKey());
+        ArrayNode loadAfterArray = (ArrayNode) proposal.get(CruiseControlRebalanceKeys.LOAD_AFTER_OPTIMIZATION.getKey())
+                .get(CruiseControlRebalanceKeys.BROKERS.getKey());
 
-        JsonObject output = KafkaRebalanceAssemblyOperator.parseLoadStats(
+        JsonNode output = KafkaRebalanceAssemblyOperator.parseLoadStats(
                 loadBeforeArray, loadAfterArray);
 
-        assertThat(output.getMap(), hasKey("1"));
+        assertTrue(output.has("1"));
+        assertTrue(output.get("1").has(CruiseControlLoadParameters.REPLICAS.getKafkaRebalanceStatusKey()));
 
-        assertThat(output.getJsonObject("1").getMap(), hasKey(CruiseControlLoadParameters.REPLICAS.getKafkaRebalanceStatusKey()));
+        JsonNode replicas = output.get("1").get("replicas");
 
-        JsonObject replicas = output.getJsonObject("1").getJsonObject("replicas");
+        assertThat(replicas.get("before").asInt(), is(10));
+        assertThat(replicas.get("after").asInt(), is(5));
+        assertThat(replicas.get("diff").asInt(), is(-5));
 
-        assertThat(replicas.getInteger("before"), is(10));
-        assertThat(replicas.getInteger("after"), is(5));
-        assertThat(replicas.getInteger("diff"), is(-5));
+        assertTrue(output.get("1").has(CruiseControlLoadParameters.CPU_PERCENTAGE.getKafkaRebalanceStatusKey()));
 
-        assertThat(output.getJsonObject("1").getMap(), hasKey(CruiseControlLoadParameters.CPU_PERCENTAGE.getKafkaRebalanceStatusKey()));
+        JsonNode cpus = output.get("1").get("cpuPercentage");
 
-        JsonObject cpus = output.getJsonObject("1").getJsonObject("cpuPercentage");
-
-        assertThat(cpus.getDouble("before"), is(10.));
-        assertThat(cpus.getDouble("after"), is(20.0));
-        assertThat(cpus.getDouble("diff"), is(10.0));
+        assertThat(cpus.get("before").asDouble(), is(10.));
+        assertThat(cpus.get("after").asDouble(), is(20.0));
+        assertThat(cpus.get("diff").asDouble(), is(10.0));
 
     }
 
     @Test
     public void testProcessProposal() {
 
-        JsonObject proposal = buildOptimizationProposal();
+        JsonNode proposal = buildOptimizationProposal();
 
         KafkaRebalance kr =
                 createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, new KafkaRebalanceSpecBuilder().build());
@@ -143,9 +148,7 @@ public class KafkaRebalanceStatusTest {
 
         try {
 
-            ObjectMapper mapper = new ObjectMapper();
-
-            Map<String, LinkedHashMap<String, String>> brokerLoadMap = mapper.readValue(brokerMap.get(KafkaRebalanceAssemblyOperator.BROKER_LOAD_KEY), LinkedHashMap.class);
+            Map<String, LinkedHashMap<String, String>> brokerLoadMap = OBJECT_MAPPER.readValue(brokerMap.get(KafkaRebalanceAssemblyOperator.BROKER_LOAD_KEY), LinkedHashMap.class);
 
             assertThat(brokerMap, hasKey(KafkaRebalanceAssemblyOperator.BROKER_LOAD_KEY));
 

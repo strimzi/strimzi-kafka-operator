@@ -4,6 +4,11 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
@@ -58,8 +63,6 @@ import io.strimzi.operator.common.model.cruisecontrol.CruiseControlUserTaskStatu
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -148,6 +151,7 @@ public class KafkaRebalanceAssemblyOperator
        extends AbstractOperator<KafkaRebalance, KafkaRebalanceSpec, KafkaRebalanceStatus, AbstractWatchableStatusedNamespacedResourceOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList, Resource<KafkaRebalance>>> {
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaRebalanceAssemblyOperator.class.getName());
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     /* test */ static final String BROKER_LOAD_KEY = "brokerLoad.json";
     private final CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> kafkaRebalanceOperator;
@@ -463,28 +467,26 @@ public class KafkaRebalanceAssemblyOperator
      * @param brokerLoadArray The JSONArray of broker load JSONObjects returned by the Cruise Control rebalance endpoint.
      * @return A map linking from broker ID integer to a map of load parameter to value.
      */
-    protected static Map<Integer, Map<String, Object>> extractLoadParameters(JsonArray brokerLoadArray) {
+    protected static Map<Integer, Map<String, Object>> extractLoadParameters(ArrayNode brokerLoadArray) {
 
         Map<Integer, Map<String, Object>> loadMap = new HashMap<>();
 
-        for (Object rawBrokerLoad : brokerLoadArray) {
-            JsonObject brokerLoad = (JsonObject) rawBrokerLoad;
-
+        for (JsonNode brokerLoad : brokerLoadArray) {
             Map<String, Object> brokerLoadMap = new HashMap<>();
 
             for (CruiseControlLoadParameters intParam : CruiseControlLoadParameters.getIntegerParameters()) {
-                if (brokerLoad.containsKey(intParam.getCruiseControlKey())) {
-                    brokerLoadMap.put(intParam.getKafkaRebalanceStatusKey(), brokerLoad.getInteger(intParam.getCruiseControlKey()));
+                if (brokerLoad.has(intParam.getCruiseControlKey())) {
+                    brokerLoadMap.put(intParam.getKafkaRebalanceStatusKey(), brokerLoad.get(intParam.getCruiseControlKey()).asInt());
                 }
             }
 
             for (CruiseControlLoadParameters doubleParam : CruiseControlLoadParameters.getDoubleParameters()) {
-                if (brokerLoad.containsKey(doubleParam.getCruiseControlKey())) {
-                    brokerLoadMap.put(doubleParam.getKafkaRebalanceStatusKey(), brokerLoad.getDouble(doubleParam.getCruiseControlKey()));
+                if (brokerLoad.has(doubleParam.getCruiseControlKey())) {
+                    brokerLoadMap.put(doubleParam.getKafkaRebalanceStatusKey(), brokerLoad.get(doubleParam.getCruiseControlKey()).asDouble());
                 }
             }
 
-            int brokerID = brokerLoad.getInteger(CruiseControlRebalanceKeys.BROKER_ID.getKey());
+            int brokerID = brokerLoad.get(CruiseControlRebalanceKeys.BROKER_ID.getKey()).asInt();
             loadMap.put(brokerID, brokerLoadMap);
 
         }
@@ -506,7 +508,7 @@ public class KafkaRebalanceAssemblyOperator
      *                             returned by the Cruise Control rebalance endpoint.
      * @return A JsonObject linking from broker ID integer to a map of load parameter to [before, after, difference] arrays.
      */
-    protected static JsonObject parseLoadStats(JsonArray brokerLoadBeforeJson, JsonArray brokerLoadAfterJson) {
+    protected static JsonNode parseLoadStats(ArrayNode brokerLoadBeforeJson, ArrayNode brokerLoadAfterJson) {
 
         if (brokerLoadBeforeJson == null && brokerLoadAfterJson == null) {
             throw new IllegalArgumentException("The rebalance optimization proposal returned by Cruise Control did not contain broker load information");
@@ -527,7 +529,7 @@ public class KafkaRebalanceAssemblyOperator
             throw new IllegalArgumentException("Broker data was missing from the load before/after information");
         }
 
-        JsonObject brokersStats = new JsonObject();
+        ObjectNode brokersStats = OBJECT_MAPPER.createObjectNode();
 
         for (Map.Entry<Integer, Map<String, Object>> loadAfterEntry : loadAfterMap.entrySet()) {
 
@@ -539,7 +541,7 @@ public class KafkaRebalanceAssemblyOperator
 
             Map<String, Object> brokerAfter = loadAfterEntry.getValue();
 
-            JsonObject brokerStats = new JsonObject();
+            ObjectNode brokerStats = OBJECT_MAPPER.createObjectNode();
 
             for (CruiseControlLoadParameters intLoadParameter : CruiseControlLoadParameters.getIntegerParameters()) {
 
@@ -551,19 +553,19 @@ public class KafkaRebalanceAssemblyOperator
                     int intDiff = intAfterStat - intBeforeStat;
 
 
-                    JsonObject intStats = new JsonObject();
+                    ObjectNode intStats = OBJECT_MAPPER.createObjectNode();
                     intStats.put("before", intBeforeStat);
                     intStats.put("after", intAfterStat);
                     intStats.put("diff", intDiff);
 
-                    brokerStats.put(intLoadParameter.getKafkaRebalanceStatusKey(), intStats);
+                    brokerStats.set(intLoadParameter.getKafkaRebalanceStatusKey(), intStats);
                 } else if (brokerBefore.isEmpty() &&
                         brokerAfter.containsKey(intLoadParameter.getKafkaRebalanceStatusKey())) {
                     int intAfterStat = (int) brokerAfter.get(intLoadParameter.getKafkaRebalanceStatusKey());
-                    JsonObject intStats = new JsonObject();
+                    ObjectNode intStats = OBJECT_MAPPER.createObjectNode();
                     intStats.put("after", intAfterStat);
 
-                    brokerStats.put(intLoadParameter.getKafkaRebalanceStatusKey(), intStats);
+                    brokerStats.set(intLoadParameter.getKafkaRebalanceStatusKey(), intStats);
                 } else {
                     LOGGER.warnOp("{} information was missing from the broker before/after load information",
                             intLoadParameter.getKafkaRebalanceStatusKey());
@@ -579,19 +581,19 @@ public class KafkaRebalanceAssemblyOperator
                     double doubleAfterStat = (double) brokerAfter.get(doubleLoadParameter.getKafkaRebalanceStatusKey());
                     double doubleDiff = doubleAfterStat - doubleBeforeStat;
 
-                    JsonObject doubleStats = new JsonObject();
+                    ObjectNode doubleStats = OBJECT_MAPPER.createObjectNode();
                     doubleStats.put("before", doubleBeforeStat);
                     doubleStats.put("after", doubleAfterStat);
                     doubleStats.put("diff", doubleDiff);
 
-                    brokerStats.put(doubleLoadParameter.getKafkaRebalanceStatusKey(), doubleStats);
+                    brokerStats.set(doubleLoadParameter.getKafkaRebalanceStatusKey(), doubleStats);
                 } else if (brokerBefore.isEmpty() &&
                         brokerAfter.containsKey(doubleLoadParameter.getKafkaRebalanceStatusKey())) {
                     double doubleAfterStat = (double) brokerAfter.get(doubleLoadParameter.getKafkaRebalanceStatusKey());
-                    JsonObject doubleStats = new JsonObject();
+                    ObjectNode doubleStats = OBJECT_MAPPER.createObjectNode();
                     doubleStats.put("after", doubleAfterStat);
 
-                    brokerStats.put(doubleLoadParameter.getKafkaRebalanceStatusKey(), doubleStats);
+                    brokerStats.set(doubleLoadParameter.getKafkaRebalanceStatusKey(), doubleStats);
                 } else {
                     LOGGER.warnOp("{} information was missing from the broker before/after load information",
                             doubleLoadParameter.getKafkaRebalanceStatusKey());
@@ -599,7 +601,7 @@ public class KafkaRebalanceAssemblyOperator
 
             }
 
-            brokersStats.put(String.valueOf(loadAfterEntry.getKey()), brokerStats);
+            brokersStats.set(String.valueOf(loadAfterEntry.getKey()), brokerStats);
         }
 
         return brokersStats;
@@ -639,22 +641,22 @@ public class KafkaRebalanceAssemblyOperator
      * @param  proposalJson The JSONObject representing the response from the Cruise Control rebalance endpoint.
      * @return A wrapper class containing the proposal summary map and a config map containing broker load.
      */
-    protected static MapAndStatus<ConfigMap, Map<String, Object>> processOptimizationProposal(KafkaRebalance kafkaRebalance, JsonObject proposalJson) {
+    protected static MapAndStatus<ConfigMap, Map<String, Object>> processOptimizationProposal(KafkaRebalance kafkaRebalance, JsonNode proposalJson) {
 
-        JsonArray brokerLoadBeforeOptimization = null;
-        JsonArray brokerLoadAfterOptimization = null;
-        if (proposalJson.containsKey(CruiseControlRebalanceKeys.LOAD_BEFORE_OPTIMIZATION.getKey())) {
-            brokerLoadBeforeOptimization = proposalJson
-                    .getJsonObject(CruiseControlRebalanceKeys.LOAD_BEFORE_OPTIMIZATION.getKey())
-                    .getJsonArray(CruiseControlRebalanceKeys.BROKERS.getKey());
+        ArrayNode brokerLoadBeforeOptimization = null;
+        ArrayNode brokerLoadAfterOptimization = null;
+        if (proposalJson.has(CruiseControlRebalanceKeys.LOAD_BEFORE_OPTIMIZATION.getKey())) {
+            brokerLoadBeforeOptimization = (ArrayNode) proposalJson
+                    .get(CruiseControlRebalanceKeys.LOAD_BEFORE_OPTIMIZATION.getKey())
+                    .get(CruiseControlRebalanceKeys.BROKERS.getKey());
         }
-        if (proposalJson.containsKey(CruiseControlRebalanceKeys.LOAD_AFTER_OPTIMIZATION.getKey())) {
-            brokerLoadAfterOptimization = proposalJson
-                    .getJsonObject(CruiseControlRebalanceKeys.LOAD_AFTER_OPTIMIZATION.getKey())
-                    .getJsonArray(CruiseControlRebalanceKeys.BROKERS.getKey());
+        if (proposalJson.has(CruiseControlRebalanceKeys.LOAD_AFTER_OPTIMIZATION.getKey())) {
+            brokerLoadAfterOptimization = (ArrayNode) proposalJson
+                    .get(CruiseControlRebalanceKeys.LOAD_AFTER_OPTIMIZATION.getKey())
+                    .get(CruiseControlRebalanceKeys.BROKERS.getKey());
         }
 
-        JsonObject beforeAndAfterBrokerLoad = parseLoadStats(
+        JsonNode beforeAndAfterBrokerLoad = parseLoadStats(
                 brokerLoadBeforeOptimization, brokerLoadAfterOptimization);
 
         ConfigMap rebalanceMap = new ConfigMapBuilder()
@@ -664,14 +666,15 @@ public class KafkaRebalanceAssemblyOperator
                     .withLabels(Collections.singletonMap("app", "strimzi"))
                     .withOwnerReferences(ModelUtils.createOwnerReference(kafkaRebalance, false))
                 .endMetadata()
-                .withData(Collections.singletonMap(BROKER_LOAD_KEY, beforeAndAfterBrokerLoad.encode()))
+                .withData(Collections.singletonMap(BROKER_LOAD_KEY, beforeAndAfterBrokerLoad.toPrettyString()))
                 .build();
 
-        proposalJson.getJsonObject(CruiseControlRebalanceKeys.SUMMARY.getKey()).getMap().put("afterBeforeLoadConfigMap", rebalanceMap.getMetadata().getName());
-        return new MapAndStatus<>(rebalanceMap, proposalJson.getJsonObject(CruiseControlRebalanceKeys.SUMMARY.getKey()).getMap());
+        Map<String, Object> summaryMap = OBJECT_MAPPER.convertValue(proposalJson.get(CruiseControlRebalanceKeys.SUMMARY.getKey()), new TypeReference<Map<String, Object>>() { });
+        summaryMap.put("afterBeforeLoadConfigMap", rebalanceMap.getMetadata().getName());
+        return new MapAndStatus<>(rebalanceMap, summaryMap);
     }
 
-    private MapAndStatus<ConfigMap, KafkaRebalanceStatus> buildRebalanceStatus(KafkaRebalance kafkaRebalance, String sessionID, KafkaRebalanceState cruiseControlState, JsonObject proposalJson, Set<Condition> validation) {
+    private MapAndStatus<ConfigMap, KafkaRebalanceStatus> buildRebalanceStatus(KafkaRebalance kafkaRebalance, String sessionID, KafkaRebalanceState cruiseControlState, JsonNode proposalJson, Set<Condition> validation) {
         List<Condition> conditions = new ArrayList<>();
         conditions.add(StatusUtils.buildRebalanceCondition(cruiseControlState.toString()));
         conditions.addAll(validation);
@@ -839,8 +842,8 @@ public class KafkaRebalanceAssemblyOperator
             return;
         }
 
-        JsonObject taskStatusJson = cruiseControlResponse.getJson();
-        CruiseControlUserTaskStatus taskStatus = CruiseControlUserTaskStatus.lookup(taskStatusJson.getString("Status"));
+        JsonNode taskStatusJson = cruiseControlResponse.getJson();
+        CruiseControlUserTaskStatus taskStatus = CruiseControlUserTaskStatus.lookup(taskStatusJson.get("Status").asText());
         switch (taskStatus) {
             case COMPLETED_WITH_ERROR:
                 // TODO: There doesn't seem to be a way to retrieve the actual error message from the user tasks endpoint?
@@ -859,8 +862,8 @@ public class KafkaRebalanceAssemblyOperator
             case IN_EXECUTION:
                 if (dryRun) {
                     // If the returned status has an optimization result then the rebalance proposal is ready.
-                    if (taskStatusJson.containsKey(CruiseControlRebalanceKeys.LOAD_BEFORE_OPTIMIZATION.getKey()) &&
-                            taskStatusJson.containsKey(CruiseControlRebalanceKeys.LOAD_AFTER_OPTIMIZATION.getKey())) {
+                    if (taskStatusJson.has(CruiseControlRebalanceKeys.LOAD_BEFORE_OPTIMIZATION.getKey()) &&
+                            taskStatusJson.has(CruiseControlRebalanceKeys.LOAD_AFTER_OPTIMIZATION.getKey())) {
                         LOGGER.infoCr(reconciliation, "Rebalance ({}) optimization proposal is now ready", sessionId);
                         System.out.println("Status" + taskStatusJson);
                         p.complete(buildRebalanceStatus(kafkaRebalance, sessionId, KafkaRebalanceState.ProposalReady, taskStatusJson, conditions));
@@ -1241,7 +1244,7 @@ public class KafkaRebalanceAssemblyOperator
             }
         }
 
-        if (response.getJson() != null && response.getJson().containsKey(CruiseControlRebalanceKeys.SUMMARY.getKey())) {
+        if (response.getJson() != null && response.getJson().has(CruiseControlRebalanceKeys.SUMMARY.getKey())) {
             // If there is enough data and the proposal is complete (the response has the "summary" key) then we move
             // to ProposalReady for a dry run or to the Rebalancing state for a full run
             KafkaRebalanceState ready = dryrun ? KafkaRebalanceState.ProposalReady : KafkaRebalanceState.Rebalancing;
