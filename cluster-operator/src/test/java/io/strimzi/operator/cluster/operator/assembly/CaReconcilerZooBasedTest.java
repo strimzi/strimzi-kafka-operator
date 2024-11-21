@@ -259,8 +259,8 @@ public class CaReconcilerZooBasedTest {
         }
 
         @Override
-        Future<Void> rollZookeeper(int replicas, String restartReason, TlsPemIdentity coTlsPemIdentity) {
-            this.zkPodRestartReason = restartReason;
+        Future<Void> rollZookeeper(int replicas, RestartReason restartReason, TlsPemIdentity coTlsPemIdentity) {
+            this.zkPodRestartReason = restartReason.getDefaultNote();
             return Future.succeededFuture();
         }
 
@@ -280,11 +280,11 @@ public class CaReconcilerZooBasedTest {
         }
 
         @Override
-        Future<Void> rollDeploymentIfExists(String deploymentName, String reason) {
+        Future<Void> rollDeploymentIfExists(String deploymentName, RestartReason reason) {
             return deploymentOperator.getAsync(reconciliation.namespace(), deploymentName)
                     .compose(dep -> {
                         if (dep != null) {
-                            this.deploymentRollReason.add(reason);
+                            this.deploymentRollReason.add(reason.getDefaultNote());
                         }
                         return Future.succeededFuture();
                     });

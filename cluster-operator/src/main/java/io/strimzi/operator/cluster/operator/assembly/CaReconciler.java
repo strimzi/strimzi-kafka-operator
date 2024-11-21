@@ -387,12 +387,12 @@ public class CaReconciler {
      */
     Future<Void> maybeRollingUpdateForNewClusterCaKey() {
         if (clusterCa.keyReplaced() || isClusterCaNeedFullTrust) {
-            String restartReason = RestartReason.CLUSTER_CA_CERT_KEY_REPLACED.getDefaultNote();
+            RestartReason restartReason = RestartReason.CLUSTER_CA_CERT_KEY_REPLACED;
             TlsPemIdentity coTlsPemIdentity = new TlsPemIdentity(new PemTrustSet(clusterCa.caCertSecret()), PemAuthIdentity.clusterOperator(coSecret));
             return getZooKeeperReplicas()
                     .compose(replicas -> rollZookeeper(replicas, restartReason, coTlsPemIdentity))
                     .compose(i -> getKafkaReplicas())
-                    .compose(nodes -> rollKafkaBrokers(nodes, RestartReasons.of(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED), coTlsPemIdentity))
+                    .compose(nodes -> rollKafkaBrokers(nodes, RestartReasons.of(restartReason), coTlsPemIdentity))
                     .compose(i -> rollDeploymentIfExists(KafkaResources.entityOperatorDeploymentName(reconciliation.name()), restartReason))
                     .compose(i -> rollDeploymentIfExists(KafkaExporterResources.componentName(reconciliation.name()), restartReason))
                     .compose(i -> rollDeploymentIfExists(CruiseControlResources.componentName(reconciliation.name()), restartReason));
@@ -502,14 +502,14 @@ public class CaReconciler {
      *
      * @return  Future which completes when the ZooKeeper cluster has been rolled.
      */
-    /* test */ Future<Void> rollZookeeper(int replicas, String podRestartReason, TlsPemIdentity coTlsPemIdentity) {
+    /* test */ Future<Void> rollZookeeper(int replicas, RestartReason podRestartReason, TlsPemIdentity coTlsPemIdentity) {
         Labels zkSelectorLabels = Labels.EMPTY
                 .withStrimziKind(reconciliation.kind())
                 .withStrimziCluster(reconciliation.name())
                 .withStrimziName(KafkaResources.zookeeperComponentName(reconciliation.name()));
 
         Function<Pod, List<String>> rollZkPodAndLogReason = pod -> {
-            List<String> reason = List.of(podRestartReason);
+            List<String> reason = List.of(podRestartReason.getDefaultNote());
             LOGGER.debugCr(reconciliation, "Rolling Pod {} to {}", pod.getMetadata().getName(), reason);
             return reason;
         };
@@ -566,15 +566,15 @@ public class CaReconciler {
      * Rolls deployments when they exist. This method is used by the CA renewal to roll deployments.
      *
      * @param deploymentName    Name of the deployment which should be rolled if it exists
-     * @param reason           Reason for which it is being rolled
+     * @param reason            Reason for which it is being rolled
      *
      * @return  Succeeded future if it succeeded, failed otherwise.
      */
-    /* test */ Future<Void> rollDeploymentIfExists(String deploymentName, String reason)  {
+    /* test */ Future<Void> rollDeploymentIfExists(String deploymentName, RestartReason reason)  {
         return deploymentOperator.getAsync(reconciliation.namespace(), deploymentName)
                 .compose(dep -> {
                     if (dep != null) {
-                        LOGGER.infoCr(reconciliation, "Rolling Deployment {} due to {}", deploymentName, reason);
+                        LOGGER.infoCr(reconciliation, "Rolling Deployment {} due to {}", deploymentName, reason.getDefaultNote());
                         return deploymentOperator.singlePodDeploymentRollingUpdate(reconciliation, reconciliation.namespace(), deploymentName, operationTimeoutMs);
                     } else {
                         return Future.succeededFuture();

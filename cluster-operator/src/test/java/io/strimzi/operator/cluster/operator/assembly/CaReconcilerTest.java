@@ -2104,11 +2104,11 @@ public class CaReconcilerTest {
         }
 
         @Override
-        Future<Void> rollDeploymentIfExists(String deploymentName, String reason) {
+        Future<Void> rollDeploymentIfExists(String deploymentName, RestartReason reason) {
             return deploymentOperator.getAsync(reconciliation.namespace(), deploymentName)
                     .compose(dep -> {
                         if (dep != null) {
-                            this.deploymentRestartReasons.put(deploymentName, reason);
+                            this.deploymentRestartReasons.put(deploymentName, reason.getDefaultNote());
                         }
                         return Future.succeededFuture();
                     });
