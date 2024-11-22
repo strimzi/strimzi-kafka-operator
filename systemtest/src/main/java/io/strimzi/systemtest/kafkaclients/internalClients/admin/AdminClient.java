@@ -142,111 +142,129 @@ public class AdminClient {
         return result.returnCode() == 0 ? result.out() : result.err();
     }
 
-    static class AdminTopicCommand {
-        private final static String TOPIC_SUBCOMMAND = "topic";
-        private List<String> command = new ArrayList<>(List.of(CMD, TOPIC_SUBCOMMAND));
-
+    static class AdminTopicCommand extends AdminCommonCommand<AdminTopicCommand> {
         public AdminTopicCommand withCreateSubcommand() {
-            this.command.add("create");
-            return this;
-        }
-
-        public AdminTopicCommand withDescribeSubcommand() {
-            this.command.add("describe");
-            return this;
-        }
-
-        public AdminTopicCommand withOutputJson() {
-            this.command.add("--output=json");
+            add("create");
             return this;
         }
 
         public AdminTopicCommand withDeleteSubcommand() {
-            this.command.add("delete");
+            add("delete");
             return this;
         }
 
         public AdminTopicCommand withAlterSubcommand() {
-            this.command.add("alter");
+            add("alter");
             return this;
         }
 
         public AdminTopicCommand withListSubCommand() {
-            this.command.add("list");
+            add("list");
             return this;
         }
 
         public AdminTopicCommand withFetchOffsetsSubCommand() {
-            this.command.add("fetch-offsets");
+            add("fetch-offsets");
             return this;
         }
 
         public AdminTopicCommand withTopicPrefix(String topicPrefix) {
-            this.command.addAll(List.of("-tpref", topicPrefix));
+            add(List.of("-tpref", topicPrefix));
             return this;
         }
 
         public AdminTopicCommand withTopicName(String topicName) {
-            this.command.addAll(List.of("-t", topicName));
+            add(List.of("-t", topicName));
             return this;
         }
 
         public AdminTopicCommand withTopicPartitions(int topicPartitions) {
-            this.command.addAll(List.of("-tp", String.valueOf(topicPartitions)));
+            add(List.of("-tp", String.valueOf(topicPartitions)));
             return this;
         }
 
         public AdminTopicCommand withTopicCount(int topicCount) {
-            this.command.addAll(List.of("-tc", String.valueOf(topicCount)));
+            add(List.of("-tc", String.valueOf(topicCount)));
             return this;
         }
 
         public AdminTopicCommand withTopicReplicas(int topicReplicas) {
-            this.command.addAll(List.of("-trf", String.valueOf(topicReplicas)));
+            add(List.of("-trf", String.valueOf(topicReplicas)));
             return this;
         }
 
         public AdminTopicCommand withFromIndex(int fromIndex) {
-            this.command.addAll(List.of("-fi", String.valueOf(fromIndex)));
+            add(List.of("-fi", String.valueOf(fromIndex)));
             return this;
         }
 
         public AdminTopicCommand withAll() {
-            this.command.add("--all");
+            add("--all");
             return this;
         }
 
         public AdminTopicCommand withTime(String time) {
-            this.command.addAll(List.of("--time", time));
+            add(List.of("--time", time));
             return this;
         }
 
-        public String[] getCommand() {
-            return this.command.toArray(new String[0]);
+        @Override
+        protected AdminTopicCommand self() {
+            return this;
+        }
+
+        @Override
+        protected String mainSubCommand() {
+            return "topic";
         }
     }
 
-    static class AdminNodeCommand {
-        private final static String NODE_SUBCOMMAND = "node";
-        private List<String> command = new ArrayList<>(List.of(CMD, NODE_SUBCOMMAND));
-
-        public AdminNodeCommand withDescribeSubcommand() {
-            this.command.add("describe");
-            return this;
-        }
-
+    static class AdminNodeCommand extends AdminCommonCommand<AdminNodeCommand> {
         public AdminNodeCommand withNodeIds(String nodeIds) {
-            this.command.addAll(List.of("--node-ids", nodeIds));
+            add(List.of("--node-ids", nodeIds));
             return this;
         }
 
-        public AdminNodeCommand withOutputJson() {
-            this.command.add("--output=json");
+        @Override
+        protected AdminNodeCommand self() {
             return this;
+        }
+
+        @Override
+        protected String mainSubCommand() {
+            return "node";
+        }
+    }
+
+    static abstract class AdminCommonCommand<T extends AdminCommonCommand<T>> {
+        private List<String> command = new ArrayList<>(List.of(CMD, mainSubCommand()));
+
+        protected T add(String toBeAdded) {
+            command.add(toBeAdded);
+            return self();
+        }
+
+        protected T add(List<String> toBeAdded) {
+            command.addAll(toBeAdded);
+            return self();
+        }
+
+        public T withDescribeSubcommand() {
+            command.add("describe");
+            return self();
+        }
+
+        public T withOutputJson() {
+            command.add("--output=json");
+            return self();
         }
 
         public String[] getCommand() {
-            return this.command.toArray(new String[0]);
+            return command.toArray(new String[0]);
         }
+
+        protected abstract T self();
+
+        protected abstract String mainSubCommand();
     }
 }

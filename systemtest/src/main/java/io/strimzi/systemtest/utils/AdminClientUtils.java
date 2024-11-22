@@ -139,7 +139,7 @@ public class AdminClientUtils {
             }
 
             return nodeObject != null ? nodeObject.get("rack").textValue() : "";
-        } catch (Exception e) {
+        } catch (JsonProcessingException e) {
             LOGGER.error("There was an error parsing the JSON object from: {}. Exception: {}", data, e.getMessage());
             throw new RuntimeException(e);
         }
