@@ -142,13 +142,6 @@ public class AdminClientTemplates {
         return defaultAdminClient(namespaceName, adminName, bootstrapName, "");
     }
 
-    /**
-     * Creates a Deployment configuration for an AdminClient with PLAINTEXT communication and desired additional configuration.
-     */
-    public static DeploymentBuilder plainAdminClient(String namespaceName, String adminName, String bootstrapName, String additionalConfig) {
-        return defaultAdminClient(namespaceName, adminName, bootstrapName, additionalConfig);
-    }
-
     ///////////////////////////////////////////
     //          default admin client
     ///////////////////////////////////////////

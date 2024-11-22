@@ -132,6 +132,16 @@ public class AdminClient {
         return result.returnCode() == 0 ? result.out() : result.err();
     }
 
+    public String describeNodes(String nodeIds) {
+        AdminNodeCommand adminNodeCommand = new AdminNodeCommand()
+            .withDescribeSubcommand()
+            .withNodeIds(nodeIds)
+            .withOutputJson();
+
+        ExecResult result = cmdKubeClient(namespaceName).execInPod(podName, false, adminNodeCommand.getCommand());
+        return result.returnCode() == 0 ? result.out() : result.err();
+    }
+
     static class AdminTopicCommand {
         private final static String TOPIC_SUBCOMMAND = "topic";
         private List<String> command = new ArrayList<>(List.of(CMD, TOPIC_SUBCOMMAND));
@@ -208,6 +218,30 @@ public class AdminClient {
 
         public AdminTopicCommand withTime(String time) {
             this.command.addAll(List.of("--time", time));
+            return this;
+        }
+
+        public String[] getCommand() {
+            return this.command.toArray(new String[0]);
+        }
+    }
+
+    static class AdminNodeCommand {
+        private final static String NODE_SUBCOMMAND = "node";
+        private List<String> command = new ArrayList<>(List.of(CMD, NODE_SUBCOMMAND));
+
+        public AdminNodeCommand withDescribeSubcommand() {
+            this.command.add("describe");
+            return this;
+        }
+
+        public AdminNodeCommand withNodeIds(String nodeIds) {
+            this.command.addAll(List.of("--node-ids", nodeIds));
+            return this;
+        }
+
+        public AdminNodeCommand withOutputJson() {
+            this.command.add("--output=json");
             return this;
         }
 

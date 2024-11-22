@@ -19,6 +19,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 public class AdminClientUtils {
@@ -52,21 +53,6 @@ public class AdminClientUtils {
         LOGGER.info("Waiting for topic: {} to be present in Kafka", topicName);
         TestUtils.waitFor("Topic: " + topicName + " to be present in Kafka", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT_SHORT,
             () -> isTopicPresent(adminClient, topicName));
-    }
-
-    /**
-     * Waits for a specified Kafka topic to be absent.
-     *
-     * Periodically checks if a Kafka topic is absent and waits until it dissappears
-     * or until the timeout expires.
-     *
-     * @param adminClient The Kafka {@link AdminClient} used to check the topic's absence.
-     * @param topicName The name of the topic to wait for its absence.
-     */
-    public static void waitForTopicAbsence(AdminClient adminClient, String topicName) {
-        LOGGER.info("Waiting for topic: {} to be absent in Kafka", topicName);
-        TestUtils.waitFor("Topic: " + topicName + " to be absent in Kafka", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT_SHORT,
-            () -> !isTopicPresent(adminClient, topicName));
     }
 
     /**
@@ -131,5 +117,31 @@ public class AdminClientUtils {
 
         // Get the offset value
         return partitionNode.get("offset").asLong();
+    }
+
+    public static String getRack(String data, String nodeId) {
+        // Create ObjectMapper instance
+        ObjectMapper mapper = new ObjectMapper();
+
+        try {
+            // Read JSON string as JsonNode
+            JsonNode rootNode = mapper.readTree(data);
+
+            JsonNode nodeObject = mapper.createObjectNode();
+
+            Iterator<JsonNode> nodeIterator = rootNode.withArray("nodes").elements();
+
+            while (nodeIterator.hasNext()) {
+                nodeObject = nodeIterator.next();
+                if (nodeObject.get("id").textValue().equals(nodeId)) {
+                    break;
+                }
+            }
+
+            return nodeObject != null ? nodeObject.get("rack").textValue() : "";
+        } catch (Exception e) {
+            LOGGER.error("There was an error parsing the JSON object from: {}. Exception: {}", data, e.getMessage());
+            throw new RuntimeException(e);
+        }
     }
 }
