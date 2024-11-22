@@ -10,6 +10,9 @@ Storage management in Strimzi is usually straightforward, and requires little ch
 Node pools simplify this process, because you can set up separate node pools that specify your new storage requirements.
 
 In this procedure we create and manage storage for a node pool called `pool-a` containing three nodes.
+The steps require a scaling operation to add a new node pool.
+Currently, scaling is only possible for broker-only node pools containing nodes that run as dedicated brokers.
+
 We show how to change the storage class (`volumes.class`) that defines the type of persistent storage it uses.
 You can use the same steps to change the storage size (`volumes.size`). 
 This approach is particularly useful if you want to reduce disk sizes.
@@ -38,6 +41,8 @@ metadata:
   labels:
     strimzi.io/cluster: my-cluster
 spec:
+  roles:
+    - broker
   replicas: 3
   storage:
     type: jbod
