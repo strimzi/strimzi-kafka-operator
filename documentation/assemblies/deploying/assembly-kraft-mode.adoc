@@ -50,7 +50,11 @@ In the following example, three nodes perform a dual role and two nodes act only
 .Example cluster with dual-role nodes and dedicated broker nodes
 image::kraft-dual-role-quorum.png[KRaft cluster with nodes that combine roles]
 
-== Controller scaling
+== KRaft limitations
+
+KRaft limitations primarily relate to controller scaling, which impacts cluster operations.
+
+=== Controller scaling
 
 KRaft mode supports two types of controller quorums:
 
@@ -63,28 +67,32 @@ If a controller being removed is the active controller, it will step down from t
 
 Scaling is useful not only for adding or removing controllers, but supports the following operations:
 
-* Replacing controllers because of hardware failure
-* Migrating clusters onto new hardware
-* Moving nodes from dedicated controller roles to dual roles or vice versa
+* Renaming a node pool, which involves adding a new node pool with the desired name and deleting the old one.
+* Changing non-JBOD storage, which requires creating a new node pool with the updated storage configuration and removing the old one.
 
 Dynamic controller quorums provide the flexibility to make these operations significantly easier to perform.
 
-== Limitations with static controller quorums
+=== Limitations with static controller quorums
 
-Strimzi currently supports only static controller quorums.
+Migration between static and dynamic controller quorums is not currently supported by Apache Kafka, though it is expected to be introduced in a future release.
+All pre-existing KRaft-based Apache Kafka clusters that use static controller quorums must continue using them. 
+To ensure compatibility with existing KRaft-based clusters, Strimzi continues to use static controller quorums as well.
+
 This limitation means dynamic scaling of controller quorums cannot be used to support the following:
 
-* Scaling up or down of node pools that have controller roles
-* Adding or removing controller roles from node pools
-* Switching node pools between dedicated controller roles and dual roles
+* Adding or removing node pools with controller roles
+* Adding the controller role to an existing node pool
+* Removing the controller role from an existing node pool
+* Scaling a node pool with the controller role
+* Renaming a node pool with the controller role
 
 Static controller quorums also limit operations that require scaling. 
-For example, changing the storage type for a node pool with a controller role is not possible because it involves scaling the controller quorum. For non-JBOD storage, creating a new node pool with the desired storage type, adding it to the cluster, and removing the old one would require scaling operations, which are not supported. 
+For example, changing the storage type for a node pool with a controller role is not possible because it involves scaling the controller quorum. 
+For non-JBOD storage, creating a new node pool with the desired storage type, adding it to the cluster, and removing the old one would require scaling operations, which are not supported. 
 In some cases, workarounds are possible.
 For instance, when modifying node pool roles to combine controller and broker functions, you can xref:proc-joining-node-pools-roles-str[add broker roles to controller nodes] instead of adding controller roles to broker nodes to avoid controller scaling. 
-However, this approach would require reassigning more data, temporarily affecting cluster performance.
+However, this approach would require reassigning more data, which may temporarily affect cluster performance.
 
-Migration between static and dynamic controller quorums is not currently supported, though it is expected to be introduced in a future Kafka release.
 Once migration is possible, Strimzi plans to assess introducing support for dynamic quorums.
 
 //migrating to KRaft
