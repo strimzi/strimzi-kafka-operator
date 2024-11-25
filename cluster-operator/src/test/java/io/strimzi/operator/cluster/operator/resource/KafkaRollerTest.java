@@ -171,6 +171,7 @@ public class KafkaRollerTest {
                 brokerId -> succeededFuture(true),
                 true, mock, mockKafkaAgentClientProvider(), true, null, -1);
 
+        // When admin client cannot be created for a controller node, we expect it to be force restarted.
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0),
                 asList(0));
@@ -188,6 +189,8 @@ public class KafkaRollerTest {
                 brokerId -> succeededFuture(true),
                 true, mock, mockKafkaAgentClientProvider(), true, null, -1);
 
+        // If the controller has older version (< 3.9.0), we should only be creating admin client for brokers
+        // and when the operator cannot connect to brokers, we expect to fail initialising KafkaQuorumCheck
         doFailingRollingRestart(testContext, kafkaRoller,
                 asList(0),
                 KafkaRoller.UnforceableProblem.class, "KafkaQuorumCheck cannot be initialised for c-kafka-0/0 because none of the brokers do not seem to responding to connection attempts",
