@@ -265,7 +265,7 @@ public class CaReconcilerZooBasedTest {
         }
 
         @Override
-        Future<Set<NodeRef>> getKafkaReplicas() {
+        Future<Set<NodeRef>> patchClusterCaKeyGenerationAndReturnNodes() {
             Set<NodeRef> nodes = new HashSet<>();
             nodes.add(ReconcilerUtils.nodeFromPod(podWithName("my-kafka-kafka-0")));
             nodes.add(ReconcilerUtils.nodeFromPod(podWithName("my-kafka-kafka-1")));

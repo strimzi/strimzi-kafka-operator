@@ -19,6 +19,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.api.ResourceAnnotations;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
@@ -37,6 +38,7 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaMetadataConfigurationState;
@@ -397,19 +399,10 @@ public class KubernetesRestartEventsMockTest {
 
     @Test
     void testEventEmittedWhenClusterCaCertKeyReplaced(Vertx vertx, VertxTestContext context) {
-        //Turn off cert authority generation to cause reconciliation to roll pods
-        Kafka kafkaWithoutClusterCaGen = new KafkaBuilder(kafka)
-                .editSpec()
-                    .editOrNewClusterCa()
-                        .withGenerateCertificateAuthority(false)
-                    .endClusterCa()
-                .endSpec()
-                .build();
+        // Force replace ca key
+        patchClusterCaKeySecretWithAnnotation(ResourceAnnotations.ANNO_STRIMZI_IO_FORCE_REPLACE, "true");
 
-        // Bump ca cert generation to make it look newer than pod knows of
-        patchClusterSecretWithAnnotation(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "100001");
-
-        CaReconciler reconciler = new CaReconciler(reconciliation, kafkaWithoutClusterCaGen, clusterOperatorConfig, supplier, vertx, mockCertManager, passwordGenerator);
+        CaReconciler reconciler = new CaReconciler(reconciliation, kafka, clusterOperatorConfig, supplier, vertx, mockCertManager, passwordGenerator);
         reconciler.reconcile(Clock.systemUTC()).onComplete(verifyEventPublished(CLUSTER_CA_CERT_KEY_REPLACED, context));
     }
 
@@ -714,8 +707,8 @@ public class KubernetesRestartEventsMockTest {
         );
     }
 
-    private void patchClusterSecretWithAnnotation(String annotation, String value) {
-        Secret brokerSecret = client.secrets().inNamespace(namespace).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get();
+    private void patchClusterCaKeySecretWithAnnotation(String annotation, String value) {
+        Secret brokerSecret = client.secrets().inNamespace(namespace).withName(AbstractModel.clusterCaKeySecretName(CLUSTER_NAME)).get();
         Secret patchedSecret = modifySecretWithAnnotation(brokerSecret, annotation, value);
 
         client.secrets().resource(patchedSecret).update();

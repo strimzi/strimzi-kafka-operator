@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -24,6 +23,7 @@ import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
+import io.strimzi.operator.cluster.model.WorkloadUtils;
 import io.strimzi.operator.cluster.operator.resource.KafkaAgentClientProvider;
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -54,11 +54,11 @@ import io.vertx.core.Vertx;
 
 import java.time.Clock;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Class used for reconciliation of Cluster and Client CAs. This class contains both the steps of the CA reconciliation
@@ -234,8 +234,6 @@ public class CaReconciler {
                     Secret clusterCaKeySecret = null;
                     Secret clientsCaCertSecret = null;
                     Secret clientsCaKeySecret = null;
-                    List<HasMetadata> clusterCaSecrets = new ArrayList<>();
-                    List<HasMetadata> clientsCaSecrets = new ArrayList<>();
 
                     for (Secret secret : clusterSecrets) {
                         String secretName = secret.getMetadata().getName();
@@ -247,13 +245,6 @@ public class CaReconciler {
                             clientsCaCertSecret = secret;
                         } else if (secretName.equals(clientsCaKeyName)) {
                             clientsCaKeySecret = secret;
-                        } else if (secretName.equals(KafkaResources.kafkaSecretName(reconciliation.name()))) {
-                            clusterCaSecrets.add(secret);
-                            clientsCaSecrets.add(secret);
-                        } else if (secretName.equals(KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()))) {
-                            // The CO certificate is excluded as it is renewed in a separate cycle
-                        } else {
-                            clusterCaSecrets.add(secret);
                         }
                     }
 
@@ -266,7 +257,6 @@ public class CaReconciler {
                             reconciliation.namespace(), caLabels,
                             clusterCaCertLabels, clusterCaCertAnnotations,
                             clusterCaConfig != null && !clusterCaConfig.isGenerateSecretOwnerReference() ? null : ownerRef,
-                            clusterCaSecrets,
                             Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
 
                     clientsCa = new ClientsCa(reconciliation, certManager,
@@ -280,7 +270,6 @@ public class CaReconciler {
                     clientsCa.createRenewOrReplace(reconciliation.namespace(),
                             caLabels, Map.of(), Map.of(),
                             clientsCaConfig != null && !clientsCaConfig.isGenerateSecretOwnerReference() ? null : ownerRef,
-                            clientsCaSecrets,
                             Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
 
                     return null;
@@ -368,7 +357,7 @@ public class CaReconciler {
             TlsPemIdentity coTlsPemIdentity = new TlsPemIdentity(new PemTrustSet(clusterCa.caCertSecret()), PemAuthIdentity.clusterOperator(coSecret));
             return getZooKeeperReplicas()
                     .compose(replicas -> rollZookeeper(replicas, restartReason, coTlsPemIdentity))
-                    .compose(i -> getKafkaReplicas())
+                    .compose(i -> patchClusterCaKeyGenerationAndReturnNodes())
                     .compose(nodes -> rollKafkaBrokers(nodes, RestartReasons.of(restartReason), coTlsPemIdentity))
                     .compose(i -> rollDeploymentIfExists(KafkaResources.entityOperatorDeploymentName(reconciliation.name()), restartReason))
                     .compose(i -> rollDeploymentIfExists(KafkaExporterResources.componentName(reconciliation.name()), restartReason))
@@ -494,7 +483,12 @@ public class CaReconciler {
                 .maybeRollingUpdate(reconciliation, replicas, zkSelectorLabels, rollZkPodAndLogReason, coTlsPemIdentity);
     }
 
-    /* test */ Future<Set<NodeRef>> getKafkaReplicas() {
+    /**
+     * Patches the Kafka StrimziPodSets to update the Cluster CA key generation annotation and returns the nodes.
+     *
+     * @return Future containing the set of Kafka nodes which completes when the StrimziPodSets have been patched.
+     */
+    /* test */ Future<Set<NodeRef>> patchClusterCaKeyGenerationAndReturnNodes() {
         Labels selectorLabels = Labels.EMPTY
                 .withStrimziKind(reconciliation.kind())
                 .withStrimziCluster(reconciliation.name())
@@ -502,22 +496,33 @@ public class CaReconciler {
 
         return strimziPodSetOperator.listAsync(reconciliation.namespace(), selectorLabels)
                 .compose(podSets -> {
-                    Set<NodeRef> nodes = new LinkedHashSet<>();
-
                     if (podSets != null) {
-                        for (StrimziPodSet podSet : podSets) {
-                            nodes.addAll(ReconcilerUtils.nodesFromPodSet(podSet));
-                        }
+                        List<StrimziPodSet> updatedPodSets = podSets
+                                .stream()
+                                .map(podSet -> WorkloadUtils.patchAnnotations(
+                                        podSet,
+                                        Map.of(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(clusterCa.caKeyGeneration()))
+                                )).toList();
+                        return strimziPodSetOperator.batchReconcile(reconciliation, reconciliation.namespace(), updatedPodSets, selectorLabels)
+                                .map(i -> updatedPodSets.stream().flatMap(podSet -> ReconcilerUtils.nodesFromPodSet(podSet).stream())
+                                .collect(Collectors.toSet()));
+                    } else {
+                        return Future.succeededFuture(Set.of());
                     }
-
-                    return Future.succeededFuture(nodes);
                 });
     }
 
     /* test */ Future<Void> rollKafkaBrokers(Set<NodeRef> nodes, RestartReasons podRollReasons, TlsPemIdentity coTlsPemIdentity) {
         return createKafkaRoller(nodes, coTlsPemIdentity).rollingRestart(pod -> {
-            LOGGER.debugCr(reconciliation, "Rolling Pod {} due to {}", pod.getMetadata().getName(), podRollReasons.getReasons());
-            return podRollReasons;
+            int clusterCaKeyGeneration = clusterCa.caKeyGeneration();
+            int podClusterCaKeyGeneration = Annotations.intAnnotation(pod, Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, clusterCaKeyGeneration);
+            if (clusterCaKeyGeneration == podClusterCaKeyGeneration) {
+                LOGGER.debugCr(reconciliation, "Not rolling Pod {} since the Cluster CA cert key generation is correct.", pod.getMetadata().getName());
+                return RestartReasons.empty();
+            } else {
+                LOGGER.debugCr(reconciliation, "Rolling Pod {} due to {}", pod.getMetadata().getName(), podRollReasons.getReasons());
+                return podRollReasons;
+            }
         });
     }
 

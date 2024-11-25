@@ -99,6 +99,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.anEmptyMap;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
@@ -1461,7 +1462,26 @@ public class CaReconcilerTest {
                 controllerPods,
                 brokerPods);
 
-        Checkpoint async = context.checkpoint();
+        Checkpoint async = context.checkpoint(2);
+        when(supplier.strimziPodSetOperator.batchReconcile(any(), eq(NAMESPACE), any(), any(Labels.class))).thenAnswer(i -> {
+            List<StrimziPodSet> podSets = i.getArgument(2);
+            context.verify(() -> {
+                assertThat(podSets, hasSize(2));
+                List<Pod> returnedPods = podSets
+                        .stream()
+                        .flatMap(podSet -> PodSetUtils.podSetToPods(podSet).stream())
+                        .toList();
+                for (Pod pod : returnedPods) {
+                    Map<String, String> podAnnotations = pod.getMetadata().getAnnotations();
+                    // Expect that the CA key generation was updated. CA cert generations are updated by component reconcilers
+                    assertThat(podAnnotations, hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0"));
+                    assertThat(podAnnotations, hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "1"));
+                    assertThat(podAnnotations, hasEntry(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0"));
+                }
+            });
+            async.flag();
+            return Future.succeededFuture();
+        });
 
         NewMockCaReconciler mockCaReconciler = new NewMockCaReconciler(reconciliation, KAFKA, new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup()).with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "1").build(),
                 supplier, vertx, CERT_MANAGER, PASSWORD_GENERATOR);
@@ -1507,14 +1527,18 @@ public class CaReconcilerTest {
                 Map.of(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0",
                         Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "0",
                         Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0");
+        Map<String, String> updatedGenerationAnnotations =
+                Map.of(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0",
+                        Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "1",
+                        Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0");
 
         // Kafka pods with old CA cert and key generation
         List<Pod> controllerPods = new ArrayList<>();
         controllerPods.add(podWithNameAndAnnotations("my-cluster-controllers-3", false, true, generationAnnotations));
-        controllerPods.add(podWithNameAndAnnotations("my-cluster-controllers-4", false, true, generationAnnotations));
+        controllerPods.add(podWithNameAndAnnotations("my-cluster-controllers-4", false, true, updatedGenerationAnnotations));
         controllerPods.add(podWithNameAndAnnotations("my-cluster-controllers-5", false, true, generationAnnotations));
         List<Pod> brokerPods = new ArrayList<>();
-        brokerPods.add(podWithNameAndAnnotations("my-cluster-brokers-0", true, false, generationAnnotations));
+        brokerPods.add(podWithNameAndAnnotations("my-cluster-brokers-0", true, false, updatedGenerationAnnotations));
         brokerPods.add(podWithNameAndAnnotations("my-cluster-brokers-1", true, false, generationAnnotations));
         brokerPods.add(podWithNameAndAnnotations("my-cluster-brokers-2", true, false, generationAnnotations));
 
@@ -1525,7 +1549,26 @@ public class CaReconcilerTest {
                 brokerPods
         );
 
-        Checkpoint async = context.checkpoint();
+        Checkpoint async = context.checkpoint(2);
+        when(supplier.strimziPodSetOperator.batchReconcile(any(), eq(NAMESPACE), any(), any(Labels.class))).thenAnswer(i -> {
+            List<StrimziPodSet> podSets = i.getArgument(2);
+            context.verify(() -> {
+                assertThat(podSets, hasSize(2));
+                List<Pod> returnedPods = podSets
+                        .stream()
+                        .flatMap(podSet -> PodSetUtils.podSetToPods(podSet).stream())
+                        .toList();
+                for (Pod pod : returnedPods) {
+                    Map<String, String> podAnnotations = pod.getMetadata().getAnnotations();
+                    // Expect that the CA key generation was updated. CA cert generations are updated by component reconcilers
+                    assertThat(podAnnotations, hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0"));
+                    assertThat(podAnnotations, hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "1"));
+                    assertThat(podAnnotations, hasEntry(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0"));
+                }
+            });
+            async.flag();
+            return Future.succeededFuture();
+        });
 
         NewMockCaReconciler mockCaReconciler = new NewMockCaReconciler(reconciliation, KAFKA, new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup()).with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "1").build(),
                 supplier, vertx, CERT_MANAGER, PASSWORD_GENERATOR);
@@ -1534,8 +1577,12 @@ public class CaReconcilerTest {
                 .onComplete(context.succeeding(c -> context.verify(() -> {
                     assertThat("Kafka restart reasons", mockCaReconciler.kafkaRestartReasons, aMapWithSize(6));
                     mockCaReconciler.kafkaRestartReasons.forEach((podName, restartReasons) -> {
-                        assertThat("Restart reasons for pod " + podName, restartReasons.getReasons(), hasSize(1));
-                        assertThat("Restart reasons for pod " + podName, restartReasons.contains(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED), is(true));
+                        if ("my-cluster-controllers-4".equals(podName) || "my-cluster-brokers-0".equals(podName)) {
+                            assertThat("Pod " + podName + " should not be restarted", restartReasons.getReasons(), empty());
+                        } else {
+                            assertThat("Restart reasons for pod " + podName, restartReasons.getReasons(), hasSize(1));
+                            assertThat("Restart reasons for pod " + podName, restartReasons.contains(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED), is(true));
+                        }
                     });
                     assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, aMapWithSize(3));
                     mockCaReconciler.deploymentRestartReasons.forEach((deploymentName, restartReason) ->
@@ -1644,7 +1691,26 @@ public class CaReconcilerTest {
                 controllerPods,
                 brokerPods);
 
-        Checkpoint async = context.checkpoint();
+        Checkpoint async = context.checkpoint(2);
+        when(supplier.strimziPodSetOperator.batchReconcile(any(), eq(NAMESPACE), any(), any(Labels.class))).thenAnswer(i -> {
+            List<StrimziPodSet> podSets = i.getArgument(2);
+            context.verify(() -> {
+                assertThat(podSets, hasSize(2));
+                List<Pod> returnedPods = podSets
+                        .stream()
+                        .flatMap(podSet -> PodSetUtils.podSetToPods(podSet).stream())
+                        .toList();
+                for (Pod pod : returnedPods) {
+                    Map<String, String> podAnnotations = pod.getMetadata().getAnnotations();
+                    // Expect that the CA key generation was updated. CA cert generations are updated by component reconcilers
+                    assertThat(podAnnotations, hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0"));
+                    assertThat(podAnnotations, hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "1"));
+                    assertThat(podAnnotations, hasEntry(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0"));
+                }
+            });
+            async.flag();
+            return Future.succeededFuture();
+        });
 
         // Disable CA generation
         Kafka kafka = new KafkaBuilder(KAFKA)
@@ -1730,15 +1796,8 @@ public class CaReconcilerTest {
         mockCaReconciler
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
-                    // When user is managing CA a cert renewal implies a key replacement
-                    assertThat("Kafka restart reasons", mockCaReconciler.kafkaRestartReasons, aMapWithSize(6));
-                    mockCaReconciler.kafkaRestartReasons.forEach((podName, restartReasons) -> {
-                        assertThat("Restart reasons for pod " + podName, restartReasons.getReasons(), hasSize(1));
-                        assertThat("Restart reasons for pod " + podName, restartReasons.contains(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED), is(true));
-                    });
-                    assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, aMapWithSize(3));
-                    mockCaReconciler.deploymentRestartReasons.forEach((deploymentName, restartReason) ->
-                            assertThat("Deployment restart reason for " + deploymentName, restartReason.equals(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED.getDefaultNote()), is(true)));
+                    assertThat("Kafka restart reasons", mockCaReconciler.kafkaRestartReasons, anEmptyMap());
+                    assertThat("Deployment restart reasons", mockCaReconciler.deploymentRestartReasons, anEmptyMap());
                     async.flag();
                 })));
     }
