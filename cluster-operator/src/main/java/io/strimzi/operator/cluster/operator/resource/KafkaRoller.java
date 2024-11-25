@@ -20,6 +20,7 @@ import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.common.AdminClientProvider;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -208,14 +209,14 @@ public class KafkaRoller {
      * Initializes controllerAdminClient if it has not been initialized yet
      * @return true if the creation of AC succeeded, false otherwise
      */
-    private boolean maybeInitControllerAdminClient() {
+    private boolean maybeInitControllerAdminClient(String currentVersion) {
         if (this.controllerAdminClient == null) {
             // Prior to 3.9.0, Kafka did not support directly connecting to controllers nodes
             // via Kafka Admin API when running in KRaft mode.
             // Therefore, use brokers to initialise adminClient for quorum health check
             // when the version is older than 3.9.0.
             try {
-                if (KafkaVersion.compareDottedVersions(kafkaVersion.version(), "3.9.0") >= 0) {
+                if (currentVersion != null && KafkaVersion.compareDottedVersions(currentVersion, "3.9.0") >= 0) {
                     this.controllerAdminClient = controllerAdminClient(nodes);
                 } else {
                     this.controllerAdminClient = brokerAdminClient(Set.of());
@@ -454,9 +455,11 @@ public class KafkaRoller {
         // change and the desired roles still apply.
         boolean isBroker = Labels.booleanLabel(pod, Labels.STRIMZI_BROKER_ROLE_LABEL, nodeRef.broker());
         boolean isController = Labels.booleanLabel(pod, Labels.STRIMZI_CONTROLLER_ROLE_LABEL, nodeRef.controller());
+        // This is relevant when creating admin client for controllers
+        String currentVersion = pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_KAFKA_VERSION);
 
         try {
-            checkIfRestartOrReconfigureRequired(nodeRef, isController, isBroker, restartContext);
+            checkIfRestartOrReconfigureRequired(nodeRef, isController, isBroker, restartContext, currentVersion);
             if (restartContext.forceRestart) {
                 LOGGER.debugCr(reconciliation, "Pod {} can be rolled now", nodeRef);
                 restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
@@ -586,7 +589,7 @@ public class KafkaRoller {
      * Determine whether the pod should be restarted, or the broker reconfigured.
      */
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
-    private void checkIfRestartOrReconfigureRequired(NodeRef nodeRef, boolean isController, boolean isBroker, RestartContext restartContext) throws ForceableProblem, InterruptedException, FatalProblem, UnforceableProblem {
+    private void checkIfRestartOrReconfigureRequired(NodeRef nodeRef, boolean isController, boolean isBroker, RestartContext restartContext, String currentVersion) throws ForceableProblem, InterruptedException, FatalProblem, UnforceableProblem {
         RestartReasons reasonToRestartPod = restartContext.restartReasons;
         if (restartContext.podStuck && !reasonToRestartPod.contains(RestartReason.POD_HAS_OLD_REVISION)) {
             // If the pod is unschedulable then deleting it, or trying to open an Admin client to it will make no difference
@@ -609,8 +612,8 @@ public class KafkaRoller {
 
         // if it is a pure controller, initialise the admin client specifically for controllers
         if (isController && !isBroker) {
-            if (!maybeInitControllerAdminClient()) {
-                handleFailedAdminClientForController(nodeRef, restartContext, reasonToRestartPod);
+            if (!maybeInitControllerAdminClient(currentVersion)) {
+                handleFailedAdminClientForController(nodeRef, restartContext, reasonToRestartPod, currentVersion);
                 return;
             }
             restartContext.quorumCheck = quorumCheck(controllerAdminClient, nodeRef);
@@ -674,8 +677,8 @@ public class KafkaRoller {
         restartContext.brokerLoggingDiff = brokerLoggingDiff;
     }
 
-    private void handleFailedAdminClientForController(NodeRef nodeRef, RestartContext restartContext, RestartReasons reasonToRestartPod) throws UnforceableProblem {
-        if (KafkaVersion.compareDottedVersions(kafkaVersion.version(), "3.9.0") >= 0) {
+    private void handleFailedAdminClientForController(NodeRef nodeRef, RestartContext restartContext, RestartReasons reasonToRestartPod, String currentVersion) throws UnforceableProblem {
+        if (currentVersion != null && KafkaVersion.compareDottedVersions(currentVersion, "3.9.0") >= 0) {
             // If the version supports talking to controllers, force restart this pod when the admin client cannot be initialised.
             // There is no reason to continue as we won't be able to connect an admin client to this pod for other checks later.
             LOGGER.infoCr(reconciliation, "KafkaQuorumCheck cannot be initialised for {} because none of the controllers do not seem to responding to connection attempts.", nodeRef);
