@@ -44,6 +44,7 @@ import static io.strimzi.operator.common.model.cruisecontrol.CruiseControlHeader
  */
 public class CruiseControlApiImpl implements CruiseControlApi {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(CruiseControlApiImpl.class);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     /**
      * Default timeout for the HTTP client (-1 means use the clients default)
      */
@@ -54,7 +55,6 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     private final HTTPHeader authHttpHeader;
     private final PemTrustSet pemTrustSet;
     private final HttpClient httpClient;
-    private final ObjectMapper objectMapper;
 
     /**
      * Constructor
@@ -71,7 +71,6 @@ public class CruiseControlApiImpl implements CruiseControlApi {
         this.authHttpHeader = getAuthHttpHeader(apiAuthEnabled, ccApiSecret);
         this.pemTrustSet = new PemTrustSet(ccSecret);
         this.httpClient = buildHttpClient();
-        this.objectMapper = new ObjectMapper();
     }
 
     @Override
@@ -104,13 +103,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                     int statusCode = response.statusCode();
                     if (statusCode == 200 || statusCode == 201) {
                         String userTaskID = response.headers().firstValue(CruiseControlHeaders.USER_TASK_ID_HEADER).orElse("");
-                        JsonNode json;
-                        try {
-                            json = objectMapper.readTree(response.body());
-                        } catch (JsonProcessingException e) {
-                            return CompletableFuture.failedFuture(new CruiseControlRestException(
-                                    "Error for request: " + host + ":" + port + path + ". Failed to deserialize the response: " + e));
-                        }
+                        JsonNode json = parseToJsonNode(response.body());
 
                         LOGGER.debugCr(reconciliation, "Got {} response to GET request to {} : userTaskID = {}", response.statusCode(), path, userTaskID);
                         if (json.has(CC_REST_API_ERROR_KEY)) {
@@ -165,7 +158,17 @@ public class CruiseControlApiImpl implements CruiseControlApi {
         }
     }
 
-    @SuppressWarnings("checkstyle:CyclomaticComplexity")
+    private JsonNode parseToJsonNode(String responseBody) {
+        JsonNode json;
+        try {
+            json = OBJECT_MAPPER.readTree(responseBody);
+        } catch (JsonProcessingException e) {
+            throw new CruiseControlRestException(
+                    "Failed to deserialize the response: " + e);
+        }
+        return json;
+    }
+
     private CompletableFuture<CruiseControlRebalanceResponse> internalRebalance(Reconciliation reconciliation, String host, int port, String path, String userTaskId) {
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(String.format("%s://%s:%d%s", apiSslEnabled ? "https" : "http", host, port, path)))
@@ -192,33 +195,20 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                     // send request and handle response
                     LOGGER.traceCr(reconciliation, "Response: {}, body: {}", response, response.body());
                     int statusCode = response.statusCode();
-
-                    JsonNode json = null;
-                    String userTaskID = "";
-                    String errorMessage = "";
-
-                    if (statusCode == 200 || statusCode == 201 || statusCode == 202 || statusCode == 500) {
-                        try {
-                            json = objectMapper.readTree(response.body());
-                        } catch (JsonProcessingException e) {
-                            return CompletableFuture.failedFuture(new CruiseControlRestException(
-                                    "Error for request: " + host + ":" + port + path + ". Failed to deserialize the response: " + e));
-                        }
-
-                        userTaskID = response.headers().firstValue(USER_TASK_ID_HEADER).orElse("");
-
-                        if (json.has(CC_REST_API_ERROR_KEY)) errorMessage = json.get(CC_REST_API_ERROR_KEY).asText();
-                    }
+                    String userTaskID = response.headers().firstValue(USER_TASK_ID_HEADER).orElse("");
 
                     if (statusCode == 200 || statusCode == 201) {
-                        if (!errorMessage.isEmpty()) {
+                        JsonNode json = parseToJsonNode(response.body());
+                        LOGGER.debugCr(reconciliation, "Got {} response to POST request to {} : userTaskID = {}", response.statusCode(), path, userTaskID);
+                        if (json.has(CC_REST_API_ERROR_KEY)) {
                             return CompletableFuture.failedFuture(new CruiseControlRestException(
                                     "Error for request: " + host + ":" + port + path + ". Server returned: " +
-                                            errorMessage));
+                                            json.get(CC_REST_API_ERROR_KEY).asText()));
                         } else {
                             return CompletableFuture.completedFuture(new CruiseControlRebalanceResponse(userTaskID, json));
                         }
                     } else if (statusCode == 202) {
+                        JsonNode json = parseToJsonNode(response.body());
                         LOGGER.debugCr(reconciliation, "Got {} response to POST request to {} : userTaskID = {}", response.statusCode(), path, userTaskID);
                         CruiseControlRebalanceResponse ccResponse = new CruiseControlRebalanceResponse(userTaskID, json);
                         if (json.has(CC_REST_API_PROGRESS_KEY)) {
@@ -232,22 +222,24 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                         }
                         return CompletableFuture.completedFuture(ccResponse);
                     } else if (statusCode == 500) {
+                        JsonNode json = parseToJsonNode(response.body());
                         LOGGER.debugCr(reconciliation, "Got {} response to POST request to {} : userTaskID = {}", response.statusCode(), path, userTaskID);
-                        if (errorMessage != null) {
+                        if ((json.has(CC_REST_API_ERROR_KEY))) {
+                            String errorString = json.get(CC_REST_API_ERROR_KEY).asText();
                             // If there was a client side error, check whether it was due to not enough data being available ...
-                            if (errorMessage.contains("NotEnoughValidWindowsException")) {
+                            if (errorString.contains("NotEnoughValidWindowsException")) {
                                 CruiseControlRebalanceResponse ccResponse = new CruiseControlRebalanceResponse(userTaskID, json);
                                 ccResponse.setNotEnoughDataForProposal(true);
                                 return CompletableFuture.completedFuture(ccResponse);
                                 // ... or one or more brokers doesn't exist on a add/remove brokers rebalance request
-                            } else if (errorMessage.contains("IllegalArgumentException") &&
-                                    errorMessage.contains("does not exist.")) {
+                            } else if (errorString.contains("IllegalArgumentException") &&
+                                    errorString.contains("does not exist.")) {
                                 return CompletableFuture.failedFuture(new IllegalArgumentException("Some/all brokers specified don't exist"));
                             } else {
                                 // If there was any other kind of error propagate this to the operator
                                 return CompletableFuture.failedFuture(new CruiseControlRestException(
                                         "Error for request: " + host + ":" + port + path + ". Server returned: " +
-                                                errorMessage));
+                                                errorString));
                             }
                         } else {
                             return CompletableFuture.failedFuture(new CruiseControlRestException(
@@ -325,7 +317,6 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     }
 
     @Override
-    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     public CompletableFuture<CruiseControlUserTasksResponse> getUserTaskStatus(Reconciliation reconciliation, String host, int port, String userTaskId) {
         PathBuilder pathBuilder = new PathBuilder(CruiseControlEndpoints.USER_TASKS)
                         .withParameter(CruiseControlParameters.JSON, "true")
@@ -358,26 +349,12 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                     // send request and handle response
                     LOGGER.traceCr(reconciliation, "Response: {}, body: {}", response, response.body());
                     int statusCode = response.statusCode();
-                    JsonNode json = null;
-                    String userTaskID = "";
-                    String errorMessage = "";
-
-                    if (statusCode == 200 || statusCode == 201 || statusCode == 500) {
-                        try {
-                            json = objectMapper.readTree(response.body());
-                        } catch (JsonProcessingException e) {
-                            return CompletableFuture.failedFuture(new CruiseControlRestException(
-                                    "Error for request: " + host + ":" + port + path + ". Failed to deserialize the response: " + e));
-                        }
-
-                        userTaskID = response.headers().firstValue(USER_TASK_ID_HEADER).orElse("");
-
-                        if (json.has(CC_REST_API_ERROR_KEY)) errorMessage = json.get(CC_REST_API_ERROR_KEY).asText();
-                    }
+                    String userTaskID = response.headers().firstValue(USER_TASK_ID_HEADER).orElse("");
 
                     if (statusCode == 200 || statusCode == 201) {
+                        JsonNode json = parseToJsonNode(response.body());
                         ArrayNode userTasks = (ArrayNode) json.get("userTasks");
-                        ObjectNode statusJson = objectMapper.createObjectNode();
+                        ObjectNode statusJson = OBJECT_MAPPER.createObjectNode();
                         if (userTasks.isEmpty()) {
                             // This may happen if:
                             // 1. Cruise Control restarted so resetting the state because the tasks queue is not persisted
@@ -406,14 +383,8 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                 case COMPLETED:
                                     // Completed tasks will have the original rebalance proposal summary in their original response
                                     // The original response is not Json, therefore it needs to be parsed
-                                    JsonNode originalResponse;
-                                    try {
-                                        originalResponse = objectMapper.readTree(jsonUserTask.get(
+                                    JsonNode originalResponse = parseToJsonNode(jsonUserTask.get(
                                                 CruiseControlRebalanceKeys.ORIGINAL_RESPONSE.getKey()).asText());
-                                    } catch (JsonProcessingException e) {
-                                        return CompletableFuture.failedFuture(new CruiseControlRestException(
-                                                "Error for request: " + host + ":" + port + path + ". Failed to deserialize the original response: " + e));
-                                    }
                                     statusJson.set(CruiseControlRebalanceKeys.SUMMARY.getKey(),
                                             originalResponse.get(CruiseControlRebalanceKeys.SUMMARY.getKey()));
                                     // Extract the load before/after information for the brokers
@@ -437,18 +408,22 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                             return CompletableFuture.completedFuture(new CruiseControlUserTasksResponse(userTaskID, statusJson));
                         }
                     } else if (statusCode == 500) {
+                        JsonNode json = parseToJsonNode(response.body());
                         LOGGER.debugCr(reconciliation, "Got {} response to GET request to {} : userTaskID = {}", response.statusCode(), path, userTaskID);
-                        if (errorMessage.isEmpty()) {
-                            errorMessage = json.asText();
+                        String errorString;
+                        if (json.has(CC_REST_API_ERROR_KEY)) {
+                            errorString = json.get(CC_REST_API_ERROR_KEY).asText();
+                        } else {
+                            errorString = json.asText();
                         }
-                        if (errorMessage.matches(".*" + "There are already \\d+ active user tasks, which has reached the servlet capacity." + ".*")) {
-                            LOGGER.debugCr(reconciliation, errorMessage);
+                        if (errorString.matches(".*" + "There are already \\d+ active user tasks, which has reached the servlet capacity." + ".*")) {
+                            LOGGER.debugCr(reconciliation, errorString);
                             CruiseControlUserTasksResponse ccResponse = new CruiseControlUserTasksResponse(userTaskID, json);
                             ccResponse.setMaxActiveUserTasksReached(true);
                             return CompletableFuture.completedFuture(ccResponse);
                         } else {
                             return CompletableFuture.failedFuture(new CruiseControlRestException(
-                                    "Error for request: " + host + ":" + port + path + ". Server returned: " + errorMessage));
+                                    "Error for request: " + host + ":" + port + path + ". Server returned: " + errorString));
                         }
                     } else {
                         return CompletableFuture.failedFuture(new CruiseControlRestException(
@@ -490,13 +465,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                     int statusCode = response.statusCode();
                     if (statusCode == 200 || statusCode == 201) {
                         String userTaskID = response.headers().firstValue(CruiseControlHeaders.USER_TASK_ID_HEADER).orElse("");
-                        JsonNode json;
-                        try {
-                            json = objectMapper.readTree(response.body());
-                        } catch (JsonProcessingException e) {
-                            return CompletableFuture.failedFuture(new CruiseControlRestException(
-                                    "Error for request: " + host + ":" + port + path + ". Failed to deserialize the response: " + e));
-                        }
+                        JsonNode json = parseToJsonNode(response.body());
 
                         LOGGER.debugCr(reconciliation, "Got {} response to POST request to {} : userTaskID = {}", response.statusCode(), path, userTaskID);
                         if (json.has(CC_REST_API_ERROR_KEY)) {
