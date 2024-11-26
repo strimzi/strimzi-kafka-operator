@@ -7,7 +7,7 @@
 
 [role="_abstract"]
 Off-cluster access using node ports with TLS encryption enabled does not support TLS hostname verification.
-The reason is that Strimzi does not know what will be the address of the node where the broker Pod will be scheduled and cannot add it to the broker certificate.
+This is because Strimzi does not know the address of the node where the broker pod is scheduled and cannot include it in the broker certificate.
 Consequently, clients that perform hostname verification will fail to connect.
 
 For example, a Java client will fail with the following exception:
@@ -32,4 +32,6 @@ When configuring the client directly in Java, set the configuration option to an
 [source,java]
 props.put("ssl.endpoint.identification.algorithm", "");
 
-Alternatively, if you know the addresses of the worker nodes where the brokers will be scheduled upfront (for example because your cluster is running on bare-metal with a limited number of available worker nodes), you can use the link:{BookURLConfiguring}#property-listener-config-altnames-reference[`alternativeNames` field ^] to add additional SANs to the broker certificates manually.
+Alternatively, if you know the addresses of the worker nodes where the brokers are scheduled, you can add them as additional SANs (Subject Alternative Names) to the broker certificates manually. 
+For example, this might apply if your cluster is running on a bare metal deployment with a limited number of available worker nodes. 
+Use the link:{BookURLConfiguring}#property-listener-config-altnames-reference[`alternativeNames` property ^] to specify additional SANS.
