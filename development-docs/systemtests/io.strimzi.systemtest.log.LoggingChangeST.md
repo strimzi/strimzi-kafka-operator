@@ -25,7 +25,7 @@
 | - | - | - |
 | 1. | Deploy Kafka cluster, without any logging related configuration. | Cluster is deployed. |
 | 2. | Modify Kafka by changing specification of logging to new external value. | Change in logging specification triggers Rolling Update. |
-| 3. | Modify Kafka by changing specification of logging to new logging format. | Change in logging specification triggers Rolling Update. |
+| 3. | Modify ConfigMap to new logging format. | Change in logging specification triggers Rolling Update. |
 
 **Labels:**
 
@@ -35,14 +35,14 @@
 
 ## testDynamicallyAndNonDynamicSetConnectLoggingLevels
 
-**Description:** This test case verifies dynamic and non-dynamic changes in KafkaConnect logging level.
+**Description:** This test dynamically changes the logging levels of the Kafka Bridge and verifies the application behaves correctly with respect to these changes.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
 | 1. | Deploy Kafka cluster and KafkaConnect cluster, the latter with Log level Off. | Clusters are deployed with KafkaConnect log level set to Off. |
-| 2. | Deploy all additional resources, scraper Pod and network policies. | Additional resources, scraper Pod and network policies are deployed. |
+| 2. | Deploy all additional resources, Scraper Pod and network policies (in order to gather the stuff from the Scraper Pod). | Additional resources, Scraper Pod and network policies are deployed. |
 | 3. | Verify that no logs are present in KafkaConnect Pods. | KafkaConnect Pods contain no logs. |
 | 4. | Set inline log level to Debug in KafkaConnect CustomResource. | Log level is set to Debug, and pods provide logs on Debug level. |
 | 5. | Change inline log level from Debug to Info in KafkaConnect CustomResource. | Log level is changed to Info, and pods provide logs on Info level. |
@@ -59,20 +59,20 @@
 
 ## testDynamicallySetBridgeLoggingLevels
 
-**Description:** This test dynamically changes the logging levels of the Kafka Bridge and verifies the application behaves correctly with respect to these changes.
+**Description:** This test dynamically changes the logging levels of the Kafka Bridge and verifies that it behaves correctly in response to these changes.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Configure initial logging levels to OFF. | Logging levels are set to OFF. |
-| 2. | Deploy Kafka resources asynchronously and wait for their readiness. | Kafka resources, including the Bridge, become ready. |
-| 3. | Ensure that no logs are produced initially. | Logs are confirmed to be empty. |
-| 4. | Change rootLogger level to DEBUG using inline logging and apply the changes. | Logging level is updated to DEBUG and changes are reflected in log4j2.properties. |
-| 5. | Verify logs contain expected records with DEBUG level. | Logs contain records matching the DEBUG level setting. |
-| 6. | Switch to external logging configuration with rootLogger level OFF. | Logging levels are updated to OFF using an external ConfigMap. |
-| 7. | Verify logs are empty again after external configuration is applied. | Logs are confirmed to be empty with the OFF level setting. |
-| 8. | Ensure Bridge Pod did not roll during the logging level changes. | Bridge Pod maintains its original state. |
+| 1. | Configure the initial logging levels of the Kafka Bridge to OFF using inline logging. | Kafka Bridge logging levels are set to OFF. |
+| 2. | Asynchronously deploy the Kafka Bridge with the initial logging configuration, along with the required Kafka cluster and Scraper Pod. | Kafka Bridge and all required resources become ready. |
+| 3. | Verify that the Kafka Bridge logs are empty due to logging level being OFF. | Kafka Bridge logs are confirmed to be empty. |
+| 4. | Change the Kafka Bridge's rootLogger level to DEBUG using inline logging and apply the changes. | Kafka Bridge logging level is updated to DEBUG and reflected in its log4j2.properties. |
+| 5. | Verify that the Kafka Bridge logs now contain records at the DEBUG level. | Kafka Bridge logs contain expected DEBUG level records. |
+| 6. | Switch the Kafka Bridge to use an external logging configuration from a ConfigMap with rootLogger level set to OFF. | Kafka Bridge logging levels are updated to OFF using the external ConfigMap. |
+| 7. | Verify that the Kafka Bridge logs are empty again after applying the external logging configuration. | Kafka Bridge logs are confirmed to be empty. |
+| 8. | Ensure that the Kafka Bridge Pod did not restart or roll during the logging level changes. | Kafka Bridge Pod maintains its original state without restarting. |
 
 **Labels:**
 
@@ -124,17 +124,18 @@
 
 ## testDynamicallySetKafkaExternalLogging
 
-**Description:** Test dynamically setting Kafka external logging configurations to ensure logging updates without triggering unnecessary rolling updates, and verifies correct logging behavior.
+**Description:** Test dynamic updates to Kafka's external logging configuration to ensure that logging updates are applied correctly, with or without triggering a rolling update based on the nature of the changes.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create a ConfigMap with initial logging settings. | ConfigMap is created with the 'external-cm' name. |
-| 2. | Apply external logging configuration to Kafka brokers. | Kafka brokers are configured with the specified external logging. |
-| 3. | Verify no rolling update occurs after initial logging update. | No rolling update occurs and logging change is verified. |
-| 4. | Update ConfigMap with new logger levels. | ConfigMap is updated and rolling update is expected. |
-| 5. | Verify rolling update completion and new logging settings applied. | Rolling update is completed successfully and new settings are active. |
+| 1. | Create a ConfigMap 'external-cm' with initial logging settings for Kafka. | ConfigMap 'external-cm' is created with initial logging settings. |
+| 2. | Deploy a Kafka cluster configured to use the external logging ConfigMap, along with a Scraper Pod. | Kafka cluster and Scraper Pod are successfully deployed and become ready. |
+| 3. | Update the ConfigMap 'external-cm' to change logger levels that can be updated dynamically. | ConfigMap is updated, and dynamic logging changes are applied without triggering a rolling update. |
+| 4. | Verify that no rolling update occurs and that the new logger levels are active in the Kafka brokers. | No rolling update occurs; Kafka brokers reflect the new logger levels. |
+| 5. | Update the ConfigMap 'external-cm' to change logger settings that require a rolling update. | ConfigMap is updated with changes that cannot be applied dynamically. |
+| 6. | Verify that a rolling update occurs and that the new logging settings are applied after the restart. | Rolling update completes successfully; Kafka brokers are updated with the new logging settings. |
 
 **Labels:**
 
@@ -173,7 +174,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Set initial logging level to OFF and deploy resources. | Resources are deployed with logging level set to OFF. |
+| 1. | Set initial logging level to OFF and deploy resources. | Resources are deployed |
 | 2. | Verify the log is empty with level OFF. | Log is confirmed empty. |
 | 3. | Change logging level to DEBUG dynamically. | Logging level changes to DEBUG without pod roll. |
 | 4. | Verify the log is not empty with DEBUG level. | Log contains entries with DEBUG level. |
@@ -195,7 +196,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Retrieve the name of a broker pod and scraper pod. | Pod names are retrieved successfully. |
+| 1. | Retrieve the name of a broker pod and Scraper Pod. | Pod names are retrieved successfully. |
 | 2. | Take a snapshot of broker pod states. | Broker pod states are captured. |
 | 3. | Set new logger configuration with InlineLogging. | Logger is configured to 'log4j.logger.paprika'='INFO'. |
 | 4. | Wait for rolling update of broker components to finish. | Brokers are updated and rolled successfully. |
@@ -215,11 +216,10 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create test storage and resources with required namespaces and node pools. | Resources are created with the correct configuration. |
-| 2. | Take a snapshot of current broker pods. | Snapshot of broker pods is captured successfully. |
-| 3. | Set Kafka root logger level to an unknown value 'PAPRIKA'. | Logger level is updated in the Kafka resource spec. |
-| 4. | Wait to ensure no rolling update is triggered for broker pods. | Kafka brokers do not roll. |
-| 5. | Assert that Kafka Pod should not roll. | Assertion confirms no rolling update was triggered. |
+| 1. | Take a snapshot of current broker pods. | Snapshot of broker pods is captured successfully. |
+| 2. | Set Kafka root logger level to an unknown value 'PAPRIKA'. | Logger level is updated in the Kafka resource spec. |
+| 3. | Wait to ensure no rolling update is triggered for broker pods. | Kafka brokers do not roll. |
+| 4. | Assert that Kafka Pod should not roll. | Assertion confirms no rolling update was triggered. |
 
 **Labels:**
 
@@ -279,7 +279,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Set up source and target Kafka cluster. | Kafka clusters are deployed and ready. |
-| 2. | Configure Kafka MirrorMaker2 with initial logging levels. | Logging configuration is applied with log level 'OFF'. |
+| 2. | Configure Kafka MirrorMaker2 with initial logging level set to `OFF`. | Logging configuration is applied with log level 'OFF'. |
 | 3. | Verify initial logging levels in Kafka MirrorMaker2 pod. | Log level 'OFF' is confirmed. |
 | 4. | Update logging configuration to change log levels. | New logging configuration is applied. |
 | 5. | Verify updated logging levels in Kafka MirrorMaker2 pod. | Log levels 'INFO' and 'WARN' are correctly set as per hierarchy. |

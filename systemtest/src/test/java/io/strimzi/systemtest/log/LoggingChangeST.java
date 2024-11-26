@@ -512,16 +512,16 @@ class LoggingChangeST extends AbstractST {
     @Tag(BRIDGE)
     @Tag(ROLLING_UPDATE)
     @TestDoc(
-        description = @Desc("This test dynamically changes the logging levels of the Kafka Bridge and verifies the application behaves correctly with respect to these changes."),
+        description = @Desc("This test dynamically changes the logging levels of the Kafka Bridge and verifies that it behaves correctly in response to these changes."),
         steps = {
-            @Step(value = "Configure initial logging levels to OFF.", expected = "Logging levels are set to OFF."),
-            @Step(value = "Deploy Kafka resources asynchronously and wait for their readiness.", expected = "Kafka resources, including the Bridge, become ready."),
-            @Step(value = "Ensure that no logs are produced initially.", expected = "Logs are confirmed to be empty."),
-            @Step(value = "Change rootLogger level to DEBUG using inline logging and apply the changes.", expected = "Logging level is updated to DEBUG and changes are reflected in log4j2.properties."),
-            @Step(value = "Verify logs contain expected records with DEBUG level.", expected = "Logs contain records matching the DEBUG level setting."),
-            @Step(value = "Switch to external logging configuration with rootLogger level OFF.", expected = "Logging levels are updated to OFF using an external ConfigMap."),
-            @Step(value = "Verify logs are empty again after external configuration is applied.", expected = "Logs are confirmed to be empty with the OFF level setting."),
-            @Step(value = "Ensure Bridge Pod did not roll during the logging level changes.", expected = "Bridge Pod maintains its original state.")
+            @Step(value = "Configure the initial logging levels of the Kafka Bridge to OFF using inline logging.", expected = "Kafka Bridge logging levels are set to OFF."),
+            @Step(value = "Asynchronously deploy the Kafka Bridge with the initial logging configuration, along with the required Kafka cluster and Scraper Pod.", expected = "Kafka Bridge and all required resources become ready."),
+            @Step(value = "Verify that the Kafka Bridge logs are empty due to logging level being OFF.", expected = "Kafka Bridge logs are confirmed to be empty."),
+            @Step(value = "Change the Kafka Bridge's rootLogger level to DEBUG using inline logging and apply the changes.", expected = "Kafka Bridge logging level is updated to DEBUG and reflected in its log4j2.properties."),
+            @Step(value = "Verify that the Kafka Bridge logs now contain records at the DEBUG level.", expected = "Kafka Bridge logs contain expected DEBUG level records."),
+            @Step(value = "Switch the Kafka Bridge to use an external logging configuration from a ConfigMap with rootLogger level set to OFF.", expected = "Kafka Bridge logging levels are updated to OFF using the external ConfigMap."),
+            @Step(value = "Verify that the Kafka Bridge logs are empty again after applying the external logging configuration.", expected = "Kafka Bridge logs are confirmed to be empty."),
+            @Step(value = "Ensure that the Kafka Bridge Pod did not restart or roll during the logging level changes.", expected = "Kafka Bridge Pod maintains its original state without restarting.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA),
@@ -768,10 +768,10 @@ class LoggingChangeST extends AbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     @TestDoc(
-        description = @Desc("This test case verifies dynamic and non-dynamic changes in KafkaConnect logging level."),
+        description = @Desc("This test dynamically changes the logging levels of the Kafka Bridge and verifies the application behaves correctly with respect to these changes."),
         steps = {
             @Step(value = "Deploy Kafka cluster and KafkaConnect cluster, the latter with Log level Off.", expected = "Clusters are deployed with KafkaConnect log level set to Off."),
-            @Step(value = "Deploy all additional resources, scraper Pod and network policies.", expected = "Additional resources, scraper Pod and network policies are deployed."),
+            @Step(value = "Deploy all additional resources, Scraper Pod and network policies (in order to gather the stuff from the Scraper Pod).", expected = "Additional resources, Scraper Pod and network policies are deployed."),
             @Step(value = "Verify that no logs are present in KafkaConnect Pods.", expected = "KafkaConnect Pods contain no logs."),
             @Step(value = "Set inline log level to Debug in KafkaConnect CustomResource.", expected = "Log level is set to Debug, and pods provide logs on Debug level."),
             @Step(value = "Change inline log level from Debug to Info in KafkaConnect CustomResource.", expected = "Log level is changed to Info, and pods provide logs on Info level."),
@@ -1090,7 +1090,7 @@ class LoggingChangeST extends AbstractST {
     @TestDoc(
         description = @Desc("Test dynamically setting an unknown Kafka logger in the resource."),
         steps = {
-            @Step(value = "Retrieve the name of a broker pod and scraper pod.", expected = "Pod names are retrieved successfully."),
+            @Step(value = "Retrieve the name of a broker pod and Scraper Pod.", expected = "Pod names are retrieved successfully."),
             @Step(value = "Take a snapshot of broker pod states.", expected = "Broker pod states are captured."),
             @Step(value = "Set new logger configuration with InlineLogging.", expected = "Logger is configured to 'log4j.logger.paprika'='INFO'."),
             @Step(value = "Wait for rolling update of broker components to finish.", expected = "Brokers are updated and rolled successfully."),
@@ -1137,7 +1137,6 @@ class LoggingChangeST extends AbstractST {
     @TestDoc(
         description = @Desc("Test the dynamic setting of an unknown Kafka logger value without triggering a rolling update."),
         steps = {
-            @Step(value = "Create test storage and resources with required namespaces and node pools.", expected = "Resources are created with the correct configuration."),
             @Step(value = "Take a snapshot of current broker pods.", expected = "Snapshot of broker pods is captured successfully."),
             @Step(value = "Set Kafka root logger level to an unknown value 'PAPRIKA'.", expected = "Logger level is updated in the Kafka resource spec."),
             @Step(value = "Wait to ensure no rolling update is triggered for broker pods.", expected = "Kafka brokers do not roll."),
@@ -1174,13 +1173,14 @@ class LoggingChangeST extends AbstractST {
 
     @ParallelNamespaceTest
     @TestDoc(
-        description = @Desc("Test dynamically setting Kafka external logging configurations to ensure logging updates without triggering unnecessary rolling updates, and verifies correct logging behavior."),
+        description = @Desc("Test dynamic updates to Kafka's external logging configuration to ensure that logging updates are applied correctly, with or without triggering a rolling update based on the nature of the changes."),
         steps = {
-            @Step(value = "Create a ConfigMap with initial logging settings.", expected = "ConfigMap is created with the 'external-cm' name."),
-            @Step(value = "Apply external logging configuration to Kafka brokers.", expected = "Kafka brokers are configured with the specified external logging."),
-            @Step(value = "Verify no rolling update occurs after initial logging update.", expected = "No rolling update occurs and logging change is verified."),
-            @Step(value = "Update ConfigMap with new logger levels.", expected = "ConfigMap is updated and rolling update is expected."),
-            @Step(value = "Verify rolling update completion and new logging settings applied.", expected = "Rolling update is completed successfully and new settings are active.")
+            @Step(value = "Create a ConfigMap 'external-cm' with initial logging settings for Kafka.", expected = "ConfigMap 'external-cm' is created with initial logging settings."),
+            @Step(value = "Deploy a Kafka cluster configured to use the external logging ConfigMap, along with a Scraper Pod.", expected = "Kafka cluster and Scraper Pod are successfully deployed and become ready."),
+            @Step(value = "Update the ConfigMap 'external-cm' to change logger levels that can be updated dynamically.", expected = "ConfigMap is updated, and dynamic logging changes are applied without triggering a rolling update."),
+            @Step(value = "Verify that no rolling update occurs and that the new logger levels are active in the Kafka brokers.", expected = "No rolling update occurs; Kafka brokers reflect the new logger levels."),
+            @Step(value = "Update the ConfigMap 'external-cm' to change logger settings that require a rolling update.", expected = "ConfigMap is updated with changes that cannot be applied dynamically."),
+            @Step(value = "Verify that a rolling update occurs and that the new logging settings are applied after the restart.", expected = "Rolling update completes successfully; Kafka brokers are updated with the new logging settings.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA),
@@ -1319,7 +1319,7 @@ class LoggingChangeST extends AbstractST {
     @TestDoc(
         description = @Desc("Test to dynamically set logging levels for MirrorMaker2 and verify the changes are applied without pod rolling."),
         steps = {
-            @Step(value = "Set initial logging level to OFF and deploy resources.", expected = "Resources are deployed with logging level set to OFF."),
+            @Step(value = "Set initial logging level to OFF and deploy resources.", expected = "Resources are deployed"),
             @Step(value = "Verify the log is empty with level OFF.", expected = "Log is confirmed empty."),
             @Step(value = "Change logging level to DEBUG dynamically.", expected = "Logging level changes to DEBUG without pod roll."),
             @Step(value = "Verify the log is not empty with DEBUG level.", expected = "Log contains entries with DEBUG level."),
@@ -1455,7 +1455,7 @@ class LoggingChangeST extends AbstractST {
         description = @Desc("Test to ensure logging levels in Kafka MirrorMaker2 follow a specific hierarchy."),
         steps = {
             @Step(value = "Set up source and target Kafka cluster.", expected = "Kafka clusters are deployed and ready."),
-            @Step(value = "Configure Kafka MirrorMaker2 with initial logging levels.", expected = "Logging configuration is applied with log level 'OFF'."),
+            @Step(value = "Configure Kafka MirrorMaker2 with initial logging level set to `OFF`.", expected = "Logging configuration is applied with log level 'OFF'."),
             @Step(value = "Verify initial logging levels in Kafka MirrorMaker2 pod.", expected = "Log level 'OFF' is confirmed."),
             @Step(value = "Update logging configuration to change log levels.", expected = "New logging configuration is applied."),
             @Step(value = "Verify updated logging levels in Kafka MirrorMaker2 pod.", expected = "Log levels 'INFO' and 'WARN' are correctly set as per hierarchy."),
@@ -1772,7 +1772,7 @@ class LoggingChangeST extends AbstractST {
         steps = {
             @Step(value = "Deploy Kafka cluster, without any logging related configuration.", expected = "Cluster is deployed."),
             @Step(value = "Modify Kafka by changing specification of logging to new external value.", expected = "Change in logging specification triggers Rolling Update."),
-            @Step(value = "Modify Kafka by changing specification of logging to new logging format.", expected = "Change in logging specification triggers Rolling Update.")
+            @Step(value = "Modify ConfigMap to new logging format.", expected = "Change in logging specification triggers Rolling Update.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA),
