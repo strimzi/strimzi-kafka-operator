@@ -101,7 +101,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     protected static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/kafka/custom-config/";
 
     // Configuration defaults
-    private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withInitialDelaySeconds(60).build();
+    private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(5).withInitialDelaySeconds(60).build();
 
     // Kafka Connect configuration keys (EnvVariables)
     protected static final String ENV_VAR_PREFIX = "KAFKA_CONNECT_";
