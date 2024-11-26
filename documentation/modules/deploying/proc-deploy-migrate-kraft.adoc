@@ -22,8 +22,6 @@ Note also, the following:
 .Prerequisites
 
 * You must be using Strimzi 0.40 or newer with Kafka 3.7.0 or newer. If you are using an earlier version of Strimzi or Apache Kafka, upgrade before migrating to KRaft mode.
-* Verify that the ZooKeeper-based deployment is operating without the following, as they are not supported in KRaft mode:
-** JBOD storage. While the `jbod` storage type can be used, the JBOD array must contain only one disk.
 * The Cluster Operator that manages the Kafka cluster is running.
 * The Kafka cluster deployment uses Kafka node pools.
 +
