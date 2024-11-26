@@ -216,7 +216,7 @@ public class KafkaRoller {
             // Therefore, use brokers to initialise adminClient for quorum health check
             // when the version is older than 3.9.0.
             try {
-                if (currentVersion != null && KafkaVersion.compareDottedVersions(currentVersion, "3.9.0") >= 0) {
+                if (KafkaVersion.compareDottedVersions(currentVersion, "3.9.0") >= 0) {
                     this.controllerAdminClient = controllerAdminClient(nodes);
                 } else {
                     this.controllerAdminClient = brokerAdminClient(Set.of());
@@ -456,7 +456,7 @@ public class KafkaRoller {
         boolean isBroker = Labels.booleanLabel(pod, Labels.STRIMZI_BROKER_ROLE_LABEL, nodeRef.broker());
         boolean isController = Labels.booleanLabel(pod, Labels.STRIMZI_CONTROLLER_ROLE_LABEL, nodeRef.controller());
         // This is relevant when creating admin client for controllers
-        String currentVersion = pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_KAFKA_VERSION);
+        String currentVersion = Annotations.stringAnnotation(pod, KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION, "0.0.0", null);
 
         try {
             checkIfRestartOrReconfigureRequired(nodeRef, isController, isBroker, restartContext, currentVersion);
@@ -678,7 +678,7 @@ public class KafkaRoller {
     }
 
     private void handleFailedAdminClientForController(NodeRef nodeRef, RestartContext restartContext, RestartReasons reasonToRestartPod, String currentVersion) throws UnforceableProblem {
-        if (currentVersion != null && KafkaVersion.compareDottedVersions(currentVersion, "3.9.0") >= 0) {
+        if (KafkaVersion.compareDottedVersions(currentVersion, "3.9.0") >= 0) {
             // If the version supports talking to controllers, force restart this pod when the admin client cannot be initialised.
             // There is no reason to continue as we won't be able to connect an admin client to this pod for other checks later.
             LOGGER.infoCr(reconciliation, "KafkaQuorumCheck cannot be initialised for {} because none of the controllers do not seem to responding to connection attempts.", nodeRef);

@@ -9,13 +9,13 @@ import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.common.AdminClientProvider;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
@@ -845,7 +845,7 @@ public class KafkaRollerTest {
                         .withNewMetadata()
                         .withNamespace(invocation.getArgument(0))
                         .withName(invocation.getArgument(1))
-                        .addToAnnotations(Annotations.ANNO_STRIMZI_KAFKA_VERSION, version)
+                        .addToAnnotations(KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION, version)
                         .endMetadata()
                         .build()
         );

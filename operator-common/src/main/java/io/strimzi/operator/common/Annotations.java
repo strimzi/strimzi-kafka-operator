@@ -34,10 +34,6 @@ public class Annotations extends ResourceAnnotations {
      * annotation we force a restart of the pods managed by StrimziPodSets or Deployments.
      */
     public static final String ANNO_STRIMZI_LOGGING_HASH = STRIMZI_DOMAIN + "logging-hash";
-    /**
-     * Annotation for current Kafka Version
-     */
-    public static final String ANNO_STRIMZI_KAFKA_VERSION = STRIMZI_DOMAIN + "kafka-version";
 
     /**
      * Annotation for tracking authentication changes
