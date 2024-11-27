@@ -2,7 +2,7 @@
 = Using Cruise Control to reassign partitions on JBOD disks
 
 [role="_abstract"]
-If you are using JBOD storage and have Cruise Control installed with Strimzi, you can reassign partitions and move data between the JBOD disks used for storage on the same broker.
+If you are using JBOD storage and have Cruise Control installed with Strimzi, you can reassign partitions between the JBOD disks used for storage on the same broker.
 This capability also allows you to remove JBOD disks without data loss.
 
 To reassign partitions, configure a `KafkaRebalance` resource in `remove-disks` mode and specify a list of broker IDs with corresponding volume IDs for partition reassignment. 
@@ -333,8 +333,3 @@ In this example, the log directories for volumes 1 and 2 no longer have partitio
       ]
     }
 ----
-
-
-
-
-
