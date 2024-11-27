@@ -68,7 +68,7 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
      *
      * @return  Admin client configuration
      */
-    /* test */ static Properties adminClientConfiguration(PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity, Properties config)    {
+    /* test */ Properties adminClientConfiguration(PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity, Properties config)    {
         if (config == null) {
             throw new InvalidConfigurationException("The config parameter should not be null");
         }
