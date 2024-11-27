@@ -4,11 +4,10 @@
  */
 package io.strimzi.operator.user;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
-import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
-import io.fabric8.kubernetes.client.informers.cache.Lister;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.api.kafka.model.user.KafkaUserList;
 import io.strimzi.operator.common.Annotations;
@@ -25,6 +24,7 @@ import io.strimzi.operator.common.metrics.ControllerMetricsHolder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.Informer;
 import io.strimzi.operator.common.operator.resource.concurrent.SecretOperator;
 import io.strimzi.operator.user.operator.KafkaUserOperator;
 
@@ -60,8 +60,8 @@ public class UserController implements Liveness, Readiness {
     private final long reconcileIntervalMs;
     private final long operationTimeoutMs;
 
-    private final SharedIndexInformer<Secret> secretInformer;
-    private final SharedIndexInformer<KafkaUser> userInformer;
+    private final Informer<Secret> secretInformer;
+    private final Informer<KafkaUser> userInformer;
 
     private final ScheduledExecutorService scheduledExecutor;
 
@@ -106,12 +106,10 @@ public class UserController implements Liveness, Readiness {
         this.workQueue = new ControllerQueue(config.getWorkQueueSize(), this.metrics);
 
         // Secret informer and lister is used to get events about Secrets and get Secrets quickly
-        this.secretInformer = secretOperator.informer(watchedNamespace, secretSelector, DEFAULT_RESYNC_PERIOD_MS);
-        Lister<Secret> secretLister = new Lister<>(secretInformer.getIndexer());
+        this.secretInformer = secretOperator.informer(watchedNamespace, new LabelSelector(null, secretSelector), DEFAULT_RESYNC_PERIOD_MS);
 
         // KafkaUser informer and lister is used to get events about Users and get Users quickly
-        this.userInformer = userCrdOperator.informer(watchedNamespace, userSelector, DEFAULT_RESYNC_PERIOD_MS);
-        Lister<KafkaUser> userLister = new Lister<>(userInformer.getIndexer());
+        this.userInformer = userCrdOperator.informer(watchedNamespace, new LabelSelector(null, userSelector), DEFAULT_RESYNC_PERIOD_MS);
 
         // Creates the scheduled executor service used for periodical reconciliations and progress warnings
         this.scheduledExecutor = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "UserControllerScheduledExecutor"));
@@ -122,7 +120,7 @@ public class UserController implements Liveness, Readiness {
         // Create a thread pool for the reconciliation loops and add the reconciliation loops
         this.threadPool = new ArrayList<>(config.getControllerThreadPoolSize());
         for (int i = 0; i < config.getControllerThreadPoolSize(); i++)  {
-            threadPool.add(new UserControllerLoop(RESOURCE_KIND + "-ControllerLoop-" + i, workQueue, lockManager, scheduledExecutor, userLister, secretLister, userCrdOperator, userOperator, metrics, config));
+            threadPool.add(new UserControllerLoop(RESOURCE_KIND + "-ControllerLoop-" + i, workQueue, lockManager, scheduledExecutor, userInformer, secretInformer, userCrdOperator, userOperator, metrics, config));
         }
     }
 
@@ -194,11 +192,9 @@ public class UserController implements Liveness, Readiness {
     protected void start() {
         // Configure the event handler for the KafkaUser resources
         this.userInformer.addEventHandler(new KafkaUserEventHandler());
-        this.userInformer.exceptionHandler((isStarted, throwable) -> InformerUtils.loggingExceptionHandler("KafkaUser", isStarted, throwable));
 
         // Configure the event handler for Secrets
         this.secretInformer.addEventHandler(new SecretEventHandler());
-        this.userInformer.exceptionHandler((isStarted, throwable) -> InformerUtils.loggingExceptionHandler("Secret", isStarted, throwable));
 
         LOGGER.infoOp("Starting the KafkaUser informer");
         userInformer.start();
