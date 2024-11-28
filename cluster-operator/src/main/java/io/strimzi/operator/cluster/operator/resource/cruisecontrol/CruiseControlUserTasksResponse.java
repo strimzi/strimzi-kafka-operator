@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
-import io.vertx.core.json.JsonObject;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Response to user tasks request
@@ -18,7 +18,7 @@ public class CruiseControlUserTasksResponse extends CruiseControlResponse {
      * @param userTaskId    User task ID
      * @param json          JSON data
      */
-    CruiseControlUserTasksResponse(String userTaskId, JsonObject json) {
+    CruiseControlUserTasksResponse(String userTaskId, JsonNode json) {
         super(userTaskId, json);
         // The maximum number of active user tasks that can run concurrently has reached
         // Sourced from the error message that contains "reached the servlet capacity" from the Cruise Control response

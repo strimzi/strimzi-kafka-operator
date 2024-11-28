@@ -4,14 +4,14 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
-import io.vertx.core.json.JsonObject;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Cruise Control response
  */
 public class CruiseControlResponse {
     private final String userTaskId;
-    private final JsonObject json;
+    private final JsonNode json;
 
     /**
      * Constructor
@@ -19,7 +19,7 @@ public class CruiseControlResponse {
      * @param userTaskId    User task ID
      * @param json          JSON data
      */
-    CruiseControlResponse(String userTaskId, JsonObject json) {
+    CruiseControlResponse(String userTaskId, JsonNode json) {
         this.userTaskId = userTaskId;
         this.json = json;
     }
@@ -34,12 +34,12 @@ public class CruiseControlResponse {
     /**
      * @return  The JSON data of the response
      */
-    public JsonObject getJson() {
+    public JsonNode getJson() {
         return json;
     }
 
     @Override
     public String toString() {
-        return "User Task ID: " + userTaskId + " JSON: " + json.toString();
+        return "User Task ID: " + userTaskId + " JSON: " + json;
     }
 }

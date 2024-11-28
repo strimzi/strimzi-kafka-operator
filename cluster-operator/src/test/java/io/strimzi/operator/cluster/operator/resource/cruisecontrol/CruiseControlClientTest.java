@@ -81,7 +81,7 @@ public class CruiseControlClientTest {
 
         CruiseControlApi client = cruiseControlClientProvider();
         client.getCruiseControlState(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, false)
-                .whenComplete((result, ex) -> assertThat(result.getJson().getJsonObject("ExecutorState"),
+                .whenComplete((result, ex) -> assertThat(result.getJson().get("ExecutorState"),
                         hasEntry("state", "NO_TASK_IN_PROGRESS"))).join();
     }
 
@@ -129,7 +129,7 @@ public class CruiseControlClientTest {
 
         client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID).whenComplete((result, ex) -> {
             assertThat(result.getUserTaskId(), is(MockCruiseControl.USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID));
-            assertThat(result.getJson().getJsonObject(CruiseControlRebalanceKeys.SUMMARY.getKey()), is(notNullValue()));
+            assertThat(result.getJson().get(CruiseControlRebalanceKeys.SUMMARY.getKey()), is(notNullValue()));
         }).join();
     }
 
@@ -502,7 +502,7 @@ public class CruiseControlClientTest {
         for (int i = 1; i <= pendingCalls1; i++) {
             statusFuture = statusFuture.thenCompose(response -> {
                 assertThat(
-                    response.getJson().getString("Status"),
+                    response.getJson().get("Status").asText(),
                     is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()));
                 return client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID);
             });
@@ -510,7 +510,7 @@ public class CruiseControlClientTest {
 
         statusFuture = statusFuture.thenCompose(response -> {
             assertThat(
-                response.getJson().getString("Status"),
+                response.getJson().get("Status").asText(),
                 is(CruiseControlUserTaskStatus.COMPLETED.toString()));
             return CompletableFuture.completedFuture(response);
         });
@@ -530,7 +530,7 @@ public class CruiseControlClientTest {
         for (int i = 1; i <= pendingCalls2; i++) {
             statusFuture = statusFuture.thenCompose(response -> {
                 assertThat(
-                    response.getJson().getString("Status"),
+                    response.getJson().get("Status").asText(),
                     is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()));
                 return client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID);
             });
@@ -538,7 +538,7 @@ public class CruiseControlClientTest {
 
         statusFuture.thenCompose(response -> {
             assertThat(
-                response.getJson().getString("Status"),
+                response.getJson().get("Status").asText(),
                 is(CruiseControlUserTaskStatus.COMPLETED.toString()));
             return CompletableFuture.completedFuture(response);
         }).join();
@@ -554,7 +554,7 @@ public class CruiseControlClientTest {
         for (int i = 1; i <= pendingCalls; i++) {
             statusFuture = statusFuture.thenCompose(response -> {
                 assertThat(
-                    response.getJson().getString("Status"),
+                    response.getJson().get("Status").asText(),
                     is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()));
                 return client.getUserTaskStatus(Reconciliation.DUMMY_RECONCILIATION, HOST, cruiseControlPort, userTaskID);
             });
@@ -562,7 +562,7 @@ public class CruiseControlClientTest {
 
         statusFuture.thenCompose(response -> {
             assertThat(
-                    response.getJson().getString("Status"),
+                    response.getJson().get("Status").asText(),
                     is(CruiseControlUserTaskStatus.COMPLETED.toString()));
             return CompletableFuture.completedFuture(response);
         }).join();

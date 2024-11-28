@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
-import io.vertx.core.json.JsonObject;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Response to rebalance request
@@ -19,7 +19,7 @@ public class CruiseControlRebalanceResponse extends CruiseControlResponse {
      * @param userTaskId    User task ID
      * @param json          JSON data
      */
-    CruiseControlRebalanceResponse(String userTaskId, JsonObject json) {
+    CruiseControlRebalanceResponse(String userTaskId, JsonNode json) {
         super(userTaskId, json);
         // There is sufficient data for proposal unless response from Cruise Control says otherwise
         // Sourced from the NotEnoughValidWindows error from the Cruise Control response

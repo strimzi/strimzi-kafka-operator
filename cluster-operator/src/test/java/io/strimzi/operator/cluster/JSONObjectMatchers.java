@@ -4,20 +4,22 @@
  */
 package io.strimzi.operator.cluster;
 
-import io.vertx.core.json.JsonObject;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class JSONObjectMatchers {
 
-    public static Matcher<JsonObject> hasSize(int size) {
+    public static Matcher<JsonNode> hasSize(int size) {
         return new TypeSafeDiagnosingMatcher<>() {
 
             @Override
-            protected boolean matchesSafely(JsonObject actual, Description mismatchDescription) {
+            protected boolean matchesSafely(JsonNode actual, Description mismatchDescription) {
                 mismatchDescription.appendText("was ").appendValue(actual.size());
                 if (size != actual.size()) {
                     mismatchDescription.appendText("\n There are actually ")
@@ -35,13 +37,15 @@ public class JSONObjectMatchers {
             }
         };
     }
-    public static Matcher<JsonObject> hasKey(String key) {
+    public static Matcher<JsonNode> hasKey(String key) {
         return new TypeSafeDiagnosingMatcher<>() {
 
             @Override
-            protected boolean matchesSafely(JsonObject actual, Description mismatchDescription) {
-                mismatchDescription.appendText("was ").appendValue(actual.fieldNames());
-                if (!actual.fieldNames().contains(key)) {
+            protected boolean matchesSafely(JsonNode actual, Description mismatchDescription) {
+                List<String> fieldNames = new ArrayList<>();
+                actual.fieldNames().forEachRemaining(fieldNames::add);
+                mismatchDescription.appendText("was ").appendValue(fieldNames);
+                if (!fieldNames.contains(key)) {
                     mismatchDescription.appendText("\nDoes not contain desired key");
                     return false;
                 }
@@ -55,12 +59,14 @@ public class JSONObjectMatchers {
         };
     }
 
-    public static Matcher<JsonObject> hasKeys(String... keys) {
+    public static Matcher<JsonNode> hasKeys(String... keys) {
         return new TypeSafeDiagnosingMatcher<>() {
 
             @Override
-            protected boolean matchesSafely(JsonObject actual, Description mismatchDescription) {
-                mismatchDescription.appendText("was ").appendValue(actual.fieldNames());
+            protected boolean matchesSafely(JsonNode actual, Description mismatchDescription) {
+                List<String> fieldNames = new ArrayList<>();
+                actual.fieldNames().forEachRemaining(fieldNames::add);
+                mismatchDescription.appendText("was ").appendValue(fieldNames);
                 boolean matches = true;
                 for (String key : keys) {
                     if (!hasKey(key).matches(actual)) {
@@ -80,18 +86,18 @@ public class JSONObjectMatchers {
         };
     }
 
-    public static Matcher<JsonObject> hasEntry(String key, String value) {
+    public static Matcher<JsonNode> hasEntry(String key, String value) {
         return new TypeSafeDiagnosingMatcher<>() {
 
             @Override
-            protected boolean matchesSafely(JsonObject actual, Description mismatchDescription) {
-                mismatchDescription.appendText("was ").appendValue(actual.getString(key));
+            protected boolean matchesSafely(JsonNode actual, Description mismatchDescription) {
+                mismatchDescription.appendText("was ").appendValue(actual.get(key));
                 if (!hasKey(key).matches(actual)) {
                     mismatchDescription.appendText("\nDoes not contain key " + key);
                     return false;
                 }
 
-                String actualValue = actual.getString(key);
+                String actualValue = actual.get(key).asText();
                 if (!value.equals(actualValue)) {
                     mismatchDescription.appendText("\nKey does not have expected value, found " + actualValue);
                     return false;
