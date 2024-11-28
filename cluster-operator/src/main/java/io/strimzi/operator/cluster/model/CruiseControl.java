@@ -135,7 +135,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
 
     protected static final String ENV_VAR_API_SSL_ENABLED = "STRIMZI_CC_API_SSL_ENABLED";
     protected static final String ENV_VAR_API_AUTH_ENABLED = "STRIMZI_CC_API_AUTH_ENABLED";
-    protected static final String ENV_VAR_API_HEALTHCHECK_USERNAME = "API_HEALTHCHECK";
+    protected static final String ENV_VAR_API_HEALTHCHECK_USERNAME = "API_HEALTHCHECK_USERNAME";
     protected static final String ENV_VAR_API_PORT = "API_PORT";
     protected static final String ENV_VAR_API_HEALTHCHECK_PATH = "API_HEALTHCHECK_PATH";
 
