@@ -37,7 +37,7 @@
 :InterBrokerVersionHigher: 3.9
 
 // Bridge version
-:BridgeVersion: 0.30.0
+:BridgeVersion: 0.31.0
 
 // Drain Cleaner Version
 :DrainCleanerVersion: 1.2.0
