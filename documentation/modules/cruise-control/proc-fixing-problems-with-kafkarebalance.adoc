@@ -31,25 +31,23 @@ During a “refresh”, a new optimization proposal is requested from the Cruise
 
 . Get information about the error from the `KafkaRebalance` status:
 +
-[source,shell,subs="+quotes"]
+[source,shell]
 ----
-kubectl describe kafkarebalance _rebalance-cr-name_
+kubectl describe kafkarebalance <kafka_rebalance_resource_name>
 ----
 
-. Attempt to resolve the issue in the `KafkaRebalance` resource.
-
-. Annotate the `KafkaRebalance` resource in Kubernetes:
+. Attempt to resolve the issue by annotating the `KafkaRebalance` resource to refresh the proposal:
 +
-[source,shell,subs="+quotes"]
+[source,shell]
 ----
-kubectl annotate kafkarebalance _rebalance-cr-name_ strimzi.io/rebalance="refresh"
+kubectl annotate kafkarebalance <kafka_rebalance_resource_name> strimzi.io/rebalance="refresh"
 ----
 
 . Check the status of the `KafkaRebalance` resource:
 +
-[source,shell,subs="+quotes"]
+[source,shell]
 ----
-kubectl describe kafkarebalance _rebalance-cr-name_
+kubectl describe kafkarebalance <kafka_rebalance_resource_name>
 ----
 
 . Wait until the status changes to `PendingProposal`, or directly to `ProposalReady`.

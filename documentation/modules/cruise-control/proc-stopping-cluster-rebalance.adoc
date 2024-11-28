@@ -21,18 +21,18 @@ NOTE: The performance of the Kafka cluster in the intermediate (stopped) state m
 
 .Procedure
 
-. Annotate the `KafkaRebalance` resource in Kubernetes:
+. Annotate the `KafkaRebalance` resource to stop the rebalance:
 +
-[source,shell,subs="+quotes"]
+[source,shell]
 ----
-kubectl annotate kafkarebalance _rebalance-cr-name_ strimzi.io/rebalance="stop"
+kubectl annotate kafkarebalance <kafka_rebalance_resource_name> strimzi.io/rebalance="stop"
 ----
 
 . Check the status of the `KafkaRebalance` resource:
 +
-[source,shell,subs="+quotes"]
+[source,shell]
 ----
-kubectl describe kafkarebalance _rebalance-cr-name_
+kubectl describe kafkarebalance <kafka_rebalance_resource_name>
 ----
 
 . Wait until the status changes to `Stopped`.
