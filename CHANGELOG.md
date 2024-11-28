@@ -9,7 +9,7 @@
 * Only roll pods once for ClientsCa cert renewal.
   This change also means the restart reason ClientCaCertKeyReplaced is removed and either CaCertRenewed or CaCertHasOldGeneration will be used.
 * Allow rolling update for new cluster CA trust (during Cluster CA key replacement) to continue where it left off before interruption without rolling all pods again.
-* Update HTTP bridge to latest 0.31.0 release
+* Update HTTP bridge to 0.31.0
 
 ### Major changes, deprecations and removals
 
