@@ -404,34 +404,6 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
         return internalDelete(reconciliation, namespace, name, cascading).map((Void) null);
     }
 
-    ///**
-    // * Creates the informer for given resource type to inform on all instances in given namespace (or cluster-wide). The
-    // * informer returned by this method is not running and has to be started by the code using it.
-    // *
-    // * @param namespace         Namespace on which to inform
-    // * @param resyncIntervalMs  The interval in which the resync of the informer should happen in milliseconds
-    // *
-    // * @return          Informer instance
-    // */
-    //public Informer<T> informer(String namespace, long resyncIntervalMs)   {
-    //    return new Informer<>(runnableInformer(applyNamespace(namespace), resyncIntervalMs));
-    //}
-    //
-    ///**
-    // * Creates the informer for given resource type to inform on all instances in given namespace (or cluster-wide)
-    // * matching the selector. The informer returned by this method is not running and has to be started by the code
-    // * using it.
-    // *
-    // * @param namespace         Namespace on which to inform
-    // * @param selectorLabels    Selector which should be matched by the resources
-    // * @param resyncIntervalMs  The interval in which the resync of the informer should happen in milliseconds
-    // *
-    // * @return                  Informer instance
-    // */
-    //public Informer<T> informer(String namespace, Map<String, String> selectorLabels, long resyncIntervalMs)   {
-    //    return new Informer<>(runnableInformer(applyNamespace(namespace).withLabels(selectorLabels), resyncIntervalMs));
-    //}
-
     /**
      * Creates the informer for given resource type to inform on all instances in given namespace (or cluster-wide)
      * matching the selector. The informer returned by this method is not running and has to be started by the code
