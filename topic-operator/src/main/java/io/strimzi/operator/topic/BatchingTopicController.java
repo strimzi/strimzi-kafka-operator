@@ -684,11 +684,11 @@ public class BatchingTopicController {
         Reconciliation reconciliation, KafkaTopic kafkaTopic, int currentNumPartitions
     ) {
         var requested = kafkaTopic.getSpec() == null || kafkaTopic.getSpec().getPartitions() == null
-            ? KafkaHandler.BROKER_DEFAULT : kafkaTopic.getSpec().getPartitions();
+            ? KafkaHandler.DEFAULT_PARTITIONS : kafkaTopic.getSpec().getPartitions();
         if (requested > currentNumPartitions) {
             LOGGER.debugCr(reconciliation, "Partition increase from {} to {}", currentNumPartitions, requested);
             return Either.ofRight(NewPartitions.increaseTo(requested));
-        } else if (requested != KafkaHandler.BROKER_DEFAULT && requested < currentNumPartitions) {
+        } else if (requested != KafkaHandler.DEFAULT_PARTITIONS && requested < currentNumPartitions) {
             LOGGER.debugCr(reconciliation, "Partition decrease from {} to {}", currentNumPartitions, requested);
             return Either.ofLeft(new TopicOperatorException.NotSupported("Decreasing partitions not supported"));
         } else {
@@ -820,13 +820,15 @@ public class BatchingTopicController {
         for (ReconcilableTopic reconcilableTopic : reconcilableTopics) {
             var topicConfig = reconcilableTopic.kt().getSpec().getConfig();
             if (topicConfig != null) {
-                Integer topicMinIsr = (Integer) topicConfig.get(KafkaHandler.MIN_INSYNC_REPLICAS);
-                var minIsr = topicMinIsr != null ? topicMinIsr : clusterMinIsr.map(Integer::parseInt).orElse(1);
+                var topicMinIsr = topicConfig.get(KafkaHandler.MIN_INSYNC_REPLICAS);
+                var configuredMinIsr = topicMinIsr != null 
+                    ? Integer.parseInt(TopicOperatorUtil.configValueAsString(KafkaHandler.MIN_INSYNC_REPLICAS, topicMinIsr))
+                    : clusterMinIsr.map(Integer::parseInt).orElse(KafkaHandler.DEFAULT_MIN_ISR);
                 var targetRf = reconcilableTopic.kt().getSpec().getReplicas();
-                if (targetRf < minIsr) {
+                if (targetRf < configuredMinIsr) {
                     LOGGER.warnCr(reconcilableTopic.reconciliation(),
                         "The target replication factor ({}) is below the configured {} ({})",
-                        targetRf, KafkaHandler.MIN_INSYNC_REPLICAS, minIsr);
+                        targetRf, KafkaHandler.MIN_INSYNC_REPLICAS, configuredMinIsr);
                 }
             }
         }

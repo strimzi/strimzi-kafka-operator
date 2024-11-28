@@ -994,7 +994,7 @@ class TopicControllerIT implements TestSeparator {
                         return theKt;
                     },
                     expectedCreateConfigs -> {
-                        Map<String, String> expectedUpdatedConfigs = new HashMap<>(expectedCreateConfigs);
+                        var expectedUpdatedConfigs = new HashMap<>(expectedCreateConfigs);
                         expectedUpdatedConfigs.remove(TopicConfig.UNCLEAN_LEADER_ELECTION_ENABLE_CONFIG);
                         return expectedUpdatedConfigs;
                     });
@@ -1550,7 +1550,7 @@ class TopicControllerIT implements TestSeparator {
             @Override
             public boolean test(KafkaTopic theKt) {
                 return theKt.getStatus() != null
-                    && (theKt.getStatus().getObservedGeneration() >= postUpdateGeneration 
+                    && (theKt.getStatus().getObservedGeneration() == postUpdateGeneration 
                         || !TopicOperatorUtil.isManaged(theKt) || TopicOperatorUtil.isPaused(theKt))
                     && predicate.test(theKt);
             }

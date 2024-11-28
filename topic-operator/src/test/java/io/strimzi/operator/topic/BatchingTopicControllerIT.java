@@ -267,8 +267,6 @@ class BatchingTopicControllerIT implements TestSeparator {
         assertOnUpdateThrowsInterruptedException(adminSpy, withDeletionTimestamp);
     }
 
-    // TODO kube client interrupted exceptions
-
     @ParameterizedTest
     @ValueSource(booleans = { true, false })
     public void replicasChangeShouldBeReconciled(boolean cruiseControlEnabled) {
@@ -310,6 +308,8 @@ class BatchingTopicControllerIT implements TestSeparator {
                 .addToLabels("key", "VALUE")
             .endMetadata()
             .withNewSpec()
+                // we also support string values
+                .withConfig(Map.of("min.insync.replicas", "1"))
                 .withPartitions(25)
                 .withReplicas(++replicationFactor)
             .endSpec()
