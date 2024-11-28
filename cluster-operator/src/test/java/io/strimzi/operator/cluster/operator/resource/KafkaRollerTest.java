@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
@@ -157,6 +158,43 @@ public class KafkaRollerTest {
         AdminClientProvider mock = mock(AdminClientProvider.class);
         when(mock.createAdminClient(anyString(), any(), any())).thenReturn(admin);
         return mock;
+    }
+
+    @Test
+    public void testTalkingToControllersLatestVersion(VertxTestContext testContext) {
+        PodOperator podOps = mockPodOpsWithVersion(podId -> succeededFuture(), KafkaVersionTestUtils.getLatestVersion().version());
+        AdminClientProvider mock = mock(AdminClientProvider.class);
+        when(mock.createControllerAdminClient(anyString(), any(), any())).thenThrow(new RuntimeException("An error while try to create an admin client with bootstrap controllers"));
+
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addKraftPodNames(0, 0, 1), podOps,
+                noException(), null, noException(), noException(), noException(),
+                brokerId -> succeededFuture(true),
+                true, mock, mockKafkaAgentClientProvider(), true, null, -1);
+
+        // When admin client cannot be created for a controller node, we expect it to be force restarted.
+        doSuccessfulRollingRestart(testContext, kafkaRoller,
+                asList(0),
+                asList(0));
+    }
+
+    @Test
+    public void testTalkingToControllersWithOldVersion(VertxTestContext testContext) throws InterruptedException {
+        PodOperator podOps = mockPodOpsWithVersion(podId -> succeededFuture(), "3.8.0");
+
+        AdminClientProvider mock = mock(AdminClientProvider.class);
+        when(mock.createAdminClient(anyString(), any(), any())).thenThrow(new RuntimeException("An error while try to create an admin client with bootstrap brokers"));
+
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addKraftPodNames(0, 0, 1), podOps,
+                noException(), null, noException(), noException(), noException(),
+                brokerId -> succeededFuture(true),
+                true, mock, mockKafkaAgentClientProvider(), true, null, -1);
+
+        // If the controller has older version (< 3.9.0), we should only be creating admin client for brokers
+        // and when the operator cannot connect to brokers, we expect to fail initialising KafkaQuorumCheck
+        doFailingRollingRestart(testContext, kafkaRoller,
+                asList(0),
+                KafkaRoller.UnforceableProblem.class, "KafkaQuorumCheck cannot be initialised for c-kafka-0/0 because none of the brokers do not seem to responding to connection attempts",
+                emptyList());
     }
 
     private static KafkaAgentClientProvider mockKafkaAgentClientProvider() {
@@ -797,12 +835,17 @@ public class KafkaRollerTest {
     }
 
     private PodOperator mockPodOps(Function<Integer, Future<Void>> readiness) {
+        return mockPodOpsWithVersion(readiness, KafkaVersionTestUtils.getLatestVersion().version());
+    }
+
+    private PodOperator mockPodOpsWithVersion(Function<Integer, Future<Void>> readiness, String version) {
         PodOperator podOps = mock(PodOperator.class);
         when(podOps.get(any(), any())).thenAnswer(
                 invocation -> new PodBuilder()
                         .withNewMetadata()
-                            .withNamespace(invocation.getArgument(0))
-                            .withName(invocation.getArgument(1))
+                        .withNamespace(invocation.getArgument(0))
+                        .withName(invocation.getArgument(1))
+                        .addToAnnotations(KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION, version)
                         .endMetadata()
                         .build()
         );
@@ -901,9 +944,33 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected Admin adminClient(Set<NodeRef> nodes, boolean b) throws ForceableProblem, FatalProblem {
+        protected Admin brokerAdminClient(Set<NodeRef> nodes) throws ForceableProblem, FatalProblem {
             if (delegateAdminClientCall) {
-                return super.adminClient(nodes, b);
+                return super.brokerAdminClient(nodes);
+            }
+            RuntimeException exception = acOpenException.apply(nodes);
+            if (exception != null) {
+                throw new ForceableProblem("An error while try to create the admin client", exception);
+            }
+            Admin ac = mock(AdminClient.class, invocation -> {
+                if ("close".equals(invocation.getMethod().getName())) {
+                    Admin mock = (Admin) invocation.getMock();
+                    unclosedAdminClients.remove(mock);
+                    if (acCloseException != null) {
+                        throw acCloseException;
+                    }
+                    return null;
+                }
+                throw new RuntimeException("Not mocked " + invocation.getMethod());
+            });
+            unclosedAdminClients.put(ac, new Throwable("Pod " + nodes));
+            return ac;
+        }
+
+        @Override
+        protected Admin controllerAdminClient(Set<NodeRef> nodes) throws ForceableProblem, FatalProblem {
+            if (delegateAdminClientCall) {
+                return super.controllerAdminClient(nodes);
             }
             RuntimeException exception = acOpenException.apply(nodes);
             if (exception != null) {
@@ -945,7 +1012,7 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected KafkaQuorumCheck quorumCheck(Admin ac, long controllerQuorumFetchTimeoutMs) {
+        protected KafkaQuorumCheck quorumCheck(Admin ac, NodeRef nodeRef) {
             Admin admin = mock(Admin.class);
             DescribeMetadataQuorumResult qrmResult = mock(DescribeMetadataQuorumResult.class);
             when(admin.describeMetadataQuorum()).thenReturn(qrmResult);
