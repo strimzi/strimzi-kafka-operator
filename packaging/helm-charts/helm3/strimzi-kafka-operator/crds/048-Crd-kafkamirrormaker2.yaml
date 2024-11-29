@@ -1320,12 +1320,32 @@ spec:
                                   readOnly:
                                     type: boolean
                                 description: PersistentVolumeClaim object to use to populate the volume.
+                              csi:
+                                type: object
+                                properties:
+                                  driver:
+                                    type: string
+                                  fsType:
+                                    type: string
+                                  nodePublishSecretRef:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                  readOnly:
+                                    type: boolean
+                                  volumeAttributes:
+                                    additionalProperties:
+                                      type: string
+                                    type: object
+                                description: CSIVolumeSource object to use to populate the volume.
                             oneOf:
                               - properties:
                                   secret: {}
                                   configMap: {}
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
+                                  csi: {}
                           description: Additional volumes that can be mounted to the pod.
                       description: Template for Kafka Connect `Pods`.
                     apiService:
@@ -2313,12 +2333,32 @@ spec:
                                   readOnly:
                                     type: boolean
                                 description: PersistentVolumeClaim object to use to populate the volume.
+                              csi:
+                                type: object
+                                properties:
+                                  driver:
+                                    type: string
+                                  fsType:
+                                    type: string
+                                  nodePublishSecretRef:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                  readOnly:
+                                    type: boolean
+                                  volumeAttributes:
+                                    additionalProperties:
+                                      type: string
+                                    type: object
+                                description: CSIVolumeSource object to use to populate the volume.
                             oneOf:
                               - properties:
                                   secret: {}
                                   configMap: {}
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
+                                  csi: {}
                           description: Additional volumes that can be mounted to the pod.
                       description: Template for Kafka Connect Build `Pods`. The build pod is used only on Kubernetes.
                     buildContainer:

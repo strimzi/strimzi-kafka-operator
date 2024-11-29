@@ -1275,6 +1275,9 @@ Used in: xref:type-PodTemplate-{context}[`PodTemplate`]
 |persistentVolumeClaim
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#persistentvolumeclaimvolumesource-v1-core[PersistentVolumeClaimVolumeSource]
 |PersistentVolumeClaim object to use to populate the volume.
+|csi
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#csivolumesource-v1-core[CSIVolumeSource]
+|CSIVolumeSource object to use to populate the volume.
 |====
 
 [id='type-InternalServiceTemplate-{context}']

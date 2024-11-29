@@ -121,13 +121,15 @@ public class TemplateUtils {
     private static Volume createVolumeFromConfig(AdditionalVolume volumeConfig) {
         VolumeBuilder volumeBuilder = new VolumeBuilder().withName(volumeConfig.getName());
         if (volumeConfig.getConfigMap() != null) {
-            volumeBuilder.withNewConfigMap().withName(volumeConfig.getConfigMap().getName()).endConfigMap();
+            volumeBuilder.withConfigMap(volumeConfig.getConfigMap());
         } else if (volumeConfig.getSecret() != null) {
-            volumeBuilder.withNewSecret().withSecretName(volumeConfig.getSecret().getSecretName()).endSecret();
+            volumeBuilder.withSecret(volumeConfig.getSecret());
         } else if (volumeConfig.getEmptyDir() != null) {
-            volumeBuilder.withNewEmptyDir().withMedium(volumeConfig.getEmptyDir().getMedium()).endEmptyDir();
+            volumeBuilder.withEmptyDir(volumeConfig.getEmptyDir());
         } else if (volumeConfig.getPersistentVolumeClaim() != null) {
             volumeBuilder.withPersistentVolumeClaim(volumeConfig.getPersistentVolumeClaim());
+        } else if (volumeConfig.getCsi() != null) {
+            volumeBuilder.withCsi(volumeConfig.getCsi());
         }
 
         return volumeBuilder.build();
