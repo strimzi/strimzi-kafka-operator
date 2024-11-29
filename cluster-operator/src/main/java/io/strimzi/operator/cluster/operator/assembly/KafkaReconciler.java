@@ -161,7 +161,7 @@ public class KafkaReconciler {
     private final boolean continueOnManualRUFailure;
 
     private String logging = "";
-    private final Map<Integer, String> brokerLoggingHash = new HashMap<>();
+    private final Map<Integer, String> nodeLoggingHash = new HashMap<>();
     private final Map<Integer, String> brokerConfigurationHash = new HashMap<>();
     private final Map<Integer, String> kafkaServerCertificateHash = new HashMap<>();
     /* test */ TlsPemIdentity coTlsPemIdentity;
@@ -709,15 +709,7 @@ public class KafkaReconciler {
                         // We collect the configuration options related to various plugins
                         nodeConfiguration += kc.unknownConfigsWithValues(kafka.getKafkaVersion()).toString();
 
-                        // We collect the information relevant to controller-only nodes
-                        if (pool.isController() && !pool.isBroker())   {
-                            // For controllers only, we extract the controller-relevant configurations and use it in the configuration annotations
-                            nodeConfiguration = kc.controllerConfigsWithValues().toString();
-                            // For controllers only, we use the full logging configuration in the logging annotation
-                            this.brokerLoggingHash.put(nodeId, Util.hashStub(logging));
-                        } else {
-                            this.brokerLoggingHash.put(nodeId, Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(logging)));
-                        }
+                        this.nodeLoggingHash.put(nodeId, Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(logging)));
 
                         // We store hash of the broker configurations for later use in Pod and in rolling updates
                         this.brokerConfigurationHash.put(nodeId, Util.hashStub(nodeConfiguration));
@@ -810,7 +802,7 @@ public class KafkaReconciler {
         podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(this.clusterCa.caCertGeneration()));
         podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(this.clusterCa.caKeyGeneration()));
         podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, String.valueOf(this.clientsCa.caCertGeneration()));
-        podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_HASH, brokerLoggingHash.get(node.nodeId()));
+        podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_HASH, nodeLoggingHash.get(node.nodeId()));
         podAnnotations.put(KafkaCluster.ANNO_STRIMZI_BROKER_CONFIGURATION_HASH, brokerConfigurationHash.get(node.nodeId()));
         podAnnotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafka.getKafkaVersion().version());
 

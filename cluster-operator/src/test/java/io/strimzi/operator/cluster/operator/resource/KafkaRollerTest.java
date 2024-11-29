@@ -1047,7 +1047,7 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected Config brokerConfig(NodeRef nodeRef) throws ForceableProblem {
+        protected Config nodeConfig(NodeRef nodeRef, boolean isPureController) throws ForceableProblem {
             ForceableProblem problem = getConfigsException.apply(nodeRef.nodeId());
             if (problem != null) {
                 throw problem;
@@ -1055,12 +1055,12 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected Config brokerLogging(int brokerId) {
+        protected Config nodeLogging(int brokerId, boolean isPureController) {
             return new Config(emptyList());
         }
 
         @Override
-        protected void dynamicUpdateBrokerConfig(NodeRef nodeRef, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff) throws ForceableProblem {
+        protected void dynamicUpdateBrokerConfig(NodeRef nodeRef, KafkaNodeConfigurationDiff configurationDiff, KafkaNodeLoggingConfigurationDiff logDiff) throws ForceableProblem {
             ForceableProblem problem = alterConfigsException.apply(nodeRef.nodeId());
             if (problem != null) {
                 throw problem;

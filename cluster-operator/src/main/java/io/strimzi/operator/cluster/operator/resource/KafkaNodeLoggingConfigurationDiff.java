@@ -25,9 +25,9 @@ import java.util.Map;
 /**
  * Diffs Kafka broker logging configuration
  */
-public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
+public class KafkaNodeLoggingConfigurationDiff extends AbstractJsonDiff {
 
-    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaBrokerLoggingConfigurationDiff.class);
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaNodeLoggingConfigurationDiff.class);
     private final Collection<AlterConfigOp> diff;
     private final Reconciliation reconciliation;
 
@@ -38,7 +38,7 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
      * @param brokerConfigs  Current broker configuration from Kafka Admin API
      * @param desired        Desired logging configuration
      */
-    protected KafkaBrokerLoggingConfigurationDiff(Reconciliation reconciliation, Config brokerConfigs, String desired) {
+    protected KafkaNodeLoggingConfigurationDiff(Reconciliation reconciliation, Config brokerConfigs, String desired) {
         this.reconciliation = reconciliation;
         this.diff = diff(desired, brokerConfigs);
     }
