@@ -7,7 +7,6 @@ package io.strimzi.operator.user;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.informers.cache.Lister;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.api.kafka.model.user.KafkaUserBuilder;
@@ -24,6 +23,7 @@ import io.strimzi.operator.common.metrics.ControllerMetricsHolder;
 import io.strimzi.operator.common.model.StatusDiff;
 import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.Informer;
 import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.operator.KafkaUserOperator;
 
@@ -42,8 +42,8 @@ import java.util.concurrent.TimeoutException;
 public class UserControllerLoop extends AbstractControllerLoop {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(UserControllerLoop.class);
 
-    private final Lister<KafkaUser> userLister;
-    private final Lister<Secret> secretLister;
+    private final Informer<KafkaUser> userInformer;
+    private final Informer<Secret> secretInformer;
     private final CrdOperator<KubernetesClient, KafkaUser, KafkaUserList> userCrdOperator;
     private final KafkaUserOperator userOperator;
     private final ControllerMetricsHolder metrics;
@@ -61,8 +61,8 @@ public class UserControllerLoop extends AbstractControllerLoop {
      * @param lockManager           LockManager which is used to avoid the same resource being reconciled in multiple loops in parallel
      * @param scheduledExecutor     Scheduled executor service which will be passed to the AbstractControllerLoop and
      *                              used to run the progress warnings
-     * @param userLister            The KafkaUser resource lister for getting the resources
-     * @param secretLister          The Secret lister for getting the secrets
+     * @param userInformer          The KafkaUser resource lister for getting the resources
+     * @param secretInformer        The Secret lister for getting the secrets
      * @param userCrdOperator       For operating on KafkaUser resources
      * @param userOperator          The KafkaUserOperator which has the logic for updating the Kubernetes or Kafka resources
      * @param metrics               The metrics holder for providing metrics about the reconciliation
@@ -73,8 +73,8 @@ public class UserControllerLoop extends AbstractControllerLoop {
             ControllerQueue workQueue,
             ReconciliationLockManager lockManager,
             ScheduledExecutorService scheduledExecutor,
-            Lister<KafkaUser> userLister,
-            Lister<Secret> secretLister,
+            Informer<KafkaUser> userInformer,
+            Informer<Secret> secretInformer,
             CrdOperator<KubernetesClient, KafkaUser, KafkaUserList> userCrdOperator,
             KafkaUserOperator userOperator,
             ControllerMetricsHolder metrics,
@@ -82,8 +82,8 @@ public class UserControllerLoop extends AbstractControllerLoop {
     ) {
         super(name, workQueue, lockManager, scheduledExecutor);
 
-        this.userLister = userLister;
-        this.secretLister = secretLister;
+        this.userInformer = userInformer;
+        this.secretInformer = secretInformer;
         this.userCrdOperator = userCrdOperator;
         this.userOperator = userOperator;
         this.metrics = metrics;
@@ -101,7 +101,7 @@ public class UserControllerLoop extends AbstractControllerLoop {
     protected void reconcile(Reconciliation reconciliation) {
         LOGGER.infoCr(reconciliation, "{} will be reconciled", reconciliation.kind());
 
-        KafkaUser user = userLister.namespace(reconciliation.namespace()).get(reconciliation.name());
+        KafkaUser user = userInformer.get(reconciliation.namespace(), reconciliation.name());
 
         if (user != null && Annotations.isReconciliationPausedWithAnnotation(user)) {
             // Reconciliation is paused => we make sure the status is up-to-date but don't do anything
@@ -112,7 +112,7 @@ public class UserControllerLoop extends AbstractControllerLoop {
         } else {
             // Resource is not paused or is null (and we should trigger deletion) => we should proceed with reconciliation
             CompletionStage<KafkaUserStatus> reconciliationResult = userOperator
-                    .reconcile(reconciliation, user, secretLister.namespace(reconciliation.namespace()).get(KafkaUserModel.getSecretName(secretPrefix, reconciliation.name())));
+                    .reconcile(reconciliation, user, secretInformer.get(reconciliation.namespace(), KafkaUserModel.getSecretName(secretPrefix, reconciliation.name())));
 
             try {
                 KafkaUserStatus status = new KafkaUserStatus();
@@ -155,7 +155,7 @@ public class UserControllerLoop extends AbstractControllerLoop {
         // KafkaUser or desiredStatus being null means deletion => no status to update
         if (kafkaUser != null && desiredStatus != null && !new StatusDiff(kafkaUser.getStatus(), desiredStatus).isEmpty()) {
             LOGGER.debugCr(reconciliation, "Updating status of {} {} in namespace {}", reconciliation.kind(), reconciliation.name(), reconciliation.namespace());
-            KafkaUser latestKafkaUser = userLister.namespace(reconciliation.namespace()).get(reconciliation.name());
+            KafkaUser latestKafkaUser = userInformer.get(reconciliation.namespace(), reconciliation.name());
 
             if (latestKafkaUser != null) {
                 KafkaUser updateKafkaUser = new KafkaUserBuilder(latestKafkaUser)

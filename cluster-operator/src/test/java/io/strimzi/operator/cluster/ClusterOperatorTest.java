@@ -150,7 +150,7 @@ public class ClusterOperatorTest {
                 return mockCmInformer;
             });
 
-            when(mockNamespacedCms.withLabels(any())).thenReturn(mockNamespacedCms);
+            when(mockNamespacedCms.withLabelSelector(any(LabelSelector.class))).thenReturn(mockNamespacedCms);
             when(mockCms.inNamespace(namespace)).thenReturn(mockNamespacedCms);
 
             // Mock Pods
@@ -230,7 +230,7 @@ public class ClusterOperatorTest {
         when(mockCmInformer.stopped()).thenReturn(CompletableFuture.completedFuture(null));
 
         AnyNamespaceOperation mockFilteredCms = mock(AnyNamespaceOperation.class);
-        when(mockFilteredCms.withLabels(any())).thenReturn(mockFilteredCms);
+        when(mockFilteredCms.withLabelSelector(any(LabelSelector.class))).thenReturn(mockFilteredCms);
         when(mockFilteredCms.watch(any())).thenAnswer(invo -> {
             numWatchers.incrementAndGet();
             Watch mockWatch = mock(Watch.class);

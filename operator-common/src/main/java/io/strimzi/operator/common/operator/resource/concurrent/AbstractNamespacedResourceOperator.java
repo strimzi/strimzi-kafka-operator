@@ -26,7 +26,6 @@ import io.strimzi.operator.common.operator.resource.ReconcileResult;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
@@ -438,50 +437,22 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
     }
 
     /**
-     * Creates the informer for given resource type to inform on all instances in given namespace (or cluster-wide). The
-     * informer returned by this method is not running and has to be started by the code using it.
-     *
-     * @param namespace         Namespace on which to inform
-     * @param resyncIntervalMs  The interval in which the resync of the informer should happen in milliseconds
-     *
-     * @return          Informer instance
-     */
-    public SharedIndexInformer<T> informer(String namespace, long resyncIntervalMs) {
-        return runnableInformer(applyNamespace(namespace), resyncIntervalMs);
-    }
-
-    /**
      * Creates the informer for given resource type to inform on all instances in given namespace (or cluster-wide)
      * matching the selector. The informer returned by this method is not running and has to be started by the code
      * using it.
      *
      * @param namespace         Namespace on which to inform
-     * @param selectorLabels    Selector which should be matched by the resources
+     * @param selector    Selector which should be matched by the resources
      * @param resyncIntervalMs  The interval in which the resync of the informer should happen in milliseconds
      *
      * @return                  Informer instance
      */
-    public SharedIndexInformer<T> informer(String namespace, Map<String, String> selectorLabels, long resyncIntervalMs) {
-        return runnableInformer(applyNamespace(namespace).withLabels(selectorLabels), resyncIntervalMs);
+    public Informer<T> informer(String namespace, LabelSelector selector, long resyncIntervalMs) {
+        return new Informer<>(runnableInformer(applyNamespace(namespace).withLabelSelector(selector), resyncIntervalMs));
     }
 
     /**
-     * Creates the informer for given resource type to inform on all instances in given namespace (or cluster-wide)
-     * matching the selector. The informer returned by this method is not running and has to be started by the code
-     * using it.
-     *
-     * @param namespace         Namespace on which to inform
-     * @param labelSelector     Labels Selector which should be matched by the resources
-     * @param resyncIntervalMs  The interval in which the resync of the informer should happen in milliseconds
-     *
-     * @return                  Informer instance
-     */
-    public SharedIndexInformer<T> informer(String namespace, LabelSelector labelSelector, long resyncIntervalMs) {
-        return runnableInformer(applyNamespace(namespace).withLabelSelector(labelSelector), resyncIntervalMs);
-    }
-
-    /**
-     * Creates a runnable informer. Runnable informer is not running yet and need to be started by the code using it.
+     * Creates a runnable informer. Runnable informer is not running yet and needs to be started by the code using it.
      *
      * @param informable        Instance of the Informable interface for creating informers
      * @param resyncIntervalMs  The interval in which the resync of the informer should happen in milliseconds
