@@ -27,7 +27,7 @@ import java.util.Map;
  */
 @Buildable(editableEnabled = false, builderPackage = Constants.FABRIC8_KUBERNETES_API)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "name", "path", "subPath", "secret", "configMap", "emptyDir", "persistentVolumeClaim" })
+@JsonPropertyOrder({ "name", "secret", "configMap", "emptyDir", "persistentVolumeClaim" })
 @OneOf({
     @OneOf.Alternative({
         @OneOf.Alternative.Property(value = "secret", required = false),

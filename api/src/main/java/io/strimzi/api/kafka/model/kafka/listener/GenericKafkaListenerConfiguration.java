@@ -28,10 +28,10 @@ import java.util.Map;
  * Configures Kafka listeners
  */
 @DescriptionFile
-@JsonPropertyOrder({"brokerCertChainAndKey", "class", "preferredAddressType", "externalTrafficPolicy",
-    "loadBalancerSourceRanges", "bootstrap", "brokers", "ipFamilyPolicy", "ipFamilies", "createBootstrapService",
-    "finalizers", "useServiceDnsDomain", "maxConnections", "maxConnectionCreationRate", "preferredNodePortAddressType",
-    "publishNotReadyAddresses", "hostTemplate", "advertisedHostTemplate", "allocateLoadBalancerNodePorts"})
+@JsonPropertyOrder({"brokerCertChainAndKey", "class", "externalTrafficPolicy", "loadBalancerSourceRanges", "bootstrap",
+    "brokers", "ipFamilyPolicy", "ipFamilies", "createBootstrapService", "finalizers", "useServiceDnsDomain",
+    "maxConnections", "maxConnectionCreationRate", "preferredNodePortAddressType", "publishNotReadyAddresses",
+    "hostTemplate", "advertisedHostTemplate", "allocateLoadBalancerNodePorts"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,

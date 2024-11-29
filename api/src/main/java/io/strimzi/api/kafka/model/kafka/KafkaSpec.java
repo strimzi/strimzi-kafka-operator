@@ -32,9 +32,8 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "kafka", "zookeeper", "topicOperator",
-    "entityOperator", "clusterCa", "clientsCa",
-    "maintenance", "cruiseControl", "jmxTrans", "kafkaExporter", "maintenanceTimeWindows"})
+@JsonPropertyOrder({ "kafka", "zookeeper", "entityOperator", "clusterCa", "clientsCa", "cruiseControl", "jmxTrans",
+    "kafkaExporter", "maintenanceTimeWindows"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaSpec extends Spec {

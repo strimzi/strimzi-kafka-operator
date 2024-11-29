@@ -21,10 +21,8 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"version", "replicas", "image", "connectCluster",
-    "clusters", "mirrors", "resources", "livenessProbe", "readinessProbe",
-    "jvmOptions", "jmxOptions", "affinity", "tolerations", "logging",
-    "clientRackInitImage", "rack", "metricsConfig", "tracing",
+@JsonPropertyOrder({"version", "replicas", "image", "connectCluster", "clusters", "mirrors", "resources", "livenessProbe",
+    "readinessProbe", "jvmOptions", "jmxOptions", "logging", "clientRackInitImage", "rack", "metricsConfig", "tracing",
     "template", "externalConfiguration" })
 @EqualsAndHashCode(callSuper = true, doNotUseGetters = true)
 @ToString(callSuper = true)
