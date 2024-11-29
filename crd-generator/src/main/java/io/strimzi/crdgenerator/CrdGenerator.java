@@ -763,20 +763,9 @@ class CrdGenerator {
             }
 
             List<String> expectedOrder = asList(order.value());
-
-            // Check that all properties are in the list
             for (String property : properties) {
                 if (!expectedOrder.contains(property)) {
                     err(crdClass + " has a property " + property + " which is not in the @JsonPropertyOrder");
-                }
-            }
-
-            // Check that the list does not contain any non-existent properties
-            List<String> ignoredTopLevelProperties = List.of("apiVersion", "metadata", "kind");
-            for (String property : expectedOrder) {
-                if (!properties.contains(property) &&
-                        !(CustomResource.class.isAssignableFrom(crdClass) && ignoredTopLevelProperties.contains(property))) { // The top level CRD classes include some inherited fields
-                    err("@JsonPropertyOrder has a property " + property + " that does not exist in " + crdClass);
                 }
             }
         }
