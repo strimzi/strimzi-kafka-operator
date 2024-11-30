@@ -25,7 +25,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "deployment", "pod", "container", "serviceAccount", "additionalProperties" })
+@JsonPropertyOrder({ "deployment", "pod", "container", "serviceAccount" })
 @EqualsAndHashCode
 @ToString
 public class JmxTransTemplate implements UnknownPropertyPreserving {

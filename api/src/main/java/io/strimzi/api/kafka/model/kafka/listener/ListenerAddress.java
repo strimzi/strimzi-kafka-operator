@@ -24,7 +24,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "address", "host", "port" })
+@JsonPropertyOrder({ "host", "port" })
 @EqualsAndHashCode
 @ToString
 public class ListenerAddress implements UnknownPropertyPreserving {

@@ -26,11 +26,10 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"type", "clientId", "tokenEndpointUri",
-    "tlsTrustedCertificates", "disableTlsHostnameVerification",
+@JsonPropertyOrder({"type", "clientId", "tokenEndpointUri", "tlsTrustedCertificates", "disableTlsHostnameVerification",
     "delegateToKafkaAcls", "grantsRefreshPeriodSeconds", "grantsRefreshPoolSize", "grantsMaxIdleTimeSeconds",
-    "grantsMaxIdleSeconds", "grantsGcPeriodSeconds", "grantsAlwaysLatest", "KafkaAuthorizationKeycloak", "superUsers",
-    "connectTimeoutSeconds", "readTimeoutSeconds", "httpRetries", "enableMetrics", "includeAcceptHeader"})
+    "grantsGcPeriodSeconds", "grantsAlwaysLatest", "superUsers", "connectTimeoutSeconds", "readTimeoutSeconds",
+    "httpRetries", "enableMetrics", "includeAcceptHeader"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaAuthorizationKeycloak extends KafkaAuthorization {

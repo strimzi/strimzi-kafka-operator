@@ -23,8 +23,7 @@ import java.util.Map;
  * Configures listener per-broker configuration
  */
 @DescriptionFile
-@JsonPropertyOrder({"broker", "advertisedHost", "advertisedPort", "host", "dnsAnnotations", "nodePort",
-    "loadBalancerIP", "annotations", "labels", "externalIPs"})
+@JsonPropertyOrder({"broker", "advertisedHost", "advertisedPort", "host", "nodePort", "loadBalancerIP", "annotations", "labels", "externalIPs"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,

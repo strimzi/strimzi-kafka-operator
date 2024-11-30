@@ -21,7 +21,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "bootstrapServers", "abortOnSendFailure", "logging", "authentication", "config", "tls"})
+@JsonPropertyOrder({ "bootstrapServers", "abortOnSendFailure", "authentication", "config", "tls"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaMirrorMakerProducerSpec extends KafkaMirrorMakerClientSpec {
