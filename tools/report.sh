@@ -228,18 +228,25 @@ get_pod_logs() {
     local names && names=$($KUBE_CLIENT -n "$NAMESPACE" get po "$pod" -o jsonpath='{.spec.containers[*].name}' --ignore-not-found)
     local count && count=$(echo "$names" | wc -w)
     local logs
-    mkdir -p "$OUT_DIR"/reports/logs
+    mkdir -p "$OUT_DIR"/reports/logs "$OUT_DIR"/reports/threads
     if [[ "$count" -eq 1 ]]; then
       logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" ||true)"
       if [[ -n $logs ]]; then printf "%s" "$logs" > "$OUT_DIR"/reports/logs/"$pod".log; fi
       logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -p 2>/dev/null ||true)"
       if [[ -n $logs ]]; then printf "%s" "$logs" > "$OUT_DIR"/reports/logs/"$pod".log.0; fi
-    fi
-    if [[ "$count" -gt 1 && -n "$con" && "$names" == *"$con"* ]]; then
+      # shellcheck disable=SC2016
+      $KUBE_CLIENT -n "$NAMESPACE" exec -i "$pod" -- \
+        sh -c 'jcmd $(jcmd | grep -v JCmd | cut -f1 -d " ") Thread.print' \
+        > "$OUT_DIR"/reports/threads/"$pod".txt
+    elif [[ "$count" -gt 1 && -n "$con" && "$names" == *"$con"* ]]; then
       logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -c "$con" ||true)"
       if [[ -n $logs ]]; then printf "%s" "$logs" > "$OUT_DIR"/reports/logs/"$pod"-"$con".log; fi
       logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -p -c "$con" 2>/dev/null ||true)"
       if [[ -n $logs ]]; then printf "%s" "$logs" > "$OUT_DIR"/reports/logs/"$pod"-"$con".log.0; fi
+      # shellcheck disable=SC2016
+      $KUBE_CLIENT -n "$NAMESPACE" exec -i "$pod" -c "$con" -- \
+        sh -c 'jcmd $(jcmd | grep -v JCmd | cut -f1 -d " ") Thread.print' \
+        > "$OUT_DIR"/reports/threads/"$pod"-"$con".txt
     fi
   fi
 }
