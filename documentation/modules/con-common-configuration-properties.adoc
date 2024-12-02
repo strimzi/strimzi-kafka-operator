@@ -692,6 +692,7 @@ Supported Volume Types
 * ConfigMap
 * EmptyDir
 * PersistentVolumeClaims
+* CSI Volumes
 
 .Example configuration for additional volumes
 [source,yaml,subs=attributes+]
@@ -714,6 +715,13 @@ spec:
           - name: example-pvc-volume
             persistentVolumeClaim:
               claimName: myclaim
+          - name: example-csi-volume
+            csi:
+              driver: csi.cert-manager.io
+              readOnly: true
+              volumeAttributes:
+                csi.cert-manager.io/issuer-name: my-ca
+                csi.cert-manager.io/dns-names: ${POD_NAME}.${POD_NAMESPACE}.svc.cluster.local
       kafkaContainer:
         volumeMounts:
           - name: example-secret
@@ -724,6 +732,8 @@ spec:
             mountPath: /mnt/temp
           - name: example-pvc-volume
             mountPath: /mnt/data
+          - name: example-csi-volume
+            mountPath: /mnt/certificate
 ----
 
 You can use volumes to store files containing configuration values for a Kafka component and then load those values using a configuration provider.
