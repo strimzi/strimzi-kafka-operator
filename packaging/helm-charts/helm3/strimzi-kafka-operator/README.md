@@ -169,7 +169,7 @@ the documentation for more details.
 | `kafkaBridge.image.registry`                | Override default Kafka Bridge image registry                                    | `quay.io`                    |
 | `kafkaBridge.image.repository`              | Override default Kafka Bridge image repository                                  | `strimzi`                    |
 | `kafkaBridge.image.name`                    | Kafka Bridge image name                                                         | `kafka-bridge`               |
-| `kafkaBridge.image.tag`                     | Override default Kafka Bridge image tag                                         | `0.31.1-rc1`                     |
+| `kafkaBridge.image.tag`                     | Override default Kafka Bridge image tag                                         | `0.31.1`                     |
 | `kafkaBridge.image.digest`                  | Override Kafka Bridge image tag with digest                                     | `nil`                        |
 | `kafkaExporter.image.registry`              | Override default Kafka Exporter image registry                                  | `nil`                        |
 | `kafkaExporter.image.repository`            | Override default Kafka Exporter image repository                                | `nil`                        |
