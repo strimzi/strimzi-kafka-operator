@@ -4,11 +4,9 @@
  */
 package io.strimzi.operator.topic;
 
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
@@ -38,19 +36,6 @@ public class TopicOperatorUtil {
     static final int BROKER_DEFAULT = -1;
 
     private TopicOperatorUtil() { }
-
-    /**
-     * Create a new Kubernetes client instance.
-     *
-     * @param id Caller id.
-     * @return Kubernetes client.
-     */
-    public static KubernetesClient createKubernetesClient(String id) {
-        return new OperatorKubernetesClientBuilder(
-            "strimzi-topic-operator-" + id,
-            TopicOperatorMain.class.getPackage().getImplementationVersion())
-            .build();
-    }
 
     /**
      * Create a new Kafka admin client instance.
