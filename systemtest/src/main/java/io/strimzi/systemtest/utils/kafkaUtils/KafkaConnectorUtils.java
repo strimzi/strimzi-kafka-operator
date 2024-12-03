@@ -228,6 +228,13 @@ public class KafkaConnectorUtils {
         );
     }
 
+    /**
+     * Waits for a removal of the annotation from the KafkaConnector resource.
+     *
+     * @param namespaceName     name of the Namespace where the KafkaConnector resource is present
+     * @param connectorName     name of the KafkaConnector which should be checked
+     * @param annotationName    name of the annotation that should be deleted from the KafkaConnector's metadata
+     */
     public static void waitForRemovalOfTheAnnotation(String namespaceName, String connectorName, String annotationName) {
         LOGGER.info("Waiting for annotation: {} to be removed from KafkaConnector: {}/{}", annotationName, namespaceName, connectorName);
 
@@ -238,6 +245,17 @@ public class KafkaConnectorUtils {
         );
     }
 
+    /**
+     * Using Connect API it collects the offsets from the /offset endpoint of the particular connector.
+     * It returns the result in JsonNode object for easier handling in the particular tests.
+     *
+     * @param namespaceName     name of the Namespace where the scraper Pod and Connect are running
+     * @param scraperPodName    name of the scraper Pod name for execution of the cURL command
+     * @param serviceName       name of the service which exposes the 8083 port
+     * @param connectorName     name of the connector that should be checked for the offsets
+     * @return  JsonNode object with the offsets (the result of the API call)
+     * @throws JsonProcessingException  when the JsonNode object cannot be processed
+     */
     public static JsonNode getOffsetOfConnectorFromConnectAPI(
         String namespaceName,
         String scraperPodName,
@@ -251,6 +269,15 @@ public class KafkaConnectorUtils {
             "http://" + serviceName + ":8083/connectors/" + connectorName + "/offsets").out().trim());
     }
 
+    /**
+     * Waits for a specific offset to be present in the File Sink Connector.
+     *
+     * @param namespaceName     name of the Namespace where the scraper Pod and Connect are running
+     * @param scraperPodName    name of the scraper Pod name for execution of the cURL command
+     * @param connectName       name of the KafkaConnect resource which should be used for building the service name
+     * @param connectorName     name of the connector that should be checked for the offsets
+     * @param expectedOffset    offset for which we should wait
+     */
     public static void waitForOffsetInFileSinkConnector(
         String namespaceName,
         String scraperPodName,
@@ -268,6 +295,15 @@ public class KafkaConnectorUtils {
         );
     }
 
+    /**
+     * Waits for a specific offset to be present in the Connector.
+     *
+     * @param namespaceName     name of the Namespace where the scraper Pod and Connect are running
+     * @param scraperPodName    name of the scraper Pod name for execution of the cURL command
+     * @param serviceName       name of the service which exposes the 8083 port
+     * @param connectorName     name of the connector that should be checked for the offsets
+     * @param expectedOffset    offset for which we should wait
+     */
     public static void waitForOffsetInConnector(
         String namespaceName,
         String scraperPodName,

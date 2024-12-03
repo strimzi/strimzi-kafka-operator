@@ -57,6 +57,30 @@
 * [connect](labels/connect.md)
 
 
+## testConnectorOffsetManagement
+
+**Description:** The test verifies functionality of the connector offset management feature by going through all three operation that we can do - `list`, `alter`, `reset`. To do that, it uses one ConfigMap, that is initially created by Cluster Operator during the `list` operation, then it is used for altering the offset in the `alter` phase. For using the particular ConfigMap, we need to specify it on two places - `.spec.listOffsets.toConfigMap` and `.spec.alterOffsets.fromConfigMap`. To verify that everything is really reflected correctly, there are calls to Connect API for the particular Connector throughout the test - where the real offset is gathered. In order to do the `alter` and `reset` the offsets, the particular Connector have to be stopped - in the `.spec.state` - otherwise a warning will be raised in the status section of the Connector and the offsets will not be updated.
+
+**Steps:**
+
+| Step | Action | Result |
+| - | - | - |
+| 1. | Create KafkaNodePools, Kafka, KafkaConnect with use of Connectors enabled and File Sink plugin. | KafkaNodePools, Kafka, and KafkaConnect are deployed successfully. |
+| 2. | Create KafkaConnector for the File Sink plugin and configuration for the offset management - specified ConfigMap in `.spec.listOffsets.toConfigMap` and `.spec.alterOffsets.fromConfigMap`. | KafkaConnector is deployed successfully. |
+| 3. | Together with KafkaConnect and KafkaConnector, deploy scraper Pod for obtaining the offsets from Connect API. Also deploy NetworkPolicies for accessing the KafkaConnect from the scraper Pod. | Scraper Pod and NetworkPolicies are deployed, Connect API is now accessible from the scraper Pod. |
+| 4. | Produce and Consume 100 messages and wait for the offset to be updated on the Connector. | Messages are successfully transmitted and the offset is updated. |
+| 5. | List the offsets - annotate KafkaConnector using the strimzi.io/connector-offsets annotation set to `list`, wait for the creation of the ConfigMap containing the offsets. | Offsets are successfully listed and added into the newly created ConfigMap. |
+| 6. | Verify that the ConfigMap contains correct (and expected) offset. | Offsets in the ConfigMap are correct. |
+| 7. | Change the offset in the ConfigMap to `20`, stop the Connector, and apply the strimzi.io/connector-offsets annotation set to `alter` to alter the offsets. | The offset in the ConfigMap is changed to `20`, Connector is stopped, and the annotation is applied. |
+| 8. | Wait for the removal of the annotation from KafkaConnector (determining that the offsets are altered) and check the Connect API if the values are correct. | The annotation is removed and the offsets from Connect API are correct (set to `20`). |
+| 9. | Apply the strimzi.io/connector-offsets annotation set to `reset` (the KafkaConnector is still stopped). | The annotation is applied to the KafkaConnector resource. |
+| 10. | Finally, verify that the offsets are empty (the reset was successful) on the Connect API endpoint. | The response from the Connect API shows that the offsets are really empty. |
+
+**Labels:**
+
+* [connect](labels/connect.md)
+
+
 ## testConnectorTaskAutoRestart
 
 **Description:** Test the automatic restart functionality of Kafka Connect tasks when they fail.

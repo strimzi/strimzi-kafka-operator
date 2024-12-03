@@ -1731,6 +1731,51 @@ class ConnectST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("The test verifies functionality of the connector offset management feature by going through all three operation that we can do - `list`, `alter`, `reset`. " +
+            "To do that, it uses one ConfigMap, that is initially created by Cluster Operator during the `list` operation, then it is used for altering the offset in the `alter` phase. " +
+            "For using the particular ConfigMap, we need to specify it on two places - `.spec.listOffsets.toConfigMap` and `.spec.alterOffsets.fromConfigMap`. " +
+            "To verify that everything is really reflected correctly, there are calls to Connect API for the particular Connector throughout the test - where the real offset is gathered. " +
+            "In order to do the `alter` and `reset` the offsets, the particular Connector have to be stopped - in the `.spec.state` - otherwise a warning will be raised in the status " +
+            "section of the Connector and the offsets will not be updated."),
+        steps = {
+            @Step(
+                value = "Create KafkaNodePools, Kafka, KafkaConnect with use of Connectors enabled and File Sink plugin.",
+                expected = "KafkaNodePools, Kafka, and KafkaConnect are deployed successfully."),
+            @Step(
+                value = "Create KafkaConnector for the File Sink plugin and configuration for the offset management - " +
+                    "specified ConfigMap in `.spec.listOffsets.toConfigMap` and `.spec.alterOffsets.fromConfigMap`.",
+                expected = "KafkaConnector is deployed successfully."),
+            @Step(
+                value = "Together with KafkaConnect and KafkaConnector, deploy scraper Pod for obtaining the offsets from Connect API. " +
+                "Also deploy NetworkPolicies for accessing the KafkaConnect from the scraper Pod.",
+                expected = "Scraper Pod and NetworkPolicies are deployed, Connect API is now accessible from the scraper Pod."),
+            @Step(
+                value = "Produce and Consume 100 messages and wait for the offset to be updated on the Connector.",
+                expected = "Messages are successfully transmitted and the offset is updated."),
+            @Step(
+                value = "List the offsets - annotate KafkaConnector using the strimzi.io/connector-offsets annotation set to `list`, wait for the creation of the ConfigMap containing the offsets.",
+                expected = "Offsets are successfully listed and added into the newly created ConfigMap."),
+            @Step(
+                value = "Verify that the ConfigMap contains correct (and expected) offset.",
+                expected = "Offsets in the ConfigMap are correct."),
+            @Step(
+                value = "Change the offset in the ConfigMap to `20`, stop the Connector, and apply the strimzi.io/connector-offsets annotation set to `alter` to alter the offsets.",
+                expected = "The offset in the ConfigMap is changed to `20`, Connector is stopped, and the annotation is applied."),
+            @Step(
+                value = "Wait for the removal of the annotation from KafkaConnector (determining that the offsets are altered) and check the Connect API if the values are correct.",
+                expected = "The annotation is removed and the offsets from Connect API are correct (set to `20`)."),
+            @Step(
+                value = "Apply the strimzi.io/connector-offsets annotation set to `reset` (the KafkaConnector is still stopped).",
+                expected = "The annotation is applied to the KafkaConnector resource."),
+            @Step(
+                value = "Finally, verify that the offsets are empty (the reset was successful) on the Connect API endpoint.",
+                expected = "The response from the Connect API shows that the offsets are really empty.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.CONNECT)
+        }
+    )
     void testConnectorOffsetManagement() throws JsonProcessingException {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String offsetConfigMap = testStorage.getClusterName() + "-offsets";
@@ -1788,6 +1833,8 @@ class ConnectST extends AbstractST {
 
         KafkaConnectorUtils.waitForOffsetInFileSinkConnector(testStorage.getNamespaceName(), scraperPodName, testStorage.getClusterName(), testStorage.getClusterName(), TestConstants.MESSAGE_COUNT);
 
+        LOGGER.info("Listing the Connector's offsets using the {} annotation set to 'list'", ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
+
         // annotate the KafkaConnector resource to list the offsets of the file sink connector
         KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
             connector -> connector.getMetadata().getAnnotations().put(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, "list"));
@@ -1796,46 +1843,58 @@ class ConnectST extends AbstractST {
         ConfigMapUtils.waitForCreationOfConfigMap(testStorage.getNamespaceName(), offsetConfigMap);
 
         // checking the config map
-        ConfigMap listConfigMap = kubeClient().getConfigMap(testStorage.getNamespaceName(), offsetConfigMap);
-        JsonNode offsets = mapper.readTree(listConfigMap.getData().get("offsets.json"));
+        ConfigMap offsetsConfigMap = kubeClient().getConfigMap(testStorage.getNamespaceName(), offsetConfigMap);
+        JsonNode offsets = mapper.readTree(offsetsConfigMap.getData().get("offsets.json"));
 
-        assertThat("Offset config map contains correct kafka_offset value", offsets.get("offsets").get(0).get("offset").get("kafka_offset").asInt(), is(TestConstants.MESSAGE_COUNT));
+        assertThat("Offset config map contains correct kafka_offset value", offsets.at("/offsets/0/offset/kafka_offset").asInt(), is(TestConstants.MESSAGE_COUNT));
+
+        LOGGER.info("Changing the offset in the ConfigMap to {}, stopping the Connector and applying the {} annotation with 'alter'", desiredNewOffset, ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
 
         // set the offsets to `20`
-        ((ObjectNode) offsets.get("offsets").get(0).get("offset")).put("kafka_offset", 20);
+        ((ObjectNode) offsets.get("offsets").get(0).get("offset")).put("kafka_offset", desiredNewOffset);
 
         // update the connector to be stopped
         KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
             connector -> connector.getSpec().setState(ConnectorState.STOPPED));
 
-        listConfigMap = new ConfigMapBuilder(listConfigMap)
+        offsetsConfigMap = new ConfigMapBuilder(offsetsConfigMap)
             .withData(Map.of("offsets.json", offsets.toString()))
             .build();
 
         // update the configmap
-        kubeClient().updateConfigMapInNamespace(testStorage.getNamespaceName(), listConfigMap);
+        kubeClient().updateConfigMapInNamespace(testStorage.getNamespaceName(), offsetsConfigMap);
 
         // annotate the KafkaConnector with alter annotation
         KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
             connector -> connector.getMetadata().getAnnotations().put(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, "alter"));
 
+        LOGGER.info("Once the offset is altered, the {} annotation should be removed from the KafkaConnector CR - waiting for that to happen", ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
+
         // wait for removal of the annotation from the KafkaConnector CR
         KafkaConnectorUtils.waitForRemovalOfTheAnnotation(testStorage.getNamespaceName(), testStorage.getClusterName(), ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
 
-        // check that connector contains desired offset
-        offsets = KafkaConnectorUtils.getOffsetOfConnectorFromConnectAPI(testStorage.getNamespaceName(), scraperPodName, testStorage.getClusterName(), testStorage.getClusterName());
+        LOGGER.info("Verifying that the offset is correct on the Connect API");
 
-        assertThat("Offset endpoint returns response with correct offset in kafka_offset", offsets.get("offsets").get(0).get("offset").get("kafka_offset").asInt(), is(desiredNewOffset));
+        // check that connector contains desired offset
+        offsets = KafkaConnectorUtils.getOffsetOfConnectorFromConnectAPI(testStorage.getNamespaceName(), scraperPodName, KafkaConnectResources.serviceName(testStorage.getClusterName()), testStorage.getClusterName());
+
+        assertThat("Offset endpoint returns response with correct offset in kafka_offset", offsets.at("/offsets/0/offset/kafka_offset").asInt(), is(desiredNewOffset));
+
+        LOGGER.info("Finally, resetting the offset completely using {} set to 'reset'", ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
 
         // reset the offset
         KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
             connector -> connector.getMetadata().getAnnotations().put(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, "reset"));
 
+        LOGGER.info("Once the offset is altered, the {} annotation should be removed from the KafkaConnector CR - waiting for that to happen", ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
+
         // wait for removal of the annotation from the KafkaConnector CR
         KafkaConnectorUtils.waitForRemovalOfTheAnnotation(testStorage.getNamespaceName(), testStorage.getClusterName(), ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
 
+        LOGGER.info("Verifying that the offset is correct on the Connect API");
+
         // check that connector contains desired offset
-        offsets = KafkaConnectorUtils.getOffsetOfConnectorFromConnectAPI(testStorage.getNamespaceName(), scraperPodName, testStorage.getClusterName(), testStorage.getClusterName());
+        offsets = KafkaConnectorUtils.getOffsetOfConnectorFromConnectAPI(testStorage.getNamespaceName(), scraperPodName, KafkaConnectResources.serviceName(testStorage.getClusterName()), testStorage.getClusterName());
 
         assertThat("Offset endpoint returns response with correct offset in kafka_offset", offsets.get("offsets").toString(), is("[]"));
     }

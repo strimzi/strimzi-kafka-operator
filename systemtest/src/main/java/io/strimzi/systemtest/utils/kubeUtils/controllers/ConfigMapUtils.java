@@ -35,6 +35,12 @@ public class ConfigMapUtils {
         }
     }
 
+    /**
+     * Waits for ConfigMap with specified name and in specified Namespace will be created.
+     *
+     * @param namespaceName     name of the Namespace where the ConfigMap should be created
+     * @param configMapName     name of the ConfigMap that should be created
+     */
     public static void waitForCreationOfConfigMap(String namespaceName, String configMapName) {
         LOGGER.info("Waiting for ConfigMap: {}/{} to be created", namespaceName, configMapName);
         TestUtils.waitFor(String.format("ConfigMap: %s/%s to be created", namespaceName, configMapName),
