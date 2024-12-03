@@ -98,6 +98,7 @@ public class Crds {
             kind = KafkaTopic.RESOURCE_KIND;
             listKind = KafkaTopic.RESOURCE_LIST_KIND;
             versions = KafkaTopic.VERSIONS;
+            status = new CustomResourceSubresourceStatus();
         } else if (cls.equals(KafkaUser.class)) {
             scope = KafkaUser.SCOPE;
             plural = KafkaUser.RESOURCE_PLURAL;
