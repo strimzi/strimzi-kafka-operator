@@ -269,7 +269,9 @@ public class Main {
                         request.response().setStatusCode(204).end();
                     } else if (request.path().equals("/metrics")) {
                         PrometheusMeterRegistry metrics = (PrometheusMeterRegistry) metricsProvider.meterRegistry();
-                        request.response().setStatusCode(200)
+                        request.response()
+                                .putHeader("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
+                                .setStatusCode(200)
                                 .end(metrics.scrape());
                     }
                 })
