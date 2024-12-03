@@ -4,6 +4,10 @@
  */
 package io.strimzi.systemtest.connect;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
@@ -22,6 +26,7 @@ import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
+import io.strimzi.api.ResourceAnnotations;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.ConnectorState;
 import io.strimzi.api.kafka.model.common.PasswordSecretSourceBuilder;
@@ -70,6 +75,7 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.VerificationUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.ReadWriteUtils;
@@ -113,7 +119,7 @@ import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 @Tag(REGRESSION)
 @Tag(CONNECT)
 @Tag(CONNECT_COMPONENTS)
-@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 @SuiteDoc(
     description = @Desc("Verifies the deployment, manual rolling update, and undeployment of Kafka Connect components."),
     beforeTestSteps = {
@@ -1722,6 +1728,116 @@ class ConnectST extends AbstractST {
 
         final String kafkaConnectPodNameAfterRU = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(KafkaConnectResources.componentName(testStorage.getClusterName())).get(0).getMetadata().getName();
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(testStorage.getNamespaceName(), kafkaConnectPodNameAfterRU);
+    }
+
+    @ParallelNamespaceTest
+    void testConnectorOffsetManagement() throws JsonProcessingException {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final String offsetConfigMap = testStorage.getClusterName() + "-offsets";
+        final int desiredNewOffset = 20;
+
+        // Create ObjectMapper instance for parsing the JSON from the offset ConfigMaps
+        final ObjectMapper mapper = new ObjectMapper();
+
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+            )
+        );
+        resourceManager.createResourceWithWait(
+            KafkaTemplates.kafkaEphemeral(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build(),
+            KafkaTopicTemplates.topic(testStorage).build()
+        );
+
+        KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
+            .editMetadata()
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+            .endMetadata()
+            .build();
+
+        KafkaConnector kafkaConnector = KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), testStorage.getClusterName())
+            .editSpec()
+                .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
+                .addToConfig("file", TestConstants.DEFAULT_SINK_FILE_PATH)
+                .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .addToConfig("topics", testStorage.getTopicName())
+                .withNewAlterOffsets()
+                    .withNewFromConfigMap(offsetConfigMap)
+                .endAlterOffsets()
+                .withNewListOffsets()
+                    .withNewToConfigMap(offsetConfigMap)
+                .endListOffsets()
+            .endSpec()
+            .build();
+
+        resourceManager.createResourceWithWait(
+            connect,
+            kafkaConnector,
+            ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
+        );
+
+        LOGGER.info("Deploying network policies for KafkaConnect");
+        NetworkPolicyResource.deployNetworkPolicyForResource(connect, KafkaConnectResources.componentName(testStorage.getClusterName()));
+        final String scraperPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
+
+        KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
+
+        resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
+
+        KafkaConnectorUtils.waitForOffsetInFileSinkConnector(testStorage.getNamespaceName(), scraperPodName, testStorage.getClusterName(), testStorage.getClusterName(), TestConstants.MESSAGE_COUNT);
+
+        // annotate the KafkaConnector resource to list the offsets of the file sink connector
+        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            connector -> connector.getMetadata().getAnnotations().put(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, "list"));
+
+        // wait for creation of the CM
+        ConfigMapUtils.waitForCreationOfConfigMap(testStorage.getNamespaceName(), offsetConfigMap);
+
+        // checking the config map
+        ConfigMap listConfigMap = kubeClient().getConfigMap(testStorage.getNamespaceName(), offsetConfigMap);
+        JsonNode offsets = mapper.readTree(listConfigMap.getData().get("offsets.json"));
+
+        assertThat("Offset config map contains correct kafka_offset value", offsets.get("offsets").get(0).get("offset").get("kafka_offset").asInt(), is(TestConstants.MESSAGE_COUNT));
+
+        // set the offsets to `20`
+        ((ObjectNode) offsets.get("offsets").get(0).get("offset")).put("kafka_offset", 20);
+
+        // update the connector to be stopped
+        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            connector -> connector.getSpec().setState(ConnectorState.STOPPED));
+
+        listConfigMap = new ConfigMapBuilder(listConfigMap)
+            .withData(Map.of("offsets.json", offsets.toString()))
+            .build();
+
+        // update the configmap
+        kubeClient().updateConfigMapInNamespace(testStorage.getNamespaceName(), listConfigMap);
+
+        // annotate the KafkaConnector with alter annotation
+        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            connector -> connector.getMetadata().getAnnotations().put(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, "alter"));
+
+        // wait for removal of the annotation from the KafkaConnector CR
+        KafkaConnectorUtils.waitForRemovalOfTheAnnotation(testStorage.getNamespaceName(), testStorage.getClusterName(), ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
+
+        // check that connector contains desired offset
+        offsets = KafkaConnectorUtils.getOffsetOfConnectorFromConnectAPI(testStorage.getNamespaceName(), scraperPodName, testStorage.getClusterName(), testStorage.getClusterName());
+
+        assertThat("Offset endpoint returns response with correct offset in kafka_offset", offsets.get("offsets").get(0).get("offset").get("kafka_offset").asInt(), is(desiredNewOffset));
+
+        // reset the offset
+        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            connector -> connector.getMetadata().getAnnotations().put(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, "reset"));
+
+        // wait for removal of the annotation from the KafkaConnector CR
+        KafkaConnectorUtils.waitForRemovalOfTheAnnotation(testStorage.getNamespaceName(), testStorage.getClusterName(), ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
+
+        // check that connector contains desired offset
+        offsets = KafkaConnectorUtils.getOffsetOfConnectorFromConnectAPI(testStorage.getNamespaceName(), scraperPodName, testStorage.getClusterName(), testStorage.getClusterName());
+
+        assertThat("Offset endpoint returns response with correct offset in kafka_offset", offsets.get("offsets").toString(), is("[]"));
     }
 
     /**

@@ -34,4 +34,13 @@ public class ConfigMapUtils {
             }
         }
     }
+
+    public static void waitForCreationOfConfigMap(String namespaceName, String configMapName) {
+        LOGGER.info("Waiting for ConfigMap: {}/{} to be created", namespaceName, configMapName);
+        TestUtils.waitFor(String.format("ConfigMap: %s/%s to be created", namespaceName, configMapName),
+            TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
+            TestConstants.GLOBAL_TIMEOUT,
+            () -> kubeClient().getConfigMap(namespaceName, configMapName) != null
+        );
+    }
 }

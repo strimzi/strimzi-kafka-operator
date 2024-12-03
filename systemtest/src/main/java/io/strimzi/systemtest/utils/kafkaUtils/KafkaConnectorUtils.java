@@ -4,6 +4,9 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorStatus;
@@ -223,5 +226,66 @@ public class KafkaConnectorUtils {
                 return false;
             }
         );
+    }
+
+    public static void waitForRemovalOfTheAnnotation(String namespaceName, String connectorName, String annotationName) {
+        LOGGER.info("Waiting for annotation: {} to be removed from KafkaConnector: {}/{}", annotationName, namespaceName, connectorName);
+
+        TestUtils.waitFor(String.format("annotation %s to be removed from KafkaConnector: %s/%s", annotationName, namespaceName, connectorName),
+            TestConstants.GLOBAL_POLL_INTERVAL_5_SECS,
+            TestConstants.GLOBAL_STATUS_TIMEOUT,
+            () -> KafkaConnectorResource.kafkaConnectorClient().inNamespace(namespaceName).withName(connectorName).get().getMetadata().getAnnotations().get(annotationName) == null
+        );
+    }
+
+    public static JsonNode getOffsetOfConnectorFromConnectAPI(
+        String namespaceName,
+        String scraperPodName,
+        String serviceName,
+        String connectorName
+    ) throws JsonProcessingException {
+        final ObjectMapper mapper = new ObjectMapper();
+
+        return mapper.readTree(cmdKubeClient().namespace(namespaceName).execInPod(scraperPodName,
+            "curl", "-X", "GET",
+            "http://" + serviceName + ":8083/connectors/" + connectorName + "/offsets").out().trim());
+    }
+
+    public static void waitForOffsetInFileSinkConnector(
+        String namespaceName,
+        String scraperPodName,
+        String connectName,
+        String connectorName,
+        int expectedOffset
+    ) {
+        waitForOffsetInConnector(
+            namespaceName,
+            scraperPodName,
+            KafkaConnectResources.serviceName(connectName),
+            connectorName,
+            "/offsets/0/offset/kafka_offset",
+            expectedOffset
+        );
+    }
+
+    public static void waitForOffsetInConnector(
+        String namespaceName,
+        String scraperPodName,
+        String serviceName,
+        String connectorName,
+        String pathInJsonToOffsetObject,
+        int expectedOffset
+    ) {
+        TestUtils.waitFor("offset on the Connector will contain expected number",
+            TestConstants.GLOBAL_POLL_INTERVAL_5_SECS,
+            TestConstants.GLOBAL_STATUS_TIMEOUT,
+            () -> {
+                try {
+                    JsonNode offsets = getOffsetOfConnectorFromConnectAPI(namespaceName, scraperPodName, serviceName, connectorName);
+                    return offsets.at(pathInJsonToOffsetObject).asInt() == expectedOffset;
+                } catch (Exception e) {
+                    return false;
+                }
+            });
     }
 }
