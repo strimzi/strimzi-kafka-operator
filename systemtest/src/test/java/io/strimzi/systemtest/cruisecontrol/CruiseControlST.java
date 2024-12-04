@@ -971,7 +971,7 @@ public class CruiseControlST extends AbstractST {
             //  cluster-ef377b8e-b-45e0111e-0:/var/lib/kafka/data-2 -> 37,416 bytes (~37 KB)
             //  cluster-ef377b8e-b-45e0111e-2:/var/lib/kafka/data-1 -> 24,983 bytes (~25 KB)
             assertThat("Expected data directory " + key + " to have reduced size after rebalance.",
-                finalSize, Matchers.lessThan(initialSize / 100)); // Adjust the threshold as needed
+                finalSize, Matchers.lessThan(initialSize / 100));
         }
     }
 
