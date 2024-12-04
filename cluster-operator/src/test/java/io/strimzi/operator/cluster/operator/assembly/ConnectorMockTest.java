@@ -79,6 +79,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -141,7 +142,7 @@ public class ConnectorMockTest {
         return host + "##" + connectorName;
     }
 
-    private Future<Map<String, Object>> kafkaConnectApiStatusMock(String host, String connectorName)   {
+    private CompletableFuture<Map<String, Object>> kafkaConnectApiStatusMock(String host, String connectorName)   {
         ConnectorStatus connectorStatus = connectors.get(key(host, connectorName));
         Map<String, Object> statusNode = new HashMap<>();
         statusNode.put("name", connectorName);
@@ -156,7 +157,7 @@ public class ConnectorMockTest {
         List<Map<String, Object>> tasks = singletonList(task);
         statusNode.put("tasks", tasks);
 
-        return Future.succeededFuture(statusNode);
+        return CompletableFuture.completedFuture(statusNode);
     }
 
     @BeforeAll
@@ -250,7 +251,7 @@ public class ConnectorMockTest {
         when(api.list(any(), any(), anyInt())).thenAnswer(i -> {
             String host = i.getArgument(1);
             String matchingKeyPrefix = host + "##";
-            return Future.succeededFuture(connectors.keySet().stream()
+            return CompletableFuture.completedFuture(connectors.keySet().stream()
                     .filter(s -> s.startsWith(matchingKeyPrefix))
                     .map(s -> s.substring(matchingKeyPrefix.length()))
                     .collect(Collectors.toList()));
@@ -261,9 +262,9 @@ public class ConnectorMockTest {
                     .withType("sink")
                     .withVersion("1.0.0")
                     .build();
-            return Future.succeededFuture(Collections.singletonList(connectorPlugin));
+            return CompletableFuture.completedFuture(Collections.singletonList(connectorPlugin));
         });
-        when(api.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
+        when(api.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(CompletableFuture.completedFuture(null));
         when(api.getConnectorConfig(any(), any(), any(), anyInt(), any())).thenAnswer(invocation -> {
             String host = invocation.getArgument(2);
             String connectorName = invocation.getArgument(4);
@@ -276,9 +277,9 @@ public class ConnectorMockTest {
                         map.put(entry.getKey(), entry.getValue().toString());
                     }
                 }
-                return Future.succeededFuture(map);
+                return CompletableFuture.completedFuture(map);
             } else {
-                return Future.failedFuture(new ConnectRestException("GET", String.format("/connectors/%s/config", connectorName), 404, "Not Found", ""));
+                return CompletableFuture.failedFuture(new ConnectRestException("GET", String.format("/connectors/%s/config", connectorName), 404, "Not Found", ""));
             }
         });
         when(api.getConnector(any(), any(), anyInt(), any())).thenAnswer(invocation -> {
@@ -286,9 +287,9 @@ public class ConnectorMockTest {
             String connectorName = invocation.getArgument(3);
             ConnectorStatus connectorStatus = connectors.get(key(host, connectorName));
             if (connectorStatus == null) {
-                return Future.failedFuture(new ConnectRestException("GET", String.format("/connectors/%s", connectorName), 404, "Not Found", ""));
+                return CompletableFuture.failedFuture(new ConnectRestException("GET", String.format("/connectors/%s", connectorName), 404, "Not Found", ""));
             }
-            return Future.succeededFuture(Map.of(
+            return CompletableFuture.completedFuture(Map.of(
                     "name", connectorName,
                     "config", connectorStatus.config,
                     "tasks", Map.of()));
@@ -300,14 +301,14 @@ public class ConnectorMockTest {
             String connectorName = invocation.getArgument(3);
             JsonObject connectorConfig = invocation.getArgument(4);
             connectors.putIfAbsent(key(host, connectorName), new ConnectorStatus(ConnectorState.RUNNING, connectorConfig));
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
         });
         when(api.delete(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> {
             String host = invocation.getArgument(1);
             LOGGER.info("###### delete " + host);
             String connectorName = invocation.getArgument(3);
             ConnectorStatus remove = connectors.remove(key(host, connectorName));
-            return remove != null ? Future.succeededFuture() : Future.failedFuture("No such connector " + connectorName);
+            return remove != null ? CompletableFuture.completedFuture(null) : CompletableFuture.failedFuture(new ConnectRestException("DELETE", "", 404, "No such connector " + connectorName, ""));
         });
         when(api.statusWithBackOff(any(), any(), any(), anyInt(), anyString())).thenAnswer(invocation -> {
             String host = invocation.getArgument(2);
@@ -326,73 +327,73 @@ public class ConnectorMockTest {
             String connectorName = invocation.getArgument(3);
             ConnectorStatus connectorStatus = connectors.get(key(host, connectorName));
             if (connectorStatus == null) {
-                return Future.failedFuture(new ConnectRestException("PUT", "", 404, "Not found", "Connector name " + connectorName));
+                return CompletableFuture.failedFuture(new ConnectRestException("PUT", "", 404, "Not found", "Connector name " + connectorName));
             }
             if (!ConnectorState.PAUSED.equals(connectorStatus.state)) {
                 connectors.put(key(host, connectorName), new ConnectorStatus(ConnectorState.PAUSED, connectorStatus.config));
             }
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
         });
         when(api.stop(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> {
             String host = invocation.getArgument(1);
             String connectorName = invocation.getArgument(3);
             ConnectorStatus connectorStatus = connectors.get(key(host, connectorName));
             if (connectorStatus == null) {
-                return Future.failedFuture(new ConnectRestException("PUT", "", 404, "Not found", "Connector name " + connectorName));
+                return CompletableFuture.failedFuture(new ConnectRestException("PUT", "", 404, "Not found", "Connector name " + connectorName));
             }
             if (!ConnectorState.STOPPED.equals(connectorStatus.state)) {
                 connectors.put(key(host, connectorName), new ConnectorStatus(ConnectorState.STOPPED, connectorStatus.config));
             }
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
         });
         when(api.resume(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> {
             String host = invocation.getArgument(1);
             String connectorName = invocation.getArgument(3);
             ConnectorStatus connectorStatus = connectors.get(key(host, connectorName));
             if (connectorStatus == null) {
-                return Future.failedFuture(new ConnectRestException("PUT", "", 404, "Not found", "Connector name " + connectorName));
+                return CompletableFuture.failedFuture(new ConnectRestException("PUT", "", 404, "Not found", "Connector name " + connectorName));
             }
             if (ConnectorState.STOPPED.equals(connectorStatus.state) || ConnectorState.PAUSED.equals(connectorStatus.state)) {
                 connectors.put(key(host, connectorName), new ConnectorStatus(ConnectorState.RUNNING, connectorStatus.config));
             }
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
         });
         when(api.restart(any(), anyInt(), anyString(), anyBoolean(), anyBoolean())).thenAnswer(invocation -> {
             String host = invocation.getArgument(0);
             String connectorName = invocation.getArgument(2);
             ConnectorStatus connectorStatus = connectors.get(key(host, connectorName));
             if (connectorStatus == null) {
-                return Future.failedFuture(new ConnectRestException("PUT", "", 404, "Not found", "Connector name " + connectorName));
+                return CompletableFuture.failedFuture(new ConnectRestException("PUT", "", 404, "Not found", "Connector name " + connectorName));
             }
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
         });
         when(api.restartTask(any(), anyInt(), anyString(), anyInt())).thenAnswer(invocation -> {
             String host = invocation.getArgument(0);
             String connectorName = invocation.getArgument(2);
             ConnectorStatus connectorStatus = connectors.get(key(host, connectorName));
             if (connectorStatus == null) {
-                return Future.failedFuture(new ConnectRestException("PUT", "", 404, "Not found", "Connector name " + connectorName));
+                return CompletableFuture.failedFuture(new ConnectRestException("PUT", "", 404, "Not found", "Connector name " + connectorName));
             }
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
         });
         when(api.getConnectorTopics(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> {
             String host = invocation.getArgument(1);
             String connectorName = invocation.getArgument(3);
             ConnectorStatus connectorStatus = connectors.get(key(host, connectorName));
             if (connectorStatus == null) {
-                return Future.failedFuture(new ConnectRestException("GET", String.format("/connectors/%s/topics", connectorName), 404, "Not Found", ""));
+                return CompletableFuture.failedFuture(new ConnectRestException("GET", String.format("/connectors/%s/topics", connectorName), 404, "Not Found", ""));
             }
-            return Future.succeededFuture(List.of("my-topic"));
+            return CompletableFuture.completedFuture(List.of("my-topic"));
         });
 
-        when(api.getConnectorOffsets(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> Future.succeededFuture(connectorOffsets));
+        when(api.getConnectorOffsets(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> CompletableFuture.completedFuture(connectorOffsets));
         when(api.alterConnectorOffsets(any(), any(), anyInt(), anyString(), anyString())).thenAnswer(invocation -> {
             connectorOffsets = invocation.getArgument(4);
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
         });
         when(api.resetConnectorOffsets(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> {
             connectorOffsets = RESET_OFFSETS_JSON;
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
         });
     }
 
@@ -1066,7 +1067,7 @@ public class ConnectorMockTest {
         String connectorName = "connector";
 
         when(api.createOrUpdatePutRequest(any(), any(), anyInt(), anyString(), any()))
-            .thenAnswer(invocation -> Future.failedFuture(new ConnectRestException("GET", "/foo", 500, "Internal server error", "Bad stuff happened")));
+            .thenAnswer(invocation -> CompletableFuture.failedFuture(new ConnectRestException("GET", "/foo", 500, "Internal server error", "Bad stuff happened")));
         // NOTE: Clear runningConnectors as re-mocking it causes an entry to be added
         connectors.clear();
 
@@ -1519,7 +1520,7 @@ public class ConnectorMockTest {
         String connectorName = "connector";
 
         when(api.restart(anyString(), anyInt(), anyString(), anyBoolean(), anyBoolean()))
-            .thenAnswer(invocation -> Future.failedFuture(new ConnectRestException("GET", "/foo", 500, "Internal server error", "Bad stuff happened")));
+            .thenAnswer(invocation -> CompletableFuture.failedFuture(new ConnectRestException("GET", "/foo", 500, "Internal server error", "Bad stuff happened")));
 
         // Create KafkaConnect cluster and wait till it's ready
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(new KafkaConnectBuilder()
@@ -1684,7 +1685,7 @@ public class ConnectorMockTest {
         String connectorName = "connector";
 
         when(api.restartTask(anyString(), anyInt(), anyString(), anyInt()))
-            .thenAnswer(invocation -> Future.failedFuture(new ConnectRestException("GET", "/foo", 500, "Internal server error", "Bad stuff happened")));
+            .thenAnswer(invocation -> CompletableFuture.failedFuture(new ConnectRestException("GET", "/foo", 500, "Internal server error", "Bad stuff happened")));
 
         // Create KafkaConnect cluster and wait till it's ready
         Crds.kafkaConnectOperation(client).inNamespace(namespace).resource(new KafkaConnectBuilder()
@@ -1813,11 +1814,11 @@ public class ConnectorMockTest {
                 eq(connectorName), any());
         assertThat(connectors.keySet(), is(Collections.singleton(key("cluster-connect-api.testconnectscaletozero.svc", connectorName))));
 
-        when(api.list(any(), any(), anyInt())).thenReturn(Future.failedFuture(new ConnectTimeoutException("connection timed out")));
-        when(api.listConnectorPlugins(any(), any(), anyInt())).thenReturn(Future.failedFuture(new ConnectTimeoutException("connection timed out")));
-        when(api.createOrUpdatePutRequest(any(), any(), anyInt(), anyString(), any())).thenReturn(Future.failedFuture(new ConnectTimeoutException("connection timed out")));
-        when(api.getConnectorConfig(any(), any(), anyInt(), any())).thenReturn(Future.failedFuture(new ConnectTimeoutException("connection timed out")));
-        when(api.getConnector(any(), any(), anyInt(), any())).thenReturn(Future.failedFuture(new ConnectTimeoutException("connection timed out")));
+        when(api.list(any(), any(), anyInt())).thenReturn(CompletableFuture.failedFuture(new ConnectTimeoutException("connection timed out")));
+        when(api.listConnectorPlugins(any(), any(), anyInt())).thenReturn(CompletableFuture.failedFuture(new ConnectTimeoutException("connection timed out")));
+        when(api.createOrUpdatePutRequest(any(), any(), anyInt(), anyString(), any())).thenReturn(CompletableFuture.failedFuture(new ConnectTimeoutException("connection timed out")));
+        when(api.getConnectorConfig(any(), any(), anyInt(), any())).thenReturn(CompletableFuture.failedFuture(new ConnectTimeoutException("connection timed out")));
+        when(api.getConnector(any(), any(), anyInt(), any())).thenReturn(CompletableFuture.failedFuture(new ConnectTimeoutException("connection timed out")));
 
         Crds.kafkaConnectOperation(client).inNamespace(namespace).withName(connectName).edit(spec -> new KafkaConnectBuilder(spec)
                 .editSpec()
@@ -1880,11 +1881,11 @@ public class ConnectorMockTest {
                 eq(connectorName), any());
         assertThat(connectors.keySet(), is(Collections.singleton(key("cluster-connect-api.testconnectrestapiissues.svc", connectorName))));
 
-        when(api.list(any(), any(), anyInt())).thenReturn(Future.failedFuture(new ConnectTimeoutException("connection timed out")));
-        when(api.listConnectorPlugins(any(), any(), anyInt())).thenReturn(Future.failedFuture(new ConnectTimeoutException("connection timed out")));
-        when(api.createOrUpdatePutRequest(any(), any(), anyInt(), anyString(), any())).thenReturn(Future.failedFuture(new ConnectTimeoutException("connection timed out")));
-        when(api.getConnectorConfig(any(), any(), any(), anyInt(), any())).thenReturn(Future.failedFuture(new ConnectTimeoutException("connection timed out")));
-        when(api.getConnector(any(), any(), anyInt(), any())).thenReturn(Future.failedFuture(new ConnectTimeoutException("connection timed out")));
+        when(api.list(any(), any(), anyInt())).thenReturn(CompletableFuture.failedFuture(new ConnectTimeoutException("connection timed out")));
+        when(api.listConnectorPlugins(any(), any(), anyInt())).thenReturn(CompletableFuture.failedFuture(new ConnectTimeoutException("connection timed out")));
+        when(api.createOrUpdatePutRequest(any(), any(), anyInt(), anyString(), any())).thenReturn(CompletableFuture.failedFuture(new ConnectTimeoutException("connection timed out")));
+        when(api.getConnectorConfig(any(), any(), any(), anyInt(), any())).thenReturn(CompletableFuture.failedFuture(new ConnectTimeoutException("connection timed out")));
+        when(api.getConnector(any(), any(), anyInt(), any())).thenReturn(CompletableFuture.failedFuture(new ConnectTimeoutException("connection timed out")));
 
         Crds.kafkaConnectOperation(client).inNamespace(namespace).withName(connectName).edit(sp -> new KafkaConnectBuilder(sp)
             .editSpec()
@@ -1952,8 +1953,8 @@ public class ConnectorMockTest {
         String connectName = "cluster";
 
         // this connector should be deleted on connect reconciliation
-        when(api.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(List.of("connector")));
-        when(api.delete(any(), anyString(), anyInt(), anyString())).thenReturn(Future.failedFuture(new RuntimeException("deletion error")));
+        when(api.list(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(List.of("connector")));
+        when(api.delete(any(), anyString(), anyInt(), anyString())).thenReturn(CompletableFuture.failedFuture(new RuntimeException("deletion error")));
 
         KafkaConnect kafkaConnect = new KafkaConnectBuilder()
                 .withNewMetadata()

@@ -29,6 +29,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -138,7 +139,7 @@ public class KafkaConnectAssemblyOperatorConnectorAutoRestartTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         KafkaConnectApi mockConnectApi = mock(KafkaConnectApi.class);
-        when(mockConnectApi.restart(any(), anyInt(), any(), anyBoolean(), anyBoolean())).thenReturn(Future.succeededFuture(Map.of()));
+        when(mockConnectApi.restart(any(), anyInt(), any(), anyBoolean(), anyBoolean())).thenReturn(CompletableFuture.completedFuture(Map.of()));
         AbstractConnectOperator.ConnectorStatusAndConditions statusAndConditions = new AbstractConnectOperator.ConnectorStatusAndConditions(Map.of("connector", Map.of("state", "FAILED")), List.of(), List.of(), null);
         KafkaConnector connector = new KafkaConnectorBuilder()
                 .withNewMetadata()
@@ -183,7 +184,7 @@ public class KafkaConnectAssemblyOperatorConnectorAutoRestartTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         KafkaConnectApi mockConnectApi = mock(KafkaConnectApi.class);
-        when(mockConnectApi.restart(any(), anyInt(), any(), anyBoolean(), anyBoolean())).thenReturn(Future.succeededFuture(Map.of()));
+        when(mockConnectApi.restart(any(), anyInt(), any(), anyBoolean(), anyBoolean())).thenReturn(CompletableFuture.completedFuture(Map.of()));
         AbstractConnectOperator.ConnectorStatusAndConditions statusAndConditions = new AbstractConnectOperator.ConnectorStatusAndConditions(Map.of("connector", Map.of("state", "FAILED")), List.of(), List.of(), null);
         KafkaConnector connector = new KafkaConnectorBuilder()
                 .withNewMetadata()

@@ -9,24 +9,21 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.test.container.StrimziKafkaCluster;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import io.vertx.junit5.Checkpoint;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
@@ -41,11 +38,10 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-@ExtendWith(VertxExtension.class)
 public class KafkaConnectApiIT {
     private static StrimziKafkaCluster cluster;
-    private static Vertx vertx;
 
     private ConnectCluster connectCluster;
     private int port;
@@ -69,7 +65,6 @@ public class KafkaConnectApiIT {
 
     @BeforeAll
     public static void before() throws IOException {
-        vertx = Vertx.vertx();
         cluster = new StrimziKafkaCluster.StrimziKafkaClusterBuilder()
                 .withKraft()
                 .withNumberOfBrokers(1)
@@ -82,17 +77,36 @@ public class KafkaConnectApiIT {
     @AfterAll
     public static void after() {
         cluster.stop();
-        vertx.close();
+    }
+
+    private void checkStatusWithDelay(Supplier<CompletableFuture<Map<String, Object>>> statusSupplier,
+                                      ScheduledExecutorService singleExecutor,
+                                      CompletableFuture<Map<String, Object>> completableFuture,
+                                      long delay) {
+        singleExecutor.schedule(() -> {
+            statusSupplier.get().whenComplete((status, error) -> {
+                if (error == null) {
+                    if ("RUNNING".equals(((Map<String, Object>) status.getOrDefault("connector", emptyMap())).get("state"))) {
+                        completableFuture.complete(status);
+                    } else {
+                        System.err.println(status);
+                        checkStatusWithDelay(statusSupplier, singleExecutor, completableFuture, delay);
+                    }
+                } else {
+                    error.printStackTrace();
+                    checkStatusWithDelay(statusSupplier, singleExecutor, completableFuture, delay);
+                }
+            });
+        }, delay, TimeUnit.MILLISECONDS);
     }
 
     @Test
     @SuppressWarnings({"unchecked", "checkstyle:MethodLength", "checkstyle:NPathComplexity"})
-    public void test(VertxTestContext context) throws InterruptedException {
-        KafkaConnectApi client = new KafkaConnectApiImpl(vertx);
-        Checkpoint async = context.checkpoint();
+    public void test() throws InterruptedException {
+        KafkaConnectApi client = new KafkaConnectApiImpl();
         Thread.sleep(10_000L);
         client.listConnectorPlugins(Reconciliation.DUMMY_RECONCILIATION, "localhost", port)
-            .onComplete(context.succeeding(connectorPlugins -> context.verify(() -> {
+            .whenComplete((connectorPlugins, error) -> {
                 assertThat(connectorPlugins.size(), greaterThanOrEqualTo(2));
 
                 ConnectorPlugin fileSink = connectorPlugins.stream()
@@ -106,12 +120,12 @@ public class KafkaConnectApiIT {
                 assertNotNull(fileSource);
                 assertThat(fileSource.getType(), is("source"));
                 assertThat(fileSource.getVersion(), is(not(emptyString())));
-            })))
+            })
 
-            .compose(connectorPlugins -> client.list(Reconciliation.DUMMY_RECONCILIATION, "localhost", port))
-            .onComplete(context.succeeding(connectorNames -> context.verify(() -> assertThat(connectorNames, is(empty())))))
+            .thenCompose(connectorPlugins -> client.list(Reconciliation.DUMMY_RECONCILIATION, "localhost", port))
+            .whenComplete((connectorNames, error) -> assertThat(connectorNames, is(empty())))
 
-            .compose(connectorNames -> {
+            .thenCompose(connectorNames -> {
                 JsonObject o = new JsonObject()
                     .put("connector.class", "FileStreamSource")
                     .put("tasks.max", "1")
@@ -119,34 +133,17 @@ public class KafkaConnectApiIT {
                     .put("topic", "my-topic");
                 return client.createOrUpdatePutRequest(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "test", o);
             })
-            .onComplete(context.succeeding(i -> { }))
-            .compose(created -> {
 
-                Promise<Map<String, Object>> promise = Promise.promise();
-
-                Handler<Long> handler = new Handler<>() {
-                    @Override
-                    public void handle(Long timerId) {
-                        client.status(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "test").onComplete(result -> {
-                            if (result.succeeded()) {
-                                Map<String, Object> status = result.result();
-                                if ("RUNNING".equals(((Map<String, Object>) status.getOrDefault("connector", emptyMap())).get("state"))) {
-                                    promise.complete(status);
-                                    return;
-                                } else {
-                                    System.err.println(status);
-                                }
-                            } else {
-                                result.cause().printStackTrace();
-                            }
-                            vertx.setTimer(1000, this);
-                        });
-                    }
-                };
-                vertx.setTimer(1000, handler);
-                return promise.future();
+            .thenCompose(created -> {
+                CompletableFuture<Map<String, Object>> completableFuture = new CompletableFuture<>();
+                ScheduledExecutorService singleExecutor = Executors.newSingleThreadScheduledExecutor(
+                        runnable -> new Thread(runnable, "kafka-connect-api-test"));
+                checkStatusWithDelay(() -> client.status(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "test"), singleExecutor, completableFuture, 1000);
+                completableFuture.whenComplete((r, e) -> singleExecutor.shutdown());
+                return completableFuture;
             })
-            .onComplete(context.succeeding(status -> context.verify(() -> {
+            .whenComplete((status, error) -> {
+                assertNull(error);
                 assertThat(status.get("name"), is("test"));
                 Map<String, Object> connectorStatus = (Map<String, Object>) status.getOrDefault("connector", emptyMap());
                 assertThat(connectorStatus.get("state"), is("RUNNING"));
@@ -157,87 +154,97 @@ public class KafkaConnectApiIT {
                     assertThat(an.get("state"), is("RUNNING"));
                     assertThat(an.get("worker_id"), startsWith("localhost:"));
                 }
-            })))
-            .compose(status -> client.getConnectorConfig(Reconciliation.DUMMY_RECONCILIATION, new BackOff(10), "localhost", port, "test"))
-            .onComplete(context.succeeding(config -> context.verify(() -> {
+            })
+
+            .thenCompose(status -> client.getConnectorConfig(Reconciliation.DUMMY_RECONCILIATION, new BackOff(10), "localhost", port, "test"))
+            .whenComplete((config, error) -> {
+                assertNull(error);
                 assertThat(config, is(Map.of("connector.class", "FileStreamSource",
                         "file", "/dev/null",
                         "tasks.max", "1",
                         "name", "test",
                         "topic", "my-topic")));
-            })))
-            .compose(config -> client.getConnectorConfig(Reconciliation.DUMMY_RECONCILIATION, new BackOff(10), "localhost", port, "does-not-exist"))
-            .onComplete(context.failing(error -> context.verify(() -> {
-                assertThat(error, instanceOf(ConnectRestException.class));
-                assertThat(((ConnectRestException) error).getStatusCode(), is(404));
-            })))
-            .recover(error -> Future.succeededFuture())
+            })
 
-            .compose(ignored -> client.pause(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "test"))
-            .onComplete(context.succeeding(i -> { }))
+            .thenCompose(ignored -> client.getConnectorConfig(Reconciliation.DUMMY_RECONCILIATION, new BackOff(10), "localhost", port, "does-not-exist")
+                        .handle((r, e) -> {
+                            assertThat(e.getCause(), is(instanceOf(ConnectRestException.class)));
+                            assertThat(e.getMessage(), containsString("404"));
+                            if (e == null) {
+                                throw new RuntimeException("Expected failure when getting config for connector that doesn't exist");
+                            }
+                            return null;
+                        }))
 
-            .compose(ignored -> client.resume(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "test"))
-            .onComplete(context.succeeding(i -> { }))
+            .thenCompose(ignored -> client.pause(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "test"))
 
-            .compose(ignored -> client.stop(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "test"))
-            .onComplete(context.succeeding(i -> { }))
+            .thenCompose(ignored -> client.resume(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "test"))
 
-            .compose(ignored -> client.resume(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "test"))
-            .onComplete(context.succeeding(i -> { }))
+            .thenCompose(ignored -> client.stop(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "test"))
 
-            .compose(ignored -> client.restart("localhost", port, "test", true, true))
-            .onComplete(context.succeeding(i -> { }))
+            .thenCompose(ignored -> client.resume(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "test"))
 
-            .compose(ignored -> client.restartTask("localhost", port, "test", 0))
-            .onComplete(context.succeeding(i -> { }))
+            .thenCompose(ignored -> client.restart("localhost", port, "test", true, true))
 
-            .compose(ignored -> {
+            .thenCompose(ignored -> client.restartTask("localhost", port, "test", 0))
+
+            .thenCompose(ignored -> {
                 JsonObject o = new JsonObject()
                         .put("connector.class", "ThisConnectorDoesNotExist")
                         .put("tasks.max", "1")
                         .put("file", "/dev/null")
                         .put("topic", "my-topic");
-                return client.createOrUpdatePutRequest(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "broken", o);
+                return client.createOrUpdatePutRequest(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "broken", o)
+                        .handle((r, e) -> {
+                            assertThat(e.getCause(), is(instanceOf(ConnectRestException.class)));
+                            assertThat(e.getMessage(), containsString("Failed to find any class that implements Connector and which name matches ThisConnectorDoesNotExist"));
+                            if (e == null) {
+                                throw new RuntimeException("Expected error: Failed to find any class that implements Connector and which name matches ThisConnectorDoesNotExist");
+                            }
+                            return null;
+                        });
             })
-            .onComplete(context.failing(error -> context.verify(() -> {
-                assertThat(error, instanceOf(ConnectRestException.class));
 
-                assertThat(error.getMessage(),
-                        containsString("Failed to find any class that implements Connector and which name matches ThisConnectorDoesNotExist"));
-            })))
-            .recover(e -> Future.succeededFuture())
-            .compose(ignored -> {
+            .thenCompose(ignored -> {
                 JsonObject o = new JsonObject()
                         .put("connector.class", "FileStreamSource")
                         .put("tasks.max", "dog")
                         .put("file", "/dev/null")
                         .put("topic", "my-topic");
-                return client.createOrUpdatePutRequest(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "broken2", o);
+                return client.createOrUpdatePutRequest(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "broken2", o)
+                        .handle((r, e) -> {
+                            assertThat(e.getCause(), is(instanceOf(ConnectRestException.class)));
+                            assertThat(e.getMessage(), containsString("Invalid value dog for configuration tasks.max: Not a number of type INT"));
+                            if (e == null) {
+                                throw new RuntimeException("Expected error: Invalid value dog for configuration tasks.max: Not a number of type INT");
+                            }
+                            return null;
+                        });
             })
-            .onComplete(context.failing(error -> context.verify(() -> {
-                assertThat(error, instanceOf(ConnectRestException.class));
-                assertThat(error.getMessage(),
-                        containsString("Invalid value dog for configuration tasks.max: Not a number of type INT"));
-            })))
-            .recover(e -> Future.succeededFuture())
-            .compose(createResponse -> client.list(Reconciliation.DUMMY_RECONCILIATION, "localhost", port))
-            .onComplete(context.succeeding(connectorNames -> context.verify(() ->
-                    assertThat(connectorNames, is(singletonList("test"))))))
-            .compose(connectorNames -> client.delete(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "test"))
-            .onComplete(context.succeeding(i -> { }))
-            .compose(deletedConnector -> client.list(Reconciliation.DUMMY_RECONCILIATION, "localhost", port))
-            .onComplete(context.succeeding(connectorNames -> assertThat(connectorNames, is(empty()))))
-            .compose(connectorNames -> client.delete(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "never-existed"))
-            .onComplete(context.failing(error -> {
-                assertThat(error, instanceOf(ConnectRestException.class));
-                assertThat(error.getMessage(),
-                        containsString("Connector never-existed not found"));
-                async.flag();
-            }));
+
+            .thenCompose(createResponse -> client.list(Reconciliation.DUMMY_RECONCILIATION, "localhost", port))
+            .whenComplete((connectorNames, error) ->
+                    assertThat(connectorNames, is(singletonList("test"))))
+
+            .thenCompose(connectorNames -> client.delete(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "test"))
+
+            .thenCompose(deletedConnector -> client.list(Reconciliation.DUMMY_RECONCILIATION, "localhost", port))
+            .whenComplete((connectorNames, error) -> assertThat(connectorNames, is(empty())))
+
+            .thenCompose(connectorNames -> client.delete(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "never-existed")
+                    .handle((r, e) -> {
+                        assertThat(e.getCause(), is(instanceOf(ConnectRestException.class)));
+                        assertThat(e.getMessage(), containsString("Connector never-existed not found"));
+                        if (e == null) {
+                            throw new RuntimeException("Expected error: Connector never-existed not found");
+                        }
+                        return null;
+                    }))
+            .join();
     }
 
     @Test
-    public void testChangeLoggers(VertxTestContext context) {
+    public void testChangeLoggers() {
         String desired = "log4j.rootLogger=TRACE, CONSOLE\n" +
                 "log4j.logger.org.apache.zookeeper=WARN\n" +
                 "log4j.logger.org.reflections.Reflection=INFO\n" +
@@ -246,16 +253,15 @@ public class KafkaConnectApiIT {
                 "log4j.logger.foo.bar=TRACE\n" +
                 "log4j.logger.foo.bar.quux=DEBUG";
 
-        KafkaConnectApi client = new KafkaConnectApiImpl(vertx);
-        Checkpoint async = context.checkpoint();
+        KafkaConnectApi client = new KafkaConnectApiImpl();
 
         OrderedProperties ops = new OrderedProperties();
         ops.addStringPairs(desired);
 
         client.updateConnectLoggers(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, desired, ops)
-                .onComplete(context.succeeding(wasChanged -> context.verify(() -> assertEquals(true, wasChanged))))
-                .compose(a -> client.listConnectLoggers(Reconciliation.DUMMY_RECONCILIATION, "localhost", port)
-                        .onComplete(context.succeeding(map -> context.verify(() -> {
+                .whenComplete((wasChanged, error) -> assertEquals(true, wasChanged))
+                .thenCompose(a -> client.listConnectLoggers(Reconciliation.DUMMY_RECONCILIATION, "localhost", port)
+                        .whenComplete((map, error) -> {
                             assertThat(map.get("root"), is("TRACE"));
                             assertThat(map.get("org.apache.zookeeper"), is("WARN"));
                             assertThat(map.get("org.reflections"), is("FATAL"));
@@ -265,12 +271,11 @@ public class KafkaConnectApiIT {
                             assertThat(map.get("foo.bar"), is("TRACE"));
                             assertThat(map.get("foo.bar.quux"), is("DEBUG"));
 
-                        }))))
-                .compose(a -> client.updateConnectLoggers(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, desired, ops)
-                        .onComplete(context.succeeding(wasChanged -> context.verify(() -> {
+                        }))
+                .thenCompose(b -> client.updateConnectLoggers(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, desired, ops)
+                        .whenComplete((wasChanged, error) -> {
                             assertEquals(false, wasChanged);
-                            async.flag();
-                        }))));
+                        })).join();
     }
 
     @Test
@@ -285,7 +290,7 @@ public class KafkaConnectApiIT {
                 "log4j.logger.oorg.eclipse.jetty.util=DEBUG\n" +
                 "log4j.logger.foo.bar.quux=DEBUG";
 
-        KafkaConnectApiImpl client = new KafkaConnectApiImpl(vertx);
+        KafkaConnectApiImpl client = new KafkaConnectApiImpl();
         OrderedProperties ops = new OrderedProperties();
         ops.addStringPairs(desired);
         assertEquals("TRACE", client.getEffectiveLevel("foo.bar", ops.asMap()));

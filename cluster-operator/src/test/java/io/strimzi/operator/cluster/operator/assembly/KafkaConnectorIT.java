@@ -131,7 +131,7 @@ public class KafkaConnectorIT {
 
     @Test
     public void testConnectorNotUpdatedWhenConfigUnchanged(VertxTestContext context) {
-        KafkaConnectApiImpl connectClient = new KafkaConnectApiImpl(vertx);
+        KafkaConnectApiImpl connectClient = new KafkaConnectApiImpl();
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
 
@@ -165,7 +165,7 @@ public class KafkaConnectorIT {
 
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
                 ClusterOperatorConfig.buildFromMap(Map.of(), KafkaVersionTestUtils.getKafkaVersionLookup()),
-            connect -> new KafkaConnectApiImpl(vertx),
+            connect -> new KafkaConnectApiImpl(),
             connectCluster.getPort(0)
         ) { };
 
@@ -200,8 +200,8 @@ public class KafkaConnectorIT {
     }
 
     @Test
-    public void testConnectorResourceNotReadyWhenConnectorFailed(VertxTestContext context) {
-        KafkaConnectApiImpl connectClient = new KafkaConnectApiImpl(vertx);
+    public void     testConnectorResourceNotReadyWhenConnectorFailed(VertxTestContext context) {
+        KafkaConnectApiImpl connectClient = new KafkaConnectApiImpl();
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
 
@@ -236,7 +236,7 @@ public class KafkaConnectorIT {
 
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
                 ClusterOperatorConfig.buildFromMap(Map.of(), KafkaVersionTestUtils.getKafkaVersionLookup()),
-                connect -> new KafkaConnectApiImpl(vertx),
+                connect -> new KafkaConnectApiImpl(),
                 connectCluster.getPort(0)
         ) { };
 
@@ -251,7 +251,7 @@ public class KafkaConnectorIT {
 
     @Test
     public void testConnectorResourceNotReadyWhenTaskFailed(VertxTestContext context) {
-        KafkaConnectApiImpl connectClient = new KafkaConnectApiImpl(vertx);
+        KafkaConnectApiImpl connectClient = new KafkaConnectApiImpl();
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
 
@@ -286,7 +286,7 @@ public class KafkaConnectorIT {
 
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
                 ClusterOperatorConfig.buildFromMap(Map.of(), KafkaVersionTestUtils.getKafkaVersionLookup()),
-                connect -> new KafkaConnectApiImpl(vertx),
+                connect -> new KafkaConnectApiImpl(),
                 connectCluster.getPort(0)
         ) { };
 
@@ -312,7 +312,7 @@ public class KafkaConnectorIT {
 
     @Test
     public void testConnectorIsAutoRestarted(VertxTestContext context) {
-        KafkaConnectApiImpl connectClient = new KafkaConnectApiImpl(vertx);
+        KafkaConnectApiImpl connectClient = new KafkaConnectApiImpl();
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
 
@@ -347,7 +347,7 @@ public class KafkaConnectorIT {
 
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
             ClusterOperatorConfig.buildFromMap(Map.of(), KafkaVersionTestUtils.getKafkaVersionLookup()),
-            connect -> new KafkaConnectApiImpl(vertx),
+            connect -> new KafkaConnectApiImpl(),
             connectCluster.getPort(0)
         ) { };
 
@@ -362,7 +362,7 @@ public class KafkaConnectorIT {
 
     @Test
     public void testTaskIsAutoRestarted(VertxTestContext context) {
-        KafkaConnectApiImpl connectClient = new KafkaConnectApiImpl(vertx);
+        KafkaConnectApiImpl connectClient = new KafkaConnectApiImpl();
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
 
@@ -397,7 +397,7 @@ public class KafkaConnectorIT {
 
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
             ClusterOperatorConfig.buildFromMap(Map.of(), KafkaVersionTestUtils.getKafkaVersionLookup()),
-            connect -> new KafkaConnectApiImpl(vertx),
+            connect -> new KafkaConnectApiImpl(),
             connectCluster.getPort(0)
         ) { };
 

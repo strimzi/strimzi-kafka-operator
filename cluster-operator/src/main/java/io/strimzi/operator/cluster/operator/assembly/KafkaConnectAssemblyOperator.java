@@ -94,7 +94,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     public KafkaConnectAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                         ResourceOperatorSupplier supplier,
                                         ClusterOperatorConfig config) {
-        this(vertx, pfa, supplier, config, connect -> new KafkaConnectApiImpl(vertx));
+        this(vertx, pfa, supplier, config, connect -> new KafkaConnectApiImpl());
     }
 
     /**
@@ -336,7 +336,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      */
     private Future<Void> reconcileAvailableConnectorPlugins(Reconciliation reconciliation, String host, KafkaConnectStatus connectStatus)  {
         KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
-        return apiClient.listConnectorPlugins(reconciliation, host, port)
+        return VertxUtil.completableFutureToVertxFuture(apiClient.listConnectorPlugins(reconciliation, host, port))
                 .compose(connectorPlugins -> {
                     LOGGER.debugCr(reconciliation, "Setting list of connector plugins in Kafka Connect status");
                     connectStatus.setConnectorPlugins(connectorPlugins);
@@ -370,7 +370,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
             KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
 
             return Future.join(
-                    apiClient.list(reconciliation, host, port),
+                    VertxUtil.completableFutureToVertxFuture(apiClient.list(reconciliation, host, port)),
                     connectorOperator.listAsync(namespace, new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build())
             ).compose(cf -> {
                 List<String> runningConnectorNames = cf.resultAt(0);
@@ -479,7 +479,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         if (connector == null) {
             if (useResources) {
                 LOGGER.infoCr(reconciliation, "deleting connector: {}", connectorName);
-                return apiClient.delete(reconciliation, host, port, connectorName).mapEmpty();
+                return VertxUtil.completableFutureToVertxFuture(apiClient.delete(reconciliation, host, port, connectorName)).mapEmpty();
             } else {
                 return Future.succeededFuture();
             }
