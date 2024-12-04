@@ -22,6 +22,7 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceConfigurationBuilder;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceMode;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceState;
+import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIdsBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
@@ -34,12 +35,14 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.MixedRoleNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaRebalanceTemplates;
@@ -48,6 +51,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.specific.AdminClientTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.AdminClientUtils;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.VerificationUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
@@ -56,9 +60,11 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
+import io.strimzi.test.executor.ExecResult;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
@@ -67,6 +73,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.TestTags.ACCEPTANCE;
 import static io.strimzi.systemtest.TestTags.CRUISE_CONTROL;
@@ -804,6 +811,168 @@ public class CruiseControlST extends AbstractST {
 
         // check that KafkaRebalance <cluster-name>-auto-rebalancing-<mode> is deleted
         KafkaRebalanceUtils.waitForKafkaRebalanceIsDeleted(testStorage.getNamespaceName(), KafkaResources.autoRebalancingKafkaRebalanceResourceName(testStorage.getClusterName(), KafkaAutoRebalanceMode.REMOVE_BROKERS));
+    }
+
+    @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Test verifying the 'remove-disks' mode in Cruise Control, which allows moving data between JBOD disks on the same broker."),
+        steps = {
+            @Step(value = "Initialize JBOD storage configuration with multiple volumes (disks).", expected = "JBOD storage with disk IDs 0, 1, and 2 are initialized."),
+            @Step(value = "Deploy Kafka with Cruise Control enabled.", expected = "Kafka deployment with Cruise Control is successfully created."),
+            @Step(value = "Create topics and produce data to them.", expected = "Topics are created and data is produced to them."),
+            @Step(value = "Retrieve initial data directory sizes for the disks being removed.", expected = "Initial data directory sizes are retrieved."),
+            @Step(value = "Create a KafkaRebalance resource with 'remove-disks' mode, specifying the brokers and volume IDs.", expected = "KafkaRebalance resource is created with 'remove-disks' mode and moveReplicasOffVolumes settings."),
+            @Step(value = "Wait for the KafkaRebalance to reach the ProposalReady state.", expected = "KafkaRebalance reaches the ProposalReady state."),
+            @Step(value = "Approve the KafkaRebalance proposal.", expected = "KafkaRebalance is approved."),
+            @Step(value = "Wait for the KafkaRebalance to reach Ready state.", expected = "KafkaRebalance reaches the Ready state."),
+            @Step(value = "Verify that data has been moved off the specified disks by checking data directory sizes in the broker pods.", expected = "Data directories for the specified volumes are empty or have minimal data, confirming data has been moved off."),
+        },
+        labels = {
+            @Label(value = TestDocsLabels.CRUISE_CONTROL),
+        }
+    )
+    void testCruiseControlRemoveDisksMode() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        String diskSize = "6Gi";
+
+        // Initialize JBOD storage configuration with disk IDs 0, 1, and 2
+        JbodStorage jbodStorage = new JbodStorageBuilder()
+            .withVolumes(
+                new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(0).withSize(diskSize).build(),
+                new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(1).withSize(diskSize).build(),
+                new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(2).withSize(diskSize).build()
+            ).build();
+
+        // Create Kafka broker and controller pools using the initialized storage
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3)
+                    .editSpec()
+                        .withStorage(jbodStorage)
+                    .endSpec()
+                    .build(),
+                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+            )
+        );
+
+        // Deploy Kafka with Cruise Control enabled
+        resourceManager.createResourceWithWait(
+            KafkaTemplates.kafkaWithCruiseControlTunedForFastModelGeneration(testStorage.getNamespaceName(), testStorage.getClusterName(), 3, 3)
+                .editOrNewSpec()
+                    .editKafka()
+                        .withStorage(jbodStorage)
+                    .endKafka()
+                .endSpec()
+                .build(),
+            ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
+        );
+
+        // Create topics and produce some data to them
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName(), 24, 3).build());
+
+        // send some data to topic
+        final KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage).withMessageCount(1000).build();
+        resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
+        ClientUtils.waitForInstantClientSuccess(testStorage);
+
+        final Map<Integer, List<Integer>> brokersWithRemovedVolumes = Map.of(
+            0, Arrays.asList(1, 2),
+            2, Arrays.asList(1)
+        );
+
+        // Retrieve initial data directory sizes for the disks being removed
+        Map<String, Long> initialDataDirSizes = getDataDirectorySizes(testStorage, brokersWithRemovedVolumes);
+        LOGGER.info("Initial data directory sizes: {}", initialDataDirSizes);
+
+        // Create a KafkaRebalance resource with 'remove-disks' mode, specifying the brokers and volume IDs
+        resourceManager.createResourceWithoutWait(
+            KafkaRebalanceTemplates.kafkaRebalance(testStorage.getNamespaceName(), testStorage.getClusterName())
+                .editOrNewSpec()
+                    .withMode(KafkaRebalanceMode.REMOVE_DISKS)
+                    .withMoveReplicasOffVolumes(
+                        brokersWithRemovedVolumes.entrySet().stream()
+                            .map(entry -> new BrokerAndVolumeIdsBuilder()
+                                .withBrokerId(entry.getKey())
+                                .withVolumeIds(entry.getValue())
+                                .build()
+                            ).collect(Collectors.toList())
+                )
+                .endSpec()
+                .build()
+        );
+
+        // Wait for the KafkaRebalance to reach ProposalReady state
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceState.ProposalReady);
+
+        // Approve the KafkaRebalance proposal
+        KafkaRebalanceUtils.annotateKafkaRebalanceResource(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceAnnotation.approve);
+
+        // Wait for the KafkaRebalance to reach Ready state
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceState.Ready);
+
+        // Verify that data has been moved off the specified disks by checking data directory sizes
+        verifyDataMovedOffSpecifiedDisks(testStorage, brokersWithRemovedVolumes, initialDataDirSizes);
+    }
+
+    private Map<String, Long> getDataDirectorySizes(TestStorage testStorage, Map<Integer, List<Integer>> brokersWithRemovedVolumes) {
+        Map<String, Long> dataDirSizes = new HashMap<>();
+        for (Map.Entry<Integer, List<Integer>> entry : brokersWithRemovedVolumes.entrySet()) {
+            int brokerId = entry.getKey();
+            List<Integer> volumeIds = entry.getValue();
+
+            String brokerPodName = StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName()) + "-" + brokerId;
+            for (int volumeId : volumeIds) {
+                String dataDirPath = String.format("/var/lib/kafka/data-%d", volumeId);
+                LOGGER.info("Getting size of broker {} volume {} at path {}", brokerId, volumeId, dataDirPath);
+
+                ExecResult execResult = cmdKubeClient(testStorage.getNamespaceName())
+                    .execInPodContainer(
+                        brokerPodName,
+                        "kafka",
+                        "bash",
+                        "-c",
+                        "du -sb " + dataDirPath + " | cut -f1"
+                    );
+
+                if (execResult.returnCode() != 0) {
+                    throw new RuntimeException("Failed to get data directory size in pod " + brokerPodName + ": " + execResult.out() + " " + execResult.err());
+                }
+
+                long sizeInBytes = Long.parseLong(execResult.out().trim());
+                String key = brokerPodName + ":" + dataDirPath;
+                dataDirSizes.put(key, sizeInBytes);
+            }
+        }
+        return dataDirSizes;
+    }
+
+    private void verifyDataMovedOffSpecifiedDisks(TestStorage testStorage, Map<Integer, List<Integer>> brokersWithRemovedVolumes, Map<String, Long> initialDataDirSizes) {
+        LOGGER.info("Verifying that data has been moved off the specified disks...");
+        Map<String, Long> finalDataDirSizes = getDataDirectorySizes(testStorage, brokersWithRemovedVolumes);
+        LOGGER.info("Final data directory sizes: {}", finalDataDirSizes);
+
+        for (String key : initialDataDirSizes.keySet()) {
+            long initialSize = initialDataDirSizes.get(key);
+            long finalSize = finalDataDirSizes.getOrDefault(key, 0L);
+
+            LOGGER.info("Data directory {}: initial size = {}, final size = {}", key, initialSize, finalSize);
+
+            // Assert that final size is significantly less than initial size
+
+            // Data directories
+            //  --- before rebalance
+            //
+            //  cluster-ef377b8e-b-45e0111e-0:/var/lib/kafka/data-1 -> 524,437,387 bytes (~524 MB)
+            //  cluster-ef377b8e-b-45e0111e-0:/var/lib/kafka/data-2 -> 524,450,596 bytes (~524 MB)
+            //  cluster-ef377b8e-b-45e0111e-2:/var/lib/kafka/data-1 -> 524,436,977 bytes (~524 MB)
+            // ------
+            //  --- after rebalance
+            //  cluster-ef377b8e-b-45e0111e-0:/var/lib/kafka/data-1 -> 24,982 bytes (~25 KB)
+            //  cluster-ef377b8e-b-45e0111e-0:/var/lib/kafka/data-2 -> 37,416 bytes (~37 KB)
+            //  cluster-ef377b8e-b-45e0111e-2:/var/lib/kafka/data-1 -> 24,983 bytes (~25 KB)
+            assertThat("Expected data directory " + key + " to have reduced size after rebalance.",
+                finalSize, Matchers.lessThan(initialSize / 100)); // Adjust the threshold as needed
+        }
     }
 
     @BeforeAll
