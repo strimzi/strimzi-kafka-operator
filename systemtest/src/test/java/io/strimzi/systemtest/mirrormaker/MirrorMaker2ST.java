@@ -4,6 +4,10 @@
  */
 package io.strimzi.systemtest.mirrormaker;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.ConnectorState;
@@ -33,6 +37,7 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
+import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -46,9 +51,11 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.VerificationUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMaker2Utils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
@@ -861,8 +868,12 @@ class MirrorMaker2ST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    void testKafkaMirrorMaker2ConnectorsState() {
+    void testKafkaMirrorMaker2ConnectorsStateAndOffsetManagement() throws JsonProcessingException {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+
+        final String listOffsetsConfigMap = testStorage.getClusterName() + "-offsets-list";
+        final ObjectMapper mapper = new ObjectMapper();
+        final String sourceConnectorName = String.format("%s->%s.MirrorSourceConnector", testStorage.getSourceClusterName(), testStorage.getTargetClusterName());
 
         final String errorMessage = "One or more connectors are in FAILED state";
 
@@ -883,16 +894,31 @@ class MirrorMaker2ST extends AbstractST {
         );
         resourceManager.createResourceWithWait(
             KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), 1, 3).build(),
-            KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), testStorage.getTargetClusterName(), 1, 3).build());
-        resourceManager.createResourceWithoutWait(
-            KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage, 1, false)
-                .editSpec()
-                    .editMatchingCluster(spec -> spec.getAlias().equals(testStorage.getSourceClusterName()))
-                        // typo in bootstrap name, connectors should not connect and MM2 should be in NotReady state with error
-                        .withBootstrapServers(KafkaResources.bootstrapServiceName(testStorage.getSourceClusterName()) + ".:9092")
-                    .endCluster()
-                .endSpec()
-                .build());
+            KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), testStorage.getTargetClusterName(), 1, 3).build(),
+            ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
+        );
+        KafkaMirrorMaker2 kmm2 = KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage, 1, false)
+            .editSpec()
+            .editFirstMirror()
+                .editOrNewSourceConnector()
+                    .withNewListOffsets()
+                        .withNewToConfigMap(listOffsetsConfigMap)
+                    .endListOffsets()
+                .endSourceConnector()
+            .endMirror()
+                .editMatchingCluster(spec -> spec.getAlias().equals(testStorage.getSourceClusterName()))
+                    // typo in bootstrap name, connectors should not connect and MM2 should be in NotReady state with error
+                    .withBootstrapServers(KafkaResources.bootstrapServiceName(testStorage.getSourceClusterName()) + ".:9092")
+                .endCluster()
+            .endSpec()
+            .build();
+
+        resourceManager.createResourceWithoutWait(kmm2);
+
+        final String scraperPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
+        LOGGER.info("Deploying network policies for KafkaMirrorMaker2");
+        NetworkPolicyResource.deployNetworkPolicyForResource(kmm2, KafkaMirrorMaker2Resources.componentName(testStorage.getClusterName()));
+
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2StatusMessage(testStorage.getNamespaceName(), testStorage.getClusterName(), errorMessage);
 
         LOGGER.info("Modify originally wrong bootstrap service name configuration in KafkaMirrorMaker2: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
@@ -927,6 +953,32 @@ class MirrorMaker2ST extends AbstractST {
         LOGGER.info("Consumer in target cluster and Topic should receive {} messages", testStorage.getMessageCount());
         resourceManager.createResourceWithWait(targetKafkaCLients.consumerStrimzi());
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
+
+        KafkaConnectorUtils.waitForOffsetInConnector(
+            testStorage.getNamespaceName(),
+            scraperPodName,
+            KafkaMirrorMaker2Resources.serviceName(testStorage.getClusterName()),
+            sourceConnectorName,
+            "/offsets/0/offset/offset",
+            99
+        );
+
+        LOGGER.info("Checking Source Connector's offset using the offset management");
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+            mm2 -> mm2.getMetadata().getAnnotations().putAll(Map.of(
+                    Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, "list",
+                    Annotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR, sourceConnectorName
+                ))
+        );
+
+        // wait for creation of the CM
+        ConfigMapUtils.waitForCreationOfConfigMap(testStorage.getNamespaceName(), listOffsetsConfigMap);
+
+        // checking the config map
+        ConfigMap listConfigMap = kubeClient().getConfigMap(testStorage.getNamespaceName(), listOffsetsConfigMap);
+        JsonNode offsets = mapper.readTree(listConfigMap.getData().get(sourceConnectorName.replace("->", "--") + ".json"));
+
+        assertThat("Offset config map contains correct offset value", offsets.get("offsets").get(0).get("offset").get("offset").asInt(), is(99));
     }
 
     /**
