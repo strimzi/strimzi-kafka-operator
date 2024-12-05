@@ -6,15 +6,12 @@ See our [website](https://strimzi.io) for more details about the project.
 
 **!!! IMPORTANT !!!**
 
+* **Strimzi 0.45 is the last Strimzi version with support for ZooKeeper-based Apache Kafka clusters and MirrorMaker 1 deployments.**
+  **Please make sure to [migrate to KRaft](https://strimzi.io/docs/operators/latest/full/deploying.html#assembly-kraft-mode-str) and MirrorMaker 2 before upgrading to Strimzi 0.46 or newer.**
+* Strimzi 0.45 is the last Strimzi version to include the [Strimzi EnvVar Configuration Provider](https://github.com/strimzi/kafka-env-var-config-provider) (deprecated in Strimzi 0.38.0) and [Strimzi MirrorMaker 2 Extensions](https://github.com/strimzi/mirror-maker-2-extensions) (deprecated in Strimzi 0.28.0).
+  Please use the Apache Kafka [EnvVarConfigProvider](https://github.com/strimzi/kafka-env-var-config-provider?tab=readme-ov-file#deprecation-notice) and [Identity Replication Policy](https://github.com/strimzi/mirror-maker-2-extensions?tab=readme-ov-file#identity-replication-policy) instead.
 * From Strimzi 0.44.0 on, we support only Kubernetes 1.25 and newer.
   Kubernetes 1.23 and 1.24 are not supported anymore.
-* ZooKeeper support will be soon removed from Apache Kafka and Strimzi.
-  Currently, the last Strimzi version with ZooKeeper support is expected to be Strimzi 0.45.
-  Please plan your migration to KRaft (ZooKeeper-less Apache Kafka) accordingly.
-  Follow the [documentation](https://strimzi.io/docs/operators/latest/full/deploying.html#assembly-kraft-mode-str) for more details. 
-* Kafka Mirror Maker 1 support will be soon removed from Apache Kafka and Strimzi.
-  Currently, the last Strimzi version with Mirror Maker 1 support is expected to be Strimzi 0.45.
-  Please plan your migration to Mirror Maker 2 or another mirroring tool.
 * Upgrading to Strimzi 0.32 and newer directly from Strimzi 0.22 and earlier is no longer possible.
   Please follow the [documentation](https://strimzi.io/docs/operators/latest/full/deploying.html#assembly-upgrade-str) for more details.
 
