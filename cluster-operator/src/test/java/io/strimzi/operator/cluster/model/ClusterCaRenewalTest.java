@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.common.CertificateExpirationPolicy;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
@@ -19,7 +18,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -44,7 +42,7 @@ public class ClusterCaRenewalTest {
     }
 
     @ParallelTest
-    public void renewalOfCertificatesWithNullSecret() throws IOException {
+    public void renewalOfCertificatesWithNullCertificates() throws IOException {
         ClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
 
         boolean isMaintenanceTimeWindowsSatisfied = true;
@@ -54,7 +52,8 @@ public class ClusterCaRenewalTest {
                 NODES,
                 SUBJECT_FN,
                 null,
-                isMaintenanceTimeWindowsSatisfied);
+                isMaintenanceTimeWindowsSatisfied,
+                false);
 
         assertThat(new String(newCerts.get("pod0").cert()), is("new-cert0"));
         assertThat(new String(newCerts.get("pod0").key()), is("new-key0"));
@@ -77,15 +76,10 @@ public class ClusterCaRenewalTest {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
         mockedCa.setCertRenewed(true);
 
-        Map<String, String> initialCerts = new HashMap<>();
-        initialCerts.put("pod0.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod0.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod1.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod1.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod2.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod2.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-
-        Secret initialSecret = initialSecret(initialCerts);
+        Map<String, CertAndKey> initialCerts = new HashMap<>();
+        initialCerts.put("pod0", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
+        initialCerts.put("pod1", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
+        initialCerts.put("pod2", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
 
         boolean isMaintenanceTimeWindowsSatisfied = true;
 
@@ -93,8 +87,9 @@ public class ClusterCaRenewalTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 NODES,
                 SUBJECT_FN,
-                initialSecret,
-                isMaintenanceTimeWindowsSatisfied);
+                initialCerts,
+                isMaintenanceTimeWindowsSatisfied,
+                false);
 
         assertThat(new String(newCerts.get("pod0").cert()), is("new-cert0"));
         assertThat(new String(newCerts.get("pod0").key()), is("new-key0"));
@@ -113,19 +108,13 @@ public class ClusterCaRenewalTest {
     }
 
     @ParallelTest
-    public void renewalOfCertificatesWithBrokenCaRenewal() throws IOException {
+    public void renewalOfCertificatesWithForcedCaRenewal() throws IOException {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
-        mockedCa.setCaGeneration(2);
 
-        Map<String, String> initialCerts = new HashMap<>();
-        initialCerts.put("pod0.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod0.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod1.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod1.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod2.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod2.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-
-        Secret initialSecret = initialSecret(1, initialCerts);
+        Map<String, CertAndKey> initialCerts = new HashMap<>();
+        initialCerts.put("pod0", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
+        initialCerts.put("pod1", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
+        initialCerts.put("pod2", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
 
         boolean isMaintenanceTimeWindowsSatisfied = true;
 
@@ -133,8 +122,9 @@ public class ClusterCaRenewalTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 NODES,
                 SUBJECT_FN,
-                initialSecret,
-                isMaintenanceTimeWindowsSatisfied);
+                initialCerts,
+                isMaintenanceTimeWindowsSatisfied,
+                true);
 
         assertThat(new String(newCerts.get("pod0").cert()), is("new-cert0"));
         assertThat(new String(newCerts.get("pod0").key()), is("new-key0"));
@@ -157,15 +147,10 @@ public class ClusterCaRenewalTest {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
         mockedCa.setCertExpiring(true);
 
-        Map<String, String> initialCerts = new HashMap<>();
-        initialCerts.put("pod0.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod0.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod1.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod1.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod2.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod2.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-
-        Secret initialSecret = initialSecret(initialCerts);
+        Map<String, CertAndKey> initialCerts = new HashMap<>();
+        initialCerts.put("pod0", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
+        initialCerts.put("pod1", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
+        initialCerts.put("pod2", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
 
         boolean isMaintenanceTimeWindowsSatisfied = true;
 
@@ -173,8 +158,9 @@ public class ClusterCaRenewalTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 NODES,
                 SUBJECT_FN,
-                initialSecret,
-                isMaintenanceTimeWindowsSatisfied);
+                initialCerts,
+                isMaintenanceTimeWindowsSatisfied,
+                false);
 
         assertThat(new String(newCerts.get("pod0").cert()), is("new-cert0"));
         assertThat(new String(newCerts.get("pod0").key()), is("new-key0"));
@@ -197,15 +183,10 @@ public class ClusterCaRenewalTest {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
         mockedCa.setCertExpiring(true);
 
-        Map<String, String> initialCerts = new HashMap<>();
-        initialCerts.put("pod0.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod0.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod1.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod1.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod2.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod2.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-
-        Secret initialSecret = initialSecret(initialCerts);
+        Map<String, CertAndKey> initialCerts = new HashMap<>();
+        initialCerts.put("pod0", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
+        initialCerts.put("pod1", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
+        initialCerts.put("pod2", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
         
         boolean isMaintenanceTimeWindowsSatisfied = false;
 
@@ -213,8 +194,9 @@ public class ClusterCaRenewalTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 NODES,
                 SUBJECT_FN,
-                initialSecret,
-                isMaintenanceTimeWindowsSatisfied);
+                initialCerts,
+                isMaintenanceTimeWindowsSatisfied,
+                false);
 
         assertThat(new String(newCerts.get("pod0").cert()), is("old-cert"));
         assertThat(new String(newCerts.get("pod0").key()), is("old-key"));
@@ -231,13 +213,9 @@ public class ClusterCaRenewalTest {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
         mockedCa.setCertExpiring(true);
 
-        Map<String, String> initialCerts = new HashMap<>();
-        initialCerts.put("pod0.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod0.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod1.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod1.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-
-        Secret initialSecret = initialSecret(initialCerts);
+        Map<String, CertAndKey> initialCerts = new HashMap<>();
+        initialCerts.put("pod0", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
+        initialCerts.put("pod1", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
 
         boolean isMaintenanceTimeWindowsSatisfied = false;
 
@@ -245,8 +223,9 @@ public class ClusterCaRenewalTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 NODES,
                 SUBJECT_FN,
-                initialSecret,
-                isMaintenanceTimeWindowsSatisfied);
+                initialCerts,
+                isMaintenanceTimeWindowsSatisfied,
+                false);
 
         assertThat(new String(newCerts.get("pod0").cert()), is("old-cert"));
         assertThat(new String(newCerts.get("pod0").key()), is("old-key"));
@@ -262,22 +241,18 @@ public class ClusterCaRenewalTest {
     public void noRenewal() throws IOException {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
 
-        Map<String, String> initialCerts = new HashMap<>();
-        initialCerts.put("pod0.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod0.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod1.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod1.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod2.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod2.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-
-        Secret initialSecret = initialSecret(initialCerts);
+        Map<String, CertAndKey> initialCerts = new HashMap<>();
+        initialCerts.put("pod0", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
+        initialCerts.put("pod1", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
+        initialCerts.put("pod2", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
 
         Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(
                 Reconciliation.DUMMY_RECONCILIATION,
                 NODES,
                 SUBJECT_FN,
-                initialSecret,
-                true);
+                initialCerts,
+                true,
+                false);
 
         assertThat(new String(newCerts.get("pod0").cert()), is("old-cert"));
         assertThat(new String(newCerts.get("pod0").key()), is("old-key"));
@@ -293,18 +268,16 @@ public class ClusterCaRenewalTest {
     public void noRenewalWithScaleUp() throws IOException {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
 
-        Map<String, String> initialCerts = new HashMap<>();
-        initialCerts.put("pod0.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod0.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-
-        Secret initialSecret = initialSecret(initialCerts);
+        Map<String, CertAndKey> initialCerts = new HashMap<>();
+        initialCerts.put("pod0", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
 
         Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(
                 Reconciliation.DUMMY_RECONCILIATION,
                 NODES,
                 SUBJECT_FN,
-                initialSecret,
-                true);
+                initialCerts,
+                true,
+                false);
 
         assertThat(new String(newCerts.get("pod0").cert()), is("old-cert"));
         assertThat(new String(newCerts.get("pod0").key()), is("old-key"));
@@ -320,20 +293,17 @@ public class ClusterCaRenewalTest {
     public void noRenewalWithScaleUpInTheMiddle() throws IOException {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
 
-        Map<String, String> initialCerts = new HashMap<>();
-        initialCerts.put("pod0.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod0.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod2.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod2.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-
-        Secret initialSecret = initialSecret(initialCerts);
+        Map<String, CertAndKey> initialCerts = new HashMap<>();
+        initialCerts.put("pod0", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
+        initialCerts.put("pod2", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
 
         Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(
                 Reconciliation.DUMMY_RECONCILIATION,
                 NODES,
                 SUBJECT_FN,
-                initialSecret,
-                true);
+                initialCerts,
+                true,
+                false);
 
         assertThat(new String(newCerts.get("pod0").cert()), is("old-cert"));
         assertThat(new String(newCerts.get("pod0").key()), is("old-key"));
@@ -349,22 +319,18 @@ public class ClusterCaRenewalTest {
     public void noRenewalScaleDown() throws IOException {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
 
-        Map<String, String> initialCerts = new HashMap<>();
-        initialCerts.put("pod0.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod0.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod1.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod1.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod2.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod2.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-
-        Secret initialSecret = initialSecret(initialCerts);
+        Map<String, CertAndKey> initialCerts = new HashMap<>();
+        initialCerts.put("pod0", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
+        initialCerts.put("pod1", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
+        initialCerts.put("pod2", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
 
         Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(
                 Reconciliation.DUMMY_RECONCILIATION,
                 Set.of(new NodeRef("pod1", 1, null, false, true)),
                 SUBJECT_FN,
-                initialSecret,
-                true);
+                initialCerts,
+                true,
+                false);
 
         assertThat(newCerts.get("pod0"), is(nullValue()));
 
@@ -379,15 +345,10 @@ public class ClusterCaRenewalTest {
         MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
         mockedCa.setCertExpiring(true);
 
-        Map<String, String> initialCerts = new HashMap<>();
-        initialCerts.put("pod0.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod0.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod1.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod1.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-        initialCerts.put("pod2.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()));
-        initialCerts.put("pod2.key", Base64.getEncoder().encodeToString("old-key".getBytes()));
-
-        Secret initialSecret = initialSecret(initialCerts);
+        Map<String, CertAndKey> initialCerts = new HashMap<>();
+        initialCerts.put("pod0", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
+        initialCerts.put("pod1", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
+        initialCerts.put("pod2", new CertAndKey("old-key".getBytes(), "old-cert".getBytes()));
 
         boolean isMaintenanceTimeWindowsSatisfied = true;
 
@@ -395,8 +356,9 @@ public class ClusterCaRenewalTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 NODES,
                 node -> new Subject.Builder().withCommonName(node.podName()).build(),
-                initialSecret,
-                isMaintenanceTimeWindowsSatisfied);
+                initialCerts,
+                isMaintenanceTimeWindowsSatisfied,
+                false);
 
         assertThat(new String(newCerts.get("pod0").cert()), is("new-cert0"));
         assertThat(new String(newCerts.get("pod0").key()), is("new-key0"));
@@ -408,26 +370,10 @@ public class ClusterCaRenewalTest {
         assertThat(new String(newCerts.get("pod2").key()), is("new-key2"));
     }
 
-    public static Secret initialSecret(Map<String, String> data)   {
-        return initialSecret(0, data);
-    }
-
-    public static Secret initialSecret(int generation, Map<String, String> data)   {
-        return new SecretBuilder()
-                .withNewMetadata()
-                    .withNamespace("test-namespace")
-                    .withName("test-secret")
-                    .withAnnotations(Map.of(ClusterCa.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(generation)))
-                .endMetadata()
-                .withData(data)
-                .build();
-    }
-
     public static class MockedClusterCa extends ClusterCa {
         private final AtomicInteger invocationCount = new AtomicInteger(0);
         private boolean isCertRenewed;
         private boolean isCertExpiring;
-        private int caGeneration = 0;
 
         public MockedClusterCa(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator, String commonName, Secret caCertSecret, Secret caKeySecret, int validityDays, int renewalDays, boolean generateCa, CertificateExpirationPolicy policy) {
             super(reconciliation, certManager, passwordGenerator, commonName, caCertSecret, caKeySecret, validityDays, renewalDays, generateCa, policy);
@@ -439,7 +385,7 @@ public class ClusterCaRenewalTest {
         }
 
         @Override
-        public boolean isExpiring(Secret secret, String certKey)  {
+        public boolean isExpiring(byte[] certificate)  {
             return isCertExpiring;
         }
 
@@ -474,11 +420,6 @@ public class ClusterCaRenewalTest {
                     ("new-keystore" + index).getBytes(),
                     "new-password" + index);
         }
-
-        @Override
-        public int certGeneration() {
-            return caGeneration;
-        }
         
         public void setCertRenewed(boolean certRenewed) {
             isCertRenewed = certRenewed;
@@ -486,10 +427,6 @@ public class ClusterCaRenewalTest {
 
         public void setCertExpiring(boolean certExpiring) {
             isCertExpiring = certExpiring;
-        }
-
-        public void setCaGeneration(int caGeneration) {
-            this.caGeneration = caGeneration;
         }
     }
 }

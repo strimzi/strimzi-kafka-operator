@@ -498,6 +498,23 @@ public abstract class Ca {
     }
 
     /**
+     * Returns whether the certificate is expiring or not
+     *
+     * @param certificate Byte array with the certificate
+     *
+     * @return  True when the certificate should be renewed. False otherwise.
+     */
+    public boolean isExpiring(byte[] certificate)  {
+        try {
+            X509Certificate currentCert = x509Certificate(certificate);
+            return certNeedsRenewal(currentCert);
+        } catch (CertificateException e) {
+            LOGGER.errorCr(reconciliation, "Failed to parse existing certificate", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
      * Create the CA {@code Secrets} if they don't exist, otherwise if within the renewal period then either renew
      * the CA cert or replace the CA cert and key, according to the configured policy. After calling this method
      * {@link #certRenewed()} and {@link #certsRemoved()} will return whether the certificate was renewed and whether
@@ -1073,24 +1090,6 @@ public abstract class Ca {
      *         on the Secrets containing certificates signed by that CA (i.e. ZooKeeper nodes, Kafka brokers, ...)
      */
     protected abstract String caCertGenerationAnnotation();
-
-    /**
-     * Checks if the CA generation on any of the existing Secrets with server certificates signed by this CA changed or
-     * not.
-     *
-     * @param existingServerSecrets     List of existing Secrets with server certificates
-     *
-     * @return  True if any Secret has different CA generation. False otherwise.
-     */
-    private boolean hasCaCertGenerationChanged(List<HasMetadata> existingServerSecrets) {
-        boolean hasChanged = false;
-
-        for (HasMetadata secret : existingServerSecrets)    {
-            hasChanged |= hasCaCertGenerationChanged(secret);
-        }
-
-        return hasChanged;
-    }
 
     /**
      * It checks if the current (cluster or clients) CA certificate generation is changed compared to the one
