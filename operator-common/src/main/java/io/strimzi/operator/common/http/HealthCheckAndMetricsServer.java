@@ -19,6 +19,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Jetty based web server used for health checks and metrics
@@ -158,12 +159,13 @@ public class HealthCheckAndMetricsServer {
     class MetricsHandler extends AbstractHandler {
         @Override
         public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
-            response.setContentType("text/plain");
-
             if (prometheusMeterRegistry != null) {
+                response.setContentType("text/plain; version=0.0.4");
+                response.setCharacterEncoding(StandardCharsets.UTF_8.toString());
                 response.setStatus(HttpServletResponse.SC_OK);
                 prometheusMeterRegistry.scrape(response.getWriter());
             } else {
+                response.setContentType("text/plain");
                 response.setStatus(HttpServletResponse.SC_NOT_IMPLEMENTED);
                 response.getWriter().println("Prometheus metrics are not enabled");
             }
