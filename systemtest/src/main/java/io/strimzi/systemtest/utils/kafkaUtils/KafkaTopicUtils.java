@@ -607,7 +607,8 @@ public class KafkaTopicUtils {
      */
     public static void verifyPartitionsMovedOffDisks(final Map<String, Set<Integer>> initialPartitionDirs,
                                                final Map<String, Set<Integer>> finalPartitionDirs) {
-        for (final String key : initialPartitionDirs.keySet()) {
+        for (final Map.Entry<String, Set<Integer>> entry : initialPartitionDirs.entrySet()) {
+            final String key = entry.getKey();
             final Set<Integer> initialPartitions = initialPartitionDirs.get(key);
             final Set<Integer> finalPartitions = finalPartitionDirs.getOrDefault(key, Collections.emptySet());
 
@@ -646,7 +647,8 @@ public class KafkaTopicUtils {
                                                         final Map<String, Long> finalDataDirSizes) {
         LOGGER.info("Verifying that data has been moved off the specified disks...");
 
-        for (final String key : initialDataDirSizes.keySet()) {
+        for (final Map.Entry<String, Long> entry : initialDataDirSizes.entrySet()) {
+            final String key = entry.getKey();
             final long initialSize = initialDataDirSizes.get(key);
             final long finalSize = finalDataDirSizes.getOrDefault(key, 0L);
 
