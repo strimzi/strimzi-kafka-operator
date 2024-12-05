@@ -42,7 +42,6 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaRebalanceTemplates;
@@ -60,25 +59,18 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
-import io.strimzi.test.executor.ExecResult;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.TestTags.ACCEPTANCE;
@@ -824,14 +816,15 @@ public class CruiseControlST extends AbstractST {
         description = @Desc("Test verifying the 'remove-disks' mode in Cruise Control, which allows moving data between JBOD disks on the same broker."),
         steps = {
             @Step(value = "Initialize JBOD storage configuration with multiple volumes (disks).", expected = "JBOD storage with disk IDs 0, 1, and 2 are initialized."),
-            @Step(value = "Deploy Kafka with Cruise Control enabled.", expected = "Kafka deployment with Cruise Control is successfully created."),
-            @Step(value = "Create topics and produce data to them.", expected = "Topics are created and data is produced to them."),
-            @Step(value = "Retrieve initial data directory sizes for the disks being removed.", expected = "Initial data directory sizes are retrieved."),
+            @Step(value = "Deploy Kafka with Cruise Control enabled.", expected = "Kafka with Cruise Control is successfully created."),
+            @Step(value = "Create KafkaTopic resources and produce data to them.", expected = "KafkaTopic resources are created and data is produced to them."),
+            @Step(value = "Retrieve initial data directory sizes and partition replicas for the disks being removed.", expected = "Initial data directory sizes and partition replicas are retrieved."),
             @Step(value = "Create a KafkaRebalance resource with 'remove-disks' mode, specifying the brokers and volume IDs.", expected = "KafkaRebalance resource is created with 'remove-disks' mode and moveReplicasOffVolumes settings."),
             @Step(value = "Wait for the KafkaRebalance to reach the ProposalReady state.", expected = "KafkaRebalance reaches the ProposalReady state."),
             @Step(value = "Approve the KafkaRebalance proposal.", expected = "KafkaRebalance is approved."),
             @Step(value = "Wait for the KafkaRebalance to reach Ready state.", expected = "KafkaRebalance reaches the Ready state."),
             @Step(value = "Verify that data has been moved off the specified disks by checking data directory sizes in the broker pods.", expected = "Data directories for the specified volumes are empty or have minimal data, confirming data has been moved off."),
+            @Step(value = "Verify that partitions have been moved off the specified disks.", expected = "Partitions are no longer present on the specified disks, confirming successful removal."),
         },
         labels = {
             @Label(value = TestDocsLabels.CRUISE_CONTROL),
@@ -839,7 +832,7 @@ public class CruiseControlST extends AbstractST {
     )
     void testCruiseControlRemoveDisksMode() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        String diskSize = "6Gi";
+        final String diskSize = "6Gi";
 
         // Initialize JBOD storage configuration with disk IDs 0, 1, and 2
         JbodStorage jbodStorage = new JbodStorageBuilder()
@@ -886,9 +879,8 @@ public class CruiseControlST extends AbstractST {
             2, Arrays.asList(1)
         );
 
-        // Retrieve initial data directory sizes for the disks being removed
-        Map<String, Long> initialDataDirSizes = getDataDirectorySizes(testStorage, brokersWithRemovedVolumes);
-        Map<String, Set<Integer>> initialPartitionDirs = getPartitionDirectories(testStorage, brokersWithRemovedVolumes);
+        final Map<String, Long> initialDataDirSizes = KafkaTopicUtils.getDataDirectorySizes(testStorage, brokersWithRemovedVolumes);
+        final Map<String, Set<Integer>> initialPartitionDirs = KafkaTopicUtils.getPartitionDirectories(testStorage, brokersWithRemovedVolumes);
 
         LOGGER.info("Initial data directory sizes: {}", initialDataDirSizes);
         LOGGER.info("Initial partition directories: {}", initialPartitionDirs);
@@ -920,136 +912,10 @@ public class CruiseControlST extends AbstractST {
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceState.Ready);
 
         // Verify that data has been moved off the specified disks by checking data directory sizes
-        verifyDataMovedOffSpecifiedDisks(testStorage, brokersWithRemovedVolumes, initialDataDirSizes);
-
-        Map<String, Set<Integer>> finalPartitionDirs = getPartitionDirectories(testStorage, brokersWithRemovedVolumes);
-        LOGGER.info("Final partition directories: {}", finalPartitionDirs);
+        KafkaTopicUtils.verifyDataMovedOffSpecifiedDisks(initialDataDirSizes, KafkaTopicUtils.getDataDirectorySizes(testStorage, brokersWithRemovedVolumes));
 
         // Verify that partitions have been moved off the specified disks
-        verifyPartitionsMovedOffDisks(initialPartitionDirs, finalPartitionDirs);
-    }
-
-    private Map<String, Long> getDataDirectorySizes(TestStorage testStorage, Map<Integer, List<Integer>> brokersWithRemovedVolumes) {
-        Map<String, Long> dataDirSizes = new HashMap<>();
-        for (Map.Entry<Integer, List<Integer>> entry : brokersWithRemovedVolumes.entrySet()) {
-            int brokerId = entry.getKey();
-            List<Integer> volumeIds = entry.getValue();
-
-            String brokerPodName = StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName()) + "-" + brokerId;
-            for (int volumeId : volumeIds) {
-                String dataDirPath = String.format("/var/lib/kafka/data-%d", volumeId);
-                LOGGER.info("Getting size of broker {} volume {} at path {}", brokerId, volumeId, dataDirPath);
-
-                ExecResult execResult = cmdKubeClient(testStorage.getNamespaceName())
-                    .execInPodContainer(
-                        brokerPodName,
-                        "kafka",
-                        "bash",
-                        "-c",
-                        "du -sb " + dataDirPath + " | cut -f1"
-                    );
-
-                if (execResult.returnCode() != 0) {
-                    throw new RuntimeException("Failed to get data directory size in pod " + brokerPodName + ": " + execResult.out() + " " + execResult.err());
-                }
-
-                long sizeInBytes = Long.parseLong(execResult.out().trim());
-                String key = brokerPodName + ":" + dataDirPath;
-                dataDirSizes.put(key, sizeInBytes);
-            }
-        }
-        return dataDirSizes;
-    }
-
-    private void verifyDataMovedOffSpecifiedDisks(TestStorage testStorage, Map<Integer, List<Integer>> brokersWithRemovedVolumes, Map<String, Long> initialDataDirSizes) {
-        LOGGER.info("Verifying that data has been moved off the specified disks...");
-        Map<String, Long> finalDataDirSizes = getDataDirectorySizes(testStorage, brokersWithRemovedVolumes);
-        LOGGER.info("Final data directory sizes: {}", finalDataDirSizes);
-
-        for (String key : initialDataDirSizes.keySet()) {
-            long initialSize = initialDataDirSizes.get(key);
-            long finalSize = finalDataDirSizes.getOrDefault(key, 0L);
-
-            LOGGER.info("Data directory {}: initial size = {}, final size = {}", key, initialSize, finalSize);
-
-            // Assert that final size is significantly less than initial size
-
-            // Data directories
-            //  --- before rebalance
-            //
-            //  cluster-ef377b8e-b-45e0111e-0:/var/lib/kafka/data-1 -> 524,437,387 bytes (~524 MB)
-            //  cluster-ef377b8e-b-45e0111e-0:/var/lib/kafka/data-2 -> 524,450,596 bytes (~524 MB)
-            //  cluster-ef377b8e-b-45e0111e-2:/var/lib/kafka/data-1 -> 524,436,977 bytes (~524 MB)
-            // ------
-            //  --- after rebalance
-            //  cluster-ef377b8e-b-45e0111e-0:/var/lib/kafka/data-1 -> 24,982 bytes (~25 KB)
-            //  cluster-ef377b8e-b-45e0111e-0:/var/lib/kafka/data-2 -> 37,416 bytes (~37 KB)
-            //  cluster-ef377b8e-b-45e0111e-2:/var/lib/kafka/data-1 -> 24,983 bytes (~25 KB)
-            assertThat("Expected data directory " + key + " to have reduced size after rebalance.",
-                finalSize, Matchers.lessThan(initialSize / 100));
-        }
-    }
-
-    private Map<String, Set<Integer>> getPartitionDirectories(TestStorage testStorage, Map<Integer, List<Integer>> brokersWithRemovedVolumes) {
-        Map<String, Set<Integer>> partitionDirs = new HashMap<>();
-        for (Map.Entry<Integer, List<Integer>> entry : brokersWithRemovedVolumes.entrySet()) {
-            int brokerId = entry.getKey();
-            List<Integer> volumeIds = entry.getValue();
-
-            String brokerPodName = StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName()) + "-" + brokerId;
-            for (int volumeId : volumeIds) {
-                String dataDirPath = String.format("/var/lib/kafka/data-%d/kafka-log%d", volumeId, brokerId);
-                LOGGER.info("Listing partition directories in broker {} volume {} at path {}", brokerId, volumeId, dataDirPath);
-
-                ExecResult execResult = cmdKubeClient(testStorage.getNamespaceName())
-                    .execInPodContainer(
-                        brokerPodName,
-                        "kafka",
-                        "bash",
-                        "-c",
-                        "ls " + dataDirPath
-                    );
-
-                if (execResult.returnCode() != 0) {
-                    throw new RuntimeException("Failed to list directories in " + dataDirPath + " in pod " + brokerPodName + ": " + execResult.out() + " " + execResult.err());
-                }
-
-                String[] dirs = execResult.out().trim().split("\\s+");
-                Set<Integer> partitions = Arrays.stream(dirs)
-                    .filter(dir -> dir.startsWith(testStorage.getTopicName()))
-                    .map(dir -> {
-                        Pattern pattern = Pattern.compile(Pattern.quote(testStorage.getTopicName()) + "-(\\d+)$");
-                        Matcher matcher = pattern.matcher(dir);
-                        if (matcher.matches()) {
-                            return Integer.parseInt(matcher.group(1));
-                        } else {
-                            return null;
-                        }
-                    })
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toSet());
-
-                String key = brokerPodName + ":" + dataDirPath;
-                partitionDirs.put(key, partitions);
-            }
-        }
-        return partitionDirs;
-    }
-
-    private void verifyPartitionsMovedOffDisks(Map<String, Set<Integer>> initialPartitionDirs, Map<String, Set<Integer>> finalPartitionDirs) {
-        for (String key : initialPartitionDirs.keySet()) {
-            Set<Integer> initialPartitions = initialPartitionDirs.get(key);
-            Set<Integer> finalPartitions = finalPartitionDirs.getOrDefault(key, Collections.emptySet());
-
-            LOGGER.info("Data directory {}: initial partitions = {}, final partitions = {}", key, initialPartitions, finalPartitions);
-
-            // Check that partitions in the initial set are no longer present in the final set
-            Set<Integer> remainingPartitions = new HashSet<>(initialPartitions);
-            remainingPartitions.retainAll(finalPartitions);
-
-            assertThat("Partitions " + remainingPartitions + " are still present in data directory " + key + " after rebalance.",
-                remainingPartitions.isEmpty(), is(true));
-        }
+        KafkaTopicUtils.verifyPartitionsMovedOffDisks(initialPartitionDirs, KafkaTopicUtils.getPartitionDirectories(testStorage, brokersWithRemovedVolumes));
     }
 
     @BeforeAll

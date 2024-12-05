@@ -14,24 +14,35 @@ import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.executor.ExecResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hamcrest.Matchers;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
 public class KafkaTopicUtils {
@@ -526,5 +537,136 @@ public class KafkaTopicUtils {
                     return e.getMessage().contains("Not Found") || e.getMessage().contains("the server doesn't have a resource type");
                 }
             });
+    }
+
+    /**
+     * Executes a command in the specified broker pod for a given data directory path.
+     *
+     * @param testStorage   the test storage object containing cluster information.
+     * @param brokerPodName the name of the broker pod.
+     * @param volumeId      the volume ID for the data directory.
+     * @param brokerId      the broker ID for the data directory.
+     * @param command       the command to execute in the pod.
+     * @return the ExecResult of the command execution.
+     * @throws RuntimeException if the command execution fails.
+     */
+    private static ExecResult executeInBrokerPod(TestStorage testStorage, String brokerPodName, int volumeId, int brokerId, String command) {
+        final String dataDirPath = String.format("/var/lib/kafka/data-%d/kafka-log%d", volumeId, brokerId);
+        LOGGER.info("Executing command in broker {} volume {} at path {}: {}", brokerId, volumeId, dataDirPath, command);
+
+        ExecResult execResult = cmdKubeClient(testStorage.getNamespaceName())
+            .execInPodContainer(brokerPodName, "kafka", "bash", "-c", command);
+
+        if (execResult.returnCode() != 0) {
+            throw new RuntimeException("Failed to execute command in " + dataDirPath + " in pod " + brokerPodName + ": " + execResult.out() + " " + execResult.err());
+        }
+
+        return execResult;
+    }
+
+    public static Map<String, Set<Integer>> getPartitionDirectories(final TestStorage testStorage,
+                                                                    final Map<Integer, List<Integer>> brokersWithRemovedVolumes) {
+        final Map<String, Set<Integer>> partitionDirs = new HashMap<>();
+        for (final Map.Entry<Integer, List<Integer>> entry : brokersWithRemovedVolumes.entrySet()) {
+            final int brokerId = entry.getKey();
+            final List<Integer> volumeIds = entry.getValue();
+            final String brokerPodName = StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName()) + "-" + brokerId;
+
+            for (final int volumeId : volumeIds) {
+                final String command = "ls " + String.format("/var/lib/kafka/data-%d/kafka-log%d", volumeId, brokerId);
+                ExecResult execResult = executeInBrokerPod(testStorage, brokerPodName, volumeId, brokerId, command);
+
+                final String[] dirs = execResult.out().trim().split("\\s+");
+                final Set<Integer> partitions = Arrays.stream(dirs)
+                    .filter(dir -> dir.startsWith(testStorage.getTopicName()))
+                    .map(dir -> {
+                        Pattern pattern = Pattern.compile(Pattern.quote(testStorage.getTopicName()) + "-(\\d+)$");
+                        Matcher matcher = pattern.matcher(dir);
+                        if (matcher.matches()) {
+                            return Integer.parseInt(matcher.group(1));
+                        } else {
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+
+                final String key = brokerPodName + ":" + String.format("/var/lib/kafka/data-%d/kafka-log%d", volumeId, brokerId);
+                partitionDirs.put(key, partitions);
+            }
+        }
+        return partitionDirs;
+    }
+
+    /**
+     * Verifies that partitions have been moved off specified disks after a rebalance.
+     *
+     * @param initialPartitionDirs  the initial mapping of data directories to partitions.
+     * @param finalPartitionDirs    the final mapping of data directories to partitions.
+     * @throws AssertionError       if any initial partitions remain in their original directories.
+     */
+    public static void verifyPartitionsMovedOffDisks(final Map<String, Set<Integer>> initialPartitionDirs,
+                                               final Map<String, Set<Integer>> finalPartitionDirs) {
+        for (final String key : initialPartitionDirs.keySet()) {
+            final Set<Integer> initialPartitions = initialPartitionDirs.get(key);
+            final Set<Integer> finalPartitions = finalPartitionDirs.getOrDefault(key, Collections.emptySet());
+
+            LOGGER.info("Data directory {}: initial partitions = {}, final partitions = {}", key, initialPartitions, finalPartitions);
+
+            // Check that partitions in the initial set are no longer present in the final set
+            final Set<Integer> remainingPartitions = new HashSet<>(initialPartitions);
+            remainingPartitions.retainAll(finalPartitions);
+
+            assertThat("Partitions " + remainingPartitions + " are still present in data directory " + key + " after rebalance.",
+                remainingPartitions.isEmpty(), is(true));
+        }
+    }
+
+    public static Map<String, Long> getDataDirectorySizes(final TestStorage testStorage,
+                                                          final Map<Integer, List<Integer>> brokersWithRemovedVolumes) {
+        final Map<String, Long> dataDirSizes = new HashMap<>();
+        for (final Map.Entry<Integer, List<Integer>> entry : brokersWithRemovedVolumes.entrySet()) {
+            final int brokerId = entry.getKey();
+            final List<Integer> volumeIds = entry.getValue();
+            final String brokerPodName = StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName()) + "-" + brokerId;
+
+            for (final int volumeId : volumeIds) {
+                final String command = "du -sb " + String.format("/var/lib/kafka/data-%d/kafka-log%d", volumeId, brokerId) + " | cut -f1";
+                ExecResult execResult = executeInBrokerPod(testStorage, brokerPodName, volumeId, brokerId, command);
+
+                final long sizeInBytes = Long.parseLong(execResult.out().trim());
+                final String key = brokerPodName + ":" + String.format("/var/lib/kafka/data-%d/kafka-log%d", volumeId, brokerId);
+                dataDirSizes.put(key, sizeInBytes);
+            }
+        }
+        return dataDirSizes;
+    }
+
+    public static void verifyDataMovedOffSpecifiedDisks(final Map<String, Long> initialDataDirSizes,
+                                                        final Map<String, Long> finalDataDirSizes) {
+        LOGGER.info("Verifying that data has been moved off the specified disks...");
+
+        for (final String key : initialDataDirSizes.keySet()) {
+            final long initialSize = initialDataDirSizes.get(key);
+            final long finalSize = finalDataDirSizes.getOrDefault(key, 0L);
+
+            LOGGER.info("Data directory {}: initial size = {}, final size = {}", key, initialSize, finalSize);
+
+            // Assert that final size is significantly less than initial size
+
+            // Data directories
+            //  --- before rebalance
+            //
+            //  cluster-ef377b8e-b-45e0111e-0:/var/lib/kafka/data-1 -> 524,437,387 bytes (~524 MB)
+            //  cluster-ef377b8e-b-45e0111e-0:/var/lib/kafka/data-2 -> 524,450,596 bytes (~524 MB)
+            //  cluster-ef377b8e-b-45e0111e-2:/var/lib/kafka/data-1 -> 524,436,977 bytes (~524 MB)
+            // ------
+            //  --- after rebalance
+            //  cluster-ef377b8e-b-45e0111e-0:/var/lib/kafka/data-1 -> 24,982 bytes (~25 KB)
+            //  cluster-ef377b8e-b-45e0111e-0:/var/lib/kafka/data-2 -> 37,416 bytes (~37 KB)
+            //  cluster-ef377b8e-b-45e0111e-2:/var/lib/kafka/data-1 -> 24,983 bytes (~25 KB)
+            assertThat("Expected data directory " + key + " to have reduced size after rebalance.",
+                finalSize, Matchers.lessThan(initialSize / 100));
+        }
     }
 }
