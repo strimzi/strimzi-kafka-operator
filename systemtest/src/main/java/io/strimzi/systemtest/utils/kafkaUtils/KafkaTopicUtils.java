@@ -525,7 +525,6 @@ public class KafkaTopicUtils {
             }).toList();
     }
 
-
     public static void waitForTopicWithPrefixDeletion(String namespaceName, String topicPrefix, int start, int end) {
         TestUtils.waitFor("deletion of all topics with prefix: " + topicPrefix + " from " + start + " to " + end,
             TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
@@ -633,6 +632,13 @@ public class KafkaTopicUtils {
         return dataDirSizes;
     }
 
+    /**
+     * Verifies that data has been moved off the specified disks after a rebalance.
+     *
+     * @param initialDataDirSizes   a map of initial data directory paths to their sizes in bytes.
+     * @param finalDataDirSizes     a map of final data directory paths to their sizes in bytes.
+     * @throws AssertionError       if the size of any data directory has not been sufficiently reduced.
+     */
     public static void verifyDataMovedOffSpecifiedDisks(final Map<String, Long> initialDataDirSizes,
                                                         final Map<String, Long> finalDataDirSizes) {
         LOGGER.info("Verifying that data has been moved off the specified disks...");
