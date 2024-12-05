@@ -5,6 +5,7 @@
 package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.ResourceAnnotations;
 import io.strimzi.api.kafka.Crds;
@@ -117,7 +118,7 @@ class TopicControllerIT implements TestSeparator {
 
     @BeforeAll
     public static void beforeAll() {
-        kubernetesClient = TopicOperatorUtil.createKubernetesClient("test");
+        kubernetesClient = new KubernetesClientBuilder().build();
         TopicOperatorTestUtil.setupKubeCluster(kubernetesClient, NAMESPACE);
     }
 

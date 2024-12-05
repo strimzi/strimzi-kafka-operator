@@ -13,7 +13,6 @@ import io.strimzi.operator.topic.model.TopicEvent.TopicDelete;
 import io.strimzi.operator.topic.model.TopicEvent.TopicUpsert;
 
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Handler for {@link KafkaTopic} events.
@@ -24,8 +23,6 @@ class TopicEventHandler implements ResourceEventHandler<KafkaTopic> {
     private final TopicOperatorConfig config;
     private final BatchingLoop queue;
     private final MetricsHolder metrics;
-    
-    private long lastPeriodicTimestampMs;
 
     public TopicEventHandler(TopicOperatorConfig config, BatchingLoop queue, MetricsHolder metrics) {
         this.config = config;
@@ -48,9 +45,8 @@ class TopicEventHandler implements ResourceEventHandler<KafkaTopic> {
     @Override
     public void onUpdate(KafkaTopic oldObj, KafkaTopic newObj) {
         String trigger = Objects.equals(oldObj, newObj) ? "resync" : "update";
-        if (trigger.equals("resync") && (TimeUnit.NANOSECONDS.toMillis(System.nanoTime()) - lastPeriodicTimestampMs) > config.fullReconciliationIntervalMs()) {
+        if (trigger.equals("resync")) {
             LOGGER.infoOp("Triggering periodic reconciliation of {} resources for namespace {}", KafkaTopic.RESOURCE_KIND, config.namespace());
-            this.lastPeriodicTimestampMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime());
         }
         if (trigger.equals("update")) {
             LOGGER.debugOp("Informed about update event for topic {}", TopicOperatorUtil.topicName(newObj));

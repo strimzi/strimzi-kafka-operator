@@ -39,7 +39,7 @@ import java.util.concurrent.ExecutionException;
  */
 public class TopicOperatorMain implements Liveness, Readiness {
     private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(TopicOperatorMain.class);
-    private final static long INFORMER_PERIOD_MS = 2_000;
+    private final static long INFORMER_RESYNC_CHECK_PERIOD_MS = 30_000;
 
     private final TopicOperatorConfig config;
     private final KubernetesClient kubernetesClient;
@@ -61,7 +61,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
         Objects.requireNonNull(config.labelSelector());
         this.config = config;
         var selector = config.labelSelector().toMap();
-        this.kubernetesClient = TopicOperatorUtil.createKubernetesClient("main");
+        this.kubernetesClient = new OperatorKubernetesClientBuilder("strimzi-topic-operator", TopicOperatorMain.class.getPackage().getImplementationVersion()).build();
         this.kafkaAdminClient = kafkaAdminClient;
         this.cruiseControlClient = TopicOperatorUtil.createCruiseControlClient(config);
         
@@ -96,13 +96,13 @@ public class TopicOperatorMain implements Liveness, Readiness {
                 // Do NOT use withLabels to filter the informer, since the controller is stateful
                 // (topics need to be added to removed from TopicController.topics if KafkaTopics transition between
                 // selected and unselected).
-                .runnableInformer(INFORMER_PERIOD_MS)
-                // The informer interval acts like a heartbeat, then each handler interval will cause a resync at 
+                .runnableInformer(INFORMER_RESYNC_CHECK_PERIOD_MS)
+                // The informer resync check interval acts like a heartbeat, then each handler interval will cause a resync at
                 // some interval of the overall heartbeat. The closer these values are together the more likely it 
                 // is that the handler skips one informer intervals. Setting both intervals to the same value generates 
                 // just enough skew that when the informer checks if the handler is ready for resync it sees that 
                 // it still needs another couple of micro-seconds and skips to the next informer level resync.
-                .addEventHandlerWithResyncPeriod(resourceEventHandler, config.fullReconciliationIntervalMs() + INFORMER_PERIOD_MS)
+                .addEventHandlerWithResyncPeriod(resourceEventHandler, config.fullReconciliationIntervalMs())
                 .itemStore(itemStore);
         LOGGER.infoOp("Starting informer");
         informer.run();
@@ -160,13 +160,6 @@ public class TopicOperatorMain implements Liveness, Readiness {
 
     static TopicOperatorMain operator(TopicOperatorConfig config, Admin kafkaAdmin) throws ExecutionException, InterruptedException {
         return new TopicOperatorMain(config, kafkaAdmin);
-    }
-
-    static KubernetesClient kubeClient() {
-        return new OperatorKubernetesClientBuilder(
-                    "strimzi-topic-operator",
-                    TopicOperatorMain.class.getPackage().getImplementationVersion())
-                .build();
     }
 
     @Override
