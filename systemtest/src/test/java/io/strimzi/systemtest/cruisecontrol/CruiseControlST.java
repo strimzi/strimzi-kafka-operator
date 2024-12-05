@@ -22,6 +22,7 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceConfigurationBuilder;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceMode;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceState;
+import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIds;
 import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIdsBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
@@ -71,7 +72,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.TestTags.ACCEPTANCE;
 import static io.strimzi.systemtest.TestTags.CRUISE_CONTROL;
@@ -817,7 +817,7 @@ public class CruiseControlST extends AbstractST {
         steps = {
             @Step(value = "Initialize JBOD storage configuration with multiple volumes (disks).", expected = "JBOD storage with disk IDs 0, 1, and 2 are initialized."),
             @Step(value = "Deploy Kafka with Cruise Control enabled.", expected = "Kafka with Cruise Control is successfully created."),
-            @Step(value = "Create KafkaTopic resources and produce data to them.", expected = "KafkaTopic resources are created and data is produced to them."),
+            @Step(value = "Create KafkaTopic resource and produce data to it.", expected = "KafkaTopic resource is created and data is produced to it."),
             @Step(value = "Retrieve initial data directory sizes and partition replicas for the disks being removed.", expected = "Initial data directory sizes and partition replicas are retrieved."),
             @Step(value = "Create a KafkaRebalance resource with 'remove-disks' mode, specifying the brokers and volume IDs.", expected = "KafkaRebalance resource is created with 'remove-disks' mode and moveReplicasOffVolumes settings."),
             @Step(value = "Wait for the KafkaRebalance to reach the ProposalReady state.", expected = "KafkaRebalance reaches the ProposalReady state."),
@@ -862,9 +862,7 @@ public class CruiseControlST extends AbstractST {
                         .withStorage(jbodStorage)
                     .endKafka()
                 .endSpec()
-                .build(),
-            ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
-        );
+                .build());
 
         // Create topics and produce some data to them
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName(), 24, 3).build());
@@ -874,9 +872,9 @@ public class CruiseControlST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        final Map<Integer, List<Integer>> brokersWithRemovedVolumes = Map.of(
-            0, Arrays.asList(1, 2),
-            2, Arrays.asList(1)
+        final List<BrokerAndVolumeIds> brokersWithRemovedVolumes = Arrays.asList(
+            new BrokerAndVolumeIdsBuilder().withBrokerId(0).withVolumeIds(Arrays.asList(1, 2)).build(),
+            new BrokerAndVolumeIdsBuilder().withBrokerId(2).withVolumeIds(Arrays.asList(1)).build()
         );
 
         final Map<String, Long> initialDataDirSizes = KafkaTopicUtils.getDataDirectorySizes(testStorage, brokersWithRemovedVolumes);
@@ -890,14 +888,7 @@ public class CruiseControlST extends AbstractST {
             KafkaRebalanceTemplates.kafkaRebalance(testStorage.getNamespaceName(), testStorage.getClusterName())
                 .editOrNewSpec()
                     .withMode(KafkaRebalanceMode.REMOVE_DISKS)
-                    .withMoveReplicasOffVolumes(
-                        brokersWithRemovedVolumes.entrySet().stream()
-                            .map(entry -> new BrokerAndVolumeIdsBuilder()
-                                .withBrokerId(entry.getKey())
-                                .withVolumeIds(entry.getValue())
-                                .build()
-                            ).collect(Collectors.toList())
-                )
+                    .withMoveReplicasOffVolumes(brokersWithRemovedVolumes)
                 .endSpec()
                 .build()
         );

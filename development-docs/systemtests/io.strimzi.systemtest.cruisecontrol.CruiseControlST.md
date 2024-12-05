@@ -131,7 +131,7 @@
 | - | - | - |
 | 1. | Initialize JBOD storage configuration with multiple volumes (disks). | JBOD storage with disk IDs 0, 1, and 2 are initialized. |
 | 2. | Deploy Kafka with Cruise Control enabled. | Kafka with Cruise Control is successfully created. |
-| 3. | Create KafkaTopic resources and produce data to them. | KafkaTopic resources are created and data is produced to them. |
+| 3. | Create KafkaTopic resource and produce data to it. | KafkaTopic resource is created and data is produced to it. |
 | 4. | Retrieve initial data directory sizes and partition replicas for the disks being removed. | Initial data directory sizes and partition replicas are retrieved. |
 | 5. | Create a KafkaRebalance resource with 'remove-disks' mode, specifying the brokers and volume IDs. | KafkaRebalance resource is created with 'remove-disks' mode and moveReplicasOffVolumes settings. |
 | 6. | Wait for the KafkaRebalance to reach the ProposalReady state. | KafkaRebalance reaches the ProposalReady state. |

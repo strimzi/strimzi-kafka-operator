@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
+import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIds;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
@@ -524,6 +525,7 @@ public class KafkaTopicUtils {
             }).toList();
     }
 
+
     public static void waitForTopicWithPrefixDeletion(String namespaceName, String topicPrefix, int start, int end) {
         TestUtils.waitFor("deletion of all topics with prefix: " + topicPrefix + " from " + start + " to " + end,
             TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
@@ -540,41 +542,23 @@ public class KafkaTopicUtils {
     }
 
     /**
-     * Executes a command in the specified broker pod for a given data directory path.
+     * Retrieves partition directories for specified brokers and volumes.
      *
-     * @param testStorage   the test storage object containing cluster information.
-     * @param brokerPodName the name of the broker pod.
-     * @param volumeId      the volume ID for the data directory.
-     * @param brokerId      the broker ID for the data directory.
-     * @param command       the command to execute in the pod.
-     * @return the ExecResult of the command execution.
-     * @throws RuntimeException if the command execution fails.
+     * @param testStorage           contains cluster and topic information.
+     * @param brokerAndVolumeIdsList list of brokers and their volumes to query.
+     * @return a map of broker pod and volume paths to sets of partition IDs.
+     * @throws RuntimeException if the command to list directories fails.
      */
-    private static ExecResult executeInBrokerPod(TestStorage testStorage, String brokerPodName, int volumeId, int brokerId, String command) {
-        final String dataDirPath = String.format("/var/lib/kafka/data-%d/kafka-log%d", volumeId, brokerId);
-        LOGGER.info("Executing command in broker {} volume {} at path {}: {}", brokerId, volumeId, dataDirPath, command);
-
-        ExecResult execResult = cmdKubeClient(testStorage.getNamespaceName())
-            .execInPodContainer(brokerPodName, "kafka", "bash", "-c", command);
-
-        if (execResult.returnCode() != 0) {
-            throw new RuntimeException("Failed to execute command in " + dataDirPath + " in pod " + brokerPodName + ": " + execResult.out() + " " + execResult.err());
-        }
-
-        return execResult;
-    }
-
     public static Map<String, Set<Integer>> getPartitionDirectories(final TestStorage testStorage,
-                                                                    final Map<Integer, List<Integer>> brokersWithRemovedVolumes) {
+                                                                    final List<BrokerAndVolumeIds> brokerAndVolumeIdsList) {
         final Map<String, Set<Integer>> partitionDirs = new HashMap<>();
-        for (final Map.Entry<Integer, List<Integer>> entry : brokersWithRemovedVolumes.entrySet()) {
-            final int brokerId = entry.getKey();
-            final List<Integer> volumeIds = entry.getValue();
-            final String brokerPodName = StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName()) + "-" + brokerId;
-
-            for (final int volumeId : volumeIds) {
-                final String command = "ls " + String.format("/var/lib/kafka/data-%d/kafka-log%d", volumeId, brokerId);
-                ExecResult execResult = executeInBrokerPod(testStorage, brokerPodName, volumeId, brokerId, command);
+        for (final BrokerAndVolumeIds brokerAndVolumeIds : brokerAndVolumeIdsList) {
+            final String brokerPodName = StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName())
+                + "-" + brokerAndVolumeIds.getBrokerId();
+            for (final int volumeId : brokerAndVolumeIds.getVolumeIds()) {
+                final String dataDirPath = KafkaUtils.getDataDirectoryPath(volumeId, brokerAndVolumeIds.getBrokerId());
+                final String command = "ls " + dataDirPath;
+                final ExecResult execResult = KafkaUtils.executeInBrokerPod(testStorage.getNamespaceName(), brokerPodName, volumeId, brokerAndVolumeIds.getBrokerId(), command);
 
                 final String[] dirs = execResult.out().trim().split("\\s+");
                 final Set<Integer> partitions = Arrays.stream(dirs)
@@ -591,7 +575,7 @@ public class KafkaTopicUtils {
                     .filter(Objects::nonNull)
                     .collect(Collectors.toSet());
 
-                final String key = brokerPodName + ":" + String.format("/var/lib/kafka/data-%d/kafka-log%d", volumeId, brokerId);
+                final String key = brokerPodName + ":" + dataDirPath;
                 partitionDirs.put(key, partitions);
             }
         }
@@ -606,7 +590,7 @@ public class KafkaTopicUtils {
      * @throws AssertionError       if any initial partitions remain in their original directories.
      */
     public static void verifyPartitionsMovedOffDisks(final Map<String, Set<Integer>> initialPartitionDirs,
-                                               final Map<String, Set<Integer>> finalPartitionDirs) {
+                                                     final Map<String, Set<Integer>> finalPartitionDirs) {
         for (final Map.Entry<String, Set<Integer>> entry : initialPartitionDirs.entrySet()) {
             final String key = entry.getKey();
             final Set<Integer> initialPartitions = initialPartitionDirs.get(key);
@@ -614,7 +598,6 @@ public class KafkaTopicUtils {
 
             LOGGER.info("Data directory {}: initial partitions = {}, final partitions = {}", key, initialPartitions, finalPartitions);
 
-            // Check that partitions in the initial set are no longer present in the final set
             final Set<Integer> remainingPartitions = new HashSet<>(initialPartitions);
             remainingPartitions.retainAll(finalPartitions);
 
@@ -623,20 +606,27 @@ public class KafkaTopicUtils {
         }
     }
 
+    /**
+     * Gets the sizes of Kafka data directories for specified brokers and volumes.
+     *
+     * @param testStorage           cluster and namespace information.
+     * @param brokerAndVolumeIdsList list of brokers and their volumes to query.
+     * @return a map of broker pod and volume paths to directory sizes in bytes.
+     * @throws RuntimeException if directory size retrieval fails.
+     */
     public static Map<String, Long> getDataDirectorySizes(final TestStorage testStorage,
-                                                          final Map<Integer, List<Integer>> brokersWithRemovedVolumes) {
+                                                          final List<BrokerAndVolumeIds> brokerAndVolumeIdsList) {
         final Map<String, Long> dataDirSizes = new HashMap<>();
-        for (final Map.Entry<Integer, List<Integer>> entry : brokersWithRemovedVolumes.entrySet()) {
-            final int brokerId = entry.getKey();
-            final List<Integer> volumeIds = entry.getValue();
-            final String brokerPodName = StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName()) + "-" + brokerId;
-
-            for (final int volumeId : volumeIds) {
-                final String command = "du -sb " + String.format("/var/lib/kafka/data-%d/kafka-log%d", volumeId, brokerId) + " | cut -f1";
-                ExecResult execResult = executeInBrokerPod(testStorage, brokerPodName, volumeId, brokerId, command);
+        for (final BrokerAndVolumeIds brokerAndVolumeIds : brokerAndVolumeIdsList) {
+            final String brokerPodName = StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName())
+                + "-" + brokerAndVolumeIds.getBrokerId();
+            for (final int volumeId : brokerAndVolumeIds.getVolumeIds()) {
+                final String dataDirPath = KafkaUtils.getDataDirectoryPath(volumeId, brokerAndVolumeIds.getBrokerId());
+                final String command = "du -sb " + dataDirPath + " | cut -f1";
+                final ExecResult execResult = KafkaUtils.executeInBrokerPod(testStorage.getNamespaceName(), brokerPodName, volumeId, brokerAndVolumeIds.getBrokerId(), command);
 
                 final long sizeInBytes = Long.parseLong(execResult.out().trim());
-                final String key = brokerPodName + ":" + String.format("/var/lib/kafka/data-%d/kafka-log%d", volumeId, brokerId);
+                final String key = brokerPodName + ":" + dataDirPath;
                 dataDirSizes.put(key, sizeInBytes);
             }
         }
