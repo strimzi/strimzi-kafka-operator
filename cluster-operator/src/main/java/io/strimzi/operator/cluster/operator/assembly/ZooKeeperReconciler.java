@@ -49,6 +49,7 @@ import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import org.apache.zookeeper.common.StringUtils;
 
 import java.time.Clock;
 import java.util.ArrayList;
@@ -372,7 +373,12 @@ public class ZooKeeperReconciler {
                 versionChangeType = "upgrade";
             }
 
-            if (versionChange.from().zookeeperVersion().equals(versionChange.to().zookeeperVersion())) {
+            if (StringUtils.isBlank(versionChange.from().zookeeperVersion())) {
+                LOGGER.infoCr(reconciliation, "Kafka {} from {} to {} may require Zookeeper version change",
+                        versionChangeType,
+                        versionChange.from().version(),
+                        versionChange.to().version());
+            } else if (versionChange.from().zookeeperVersion().equals(versionChange.to().zookeeperVersion())) {
                 LOGGER.infoCr(reconciliation, "Kafka {} from {} to {} requires Zookeeper {} from {} to {}",
                         versionChangeType,
                         versionChange.from().version(),
