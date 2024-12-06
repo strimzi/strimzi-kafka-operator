@@ -63,22 +63,15 @@ public class CruiseControlClientImpl implements CruiseControlClient {
     private HttpClient httpClient;
     private final ObjectMapper objectMapper;
     
-    CruiseControlClientImpl(String serverHostname,
-                            int serverPort,
-                            boolean rackEnabled,
-                            boolean sslEnabled,
-                            byte[] sslCertificate,
-                            boolean authEnabled,
-                            String authUsername,
-                            String authPassword) {
-        this.serverHostname = serverHostname;
-        this.serverPort = serverPort;
-        this.rackEnabled = rackEnabled;
-        this.sslEnabled = sslEnabled;
-        this.sslCertificate = sslCertificate;
-        this.authEnabled = authEnabled;
-        this.authUsername = authUsername;
-        this.authPassword = authPassword;
+    CruiseControlClientImpl(Config config) {
+        this.serverHostname = config.serverHostname();
+        this.serverPort = config.serverPort();
+        this.rackEnabled = config.rackEnabled();
+        this.sslEnabled = config.sslEnabled();
+        this.sslCertificate = config.sslCertificate();
+        this.authEnabled = config.authEnabled();
+        this.authUsername = config.authUsername();
+        this.authPassword = config.authPassword();
         this.httpClientExecutor = Executors.newCachedThreadPool();
         this.httpClient = buildHttpClient();
         this.objectMapper = new ObjectMapper();
