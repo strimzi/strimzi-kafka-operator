@@ -58,6 +58,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonMap;
@@ -207,21 +208,21 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
         connectorOffsets = LIST_OFFSETS_JSON;
         Map<String, Object> status = Map.of("connector", Map.of("state", state));
         KafkaConnectApi mockConnectApi = mock(KafkaConnectApi.class);
-        when(mockConnectApi.list(any(), any(), anyInt())).thenReturn(Future.succeededFuture(new ArrayList<>()));
-        when(mockConnectApi.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
-        when(mockConnectApi.getConnectorConfig(any(), any(), any(), anyInt(), eq("source->target.MirrorSourceConnector"))).thenReturn(Future.succeededFuture(EXPECTED_CONNECTOR_CONFIG));
-        when(mockConnectApi.status(any(), any(), anyInt(), eq("source->target.MirrorSourceConnector"))).thenReturn(Future.succeededFuture(status));
-        when(mockConnectApi.statusWithBackOff(any(), any(), any(), anyInt(), eq("source->target.MirrorSourceConnector"))).thenReturn(Future.succeededFuture(status));
-        when(mockConnectApi.getConnectorTopics(any(), any(), anyInt(), eq("source->target.MirrorSourceConnector"))).thenReturn(Future.succeededFuture(List.of()));
-        when(mockConnectApi.restart(any(), anyInt(), any(), anyBoolean(), anyBoolean())).thenReturn(Future.succeededFuture(Map.of("connector", Map.of("state", "RESTARTING"))));
-        when(mockConnectApi.getConnectorOffsets(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> Future.succeededFuture(connectorOffsets));
+        when(mockConnectApi.list(any(), any(), anyInt())).thenReturn(CompletableFuture.completedFuture(new ArrayList<>()));
+        when(mockConnectApi.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(CompletableFuture.completedFuture(null));
+        when(mockConnectApi.getConnectorConfig(any(), any(), any(), anyInt(), eq("source->target.MirrorSourceConnector"))).thenReturn(CompletableFuture.completedFuture(EXPECTED_CONNECTOR_CONFIG));
+        when(mockConnectApi.status(any(), any(), anyInt(), eq("source->target.MirrorSourceConnector"))).thenReturn(CompletableFuture.completedFuture(status));
+        when(mockConnectApi.statusWithBackOff(any(), any(), any(), anyInt(), eq("source->target.MirrorSourceConnector"))).thenReturn(CompletableFuture.completedFuture(status));
+        when(mockConnectApi.getConnectorTopics(any(), any(), anyInt(), eq("source->target.MirrorSourceConnector"))).thenReturn(CompletableFuture.completedFuture(List.of()));
+        when(mockConnectApi.restart(any(), anyInt(), any(), anyBoolean(), anyBoolean())).thenReturn(CompletableFuture.completedFuture(Map.of("connector", Map.of("state", "RESTARTING"))));
+        when(mockConnectApi.getConnectorOffsets(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> CompletableFuture.completedFuture(connectorOffsets));
         when(mockConnectApi.alterConnectorOffsets(any(), any(), anyInt(), anyString(), anyString())).thenAnswer(invocation -> {
             connectorOffsets = invocation.getArgument(4);
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
         });
         when(mockConnectApi.resetConnectorOffsets(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> {
             connectorOffsets = RESET_OFFSETS_JSON;
-            return Future.succeededFuture();
+            return CompletableFuture.completedFuture(null);
         });
 
         return mockConnectApi;
@@ -245,8 +246,8 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
             .build()).create();
 
         KafkaConnectApi mock = mock(KafkaConnectApi.class);
-        when(mock.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
-        when(mock.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
+        when(mock.list(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(emptyList()));
+        when(mock.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(CompletableFuture.completedFuture(null));
 
         Checkpoint async = context.checkpoint();
         createMirrorMaker2Cluster(context, mock, false)
@@ -277,8 +278,8 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                 .build()).create();
 
         KafkaConnectApi mock = mock(KafkaConnectApi.class);
-        when(mock.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
-        when(mock.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
+        when(mock.list(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(emptyList()));
+        when(mock.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(CompletableFuture.completedFuture(null));
 
         Checkpoint async = context.checkpoint();
         createMirrorMaker2Cluster(context, mock, true)

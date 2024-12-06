@@ -41,6 +41,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonMap;
@@ -152,8 +153,8 @@ public class KafkaConnectAssemblyOperatorMockTest {
                 .endSpec()
             .build()).create();
         KafkaConnectApi mock = mock(KafkaConnectApi.class);
-        when(mock.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
-        when(mock.listConnectorPlugins(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+        when(mock.list(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(emptyList()));
+        when(mock.listConnectorPlugins(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(emptyList()));
 
         Checkpoint async = context.checkpoint();
         createConnectCluster(context, mock, false)
@@ -181,8 +182,8 @@ public class KafkaConnectAssemblyOperatorMockTest {
                 .endSpec()
                 .build()).create();
         KafkaConnectApi mock = mock(KafkaConnectApi.class);
-        when(mock.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
-        when(mock.listConnectorPlugins(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+        when(mock.list(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(emptyList()));
+        when(mock.listConnectorPlugins(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(emptyList()));
 
         Checkpoint async = context.checkpoint();
         createConnectCluster(context, mock, true)

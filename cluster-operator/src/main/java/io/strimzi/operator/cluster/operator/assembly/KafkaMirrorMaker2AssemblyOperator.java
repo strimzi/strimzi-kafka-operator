@@ -79,7 +79,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     public KafkaMirrorMaker2AssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                         ResourceOperatorSupplier supplier,
                                         ClusterOperatorConfig config) {
-        this(vertx, pfa, supplier, config, connect -> new KafkaConnectApiImpl(vertx));
+        this(vertx, pfa, supplier, config, connect -> new KafkaConnectApiImpl());
     }
 
     /**
@@ -246,7 +246,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
         List<KafkaConnector> desiredConnectors = mirrorMaker2Cluster.connectors().generateConnectorDefinitions();
 
-        return apiClient.list(reconciliation, host, port).compose(currentConnectors -> {
+        return VertxUtil.completableFutureToVertxFuture(apiClient.list(reconciliation, host, port)).compose(currentConnectors -> {
             currentConnectors.removeAll(desiredConnectors.stream().map(c -> c.getMetadata().getName()).collect(Collectors.toSet()));
 
             Future<Void> deletionFuture = deleteConnectors(reconciliation, host, apiClient, currentConnectors);
@@ -260,7 +260,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         return Future.join(connectorsForDeletion.stream()
                         .map(connectorName -> {
                             LOGGER.debugCr(reconciliation, "Deleting connector {}", connectorName);
-                            return apiClient.delete(reconciliation, host, port, connectorName);
+                            return VertxUtil.completableFutureToVertxFuture(apiClient.delete(reconciliation, host, port, connectorName));
                         })
                         .collect(Collectors.toList()))
                 .mapEmpty();
