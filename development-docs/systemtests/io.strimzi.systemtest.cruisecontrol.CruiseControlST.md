@@ -121,6 +121,30 @@
 * [cruise-control](labels/cruise-control.md)
 
 
+## testCruiseControlRemoveDisksMode
+
+**Description:** Test verifying the 'remove-disks' mode in Cruise Control, which allows moving data between JBOD disks on the same broker.
+
+**Steps:**
+
+| Step | Action | Result |
+| - | - | - |
+| 1. | Initialize JBOD storage configuration with multiple volumes (disks). | JBOD storage with disk IDs 0, 1, and 2 are initialized. |
+| 2. | Deploy Kafka with Cruise Control enabled. | Kafka with Cruise Control is successfully created. |
+| 3. | Create KafkaTopic resource and produce data to it. | KafkaTopic resource is created and data is produced to it. |
+| 4. | Retrieve initial data directory sizes and partition replicas for the disks being removed. | Initial data directory sizes and partition replicas are retrieved. |
+| 5. | Create a KafkaRebalance resource with 'remove-disks' mode, specifying the brokers and volume IDs. | KafkaRebalance resource is created with 'remove-disks' mode and moveReplicasOffVolumes settings. |
+| 6. | Wait for the KafkaRebalance to reach the ProposalReady state. | KafkaRebalance reaches the ProposalReady state. |
+| 7. | Approve the KafkaRebalance proposal. | KafkaRebalance is approved. |
+| 8. | Wait for the KafkaRebalance to reach Ready state. | KafkaRebalance reaches the Ready state. |
+| 9. | Verify that data has been moved off the specified disks by checking data directory sizes in the broker pods. | Data directories for the specified volumes are empty or have minimal data, confirming data has been moved off. |
+| 10. | Verify that partitions have been moved off the specified disks. | Partitions are no longer present on the specified disks, confirming successful removal. |
+
+**Labels:**
+
+* [cruise-control](labels/cruise-control.md)
+
+
 ## testCruiseControlReplicaMovementStrategy
 
 **Description:** Test that verifies the configuration and application of custom Cruise Control replica movement strategies.

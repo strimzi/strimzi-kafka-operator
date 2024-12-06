@@ -38,6 +38,7 @@ import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.executor.ExecResult;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -712,4 +713,43 @@ public class KafkaUtils {
         );
     }
 
+    /**
+     * Executes a command in the specified broker pod for a given data directory path.
+     *
+     * @param namespaceName namespace name
+     * @param brokerPodName the name of the broker pod.
+     * @param volumeId      the volume ID for the data directory.
+     * @param brokerId      the broker ID for the data directory.
+     * @param command       the command to execute in the pod.
+     * @return the ExecResult of the command execution.
+     * @throws RuntimeException if the command execution fails.
+     */
+    public static ExecResult executeInBrokerPod(final String namespaceName,
+                                                final String brokerPodName,
+                                                final int volumeId,
+                                                final int brokerId,
+                                                final String command) {
+        LOGGER.info("Executing command in broker {} volume {}: {}", brokerId, volumeId, command);
+
+        final ExecResult execResult = cmdKubeClient(namespaceName)
+            .execInPodContainer(brokerPodName, "kafka", "bash", "-c", command);
+
+        if (execResult.returnCode() != 0) {
+            throw new RuntimeException("Failed to execute command " + command + " in pod " + brokerPodName + ": " + execResult.out() + " " + execResult.err());
+        }
+
+        return execResult;
+    }
+
+    /**
+     * Constructs the data directory path for a given broker and volume.
+     *
+     * @param volumeId the volume ID.
+     * @param brokerId the broker ID.
+     * @return the data directory path as a string.
+     */
+    public static String getDataDirectoryPath(final int volumeId,
+                                               final int brokerId) {
+        return String.format("/var/lib/kafka/data-%d/kafka-log%d", volumeId, brokerId);
+    }
 }

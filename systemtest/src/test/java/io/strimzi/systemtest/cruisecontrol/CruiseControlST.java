@@ -22,6 +22,8 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceConfigurationBuilder;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceMode;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.KafkaAutoRebalanceState;
+import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIds;
+import io.strimzi.api.kafka.model.rebalance.BrokerAndVolumeIdsBuilder;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceMode;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
@@ -34,6 +36,7 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.MixedRoleNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -48,6 +51,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.specific.AdminClientTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.AdminClientUtils;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.VerificationUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
@@ -67,6 +71,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static io.strimzi.systemtest.TestTags.ACCEPTANCE;
 import static io.strimzi.systemtest.TestTags.CRUISE_CONTROL;
@@ -804,6 +809,104 @@ public class CruiseControlST extends AbstractST {
 
         // check that KafkaRebalance <cluster-name>-auto-rebalancing-<mode> is deleted
         KafkaRebalanceUtils.waitForKafkaRebalanceIsDeleted(testStorage.getNamespaceName(), KafkaResources.autoRebalancingKafkaRebalanceResourceName(testStorage.getClusterName(), KafkaAutoRebalanceMode.REMOVE_BROKERS));
+    }
+
+    @ParallelNamespaceTest
+    @TestDoc(
+        description = @Desc("Test verifying the 'remove-disks' mode in Cruise Control, which allows moving data between JBOD disks on the same broker."),
+        steps = {
+            @Step(value = "Initialize JBOD storage configuration with multiple volumes (disks).", expected = "JBOD storage with disk IDs 0, 1, and 2 are initialized."),
+            @Step(value = "Deploy Kafka with Cruise Control enabled.", expected = "Kafka with Cruise Control is successfully created."),
+            @Step(value = "Create KafkaTopic resource and produce data to it.", expected = "KafkaTopic resource is created and data is produced to it."),
+            @Step(value = "Retrieve initial data directory sizes and partition replicas for the disks being removed.", expected = "Initial data directory sizes and partition replicas are retrieved."),
+            @Step(value = "Create a KafkaRebalance resource with 'remove-disks' mode, specifying the brokers and volume IDs.", expected = "KafkaRebalance resource is created with 'remove-disks' mode and moveReplicasOffVolumes settings."),
+            @Step(value = "Wait for the KafkaRebalance to reach the ProposalReady state.", expected = "KafkaRebalance reaches the ProposalReady state."),
+            @Step(value = "Approve the KafkaRebalance proposal.", expected = "KafkaRebalance is approved."),
+            @Step(value = "Wait for the KafkaRebalance to reach Ready state.", expected = "KafkaRebalance reaches the Ready state."),
+            @Step(value = "Verify that data has been moved off the specified disks by checking data directory sizes in the broker pods.", expected = "Data directories for the specified volumes are empty or have minimal data, confirming data has been moved off."),
+            @Step(value = "Verify that partitions have been moved off the specified disks.", expected = "Partitions are no longer present on the specified disks, confirming successful removal."),
+        },
+        labels = {
+            @Label(value = TestDocsLabels.CRUISE_CONTROL),
+        }
+    )
+    void testCruiseControlRemoveDisksMode() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final String diskSize = "6Gi";
+
+        // Initialize JBOD storage configuration with disk IDs 0, 1, and 2
+        JbodStorage jbodStorage = new JbodStorageBuilder()
+            .withVolumes(
+                new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(0).withSize(diskSize).build(),
+                new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(1).withSize(diskSize).build(),
+                new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(2).withSize(diskSize).build()
+            ).build();
+
+        // Create Kafka broker and controller pools using the initialized storage
+        resourceManager.createResourceWithWait(
+            NodePoolsConverter.convertNodePoolsIfNeeded(
+                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3)
+                    .editSpec()
+                        .withStorage(jbodStorage)
+                    .endSpec()
+                    .build(),
+                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
+            )
+        );
+
+        // Deploy Kafka with Cruise Control enabled
+        resourceManager.createResourceWithWait(
+            KafkaTemplates.kafkaWithCruiseControlTunedForFastModelGeneration(testStorage.getNamespaceName(), testStorage.getClusterName(), 3, 3)
+                .editOrNewSpec()
+                    .editKafka()
+                        .withStorage(jbodStorage)
+                    .endKafka()
+                .endSpec()
+                .build());
+
+        // Create topics and produce some data to them
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName(), 24, 3).build());
+
+        // send some data to topic
+        final KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage).withMessageCount(1000).build();
+        resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
+        ClientUtils.waitForInstantClientSuccess(testStorage);
+
+        final List<BrokerAndVolumeIds> brokersWithRemovedVolumes = Arrays.asList(
+            new BrokerAndVolumeIdsBuilder().withBrokerId(0).withVolumeIds(Arrays.asList(1, 2)).build(),
+            new BrokerAndVolumeIdsBuilder().withBrokerId(2).withVolumeIds(Arrays.asList(1)).build()
+        );
+
+        final Map<String, Long> initialDataDirSizes = KafkaTopicUtils.getDataDirectorySizes(testStorage, brokersWithRemovedVolumes);
+        final Map<String, Set<Integer>> initialPartitionDirs = KafkaTopicUtils.getPartitionDirectories(testStorage, brokersWithRemovedVolumes);
+
+        LOGGER.info("Initial data directory sizes: {}", initialDataDirSizes);
+        LOGGER.info("Initial partition directories: {}", initialPartitionDirs);
+
+        // Create a KafkaRebalance resource with 'remove-disks' mode, specifying the brokers and volume IDs
+        resourceManager.createResourceWithoutWait(
+            KafkaRebalanceTemplates.kafkaRebalance(testStorage.getNamespaceName(), testStorage.getClusterName())
+                .editOrNewSpec()
+                    .withMode(KafkaRebalanceMode.REMOVE_DISKS)
+                    .withMoveReplicasOffVolumes(brokersWithRemovedVolumes)
+                .endSpec()
+                .build()
+        );
+
+        // Wait for the KafkaRebalance to reach ProposalReady state
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceState.ProposalReady);
+
+        // Approve the KafkaRebalance proposal
+        KafkaRebalanceUtils.annotateKafkaRebalanceResource(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceAnnotation.approve);
+
+        // Wait for the KafkaRebalance to reach Ready state
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceState.Ready);
+
+        // Verify that data has been moved off the specified disks by checking data directory sizes
+        KafkaTopicUtils.verifyDataMovedOffSpecifiedDisks(initialDataDirSizes, KafkaTopicUtils.getDataDirectorySizes(testStorage, brokersWithRemovedVolumes));
+
+        // Verify that partitions have been moved off the specified disks
+        KafkaTopicUtils.verifyPartitionsMovedOffDisks(initialPartitionDirs, KafkaTopicUtils.getPartitionDirectories(testStorage, brokersWithRemovedVolumes));
     }
 
     @BeforeAll
