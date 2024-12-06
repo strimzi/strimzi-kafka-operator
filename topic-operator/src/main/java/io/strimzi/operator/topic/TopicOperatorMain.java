@@ -61,9 +61,10 @@ public class TopicOperatorMain implements Liveness, Readiness {
         Objects.requireNonNull(config.resourceLabels());
         this.config = config;
         var selector = config.resourceLabels().toMap();
-        this.kubernetesClient = new OperatorKubernetesClientBuilder("strimzi-topic-operator", TopicOperatorMain.class.getPackage().getImplementationVersion()).build();
+        this.kubernetesClient = new OperatorKubernetesClientBuilder("strimzi-topic-operator", 
+            TopicOperatorMain.class.getPackage().getImplementationVersion()).build();
         this.kafkaAdminClient = kafkaAdminClient;
-        this.cruiseControlClient = TopicOperatorUtil.createCruiseControlClient(config);
+        this.cruiseControlClient = CruiseControlClient.create(TopicOperatorUtil.mapToCcClientCfg(config));
         
         var metricsProvider = createMetricsProvider();
         var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, Labels.fromMap(selector), metricsProvider);
@@ -97,11 +98,6 @@ public class TopicOperatorMain implements Liveness, Readiness {
                 // (topics need to be added to removed from TopicController.topics if KafkaTopics transition between
                 // selected and unselected).
                 .runnableInformer(INFORMER_RESYNC_CHECK_PERIOD_MS)
-                // The informer resync check interval acts like a heartbeat, then each handler interval will cause a resync at
-                // some interval of the overall heartbeat. The closer these values are together the more likely it 
-                // is that the handler skips one informer intervals. Setting both intervals to the same value generates 
-                // just enough skew that when the informer checks if the handler is ready for resync it sees that 
-                // it still needs another couple of micro-seconds and skips to the next informer level resync.
                 .addEventHandlerWithResyncPeriod(resourceEventHandler, config.fullReconciliationIntervalMs())
                 .itemStore(itemStore);
         LOGGER.infoOp("Starting informer");
@@ -154,7 +150,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
      */
     public static void main(String[] args) throws Exception {
         var config = TopicOperatorConfig.buildFromMap(System.getenv());
-        var operator = operator(config, TopicOperatorUtil.createKafkaAdminClient(config));
+        var operator = operator(config, Admin.create(config.adminClientConfig()));
         operator.start();
     }
 
