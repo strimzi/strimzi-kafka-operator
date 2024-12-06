@@ -15,7 +15,6 @@ import io.strimzi.operator.topic.model.Pair;
 import io.strimzi.operator.topic.model.PartitionedByError;
 import io.strimzi.operator.topic.model.ReconcilableTopic;
 import io.strimzi.operator.topic.model.TopicOperatorException;
-import org.apache.kafka.clients.admin.Admin;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -38,33 +37,23 @@ public class TopicOperatorUtil {
     private TopicOperatorUtil() { }
 
     /**
-     * Create a new Kafka admin client instance.
-     *
-     * @param config Topic Operator configuration.
-     * @return Kafka admin client.
+     * Map TO configuration to CC client configuration.
+     * 
+     * @param operatorCfg Topic Operator configuration.
+     * @return Cruise Control client configuration.
      */
-    public static Admin createKafkaAdminClient(TopicOperatorConfig config) {
-        return Admin.create(config.adminClientConfig());
-    }
-
-    /**
-     * Create a new Cruise Control client instance.
-     *
-     * @param config Topic Operator configuration.
-     * @return Cruise Control client.
-     */
-    public static CruiseControlClient createCruiseControlClient(TopicOperatorConfig config) {
-        return CruiseControlClient.create(
-            config.cruiseControlHostname(),
-            config.cruiseControlPort(),
-            config.cruiseControlRackEnabled(),
-            config.cruiseControlSslEnabled(),
-            config.cruiseControlSslEnabled() ? getFileContent(config.cruiseControlCrtFilePath()) : null,
-            config.cruiseControlAuthEnabled(),
-            config.cruiseControlAuthEnabled() 
-                ? new String(getFileContent(config.cruiseControlApiUserPath()), StandardCharsets.UTF_8) : null,
-            config.cruiseControlAuthEnabled() 
-                ? new String(getFileContent(config.cruiseControlApiPassPath()), StandardCharsets.UTF_8) : null
+    public static CruiseControlClient.Config mapToCcClientCfg(TopicOperatorConfig operatorCfg) {
+        return new CruiseControlClient.Config(
+            operatorCfg.cruiseControlHostname(),
+            operatorCfg.cruiseControlPort(),
+            operatorCfg.cruiseControlRackEnabled(),
+            operatorCfg.cruiseControlSslEnabled(),
+            operatorCfg.cruiseControlSslEnabled() ? getFileContent(operatorCfg.cruiseControlCrtFilePath()) : null,
+            operatorCfg.cruiseControlAuthEnabled(),
+            operatorCfg.cruiseControlAuthEnabled()
+                ? new String(getFileContent(operatorCfg.cruiseControlApiUserPath()), StandardCharsets.UTF_8) : null,
+            operatorCfg.cruiseControlAuthEnabled()
+                ? new String(getFileContent(operatorCfg.cruiseControlApiPassPath()), StandardCharsets.UTF_8) : null
         );
     }
 

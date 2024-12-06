@@ -28,34 +28,11 @@ public interface CruiseControlClient {
     /**
      * Create default Cruise Control client instance.
      *
-     * @param serverHostname Server hostname.
-     * @param serverPort Server port.
-     * @param rackEnabled Whether rack awareness is enabled.
-     * @param sslEnabled Whether SSL is enabled.
-     * @param sslCertificate SSL certificate.
-     * @param authEnabled Whether authentication is enabled.
-     * @param authUsername Authentication username.
-     * @param authPassword Authentication password.
+     * @param config Configuration.
      * @return Cruise Control client.
      */
-    static CruiseControlClient create(String serverHostname,
-                                      int serverPort,
-                                      boolean rackEnabled,
-                                      boolean sslEnabled,
-                                      byte[] sslCertificate,
-                                      boolean authEnabled,
-                                      String authUsername,
-                                      String authPassword) {
-        return new CruiseControlClientImpl(
-            serverHostname,
-            serverPort,
-            rackEnabled,
-            sslEnabled,
-            sslCertificate,
-            authEnabled,
-            authUsername,
-            authPassword
-        );
+    static CruiseControlClient create(Config config) {
+        return new CruiseControlClientImpl(config);
     }
 
     /**
@@ -88,6 +65,27 @@ public interface CruiseControlClient {
      * @return The error message.
      */
     Optional<String> errorMessage(HttpResponse<String> response);
+
+    /**
+     * Client configuration.
+     * 
+     * @param serverHostname Server hostname.
+     * @param serverPort Server port.
+     * @param rackEnabled Whether rack awareness is enabled.
+     * @param sslEnabled Whether SSL is enabled.
+     * @param sslCertificate SSL certificate.
+     * @param authEnabled Whether authentication is enabled.
+     * @param authUsername Authentication username.
+     * @param authPassword Authentication password.
+     */
+    record Config(String serverHostname,
+                  int serverPort,
+                  boolean rackEnabled,
+                  boolean sslEnabled,
+                  byte[] sslCertificate,
+                  boolean authEnabled,
+                  String authUsername,
+                  String authPassword) { }
     
     /**
      * Topic names grouped by replication factor value.
