@@ -77,6 +77,21 @@ RUN set -ex; \
 COPY ./exporter-scripts $KAFKA_EXPORTER_HOME
 
 #####
+# Add Prometheus JMX Exporter
+#####
+ENV JMX_EXPORTER_HOME=/opt/prometheus-jmx-exporter
+ENV JMX_EXPORTER_VERSION=1.1.0
+ENV JMX_EXPORTER_CHECKSUM="63f9ff5297c6add9ecd19633a54300ffcec0df2e09afca7212e80506b801ea20aa009efc4b582b6ed8a4616b1ed68c98e30cc5b9dbf2cf6fe68b7cf2e3c5db3c  jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar"
+
+RUN set -ex; \
+    curl -LO https://github.com/prometheus/jmx_exporter/releases/download/${JMX_EXPORTER_VERSION}/jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar; \
+    echo $JMX_EXPORTER_CHECKSUM > jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar.sha512; \
+    sha512sum --check jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar.sha512; \
+    mkdir $JMX_EXPORTER_HOME; \
+    mv jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar $JMX_EXPORTER_HOME/; \
+    rm -f jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar.sha512;
+
+#####
 # Add Strimzi agents
 #####
 COPY ./tmp/kafka-agent-${STRIMZI_VERSION}.jar ${KAFKA_HOME}/libs/
