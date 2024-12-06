@@ -39,21 +39,21 @@ public class TopicOperatorUtil {
     /**
      * Map TO configuration to CC client configuration.
      * 
-     * @param operatorCfg Topic Operator configuration.
+     * @param config Topic Operator configuration.
      * @return Cruise Control client configuration.
      */
-    public static CruiseControlClient.Config mapToCcClientCfg(TopicOperatorConfig operatorCfg) {
+    public static CruiseControlClient.Config mapToCcClientCfg(TopicOperatorConfig config) {
         return new CruiseControlClient.Config(
-            operatorCfg.cruiseControlHostname(),
-            operatorCfg.cruiseControlPort(),
-            operatorCfg.cruiseControlRackEnabled(),
-            operatorCfg.cruiseControlSslEnabled(),
-            operatorCfg.cruiseControlSslEnabled() ? getFileContent(operatorCfg.cruiseControlCrtFilePath()) : null,
-            operatorCfg.cruiseControlAuthEnabled(),
-            operatorCfg.cruiseControlAuthEnabled()
-                ? new String(getFileContent(operatorCfg.cruiseControlApiUserPath()), StandardCharsets.UTF_8) : null,
-            operatorCfg.cruiseControlAuthEnabled()
-                ? new String(getFileContent(operatorCfg.cruiseControlApiPassPath()), StandardCharsets.UTF_8) : null
+            config.cruiseControlHostname(),
+            config.cruiseControlPort(),
+            config.cruiseControlRackEnabled(),
+            config.cruiseControlSslEnabled(),
+            config.cruiseControlSslEnabled() ? getFileContent(config.cruiseControlCrtFilePath()) : null,
+            config.cruiseControlAuthEnabled(),
+            config.cruiseControlAuthEnabled()
+                ? new String(getFileContent(config.cruiseControlApiUserPath()), StandardCharsets.UTF_8) : null,
+            config.cruiseControlAuthEnabled()
+                ? new String(getFileContent(config.cruiseControlApiPassPath()), StandardCharsets.UTF_8) : null
         );
     }
 
