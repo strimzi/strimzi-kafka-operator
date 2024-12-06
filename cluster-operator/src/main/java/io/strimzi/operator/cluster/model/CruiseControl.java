@@ -433,7 +433,9 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         Map<String, CertAndKey> ccCerts = new HashMap<>(4);
         LOGGER.debugCr(reconciliation, "Generating certificates");
         try {
-            ccCerts = clusterCa.generateCcCerts(namespace, clusterName, existingSecret, isMaintenanceTimeWindowsSatisfied);
+            Set<NodeRef> nodes = Set.of(new NodeRef(CruiseControl.COMPONENT_TYPE, 0, null, false, false));
+            ccCerts = clusterCa.generateCcCerts(namespace, clusterName, CertUtils.extractCertsAndKeysFromSecret(existingSecret, nodes),
+                    nodes, isMaintenanceTimeWindowsSatisfied, clusterCa.hasCaCertGenerationChanged(existingSecret));
         } catch (IOException e) {
             LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
         }

@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.Collections.emptyMap;
 
@@ -313,6 +314,34 @@ public class CertUtils {
             return String.join(";", paths);
         } else {
             return null;
+        }
+    }
+
+    /**
+     * Extract pairs of public certificates and private keys from a Secret
+     *
+     * @param secret    Secret to extract certificates and keys from
+     * @param nodes     Set of nodes the Secret contains certificates and keys for
+     *
+     * @return  Map of public certificates and private keys
+     */
+    public static Map<String, CertAndKey> extractCertsAndKeysFromSecret(Secret secret, Set<NodeRef> nodes)    {
+        if (secret == null || secret.getData() == null || secret.getData().isEmpty()) {
+            return null;
+        } else {
+            Map<String, String> certificateData = secret.getData();
+            Map<String, CertAndKey> certsAndKeys = new HashMap<>();
+
+            for (NodeRef node : nodes) {
+                String podName = node.podName();
+                String keyData = certificateData.get(Ca.SecretEntry.KEY.asKey(podName));
+                String certData = certificateData.get(Ca.SecretEntry.CRT.asKey(podName));
+                if (keyData != null && certData != null) {
+                    certsAndKeys.put(podName, new CertAndKey(Util.decodeBytesFromBase64(keyData), Util.decodeBytesFromBase64(certData)));
+                }
+            }
+
+            return certsAndKeys;
         }
     }
 }

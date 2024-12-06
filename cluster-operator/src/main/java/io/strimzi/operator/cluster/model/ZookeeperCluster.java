@@ -446,7 +446,8 @@ public class ZookeeperCluster extends AbstractModel implements SupportsMetrics, 
         Map<String, CertAndKey> certs;
 
         try {
-            certs = clusterCa.generateZkCerts(namespace, cluster, existingSecret, nodes(), isMaintenanceTimeWindowsSatisfied);
+            certs = clusterCa.generateZkCerts(namespace, cluster, CertUtils.extractCertsAndKeysFromSecret(existingSecret, nodes()),
+                    nodes(), isMaintenanceTimeWindowsSatisfied, clusterCa.hasCaCertGenerationChanged(existingSecret));
         } catch (IOException e) {
             LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
             throw new RuntimeException("Failed to prepare ZooKeeper certificates", e);
