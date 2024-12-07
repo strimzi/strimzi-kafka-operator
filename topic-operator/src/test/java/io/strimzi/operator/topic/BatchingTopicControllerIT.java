@@ -146,16 +146,18 @@ class BatchingTopicControllerIT implements TestSeparator {
     }
 
     private void assertOnUpdateThrowsInterruptedException(Admin kafkaAdmin, KafkaTopic kafkaTopic) {
-        var config = Mockito.mock(TopicOperatorConfig.class);
-        Mockito.doReturn(NAMESPACE).when(config).namespace();
-        Mockito.doReturn(true).when(config).useFinalizer();
-        Mockito.doReturn(false).when(config).enableAdditionalMetrics();
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+            TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
+            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.USE_FINALIZERS.key(), "true",
+            TopicOperatorConfig.ENABLE_ADDITIONAL_METRICS.key(), "false"
+        ));
 
         var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry()));
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdmin), metricsHolder,
-            new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(TopicOperatorUtil.mapToCcClientCfg(config))));
+            new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(config.cruiseControlClientConfig())));
         
         var batch = List.of(new ReconcilableTopic(
             new Reconciliation("test", "KafkaTopic", NAMESPACE, TopicOperatorUtil.topicName(kafkaTopic)), kafkaTopic, TopicOperatorUtil.topicName(kafkaTopic)));
@@ -274,11 +276,13 @@ class BatchingTopicControllerIT implements TestSeparator {
         var replicationFactor = 1;
 
         // setup: .spec.replicas != replicationFactor
-        var config = Mockito.mock(TopicOperatorConfig.class);
-        Mockito.doReturn(NAMESPACE).when(config).namespace();
-        Mockito.doReturn(true).when(config).useFinalizer();
-        Mockito.doReturn(false).when(config).enableAdditionalMetrics();
-        Mockito.doReturn(cruiseControlEnabled).when(config).cruiseControlEnabled();
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+            TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
+            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.USE_FINALIZERS.key(), "true",
+            TopicOperatorConfig.ENABLE_ADDITIONAL_METRICS.key(), "false",
+            TopicOperatorConfig.CRUISE_CONTROL_ENABLED.key(), Boolean.toString(cruiseControlEnabled)
+        ));
 
         var describeClusterResult = Mockito.mock(DescribeClusterResult.class);
         Mockito.doReturn(KafkaFuture.completedFuture(List.of())).when(describeClusterResult).nodes();
@@ -358,11 +362,13 @@ class BatchingTopicControllerIT implements TestSeparator {
         int replicationFactor = 3;
 
         // setup: pending with error and .spec.replicas == replicationFactor
-        var config = Mockito.mock(TopicOperatorConfig.class);
-        Mockito.doReturn(NAMESPACE).when(config).namespace();
-        Mockito.doReturn(true).when(config).useFinalizer();
-        Mockito.doReturn(false).when(config).enableAdditionalMetrics();
-        Mockito.doReturn(true).when(config).cruiseControlEnabled();
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+            TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
+            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.USE_FINALIZERS.key(), "true",
+            TopicOperatorConfig.ENABLE_ADDITIONAL_METRICS.key(), "false",
+            TopicOperatorConfig.CRUISE_CONTROL_ENABLED.key(), "true"
+        ));
 
         var describeClusterResult = Mockito.mock(DescribeClusterResult.class);
         Mockito.doReturn(KafkaFuture.completedFuture(List.of())).when(describeClusterResult).nodes();
@@ -437,11 +443,13 @@ class BatchingTopicControllerIT implements TestSeparator {
         var replicationFactor = 1;
 
         // setup: pending with .spec.replicas == replicationFactor
-        var config = Mockito.mock(TopicOperatorConfig.class);
-        Mockito.doReturn(NAMESPACE).when(config).namespace();
-        Mockito.doReturn(true).when(config).useFinalizer();
-        Mockito.doReturn(false).when(config).enableAdditionalMetrics();
-        Mockito.doReturn(true).when(config).cruiseControlEnabled();
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+            TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
+            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.USE_FINALIZERS.key(), "true",
+            TopicOperatorConfig.ENABLE_ADDITIONAL_METRICS.key(), "false",
+            TopicOperatorConfig.CRUISE_CONTROL_ENABLED.key(), "true"
+        ));
 
         var describeClusterResult = Mockito.mock(DescribeClusterResult.class);
         Mockito.doReturn(KafkaFuture.completedFuture(List.of())).when(describeClusterResult).nodes();
@@ -514,7 +522,7 @@ class BatchingTopicControllerIT implements TestSeparator {
         var kafkaAdmin = Mockito.mock(Admin.class);
         var config = TopicOperatorConfig.buildFromMap(Map.of(
               TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
-              TopicOperatorConfig.NAMESPACE.key(), "some-namespace",
+              TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
               TopicOperatorConfig.SASL_ENABLED.key(), "true",
               TopicOperatorConfig.SKIP_CLUSTER_CONFIG_REVIEW.key(), "true"
         ));
@@ -523,7 +531,7 @@ class BatchingTopicControllerIT implements TestSeparator {
         new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdmin), metricsHolder,
-            new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(TopicOperatorUtil.mapToCcClientCfg(config))));
+            new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(config.cruiseControlClientConfig())));
 
         verifyNoInteractions(kafkaAdmin);
     }
@@ -531,9 +539,13 @@ class BatchingTopicControllerIT implements TestSeparator {
     @Test
     public void shouldIgnoreWithCruiseControlThrottleConfigInKafka() throws InterruptedException, ExecutionException {
         var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient);
-        var config = Mockito.mock(TopicOperatorConfig.class);
-        Mockito.doReturn(NAMESPACE).when(config).namespace();
-        Mockito.doReturn(true).when(config).cruiseControlEnabled();
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+            TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
+            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.CRUISE_CONTROL_ENABLED.key(), "true",
+            TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "my-cruise-control",
+            TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), "9090"
+        ));
 
         // setup topic in Kafka
         kafkaAdminClient.createTopics(List.of(new NewTopic("my-topic", 2, (short) 1).configs(Map.of(
@@ -560,7 +572,7 @@ class BatchingTopicControllerIT implements TestSeparator {
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdminClientSpy), metricsHolder,
-            new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(TopicOperatorUtil.mapToCcClientCfg(config))));
+            new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(config.cruiseControlClientConfig())));
         controller.onUpdate(List.of(new ReconcilableTopic(
             new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
@@ -574,9 +586,13 @@ class BatchingTopicControllerIT implements TestSeparator {
     @Test
     public void shouldReconcileAndWarnWithThrottleConfigInKube() throws InterruptedException, ExecutionException {
         var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient);
-        var config = Mockito.mock(TopicOperatorConfig.class);
-        Mockito.doReturn(NAMESPACE).when(config).namespace();
-        Mockito.doReturn(true).when(config).cruiseControlEnabled();
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+            TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
+            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.CRUISE_CONTROL_ENABLED.key(), "true",
+            TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "my-cruise-control",
+            TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), "9090"
+        ));
 
         // setup topic in Kafka
         kafkaAdminClient.createTopics(List.of(new NewTopic("my-topic", 2, (short) 1).configs(Map.of(
@@ -606,7 +622,7 @@ class BatchingTopicControllerIT implements TestSeparator {
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdminClientSpy), metricsHolder,
-            new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(TopicOperatorUtil.mapToCcClientCfg(config))));
+            new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(config.cruiseControlClientConfig())));
         controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         Mockito.verify(kafkaAdminClientSpy, Mockito.times(1)).incrementalAlterConfigs(any());
@@ -652,9 +668,11 @@ class BatchingTopicControllerIT implements TestSeparator {
     @ValueSource(strings = { "min.insync.replicas, compression.type" })
     public void shouldIgnoreAndWarnWithAlterableConfigOnCreation(String alterableConfig) throws InterruptedException {
         var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient);
-        var config = Mockito.mock(TopicOperatorConfig.class);
-        Mockito.doReturn(NAMESPACE).when(config).namespace();
-        Mockito.doReturn(alterableConfig).when(config).alterableTopicConfig();
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+            TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
+            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.ALTERABLE_TOPIC_CONFIG.key(), alterableConfig
+        ));
 
         // setup topic in Kube
         var testTopic = Crds.topicOperation(kubernetesClient).resource(
@@ -679,7 +697,7 @@ class BatchingTopicControllerIT implements TestSeparator {
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdminClientSpy), metricsHolder,
-            new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(TopicOperatorUtil.mapToCcClientCfg(config))));
+            new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(config.cruiseControlClientConfig())));
         controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         Mockito.verify(kafkaAdminClientSpy, Mockito.never()).incrementalAlterConfigs(any());
@@ -703,9 +721,11 @@ class BatchingTopicControllerIT implements TestSeparator {
     @ValueSource(strings = { "compression.type, max.message.bytes, message.timestamp.difference.max.ms, message.timestamp.type, retention.bytes, retention.ms" })
     public void shouldReconcileWithAlterableConfigOnUpdate(String alterableConfig) throws InterruptedException, ExecutionException {
         var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient);
-        var config = Mockito.mock(TopicOperatorConfig.class);
-        Mockito.doReturn(NAMESPACE).when(config).namespace();
-        Mockito.doReturn(alterableConfig).when(config).alterableTopicConfig();
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+            TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
+            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.ALTERABLE_TOPIC_CONFIG.key(), alterableConfig
+        ));
 
         // setup topic in Kafka
         kafkaAdminClient.createTopics(List.of(new NewTopic("my-topic", 2, (short) 1).configs(Map.of(
@@ -735,7 +755,7 @@ class BatchingTopicControllerIT implements TestSeparator {
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdminClientSpy), metricsHolder,
-            new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(TopicOperatorUtil.mapToCcClientCfg(config))));
+            new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(config.cruiseControlClientConfig())));
         controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         Mockito.verify(kafkaAdminClientSpy, Mockito.times(1)).incrementalAlterConfigs(any());
@@ -781,9 +801,11 @@ class BatchingTopicControllerIT implements TestSeparator {
     @ValueSource(strings = { "ALL", "" })
     public void shouldReconcileWithAllOrEmptyAlterableConfig(String alterableConfig) throws InterruptedException, ExecutionException {
         var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient);
-        var config = Mockito.mock(TopicOperatorConfig.class);
-        Mockito.doReturn(NAMESPACE).when(config).namespace();
-        Mockito.doReturn(alterableConfig).when(config).alterableTopicConfig();
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+            TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
+            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.ALTERABLE_TOPIC_CONFIG.key(), alterableConfig
+        ));
 
         // setup topic in Kafka
         kafkaAdminClient.createTopics(List.of(new NewTopic("my-topic", 2, (short) 1).configs(Map.of(
@@ -812,7 +834,7 @@ class BatchingTopicControllerIT implements TestSeparator {
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdminClientSpy), metricsHolder,
-            new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(TopicOperatorUtil.mapToCcClientCfg(config))));
+            new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(config.cruiseControlClientConfig())));
         controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         Mockito.verify(kafkaAdminClientSpy, Mockito.times(1)).incrementalAlterConfigs(any());
@@ -826,9 +848,11 @@ class BatchingTopicControllerIT implements TestSeparator {
     @ValueSource(strings = { "NONE" })
     public void shouldIgnoreAndWarnWithNoneAlterableConfig(String alterableConfig) throws InterruptedException, ExecutionException {
         var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient);
-        var config = Mockito.mock(TopicOperatorConfig.class);
-        Mockito.doReturn(NAMESPACE).when(config).namespace();
-        Mockito.doReturn(alterableConfig).when(config).alterableTopicConfig();
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+            TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
+            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.ALTERABLE_TOPIC_CONFIG.key(), alterableConfig
+        ));
 
         // setup topic in Kafka
         kafkaAdminClient.createTopics(List.of(new NewTopic("my-topic", 2, (short) 1).configs(Map.of(
@@ -857,7 +881,7 @@ class BatchingTopicControllerIT implements TestSeparator {
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdminClientSpy), metricsHolder,
-            new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(TopicOperatorUtil.mapToCcClientCfg(config))));
+            new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(config.cruiseControlClientConfig())));
         controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         Mockito.verify(kafkaAdminClientSpy, Mockito.never()).incrementalAlterConfigs(any());
@@ -881,9 +905,11 @@ class BatchingTopicControllerIT implements TestSeparator {
     @ValueSource(strings = { "invalid", "compression.type; cleanup.policy" })
     public void shouldIgnoreAndWarnWithInvalidAlterableConfig(String alterableConfig) throws InterruptedException, ExecutionException {
         var kafkaAdminClientSpy = Mockito.spy(kafkaAdminClient);
-        var config = Mockito.mock(TopicOperatorConfig.class);
-        Mockito.doReturn(NAMESPACE).when(config).namespace();
-        Mockito.doReturn(alterableConfig).when(config).alterableTopicConfig();
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+            TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
+            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.ALTERABLE_TOPIC_CONFIG.key(), alterableConfig
+        ));
 
         // setup topic in Kafka
         kafkaAdminClient.createTopics(List.of(new NewTopic("my-topic", 2, (short) 1).configs(Map.of(
@@ -912,7 +938,7 @@ class BatchingTopicControllerIT implements TestSeparator {
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdminClientSpy), metricsHolder,
-            new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(TopicOperatorUtil.mapToCcClientCfg(config))));
+            new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(config.cruiseControlClientConfig())));
         controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         Mockito.verify(kafkaAdminClientSpy, Mockito.never()).incrementalAlterConfigs(any());
