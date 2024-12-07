@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridge;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.kafka.Kafka;
-import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
@@ -133,7 +132,6 @@ public class TestLogCollector {
      *
      * @return  {@link LogCollector} configured with default configuration for the tests
      */
-    @SuppressWarnings("deprecation") // Kafka Mirror Maker is deprecated
     private LogCollector defaultLogCollector() {
         List<String> resources = new ArrayList<>(List.of(
             TestConstants.SECRET.toLowerCase(Locale.ROOT),
@@ -144,7 +142,6 @@ public class TestLogCollector {
             KafkaConnect.RESOURCE_SINGULAR,
             KafkaConnector.RESOURCE_SINGULAR,
             KafkaBridge.RESOURCE_SINGULAR,
-            KafkaMirrorMaker.RESOURCE_SINGULAR,
             KafkaMirrorMaker2.RESOURCE_SINGULAR,
             KafkaRebalance.RESOURCE_SINGULAR,
             KafkaTopic.RESOURCE_SINGULAR,

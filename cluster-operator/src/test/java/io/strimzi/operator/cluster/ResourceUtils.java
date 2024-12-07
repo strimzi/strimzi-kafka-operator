@@ -32,10 +32,6 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterSpec;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
-import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMaker;
-import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerBuilder;
-import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerConsumerSpec;
-import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerProducerSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.zookeeper.ZookeeperClusterSpec;
@@ -268,57 +264,6 @@ public class ResourceUtils {
                     .withNewHttp(8080)
                 .endSpec()
                 .build();
-    }
-
-    /**
-     * Create an empty Kafka MirrorMaker custom resource
-     */
-    @SuppressWarnings("deprecation")
-    public static KafkaMirrorMaker createEmptyKafkaMirrorMaker(String namespace, String name) {
-        return new KafkaMirrorMakerBuilder()
-                .withMetadata(new ObjectMetaBuilder()
-                        .withName(name)
-                        .withNamespace(namespace)
-                        .withLabels(Map.of(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
-                                "my-user-label", "cromulent"))
-                        .build())
-                .withNewSpec()
-                .endSpec()
-                .build();
-    }
-
-    @SuppressWarnings("deprecation")
-    public static KafkaMirrorMaker createKafkaMirrorMaker(String namespace, String name, String image, KafkaMirrorMakerProducerSpec producer,
-                                                          KafkaMirrorMakerConsumerSpec consumer, String include) {
-        return createKafkaMirrorMaker(namespace, name, image, null, producer, consumer, include);
-    }
-
-    @SuppressWarnings("deprecation")
-    public static KafkaMirrorMaker createKafkaMirrorMaker(String namespace, String name, String image, Integer replicas,
-                                                          KafkaMirrorMakerProducerSpec producer, KafkaMirrorMakerConsumerSpec consumer,
-                                                          String include) {
-
-        KafkaMirrorMakerBuilder builder = new KafkaMirrorMakerBuilder()
-                .withMetadata(new ObjectMetaBuilder()
-                        .withName(name)
-                        .withNamespace(namespace)
-                        .withLabels(Map.of(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
-                                "my-user-label", "cromulent"))
-                        .build())
-                .withNewSpec()
-                    .withImage(image)
-                    .withProducer(producer)
-                    .withConsumer(consumer)
-                    .withInclude(include)
-                .endSpec();
-
-        if (replicas != null) {
-            builder.editOrNewSpec()
-                        .withReplicas(replicas)
-                    .endSpec();
-        }
-
-        return builder.build();
     }
 
     public static KafkaBridge createKafkaBridge(String namespace, String name, String image, int replicas, String bootstrapServers, KafkaBridgeProducerSpec producer, KafkaBridgeConsumerSpec consumer, KafkaBridgeHttpConfig http, boolean enableMetrics) {
@@ -602,7 +547,6 @@ public class ResourceUtils {
                 mock(IngressOperator.class),
                 mock(BuildConfigOperator.class),
                 mock(BuildOperator.class),
-                mock(CrdOperator.class),
                 mock(CrdOperator.class),
                 mock(CrdOperator.class),
                 mock(CrdOperator.class),

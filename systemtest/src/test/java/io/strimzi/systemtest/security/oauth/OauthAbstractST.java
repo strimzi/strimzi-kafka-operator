@@ -49,7 +49,6 @@ public class OauthAbstractST extends AbstractST {
     protected static final String OAUTH_CONSUMER_NAME = "oauth-consumer";
 
     protected static final String CONNECT_OAUTH_SECRET = "my-connect-oauth";
-    protected static final String MIRROR_MAKER_OAUTH_SECRET = "my-mirror-maker-oauth";
     protected static final String MIRROR_MAKER_2_OAUTH_SECRET = "my-mirror-maker-2-oauth";
     protected static final String BRIDGE_OAUTH_SECRET = "my-bridge-oauth";
     protected static final String OAUTH_KAFKA_BROKER_SECRET = "kafka-broker-secret";
@@ -62,7 +61,6 @@ public class OauthAbstractST extends AbstractST {
 
     protected static final String OAUTH_BRIDGE_CLIENT_ID = "kafka-bridge";
     protected static final String OAUTH_CONNECT_CLIENT_ID = "kafka-connect";
-    protected static final String OAUTH_MM_CLIENT_ID = "kafka-mirror-maker";
     protected static final String OAUTH_MM2_CLIENT_ID = "kafka-mirror-maker-2";
 
     // broker oauth configuration
@@ -148,7 +146,6 @@ public class OauthAbstractST extends AbstractST {
         SecretUtils.createSecret(namespace, OAUTH_TEAM_B_SECRET, OAUTH_KEY, "team-b-client-secret");
         SecretUtils.createSecret(namespace, OAUTH_KAFKA_BROKER_SECRET, OAUTH_KEY, "kafka-broker-secret");
         SecretUtils.createSecret(namespace, CONNECT_OAUTH_SECRET, OAUTH_KEY, "kafka-connect-secret");
-        SecretUtils.createSecret(namespace, MIRROR_MAKER_OAUTH_SECRET, OAUTH_KEY, "kafka-mirror-maker-secret");
         SecretUtils.createSecret(namespace, MIRROR_MAKER_2_OAUTH_SECRET, OAUTH_KEY, "kafka-mirror-maker-2-secret");
         SecretUtils.createSecret(namespace, BRIDGE_OAUTH_SECRET, OAUTH_KEY, "kafka-bridge-secret");
         SecretUtils.createSecret(namespace, OAUTH_CLIENT_AUDIENCE_SECRET, OAUTH_KEY, "kafka-audience-secret");

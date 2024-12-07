@@ -148,7 +148,7 @@ class HttpBridgeTlsST extends AbstractST {
         // Create weird named user with . and more than 64 chars -> SCRAM-SHA
         final String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasd.asdasidioiqweioqiweooioqieioqieoqieooi";
 
-        // Initialize PasswordSecret to set this as PasswordSecret in MirrorMaker spec
+        // Initialize PasswordSecret to set this as PasswordSecret in Bridge spec
         final PasswordSecretSource passwordSecret = new PasswordSecretSource();
         passwordSecret.setSecretName(weirdUserName);
         passwordSecret.setPassword("password");

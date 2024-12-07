@@ -33,7 +33,6 @@ public class StructuralCrdIT extends AbstractCrdIT {
             "kafkaconnects.kafka.strimzi.io", "041-Crd-kafkaconnect.yaml",
             "kafkatopics.kafka.strimzi.io", "043-Crd-kafkatopic.yaml",
             "kafkausers.kafka.strimzi.io", "044-Crd-kafkauser.yaml",
-            "kafkamirrormakers.kafka.strimzi.io", "045-Crd-kafkamirrormaker.yaml",
             "kafkabridges.kafka.strimzi.io", "046-Crd-kafkabridge.yaml",
             "kafkaconnectors.kafka.strimzi.io", "047-Crd-kafkaconnector.yaml",
             "kafkamirrormaker2s.kafka.strimzi.io", "048-Crd-kafkamirrormaker2.yaml",

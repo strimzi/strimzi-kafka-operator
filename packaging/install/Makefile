@@ -13,7 +13,6 @@ crd_install:
 	$(CP) ./cluster-operator/042-Crd-strimzipodset.yaml ../helm-charts/helm3/strimzi-kafka-operator/crds/042-Crd-strimzipodset.yaml
 	$(CP) ./cluster-operator/043-Crd-kafkatopic.yaml ../helm-charts/helm3/strimzi-kafka-operator/crds/043-Crd-kafkatopic.yaml
 	$(CP) ./cluster-operator/044-Crd-kafkauser.yaml ../helm-charts/helm3/strimzi-kafka-operator/crds/044-Crd-kafkauser.yaml
-	$(CP) ./cluster-operator/045-Crd-kafkamirrormaker.yaml ../helm-charts/helm3/strimzi-kafka-operator/crds/045-Crd-kafkamirrormaker.yaml
 	$(CP) ./cluster-operator/046-Crd-kafkabridge.yaml ../helm-charts/helm3/strimzi-kafka-operator/crds/046-Crd-kafkabridge.yaml
 	$(CP) ./cluster-operator/047-Crd-kafkaconnector.yaml ../helm-charts/helm3/strimzi-kafka-operator/crds/047-Crd-kafkaconnector.yaml
 	$(CP) ./cluster-operator/048-Crd-kafkamirrormaker2.yaml ../helm-charts/helm3/strimzi-kafka-operator/crds/048-Crd-kafkamirrormaker2.yaml
@@ -24,7 +23,6 @@ crd_install:
 	yq eval -i '.metadata.labels.component="stirmzipodsets.core.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/042-Crd-strimzipodset.yaml
 	yq eval -i '.metadata.labels.component="kafkatopics.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/043-Crd-kafkatopic.yaml
 	yq eval -i '.metadata.labels.component="kafkausers.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/044-Crd-kafkauser.yaml
-	yq eval -i '.metadata.labels.component="kafkamirrormakers.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/045-Crd-kafkamirrormaker.yaml
 	yq eval -i '.metadata.labels.component="kafkabridges.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/046-Crd-kafkabridge.yaml
 	yq eval -i '.metadata.labels.component="kafkaconnectors.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/047-Crd-kafkaconnector.yaml
 	yq eval -i '.metadata.labels.component="kafkamirrormaker2.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/048-Crd-kafkamirrormaker2.yaml

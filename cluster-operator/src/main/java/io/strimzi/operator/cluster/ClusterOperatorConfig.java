@@ -56,11 +56,6 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_KAFKA_CONNECT_IMAGES = "STRIMZI_KAFKA_CONNECT_IMAGES";
 
     /**
-     * Configures the Kafka Mirror Maker container images
-     */
-    public static final String STRIMZI_KAFKA_MIRROR_MAKER_IMAGES = "STRIMZI_KAFKA_MIRROR_MAKER_IMAGES";
-
-    /**
      * Configures the Kafka Mirror Maker 2 container images
      */
     public static final String STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES = "STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES";
@@ -288,7 +283,7 @@ public class ClusterOperatorConfig {
 
     public static ClusterOperatorConfig buildFromMap(Map<String, String> map) {
         warningsForRemovedEndVars(map);
-        KafkaVersion.Lookup lookup = parseKafkaVersions(map.get(STRIMZI_KAFKA_IMAGES), map.get(STRIMZI_KAFKA_CONNECT_IMAGES), map.get(STRIMZI_KAFKA_MIRROR_MAKER_IMAGES), map.get(STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES));
+        KafkaVersion.Lookup lookup = parseKafkaVersions(map.get(STRIMZI_KAFKA_IMAGES), map.get(STRIMZI_KAFKA_CONNECT_IMAGES), map.get(STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES));
         return buildFromMap(map, lookup);
 
     }
@@ -342,11 +337,10 @@ public class ClusterOperatorConfig {
         return (T) this.map.get(value.key());
     }
 
-    private static KafkaVersion.Lookup parseKafkaVersions(String kafkaImages, String connectImages, String mirrorMakerImages, String mirrorMaker2Images) {
+    private static KafkaVersion.Lookup parseKafkaVersions(String kafkaImages, String connectImages, String mirrorMaker2Images) {
         KafkaVersion.Lookup lookup = new KafkaVersion.Lookup(
                 Util.parseMap(kafkaImages),
                 Util.parseMap(connectImages),
-                Util.parseMap(mirrorMakerImages),
                 Util.parseMap(mirrorMaker2Images));
 
         String image = "";
@@ -360,10 +354,6 @@ public class ClusterOperatorConfig {
             image = "Kafka Connect";
             envVar = STRIMZI_KAFKA_CONNECT_IMAGES;
             lookup.validateKafkaConnectImages(lookup.supportedVersions());
-
-            image = "Kafka Mirror Maker";
-            envVar = STRIMZI_KAFKA_MIRROR_MAKER_IMAGES;
-            lookup.validateKafkaMirrorMakerImages(lookup.supportedVersions());
 
             image = "Kafka Mirror Maker 2";
             envVar = STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES;

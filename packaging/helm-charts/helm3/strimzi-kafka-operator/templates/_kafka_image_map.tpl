@@ -19,11 +19,6 @@
                 3.8.0={{ template "strimzi.image" (merge . (dict "key" "kafkaConnect" "tagSuffix" "-kafka-3.8.0")) }}
                 3.8.1={{ template "strimzi.image" (merge . (dict "key" "kafkaConnect" "tagSuffix" "-kafka-3.8.1")) }}
                 3.9.0={{ template "strimzi.image" (merge . (dict "key" "kafkaConnect" "tagSuffix" "-kafka-3.9.0")) }}
-            - name: STRIMZI_KAFKA_MIRROR_MAKER_IMAGES
-              value: |                 
-                3.8.0={{ template "strimzi.image" (merge . (dict "key" "kafkaMirrorMaker" "tagSuffix" "-kafka-3.8.0")) }}
-                3.8.1={{ template "strimzi.image" (merge . (dict "key" "kafkaMirrorMaker" "tagSuffix" "-kafka-3.8.1")) }}
-                3.9.0={{ template "strimzi.image" (merge . (dict "key" "kafkaMirrorMaker" "tagSuffix" "-kafka-3.9.0")) }}
             - name: STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES
               value: |                 
                 3.8.0={{ template "strimzi.image" (merge . (dict "key" "kafkaMirrorMaker2" "tagSuffix" "-kafka-3.8.0")) }}

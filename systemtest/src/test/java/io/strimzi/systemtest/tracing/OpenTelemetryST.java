@@ -26,7 +26,6 @@ import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
-import io.strimzi.systemtest.templates.crd.KafkaMirrorMakerTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
@@ -47,7 +46,6 @@ import static io.strimzi.systemtest.TestConstants.KAFKA_TRACING_CLIENT_KEY;
 import static io.strimzi.systemtest.TestTags.BRIDGE;
 import static io.strimzi.systemtest.TestTags.CONNECT;
 import static io.strimzi.systemtest.TestTags.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.TestTags.MIRROR_MAKER;
 import static io.strimzi.systemtest.TestTags.MIRROR_MAKER2;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.TestTags.TRACING;
@@ -57,7 +55,6 @@ import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_KAFKA_BRIDGE
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_KAFKA_CONNECT_SERVICE;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_KAFKA_STREAMS_SERVICE;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_MIRROR_MAKER2_SERVICE;
-import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_MIRROR_MAKER_SERVICE;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_PRODUCER_SERVICE;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_QUERY_SERVICE;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -186,73 +183,6 @@ public class OpenTelemetryST extends AbstractST {
         TracingUtils.verify(testStorage.getNamespaceName(),
             JAEGER_MIRROR_MAKER2_SERVICE, testStorage.getScraperPodName(),
             "To_" + testStorage.getMirroredSourceTopicName(), JAEGER_QUERY_SERVICE);
-    }
-
-    @ParallelNamespaceTest
-    @Tag(MIRROR_MAKER)
-    void testProducerConsumerMirrorMakerService() {
-        final TestStorage testStorage = deployInitialResourcesAndGetTestStorage();
-
-        resourceManager.createResourceWithWait(
-            NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getSourceBrokerPoolName(), testStorage.getSourceClusterName(), 3).build(),
-                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getSourceControllerPoolName(), testStorage.getSourceClusterName(), 1).build()
-            )
-        );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), 1).build());
-
-        resourceManager.createResourceWithWait(
-            NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getTargetBrokerPoolName(), testStorage.getTargetClusterName(), 3).build(),
-                KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getTargetControllerPoolName(), testStorage.getTargetClusterName(), 1).build()
-            )
-        );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), testStorage.getTargetClusterName(), 1).build());
-
-        // Create topic and deploy clients before Mirror Maker to not wait for MM to find the new topics
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getSourceClusterName(), 12, 3).build());
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTargetTopicName(), testStorage.getTargetClusterName(), 12, 3).build());
-
-        LOGGER.info("Setting for Kafka source plain bootstrap: {}", KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()));
-
-        final KafkaTracingClients sourceKafkaTracingClient =
-            new KafkaTracingClientsBuilder(testStorage.getTracingClients())
-                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()))
-                .build();
-
-        resourceManager.createResourceWithWait(sourceKafkaTracingClient.producerWithTracing());
-
-        LOGGER.info("Setting for Kafka target plain bootstrap: {}", KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()));
-
-        KafkaTracingClients targetKafkaTracingClient =  new KafkaTracingClientsBuilder(testStorage.getTracingClients())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()))
-            .build();
-
-        resourceManager.createResourceWithWait(targetKafkaTracingClient.consumerWithTracing());
-
-        resourceManager.createResourceWithWait(KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getSourceClusterName(), testStorage.getTargetClusterName(),
-                ClientUtils.generateRandomConsumerGroup(), 1, false)
-            .editSpec()
-                .withTracing(otelTracing)
-                .withNewTemplate()
-                    .withNewMirrorMakerContainer()
-                        .addNewEnv()
-                            .withName(TracingConstants.OTEL_SERVICE_ENV)
-                            .withValue(JAEGER_MIRROR_MAKER_SERVICE)
-                        .endEnv()
-                        .addNewEnv()
-                            .withName("OTEL_EXPORTER_OTLP_ENDPOINT")
-                            .withValue(JAEGER_COLLECTOR_OTLP_URL)
-                        .endEnv()
-                    .endMirrorMakerContainer()
-                .endTemplate()
-            .endSpec()
-            .build());
-
-        TracingUtils.verify(testStorage.getNamespaceName(), JAEGER_PRODUCER_SERVICE, testStorage.getScraperPodName(), "To_" + testStorage.getTopicName(), JAEGER_QUERY_SERVICE);
-        TracingUtils.verify(testStorage.getNamespaceName(), JAEGER_CONSUMER_SERVICE, testStorage.getScraperPodName(), "From_" + testStorage.getTopicName(), JAEGER_QUERY_SERVICE);
-        TracingUtils.verify(testStorage.getNamespaceName(), JAEGER_MIRROR_MAKER_SERVICE, testStorage.getScraperPodName(), "From_" + testStorage.getTopicName(), JAEGER_QUERY_SERVICE);
-        TracingUtils.verify(testStorage.getNamespaceName(), JAEGER_MIRROR_MAKER_SERVICE, testStorage.getScraperPodName(), "To_" + testStorage.getTopicName(), JAEGER_QUERY_SERVICE);
     }
 
     @ParallelNamespaceTest

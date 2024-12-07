@@ -51,10 +51,6 @@ KafkaAutoRebalanceStatus
 ¦KafkaMirrorMaker2Status
 ¦The Kafka MirrorMaker 2 cluster and internal connectors
 
-¦KafkaMirrorMaker
-¦KafkaMirrorMakerStatus
-¦The Kafka MirrorMaker cluster
-
 ¦KafkaBridge
 ¦KafkaBridgeStatus
 ¦The Kafka Bridge

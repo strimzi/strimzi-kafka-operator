@@ -267,34 +267,6 @@ public class AbstractConfigurationTest {
     }
 
     @ParallelTest
-    public void testKafkaMirrorMakerConsumerHostnameVerification() {
-        Map<String, Object> conf = new HashMap<>();
-        conf.put("compression.type", "zstd"); // valid
-        conf.put("ssl.endpoint.identification.algorithm", ""); // valid
-        conf.put("ssl.keystore.location", "/tmp/my.keystore"); // invalid
-
-        KafkaMirrorMakerConsumerConfiguration configuration = new KafkaMirrorMakerConsumerConfiguration(Reconciliation.DUMMY_RECONCILIATION, conf.entrySet());
-
-        assertThat(configuration.asOrderedProperties().asMap().get("compression.type"), is("zstd"));
-        assertThat(configuration.asOrderedProperties().asMap().get("ssl.keystore.location"), is(nullValue()));
-        assertThat(configuration.asOrderedProperties().asMap().get("ssl.endpoint.identification.algorithm"), is(""));
-    }
-
-    @ParallelTest
-    public void testKafkaMirrorMakerProducerHostnameVerification() {
-        Map<String, Object> conf = new HashMap<>();
-        conf.put("compression.type", "zstd"); // valid
-        conf.put("ssl.endpoint.identification.algorithm", ""); // valid
-        conf.put("ssl.keystore.location", "/tmp/my.keystore"); // invalid
-
-        KafkaMirrorMakerProducerConfiguration configuration = new KafkaMirrorMakerProducerConfiguration(Reconciliation.DUMMY_RECONCILIATION, conf.entrySet());
-
-        assertThat(configuration.asOrderedProperties().asMap().get("compression.type"), is("zstd"));
-        assertThat(configuration.asOrderedProperties().asMap().get("ssl.keystore.location"), is(nullValue()));
-        assertThat(configuration.asOrderedProperties().asMap().get("ssl.endpoint.identification.algorithm"), is(""));
-    }
-
-    @ParallelTest
     public void testSplittingOfPrefixes()   {
         String prefixes = "prefix1.field,prefix2.field , prefix3.field, prefix4.field,, ";
         List<String> prefixList = asList("prefix1.field", "prefix2.field", "prefix3.field", "prefix4.field");

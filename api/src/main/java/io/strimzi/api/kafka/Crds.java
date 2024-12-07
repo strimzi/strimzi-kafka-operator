@@ -22,8 +22,6 @@ import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorList;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaList;
-import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMaker;
-import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerList;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2List;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
@@ -46,7 +44,6 @@ import static java.util.Collections.singletonList;
 /**
  * "Static" information about the CRDs defined in this package
  */
-@SuppressWarnings("deprecation") // Kafka Mirror Maker is deprecated
 public class Crds {
     @SuppressWarnings("unchecked")
     private static final Class<? extends CustomResource>[] CRDS = new Class[] {
@@ -54,7 +51,6 @@ public class Crds {
         KafkaConnect.class,
         KafkaTopic.class,
         KafkaUser.class,
-        KafkaMirrorMaker.class,
         KafkaBridge.class,
         KafkaConnector.class,
         KafkaMirrorMaker2.class,
@@ -107,15 +103,6 @@ public class Crds {
             kind = KafkaUser.RESOURCE_KIND;
             listKind = KafkaUser.RESOURCE_LIST_KIND;
             versions = KafkaUser.VERSIONS;
-            status = new CustomResourceSubresourceStatus();
-        } else if (cls.equals(KafkaMirrorMaker.class)) {
-            scope = KafkaMirrorMaker.SCOPE;
-            plural = KafkaMirrorMaker.RESOURCE_PLURAL;
-            singular = KafkaMirrorMaker.RESOURCE_SINGULAR;
-            group = KafkaMirrorMaker.RESOURCE_GROUP;
-            kind = KafkaMirrorMaker.RESOURCE_KIND;
-            listKind = KafkaMirrorMaker.RESOURCE_LIST_KIND;
-            versions = KafkaMirrorMaker.VERSIONS;
             status = new CustomResourceSubresourceStatus();
         } else if (cls.equals(KafkaBridge.class)) {
             scope = KafkaBridge.SCOPE;
@@ -249,14 +236,6 @@ public class Crds {
 
     public static MixedOperation<KafkaUser, KafkaUserList, Resource<KafkaUser>> kafkaUserOperation(KubernetesClient client) {
         return client.resources(KafkaUser.class, KafkaUserList.class);
-    }
-
-    public static CustomResourceDefinition kafkaMirrorMaker() {
-        return crd(KafkaMirrorMaker.class);
-    }
-
-    public static MixedOperation<KafkaMirrorMaker, KafkaMirrorMakerList, Resource<KafkaMirrorMaker>> mirrorMakerOperation(KubernetesClient client) {
-        return client.resources(KafkaMirrorMaker.class, KafkaMirrorMakerList.class);
     }
 
     public static CustomResourceDefinition kafkaBridge() {

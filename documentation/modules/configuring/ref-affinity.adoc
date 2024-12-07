@@ -13,7 +13,6 @@ Affinity, tolerations and topology spread constraints are configured using the `
 * `Kafka.spec.entityOperator.template.pod`
 * `KafkaConnect.spec.template.pod`
 * `KafkaBridge.spec.template.pod`
-* `KafkaMirrorMaker.spec.template.pod`
 * `KafkaMirrorMaker2.spec.template.pod`
 
 The format of the `affinity`, `tolerations`, and `topologySpreadConstraint` properties follows the Kubernetes specification.

@@ -26,9 +26,9 @@ Enabling tracing in a resource triggers the following events:
 
 * For the Kafka Bridge, a tracer based on the tracing configuration defined in the resource is initialized by the Kafka Bridge itself.
 
-.Tracing in MirrorMaker and MirrorMaker 2
+.Tracing in MirrorMaker 2
 
-For MirrorMaker and MirrorMaker 2, messages are traced from the source cluster to the target cluster. The trace data records messages entering and leaving the MirrorMaker or MirrorMaker 2 component.
+For MirrorMaker 2, messages are traced from the source cluster to the target cluster. The trace data records messages entering and leaving the MirrorMaker 2 component.
 
 .Tracing in Kafka Connect
 
@@ -41,7 +41,7 @@ To have end-to-end tracing, you must configure tracing in your HTTP clients.
 
 .Procedure
 
-Perform these steps for each `KafkaMirrorMaker`, `KafkaMirrorMaker2`, `KafkaConnect`, and `KafkaBridge` resource.
+Perform these steps for each `KafkaMirrorMaker2`, `KafkaConnect`, and `KafkaBridge` resource.
 
 . In the `spec.template` property, configure the tracer service.
 +
@@ -70,27 +70,6 @@ spec:
   tracing:
     type: opentelemetry
   #...
-----
-
-.Example tracing configuration for MirrorMaker using OpenTelemetry
-[source,yaml,subs=attributes+]
-----
-apiVersion: {KafkaMirrorMakerApiVersion}
-kind: KafkaMirrorMaker
-metadata:
-  name: my-mirror-maker
-spec:
-  #...
-  template:
-    mirrorMakerContainer:
-      env:
-        - name: OTEL_SERVICE_NAME
-          value: my-otel-service
-        - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          value: "http://otlp-host:4317"
-  tracing:
-    type: opentelemetry
-#...
 ----
 
 .Example tracing configuration for MirrorMaker 2 using OpenTelemetry
