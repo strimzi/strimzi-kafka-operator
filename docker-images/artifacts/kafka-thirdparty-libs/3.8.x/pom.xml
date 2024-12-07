@@ -24,7 +24,6 @@
         <kafka-mirror-maker-2-extensions.version>1.2.0</kafka-mirror-maker-2-extensions.version>
         <kafka-kubernetes-config-provider.version>1.2.0</kafka-kubernetes-config-provider.version>
         <kafka-env-var-config-provider.version>1.1.0</kafka-env-var-config-provider.version>
-        <jmx-prometheus-javaagent.version>1.0.1</jmx-prometheus-javaagent.version>
         <json-smart.version>2.4.9</json-smart.version>
         <jsonevent-layout.version>1.7</jsonevent-layout.version>
         <opentelemetry.version>1.34.1</opentelemetry.version>
@@ -70,12 +69,6 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- https://mvnrepository.com/artifact/io.prometheus.jmx/jmx_prometheus_javaagent -->
-        <dependency>
-            <groupId>io.prometheus.jmx</groupId>
-            <artifactId>jmx_prometheus_javaagent</artifactId>
-            <version>${jmx-prometheus-javaagent.version}</version>
-        </dependency>
         <!-- https://mvnrepository.com/artifact/net.logstash.log4j/jsonevent-layout -->
         <dependency>
             <groupId>net.logstash.log4j</groupId>
