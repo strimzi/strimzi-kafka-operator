@@ -1286,7 +1286,7 @@ class TopicControllerIT implements TestSeparator {
             false, "", "", "", "", "",
             useFinalizer,
             100, 100, 10, false, new FeatureGates(""),
-            false, false, "", 9090, false, false, "", "", "",
+            false, false, "localhost", 9090, false, false, "", "", "",
             "all", false);
     }
 
@@ -2048,7 +2048,7 @@ class TopicControllerIT implements TestSeparator {
             false, "", "", "", "", "",
             true,
             1, 100, 5_0000, false, new FeatureGates(""),
-            false, false, "", 9090, false, false, "", "", "",
+            false, false, "localhost", 9090, false, false, "", "", "",
             "all", false);
 
         maybeStartOperator(config);

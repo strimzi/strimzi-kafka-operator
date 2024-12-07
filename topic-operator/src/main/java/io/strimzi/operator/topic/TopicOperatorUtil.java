@@ -8,20 +8,13 @@ import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.InvalidResourceException;
-import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.model.Either;
 import io.strimzi.operator.topic.model.Pair;
 import io.strimzi.operator.topic.model.PartitionedByError;
 import io.strimzi.operator.topic.model.ReconcilableTopic;
 import io.strimzi.operator.topic.model.TopicOperatorException;
-import org.apache.kafka.clients.admin.Admin;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -36,45 +29,6 @@ public class TopicOperatorUtil {
     static final int BROKER_DEFAULT = -1;
 
     private TopicOperatorUtil() { }
-
-    /**
-     * Create a new Kafka admin client instance.
-     *
-     * @param config Topic Operator configuration.
-     * @return Kafka admin client.
-     */
-    public static Admin createKafkaAdminClient(TopicOperatorConfig config) {
-        return Admin.create(config.adminClientConfig());
-    }
-
-    /**
-     * Create a new Cruise Control client instance.
-     *
-     * @param config Topic Operator configuration.
-     * @return Cruise Control client.
-     */
-    public static CruiseControlClient createCruiseControlClient(TopicOperatorConfig config) {
-        return CruiseControlClient.create(
-            config.cruiseControlHostname(),
-            config.cruiseControlPort(),
-            config.cruiseControlRackEnabled(),
-            config.cruiseControlSslEnabled(),
-            config.cruiseControlSslEnabled() ? getFileContent(config.cruiseControlCrtFilePath()) : null,
-            config.cruiseControlAuthEnabled(),
-            config.cruiseControlAuthEnabled() 
-                ? new String(getFileContent(config.cruiseControlApiUserPath()), StandardCharsets.UTF_8) : null,
-            config.cruiseControlAuthEnabled() 
-                ? new String(getFileContent(config.cruiseControlApiPassPath()), StandardCharsets.UTF_8) : null
-        );
-    }
-
-    private static byte[] getFileContent(String filePath) {
-        try {
-            return Files.readAllBytes(Path.of(filePath));
-        } catch (IOException ioe) {
-            throw new UncheckedIOException(String.format("File not found: %s", filePath), ioe);
-        }
-    }
 
     /**
      * Get the topic name from a {@link KafkaTopic} resource.
