@@ -68,24 +68,103 @@ public interface CruiseControlClient {
 
     /**
      * Client configuration.
-     * 
-     * @param serverHostname Server hostname.
-     * @param serverPort Server port.
-     * @param rackEnabled Whether rack awareness is enabled.
-     * @param sslEnabled Whether SSL is enabled.
-     * @param sslCertificate SSL certificate.
-     * @param authEnabled Whether authentication is enabled.
-     * @param authUsername Authentication username.
-     * @param authPassword Authentication password.
      */
-    record Config(String serverHostname,
-                  int serverPort,
-                  boolean rackEnabled,
-                  boolean sslEnabled,
-                  byte[] sslCertificate,
-                  boolean authEnabled,
-                  String authUsername,
-                  String authPassword) { }
+    class Config {
+        private String serverHostname;
+        private int serverPort;
+        private boolean rackEnabled;
+        private boolean sslEnabled;
+        private byte[] sslCertificate;
+        private boolean authEnabled;
+        private String authUsername;
+        private String authPassword;
+        
+        /**
+         * Create new configuration.
+         *
+         * @param serverHostname Server hostname.
+         * @param serverPort Server port.
+         * @param rackEnabled Whether rack awareness is enabled.
+         * @param sslEnabled Whether SSL is enabled.
+         * @param sslCertificate SSL certificate.
+         * @param authEnabled Whether authentication is enabled.
+         * @param authUsername Authentication username.
+         * @param authPassword Authentication password.
+         */
+        public Config(String serverHostname,
+                      int serverPort,
+                      boolean rackEnabled,
+                      boolean sslEnabled,
+                      byte[] sslCertificate,
+                      boolean authEnabled,
+                      String authUsername,
+                      String authPassword) {
+            if (serverHostname == null || serverHostname.isBlank()) {
+                throw new IllegalArgumentException("Hostname is not set");
+            }
+            if (serverPort <= 0) {
+                throw new IllegalArgumentException("Port number is invalid");
+            }
+            if (sslEnabled && (sslCertificate == null || sslCertificate.length == 0)) {
+                throw new IllegalArgumentException("SSL certificate is not set");
+            }
+            if (authEnabled && (authUsername == null || authUsername.isBlank())) {
+                throw new IllegalArgumentException("Authentication username is not set");
+            }
+            if (authEnabled && (authPassword == null || authPassword.isBlank())) {
+                throw new IllegalArgumentException("Authentication password is not set");
+            }
+            
+            this.serverHostname = serverHostname;
+            this.serverPort = serverPort;
+            this.rackEnabled = rackEnabled;
+            this.sslEnabled = sslEnabled;
+            this.sslCertificate = sslCertificate;
+            this.authEnabled = authEnabled;
+            this.authUsername = authUsername;
+            this.authPassword = authPassword;
+        }
+
+        /** @return Server hostname. */
+        public String serverHostname() {
+            return serverHostname;
+        }
+
+        /** @return Server port. */
+        public int serverPort() {
+            return serverPort;
+        }
+
+        /** @return Rack enabled. */
+        public boolean rackEnabled() {
+            return rackEnabled;
+        }
+
+        /** @return SSL enabled. */
+        public boolean sslEnabled() {
+            return sslEnabled;
+        }
+
+        /** @return SSL certificate. */
+        public byte[] sslCertificate() {
+            return sslCertificate;
+        }
+
+        /** @return Authentication enabled. */
+        public boolean authEnabled() {
+            return authEnabled;
+        }
+
+        /** @return Authentication username. */
+        public String authUsername() {
+            return authUsername;
+        }
+
+        /** @return Authentication password. */
+        public String authPassword() {
+            return authPassword;
+        }
+    }
     
     /**
      * Topic names grouped by replication factor value.

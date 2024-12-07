@@ -17,7 +17,6 @@ import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.topic.TopicOperatorConfig;
 import io.strimzi.operator.topic.TopicOperatorTestUtil;
-import io.strimzi.operator.topic.TopicOperatorUtil;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsProvider;
 import io.strimzi.operator.topic.model.ReconcilableTopic;
@@ -44,7 +43,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.number.OrderingComparison.greaterThan;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CruiseControlHandlerTest {
     private static final String NAMESPACE = TopicOperatorTestUtil.namespaceName(CruiseControlHandlerTest.class);
@@ -92,9 +90,9 @@ public class CruiseControlHandlerTest {
     }
 
     @ParameterizedTest
-    @MethodSource("validConfigs")
-    public void shouldSucceedWithValidConfig(TopicOperatorConfig config) {
-        var handler = new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(TopicOperatorUtil.mapToCcClientCfg(config)));
+    @MethodSource("operatorConfigs")
+    public void replicasChangeShouldShouldCompleteWithValidConfig(TopicOperatorConfig config) {
+        var handler = new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(config.cruiseControlClientConfig()));
 
         server.expectTopicConfigSuccessResponse(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
@@ -106,56 +104,6 @@ public class CruiseControlHandlerTest {
         var completedAndFailed = handler.requestOngoingChanges(ongoing);
         assertCompleted(ongoing, completedAndFailed);
     }
-    
-    @Test
-    public void shouldFailWithSslEnabledAndMissingCrtFile() {
-        var config = TopicOperatorConfig.buildFromMap(Map.ofEntries(
-            entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-            entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
-            entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
-            entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
-            entry(TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true"),
-            entry(TopicOperatorConfig.CRUISE_CONTROL_CRT_FILE_PATH.key(), "/invalid/ca.crt")
-        ));
-
-        RuntimeException thrown = assertThrows(RuntimeException.class, () -> 
-            new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(TopicOperatorUtil.mapToCcClientCfg(config))));
-        assertThat(thrown.getMessage(), is("File not found: /invalid/ca.crt"));
-    }
-
-    @Test
-    public void shouldFailWithAuthEnabledAndUsernameFileNotFound() {
-        var config = TopicOperatorConfig.buildFromMap(Map.ofEntries(
-            entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-            entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
-            entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
-            entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
-            entry(TopicOperatorConfig.CRUISE_CONTROL_AUTH_ENABLED.key(), "true"),
-            entry(TopicOperatorConfig.CRUISE_CONTROL_API_USER_PATH.key(), "/invalid/username"),
-            entry(TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
-        ));
-
-        RuntimeException thrown = assertThrows(RuntimeException.class, () -> 
-            new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(TopicOperatorUtil.mapToCcClientCfg(config))));
-        assertThat(thrown.getMessage(), is("File not found: /invalid/username"));
-    }
-
-    @Test
-    public void shouldFailWithAuthEnabledAndPasswordFileNotFound() {
-        var config = TopicOperatorConfig.buildFromMap(Map.ofEntries(
-            entry(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:9092"),
-            entry(TopicOperatorConfig.NAMESPACE.key(), NAMESPACE),
-            entry(TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "localhost"),
-            entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort)),
-            entry(TopicOperatorConfig.CRUISE_CONTROL_AUTH_ENABLED.key(), "true"),
-            entry(TopicOperatorConfig.CRUISE_CONTROL_API_USER_PATH.key(), apiUserFile.getAbsolutePath()),
-            entry(TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), "/invalid/password")
-        ));
-
-        RuntimeException thrown = assertThrows(RuntimeException.class, () -> 
-            new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(TopicOperatorUtil.mapToCcClientCfg(config))));
-        assertThat(thrown.getMessage(), is("File not found: /invalid/password"));
-    }
 
     @Test
     public void replicasChangeShouldFailWhenCruiseControlEndpointNotReachable() {
@@ -166,7 +114,7 @@ public class CruiseControlHandlerTest {
             entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort))
         ));
         
-        var handler = new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(TopicOperatorUtil.mapToCcClientCfg(config)));
+        var handler = new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(config.cruiseControlClientConfig()));
         
         var pending = buildPendingReconcilableTopics();
         var pendingAndOngoing = handler.requestPendingChanges(pending);
@@ -191,7 +139,7 @@ public class CruiseControlHandlerTest {
             entry(TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
         ));
 
-        var handler = new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(TopicOperatorUtil.mapToCcClientCfg(config)));
+        var handler = new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(config.cruiseControlClientConfig()));
 
         server.expectTopicConfigErrorResponse(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
@@ -219,7 +167,7 @@ public class CruiseControlHandlerTest {
             entry(TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
         ));
 
-        var handler = new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(TopicOperatorUtil.mapToCcClientCfg(config)));
+        var handler = new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(config.cruiseControlClientConfig()));
 
         server.expectTopicConfigRequestTimeout(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
@@ -246,7 +194,7 @@ public class CruiseControlHandlerTest {
             entry(TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
         ));
 
-        var handler = new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(TopicOperatorUtil.mapToCcClientCfg(config)));
+        var handler = new CruiseControlHandler(config, metricsHolder, CruiseControlClient.create(config.cruiseControlClientConfig()));
 
         server.expectTopicConfigRequestUnauthorized(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
@@ -344,7 +292,7 @@ public class CruiseControlHandlerTest {
             kafkaTopic, topicName));
     }
 
-    private static List<TopicOperatorConfig> validConfigs() {
+    private static List<TopicOperatorConfig> operatorConfigs() {
         return Arrays.asList(
             // encryption and authentication disabled
             TopicOperatorConfig.buildFromMap(Map.ofEntries(
