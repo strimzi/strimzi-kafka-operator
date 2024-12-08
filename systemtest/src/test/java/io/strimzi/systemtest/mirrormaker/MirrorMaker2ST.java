@@ -654,69 +654,6 @@ class MirrorMaker2ST extends AbstractST {
         }
     }
 
-    /*
-     * This test is using the Strimzi Identity Replication policy. This is needed for backwards compatibility for users
-     * who might still have it configured.
-     *
-     * This ST should be deleted once we drop the Strimzi policy completely.
-     */
-    @ParallelNamespaceTest
-    void testStrimziIdentityReplicationPolicy() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-
-        resourceManager.createResourceWithWait(
-            NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getSourceBrokerPoolName(), testStorage.getSourceClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getSourceControllerPoolName(), testStorage.getSourceClusterName(), 1).build(),
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetBrokerPoolName(), testStorage.getTargetClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetControllerPoolName(), testStorage.getTargetClusterName(), 1).build()
-            )
-        );
-
-        resourceManager.createResourceWithWait(
-            KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), 1, 1).build(),
-            KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), testStorage.getTargetClusterName(), 1, 1).build(),
-            ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
-        );
-
-        final String scraperPodName =  kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
-
-        // Create topic
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getSourceClusterName(), 3).build());
-
-        resourceManager.createResourceWithWait(KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage, 1, false)
-            .editSpec()
-                .editMirror(0)
-                    .editSourceConnector()
-                        .addToConfig("replication.policy.class", "io.strimzi.kafka.connect.mirror.IdentityReplicationPolicy")
-                        .addToConfig("refresh.topics.interval.seconds", "1")
-                    .endSourceConnector()
-                .endMirror()
-            .endSpec()
-            .build());
-
-        LOGGER.info("Sending and receiving messages using Topic: {}", testStorage.getSourceClusterName());
-        final KafkaClients sourceClients = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()));
-        resourceManager.createResourceWithWait(sourceClients.producerStrimzi(), sourceClients.consumerStrimzi());
-        ClientUtils.waitForInstantClientSuccess(testStorage);
-
-        LOGGER.info("Consuming mirrored messages using Topic: {}", testStorage.getTargetClusterName());
-        final KafkaClients targetClients = ClientUtils.getInstantPlainClients(testStorage, KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()));
-        resourceManager.createResourceWithWait(targetClients.consumerStrimzi());
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
-
-        if (!Environment.isKRaftModeEnabled()) {
-            LOGGER.info("Checking if the mirrored Topic name is same as the original one");
-
-            List<String> kafkaTopics = KafkaCmdClient.listTopicsUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()));
-            assertNotNull(kafkaTopics.stream().filter(kafkaTopic -> kafkaTopic.equals(testStorage.getTopicName())).findAny());
-
-            String kafkaTopicSpec = KafkaCmdClient.describeTopicUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()), testStorage.getTopicName());
-            assertThat(kafkaTopicSpec, containsString("Topic: " + testStorage.getTopicName()));
-            assertThat(kafkaTopicSpec, containsString("PartitionCount: 3"));
-        }
-    }
-
     @ParallelNamespaceTest
     void testRestoreOffsetsInConsumerGroup() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
