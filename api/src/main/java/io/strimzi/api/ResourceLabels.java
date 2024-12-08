@@ -20,7 +20,7 @@ public class ResourceLabels {
      * <ul>
      *   <li>Kafka</li>
      *   <li>KafkaConnect</li>
-     *   <li>KafkaMirrorMaker</li>
+     *   <li>KafkaMirrorMaker2</li>
      *   <li>KafkaBridge</li>
      *   <li>KafkaUser</li>
      *   <li>KafkaTopic</li>

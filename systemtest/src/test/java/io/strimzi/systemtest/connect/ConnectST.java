@@ -908,7 +908,7 @@ class ConnectST extends AbstractST {
                 is(not("test.value"))
         );
 
-        LOGGER.info("Updating values in MirrorMaker container");
+        LOGGER.info("Updating values in Connect container");
 
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kc -> {
             kc.getSpec().getTemplate().getConnectContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));

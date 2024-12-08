@@ -122,9 +122,6 @@ tests:
           value: STRIMZI_KAFKA_CONNECT_IMAGES
       - equal:
           path: spec.template.spec.containers[0].env[7].name
-          value: STRIMZI_KAFKA_MIRROR_MAKER_IMAGES
-      - equal:
-          path: spec.template.spec.containers[0].env[8].name
           value: STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES
       - matchRegex:
           path: spec.template.spec.containers[0].env[3].value
@@ -140,9 +137,6 @@ tests:
           pattern: '[0-9]+\.[0-9]+\.[0-9]+=quay.io/strimzi/kafka:(latest|[0-9]+\.[0-9]+\.[0-9]+)-kafka-[0-9]+\.[0-9]+\.[0-9]+'
       - matchRegex:
           path: spec.template.spec.containers[0].env[7].value
-          pattern: '[0-9]+\.[0-9]+\.[0-9]+=quay.io/strimzi/kafka:(latest|[0-9]+\.[0-9]+\.[0-9]+)-kafka-[0-9]+\.[0-9]+\.[0-9]+'
-      - matchRegex:
-          path: spec.template.spec.containers[0].env[8].value
           pattern: '[0-9]+\.[0-9]+\.[0-9]+=quay.io/strimzi/kafka:(latest|[0-9]+\.[0-9]+\.[0-9]+)-kafka-[0-9]+\.[0-9]+\.[0-9]+'
 
   - it: should construct custom kafka images from specified image registry if provided
@@ -172,10 +166,10 @@ tests:
           path: spec.template.spec.imagePullSecrets[0].name
           value: test-secret
       - equal:
-          path: spec.template.spec.containers[0].env[16].name
+          path: spec.template.spec.containers[0].env[15].name
           value: STRIMZI_IMAGE_PULL_SECRETS
       - equal:
-          path: spec.template.spec.containers[0].env[16].value
+          path: spec.template.spec.containers[0].env[15].value
           value: test-secret
 
   - it: should set IMAGE_PULL_SECRETS as comma separated list if provided as array
@@ -194,10 +188,10 @@ tests:
           path: spec.template.spec.imagePullSecrets[1].name
           value: test-secret2
       - equal:
-          path: spec.template.spec.containers[0].env[16].name
+          path: spec.template.spec.containers[0].env[15].name
           value: STRIMZI_IMAGE_PULL_SECRETS
       - equal:
-          path: spec.template.spec.containers[0].env[16].value
+          path: spec.template.spec.containers[0].env[15].value
           value: test-secret,test-secret2
 
   - it: should fail if imagePullSecrets is not correctly formatted

@@ -16,7 +16,6 @@ import java.util.Collections;
 import static io.strimzi.systemtest.TestTags.BRIDGE;
 import static io.strimzi.systemtest.TestTags.CONNECT;
 import static io.strimzi.systemtest.TestTags.CRUISE_CONTROL;
-import static io.strimzi.systemtest.TestTags.MIRROR_MAKER;
 import static io.strimzi.systemtest.TestTags.MIRROR_MAKER2;
 import static io.strimzi.systemtest.TestTags.OLM;
 
@@ -56,13 +55,6 @@ public class OlmSingleNamespaceST extends OlmAbstractST {
     @Tag(BRIDGE)
     void testDeployExampleKafkaBridge() {
         doTestDeployExampleKafkaBridge();
-    }
-
-    @Test
-    @Order(6)
-    @Tag(MIRROR_MAKER)
-    void testDeployExampleKafkaMirrorMaker() {
-        doTestDeployExampleKafkaMirrorMaker();
     }
 
     @Test

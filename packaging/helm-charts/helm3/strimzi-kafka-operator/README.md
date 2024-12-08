@@ -136,12 +136,6 @@ the documentation for more details.
 | `kafkaConnect.image.tagPrefix`              | Override default Kafka Connect image tag prefix                                 | `nil`                        |
 | `kafkaConnect.image.tag`                    | Override default Kafka Connect image tag and ignore suffix                      | `nil`                        |
 | `kafkaConnect.image.digest`                 | Override Kafka Connect image tag with digest                                    | `nil`                        |
-| `kafkaMirrorMaker.image.registry`           | Override default Kafka Mirror Maker image registry                              | `nil`                        |
-| `kafkaMirrorMaker.image.repository`         | Override default Kafka Mirror Maker image repository                            | `nil`                        |
-| `kafkaMirrorMaker.image.name`               | Kafka Mirror Maker image name                                                   | `kafka`                      |
-| `kafkaMirrorMaker.image.tagPrefix`          | Override default Kafka Mirror Maker image tag prefix                            | `nil`                        |
-| `kafkaMirrorMaker.image.tag`                | Override default Kafka Mirror Maker image tag and ignore suffix                 | `nil`                        |
-| `kafkaMirrorMaker.image.digest`             | Override Kafka Mirror Maker image tag with digest                               | `nil`                        |
 | `cruiseControl.image.registry`              | Override default Cruise Control image registry                                  | `nil`                        |
 | `cruiseControl.image.repository`            | Override default Cruise Control image repository                                | `nil`                        |
 | `cruiseControl.image.name`                  | Cruise Control image name                                                       | `kafka`                      |

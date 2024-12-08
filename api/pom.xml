@@ -172,7 +172,6 @@
                                 <argument>--yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.kafka.Kafka=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}040-Crd-kafka.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.connect.KafkaConnect=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}041-Crd-kafkaconnect.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMaker=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}045-Crd-kafkamirrormaker.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.bridge.KafkaBridge=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}046-Crd-kafkabridge.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.connector.KafkaConnector=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}047-Crd-kafkaconnector.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}048-Crd-kafkamirrormaker2.yaml</argument>
@@ -231,7 +230,6 @@
                                 <argument>io.strimzi.api.kafka.model.connect.KafkaConnect</argument>
                                 <argument>io.strimzi.api.kafka.model.topic.KafkaTopic</argument>
                                 <argument>io.strimzi.api.kafka.model.user.KafkaUser</argument>
-                                <argument>io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMaker</argument>
                                 <argument>io.strimzi.api.kafka.model.bridge.KafkaBridge</argument>
                                 <argument>io.strimzi.api.kafka.model.connector.KafkaConnector</argument>
                                 <argument>io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2</argument>

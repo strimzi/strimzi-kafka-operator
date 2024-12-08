@@ -115,12 +115,6 @@ kafkaInit:
     repository: ""
     name: operator
     tag: ""
-kafkaMirrorMaker:
-  image:
-    registry: ""
-    repository: ""
-    name: kafka
-    tagPrefix: ""
 kafkaBridge:
   image:
     registry: ""

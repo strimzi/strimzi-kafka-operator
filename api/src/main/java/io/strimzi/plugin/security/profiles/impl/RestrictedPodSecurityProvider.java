@@ -98,11 +98,6 @@ public class RestrictedPodSecurityProvider extends BaselinePodSecurityProvider {
     }
 
     @Override
-    public SecurityContext kafkaMirrorMakerContainerSecurityContext(ContainerSecurityProviderContext context) {
-        return createRestrictedContainerSecurityContext(context);
-    }
-
-    @Override
     public SecurityContext bridgeContainerSecurityContext(ContainerSecurityProviderContext context) {
         return createRestrictedContainerSecurityContext(context);
     }

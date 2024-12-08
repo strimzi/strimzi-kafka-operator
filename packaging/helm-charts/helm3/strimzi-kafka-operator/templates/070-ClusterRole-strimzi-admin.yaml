@@ -21,8 +21,6 @@ rules:
       - kafkanodepools/scale
       - kafkaconnects
       - kafkaconnects/scale
-      - kafkamirrormakers
-      - kafkamirrormakers/scale
       - kafkausers
       - kafkatopics
       - kafkabridges

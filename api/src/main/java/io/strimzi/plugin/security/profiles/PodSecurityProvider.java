@@ -271,27 +271,31 @@ public interface PodSecurityProvider {
     }
 
     /**
-     * Provides the Pod security context for the Kafka Mirror Maker 1 pods. The default implementation just returns the
-     * security context configured by the user in the template section or null (no Pod security context).
+     * Previously, this method provided the Pod security context for the Kafka Mirror Maker 1 pods. As Mirror Maker 1 is
+     * not supported anymore, this method is deprecated and always returns null.
      *
      * @param context   Provides the context which can be used to generate the Pod security context
      *
      * @return  Pod security context which will be set for the Kafka Mirror Maker 1 pods
      */
+    @Deprecated
+    @SuppressWarnings("unused")
     default PodSecurityContext kafkaMirrorMakerPodSecurityContext(PodSecurityProviderContext context) {
-        return podSecurityContextOrNull(context);
+        return null;
     }
 
     /**
-     * Provides the (container) security context for the Kafka Mirror Maker 1 containers. The default implementation just
-     * returns the security context configured by the user in the template section or null (no security context).
+     * Previously, this method provided the security context for the Kafka Mirror Maker 1 containers. As Mirror Maker 1
+     * is not supported anymore, this method is deprecated and always returns null.
      *
      * @param context   Provides the context which can be used to generate the security context
      *
      * @return  Security context which will be set for the Kafka Mirror Maker 1 containers
      */
+    @Deprecated
+    @SuppressWarnings("unused")
     default SecurityContext kafkaMirrorMakerContainerSecurityContext(ContainerSecurityProviderContext context) {
-        return securityContextOrNull(context);
+        return null;
     }
 
     /**

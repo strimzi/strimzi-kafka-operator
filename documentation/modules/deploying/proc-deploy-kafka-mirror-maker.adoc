@@ -8,18 +8,12 @@
 [role="_abstract"]
 This procedure shows how to deploy a Kafka MirrorMaker cluster to your Kubernetes cluster using the Cluster Operator.
 
-The deployment uses a YAML file to provide the specification to create a `KafkaMirrorMaker` or `KafkaMirrorMaker2` resource depending on the version of MirrorMaker deployed.
+The deployment uses a YAML file to provide the specification to create a `KafkaMirrorMaker2` resource.
 MirrorMaker 2 is based on Kafka Connect and uses its configuration properties. 
 
-IMPORTANT: Kafka MirrorMaker 1 (referred to as just _MirrorMaker_ in the documentation) has been deprecated in Apache Kafka 3.0.0 and will be removed in Apache Kafka 4.0.0.
-As a result, the `KafkaMirrorMaker` custom resource which is used to deploy Kafka MirrorMaker 1 has been deprecated in Strimzi as well.
-The `KafkaMirrorMaker` resource will be removed from Strimzi when we adopt Apache Kafka 4.0.0.
-As a replacement, use the `KafkaMirrorMaker2` custom resource with the xref:unidirectional_replication_activepassive[`IdentityReplicationPolicy`].
-
 Strimzi provides xref:config-examples-{context}[example configuration files].
-In this procedure, we use the following example files:
+In this procedure, we use the following example file:
 
-* `examples/mirror-maker/kafka-mirror-maker.yaml`
 * `examples/mirror-maker/kafka-mirror-maker-2.yaml`
 
 IMPORTANT: If deploying MirrorMaker 2 clusters to run in parallel, using the same target Kafka cluster, each instance must use unique names for internal Kafka Connect topics. 
@@ -32,15 +26,6 @@ To do this, xref:con-config-mm2-multiple-instances-{context}[configure each Mirr
 .Procedure
 
 . Deploy Kafka MirrorMaker to your Kubernetes cluster:
-+
-For MirrorMaker:
-+
-[source,shell,subs="attributes+"]
-----
-kubectl apply -f examples/mirror-maker/kafka-mirror-maker.yaml
-----
-+
-For MirrorMaker 2:
 +
 [source,shell,subs="attributes+"]
 ----
@@ -58,16 +43,14 @@ kubectl get pods -n _<my_cluster_operator_namespace>_
 [source,shell,subs="+quotes"]
 ----
 NAME                                    READY  STATUS   RESTARTS
-my-mirror-maker-mirror-maker-<pod_id>   1/1    Running  1
 my-mm2-cluster-mirrormaker2-<pod_id>    1/1    Running  1
 ----
 +
-`my-mirror-maker` is the name of the Kafka MirrorMaker cluster. 
 `my-mm2-cluster` is the name of the Kafka MirrorMaker 2 cluster.
 +
 A pod ID identifies each pod created.
 +
-With the default deployment, you install a single MirrorMaker or MirrorMaker 2 pod.
+With the default deployment, you install a single MirrorMaker 2 pod.
 +
 `READY` shows the number of replicas that are ready/expected.
 The deployment is successful when the `STATUS` displays as `Running`.
@@ -75,4 +58,4 @@ The deployment is successful when the `STATUS` displays as `Running`.
 [role="_additional-resources"]
 .Additional resources
 
-* xref:con-config-mirrormaker-str[Kafka MirrorMaker cluster configuration]
+* xref:con-config-mirrormaker2-str[Kafka MirrorMaker cluster configuration]
