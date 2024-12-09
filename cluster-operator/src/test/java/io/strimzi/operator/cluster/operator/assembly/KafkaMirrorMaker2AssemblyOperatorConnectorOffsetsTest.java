@@ -49,6 +49,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -271,7 +272,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(), (vertx) -> mockConnectApi);
         Reconciliation reconciliation = Reconciliation.DUMMY_RECONCILIATION;
 
-        when(mockConnectApi.getConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(Future.failedFuture(new RuntimeException("Rest API call failed")));
+        when(mockConnectApi.getConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(CompletableFuture.failedFuture(new RuntimeException("Rest API call failed")));
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, connectorName, kafkaMirrorMaker2, kafkaMirrorMaker2SourceConnector.getSpec(), new ArrayList<>())
                 .onComplete(context.succeeding(result -> context.verify(() -> {
@@ -308,7 +309,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(), (vertx) -> mockConnectApi);
         Reconciliation reconciliation = Reconciliation.DUMMY_RECONCILIATION;
 
-        when(mockConnectApi.getConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(Future.succeededFuture(OFFSETS_JSON));
+        when(mockConnectApi.getConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(CompletableFuture.completedFuture(OFFSETS_JSON));
         when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(Future.failedFuture(new RuntimeException("Failed to get ConfigMap")));
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, connectorName, kafkaMirrorMaker2, kafkaMirrorMaker2SourceConnector.getSpec(), new ArrayList<>())
@@ -345,7 +346,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(), (vertx) -> mockConnectApi);
         Reconciliation reconciliation = Reconciliation.DUMMY_RECONCILIATION;
 
-        when(mockConnectApi.getConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(Future.succeededFuture(OFFSETS_JSON));
+        when(mockConnectApi.getConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(CompletableFuture.completedFuture(OFFSETS_JSON));
         when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(Future.succeededFuture(null));
         when(supplier.configMapOperations.reconcile(any(), any(), any(), any())).thenReturn(Future.failedFuture(new RuntimeException("Create or update ConfigMap failed")));
 
@@ -383,7 +384,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(), (vertx) -> mockConnectApi);
         Reconciliation reconciliation = Reconciliation.DUMMY_RECONCILIATION;
 
-        when(mockConnectApi.getConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(Future.succeededFuture(OFFSETS_JSON));
+        when(mockConnectApi.getConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(CompletableFuture.completedFuture(OFFSETS_JSON));
         when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(Future.succeededFuture(null));
         when(supplier.configMapOperations.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
         when(supplier.mirrorMaker2Operator.patchAsync(any(), any())).thenReturn(Future.failedFuture(new RuntimeException("Patch CR failed")));
@@ -423,7 +424,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(), (vertx) -> mockConnectApi);
         Reconciliation reconciliation = Reconciliation.DUMMY_RECONCILIATION;
 
-        when(mockConnectApi.getConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(Future.succeededFuture(OFFSETS_JSON));
+        when(mockConnectApi.getConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(CompletableFuture.completedFuture(OFFSETS_JSON));
         when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(Future.succeededFuture(null));
         when(supplier.configMapOperations.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
         when(supplier.mirrorMaker2Operator.patchAsync(any(), any())).thenReturn(Future.succeededFuture());
@@ -492,7 +493,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                 .withData(existingData)
                 .build();
 
-        when(mockConnectApi.getConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(Future.succeededFuture(OFFSETS_JSON));
+        when(mockConnectApi.getConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(CompletableFuture.completedFuture(OFFSETS_JSON));
         when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(Future.succeededFuture(existingCM));
         when(supplier.configMapOperations.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
         when(supplier.mirrorMaker2Operator.patchAsync(any(), any())).thenReturn(Future.succeededFuture());
@@ -615,7 +616,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(), (vertx) -> mockConnectApi);
         Reconciliation reconciliation = Reconciliation.DUMMY_RECONCILIATION;
 
-        when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(Future.failedFuture(new RuntimeException("Rest API call failed")));
+        when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(CompletableFuture.failedFuture(new RuntimeException("Rest API call failed")));
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, connectorName, kafkaMirrorMaker2, kafkaMirrorMaker2SourceConnector.getSpec(), new ArrayList<>())
                 .onComplete(context.succeeding(result -> context.verify(() -> {
@@ -651,7 +652,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(), (vertx) -> mockConnectApi);
         Reconciliation reconciliation = Reconciliation.DUMMY_RECONCILIATION;
 
-        when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(Future.succeededFuture(Map.of("foo", "bar")));
+        when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(CompletableFuture.completedFuture(Map.of("foo", "bar")));
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, connectorName, kafkaMirrorMaker2, kafkaMirrorMaker2SourceConnector.getSpec(), new ArrayList<>())
                 .onComplete(context.succeeding(result -> context.verify(() -> {
@@ -687,7 +688,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(), (vertx) -> mockConnectApi);
         Reconciliation reconciliation = Reconciliation.DUMMY_RECONCILIATION;
 
-        when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(Future.succeededFuture(STOPPED_STATE_MAP));
+        when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(CompletableFuture.completedFuture(STOPPED_STATE_MAP));
         when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(Future.failedFuture(new RuntimeException("Failed to get ConfigMap")));
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, connectorName, kafkaMirrorMaker2, kafkaMirrorMaker2SourceConnector.getSpec(), new ArrayList<>())
@@ -725,7 +726,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(), (vertx) -> mockConnectApi);
         Reconciliation reconciliation = Reconciliation.DUMMY_RECONCILIATION;
 
-        when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(Future.succeededFuture(STOPPED_STATE_MAP));
+        when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(CompletableFuture.completedFuture(STOPPED_STATE_MAP));
         when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(Future.succeededFuture(null));
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, connectorName, kafkaMirrorMaker2, kafkaMirrorMaker2SourceConnector.getSpec(), new ArrayList<>())
@@ -768,7 +769,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                 .withData(Map.of("foo", "bar"))
                 .build();
 
-        when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(Future.succeededFuture(STOPPED_STATE_MAP));
+        when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(CompletableFuture.completedFuture(STOPPED_STATE_MAP));
         when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(Future.succeededFuture(alterOffsetsConfigMap));
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, connectorName, kafkaMirrorMaker2, kafkaMirrorMaker2SourceConnector.getSpec(), new ArrayList<>())
@@ -811,7 +812,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                 .withData(Map.of(getConfigmapEntryName(connector), "{\"test\":}"))
                 .build();
 
-        when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(Future.succeededFuture(STOPPED_STATE_MAP));
+        when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(CompletableFuture.completedFuture(STOPPED_STATE_MAP));
         when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(Future.succeededFuture(alterOffsetsConfigMap));
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, connectorName, kafkaMirrorMaker2, kafkaMirrorMaker2SourceConnector.getSpec(), new ArrayList<>())
@@ -854,9 +855,9 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                 .withData(Map.of(getConfigmapEntryName(connector), OFFSETS_JSON))
                 .build();
 
-        when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(Future.succeededFuture(STOPPED_STATE_MAP));
+        when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(CompletableFuture.completedFuture(STOPPED_STATE_MAP));
         when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(Future.succeededFuture(alterOffsetsConfigMap));
-        when(mockConnectApi.alterConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName, OFFSETS_JSON)).thenReturn(Future.succeededFuture());
+        when(mockConnectApi.alterConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName, OFFSETS_JSON)).thenReturn(CompletableFuture.completedFuture(null));
         when(supplier.mirrorMaker2Operator.patchAsync(any(), any())).thenReturn(Future.failedFuture(new RuntimeException("Patch CR failed")));
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, connectorName, kafkaMirrorMaker2, kafkaMirrorMaker2SourceConnector.getSpec(), new ArrayList<>())
@@ -898,9 +899,9 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                 .withData(Map.of(getConfigmapEntryName(connector), OFFSETS_JSON))
                 .build();
 
-        when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(Future.succeededFuture(STOPPED_STATE_MAP));
+        when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(CompletableFuture.completedFuture(STOPPED_STATE_MAP));
         when(supplier.configMapOperations.getAsync(NAMESPACE, CONFIGMAP_NAME)).thenReturn(Future.succeededFuture(alterOffsetsConfigMap));
-        when(mockConnectApi.alterConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName, OFFSETS_JSON)).thenReturn(Future.succeededFuture());
+        when(mockConnectApi.alterConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName, OFFSETS_JSON)).thenReturn(CompletableFuture.completedFuture(null));
         when(supplier.mirrorMaker2Operator.patchAsync(any(), any())).thenReturn(Future.succeededFuture());
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, connectorName, kafkaMirrorMaker2, kafkaMirrorMaker2SourceConnector.getSpec(), new ArrayList<>())
@@ -975,7 +976,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(), (vertx) -> mockConnectApi);
         Reconciliation reconciliation = Reconciliation.DUMMY_RECONCILIATION;
 
-        when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(Future.failedFuture(new RuntimeException("Rest API call failed")));
+        when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(CompletableFuture.failedFuture(new RuntimeException("Rest API call failed")));
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, connectorName, kafkaMirrorMaker2, kafkaMirrorMaker2SourceConnector.getSpec(),  new ArrayList<>())
                 .onComplete(context.succeeding(result -> context.verify(() -> {
@@ -1010,7 +1011,7 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(), (vertx) -> mockConnectApi);
         Reconciliation reconciliation = Reconciliation.DUMMY_RECONCILIATION;
 
-        when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(Future.succeededFuture(Map.of("foo", "bar")));
+        when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(CompletableFuture.completedFuture(Map.of("foo", "bar")));
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, connectorName, kafkaMirrorMaker2, kafkaMirrorMaker2SourceConnector.getSpec(), new ArrayList<>())
                 .onComplete(context.succeeding(result -> context.verify(() -> {
@@ -1045,8 +1046,8 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(), (vertx) -> mockConnectApi);
         Reconciliation reconciliation = Reconciliation.DUMMY_RECONCILIATION;
 
-        when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(Future.succeededFuture(STOPPED_STATE_MAP));
-        when(mockConnectApi.resetConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(Future.succeededFuture());
+        when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(CompletableFuture.completedFuture(STOPPED_STATE_MAP));
+        when(mockConnectApi.resetConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(CompletableFuture.completedFuture(null));
         when(supplier.mirrorMaker2Operator.patchAsync(any(), any())).thenReturn(Future.failedFuture(new RuntimeException("Patch CR failed")));
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, connectorName, kafkaMirrorMaker2, kafkaMirrorMaker2SourceConnector.getSpec(), new ArrayList<>())
@@ -1083,8 +1084,8 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorOffsetsTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(), (vertx) -> mockConnectApi);
         Reconciliation reconciliation = Reconciliation.DUMMY_RECONCILIATION;
 
-        when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(Future.succeededFuture(STOPPED_STATE_MAP));
-        when(mockConnectApi.resetConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(Future.succeededFuture());
+        when(mockConnectApi.status(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(CompletableFuture.completedFuture(STOPPED_STATE_MAP));
+        when(mockConnectApi.resetConnectorOffsets(reconciliation, CONNECT_HOSTNAME, KafkaConnectCluster.REST_API_PORT, connectorName)).thenReturn(CompletableFuture.completedFuture(null));
         when(supplier.mirrorMaker2Operator.patchAsync(any(), any())).thenReturn(Future.succeededFuture());
 
         op.manageConnectorOffsets(reconciliation, CONNECT_HOSTNAME, mockConnectApi, connectorName, kafkaMirrorMaker2, kafkaMirrorMaker2SourceConnector.getSpec(), new ArrayList<>())
