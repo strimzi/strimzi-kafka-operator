@@ -97,16 +97,20 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 
-/**
- * This integration test suite provides coverage of the {@link BatchingTopicController}.
- * If you need to test individual units of code, use the the {@link BatchingTopicController}.
- */
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
-class TopicControllerIT implements TestSeparator {
-    private static final Logger LOGGER = LogManager.getLogger(TopicControllerIT.class);
+class TopicOperatorIT implements TestSeparator {
+    private static final Logger LOGGER = LogManager.getLogger(TopicOperatorIT.class);
 
-    private static final String NAMESPACE = TopicOperatorTestUtil.namespaceName(TopicControllerIT.class);
-    public static final Map<String, String> SELECTOR = Map.of("foo", "FOO", "bar", "BAR");
+    private static final String NAMESPACE = TopicOperatorTestUtil.namespaceName(TopicOperatorIT.class);
+    private static final Map<String, String> SELECTOR = Map.of("foo", "FOO", "bar", "BAR");
+    private static final Map<String, Object> TEST_TOPIC_CONFIG = Map.of(
+        TopicConfig.CLEANUP_POLICY_CONFIG, List.of("compact"),
+        TopicConfig.COMPRESSION_TYPE_CONFIG, "producer",
+        TopicConfig.FLUSH_MS_CONFIG, 1234L,
+        TopicConfig.INDEX_INTERVAL_BYTES_CONFIG, 1234,
+        TopicConfig.MIN_CLEANABLE_DIRTY_RATIO_CONFIG, 0.6,
+        TopicConfig.UNCLEAN_LEADER_ELECTION_ENABLE_CONFIG, true
+    );
 
     static KubernetesClient kubernetesClient;
     TopicOperatorMain operator;
@@ -437,21 +441,13 @@ class TopicControllerIT implements TestSeparator {
 
     static List<KafkaTopic> managedKafkaTopicsWithConfigs() {
         var topicName = "topic" + System.nanoTime();
-        var configs = Map.of(
-            TopicConfig.CLEANUP_POLICY_CONFIG, List.of("compact"), // list typed
-            TopicConfig.COMPRESSION_TYPE_CONFIG, "producer", // string typed
-            TopicConfig.FLUSH_MS_CONFIG, 1234L, // long typed
-            TopicConfig.INDEX_INTERVAL_BYTES_CONFIG, 1234, // int typed
-            TopicConfig.MIN_CLEANABLE_DIRTY_RATIO_CONFIG, 0.6, // double typed
-            TopicConfig.UNCLEAN_LEADER_ELECTION_ENABLE_CONFIG, true // boolean typed
-        );
         return List.of(
-                kafkaTopic(NAMESPACE, topicName + "a", SELECTOR, null, true, topicName + "a", 2, 1, configs),
-                kafkaTopic(NAMESPACE, topicName + "b", SELECTOR, null, true, null, 2, 1, configs),
-                kafkaTopic(NAMESPACE, topicName + "c", SELECTOR, null, true, topicName + "c".toUpperCase(Locale.ROOT), 2, 1, configs),
-                kafkaTopic(NAMESPACE, topicName + "d", SELECTOR, null, null, topicName + "d", 2, 1, configs),
-                kafkaTopic(NAMESPACE, topicName + "e", SELECTOR, null, null, null, 2, 1, configs),
-                kafkaTopic(NAMESPACE, topicName + "f", SELECTOR, null, null, topicName + "f".toUpperCase(Locale.ROOT), 2, 1, configs)
+                kafkaTopic(NAMESPACE, topicName + "a", SELECTOR, null, true, topicName + "a", 2, 1, TEST_TOPIC_CONFIG),
+                kafkaTopic(NAMESPACE, topicName + "b", SELECTOR, null, true, null, 2, 1, TEST_TOPIC_CONFIG),
+                kafkaTopic(NAMESPACE, topicName + "c", SELECTOR, null, true, topicName + "c".toUpperCase(Locale.ROOT), 2, 1, TEST_TOPIC_CONFIG),
+                kafkaTopic(NAMESPACE, topicName + "d", SELECTOR, null, null, topicName + "d", 2, 1, TEST_TOPIC_CONFIG),
+                kafkaTopic(NAMESPACE, topicName + "e", SELECTOR, null, null, null, 2, 1, TEST_TOPIC_CONFIG),
+                kafkaTopic(NAMESPACE, topicName + "f", SELECTOR, null, null, topicName + "f".toUpperCase(Locale.ROOT), 2, 1, TEST_TOPIC_CONFIG)
         );
     }
 
@@ -851,14 +847,10 @@ class TopicControllerIT implements TestSeparator {
                                                                  UnaryOperator<Map<String, String>> expectedChangedConfigs) throws ExecutionException, InterruptedException, TimeoutException {
         // given
         var expectedTopicName = TopicOperatorUtil.topicName(kt);
-        var expectedCreateConfigs = Map.of(
-            TopicConfig.CLEANUP_POLICY_CONFIG, "compact", // list typed
-            TopicConfig.COMPRESSION_TYPE_CONFIG, "producer", // string typed
-            TopicConfig.FLUSH_MS_CONFIG, "1234", // long typed
-            TopicConfig.INDEX_INTERVAL_BYTES_CONFIG, "1234", // int typed
-            TopicConfig.MIN_CLEANABLE_DIRTY_RATIO_CONFIG, "0.6", // double typed
-            TopicConfig.UNCLEAN_LEADER_ELECTION_ENABLE_CONFIG, "true" // boolean typed
-        );
+        var expectedCreateConfigs = TEST_TOPIC_CONFIG.entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue() instanceof List 
+                    ? String.join(",", (List) e.getValue()) : String.valueOf(e.getValue())));
+        
         Map<String, String> expectedConfigs = expectedChangedConfigs.apply(expectedCreateConfigs);
         assertNotEquals(expectedCreateConfigs, expectedConfigs);
 
@@ -871,18 +863,18 @@ class TopicControllerIT implements TestSeparator {
         // then
         assertEquals(expectedConfigs, topicConfigMap(expectedTopicName));
     }
-
+    
     @Test
     public void shouldUpdateTopicInKafkaWhenStringConfigChangedInKube() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
-        List<KafkaTopic> topics = managedKafkaTopicsWithConfigs();
+        var topics = managedKafkaTopicsWithConfigs();
 
         for (KafkaTopic kt : topics) {
             shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
-                    TopicControllerIT::setSnappyCompression,
+                    TopicOperatorIT::setSnappyCompression,
                     expectedCreateConfigs -> {
-                        Map<String, String> expectedUpdatedConfigs = new HashMap<>(expectedCreateConfigs);
-                        expectedUpdatedConfigs.put(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy");
+                        var expectedUpdatedConfigs = new LinkedHashMap<>(expectedCreateConfigs);
+                        expectedUpdatedConfigs.replace(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy");
                         return expectedUpdatedConfigs;
                     });
         }
@@ -891,7 +883,7 @@ class TopicControllerIT implements TestSeparator {
     @Test
     public void shouldUpdateTopicInKafkaWhenIntConfigChangedInKube() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
-        List<KafkaTopic> topics = managedKafkaTopicsWithConfigs();
+        var topics = managedKafkaTopicsWithConfigs();
 
         for (KafkaTopic kt : topics) {
             shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
@@ -900,8 +892,8 @@ class TopicControllerIT implements TestSeparator {
                         return theKt;
                     },
                     expectedCreateConfigs -> {
-                        Map<String, String> expectedUpdatedConfigs = new HashMap<>(expectedCreateConfigs);
-                        expectedUpdatedConfigs.put(TopicConfig.INDEX_INTERVAL_BYTES_CONFIG, "5678");
+                        var expectedUpdatedConfigs = new LinkedHashMap<>(expectedCreateConfigs);
+                        expectedUpdatedConfigs.replace(TopicConfig.INDEX_INTERVAL_BYTES_CONFIG, "5678");
                         return expectedUpdatedConfigs;
                     });
         }
@@ -910,7 +902,7 @@ class TopicControllerIT implements TestSeparator {
     @Test
     public void shouldUpdateTopicInKafkaWhenLongConfigChangedInKube() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
-        List<KafkaTopic> topics = managedKafkaTopicsWithConfigs();
+        var topics = managedKafkaTopicsWithConfigs();
 
         for (KafkaTopic kt : topics) {
             shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
@@ -919,8 +911,8 @@ class TopicControllerIT implements TestSeparator {
                         return theKt;
                     },
                     expectedCreateConfigs -> {
-                        Map<String, String> expectedUpdatedConfigs = new HashMap<>(expectedCreateConfigs);
-                        expectedUpdatedConfigs.put(TopicConfig.FLUSH_MS_CONFIG, "9876");
+                        var expectedUpdatedConfigs = new LinkedHashMap<>(expectedCreateConfigs);
+                        expectedUpdatedConfigs.replace(TopicConfig.FLUSH_MS_CONFIG, "9876");
                         return expectedUpdatedConfigs;
                     });
         }
@@ -929,7 +921,7 @@ class TopicControllerIT implements TestSeparator {
     @Test
     public void shouldUpdateTopicInKafkaWhenDoubleConfigChangedInKube() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
-        List<KafkaTopic> topics = managedKafkaTopicsWithConfigs();
+        var topics = managedKafkaTopicsWithConfigs();
 
         for (KafkaTopic kt : topics) {
             shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
@@ -938,8 +930,8 @@ class TopicControllerIT implements TestSeparator {
                         return theKt;
                     },
                     expectedCreateConfigs -> {
-                        Map<String, String> expectedUpdatedConfigs = new HashMap<>(expectedCreateConfigs);
-                        expectedUpdatedConfigs.put(TopicConfig.MIN_CLEANABLE_DIRTY_RATIO_CONFIG, "0.1");
+                        var expectedUpdatedConfigs = new LinkedHashMap<>(expectedCreateConfigs);
+                        expectedUpdatedConfigs.replace(TopicConfig.MIN_CLEANABLE_DIRTY_RATIO_CONFIG, "0.1");
                         return expectedUpdatedConfigs;
                     });
         }
@@ -948,7 +940,7 @@ class TopicControllerIT implements TestSeparator {
     @Test
     public void shouldUpdateTopicInKafkaWhenBooleanConfigChangedInKube() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
-        List<KafkaTopic> topics = managedKafkaTopicsWithConfigs();
+        var topics = managedKafkaTopicsWithConfigs();
 
         for (KafkaTopic kt : topics) {
             shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
@@ -957,8 +949,8 @@ class TopicControllerIT implements TestSeparator {
                         return theKt;
                     },
                     expectedCreateConfigs -> {
-                        Map<String, String> expectedUpdatedConfigs = new HashMap<>(expectedCreateConfigs);
-                        expectedUpdatedConfigs.put(TopicConfig.UNCLEAN_LEADER_ELECTION_ENABLE_CONFIG, "false");
+                        var expectedUpdatedConfigs = new LinkedHashMap<>(expectedCreateConfigs);
+                        expectedUpdatedConfigs.replace(TopicConfig.UNCLEAN_LEADER_ELECTION_ENABLE_CONFIG, "false");
                         return expectedUpdatedConfigs;
                     });
         }
@@ -967,7 +959,7 @@ class TopicControllerIT implements TestSeparator {
     @Test
     public void shouldUpdateTopicInKafkaWhenListConfigChangedInKube() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
-        List<KafkaTopic> topics = managedKafkaTopicsWithConfigs();
+        var topics = managedKafkaTopicsWithConfigs();
 
         for (KafkaTopic kt : topics) {
             shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
@@ -976,8 +968,8 @@ class TopicControllerIT implements TestSeparator {
                         return theKt;
                     },
                     expectedCreateConfigs -> {
-                        Map<String, String> expectedUpdatedConfigs = new HashMap<>(expectedCreateConfigs);
-                        expectedUpdatedConfigs.put(TopicConfig.CLEANUP_POLICY_CONFIG, "compact,delete");
+                        var expectedUpdatedConfigs = new LinkedHashMap<>(expectedCreateConfigs);
+                        expectedUpdatedConfigs.replace(TopicConfig.CLEANUP_POLICY_CONFIG, "compact,delete");
                         return expectedUpdatedConfigs;
                     });
         }
@@ -986,7 +978,7 @@ class TopicControllerIT implements TestSeparator {
     @Test
     public void shouldUpdateTopicInKafkaWhenConfigRemovedInKube() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
-        List<KafkaTopic> topics = managedKafkaTopicsWithConfigs();
+        var topics = managedKafkaTopicsWithConfigs();
 
         for (KafkaTopic kt : topics) {
             shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
@@ -995,7 +987,7 @@ class TopicControllerIT implements TestSeparator {
                         return theKt;
                     },
                     expectedCreateConfigs -> {
-                        var expectedUpdatedConfigs = new HashMap<>(expectedCreateConfigs);
+                        var expectedUpdatedConfigs = new LinkedHashMap<>(expectedCreateConfigs);
                         expectedUpdatedConfigs.remove(TopicConfig.UNCLEAN_LEADER_ELECTION_ENABLE_CONFIG);
                         return expectedUpdatedConfigs;
                     });
@@ -1064,7 +1056,7 @@ class TopicControllerIT implements TestSeparator {
 
             // when: partitions is increased
             modifyTopicAndAwait(kt,
-                    TopicControllerIT::incrementPartitions,
+                    TopicOperatorIT::incrementPartitions,
                     readyIsTrue());
 
             // then
@@ -1280,7 +1272,7 @@ class TopicControllerIT implements TestSeparator {
         return new TopicOperatorConfig(ns,
             Labels.fromMap(SELECTOR),
             kafkaCluster.getBootstrapServers(),
-            TopicControllerIT.class.getSimpleName(),
+            TopicOperatorIT.class.getSimpleName(),
             fullReconciliationIntervalMs,
             false, "", "", "", "", "",
             false, "", "", "", "", "",
@@ -1702,7 +1694,7 @@ class TopicControllerIT implements TestSeparator {
         // then
         // trigger reconciliation by change a config
         var modified = modifyTopicAndAwait(created,
-            TopicControllerIT::setSnappyCompression,
+            TopicOperatorIT::setSnappyCompression,
             duringReassignmentPredicate);
 
         assertFalse(kafkaAdminClient.listPartitionReassignments(Set.of(tp)).reassignments().get().isEmpty(),
@@ -1721,7 +1713,7 @@ class TopicControllerIT implements TestSeparator {
 
         // trigger reconciliation by changing a config again
         modifyTopicAndAwait(modified,
-            TopicControllerIT::setGzipCompression,
+            TopicOperatorIT::setGzipCompression,
             postReassignmentPredicate);
     }
 
@@ -1798,7 +1790,7 @@ class TopicControllerIT implements TestSeparator {
         maybeStartOperator(config);
         createTopicAndAssertSuccess(kafkaCluster, kt);
 
-        var modified = modifyTopicAndAwait(kt, TopicControllerIT::setSnappyCompression, readyIsFalse());
+        var modified = modifyTopicAndAwait(kt, TopicOperatorIT::setSnappyCompression, readyIsFalse());
         var condition = assertExactlyOneCondition(modified);
         assertEquals("KafkaError", condition.getReason());
         assertEquals("org.apache.kafka.common.errors.TopicAuthorizationException: not allowed", condition.getMessage());
@@ -1880,7 +1872,7 @@ class TopicControllerIT implements TestSeparator {
         createTopicAndAssertSuccess(kafkaCluster, kt);
 
         var modified = modifyTopicAndAwait(kt,
-                TopicControllerIT::incrementPartitions,
+                TopicOperatorIT::incrementPartitions,
                 readyIsFalse());
         var condition = assertExactlyOneCondition(modified);
         assertEquals("KafkaError", condition.getReason());
@@ -2043,7 +2035,7 @@ class TopicControllerIT implements TestSeparator {
         String ns = createNamespace(NAMESPACE);
 
         var config = new TopicOperatorConfig(ns, Labels.fromMap(SELECTOR),
-            kafkaCluster.getBootstrapServers(), TopicControllerIT.class.getSimpleName(), 10_000,
+            kafkaCluster.getBootstrapServers(), TopicOperatorIT.class.getSimpleName(), 10_000,
             false, "", "", "", "", "",
             false, "", "", "", "", "",
             true,
