@@ -15,4 +15,5 @@ public interface TestDocsLabels {
     String CONNECT = "connect";
     String CRUISE_CONTROL = "cruise-control";
     String DYNAMIC_CONFIGURATION = "dynamic-configuration";
+    String LOGGING = "logging";
 }
