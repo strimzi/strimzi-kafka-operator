@@ -72,7 +72,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         LOGGER.debugCr(reconciliation, "Making PUT request to {} with body {}", path, configJson);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(String.format("http://%s:%d%s", host, port, path)))
+                .uri(URI.create(String.format("http://%s:%d%s", host, port, encodeURLString(path))))
                 .PUT(HttpRequest.BodyPublishers.ofString(data))
                 .setHeader("Accept", "application/json")
                 .setHeader("Content-Type", "application/json")
@@ -114,12 +114,16 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         return json;
     }
 
+    private String encodeURLString(String toEncode) {
+        return toEncode.replace("->", "%2D%3E");
+    }
+
 
     private <T> CompletableFuture<T> doGet(Reconciliation reconciliation, String host, int port, String path, Set<Integer> okStatusCodes, TypeReference<T> type) {
         LOGGER.debugCr(reconciliation, "Making GET request to {}", path);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(String.format("http://%s:%d%s", host, port, path)))
+                .uri(URI.create(String.format("http://%s:%d%s", host, port, encodeURLString(path))))
                 .GET()
                 .setHeader("Accept", "application/json")
                 .build();
@@ -161,25 +165,25 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         LOGGER.debugCr(reconciliation, "Making DELETE request to {}", path);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(String.format("http://%s:%d%s", host, port, path)))
+                .uri(URI.create(String.format("http://%s:%d%s", host, port, encodeURLString(path))))
                 .DELETE()
                 .setHeader("Accept", "application/json")
                 .setHeader("Content-Type", "application/json")
                 .build();
 
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-        .thenCompose(response -> {
-            int statusCode = response.statusCode();
-            if (statusCode == 204) {
-                LOGGER.debugCr(reconciliation, "Connector was deleted. Waiting for status deletion!");
-                return withBackoff(reconciliation, new BackOff(200L, 2, 10), connectorName, Collections.singleton(200),
-                        () -> status(reconciliation, host, port, connectorName, Collections.singleton(404)), "status").thenApply(r -> null);
-            } else {
-                // TODO Handle 409 (Conflict) indicating a rebalance in progress
-                LOGGER.debugCr(reconciliation, "Got {} response to PUT request to {}", statusCode, path);
-                return CompletableFuture.failedFuture(new ConnectRestException(response, tryToExtractErrorMessage(reconciliation, response.body())));
-            }
-        });
+                .thenCompose(response -> {
+                    int statusCode = response.statusCode();
+                    if (statusCode == 204) {
+                        LOGGER.debugCr(reconciliation, "Connector was deleted. Waiting for status deletion!");
+                        return withBackoff(reconciliation, new BackOff(200L, 2, 10), connectorName, Collections.singleton(200),
+                                () -> status(reconciliation, host, port, connectorName, Collections.singleton(404)), "status").thenApply(r -> null);
+                    } else {
+                        // TODO Handle 409 (Conflict) indicating a rebalance in progress
+                        LOGGER.debugCr(reconciliation, "Got {} response to PUT request to {}", statusCode, path);
+                        return CompletableFuture.failedFuture(new ConnectRestException(response, tryToExtractErrorMessage(reconciliation, response.body())));
+                    }
+                });
     }
 
     @Override
@@ -265,7 +269,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     private CompletableFuture<Void> updateState(Reconciliation reconciliation, String host, int port, String path, int expectedStatusCode) {
         LOGGER.debugCr(reconciliation, "Making PUT request to {} ", path);
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(String.format("http://%s:%d%s", host, port, path)))
+                .uri(URI.create(String.format("http://%s:%d%s", host, port, encodeURLString(path))))
                 .PUT(HttpRequest.BodyPublishers.noBody())
                 .setHeader("Accept", "application/json")
                 .build();
@@ -515,7 +519,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
 
     private CompletableFuture<Map<String, Object>> restartConnectorOrTask(String host, int port, String path) {
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(String.format("http://%s:%d%s", host, port, path)))
+                .uri(URI.create(String.format("http://%s:%d%s", host, port, encodeURLString(path))))
                 .POST(HttpRequest.BodyPublishers.noBody())
                 .setHeader("Accept", "application/json")
                 .build();
@@ -542,7 +546,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         LOGGER.debugCr(reconciliation, "Making GET request to {}", path);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(String.format("http://%s:%d%s", host, port, path)))
+                .uri(URI.create(String.format("http://%s:%d%s", host, port, encodeURLString(path))))
                 .GET()
                 .setHeader("Accept", "application/json")
                 .build();
@@ -571,7 +575,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         LOGGER.debugCr(reconciliation, "Making GET request to {}", path);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(String.format("http://%s:%d%s", host, port, path)))
+                .uri(URI.create(String.format("http://%s:%d%s", host, port, encodeURLString(path))))
                 .GET()
                 .setHeader("Accept", "application/json")
                 .setHeader("Content-Type", "application/json")
@@ -602,7 +606,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         LOGGER.debugCr(reconciliation, "Making PATCH request to {}", path);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(String.format("http://%s:%d%s", host, port, path)))
+                .uri(URI.create(String.format("http://%s:%d%s", host, port, encodeURLString(path))))
                 .method("PATCH", HttpRequest.BodyPublishers.ofString(newOffsets))
                 .setHeader("Accept", "application/json")
                 .setHeader("Content-Type", "application/json")
@@ -633,7 +637,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         LOGGER.debugCr(reconciliation, "Making DELETE request to {}", path);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(String.format("http://%s:%d%s", host, port, path)))
+                .uri(URI.create(String.format("http://%s:%d%s", host, port, encodeURLString(path))))
                 .DELETE()
                 .setHeader("Accept", "application/json")
                 .build();
