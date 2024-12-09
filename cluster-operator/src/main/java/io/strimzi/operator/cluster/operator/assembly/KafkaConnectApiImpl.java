@@ -218,13 +218,14 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                 if (error == null) {
                     statusFuture.complete(result);
                 } else {
-                    if (error.getCause() instanceof ConnectRestException
-                            && retriableStatusCodes.contains(((ConnectRestException) error.getCause()).getStatusCode())) {
+                    Throwable cause = error.getCause();
+                    if (cause instanceof ConnectRestException
+                            && retriableStatusCodes.contains(((ConnectRestException) cause).getStatusCode())) {
                         if (backOff.done()) {
-                            LOGGER.debugCr(reconciliation, "Connector {} {} returned HTTP {} and we run out of back off time", connectorName, attribute, ((ConnectRestException) error.getCause()).getStatusCode());
-                            statusFuture.completeExceptionally(error);
+                            LOGGER.debugCr(reconciliation, "Connector {} {} returned HTTP {} and we run out of back off time", connectorName, attribute, ((ConnectRestException) cause).getStatusCode());
+                            statusFuture.completeExceptionally(cause);
                         } else {
-                            LOGGER.debugCr(reconciliation, "Connector {} {} returned HTTP {} - backing off", connectorName, attribute, ((ConnectRestException) error.getCause()).getStatusCode());
+                            LOGGER.debugCr(reconciliation, "Connector {} {} returned HTTP {} - backing off", connectorName, attribute, ((ConnectRestException) cause).getStatusCode());
                             long delay1 = backOff.delayMs();
 
                             LOGGER.debugCr(reconciliation, "Status for connector {} not found; " +
@@ -233,7 +234,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                             executeBackOffInternal(reconciliation, backOff, connectorName, retriableStatusCodes, singleExecutor, statusFuture, supplier, attribute, delay1);
                         }
                     } else {
-                        statusFuture.completeExceptionally(error);
+                        statusFuture.completeExceptionally(cause);
                     }
                 }
             });

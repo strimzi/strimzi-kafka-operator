@@ -168,8 +168,8 @@ public class KafkaConnectApiIT {
 
             .thenCompose(ignored -> client.getConnectorConfig(Reconciliation.DUMMY_RECONCILIATION, new BackOff(10), "localhost", port, "does-not-exist")
                         .handle((r, e) -> {
-                            assertThat(e.getCause(), is(instanceOf(ConnectRestException.class)));
-                            assertThat(e.getMessage(), containsString("404"));
+                            assertThat(e, is(instanceOf(ConnectRestException.class)));
+                            assertThat(((ConnectRestException) e).getStatusCode(), is(404));
                             if (e == null) {
                                 throw new RuntimeException("Expected failure when getting config for connector that doesn't exist");
                             }
