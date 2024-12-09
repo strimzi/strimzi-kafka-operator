@@ -42,9 +42,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.HOUR_OF_DAY;
@@ -911,34 +909,6 @@ public abstract class Ca {
             return x509Certificate(bytes);
         } catch (CertificateException e) {
             throw new RuntimeException("Failed to decode certificate in data." + key.replace(".", "\\.") + " of Secret " + secret.getMetadata().getName(), e);
-        }
-    }
-
-    /**
-     * Returns set of all public keys (all .crt records) from a secret
-     *
-     * @param secret    Kubernetes Secret with certificates
-     *
-     * @return          Set with X509Certificate instances
-     */
-    public static Set<X509Certificate> certs(Secret secret)  {
-        if (secret == null || secret.getData() == null) {
-            return Set.of();
-        } else {
-            return secret
-                    .getData()
-                    .entrySet()
-                    .stream()
-                    .filter(record -> SecretEntry.CRT.matchesType(record.getKey()))
-                    .map(record -> {
-                        byte[] bytes = Util.decodeBytesFromBase64(record.getValue());
-                        try {
-                            return x509Certificate(bytes);
-                        } catch (CertificateException e) {
-                            throw new RuntimeException("Failed to decode certificate in data." + record.getKey().replace(".", "\\.") + " of Secret " + secret.getMetadata().getName(), e);
-                        }
-                    })
-                    .collect(Collectors.toSet());
         }
     }
 
