@@ -216,7 +216,7 @@ class spawns as many threads as we specify in the `JUnit-platform.properties`.
 - **@ParallelTest** = overrides parallelism configuration by `@Execution(ExecutionMode.CONCURRENT)` and thus test case will
   run simultaneously with other parallel tests
 - **@ParallelNamespaceTest** = same as @ParallelTest but with additional change. This type of test automatically creates
-  its namespace where all resources will be deployed (f.e., needed where we deploy `Kafka` or `KafkaMirrorMaker`).
+  its namespace where all resources will be deployed (f.e., needed where we deploy `Kafka` or `KafkaMirrorMaker2`).
 
 #### 3. Auxiliary classes
 
@@ -272,7 +272,6 @@ The following table shows currently used tags:
 | recovery           |                                Execute recovery tests                                 |
 | connectoroperator  |                   Execute tests that deploy KafkaConnector resource                   |
 | connect            |                    Execute tests that deploy KafkaConnect resource                    |
-| mirrormaker        |                  Execute tests that deploy KafkaMirrorMaker resource                  |
 | mirrormaker2       |                 Execute tests that deploy KafkaMirrorMaker2 resource                  |
 | conneccomponents   |  Execute tests that deploy KafkaConnect, KafkaMirrorMaker2, KafkaConnector resources  |
 | bridge             |                          Execute tests that use Kafka Bridge                          |

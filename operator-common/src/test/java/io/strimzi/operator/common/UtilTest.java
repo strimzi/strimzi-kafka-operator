@@ -129,15 +129,18 @@ public class UtilTest {
     public void testVarExpansion() {
         String input = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
                 "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
-                "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
-                "mirrormaker.root.logger=INFO\n" +
-                "log4j.rootLogger=${mirrormaker.root.logger}, CONSOLE";
+                "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %X{connector.context}%m (%c) [%t]%n\n" +
+                "connect.root.logger.level=INFO\n" +
+                "log4j.rootLogger=${connect.root.logger.level}, CONSOLE\n" +
+                "log4j.logger.org.reflections=ERROR";
 
         String expectedOutput = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
                 "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
-                "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
-                "mirrormaker.root.logger=INFO\n" +
-                "log4j.rootLogger=INFO, CONSOLE\n";
+                "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %X{connector.context}%m (%c) [%t]%n\n" +
+                "connect.root.logger.level=INFO\n" +
+                "log4j.rootLogger=INFO, CONSOLE\n" +
+                "log4j.logger.org.reflections=ERROR\n";
+
         String result = Util.expandVars(input);
         assertThat(result, is(expectedOutput));
     }

@@ -42,7 +42,7 @@ examples
 <1> `KafkaUser` custom resource configuration, which is managed by the User Operator.
 <2> `KafkaTopic` custom resource configuration, which is managed by Topic Operator.
 <3> Authentication and authorization configuration for Kafka components. Includes example configuration for TLS and SCRAM-SHA-512 authentication. The Keycloak example includes `Kafka` custom resource configuration and a Keycloak realm specification. You can use the example to try Keycloak authorization services. There is also an example with enabled `oauth` authentication and `keycloak` authorization metrics.
-<4> `KafkaMirrorMaker` and `KafkaMirrorMaker2` custom resource configurations for a deployment of MirrorMaker. Includes example configuration for replication policy and synchronization frequency.
+<4> `KafkaMirrorMaker2` custom resource configurations for a deployment of MirrorMaker 2. Includes example configuration for replication policy and synchronization frequency.
 <5> xref:assembly-metrics-config-files-{context}[Metrics configuration], including Prometheus installation and Grafana dashboard files.
 <6> `Kafka` and `KafkaNodePool` custom resource configurations for a deployment of Kafka clusters that use ZooKeeper mode. Includes example configuration for an ephemeral or persistent single or multi-node deployment.
 <7> `Kafka` and `KafkaNodePool` configurations for a deployment of Kafka clusters that use KRaft (Kafka Raft metadata) mode.

@@ -35,7 +35,6 @@ import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
-import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -138,7 +137,6 @@ public class ResourceManager {
         new KafkaConnectorResource(),
         new KafkaConnectResource(),
         new KafkaMirrorMaker2Resource(),
-        new KafkaMirrorMakerResource(),
         new KafkaRebalanceResource(),
         new KafkaResource(),
         new KafkaTopicResource(),
@@ -327,7 +325,7 @@ public class ResourceManager {
 
     /**
      * Auxiliary method for copying {@link TestConstants#TEST_SUITE_NAME_LABEL} and {@link TestConstants#TEST_CASE_NAME_LABEL} labels
-     * into PodTemplate ensuring that in case of failure {@link io.strimzi.systemtest.logs.LogCollector} will collect all
+     * into PodTemplate ensuring that in case of failure {@link io.strimzi.systemtest.logs.TestLogCollector} will collect all
      * related Pods, which corespondents to such Controller (i.e., Job, Deployment)
      *
      * @param resource controller resource from which we copy test suite or test case labels

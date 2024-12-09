@@ -225,16 +225,16 @@ spec:
       annotations:
         summary: 'Kafka Bridge returns code 5xx too often'
         description: 'Kafka Bridge returns code 5xx too much ({{ $value }}) for the path {{ $labels.path }}'
-  - name: mirrorMaker
+  - name: mirrorMaker2
     rules:
-    - alert: MirrorMakerContainerDown
-      expr: absent(container_last_seen{container=~".+-mirror-maker",pod=~".+-mirror-maker-.+"})
+    - alert: MirrorMaker2ContainerDown
+      expr: absent(container_last_seen{container=~".+-mirrormaker2",pod=~".+-mirrormaker2-.+"})
       for: 3m
       labels:
         severity: major
       annotations:
-        summary: 'All Kafka Mirror Maker containers down or in CrashLookBackOff status'
-        description: 'All Kafka Mirror Maker containers have been down or in CrashLookBackOff status for 3 minutes'
+        summary: 'All Kafka Mirror Maker 2 containers down or in CrashLookBackOff status'
+        description: 'All Kafka Mirror Maker 2 containers have been down or in CrashLookBackOff status for 3 minutes'
   - name: kafkaExporter
     rules:
     - alert: UnderReplicatedPartition

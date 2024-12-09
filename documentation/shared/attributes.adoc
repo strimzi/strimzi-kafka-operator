@@ -164,7 +164,6 @@
 :KafkaConnectorApiVersion: kafka.strimzi.io/v1beta2
 :KafkaTopicApiVersion: kafka.strimzi.io/v1beta2
 :KafkaUserApiVersion: kafka.strimzi.io/v1beta2
-:KafkaMirrorMakerApiVersion: kafka.strimzi.io/v1beta2
 :KafkaMirrorMaker2ApiVersion: kafka.strimzi.io/v1beta2
 :KafkaRebalanceApiVersion: kafka.strimzi.io/v1beta2
 :KafkaBridgeApiVersion: kafka.strimzi.io/v1beta2

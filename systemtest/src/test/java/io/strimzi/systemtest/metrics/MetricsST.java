@@ -20,7 +20,6 @@ import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
-import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
@@ -389,7 +388,7 @@ public class MetricsST extends AbstractST {
      *     - Metric is available with expected value
      *  2. - Check that collected metrics contain data about Kafka resource
      *     - Metric is available with expected value
-     *  3. - Check that collected metrics don't contain data about KafkaMirrorMaker and KafkaRebalance resource
+     *  3. - Check that collected metrics don't contain data about KafkaRebalance resource
      *     - Metric is not exposed
      *
      * @usecase
@@ -410,10 +409,6 @@ public class MetricsST extends AbstractST {
         assertCoMetricResources(namespaceSecond, Kafka.RESOURCE_KIND, clusterOperatorCollector, 1);
         assertCoMetricResourceState(namespaceFirst, Kafka.RESOURCE_KIND, kafkaClusterFirstName, clusterOperatorCollector, 1, "none");
         assertCoMetricResourceState(namespaceSecond, Kafka.RESOURCE_KIND, kafkaClusterSecondName, clusterOperatorCollector, 1, "none");
-
-        assertCoMetricResourcesNullOrZero(namespaceFirst, KafkaMirrorMaker.RESOURCE_KIND, clusterOperatorCollector);
-        assertCoMetricResourcesNullOrZero(namespaceSecond, KafkaMirrorMaker.RESOURCE_KIND, clusterOperatorCollector);
-        assertCoMetricResourceStateNotExists(kafkaClusterFirstName, KafkaMirrorMaker.RESOURCE_KIND, namespaceFirst, clusterOperatorCollector);
 
         assertCoMetricResourcesNullOrZero(namespaceFirst, KafkaRebalance.RESOURCE_KIND, clusterOperatorCollector);
         assertCoMetricResourcesNullOrZero(namespaceSecond, KafkaRebalance.RESOURCE_KIND, clusterOperatorCollector);

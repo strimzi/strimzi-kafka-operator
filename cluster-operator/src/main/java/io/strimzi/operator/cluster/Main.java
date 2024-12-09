@@ -14,7 +14,6 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMaker2AssemblyOperator;
-import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.MetricsProvider;
@@ -148,7 +147,6 @@ public class Main {
         KafkaAssemblyOperator kafkaClusterOperations = null;
         KafkaConnectAssemblyOperator kafkaConnectClusterOperations = null;
         KafkaMirrorMaker2AssemblyOperator kafkaMirrorMaker2AssemblyOperator = null;
-        KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator = null;
         KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator = null;
         KafkaRebalanceAssemblyOperator kafkaRebalanceAssemblyOperator = null;
 
@@ -164,7 +162,6 @@ public class Main {
             kafkaClusterOperations = new KafkaAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
             kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
             kafkaMirrorMaker2AssemblyOperator = new KafkaMirrorMaker2AssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
-            kafkaMirrorMakerAssemblyOperator = new KafkaMirrorMakerAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
             kafkaBridgeAssemblyOperator = new KafkaBridgeAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
             kafkaRebalanceAssemblyOperator = new KafkaRebalanceAssemblyOperator(vertx, resourceOperatorSupplier, config);
         }
@@ -177,7 +174,6 @@ public class Main {
                     config,
                     kafkaClusterOperations,
                     kafkaConnectClusterOperations,
-                    kafkaMirrorMakerAssemblyOperator,
                     kafkaMirrorMaker2AssemblyOperator,
                     kafkaBridgeAssemblyOperator,
                     kafkaRebalanceAssemblyOperator,

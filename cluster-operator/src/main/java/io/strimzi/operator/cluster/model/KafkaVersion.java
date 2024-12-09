@@ -82,7 +82,6 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
         private final KafkaVersion defaultVersion;
         private final Map<String, String> kafkaImages;
         private final Map<String, String> kafkaConnectImages;
-        private final Map<String, String> kafkaMirrorMakerImages;
         private final Map<String, String> kafkaMirrorMaker2Images;
 
         /**
@@ -90,23 +89,20 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
          *
          * @param kafkaImages               Map with container images for various Kafka versions to be used for Kafka brokers and ZooKeeper
          * @param kafkaConnectImages        Map with container images for various Kafka versions to be used for Kafka Connect
-         * @param kafkaMirrorMakerImages    Map with container images for various Kafka versions to be used for Kafka Mirror Maker
          * @param kafkaMirrorMaker2Images   Map with container images for various Kafka versions to be used for Kafka Mirror Maker 2
          */
         public Lookup(Map<String, String> kafkaImages,
                       Map<String, String> kafkaConnectImages,
-                      Map<String, String> kafkaMirrorMakerImages,
                       Map<String, String> kafkaMirrorMaker2Images) {
             this(new InputStreamReader(
                     KafkaVersion.class.getResourceAsStream("/" + KAFKA_VERSIONS_RESOURCE),
                     StandardCharsets.UTF_8),
-                    kafkaImages, kafkaConnectImages, kafkaMirrorMakerImages, kafkaMirrorMaker2Images);
+                    kafkaImages, kafkaConnectImages, kafkaMirrorMaker2Images);
         }
 
         protected Lookup(Reader reader,
                          Map<String, String> kafkaImages,
                          Map<String, String> kafkaConnectImages,
-                         Map<String, String> kafkaMirrorMakerImages,
                          Map<String, String> kafkaMirrorMaker2Images) {
             map = new HashMap<>();
             try {
@@ -116,7 +112,6 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
             }
             this.kafkaImages = kafkaImages;
             this.kafkaConnectImages = kafkaConnectImages;
-            this.kafkaMirrorMakerImages = kafkaMirrorMakerImages;
             this.kafkaMirrorMaker2Images = kafkaMirrorMaker2Images;
         }
 
@@ -302,38 +297,10 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
             validateImages(versions, kafkaConnectImages);
         }
 
-        /**
-         * The Kafka Connect image to use for a Kafka Mirror Maker cluster.
-         * @param image The image given in the CR.
-         * @param version The version given in the CR.
-         * @return The image to use.
-         * @throws InvalidResourceException If no image was given in the CR and the version given
-         * was not present in {@link ClusterOperatorConfig#STRIMZI_KAFKA_MIRROR_MAKER_IMAGES}.
-         */
-        public String kafkaMirrorMakerImage(String image, String version) {
-            try {
-                return image(image,
-                        version,
-                        kafkaMirrorMakerImages);
-            } catch (NoImageException e) {
-                throw asInvalidResourceException(version, e);
-            }
-        }
-
         InvalidResourceException asInvalidResourceException(String version, NoImageException e) {
             return new InvalidResourceException("Kafka version " + version + " is not supported. " +
                     "Supported versions are: " + String.join(", ", supportedVersions()) + ".",
                     e);
-        }
-
-        /**
-         * Validate that the given versions have images present in {@link ClusterOperatorConfig#STRIMZI_KAFKA_MIRROR_MAKER_IMAGES}.
-         * @param versions The versions to validate.
-         * @throws NoImageException If one of the versions lacks an image.
-         * @throws UnsupportedVersionException If any version with configured image is not supported
-         */
-        public void validateKafkaMirrorMakerImages(Set<String> versions) throws NoImageException, UnsupportedVersionException {
-            validateImages(versions, kafkaMirrorMakerImages);
         }
 
         /**
@@ -379,7 +346,6 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
                         .append(" msg: ").append(version.messageVersion)
                         .append(" kafka-image: ").append(kafkaImages.get(v))
                         .append(" connect-image: ").append(kafkaConnectImages.get(v))
-                        .append(" mirrormaker-image: ").append(kafkaMirrorMakerImages.get(v))
                         .append(" mirrormaker2-image: ").append(kafkaMirrorMaker2Images.get(v))
                         .append("}");
 

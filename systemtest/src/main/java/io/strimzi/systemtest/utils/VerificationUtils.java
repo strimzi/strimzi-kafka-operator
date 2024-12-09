@@ -15,7 +15,6 @@ import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Environment;
@@ -260,7 +259,6 @@ public class VerificationUtils {
      * @param clusterName Name of the cluster linked with configmaps
      * @param additionalClusterName Name of the second cluster - used mainly for source + target cluster verification
      */
-    @SuppressWarnings("deprecation") // Kafka Mirror Maker is deprecated
     public static void verifyConfigMapsLabels(String namespaceName, String clusterName, String additionalClusterName) {
         LOGGER.info("Verifying labels for Config maps");
 
@@ -270,9 +268,6 @@ public class VerificationUtils {
                 if (cm.getMetadata().getName().equals(clusterName.concat("-connect-config"))) {
                     assertThat(cm.getMetadata().getLabels().get("app"), is(nullValue()));
                     assertThat(cm.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is(KafkaConnect.RESOURCE_KIND));
-                } else if (cm.getMetadata().getName().contains("-mirror-maker-config")) {
-                    assertThat(cm.getMetadata().getLabels().get("app"), is(nullValue()));
-                    assertThat(cm.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is(KafkaMirrorMaker.RESOURCE_KIND));
                 } else if (cm.getMetadata().getName().contains("-mirrormaker2-config")) {
                     assertThat(cm.getMetadata().getLabels().get("app"), is(nullValue()));
                     assertThat(cm.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is(KafkaMirrorMaker2.RESOURCE_KIND));
@@ -312,7 +307,6 @@ public class VerificationUtils {
      * @param namespaceName Namespace name where service accounts are located
      * @param clusterName Name of the cluster linked with service accounts
      */
-    @SuppressWarnings("deprecation") // Kafka Mirror Maker is deprecated
     public static void verifyServiceAccountsLabels(String namespaceName, String clusterName) {
         LOGGER.info("Verifying labels for Service Accounts");
 
@@ -331,9 +325,6 @@ public class VerificationUtils {
                 if (sa.getMetadata().getName().equals(clusterName.concat("-connect"))) {
                     assertThat(sa.getMetadata().getLabels().get("app"), is(nullValue()));
                     assertThat(sa.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is(KafkaConnect.RESOURCE_KIND));
-                } else if (sa.getMetadata().getName().equals(clusterName.concat("-mirror-maker"))) {
-                    assertThat(sa.getMetadata().getLabels().get("app"), is(nullValue()));
-                    assertThat(sa.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is(KafkaMirrorMaker.RESOURCE_KIND));
                 } else {
                     assertThat(sa.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is(Kafka.RESOURCE_KIND));
                 }

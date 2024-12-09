@@ -24,7 +24,6 @@ The Cluster Operator watches for changes to the following resources:
 * `Kafka` for the Kafka cluster.
 * `KafkaConnect` for the Kafka Connect cluster.
 * `KafkaConnector` for creating and managing connectors in a Kafka Connect cluster.
-* `KafkaMirrorMaker` for the Kafka MirrorMaker instance.
 * `KafkaMirrorMaker2` for the Kafka MirrorMaker 2 instance.
 * `KafkaBridge` for the Kafka Bridge instance.
 * `KafkaRebalance` for the Cruise Control optimization requests.

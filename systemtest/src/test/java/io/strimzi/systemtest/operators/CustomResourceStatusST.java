@@ -22,7 +22,6 @@ import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
-import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerStatus;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Status;
@@ -42,7 +41,6 @@ import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
-import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
@@ -51,17 +49,14 @@ import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
-import io.strimzi.systemtest.templates.crd.KafkaMirrorMakerTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
-import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMaker2Utils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMakerUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -82,7 +77,6 @@ import static io.strimzi.systemtest.TestTags.CONNECT;
 import static io.strimzi.systemtest.TestTags.CONNECTOR_OPERATOR;
 import static io.strimzi.systemtest.TestTags.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.TestTags.EXTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.TestTags.MIRROR_MAKER;
 import static io.strimzi.systemtest.TestTags.MIRROR_MAKER2;
 import static io.strimzi.systemtest.TestTags.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
@@ -187,24 +181,6 @@ class CustomResourceStatusST extends AbstractST {
         LOGGER.info("KafkaUser Type: {}", kafkaCondition.getType());
         assertThat("KafkaUser is in wrong state!", kafkaCondition.getType(), is(Ready.toString()));
         LOGGER.info("KafkaUser is in desired state: Ready");
-    }
-
-    @ParallelTest
-    @Tag(MIRROR_MAKER)
-    void testKafkaMirrorMakerStatusWrongBootstrap() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        String mirrorMakerName = testStorage.getClusterName() + "-mirror-maker-2";
-
-        resourceManager.createResourceWithWait(KafkaMirrorMakerTemplates.kafkaMirrorMaker(Environment.TEST_SUITE_NAMESPACE, mirrorMakerName, sharedTestStorage.getClusterName(), sharedTestStorage.getClusterName(), ClientUtils.generateRandomConsumerGroup(), 1, false).build());
-        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(Environment.TEST_SUITE_NAMESPACE, mirrorMakerName);
-        assertKafkaMirrorMakerStatus(1, mirrorMakerName);
-        // Corrupt MirrorMaker Pods
-        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, mirrorMakerName, mm -> mm.getSpec().getConsumer().setBootstrapServers("non-exists-bootstrap"));
-        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerNotReady(Environment.TEST_SUITE_NAMESPACE, mirrorMakerName);
-        // Restore MirrorMaker Pods
-        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, mirrorMakerName, mm -> mm.getSpec().getConsumer().setBootstrapServers(KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName())));
-        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(Environment.TEST_SUITE_NAMESPACE, mirrorMakerName);
-        assertKafkaMirrorMakerStatus(3, mirrorMakerName);
     }
 
     @ParallelTest
@@ -463,11 +439,6 @@ class CustomResourceStatusST extends AbstractST {
                     break;
             }
         }
-    }
-
-    void assertKafkaMirrorMakerStatus(long expectedObservedGeneration, String mirrorMakerName) {
-        KafkaMirrorMakerStatus kafkaMirrorMakerStatus = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(mirrorMakerName).get().getStatus();
-        assertThat("MirrorMaker cluster status has incorrect Observed Generation", kafkaMirrorMakerStatus.getObservedGeneration(), is(expectedObservedGeneration));
     }
 
     void assertKafkaMirrorMaker2Status(long expectedObservedGeneration, String apiUrl, String mirrorMaker2Name) {

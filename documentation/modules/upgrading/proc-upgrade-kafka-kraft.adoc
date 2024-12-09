@@ -92,7 +92,6 @@ The rolling updates ensure that each pod is using the broker binaries for the ne
 . If required, set the `version` property for Kafka Connect and MirrorMaker as the new version of Kafka:
 +
 .. For Kafka Connect, update `KafkaConnect.spec.version`.
-.. For MirrorMaker, update `KafkaMirrorMaker.spec.version`.
 .. For MirrorMaker 2, update `KafkaMirrorMaker2.spec.version`.
 +
 NOTE: If you are using custom images that are built manually, you must rebuild those images to ensure that they are up-to-date with the latest Strimzi base image. 

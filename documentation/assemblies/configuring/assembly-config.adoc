@@ -166,9 +166,6 @@ include::../../modules/configuring/proc-manual-restart-mirrormaker2-connector.ad
 //Procedure to restart an MM2 connector task
 include::../../modules/configuring/proc-manual-restart-mirrormaker2-connector-task.adoc[leveloffset=+2]
 
-//`KafkaMirrorMaker` resource config
-include::../../modules/configuring/con-config-mirrormaker.adoc[leveloffset=+1]
-
 //`KafkaBridge` resource config
 include::../../modules/configuring/con-config-kafka-bridge.adoc[leveloffset=+1]
 
