@@ -107,7 +107,7 @@ public class ClusterCa extends Ca {
      * @param existingCertificates                  Existing certificates (or null if they do not exist yet)
      * @param nodes                                 Nodes that are part of the Cruise Control cluster
      * @param isMaintenanceTimeWindowsSatisfied     Flag indicating whether we can do maintenance tasks or not
-     * @param forceRenew                            Flag indicating whether to renew the existing certificates
+     * @param caCertGenerationChanged               Flag indicating whether the CA cert generation has changed since the existing certificates were issued
      *
      * @return Map with CertAndKey object containing the public and private key
      *
@@ -119,7 +119,7 @@ public class ClusterCa extends Ca {
             Map<String, CertAndKey> existingCertificates,
             Set<NodeRef> nodes,
             boolean isMaintenanceTimeWindowsSatisfied,
-            boolean forceRenew
+            boolean caCertGenerationChanged
     ) throws IOException {
         DnsNameGenerator ccDnsGenerator = DnsNameGenerator.of(namespace, CruiseControlResources.serviceName(clusterName));
 
@@ -144,7 +144,7 @@ public class ClusterCa extends Ca {
             subjectFn,
             existingCertificates,
             isMaintenanceTimeWindowsSatisfied,
-            forceRenew);
+            caCertGenerationChanged);
     }
 
     /**
@@ -156,7 +156,7 @@ public class ClusterCa extends Ca {
      * @param existingCertificates                  Existing certificates (or null if they do not exist yet)
      * @param nodes                                 Nodes that are part of the ZooKeeper cluster
      * @param isMaintenanceTimeWindowsSatisfied     Flag indicating whether we can do maintenance tasks or not
-     * @param forceRenew                            Flag indicating whether to renew the existing certificates
+     * @param caCertGenerationChanged               Flag indicating whether the CA cert generation has changed since the existing certificates were issued
      *
      * @return Map with CertAndKey objects containing the public and private keys for the different nodes
      *
@@ -168,7 +168,7 @@ public class ClusterCa extends Ca {
             Map<String, CertAndKey> existingCertificates,
             Set<NodeRef> nodes,
             boolean isMaintenanceTimeWindowsSatisfied,
-            boolean forceRenew
+            boolean caCertGenerationChanged
     ) throws IOException {
         DnsNameGenerator zkDnsGenerator = DnsNameGenerator.of(namespace, KafkaResources.zookeeperServiceName(clusterName));
         DnsNameGenerator zkHeadlessDnsGenerator = DnsNameGenerator.of(namespace, KafkaResources.zookeeperHeadlessServiceName(clusterName));
@@ -198,7 +198,7 @@ public class ClusterCa extends Ca {
             subjectFn,
             existingCertificates,
             isMaintenanceTimeWindowsSatisfied,
-            forceRenew);
+            caCertGenerationChanged);
     }
 
     /**
@@ -212,7 +212,7 @@ public class ClusterCa extends Ca {
      * @param externalBootstrapAddresses            List of external bootstrap addresses (used for certificate SANs)
      * @param externalAddresses                     Map with external listener addresses for the different nodes (used for certificate SANs)
      * @param isMaintenanceTimeWindowsSatisfied     Flag indicating whether we can do maintenance tasks or not
-     * @param forceRenew                            Flag indicating whether to renew the existing certificates
+     * @param caCertGenerationChanged               Flag indicating whether the CA cert generation has changed since the existing certificates were issued
      *
      * @return Map with CertAndKey objects containing the public and private keys for the different brokers
      *
@@ -226,7 +226,7 @@ public class ClusterCa extends Ca {
             Set<String> externalBootstrapAddresses,
             Map<Integer, Set<String>> externalAddresses,
             boolean isMaintenanceTimeWindowsSatisfied,
-            boolean forceRenew
+            boolean caCertGenerationChanged
     ) throws IOException {
         Function<NodeRef, Subject> subjectFn = node -> {
             Subject.Builder subject = new Subject.Builder()
@@ -274,7 +274,7 @@ public class ClusterCa extends Ca {
             subjectFn,
             existingCertificates,
             isMaintenanceTimeWindowsSatisfied,
-            forceRenew);
+            caCertGenerationChanged);
     }
 
     @Override
@@ -291,7 +291,7 @@ public class ClusterCa extends Ca {
      * @param subjectFn                             Function to generate certificate subject for given node / pod
      * @param existingCertificates                  Existing certificates (or null if they do not exist yet)
      * @param isMaintenanceTimeWindowsSatisfied     Flag indicating if we are inside a maintenance window or not
-     * @param forceRenew                            Flag indicating whether to renew the existing certificates regardless of CA renewal
+     * @param caCertGenerationChanged               Flag indicating whether the CA cert generation has changed since the existing certificates were issued
      *
      * @return Returns map with node certificates which can be used to create or update the stored certificates
      *
@@ -303,7 +303,7 @@ public class ClusterCa extends Ca {
             Function<NodeRef, Subject> subjectFn,
             Map<String, CertAndKey> existingCertificates,
             boolean isMaintenanceTimeWindowsSatisfied,
-            boolean forceRenew
+            boolean caCertGenerationChanged
     ) throws IOException {
         // Maps for storing the certificates => will be used in the new or updated certificate store. This map is filled in this method and returned at the end.
         Map<String, CertAndKey> certs = new HashMap<>();
@@ -323,7 +323,7 @@ public class ClusterCa extends Ca {
 
             if (!this.certRenewed() // No CA renewal is happening
                     && certAndKey != null // There is a public cert and private key for this pod
-                    && !forceRenew
+                    && !caCertGenerationChanged // The CA cert generation has not changed since the existing certificates were issued
             )   {
                 // A certificate for this node already exists, so we will try to reuse it
                 LOGGER.debugCr(reconciliation, "Certificate for node {} already exists", node);
