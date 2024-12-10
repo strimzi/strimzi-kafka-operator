@@ -130,7 +130,7 @@ public interface PodSecurityProvider {
     @Deprecated
     @SuppressWarnings("unused")
     default SecurityContext entityOperatorTlsSidecarContainerSecurityContext(ContainerSecurityProviderContext context) {
-        return securityContextOrNull(context);
+        throw new UnsupportedOperationException("TLS Sidecar container in Entity Operator pods is not supported anymore");
     }
 
     /**
@@ -192,7 +192,7 @@ public interface PodSecurityProvider {
     @Deprecated
     @SuppressWarnings("unused")
     default PodSecurityContext jmxTransPodSecurityContext(PodSecurityProviderContext context) {
-        return null;
+        throw new UnsupportedOperationException("JMX Trans is not supported anymore");
     }
 
     /**
@@ -206,7 +206,7 @@ public interface PodSecurityProvider {
     @Deprecated
     @SuppressWarnings("unused")
     default SecurityContext jmxTransContainerSecurityContext(ContainerSecurityProviderContext context) {
-        return null;
+        throw new UnsupportedOperationException("JMX Trans is not supported anymore");
     }
 
     /**
@@ -281,7 +281,7 @@ public interface PodSecurityProvider {
     @Deprecated
     @SuppressWarnings("unused")
     default PodSecurityContext kafkaMirrorMakerPodSecurityContext(PodSecurityProviderContext context) {
-        return null;
+        throw new UnsupportedOperationException("Mirror Maker 1 is not supported anymore");
     }
 
     /**
@@ -295,7 +295,7 @@ public interface PodSecurityProvider {
     @Deprecated
     @SuppressWarnings("unused")
     default SecurityContext kafkaMirrorMakerContainerSecurityContext(ContainerSecurityProviderContext context) {
-        return null;
+        throw new UnsupportedOperationException("Mirror Maker 1 is not supported anymore");
     }
 
     /**
