@@ -34,4 +34,4 @@ spec:
           labels:
             severity: warning
           annotations:
-            message: "Strimzi Kafka Topic {{`{{ $labels.topicName }}`}} is not ready"
+            message: "Strimzi KafkaTopic {{`{{ $labels.topicName }}`}} is not ready"
