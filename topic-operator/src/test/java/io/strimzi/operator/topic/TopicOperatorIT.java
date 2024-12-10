@@ -888,7 +888,7 @@ class TopicOperatorIT implements TestSeparator {
         for (KafkaTopic kt : topics) {
             shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
                     theKt -> {
-                        theKt.getSpec().getConfig().put(TopicConfig.INDEX_INTERVAL_BYTES_CONFIG, 5678);
+                        theKt.getSpec().getConfig().replace(TopicConfig.INDEX_INTERVAL_BYTES_CONFIG, 5678);
                         return theKt;
                     },
                     expectedCreateConfigs -> {
@@ -907,7 +907,7 @@ class TopicOperatorIT implements TestSeparator {
         for (KafkaTopic kt : topics) {
             shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
                     theKt -> {
-                        theKt.getSpec().getConfig().put(TopicConfig.FLUSH_MS_CONFIG, 9876L);
+                        theKt.getSpec().getConfig().replace(TopicConfig.FLUSH_MS_CONFIG, 9876L);
                         return theKt;
                     },
                     expectedCreateConfigs -> {
@@ -926,7 +926,7 @@ class TopicOperatorIT implements TestSeparator {
         for (KafkaTopic kt : topics) {
             shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
                     theKt -> {
-                        theKt.getSpec().getConfig().put(TopicConfig.MIN_CLEANABLE_DIRTY_RATIO_CONFIG, 0.1);
+                        theKt.getSpec().getConfig().replace(TopicConfig.MIN_CLEANABLE_DIRTY_RATIO_CONFIG, 0.1);
                         return theKt;
                     },
                     expectedCreateConfigs -> {
@@ -945,7 +945,7 @@ class TopicOperatorIT implements TestSeparator {
         for (KafkaTopic kt : topics) {
             shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
                     theKt -> {
-                        theKt.getSpec().getConfig().put(TopicConfig.UNCLEAN_LEADER_ELECTION_ENABLE_CONFIG, false);
+                        theKt.getSpec().getConfig().replace(TopicConfig.UNCLEAN_LEADER_ELECTION_ENABLE_CONFIG, false);
                         return theKt;
                     },
                     expectedCreateConfigs -> {
@@ -964,7 +964,7 @@ class TopicOperatorIT implements TestSeparator {
         for (KafkaTopic kt : topics) {
             shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
                     theKt -> {
-                        theKt.getSpec().getConfig().put(TopicConfig.CLEANUP_POLICY_CONFIG, List.of("compact", "delete"));
+                        theKt.getSpec().getConfig().replace(TopicConfig.CLEANUP_POLICY_CONFIG, List.of("compact", "delete"));
                         return theKt;
                     },
                     expectedCreateConfigs -> {
@@ -1538,6 +1538,10 @@ class TopicOperatorIT implements TestSeparator {
 
     private KafkaTopic modifyTopicAndAwait(KafkaTopic kt, UnaryOperator<KafkaTopic> changer, Predicate<KafkaTopic> predicate) {
         var edited = TopicOperatorTestUtil.changeTopic(kubernetesClient, kt, changer);
+        if (kt.getSpec().equals(edited.getSpec())) {
+            LOGGER.warn("Spec change failed, try again");
+            edited = TopicOperatorTestUtil.changeTopic(kubernetesClient, kt, changer);
+        }
         var postUpdateGeneration = edited.getMetadata().getGeneration();
         Predicate<KafkaTopic> topicWasSyncedAndMatchesPredicate = new Predicate<>() {
             @Override
