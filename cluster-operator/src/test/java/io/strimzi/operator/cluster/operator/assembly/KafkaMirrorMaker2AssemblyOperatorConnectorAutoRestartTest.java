@@ -20,7 +20,6 @@ import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.platform.KubernetesVersion;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -37,6 +36,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -107,12 +107,12 @@ public class KafkaMirrorMaker2AssemblyOperatorConnectorAutoRestartTest {
 
     private KafkaConnectApi mockConnectApi(Map<String, Object> status)    {
         KafkaConnectApi mockConnectApi = mock(KafkaConnectApi.class);
-        when(mockConnectApi.list(any(), any(), anyInt())).thenReturn(Future.succeededFuture(new ArrayList<>()));
-        when(mockConnectApi.getConnectorConfig(any(), any(), any(), anyInt(), eq("source->target.MirrorSourceConnector"))).thenReturn(Future.succeededFuture(EXPECTED_CONNECTOR_CONFIG));
-        when(mockConnectApi.status(any(), any(), anyInt(), eq("source->target.MirrorSourceConnector"))).thenReturn(Future.succeededFuture(status));
-        when(mockConnectApi.statusWithBackOff(any(), any(), any(), anyInt(), eq("source->target.MirrorSourceConnector"))).thenReturn(Future.succeededFuture(status));
-        when(mockConnectApi.getConnectorTopics(any(), any(), anyInt(), eq("source->target.MirrorSourceConnector"))).thenReturn(Future.succeededFuture(List.of()));
-        when(mockConnectApi.restart(any(), anyInt(), any(), anyBoolean(), anyBoolean())).thenReturn(Future.succeededFuture(Map.of("connector", Map.of("state", "RESTARTING"))));
+        when(mockConnectApi.list(any(), any(), anyInt())).thenReturn(CompletableFuture.completedFuture(new ArrayList<>()));
+        when(mockConnectApi.getConnectorConfig(any(), any(), any(), anyInt(), eq("source->target.MirrorSourceConnector"))).thenReturn(CompletableFuture.completedFuture(EXPECTED_CONNECTOR_CONFIG));
+        when(mockConnectApi.status(any(), any(), anyInt(), eq("source->target.MirrorSourceConnector"))).thenReturn(CompletableFuture.completedFuture(status));
+        when(mockConnectApi.statusWithBackOff(any(), any(), any(), anyInt(), eq("source->target.MirrorSourceConnector"))).thenReturn(CompletableFuture.completedFuture(status));
+        when(mockConnectApi.getConnectorTopics(any(), any(), anyInt(), eq("source->target.MirrorSourceConnector"))).thenReturn(CompletableFuture.completedFuture(List.of()));
+        when(mockConnectApi.restart(any(), anyInt(), any(), anyBoolean(), anyBoolean())).thenReturn(CompletableFuture.completedFuture(Map.of("connector", Map.of("state", "RESTARTING"))));
 
         return mockConnectApi;
     }

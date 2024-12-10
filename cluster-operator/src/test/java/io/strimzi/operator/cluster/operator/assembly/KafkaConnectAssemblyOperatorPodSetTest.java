@@ -74,6 +74,7 @@ import org.mockito.Mockito;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
@@ -190,14 +191,14 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
 
         // Mock Connect REST API
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
-        when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(emptyList()));
         ConnectorPlugin plugin1 = new ConnectorPluginBuilder()
                 .withConnectorClass("io.strimzi.MyClass")
                 .withType("sink")
                 .withVersion("1.0.0")
                 .build();
-        when(mockConnectClient.listConnectorPlugins(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(singletonList(plugin1)));
-        when(mockConnectClient.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
+        when(mockConnectClient.listConnectorPlugins(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(singletonList(plugin1)));
+        when(mockConnectClient.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(CompletableFuture.completedFuture(null));
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(
                 vertx,
@@ -327,14 +328,14 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
 
         // Mock Connect REST API
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
-        when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(emptyList()));
         ConnectorPlugin plugin1 = new ConnectorPluginBuilder()
                 .withConnectorClass("io.strimzi.MyClass")
                 .withType("sink")
                 .withVersion("1.0.0")
                 .build();
-        when(mockConnectClient.listConnectorPlugins(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(singletonList(plugin1)));
-        when(mockConnectClient.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
+        when(mockConnectClient.listConnectorPlugins(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(singletonList(plugin1)));
+        when(mockConnectClient.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(CompletableFuture.completedFuture(null));
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(
                 vertx,
@@ -956,14 +957,14 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
 
         // Mock Connect REST API
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
-        when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(emptyList()));
         ConnectorPlugin plugin1 = new ConnectorPluginBuilder()
                 .withConnectorClass("io.strimzi.MyClass")
                 .withType("sink")
                 .withVersion("1.0.0")
                 .build();
-        when(mockConnectClient.listConnectorPlugins(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(singletonList(plugin1)));
-        when(mockConnectClient.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
+        when(mockConnectClient.listConnectorPlugins(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(singletonList(plugin1)));
+        when(mockConnectClient.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(CompletableFuture.completedFuture(null));
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(
                 vertx,
@@ -1197,14 +1198,14 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
 
         // Mock Connect REST API
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
-        when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(emptyList()));
         ConnectorPlugin plugin1 = new ConnectorPluginBuilder()
                 .withConnectorClass("io.strimzi.MyClass")
                 .withType("sink")
                 .withVersion("1.0.0")
                 .build();
-        when(mockConnectClient.listConnectorPlugins(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(singletonList(plugin1)));
-        when(mockConnectClient.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
+        when(mockConnectClient.listConnectorPlugins(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(singletonList(plugin1)));
+        when(mockConnectClient.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(CompletableFuture.completedFuture(null));
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(
                 vertx,
