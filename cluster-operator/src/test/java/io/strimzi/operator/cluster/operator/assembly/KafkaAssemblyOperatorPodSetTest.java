@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimConditionBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
@@ -48,7 +47,6 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PvcOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
@@ -87,8 +85,6 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.startsWith;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -236,10 +232,6 @@ public class KafkaAssemblyOperatorPodSetTest {
             return Future.succeededFuture(result);
         });
 
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Zoo STS is queried and deleted if it still exists
-        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
-
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(zkCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
@@ -308,7 +300,7 @@ public class KafkaAssemblyOperatorPodSetTest {
     }
 
     /**
-     * Tests the first reconciliation of the Kafka cluster after the UseStrimziPodsSet is enabled for the first time
+     * Tests the first reconciliation of the Kafka cluster
      *
      * @param context   Test context
      */
@@ -351,14 +343,6 @@ public class KafkaAssemblyOperatorPodSetTest {
 
             return Future.succeededFuture(result);
         });
-
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        // Zoo
-        when(mockStsOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(new StatefulSetBuilder().withNewMetadata().withName(zkCluster.getComponentName()).withNamespace(NAMESPACE).endMetadata().build())); // Zoo STS still exists in the first reconciliation
-        when(mockStsOps.deleteAsync(any(), any(), eq(zkCluster.getComponentName()), eq(false))).thenReturn(Future.succeededFuture()); // The Zoo STS will be deleted during the reconciliation
-        // Kafka
-        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(new StatefulSetBuilder().withNewMetadata().withName(KAFKA_CLUSTER.getComponentName()).withNamespace(NAMESPACE).endMetadata().build()));
-        when(mockStsOps.deleteAsync(any(), any(), eq(KAFKA_CLUSTER.getComponentName()), eq(false))).thenReturn(Future.succeededFuture()); // The Kafka STS will be deleted during the reconciliation
 
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(zkCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
@@ -408,9 +392,6 @@ public class KafkaAssemblyOperatorPodSetTest {
         Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    // Test that the old Zoo STS was deleted
-                    verify(mockStsOps, times(1)).deleteAsync(any(), any(), eq(zkCluster.getComponentName()), eq(false));
-
                     assertThat(zr.maybeRollZooKeeperInvocations, is(1));
                     assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(zkPodSet, "my-cluster-zookeeper-0")), empty());
                     assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(zkPodSet, "my-cluster-zookeeper-1")), empty());
@@ -485,10 +466,6 @@ public class KafkaAssemblyOperatorPodSetTest {
 
             return Future.succeededFuture(result);
         });
-
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(any(), eq(newZkCluster.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Zoo STS is queried and deleted if it still exists
-        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
 
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(newZkCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
@@ -615,10 +592,6 @@ public class KafkaAssemblyOperatorPodSetTest {
 
             return Future.succeededFuture(result);
         });
-
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Zoo STS is queried and deleted if it still exists
-        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
 
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(zkCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
@@ -761,10 +734,6 @@ public class KafkaAssemblyOperatorPodSetTest {
         ArgumentCaptor<StrimziPodSet> kafkaPodSetCaptor =  ArgumentCaptor.forClass(StrimziPodSet.class);
         when(mockPodSetOps.reconcile(any(), any(), eq(KAFKA_CLUSTER.getComponentName()), kafkaPodSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
 
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Zoo STS is queried and deleted if it still exists
-        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
-
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(zkCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
@@ -904,9 +873,6 @@ public class KafkaAssemblyOperatorPodSetTest {
         ArgumentCaptor<StrimziPodSet> kafkaPodSetCaptor =  ArgumentCaptor.forClass(StrimziPodSet.class);
         when(mockPodSetOps.reconcile(any(), any(), eq(KAFKA_CLUSTER.getComponentName()), kafkaPodSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
 
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
-
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
@@ -1023,10 +989,6 @@ public class KafkaAssemblyOperatorPodSetTest {
 
             return Future.succeededFuture(result);
         });
-
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Zoo STS is queried and deleted if it still exists
-        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
 
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(zkCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
@@ -1153,7 +1115,6 @@ public class KafkaAssemblyOperatorPodSetTest {
             return manualPodCleaning()
                     .compose(i -> manualRollingUpdate())
                     .compose(i -> pvcs(kafkaStatus))
-                    .compose(i -> migrateFromStatefulSetToPodSet())
                     .compose(i -> podSet())
                     .compose(i -> scaleDown())
                     .compose(i -> rollingUpdate())
@@ -1184,7 +1145,6 @@ public class KafkaAssemblyOperatorPodSetTest {
                     .compose(i -> scaleDown())
                     .compose(i -> listeners())
                     .compose(i -> brokerConfigurationConfigMaps())
-                    .compose(i -> migrateFromStatefulSetToPodSet())
                     .compose(i -> podSet())
                     .compose(podSetDiffs -> rollingUpdate(podSetDiffs))
                     .compose(i -> sharedKafkaConfigurationCleanup());

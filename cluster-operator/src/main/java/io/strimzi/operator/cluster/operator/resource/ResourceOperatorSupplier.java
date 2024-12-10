@@ -46,7 +46,6 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.RouteOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceAccountOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceOperator;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StorageClassOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
 import io.strimzi.operator.common.AdminClientProvider;
@@ -80,11 +79,6 @@ public class ResourceOperatorSupplier {
      * ImageStream operator
      */
     public final ImageStreamOperator imageStreamOperations;
-
-    /**
-     * StatefulSet operator
-     */    
-    public final StatefulSetOperator stsOperations;
 
     /**
      * Config Map operator
@@ -331,7 +325,6 @@ public class ResourceOperatorSupplier {
         this(new ServiceOperator(vertx, client),
                 pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 pfa.hasImages() ? new ImageStreamOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                new StatefulSetOperator(vertx, client, operationTimeoutMs),
                 new ConfigMapOperator(vertx, client),
                 new SecretOperator(vertx, client),
                 new PvcOperator(vertx, client),
@@ -374,7 +367,6 @@ public class ResourceOperatorSupplier {
      * @param serviceOperations                     Service operator
      * @param routeOperations                       Route operator
      * @param imageStreamOperations                 ImageStream operator
-     * @param stsOperations                         StatefulSet operator
      * @param configMapOperations                   ConfigMap operator
      * @param secretOperations                      Secret operator
      * @param pvcOperations                         PVC operator
@@ -414,7 +406,6 @@ public class ResourceOperatorSupplier {
     public ResourceOperatorSupplier(ServiceOperator serviceOperations,
                                     RouteOperator routeOperations,
                                     ImageStreamOperator imageStreamOperations,
-                                    StatefulSetOperator stsOperations,
                                     ConfigMapOperator configMapOperations,
                                     SecretOperator secretOperations,
                                     PvcOperator pvcOperations,
@@ -452,7 +443,6 @@ public class ResourceOperatorSupplier {
         this.serviceOperations = serviceOperations;
         this.routeOperations = routeOperations;
         this.imageStreamOperations = imageStreamOperations;
-        this.stsOperations = stsOperations;
         this.configMapOperations = configMapOperations;
         this.secretOperations = secretOperations;
         this.pvcOperations = pvcOperations;

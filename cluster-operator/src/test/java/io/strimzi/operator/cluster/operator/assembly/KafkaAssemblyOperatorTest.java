@@ -78,7 +78,6 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.PvcOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.RouteOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceOperator;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
@@ -428,9 +427,6 @@ public class KafkaAssemblyOperatorTest {
         when(mockPodSetOps.getAsync(eq(NAMESPACE), startsWith(CLUSTER_NAME + "-"))).thenAnswer(i -> Future.succeededFuture(podSets.get(i.getArgument(1, String.class))));
         when(mockPodSetOps.batchReconcile(any(), eq(NAMESPACE), any(), any())).thenCallRealMethod();
         when(mockPodSetOps.listAsync(eq(NAMESPACE), eq(kafkaCluster.getSelectorLabels()))).thenAnswer(i -> Future.succeededFuture(new ArrayList<>(podSets.values())));
-
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
 
         // Config maps
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -842,10 +838,6 @@ public class KafkaAssemblyOperatorTest {
         when(mockPodSetOps.getAsync(eq(NAMESPACE), startsWith(CLUSTER_NAME + "-"))).thenAnswer(i -> Future.succeededFuture(podSets.get(i.getArgument(1, String.class))));
         when(mockPodSetOps.batchReconcile(any(), eq(NAMESPACE), any(), any())).thenCallRealMethod();
         when(mockPodSetOps.listAsync(eq(NAMESPACE), eq(updatedKafkaCluster.getSelectorLabels()))).thenAnswer(i -> Future.succeededFuture(new ArrayList<>(podSets.values())));
-
-        // StatefulSets
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(eq(NAMESPACE), eq(KafkaResources.kafkaComponentName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture());
 
         // Pods
         PodOperator mockPodOps = supplier.podOperations;
