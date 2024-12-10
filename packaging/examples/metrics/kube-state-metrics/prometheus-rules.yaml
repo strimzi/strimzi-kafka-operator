@@ -21,7 +21,7 @@ spec:
             severity: warning
           annotations:
             message: "Strimzi KafkaUser {{`{{ $labels.username }}`}} is not ready"
-        - alert: KafkaUserDeprecated
+        - alert: KafkaTopicDeprecated
           expr: strimzi_kafka_topic_resource_info{deprecated="Warning"}
           for: 15m
           labels:
