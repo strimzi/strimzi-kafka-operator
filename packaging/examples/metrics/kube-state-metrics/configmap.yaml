@@ -25,6 +25,7 @@ data:
                 partitions: [ spec, partitions ]
                 replicas: [ spec, replicas ]
                 ready: [ status, conditions, "[type=Ready]", status ]
+                deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
                 generation: [ status, observedGeneration ]
                 topicId: [ status, topicId ]
                 topicName: [ status, topicName ]

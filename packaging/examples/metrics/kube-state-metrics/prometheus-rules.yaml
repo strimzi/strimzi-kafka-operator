@@ -21,6 +21,13 @@ spec:
             severity: warning
           annotations:
             message: "Strimzi KafkaUser {{`{{ $labels.username }}`}} is not ready"
+        - alert: KafkaUserDeprecated
+          expr: strimzi_kafka_topic_resource_info{deprecated="Warning"}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            message: "Strimzi KafkaTopic {{`{{ $labels.topicName }}`}} has a deprecated configuration"
         - alert: KafkaTopicNotReady
           expr: strimzi_kafka_topic_resource_info{ready!="True"}
           for: 15m
