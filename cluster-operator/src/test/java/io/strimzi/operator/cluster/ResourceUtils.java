@@ -67,7 +67,6 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.RouteOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceAccountOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceOperator;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StorageClassOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
 import io.strimzi.operator.common.AdminClientProvider;
@@ -532,7 +531,6 @@ public class ResourceUtils {
                 mock(ServiceOperator.class),
                 routeOps,
                 imageOps,
-                mock(StatefulSetOperator.class),
                 mock(ConfigMapOperator.class),
                 mock(SecretOperator.class),
                 mock(PvcOperator.class),

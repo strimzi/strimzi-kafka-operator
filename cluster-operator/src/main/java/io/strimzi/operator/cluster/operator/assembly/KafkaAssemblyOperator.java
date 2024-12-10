@@ -6,7 +6,6 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -38,7 +37,6 @@ import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.InvalidConfigurationException;
@@ -66,7 +64,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.stream.IntStream;
 
 /**
  * Assembly operator for the Kafka custom resource. It manages the following components:
@@ -111,7 +108,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     /* test */ final ClusterOperatorConfig config;
     /* test */ final ResourceOperatorSupplier supplier;
 
-    private final StatefulSetOperator stsOperations;
     private final CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator;
     private final StrimziPodSetOperator strimziPodSetOperator;
     private final CrdOperator<KubernetesClient, KafkaNodePool, KafkaNodePoolList> nodePoolOperator;
@@ -134,7 +130,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.supplier = supplier;
 
         this.operationTimeoutMs = config.getOperationTimeoutMs();
-        this.stsOperations = supplier.stsOperations;
         this.kafkaOperator = supplier.kafkaOperator;
         this.nodePoolOperator = supplier.kafkaNodePoolOperator;
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
@@ -441,21 +436,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         /**
-         * Utility method to extract current number of replicas from an existing StatefulSet
-         *
-         * @param sts   StatefulSet from which the replicas count should be extracted
-         *
-         * @return      Number of replicas
-         */
-        private int currentReplicas(StatefulSet sts)  {
-            if (sts != null && sts.getSpec() != null)   {
-                return sts.getSpec().getReplicas();
-            } else {
-                return 0;
-            }
-        }
-
-        /**
          * Utility method to extract current number of replicas from an existing StrimziPodSet
          *
          * @param podSet    PodSet from which the replicas count should be extracted
@@ -552,29 +532,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return  Future with ZooKeeper reconciler
          */
         Future<ZooKeeperReconciler> zooKeeperReconciler()   {
-            Future<StatefulSet> stsFuture = stsOperations.getAsync(namespace, KafkaResources.zookeeperComponentName(name));
-            Future<StrimziPodSet> podSetFuture = strimziPodSetOperator.getAsync(namespace, KafkaResources.zookeeperComponentName(name));
-
-            return Future.join(stsFuture, podSetFuture)
-                    .compose(res -> {
-                        StatefulSet sts = res.resultAt(0);
-                        StrimziPodSet podSet = res.resultAt(1);
-
+            return strimziPodSetOperator.getAsync(namespace, KafkaResources.zookeeperComponentName(name))
+                    .compose(podSet -> {
                         int currentReplicas = 0;
                         Storage oldStorage = null;
 
-                        if (sts != null && podSet != null)  {
-                            // Both StatefulSet and PodSet exist => we use the StrimziPodSet as that is the main controller resource
+                        if (podSet != null)  {
                             oldStorage = getOldStorage(podSet);
                             currentReplicas = currentReplicas(podSet);
-                        } else if (podSet != null) {
-                            // PodSet exists, StatefulSet does not => we create the description from the PodSet
-                            oldStorage = getOldStorage(podSet);
-                            currentReplicas = currentReplicas(podSet);
-                        } else if (sts != null) {
-                            // StatefulSet exists, PodSet does not exist => we create the description from the StatefulSet
-                            oldStorage = getOldStorage(sts);
-                            currentReplicas = currentReplicas(sts);
                         }
 
                         ZooKeeperReconciler reconciler = new ZooKeeperReconciler(
@@ -682,14 +647,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 nodePoolFuture = Future.succeededFuture(null);
             }
 
-            Future<StatefulSet> stsFuture = stsOperations.getAsync(namespace, KafkaResources.kafkaComponentName(name));
             Future<List<StrimziPodSet>> podSetFuture = strimziPodSetOperator.listAsync(namespace, kafkaSelectorLabels);
 
-            return Future.join(stsFuture, podSetFuture, nodePoolFuture)
+            return Future.join(podSetFuture, nodePoolFuture)
                     .compose(res -> {
-                        StatefulSet sts = res.resultAt(0);
-                        List<StrimziPodSet> podSets = res.resultAt(1);
-                        List<KafkaNodePool> nodePools = res.resultAt(2);
+                        List<StrimziPodSet> podSets = res.resultAt(0);
+                        List<KafkaNodePool> nodePools = res.resultAt(1);
 
                         if (ReconcilerUtils.nodePoolsEnabled(kafkaAssembly)
                                 && (nodePools == null || nodePools.isEmpty())) {
@@ -699,17 +662,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         Map<String, List<String>> currentPods = new HashMap<>();
                         Map<String, Storage> oldStorage = new HashMap<>();
 
-                        if (podSets != null && !podSets.isEmpty()) {
+                        if (podSets != null) {
                             // One or more PodSets exist => we go on and use them
                             for (StrimziPodSet podSet : podSets) {
                                 oldStorage.put(podSet.getMetadata().getName(), getOldStorage(podSet));
                                 currentPods.put(podSet.getMetadata().getName(), PodSetUtils.podNames(podSet));
                             }
-                        } else if (sts != null) {
-                            // StatefulSet exists, PodSet does not exist => we create the description from the StatefulSet
-                            oldStorage.put(sts.getMetadata().getName(), getOldStorage(sts));
-                            // We generate the list of existing pod names based on the replica count
-                            currentPods.put(sts.getMetadata().getName(), IntStream.range(0, sts.getSpec().getReplicas()).mapToObj(i -> KafkaResources.kafkaPodName(kafkaAssembly.getMetadata().getName(), i)).toList());
                         }
 
                         KafkaClusterCreator kafkaClusterCreator =

@@ -64,7 +64,6 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.RouteOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceAccountOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceOperator;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StorageClassOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
 import io.strimzi.operator.common.AdminClientProvider;
@@ -134,7 +133,6 @@ public class KafkaReconciler {
 
     // Tools for operating and managing various resources
     private final Vertx vertx;
-    private final StatefulSetOperator stsOperator;
     private final StrimziPodSetOperator strimziPodSetOperator;
     private final SecretOperator secretOperator;
     private final ServiceAccountOperator serviceAccountOperator;
@@ -220,7 +218,6 @@ public class KafkaReconciler {
         this.isPodDisruptionBudgetGeneration = config.isPodDisruptionBudgetGeneration();
         this.kafkaAutoRebalanceStatus = kafkaCr.getStatus() != null ? kafkaCr.getStatus().getAutoRebalance() : null;
 
-        this.stsOperator = supplier.stsOperations;
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
         this.secretOperator = supplier.secretOperations;
         this.serviceAccountOperator = supplier.serviceAccountOperations;
@@ -270,7 +267,6 @@ public class KafkaReconciler {
                 .compose(i -> brokerConfigurationConfigMaps())
                 .compose(i -> jmxSecret())
                 .compose(i -> podDisruptionBudget())
-                .compose(i -> migrateFromStatefulSetToPodSet())
                 .compose(i -> podSet())
                 .compose(podSetDiffs -> rollingUpdate(podSetDiffs)) // We pass the PodSet reconciliation result this way to avoid storing it in the instance
                 .compose(i -> podsReady())
@@ -832,25 +828,6 @@ public class KafkaReconciler {
         }
 
         return podAnnotations;
-    }
-
-    /**
-     * Helps with the migration from StatefulSets to StrimziPodSets when the cluster is switching between them. When the
-     * switch happens, it deletes the old StatefulSet. It should happen before the new PodSet is created to
-     * allow the controller hand-off.
-     *
-     * @return          Future which completes when the StatefulSet is deleted or does not need to be deleted
-     */
-    protected Future<Void> migrateFromStatefulSetToPodSet() {
-        // Deletes the StatefulSet if it exists as a part of migration to PodSets
-        return stsOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaComponentName(reconciliation.name()))
-                .compose(sts -> {
-                    if (sts != null)    {
-                        return stsOperator.deleteAsync(reconciliation, reconciliation.namespace(), KafkaResources.kafkaComponentName(reconciliation.name()), false);
-                    } else {
-                        return Future.succeededFuture();
-                    }
-                });
     }
 
     /**

@@ -5,10 +5,8 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
@@ -17,7 +15,6 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
@@ -41,7 +38,6 @@ public class ZooKeeperVersionChangeCreator implements VersionChangeCreator {
     private final Reconciliation reconciliation;
     private final KafkaVersion.Lookup versions;
 
-    private final StatefulSetOperator stsOperator;
     private final StrimziPodSetOperator strimziPodSetOperator;
     private final PodOperator podOperator;
 
@@ -90,7 +86,6 @@ public class ZooKeeperVersionChangeCreator implements VersionChangeCreator {
 
         // Store operators and Feature Gates configuration
         this.versions = config.versions();
-        this.stsOperator = supplier.stsOperations;
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
         this.podOperator = supplier.podOperations;
     }
@@ -115,25 +110,10 @@ public class ZooKeeperVersionChangeCreator implements VersionChangeCreator {
      * @return  Future which completes when the version is collected from the controller resource
      */
     private Future<Void> getVersionFromController() {
-        Future<StatefulSet> stsFuture = stsOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaComponentName(reconciliation.name()));
-        Future<StrimziPodSet> podSetFuture = strimziPodSetOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaComponentName(reconciliation.name()));
-
-        return Future.join(stsFuture, podSetFuture)
-                .compose(res -> {
-                    StatefulSet sts = res.resultAt(0);
-                    StrimziPodSet podSet = res.resultAt(1);
-
-                    if (sts != null && podSet != null)  {
-                        // Both StatefulSet and PodSet exist => we use StrimziPodSet as the main controller resource
+        return strimziPodSetOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaComponentName(reconciliation.name()))
+                .compose(podSet -> {
+                    if (podSet != null)  {
                         versionFromControllerResource = Annotations.annotations(podSet).get(ANNO_STRIMZI_IO_KAFKA_VERSION);
-                        freshDeployment = false;
-                    } else if (podSet != null) {
-                        // PodSet exists, StatefulSet does not => we create the description from the PodSet
-                        versionFromControllerResource = Annotations.annotations(podSet).get(ANNO_STRIMZI_IO_KAFKA_VERSION);
-                        freshDeployment = false;
-                    } else if (sts != null) {
-                        // StatefulSet exists, PodSet does not exist => we create the description from the StatefulSet
-                        versionFromControllerResource = Annotations.annotations(sts).get(ANNO_STRIMZI_IO_KAFKA_VERSION);
                         freshDeployment = false;
                     }
 
