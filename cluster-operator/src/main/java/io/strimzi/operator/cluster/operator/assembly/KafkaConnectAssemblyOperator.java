@@ -4,11 +4,9 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelectorRequirement;
-import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -28,7 +26,6 @@ import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorBuilder;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorList;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorStatus;
-import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.KafkaConnectBuild;
@@ -76,7 +73,6 @@ import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART;
  *     <li>A Kafka Connect Deployment and related Services</li>
  * </ul>
  */
-@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, KafkaConnectSpec, KafkaConnectStatus> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaConnectAssemblyOperator.class.getName());
 
@@ -160,19 +156,17 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         final boolean useConnectorResources = isUseResources(kafkaConnect);
         final AtomicReference<String> image = new AtomicReference<>();
         final AtomicReference<String> desiredLogging = new AtomicReference<>();
-        final AtomicReference<Deployment> deployment = new AtomicReference<>();
-        final AtomicReference<StrimziPodSet> podSet = new AtomicReference<>();
         String initCrbName = KafkaConnectResources.initContainerClusterRoleBindingName(kafkaConnect.getMetadata().getName(), namespace);
         ClusterRoleBinding initCrb = connect.generateClusterRoleBinding();
 
         LOGGER.debugCr(reconciliation, "Creating or updating Kafka Connect cluster");
 
-        controllerResources(reconciliation, connect, deployment, podSet)
-                .compose(i -> connectServiceAccount(reconciliation, namespace, KafkaConnectResources.serviceAccountName(connect.getCluster()), connect))
+        connectServiceAccount(reconciliation, namespace, KafkaConnectResources.serviceAccountName(connect.getCluster()), connect)
                 .compose(i -> connectInitClusterRoleBinding(reconciliation, initCrbName, initCrb))
                 .compose(i -> connectNetworkPolicy(reconciliation, namespace, connect, isUseResources(kafkaConnect)))
                 .compose(i -> manualRollingUpdate(reconciliation, connect))
-                .compose(i -> connectBuildOperator.reconcile(reconciliation, namespace, activeController(deployment.get(), podSet.get()), build))
+                .compose(i -> podSetOperations.getAsync(reconciliation.namespace(), connect.getComponentName()))
+                .compose(podSet -> connectBuildOperator.reconcile(reconciliation, namespace, podSet, build))
                 .compose(buildInfo -> {
                     if (buildInfo != null) {
                         podAnnotations.put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, buildInfo.buildRevision());
@@ -208,21 +202,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash));
                     return Future.succeededFuture();
                 })
-                .compose(i -> new KafkaConnectMigration(
-                                reconciliation,
-                                connect,
-                                controllerAnnotations,
-                                podAnnotations,
-                                operationTimeoutMs,
-                                pfa.isOpenshift(),
-                                imagePullPolicy,
-                                imagePullSecrets,
-                                image.get(),
-                                deploymentOperations,
-                                podSetOperations,
-                                podOperations
-                        )
-                        .migrateFromDeploymentToStrimziPodSets(deployment.get(), podSet.get()))
                 .compose(i -> reconcilePodSet(reconciliation, connect, podAnnotations, controllerAnnotations, image.get()))
                 .compose(i -> useConnectorResources && !hasZeroReplicas ? reconcileConnectLoggers(reconciliation, KafkaConnectResources.qualifiedServiceName(reconciliation.name(), namespace), desiredLogging.get(), connect.defaultLogConfig()) : Future.succeededFuture())
                 .compose(i -> useConnectorResources && !hasZeroReplicas ? reconcileAvailableConnectorPlugins(reconciliation, KafkaConnectResources.qualifiedServiceName(reconciliation.name(), namespace), kafkaConnectStatus) : Future.succeededFuture())
@@ -870,22 +849,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      */
     private static RuntimeException zeroReplicas(String connectNamespace, String connectName) {
         return new RuntimeException("Kafka Connect cluster '" + connectName + "' in namespace " + connectNamespace + " has 0 replicas.");
-    }
-
-    /**
-     * Finds and returns the correct controller resource:
-     *     - If stable identities are enabled and PodSet exists, returns PodSet
-     *     - If stable identities are enabled and PodSet is null, we might be in the middle of migration, so it returns the Deployment (which in worst case is null which is fine)
-     *     - If stable identities are disabled and Deployment exists, returns Deployment
-     *     - If stable identities are disabled and Deployment is null, we might be in the middle of migration, so it returns the PodSet (which in worst case is null which is fine)
-     *
-     * @param deployment    Deployment resource
-     * @param podSet        PodSet resource
-     *
-     * @return  The active controller resource
-     */
-    private static HasMetadata activeController(Deployment deployment, StrimziPodSet podSet)  {
-        return podSet != null ? podSet : deployment;
     }
 
     private static boolean isPaused(KafkaConnectorStatus status) {
