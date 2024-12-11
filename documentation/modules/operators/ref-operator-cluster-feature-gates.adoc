@@ -55,7 +55,7 @@ The `StableConnectIdentities` feature gate introduced the `StrimziPodSet` custom
 
 IMPORTANT: With the `StableConnectIdentities` feature gate permanently enabled, direct downgrades from Strimzi 0.39 and newer to Strimzi 0.33 or earlier are not possible.
 You must first downgrade through one of the Strimzi versions in-between, disable the `StableConnectIdentities` feature gate, and then downgrade to Strimzi 0.33 or earlier.
-When upgrading to Strimzi 0.46.0 or newer from Strimzi 0.38.0 or older while using Kafka Connect or Kafka Mirror Maker 2 operands, make sure the `StableConnectIdentities` feature gate is enabled and `StrimziPodSets` are used before starting the upgrade.
+Before upgrading from Strimzi 0.38.0 or older to 0.46.0 or newer, make sure the `StableConnectIdentities` feature gate is enabled and `StrimziPodSet` resources are in use for Kafka Connect or Kafka MirrorMaker 2.
 
 [id='ref-operator-kafka-node-pools-feature-gate-{context}']
 === KafkaNodePools feature gate
