@@ -2554,6 +2554,12 @@ public class KafkaClusterZooBasedTest {
                     .withMatchLabels(Map.of(Labels.STRIMZI_KIND_LABEL, "Kafka", Labels.STRIMZI_CLUSTER_LABEL, CLUSTER, Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaComponentName(CLUSTER)))
                 .endPodSelector()
                 .build();
+        NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
+                .withNewPodSelector()
+                    .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"))
+                .endPodSelector()
+                .withNewNamespaceSelector().endNamespaceSelector()
+                .build();
 
         // Check Network Policies => Different namespace
         NetworkPolicy np = KC.generateNetworkPolicy("operator-namespace", null);
@@ -2562,8 +2568,9 @@ public class KafkaClusterZooBasedTest {
 
         List<NetworkPolicyPeer> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.CONTROLPLANE_PORT))).map(NetworkPolicyIngressRule::getFrom).findFirst().orElseThrow();
 
-        assertThat(rules.size(), is(1));
+        assertThat(rules.size(), is(2));
         assertThat(rules.contains(kafkaBrokersPeer), is(true));
+        assertThat(rules.contains(clusterOperatorPeer), is(true));
     }
 
     @ParallelTest
