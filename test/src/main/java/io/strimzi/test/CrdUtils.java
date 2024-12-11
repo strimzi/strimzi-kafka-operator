@@ -36,11 +36,6 @@ public final class CrdUtils {
     public static final String CRD_KAFKA_USER = TestUtils.USER_PATH + "/../packaging/install/cluster-operator/044-Crd-kafkauser.yaml";
 
     /**
-     * Path to the KafkaMirrorMaker CRD definition YAML
-     */
-    public static final String CRD_KAFKA_MIRROR_MAKER = TestUtils.USER_PATH + "/../packaging/install/cluster-operator/045-Crd-kafkamirrormaker.yaml";
-
-    /**
      * Path to the KafkaBridge CRD definition YAML
      */
     public static final String CRD_KAFKA_BRIDGE = TestUtils.USER_PATH + "/../packaging/install/cluster-operator/046-Crd-kafkabridge.yaml";

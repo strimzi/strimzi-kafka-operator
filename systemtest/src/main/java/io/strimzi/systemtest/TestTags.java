@@ -107,11 +107,6 @@ public interface TestTags {
     String CONNECT = "connect";
 
     /**
-     * Tag for tests which deploys KafkaMirrorMaker resource
-     */
-    String MIRROR_MAKER = "mirrormaker";
-
-    /**
      * Tag for tests which deploys KafkaMirrorMaker2 resource
      */
     String MIRROR_MAKER2 = "mirrormaker2";

@@ -22,7 +22,6 @@ import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
-import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.user.acl.AclOperation;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Ca;
@@ -37,12 +36,10 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
-import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
-import io.strimzi.systemtest.templates.crd.KafkaMirrorMakerTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
@@ -50,7 +47,6 @@ import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMakerUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaNodePoolUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
@@ -88,7 +84,6 @@ import static io.strimzi.systemtest.TestTags.CONNECT;
 import static io.strimzi.systemtest.TestTags.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.TestTags.CRUISE_CONTROL;
 import static io.strimzi.systemtest.TestTags.EXTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.TestTags.MIRROR_MAKER;
 import static io.strimzi.systemtest.TestTags.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.TestTags.ROLLING_UPDATE;
@@ -758,81 +753,6 @@ class SecurityST extends AbstractST {
         LOGGER.info("KafkaConnect with config {} will connect to {}:9093", "ssl.endpoint.identification.algorithm", ipOfBootstrapService);
 
         KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
-    }
-
-    @ParallelNamespaceTest
-    @Tag(MIRROR_MAKER)
-    void testTlsHostnameVerificationWithMirrorMaker() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-
-        resourceManager.createResourceWithWait(
-            NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getSourceBrokerPoolName(), testStorage.getSourceClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getSourceControllerPoolName(), testStorage.getSourceClusterName(), 1).build()
-            )
-        );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), 1).build());
-
-        resourceManager.createResourceWithWait(
-            NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetBrokerPoolName(), testStorage.getTargetClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetControllerPoolName(), testStorage.getTargetClusterName(), 1).build()
-            )
-        );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), testStorage.getTargetClusterName(), 1).build());
-
-        LOGGER.info("Getting IP of the source bootstrap service for consumer");
-        String ipOfSourceBootstrapService = kubeClient(testStorage.getNamespaceName()).getService(testStorage.getNamespaceName(), KafkaResources.bootstrapServiceName(testStorage.getSourceClusterName())).getSpec().getClusterIP();
-
-        LOGGER.info("Getting IP of the target bootstrap service for producer");
-        String ipOfTargetBootstrapService = kubeClient(testStorage.getNamespaceName()).getService(testStorage.getNamespaceName(), KafkaResources.bootstrapServiceName(testStorage.getTargetClusterName())).getSpec().getClusterIP();
-
-        LOGGER.info("KafkaMirrorMaker without config {} will not connect to consumer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfSourceBootstrapService);
-        LOGGER.info("KafkaMirrorMaker without config {} will not connect to producer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfTargetBootstrapService);
-
-        resourceManager.createResourceWithoutWait(KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getSourceClusterName(), testStorage.getTargetClusterName(),
-            ClientUtils.generateRandomConsumerGroup(), 1, true)
-            .editSpec()
-                .editConsumer()
-                    .withNewTls()
-                        .addNewTrustedCertificate()
-                            .withSecretName(KafkaResources.clusterCaCertificateSecretName(testStorage.getSourceClusterName()))
-                            .withCertificate("ca.crt")
-                        .endTrustedCertificate()
-                    .endTls()
-                    .withBootstrapServers(ipOfSourceBootstrapService + ":9093")
-                .endConsumer()
-                .editProducer()
-                    .withNewTls()
-                        .addNewTrustedCertificate()
-                            .withSecretName(KafkaResources.clusterCaCertificateSecretName(testStorage.getTargetClusterName()))
-                            .withCertificate("ca.crt")
-                        .endTrustedCertificate()
-                    .endTls()
-                    .withBootstrapServers(ipOfTargetBootstrapService + ":9093")
-                .endProducer()
-            .endSpec()
-            .build());
-
-        PodUtils.waitUntilPodIsPresent(testStorage.getNamespaceName(), testStorage.getClusterName() + "-mirror-maker");
-
-        String kafkaMirrorMakerPodName = kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND).get(0).getMetadata().getName();
-
-        PodUtils.waitUntilPodIsInCrashLoopBackOff(testStorage.getNamespaceName(), kafkaMirrorMakerPodName);
-
-        assertThat("CrashLoopBackOff", is(kubeClient(testStorage.getNamespaceName()).getPod(testStorage.getNamespaceName(), kafkaMirrorMakerPodName).getStatus().getContainerStatuses().get(0)
-                .getState().getWaiting().getReason()));
-
-        LOGGER.info("KafkaMirrorMaker with config {} will connect to consumer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfSourceBootstrapService);
-        LOGGER.info("KafkaMirrorMaker with config {} will connect to producer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfTargetBootstrapService);
-
-        LOGGER.info("Adding configuration {} to the MirrorMaker", "ssl.endpoint.identification.algorithm");
-        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), mm -> {
-            mm.getSpec().getConsumer().getConfig().put("ssl.endpoint.identification.algorithm", ""); // disable hostname verification
-            mm.getSpec().getProducer().getConfig().put("ssl.endpoint.identification.algorithm", ""); // disable hostname verification
-        });
-
-        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(testStorage.getNamespaceName(), testStorage.getClusterName());
     }
 
     @ParallelNamespaceTest

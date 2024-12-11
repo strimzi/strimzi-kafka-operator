@@ -14,8 +14,6 @@ import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.connector.KafkaConnectorList;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaList;
-import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMaker;
-import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerList;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2List;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
@@ -58,8 +56,7 @@ import io.vertx.core.Vertx;
 /**
  * Class holding the various resource operator and providers of various clients
  */
-// Deprecation is suppressed because of KafkaMirrorMaker
-@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "deprecation"})
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
 public class ResourceOperatorSupplier {
     /**
      * Secret operator
@@ -130,11 +127,6 @@ public class ResourceOperatorSupplier {
      * KafkaConnect CR operator
      */
     public final CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> connectOperator;
-
-    /**
-     * KafkaMirrorMaker CR operator
-     */
-    public final CrdOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList> mirrorMakerOperator;
 
     /**
      * KafkaBridge CR operator
@@ -348,7 +340,6 @@ public class ResourceOperatorSupplier {
                 pfa.hasBuilds() ? new BuildOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND),
                 new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectList.class, KafkaConnect.RESOURCE_KIND),
-                new CrdOperator<>(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, KafkaMirrorMaker.RESOURCE_KIND),
                 new CrdOperator<>(vertx, client, KafkaBridge.class, KafkaBridgeList.class, KafkaBridge.RESOURCE_KIND),
                 new CrdOperator<>(vertx, client, KafkaConnector.class, KafkaConnectorList.class, KafkaConnector.RESOURCE_KIND),
                 new CrdOperator<>(vertx, client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, KafkaMirrorMaker2.RESOURCE_KIND),
@@ -391,7 +382,6 @@ public class ResourceOperatorSupplier {
      * @param buildOperations                       Build operator
      * @param kafkaOperator                         Kafka CR operator
      * @param connectOperator                       KafkaConnect CR operator
-     * @param mirrorMakerOperator                   KafkaMirrorMaker CR operator
      * @param kafkaBridgeOperator                   KafkaBridge operator
      * @param kafkaConnectorOperator                KafkaConnector operator
      * @param mirrorMaker2Operator                  KafkaMirrorMaker2 operator
@@ -431,7 +421,6 @@ public class ResourceOperatorSupplier {
                                     BuildOperator buildOperations,
                                     CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator,
                                     CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> connectOperator,
-                                    CrdOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList> mirrorMakerOperator,
                                     CrdOperator<KubernetesClient, KafkaBridge, KafkaBridgeList> kafkaBridgeOperator,
                                     CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> kafkaConnectorOperator,
                                     CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mirrorMaker2Operator,
@@ -469,7 +458,6 @@ public class ResourceOperatorSupplier {
         this.buildConfigOperations = buildConfigOperations;
         this.buildOperations = buildOperations;
         this.connectOperator = connectOperator;
-        this.mirrorMakerOperator = mirrorMakerOperator;
         this.kafkaBridgeOperator = kafkaBridgeOperator;
         this.storageClassOperations = storageClassOperator;
         this.kafkaConnectorOperator = kafkaConnectorOperator;

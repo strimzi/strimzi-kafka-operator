@@ -216,7 +216,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
     @ParallelTest
     @Tag(MIRROR_MAKER2)
     final void testDeployMirrorMaker2InNamespaceDifferentFromCO(ExtensionContext extensionContext) {
-        LOGGER.info("Deploying KafkaMirrorMaker in different Namespace than CO");
+        LOGGER.info("Deploying KafkaMirrorMaker2 in different Namespace than CO");
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String mirrorMakerName = testStorage.getClusterName() + "-mirror-maker-2";
 

@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Represent the TLS configuration for all the Clients(KafkaConnect, KafkaBridge, KafkaMirrorMaker, KafkaMirrorMaker2).
+ * Represent the TLS configuration for all the Clients(KafkaConnect, KafkaBridge, KafkaMirrorMaker2).
  */
 @DescriptionFile
 @Buildable(

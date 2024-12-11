@@ -25,7 +25,6 @@ rules:
       - kafkanodepools
       - kafkaconnects
       - kafkaconnectors
-      - kafkamirrormakers
       - kafkabridges
       - kafkamirrormaker2s
       - kafkarebalances
@@ -44,7 +43,6 @@ rules:
       - kafkanodepools/status
       - kafkaconnects/status
       - kafkaconnectors/status
-      - kafkamirrormakers/status
       - kafkabridges/status
       - kafkamirrormaker2s/status
       - kafkarebalances/status

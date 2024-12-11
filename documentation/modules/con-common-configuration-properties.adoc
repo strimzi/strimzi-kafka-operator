@@ -55,7 +55,7 @@ The combination is encapsulated in the `TLS_AES_256_GCM_SHA384` cipher suite spe
 
 The `ssl.enabled.protocols` property specifies the available TLS versions that can be used for secure communication between the cluster and its clients. 
 The `ssl.protocol` property sets the default TLS version for all connections, and it must be chosen from the enabled protocols.
-Use the `ssl.endpoint.identification.algorithm` property to enable or disable hostname verification (configurable only in components based on Kafka clients - Kafka Connect, MirrorMaker 1/2, and Kafka Bridge).
+Use the `ssl.endpoint.identification.algorithm` property to enable or disable hostname verification (configurable only in components based on Kafka clients - Kafka Connect, MirrorMaker 2, and Kafka Bridge).
 
 .Example SSL configuration
 [source,yaml,subs="attributes+"]
@@ -310,7 +310,6 @@ You can specify which container image to use for a component using the `image` p
 * `Kafka.spec.kafkaExporter`
 * `Kafka.spec.kafkaBridge`
 * `KafkaConnect.spec`
-* `KafkaMirrorMaker.spec`
 * `KafkaMirrorMaker2.spec`
 * `KafkaBridge.spec`
 
@@ -519,7 +518,6 @@ To optimize their performance on different platforms and architectures, you conf
 * `Kafka.spec.cruiseControl`
 * `KafkaNodePool.spec`
 * `KafkaConnect.spec`
-* `KafkaMirrorMaker.spec`
 * `KafkaMirrorMaker2.spec`
 * `KafkaBridge.spec`
 

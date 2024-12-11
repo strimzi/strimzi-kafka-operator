@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
-import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpecBuilder;
@@ -35,7 +34,6 @@ import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
-import io.strimzi.systemtest.templates.crd.KafkaMirrorMakerTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
@@ -44,14 +42,11 @@ import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.WaitException;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.vertx.core.cli.annotations.Description;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -65,15 +60,11 @@ import static io.strimzi.systemtest.TestTags.ACCEPTANCE;
 import static io.strimzi.systemtest.TestTags.BRIDGE;
 import static io.strimzi.systemtest.TestTags.CONNECT;
 import static io.strimzi.systemtest.TestTags.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.TestTags.MIRROR_MAKER;
 import static io.strimzi.systemtest.TestTags.MIRROR_MAKER2;
 import static io.strimzi.systemtest.TestTags.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.TestTags.OAUTH;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(OAUTH)
@@ -260,161 +251,6 @@ public class OauthTlsST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, producerName, testStorage.getMessageCount());
     }
 
-    @Description("As a OAuth MirrorMaker, I am able to replicate Topic data using using encrypted communication")
-    @IsolatedTest("Using more tha one Kafka cluster in one Namespace")
-    @Tag(MIRROR_MAKER)
-    @Tag(NODEPORT_SUPPORTED)
-    @Tag(ACCEPTANCE)
-    @SuppressWarnings({"checkstyle:MethodLength"})
-    void testMirrorMaker() {
-        // Nodeport needs cluster wide rights to work properly which is not possible with STRIMZI_RBAC_SCOPE=NAMESPACE
-        assumeFalse(Environment.isNamespaceRbacScope());
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-
-        String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
-        String consumerName = OAUTH_CONSUMER_NAME + "-" + testStorage.getClusterName();
-
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), oauthClusterName).build());
-
-        KafkaOauthClients oauthExampleClients = new KafkaOauthClientsBuilder()
-            .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
-            .withProducerName(producerName)
-            .withConsumerName(consumerName)
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(oauthClusterName))
-            .withTopicName(testStorage.getTopicName())
-            .withMessageCount(testStorage.getMessageCount())
-            .withOauthClientId(OAUTH_CLIENT_NAME)
-            .withOauthClientSecret(OAUTH_CLIENT_SECRET)
-            .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
-            .build();
-
-        resourceManager.createResourceWithWait(oauthExampleClients.producerStrimziOauthTls(oauthClusterName));
-        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, producerName, testStorage.getMessageCount());
-
-        resourceManager.createResourceWithWait(oauthExampleClients.consumerStrimziOauthTls(oauthClusterName));
-        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, consumerName, testStorage.getMessageCount());
-
-        String targetKafkaCluster = oauthClusterName + "-target";
-
-        resourceManager.createResourceWithWait(
-            NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetBrokerPoolName(), targetKafkaCluster, 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetControllerPoolName(), targetKafkaCluster, 1).build()
-            )
-        );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(Environment.TEST_SUITE_NAMESPACE, targetKafkaCluster, 1, 1)
-            .editSpec()
-                .editKafka()
-                    .withListeners(OauthAbstractST.BUILD_OAUTH_TLS_LISTENER.apply(keycloakInstance),
-                            new GenericKafkaListenerBuilder()
-                                .withName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                                .withPort(9094)
-                                .withType(KafkaListenerType.NODEPORT)
-                                .withTls(true)
-                                .withNewKafkaListenerAuthenticationOAuth()
-                                .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
-                                .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
-                                .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
-                                .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
-                                .withUserNameClaim(keycloakInstance.getUserNameClaim())
-                                .withTlsTrustedCertificates(
-                                    new CertSecretSourceBuilder()
-                                        .withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
-                                        .withCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
-                                        .build())
-                                    .withDisableTlsHostnameVerification(true)
-                                .endKafkaListenerAuthenticationOAuth()
-                                .build())
-                .endKafka()
-            .endSpec()
-            .build());
-
-        resourceManager.createResourceWithWait(KafkaMirrorMakerTemplates.kafkaMirrorMaker(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, oauthClusterName, targetKafkaCluster,
-            ClientUtils.generateRandomConsumerGroup(), 1, true)
-                .editSpec()
-                    .withNewConsumer()
-                        // this is for kafka tls connection
-                        .withNewTls()
-                            .withTrustedCertificates(new CertSecretSourceBuilder()
-                                .withCertificate("ca.crt")
-                                .withSecretName(KafkaResources.clusterCaCertificateSecretName(oauthClusterName))
-                                .build())
-                        .endTls()
-                        .withBootstrapServers(KafkaResources.tlsBootstrapAddress(oauthClusterName))
-                        .withGroupId(ClientUtils.generateRandomConsumerGroup())
-                        .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
-                        .withNewKafkaClientAuthenticationOAuth()
-                            .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
-                            .withClientId("kafka-mirror-maker")
-                            .withNewClientSecret()
-                                .withSecretName(MIRROR_MAKER_OAUTH_SECRET)
-                                .withKey(OAUTH_KEY)
-                            .endClientSecret()
-                            // this is for authorization server tls connection
-                            .withTlsTrustedCertificates(new CertSecretSourceBuilder()
-                                .withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
-                                .withCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
-                                .build())
-                            .withDisableTlsHostnameVerification(true)
-                        .endKafkaClientAuthenticationOAuth()
-                    .endConsumer()
-                    .withNewProducer()
-                        .withBootstrapServers(KafkaResources.tlsBootstrapAddress(targetKafkaCluster))
-                        // this is for kafka tls connection
-                        .withNewTls()
-                            .withTrustedCertificates(new CertSecretSourceBuilder()
-                                .withCertificate("ca.crt")
-                                .withSecretName(KafkaResources.clusterCaCertificateSecretName(targetKafkaCluster))
-                                .build())
-                        .endTls()
-                        .withNewKafkaClientAuthenticationOAuth()
-                            .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
-                            .withClientId("kafka-mirror-maker")
-                            .withNewClientSecret()
-                                .withSecretName(MIRROR_MAKER_OAUTH_SECRET)
-                                .withKey(OAUTH_KEY)
-                            .endClientSecret()
-                            // this is for authorization server tls connection
-                            .withTlsTrustedCertificates(new CertSecretSourceBuilder()
-                                .withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
-                                .withCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
-                                .build())
-                            .withDisableTlsHostnameVerification(true)
-                        .endKafkaClientAuthenticationOAuth()
-                        .addToConfig(ProducerConfig.ACKS_CONFIG, "all")
-                    .endProducer()
-                .endSpec()
-                .build());
-
-        String mirrorMakerPodName = kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, KafkaMirrorMakerResources.componentName(oauthClusterName)).get(0).getMetadata().getName();
-        String kafkaMirrorMakerLogs = kubeClient().logsInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, mirrorMakerPodName);
-
-        assertThat(kafkaMirrorMakerLogs,
-            not(containsString("keytool error: java.io.FileNotFoundException: /opt/kafka/consumer-oauth-certs/**/* (No such file or directory)")));
-
-        resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, testStorage.getUsername(), oauthClusterName).build());
-        KafkaUserUtils.waitForKafkaUserCreation(Environment.TEST_SUITE_NAMESPACE, testStorage.getUsername());
-
-        LOGGER.info("Creating new client with new consumer-group and also to point on {} cluster", targetKafkaCluster);
-
-        KafkaOauthClients kafkaOauthClientJob = new KafkaOauthClientsBuilder()
-            .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
-            .withProducerName(producerName)
-            .withConsumerName(consumerName)
-            .withClientUserName(testStorage.getUsername())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(targetKafkaCluster))
-            .withTopicName(testStorage.getTopicName())
-            .withMessageCount(testStorage.getMessageCount())
-            .withOauthClientId(OAUTH_CLIENT_NAME)
-            .withOauthClientSecret(OAUTH_CLIENT_SECRET)
-            .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
-            .build();
-
-        resourceManager.createResourceWithWait(kafkaOauthClientJob.consumerStrimziOauthTls(targetKafkaCluster));
-
-        ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, consumerName, testStorage.getMessageCount());
-    }
-
     @Description("As a OAuth MirrorMaker 2, I am able to replicate Topic data using using encrypted communication")
     @IsolatedTest("Using more tha one Kafka cluster in one Namespace")
     @Tag(MIRROR_MAKER2)
@@ -559,7 +395,7 @@ public class OauthTlsST extends OauthAbstractST {
         verifyOauthConfiguration(kafkaMirrorMaker2Logs);
 
         TestUtils.waitFor("MirrorMaker2 to copy messages from " + kafkaSourceClusterName + " to " + testStorage.getTargetClusterName(),
-                Duration.ofSeconds(30).toMillis(), TestConstants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
+                Duration.ofSeconds(30).toMillis(), TestConstants.TIMEOUT_FOR_MIRROR_MAKER_2_COPY_MESSAGES_BETWEEN_BROKERS,
                 () -> {
                     LOGGER.info("Deleting Job: {}/{}", Environment.TEST_SUITE_NAMESPACE, consumerName);
                     JobUtils.deleteJobWithWait(Environment.TEST_SUITE_NAMESPACE, consumerName);

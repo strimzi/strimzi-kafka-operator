@@ -62,7 +62,7 @@ if [ -n "$KAFKA_MIRRORMAKER_2_CLUSTERS" ]; then
         echo "  with tls auth keys ${TLS_AUTH_KEYS["${clusterAlias}"]}"
         echo "  with OAuth trusted certs ${OAUTH_TRUSTED_CERTS["${clusterAlias}"]}"
         # $1 = trusted certs, $2 = TLS auth cert, $3 = TLS auth key, $4 = truststore path, $5 = keystore path, $6 = certs and key path
-        ./kafka_mirror_maker_tls_prepare_certificates.sh \
+        ./kafka_mirror_maker_2_tls_prepare_certificates.sh \
             "${TRUSTED_CERTS["${clusterAlias}"]}" \
             "${TLS_AUTH_CERTS["${clusterAlias}"]}" \
             "${TLS_AUTH_KEYS["${clusterAlias}"]}" \

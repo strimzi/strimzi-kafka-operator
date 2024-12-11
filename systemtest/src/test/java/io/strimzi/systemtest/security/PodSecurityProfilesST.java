@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.strimzi.api.kafka.model.bridge.KafkaBridge;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.api.kafka.model.mirrormaker.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
@@ -31,7 +30,6 @@ import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
-import io.strimzi.systemtest.templates.crd.KafkaMirrorMakerTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
@@ -73,7 +71,7 @@ public class PodSecurityProfilesST extends AbstractST {
      *     - Namespace is modified
      *  2. - Deploy 3 Kafka Clusters, of which 2 will serve as targets and one as a source and for other purposes
      *     - Kafka clusters are deployed
-     *  3. - Deploy all additional Operands which are to be tested, i.e., KafkaMirrorMaker KafkaMirrorMaker2 KafkaBridge KafkaConnect, KafkaConnector.
+     *  3. - Deploy all additional Operands which are to be tested, i.e., KafkaMirrorMaker2 KafkaBridge KafkaConnect, KafkaConnector.
      *     - All components are deployed targeting respective Kafka Clusters
      *  4. - Deploy producer which will produce data into Topic residing in Kafka Cluster serving as Source for KafkaMirrorMakers and is targeted by other Operands
      *     - Messages are sent into KafkaTopic
@@ -142,8 +140,6 @@ public class PodSecurityProfilesST extends AbstractST {
                 .endSpec()
                 .build(),
             KafkaBridgeTemplates.kafkaBridge(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), 1).build(),
-            KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getNamespaceName(), testStorage.getClusterName() + "-mm1", testStorage.getClusterName(), mm1TargetClusterName, ClientUtils.generateRandomConsumerGroup(), 1, false)
-                .build(),
             KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getNamespaceName(), testStorage.getClusterName() + "-mm2", testStorage.getClusterName(), mm2TargetClusterName, 1, false)
                 .editSpec()
                     .editFirstMirror()
@@ -177,23 +173,15 @@ public class PodSecurityProfilesST extends AbstractST {
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
         // verifies that Pods and Containers have proper generated SC
-        final List<Pod> podsWithProperlyGeneratedSecurityCOntexts = PodUtils.getKafkaClusterPods(testStorage);
-        podsWithProperlyGeneratedSecurityCOntexts.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND));
-        podsWithProperlyGeneratedSecurityCOntexts.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND));
-        podsWithProperlyGeneratedSecurityCOntexts.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND));
-        podsWithProperlyGeneratedSecurityCOntexts.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND));
-        verifyPodAndContainerSecurityContext(podsWithProperlyGeneratedSecurityCOntexts);
+        final List<Pod> podsWithProperlyGeneratedSecurityContexts = PodUtils.getKafkaClusterPods(testStorage);
+        podsWithProperlyGeneratedSecurityContexts.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND));
+        podsWithProperlyGeneratedSecurityContexts.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND));
+        podsWithProperlyGeneratedSecurityContexts.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND));
+        verifyPodAndContainerSecurityContext(podsWithProperlyGeneratedSecurityContexts);
 
         // verify KafkaConnect
         final String kafkaConnectPodName = kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
-
-        // verify MM1, as topic name does not change, only bootstrap server is changed.
-        final KafkaClients mm1Client =  ClientUtils.getInstantPlainClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(mm1TargetClusterName))
-            .withPodSecurityPolicy(PodSecurityProfile.RESTRICTED)
-            .build();
-        resourceManager.createResourceWithWait(mm1Client.consumerStrimzi());
-        ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
         // verify MM2
         final KafkaClients mm2Client = ClientUtils.getInstantPlainClientBuilder(testStorage, KafkaResources.plainBootstrapAddress(mm2TargetClusterName))

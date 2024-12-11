@@ -174,7 +174,7 @@ class HttpBridgeScramShaST extends AbstractST {
 
         resourceManager.createResourceWithWait(scramShaUser);
 
-        // Initialize PasswordSecret to set this as PasswordSecret in MirrorMaker spec
+        // Initialize PasswordSecret to set this as PasswordSecret in Bridge spec
         PasswordSecretSource passwordSecret = new PasswordSecretSource();
         passwordSecret.setSecretName(suiteTestStorage.getUsername());
         passwordSecret.setPassword("password");
