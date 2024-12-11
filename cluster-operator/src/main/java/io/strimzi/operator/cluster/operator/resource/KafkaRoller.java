@@ -588,7 +588,7 @@ public class KafkaRoller {
     /**
      * Determine whether the pod should be restarted, or the broker reconfigured.
      */
-    @SuppressWarnings("checkstyle:CyclomaticComplexity")
+    @SuppressWarnings({"checkstyle:NPathComplexity", "checkstyle:CyclomaticComplexity"})
     private void checkIfRestartOrReconfigureRequired(NodeRef nodeRef, boolean isController, boolean isBroker, RestartContext restartContext, String currentVersion) throws ForceableProblem, InterruptedException, FatalProblem, UnforceableProblem {
         RestartReasons reasonToRestartPod = restartContext.restartReasons;
         if (restartContext.podStuck && !reasonToRestartPod.contains(RestartReason.POD_HAS_OLD_REVISION)) {
@@ -616,7 +616,12 @@ public class KafkaRoller {
                 handleFailedAdminClientForController(nodeRef, restartContext, reasonToRestartPod, currentVersion);
                 return;
             }
-            restartContext.quorumCheck = quorumCheck(controllerAdminClient, nodeRef);
+
+            // We need broker admin in order to initialise quorum check
+            if (!maybeInitBrokerAdminClient()) {
+                throw new UnforceableProblem("KafkaQuorumCheck cannot be initialised for " + nodeRef + " because none of the brokers do not seem to responding to connection attempts");
+            }
+            restartContext.quorumCheck = quorumCheck(brokerAdminClient, nodeRef);
         }
 
         if (isBroker) {
