@@ -46,7 +46,7 @@
 | 1. | Deploy a KafkaConnect instance with specified inline logging and GC logging enabled. | KafkaConnect is deployed with correct log levels and GC logging. |
 | 2. | Verify log settings in the ConfigMap and confirm GC logging is enabled in the Connect pod. | Log configuration is correct and GC logging is initially enabled. |
 | 3. | Update KafkaConnect JVM options to disable GC logging. | KafkaConnect configuration is updated successfully. |
-| 4. | Wait for any rolling updates and confirm GC logging is disabled afterwards. | KafkaConnect pods reflect disabled GC logging without unnecessary downtime. |
+| 4. | Wait for any rolling updates and confirm GC logging is disabled afterwards. | KafkaConnect pods reflect disabled GC logging. |
 | 5. | Check that the configured log levels remain consistent after the JVM option changes. | Logging remains functional and at the expected levels. |
 
 **Labels:**
@@ -107,7 +107,7 @@
 | 1. | Deploy Kafka MirrorMaker2 with inline logging set and GC logging enabled. | MirrorMaker2 is deployed with desired log configuration and GC logging. |
 | 2. | Verify that logs in MirrorMaker2 match the configured levels and GC logging status. | Log checks confirm correct levels and GC logging enabled. |
 | 3. | Update MirrorMaker2 JVM options to disable GC logging. | Configuration is updated and applied to MirrorMaker2. |
-| 4. | Wait for any rolling updates and check that GC logging is disabled now. | MirrorMaker2 pods reflect disabled GC logging without interruptions. |
+| 4. | Wait for any rolling updates and check that GC logging is disabled now. | MirrorMaker2 pods reflect disabled GC logging. |
 | 5. | Confirm that the log levels remain correct and that no unexpected changes occurred. | MirrorMaker2 runs with correct logging hierarchy and no issues. |
 
 **Labels:**

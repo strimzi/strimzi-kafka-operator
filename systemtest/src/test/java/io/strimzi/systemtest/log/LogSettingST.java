@@ -286,7 +286,7 @@ class LogSettingST extends AbstractST {
             @Step(value = "Deploy a KafkaConnect instance with specified inline logging and GC logging enabled.", expected = "KafkaConnect is deployed with correct log levels and GC logging."),
             @Step(value = "Verify log settings in the ConfigMap and confirm GC logging is enabled in the Connect pod.", expected = "Log configuration is correct and GC logging is initially enabled."),
             @Step(value = "Update KafkaConnect JVM options to disable GC logging.", expected = "KafkaConnect configuration is updated successfully."),
-            @Step(value = "Wait for any rolling updates and confirm GC logging is disabled afterwards.", expected = "KafkaConnect pods reflect disabled GC logging without unnecessary downtime."),
+            @Step(value = "Wait for any rolling updates and confirm GC logging is disabled afterwards.", expected = "KafkaConnect pods reflect disabled GC logging."),
             @Step(value = "Check that the configured log levels remain consistent after the JVM option changes.", expected = "Logging remains functional and at the expected levels.")
         },
         labels = {
@@ -330,7 +330,7 @@ class LogSettingST extends AbstractST {
             @Step(value = "Deploy Kafka MirrorMaker2 with inline logging set and GC logging enabled.", expected = "MirrorMaker2 is deployed with desired log configuration and GC logging."),
             @Step(value = "Verify that logs in MirrorMaker2 match the configured levels and GC logging status.", expected = "Log checks confirm correct levels and GC logging enabled."),
             @Step(value = "Update MirrorMaker2 JVM options to disable GC logging.", expected = "Configuration is updated and applied to MirrorMaker2."),
-            @Step(value = "Wait for any rolling updates and check that GC logging is disabled now.", expected = "MirrorMaker2 pods reflect disabled GC logging without interruptions."),
+            @Step(value = "Wait for any rolling updates and check that GC logging is disabled now.", expected = "MirrorMaker2 pods reflect disabled GC logging."),
             @Step(value = "Confirm that the log levels remain correct and that no unexpected changes occurred.", expected = "MirrorMaker2 runs with correct logging hierarchy and no issues.")
         },
         labels = {
