@@ -46,7 +46,7 @@ The `UseStrimziPodSets` feature gate introduced the `StrimziPodSet` custom resou
 
 IMPORTANT: With the `UseStrimziPodSets` feature gate permanently enabled, direct downgrades from Strimzi 0.35 and newer to Strimzi 0.27 or earlier are not possible.
 You must first downgrade through one of the Strimzi versions in-between, disable the `UseStrimziPodSets` feature gate, and then downgrade to Strimzi 0.27 or earlier.
-When upgrading to Strimzi 0.46.0 or newer from Strimzi 0.34.0 or older while using the Kafka operand, make sure the `UseStrimziPodSets` feature gate is enabled and `StrimziPodSets` are used before starting the upgrade.
+Before upgrading from Strimzi 0.34.0 or older to 0.46.0 or newer, make sure the `UseStrimziPodSets` feature gate is enabled and `StrimziPodSet` resources are in use for Kafka.
 
 [id='ref-operator-stable-connect-identities-feature-gate-{context}']
 === StableConnectIdentities feature gate
