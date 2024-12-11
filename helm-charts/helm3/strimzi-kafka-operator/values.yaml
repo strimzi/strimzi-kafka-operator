@@ -49,6 +49,7 @@ rbac:
   create: yes
 serviceAccountCreate: yes
 serviceAccount: strimzi-cluster-operator
+serviceAccountAnnotations: {}
 
 leaderElection:
   enable: true
