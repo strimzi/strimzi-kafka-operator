@@ -16,4 +16,5 @@ public interface TestDocsLabels {
     String CRUISE_CONTROL = "cruise-control";
     String DYNAMIC_CONFIGURATION = "dynamic-configuration";
     String LOGGING = "logging";
+    String MIRROR_MAKER_2 = "mirror-maker-2";
 }
