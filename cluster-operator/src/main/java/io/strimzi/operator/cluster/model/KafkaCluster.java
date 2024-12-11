@@ -1693,8 +1693,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         List<NetworkPolicyIngressRule> rules = new ArrayList<>();
 
         // Control Plane rule covers the control plane listener.
-        // Control plane listener is used by Kafka for internal coordination only
-        rules.add(NetworkPolicyUtils.createIngressRule(CONTROLPLANE_PORT, List.of(kafkaClusterPeer)));
+        // Control plane listener is used by Kafka for internal coordination only, but also by CO during rolling updates
+        rules.add(NetworkPolicyUtils.createIngressRule(CONTROLPLANE_PORT, List.of(kafkaClusterPeer, clusterOperatorPeer)));
 
         // Replication rule covers the replication listener.
         // Replication listener is used by Kafka but also by our own tools => Operators, Cruise Control, and Kafka Exporter
