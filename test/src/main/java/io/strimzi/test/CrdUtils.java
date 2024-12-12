@@ -58,7 +58,7 @@ public final class CrdUtils {
     /**
      * Path to the KafkaNodePool CRD definition YAML
      */
-    public static final String CRD_KAFKA_NODE_POOL = TestUtils.USER_PATH + "/../packaging/install/cluster-operator/04A-Crd-kafkanodepool.yaml";
+    public static final String CRD_KAFKA_NODE_POOL = TestUtils.USER_PATH + "/../packaging/install/cluster-operator/045-Crd-kafkanodepool.yaml";
 
     /**
      * Path to the StrimziPodSet CRD definition YAML
