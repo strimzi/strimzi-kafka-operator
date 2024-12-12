@@ -190,7 +190,6 @@ public class Environment {
      * Defaults
      */
     public static final String STRIMZI_ORG_DEFAULT = "strimzi";
-    public static final String STRIMZI_TAG_DEFAULT = "latest";
     public static final String STRIMZI_REGISTRY_DEFAULT = "quay.io";
     public static final String TEST_CLIENTS_ORG_DEFAULT = "strimzi-test-clients";
     private static final String TEST_LOG_DIR_DEFAULT = TestUtils.USER_PATH + "/../systemtest/target/logs/";
