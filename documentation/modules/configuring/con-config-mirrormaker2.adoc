@@ -31,9 +31,6 @@ The configuration must specify:
 
 For a deeper understanding of the Kafka MirrorMaker 2 cluster configuration options, refer to the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
 
-NOTE: MirrorMaker 2 resource configuration differs from the previous version of MirrorMaker, which is now deprecated.
-There is currently no legacy support, so any resources must be manually converted into the new format.
-
 .Default configuration 
 MirrorMaker 2 provides default configuration values for properties such as replication factors.
 A minimal configuration, with defaults left unchanged, would be something like this example:
