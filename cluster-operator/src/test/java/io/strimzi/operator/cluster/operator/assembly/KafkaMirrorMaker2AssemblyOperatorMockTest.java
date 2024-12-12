@@ -190,7 +190,6 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
             .onComplete(context.succeeding(ar -> context.verify(() -> {
                 if (!reconciliationPaused) {
                     assertThat(Crds.strimziPodSetOperation(client).inNamespace(namespace).withName(KafkaMirrorMaker2Resources.componentName(CLUSTER_NAME)).get(), is(notNullValue()));
-                    assertThat(client.apps().deployments().inNamespace(namespace).withName(KafkaMirrorMaker2Resources.componentName(CLUSTER_NAME)).get(), is(nullValue()));
                     assertThat(client.configMaps().inNamespace(namespace).withName(KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(CLUSTER_NAME)).get(), is(notNullValue()));
                     assertThat(client.services().inNamespace(namespace).withName(KafkaMirrorMaker2Resources.serviceName(CLUSTER_NAME)).get(), is(notNullValue()));
                     assertThat(client.policy().v1().podDisruptionBudget().inNamespace(namespace).withName(KafkaMirrorMaker2Resources.componentName(CLUSTER_NAME)).get(), is(notNullValue()));

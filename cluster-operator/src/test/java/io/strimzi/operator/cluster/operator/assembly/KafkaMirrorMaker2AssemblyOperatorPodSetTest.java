@@ -10,8 +10,6 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -40,7 +38,6 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ClusterRoleBindingOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.NetworkPolicyOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodDisruptionBudgetOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
@@ -79,7 +76,6 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -132,10 +128,6 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
     public void testCreateCluster(VertxTestContext context)  {
         KafkaMirrorMaker2 mm2 = new KafkaMirrorMaker2Builder(MM2).build();
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-
-        // Mock deployment
-        DeploymentOperator mockDepOps = supplier.deploymentOperations;
-        when(mockDepOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
 
         // Mock PodSets
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
@@ -217,9 +209,6 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                     assertThat(headlessService.getSpec().getType(), is("ClusterIP"));
                     assertThat(headlessService.getSpec().getClusterIP(), is("None"));
 
-                    // Verify Deployment => one getAsync call
-                    verify(mockDepOps, times(1)).getAsync(eq(NAMESPACE), eq(COMPONENT_NAME));
-
                     // Verify PDB => should be set up for custom controller
                     List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
                     assertThat(capturedPdb.size(), is(1));
@@ -249,10 +238,6 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-
-        // Mock deployment
-        DeploymentOperator mockDepOps = supplier.deploymentOperations;
-        when(mockDepOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
 
         // Mock PodSets
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
@@ -346,10 +331,6 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-
-        // Mock deployment
-        DeploymentOperator mockDepOps = supplier.deploymentOperations;
-        when(mockDepOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
 
         // Mock PodSets
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
@@ -449,10 +430,6 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
-        // Mock deployment
-        DeploymentOperator mockDepOps = supplier.deploymentOperations;
-        when(mockDepOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
-
         // Mock PodSets
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture(oldPodSet));
@@ -545,10 +522,6 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-
-        // Mock deployment
-        DeploymentOperator mockDepOps = supplier.deploymentOperations;
-        when(mockDepOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
 
         // Mock PodSets
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
@@ -665,10 +638,6 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
-        // Mock deployment
-        DeploymentOperator mockDepOps = supplier.deploymentOperations;
-        when(mockDepOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
-
         // Mock PodSets
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture(oldPodSet));
@@ -782,10 +751,6 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-
-        // Mock deployment
-        DeploymentOperator mockDepOps = supplier.deploymentOperations;
-        when(mockDepOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
 
         // Mock PodSets
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
@@ -903,128 +868,6 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                 async.flag();
             })));
 
-    }
-
-    @Test
-    public void testClusterMigrationToPodSets(VertxTestContext context)  {
-        KafkaMirrorMaker2 mm2 = new KafkaMirrorMaker2Builder(MM2).build();
-
-        Deployment deployment = new DeploymentBuilder()
-                .withNewMetadata()
-                    .withName(KafkaMirrorMaker2Resources.componentName(NAME))
-                .endMetadata()
-                .withNewSpec()
-                    .withReplicas(3)
-                .endSpec()
-                .build();
-
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-
-        // Mock deployment
-        DeploymentOperator mockDepOps = supplier.deploymentOperations;
-        when(mockDepOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture(deployment));
-        when(mockDepOps.scaleDown(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyInt(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDepOps.deleteAsync(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyBoolean())).thenReturn(Future.succeededFuture());
-
-        // Mock PodSets
-        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
-        when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture(null));
-        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
-
-        // Mock PDBs
-        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
-
-        // Mock Config Maps
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
-
-        // Mock Services
-        ServiceOperator mockServiceOps = supplier.serviceOperations;
-        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
-
-        // Mock Network Policies
-        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
-        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
-
-        // Mock Pods
-        PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
-        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
-        when(mockPodOps.deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(false))).thenReturn(Future.succeededFuture());
-        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
-        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-
-        // Mock Secrets
-        SecretOperator mockSecretOps = supplier.secretOperations;
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
-
-        // Mock KafkaMirrorMaker2 CRs
-        CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
-        when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(mm2);
-        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(mm2));
-        ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
-        when(mockConnectOps.updateStatusAsync(any(), mm2StatusCaptor.capture())).thenReturn(Future.succeededFuture());
-
-        // Mock Connect API
-        KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
-        when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(CompletableFuture.completedFuture(emptyList()));
-        when(mockConnectClient.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(CompletableFuture.completedFuture(null));
-
-        KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(
-                vertx,
-                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
-                supplier,
-                ResourceUtils.dummyClusterOperatorConfig(),
-                x -> mockConnectClient
-        );
-
-        Checkpoint async = context.checkpoint();
-        ops.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, NAME))
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    // Check migration happened
-                    verify(mockDepOps, times(1)).deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(true));
-                    verify(mockDepOps, times(2)).scaleDown(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyInt(), anyLong());
-
-                    // Verify PodSets
-                    List<StrimziPodSet> capturesPodSets = podSetCaptor.getAllValues();
-                    assertThat(capturesPodSets.size(), is(4));
-                    
-                    StrimziPodSet podSet = capturesPodSets.get(0);
-                    assertThat(podSet.getMetadata().getName(), is(COMPONENT_NAME));
-                    assertThat(podSet.getSpec().getPods().size(), is(1));
-
-                    podSet = capturesPodSets.get(1);
-                    assertThat(podSet.getMetadata().getName(), is(COMPONENT_NAME));
-                    assertThat(podSet.getSpec().getPods().size(), is(2));
-
-                    podSet = capturesPodSets.get(2);
-                    assertThat(podSet.getMetadata().getName(), is(COMPONENT_NAME));
-                    assertThat(podSet.getSpec().getPods().size(), is(3));
-
-                    podSet = capturesPodSets.get(3);
-                    assertThat(podSet.getMetadata().getName(), is(COMPONENT_NAME));
-                    assertThat(podSet.getSpec().getPods().size(), is(3));
-
-                    // Verify CR status
-                    List<KafkaMirrorMaker2> capturedMm2Statuses = mm2StatusCaptor.getAllValues();
-                    assertThat(capturedMm2Statuses, hasSize(1));
-                    KafkaMirrorMaker2Status mm2Status = capturedMm2Statuses.get(0).getStatus();
-
-                    assertThat(mm2Status.getUrl(), is("http://my-mm2-mirrormaker2-api.my-namespace.svc:8083"));
-                    assertThat(mm2Status.getReplicas(), is(3));
-                    assertThat(mm2Status.getLabelSelector(), is("strimzi.io/cluster=my-mm2,strimzi.io/name=my-mm2-mirrormaker2,strimzi.io/kind=KafkaMirrorMaker2"));
-                    assertThat(mm2Status.getConditions().get(0).getStatus(), is("True"));
-                    assertThat(mm2Status.getConditions().get(0).getType(), is("Ready"));
-
-                    async.flag();
-                })));
     }
 
     @Test
@@ -1154,7 +997,6 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
     private ArgumentCaptor<KafkaMirrorMaker2> createMirrorMaker2CaptorMock(String targetNamespace, String kmm2Name, KafkaMirrorMaker2 kmm2, ResourceOperatorSupplier supplier) {
         CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
-        DeploymentOperator mockDcOps = supplier.deploymentOperations;
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         PodOperator mockPodOps = supplier.podOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
@@ -1167,8 +1009,6 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         when(mockMirrorMaker2Ops.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm2));
 
         when(mockServiceOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-
-        when(mockDcOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
 
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
 
@@ -1201,10 +1041,6 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-
-        // Mock deployment
-        DeploymentOperator mockDepOps = supplier.deploymentOperations;
-        when(mockDepOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
 
         // Mock PodSets
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
@@ -1289,10 +1125,6 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-
-        // Mock deployment
-        DeploymentOperator mockDepOps = supplier.deploymentOperations;
-        when(mockDepOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
 
         // Mock PodSets
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
@@ -1379,10 +1211,6 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
-        // Mock deployment
-        DeploymentOperator mockDepOps = supplier.deploymentOperations;
-        when(mockDepOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
-
         // Mock PodSets
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture(oldPodSet));
@@ -1466,10 +1294,6 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         oldPods.get(1).getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"); // We want the pod to roll manually
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-
-        // Mock deployment
-        DeploymentOperator mockDepOps = supplier.deploymentOperations;
-        when(mockDepOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
 
         // Mock PodSets
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
@@ -1556,10 +1380,6 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         oldPods.get(1).getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"); // We want the pod to roll manually
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-
-        // Mock deployment
-        DeploymentOperator mockDepOps = supplier.deploymentOperations;
-        when(mockDepOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
 
         // Mock PodSets
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
