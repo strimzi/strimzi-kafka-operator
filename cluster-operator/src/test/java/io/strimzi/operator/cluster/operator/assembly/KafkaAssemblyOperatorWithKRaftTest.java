@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
@@ -52,7 +51,6 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PvcOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.InvalidConfigurationException;
@@ -271,9 +269,6 @@ public class KafkaAssemblyOperatorWithKRaftTest {
             return Future.succeededFuture(result);
         });
 
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
-
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
@@ -342,7 +337,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
     }
 
     /**
-     * Tests the first reconciliation of the Kafka cluster after the UseStrimziPodsSet is enabled for the first time
+     * Tests the first reconciliation of the Kafka cluster
      *
      * @param context   Test context
      */
@@ -381,11 +376,6 @@ public class KafkaAssemblyOperatorWithKRaftTest {
 
             return Future.succeededFuture(result);
         });
-
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        // Kafka
-        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(new StatefulSetBuilder().withNewMetadata().withName(KAFKA_CLUSTER.getComponentName()).withNamespace(NAMESPACE).endMetadata().build()));
-        when(mockStsOps.deleteAsync(any(), any(), eq(KAFKA_CLUSTER.getComponentName()), eq(false))).thenReturn(Future.succeededFuture()); // The Kafka STS will be deleted during the reconciliation
 
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
@@ -485,9 +475,6 @@ public class KafkaAssemblyOperatorWithKRaftTest {
 
             return Future.succeededFuture(result);
         });
-
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
 
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
@@ -593,9 +580,6 @@ public class KafkaAssemblyOperatorWithKRaftTest {
 
             return Future.succeededFuture(result);
         });
-
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
 
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
@@ -735,9 +719,6 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         });
         ArgumentCaptor<StrimziPodSet> kafkaPodSetCaptor =  ArgumentCaptor.forClass(StrimziPodSet.class);
         when(mockPodSetOps.reconcile(any(), any(), startsWith("my-cluster-brokers"), kafkaPodSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
-
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
 
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
@@ -889,9 +870,6 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         });
         ArgumentCaptor<StrimziPodSet> kafkaPodSetCaptor =  ArgumentCaptor.forClass(StrimziPodSet.class);
         when(mockPodSetOps.reconcile(any(), any(), startsWith("my-cluster-brokers"), kafkaPodSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
-
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
 
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
@@ -1053,9 +1031,6 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         ArgumentCaptor<StrimziPodSet> kafkaPodSetCaptor =  ArgumentCaptor.forClass(StrimziPodSet.class);
         when(mockPodSetOps.reconcile(any(), any(), startsWith("my-cluster-brokers"), kafkaPodSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
 
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
-
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
@@ -1214,9 +1189,6 @@ public class KafkaAssemblyOperatorWithKRaftTest {
             return Future.succeededFuture(result);
         });
 
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
-
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
@@ -1366,9 +1338,6 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         ArgumentCaptor<StrimziPodSet> kafkaPodSetCaptor =  ArgumentCaptor.forClass(StrimziPodSet.class);
         when(mockPodSetOps.reconcile(any(), any(), startsWith("my-cluster-new"), kafkaPodSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
 
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
-
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
@@ -1513,9 +1482,6 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(KAFKA));
         when(mockKafkaOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
-
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null));
 
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.listAsync(eq(NAMESPACE), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(null));
@@ -1742,9 +1708,6 @@ public class KafkaAssemblyOperatorWithKRaftTest {
             return Future.succeededFuture(result);
         });
 
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
-
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
@@ -1859,7 +1822,6 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                     .compose(i -> updateNodePoolStatuses(kafkaStatus))
                     .compose(i -> listeners())
                     .compose(i -> brokerConfigurationConfigMaps())
-                    .compose(i -> migrateFromStatefulSetToPodSet())
                     .compose(i -> podSet())
                     .compose(this::rollingUpdate)
                     .compose(i -> nodeUnregistration(kafkaStatus))

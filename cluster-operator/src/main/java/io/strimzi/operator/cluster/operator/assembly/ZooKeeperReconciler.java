@@ -35,7 +35,6 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.PvcOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceAccountOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceOperator;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StorageClassOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
 import io.strimzi.operator.common.Annotations;
@@ -89,7 +88,6 @@ public class ZooKeeperReconciler {
     private final ImagePullPolicy imagePullPolicy;
     private final List<LocalObjectReference> imagePullSecrets;
 
-    private final StatefulSetOperator stsOperator;
     private final StrimziPodSetOperator strimziPodSetOperator;
     private final SecretOperator secretOperator;
     private final ServiceAccountOperator serviceAccountOperator;
@@ -164,7 +162,6 @@ public class ZooKeeperReconciler {
         this.isKRaftMigrationRollback = isKRaftMigrationRollback;
         this.isPodDisruptionBudgetGeneration = config.isPodDisruptionBudgetGeneration();
 
-        this.stsOperator = supplier.stsOperations;
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
         this.secretOperator = supplier.secretOperations;
         this.serviceAccountOperator = supplier.serviceAccountOperations;
@@ -207,7 +204,6 @@ public class ZooKeeperReconciler {
                 .compose(i -> certificateSecret(clock))
                 .compose(i -> loggingAndMetricsConfigMap())
                 .compose(i -> podDisruptionBudget())
-                .compose(i -> migrateFromStatefulSetToPodSet())
                 .compose(i -> podSet())
                 .compose(i -> scaleDown())
                 .compose(i -> rollingUpdate())
@@ -501,25 +497,6 @@ public class ZooKeeperReconciler {
         } else {
             return Future.succeededFuture();
         }
-    }
-
-    /**
-     * Helps with the migration from StatefulSets to StrimziPodSets when the cluster is switching between them. When the
-     * switch happens, it deletes the old StatefulSet. It should happen before the new PodSet is created to
-     * allow the controller hand-off.
-     *
-     * @return          Future which completes when the StatefulSet is deleted or does not need to be deleted
-     */
-    protected Future<Void> migrateFromStatefulSetToPodSet() {
-        // Delete the StatefulSet if it exists
-        return stsOperator.getAsync(reconciliation.namespace(), KafkaResources.zookeeperComponentName(reconciliation.name()))
-                .compose(sts -> {
-                    if (sts != null)    {
-                        return stsOperator.deleteAsync(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperComponentName(reconciliation.name()), false);
-                    } else {
-                        return Future.succeededFuture();
-                    }
-                });
     }
 
     /**
