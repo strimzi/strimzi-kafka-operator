@@ -108,14 +108,14 @@ public class StUtils {
     public static String changeOrgAndTag(String image) {
         Matcher m = IMAGE_PATTERN_FULL_PATH.matcher(image);
         if (m.find()) {
-            String registry = setImageProperties(m.group("registry"), Environment.STRIMZI_REGISTRY, Environment.STRIMZI_REGISTRY_DEFAULT);
-            String org = setImageProperties(m.group("org"), Environment.STRIMZI_ORG, Environment.STRIMZI_ORG_DEFAULT);
+            String registry = setImageProperties(m.group("registry"), Environment.STRIMZI_REGISTRY);
+            String org = setImageProperties(m.group("org"), Environment.STRIMZI_ORG);
 
             return registry + "/" + org + "/" + m.group("image") + ":" + buildTag(m.group("tag"));
         }
         m = IMAGE_PATTERN.matcher(image);
         if (m.find()) {
-            String org = setImageProperties(m.group("org"), Environment.STRIMZI_ORG, Environment.STRIMZI_ORG_DEFAULT);
+            String org = setImageProperties(m.group("org"), Environment.STRIMZI_ORG);
 
             return Environment.STRIMZI_REGISTRY + "/" + org + "/" + m.group("image") + ":"  + buildTag(m.group("tag"));
         }
@@ -132,15 +132,15 @@ public class StUtils {
         return sb.toString();
     }
 
-    private static String setImageProperties(String current, String envVar, String defaultEnvVar) {
-        if (!envVar.equals(defaultEnvVar) && !current.equals(envVar)) {
+    private static String setImageProperties(String current, String envVar) {
+        if (!envVar.isEmpty() && !current.equals(envVar)) {
             return envVar;
         }
         return current;
     }
 
     private static String buildTag(String currentTag) {
-        if (!currentTag.equals(Environment.STRIMZI_TAG) && !Environment.STRIMZI_TAG_DEFAULT.equals(Environment.STRIMZI_TAG)) {
+        if (!Environment.STRIMZI_TAG.isEmpty() && !currentTag.equals(Environment.STRIMZI_TAG)) {
             Matcher t = KAFKA_COMPONENT_PATTERN.matcher(currentTag);
             if (t.find()) {
                 currentTag = Environment.STRIMZI_TAG + t.group("kafka") + t.group("version");
