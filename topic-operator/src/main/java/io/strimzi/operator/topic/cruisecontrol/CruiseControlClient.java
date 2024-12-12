@@ -14,7 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Cruise Control REST API client.
+ * Cruise Control client.
  * <br/><br/>
  * The server runs one task execution at a time, additional 
  * requests are queued up to {@code max.active.user.tasks}.
@@ -26,36 +26,13 @@ public interface CruiseControlClient {
     long HTTP_REQUEST_TIMEOUT_SEC = 60;
 
     /**
-     * Create default Cruise Control client instance.
+     * Create a new Cruise Control client with the given configuration.
      *
-     * @param serverHostname Server hostname.
-     * @param serverPort Server port.
-     * @param rackEnabled Whether rack awareness is enabled.
-     * @param sslEnabled Whether SSL is enabled.
-     * @param sslCertificate SSL certificate.
-     * @param authEnabled Whether authentication is enabled.
-     * @param authUsername Authentication username.
-     * @param authPassword Authentication password.
+     * @param config Configuration.
      * @return Cruise Control client.
      */
-    static CruiseControlClient create(String serverHostname,
-                                      int serverPort,
-                                      boolean rackEnabled,
-                                      boolean sslEnabled,
-                                      byte[] sslCertificate,
-                                      boolean authEnabled,
-                                      String authUsername,
-                                      String authPassword) {
-        return new CruiseControlClientImpl(
-            serverHostname,
-            serverPort,
-            rackEnabled,
-            sslEnabled,
-            sslCertificate,
-            authEnabled,
-            authUsername,
-            authPassword
-        );
+    static CruiseControlClient create(Config config) {
+        return CruiseControlClientImpl.createInternal(config);
     }
 
     /**
@@ -88,6 +65,29 @@ public interface CruiseControlClient {
      * @return The error message.
      */
     Optional<String> errorMessage(HttpResponse<String> response);
+
+    /**
+     * Client configuration.
+     *
+     * @param serverHostname Server hostname.
+     * @param serverPort Server port.
+     * @param rackEnabled Whether rack awareness is enabled.
+     * @param sslEnabled Whether SSL is enabled.
+     * @param sslCertificate SSL certificate.
+     * @param authEnabled Whether authentication is enabled.
+     * @param authUsername Authentication username.
+     * @param authPassword Authentication password.
+     */
+    record Config(
+        String serverHostname,
+        int serverPort,
+        boolean rackEnabled,
+        boolean sslEnabled,
+        byte[] sslCertificate,
+        boolean authEnabled,
+        String authUsername,
+        String authPassword
+    ) { }
     
     /**
      * Topic names grouped by replication factor value.

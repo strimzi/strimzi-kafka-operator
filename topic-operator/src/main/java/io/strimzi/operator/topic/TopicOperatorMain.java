@@ -61,9 +61,12 @@ public class TopicOperatorMain implements Liveness, Readiness {
         Objects.requireNonNull(config.labelSelector());
         this.config = config;
         var selector = config.labelSelector().toMap();
-        this.kubernetesClient = new OperatorKubernetesClientBuilder("strimzi-topic-operator", TopicOperatorMain.class.getPackage().getImplementationVersion()).build();
+        this.kubernetesClient = new OperatorKubernetesClientBuilder(
+            "strimzi-topic-operator", 
+            TopicOperatorMain.class.getPackage().getImplementationVersion()
+        ).build();
         this.kafkaAdminClient = kafkaAdminClient;
-        this.cruiseControlClient = TopicOperatorUtil.createCruiseControlClient(config);
+        this.cruiseControlClient = CruiseControlClient.create(config.cruiseControlClientConfig());
         
         var metricsProvider = createMetricsProvider();
         var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, Labels.fromMap(selector), metricsProvider);
@@ -154,7 +157,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
      */
     public static void main(String[] args) throws Exception {
         var config = TopicOperatorConfig.buildFromMap(System.getenv());
-        var operator = operator(config, TopicOperatorUtil.createKafkaAdminClient(config));
+        var operator = operator(config, Admin.create(config.adminClientConfig()));
         operator.start();
     }
 
