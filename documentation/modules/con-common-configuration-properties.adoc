@@ -318,14 +318,13 @@ These components are not version dependent, so no additional configuration is ne
 
 *Configuring the `image` property for Kafka, Kafka Connect, and Kafka MirrorMaker*
 
-Kafka, Kafka Connect, and Kafka MirrorMaker support multiple versions of Kafka.
+Kafka, Kafka Connect, and Kafka MirrorMaker 2 support multiple versions of Kafka.
 Each component requires its own image.
 The default images for the different Kafka versions are configured in the following environment variables:
 
 * `STRIMZI_KAFKA_IMAGES`
 * `STRIMZI_KAFKA_CONNECT_IMAGES`
 * `STRIMZI_KAFKA_MIRROR_MAKER2_IMAGES`
-* (Deprecated) `STRIMZI_KAFKA_MIRROR_MAKER_IMAGES`
 
 These environment variables contain mappings between Kafka versions and corresponding images.
 The mappings are used together with the `image` and `version` properties to determine the image used:

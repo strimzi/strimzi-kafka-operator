@@ -140,10 +140,6 @@ For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher
 The mapping from the Kafka version to the corresponding image of MirrorMaker 2 for that version.
 For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
 
-(Deprecated) `STRIMZI_KAFKA_MIRROR_MAKER_IMAGES`:: Required.
-The mapping from the Kafka version to the corresponding image of MirrorMaker for that version.
-For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
-
 `STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE`:: Optional.
 The default is `{DockerTopicOperator}`.
 The image name to use as the default when deploying the Topic Operator
