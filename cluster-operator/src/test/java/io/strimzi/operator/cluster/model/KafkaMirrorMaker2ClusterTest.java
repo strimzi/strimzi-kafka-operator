@@ -18,6 +18,9 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSource;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodDNSConfig;
+import io.fabric8.kubernetes.api.model.PodDNSConfigBuilder;
+import io.fabric8.kubernetes.api.model.PodDNSConfigOptionBuilder;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
@@ -933,6 +936,21 @@ public class KafkaMirrorMaker2ClusterTest {
                 .withIp("192.168.1.87")
                 .build();
 
+        String dnsPolicy = "None";
+        PodDNSConfig dnsConfig = new PodDNSConfigBuilder()
+            .withNameservers("192.0.2.1")
+            .withSearches("ns1.svc.cluster-domain.example", "my.dns.search.suffix")
+            .withOptions(
+                new PodDNSConfigOptionBuilder()
+                        .withName("ndots")
+                        .withValue("2")
+                        .build(), 
+                new PodDNSConfigOptionBuilder()
+                        .withName("edns0")
+                        .build()
+            )
+            .build();
+
         ConfigMapVolumeSource configMap = new ConfigMapVolumeSourceBuilder()
                 .withName("configMap1")
                 .build();
@@ -981,6 +999,8 @@ public class KafkaMirrorMaker2ClusterTest {
                             .withPriorityClassName("top-priority")
                             .withSchedulerName("my-scheduler")
                             .withHostAliases(hostAlias1, hostAlias2)
+                            .withDnsPolicy(dnsPolicy)
+                            .withDnsConfig(dnsConfig)
                             .withEnableServiceLinks(false)
                             .withTmpDirSizeLimit("10Mi")
                             .withVolumes(additionalVolumeConfigMap, additionalVolumePvc)
@@ -1033,6 +1053,8 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(pod.getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()), is(true));
             assertThat(pod.getSpec().getSchedulerName(), is("my-scheduler"));
             assertThat(pod.getSpec().getHostAliases(), containsInAnyOrder(hostAlias1, hostAlias2));
+            assertThat(pod.getSpec().getDnsPolicy(), is(dnsPolicy));
+            assertThat(pod.getSpec().getDnsConfig(), is(dnsConfig));
             assertThat(pod.getSpec().getEnableServiceLinks(), is(false));
             assertThat(getVolume(pod, "strimzi-tmp").getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
             assertThat(getVolume(pod, additionalVolumeConfigMap.getName()).getConfigMap(), is(configMap));

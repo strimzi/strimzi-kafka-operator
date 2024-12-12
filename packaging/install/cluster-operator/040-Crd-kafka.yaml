@@ -1488,6 +1488,30 @@ spec:
                                 ip:
                                   type: string
                             description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                          dnsPolicy:
+                            type: string
+                            description: "The pod's DNSPolicy. Defaults to `ClusterFirst`. Valid values are `ClusterFirstWithHostNet`, `ClusterFirst`, `Default` or `None`."
+                          dnsConfig:
+                            type: object
+                            properties:
+                              nameservers:
+                                type: array
+                                items:
+                                  type: string
+                              options:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    name:
+                                      type: string
+                                    value:
+                                      type: string
+                              searches:
+                                type: array
+                                items:
+                                  type: string
+                            description: "The pod's DNSConfig. If specified, the parameters specified here will be merged to the generated DNS configuration based on the DNSPolicy."
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -3022,6 +3046,30 @@ spec:
                                 ip:
                                   type: string
                             description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                          dnsPolicy:
+                            type: string
+                            description: "The pod's DNSPolicy. Defaults to `ClusterFirst`. Valid values are `ClusterFirstWithHostNet`, `ClusterFirst`, `Default` or `None`."
+                          dnsConfig:
+                            type: object
+                            properties:
+                              nameservers:
+                                type: array
+                                items:
+                                  type: string
+                              options:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    name:
+                                      type: string
+                                    value:
+                                      type: string
+                              searches:
+                                type: array
+                                items:
+                                  type: string
+                            description: "The pod's DNSConfig. If specified, the parameters specified here will be merged to the generated DNS configuration based on the DNSPolicy."
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -4370,6 +4418,30 @@ spec:
                                 ip:
                                   type: string
                             description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                          dnsPolicy:
+                            type: string
+                            description: "The pod's DNSPolicy. Defaults to `ClusterFirst`. Valid values are `ClusterFirstWithHostNet`, `ClusterFirst`, `Default` or `None`."
+                          dnsConfig:
+                            type: object
+                            properties:
+                              nameservers:
+                                type: array
+                                items:
+                                  type: string
+                              options:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    name:
+                                      type: string
+                                    value:
+                                      type: string
+                              searches:
+                                type: array
+                                items:
+                                  type: string
+                            description: "The pod's DNSConfig. If specified, the parameters specified here will be merged to the generated DNS configuration based on the DNSPolicy."
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -5769,6 +5841,30 @@ spec:
                                 ip:
                                   type: string
                             description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                          dnsPolicy:
+                            type: string
+                            description: "The pod's DNSPolicy. Defaults to `ClusterFirst`. Valid values are `ClusterFirstWithHostNet`, `ClusterFirst`, `Default` or `None`."
+                          dnsConfig:
+                            type: object
+                            properties:
+                              nameservers:
+                                type: array
+                                items:
+                                  type: string
+                              options:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    name:
+                                      type: string
+                                    value:
+                                      type: string
+                              searches:
+                                type: array
+                                items:
+                                  type: string
+                            description: "The pod's DNSConfig. If specified, the parameters specified here will be merged to the generated DNS configuration based on the DNSPolicy."
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -6955,6 +7051,30 @@ spec:
                                 ip:
                                   type: string
                             description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                          dnsPolicy:
+                            type: string
+                            description: "The pod's DNSPolicy. Defaults to `ClusterFirst`. Valid values are `ClusterFirstWithHostNet`, `ClusterFirst`, `Default` or `None`."
+                          dnsConfig:
+                            type: object
+                            properties:
+                              nameservers:
+                                type: array
+                                items:
+                                  type: string
+                              options:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    name:
+                                      type: string
+                                    value:
+                                      type: string
+                              searches:
+                                type: array
+                                items:
+                                  type: string
+                            description: "The pod's DNSConfig. If specified, the parameters specified here will be merged to the generated DNS configuration based on the DNSPolicy."
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -7833,6 +7953,30 @@ spec:
                                 ip:
                                   type: string
                             description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                          dnsPolicy:
+                            type: string
+                            description: "The pod's DNSPolicy. Defaults to `ClusterFirst`. Valid values are `ClusterFirstWithHostNet`, `ClusterFirst`, `Default` or `None`."
+                          dnsConfig:
+                            type: object
+                            properties:
+                              nameservers:
+                                type: array
+                                items:
+                                  type: string
+                              options:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    name:
+                                      type: string
+                                    value:
+                                      type: string
+                              searches:
+                                type: array
+                                items:
+                                  type: string
+                            description: "The pod's DNSConfig. If specified, the parameters specified here will be merged to the generated DNS configuration based on the DNSPolicy."
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services should be injected into Pod's environment variables.
