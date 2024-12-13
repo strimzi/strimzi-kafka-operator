@@ -41,10 +41,7 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.OlmUtils;
 import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.executor.Exec;
 import io.strimzi.test.k8s.KubeClusterResource;
-import io.strimzi.test.k8s.cluster.OpenShift;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -288,7 +285,7 @@ public class SetupClusterOperator {
         LOGGER.info("Install Cluster Operator via Yaml bundle");
         // check if namespace is already created
         createClusterOperatorNamespaceIfPossible();
-        prepareEnvForOperator(namespaceInstallTo, bindingsNamespaces);
+        prepareEnvForOperator(namespaceInstallTo);
         // if we manage directly in the individual test one of the Role, ClusterRole, RoleBindings and ClusterRoleBinding we must do it
         // everything by ourselves in scope of RBAC permissions otherwise we apply the default one
         if (this.isRolesAndBindingsManagedByAnUser()) {
@@ -554,21 +551,10 @@ public class SetupClusterOperator {
      * Prepare environment for cluster operator which includes creation of namespaces, custom resources and operator
      * specific config files such as ServiceAccount, Roles and CRDs.
      * @param clientNamespace namespace which will be created and used as default by kube client
-     * @param namespaces list of namespaces which will be created
      */
-    public void prepareEnvForOperator(String clientNamespace, List<String> namespaces) {
+    public void prepareEnvForOperator(String clientNamespace) {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
         applyClusterOperatorInstallFiles(clientNamespace);
-
-        if (cluster.cluster() instanceof OpenShift) {
-            // This is needed in case you are using internal kubernetes registry and you want to pull images from there
-            if (kubeClient().getNamespace(Environment.STRIMZI_ORG) != null) {
-                for (String namespace : namespaces) {
-                    LOGGER.debug("Setting group policy for Openshift registry in Namespace: " + namespace);
-                    Exec.exec(null, Arrays.asList("oc", "policy", "add-role-to-group", "system:image-puller", "system:serviceaccounts:" + namespace, "-n", Environment.STRIMZI_ORG), 0, Level.DEBUG, false);
-                }
-            }
-        }
     }
 
     public String changeLeaseNameInResourceIfNeeded(String yamlPath) {

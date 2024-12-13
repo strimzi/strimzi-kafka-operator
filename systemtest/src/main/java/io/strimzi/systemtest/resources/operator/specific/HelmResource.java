@@ -57,15 +57,15 @@ public class HelmResource implements SpecificResourceType {
 
         Map<String, Object> values = new HashMap<>();
         // image registry config
-        values.put("defaultImageRegistry", Environment.STRIMZI_REGISTRY);
+        values.put("defaultImageRegistry", Environment.getIfNotEmptyOrDefault(Environment.STRIMZI_REGISTRY, Environment.STRIMZI_REGISTRY_DEFAULT));
         values.put("kafkaBridge.image.registry", Environment.STRIMZI_REGISTRY_DEFAULT);
 
         // image repository config
-        values.put("defaultImageRepository", Environment.STRIMZI_ORG);
+        values.put("defaultImageRepository", Environment.getIfNotEmptyOrDefault(Environment.STRIMZI_ORG, Environment.STRIMZI_ORG_DEFAULT));
         values.put("kafkaBridge.image.repository", Environment.STRIMZI_ORG_DEFAULT);
 
         // image tags config
-        values.put("defaultImageTag", Environment.STRIMZI_TAG);
+        values.put("defaultImageTag", Environment.getIfNotEmptyOrDefault(Environment.STRIMZI_TAG, Environment.STRIMZI_TAG_DEFAULT));
         values.put("kafkaBridge.image.tag", BridgeUtils.getBridgeVersion());
 
         // Additional config
