@@ -19,6 +19,9 @@ import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodDNSConfig;
+import io.fabric8.kubernetes.api.model.PodDNSConfigBuilder;
+import io.fabric8.kubernetes.api.model.PodDNSConfigOptionBuilder;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
@@ -54,6 +57,7 @@ import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
+import io.strimzi.api.kafka.model.common.template.DnsPolicy;
 import io.strimzi.api.kafka.model.common.template.IpFamily;
 import io.strimzi.api.kafka.model.common.template.IpFamilyPolicy;
 import io.strimzi.api.kafka.model.common.tracing.OpenTelemetryTracing;
@@ -755,6 +759,21 @@ public class KafkaConnectClusterTest {
                 .withLabelSelector(new LabelSelectorBuilder().withMatchLabels(singletonMap("label", "value")).build())
                 .build();
 
+        DnsPolicy dnsPolicy = DnsPolicy.NONE;
+        PodDNSConfig dnsConfig = new PodDNSConfigBuilder()
+            .withNameservers("192.0.2.1")
+            .withSearches("ns1.svc.cluster-domain.example", "my.dns.search.suffix")
+            .withOptions(
+                new PodDNSConfigOptionBuilder()
+                        .withName("ndots")
+                        .withValue("2")
+                        .build(), 
+                new PodDNSConfigOptionBuilder()
+                        .withName("edns0")
+                        .build()
+            )
+            .build();
+
         TopologySpreadConstraint tsc2 = new TopologySpreadConstraintBuilder()
                 .withTopologyKey("kubernetes.io/hostname")
                 .withMaxSkew(2)
@@ -825,6 +844,8 @@ public class KafkaConnectClusterTest {
                             .withPriorityClassName("top-priority")
                             .withSchedulerName("my-scheduler")
                             .withHostAliases(hostAlias1, hostAlias2)
+                            .withDnsPolicy(dnsPolicy)
+                            .withDnsConfig(dnsConfig)
                             .withTopologySpreadConstraints(tsc1, tsc2)
                             .withEnableServiceLinks(false)
                             .withTmpDirSizeLimit("10Mi")
@@ -878,6 +899,8 @@ public class KafkaConnectClusterTest {
             assertThat(pod.getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()), is(true));
             assertThat(pod.getSpec().getSchedulerName(), is("my-scheduler"));
             assertThat(pod.getSpec().getHostAliases(), containsInAnyOrder(hostAlias1, hostAlias2));
+            assertThat(pod.getSpec().getDnsPolicy(), is(DnsPolicy.NONE.toValue()));
+            assertThat(pod.getSpec().getDnsConfig(), is(dnsConfig));
             assertThat(pod.getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
             assertThat(pod.getSpec().getEnableServiceLinks(), is(false));
             assertThat(getVolume(pod, VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME).getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));

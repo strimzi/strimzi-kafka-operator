@@ -98,6 +98,11 @@ public class KafkaMirrorMaker2CrdIT extends AbstractCrdIT {
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "valueFrom");
     }
 
+    @Test
+    void testKafkaMirrorMaker2WithDnsConfig() {
+        createDeleteCustomResource("KafkaMirrorMaker2-with-dnsConfig.yaml");
+    }
+
     @BeforeAll
     void setupEnvironment() {
         client = new KubernetesClientBuilder().withConfig(new ConfigBuilder().withNamespace(NAMESPACE).build()).build();
