@@ -55,7 +55,7 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
     private String schedulerName;
     private List<HostAlias> hostAliases;
     private PodDNSConfig dnsConfig;
-    private String dnsPolicy;
+    private DnsPolicy dnsPolicy;
     private Boolean enableServiceLinks;
     private String tmpDirSizeLimit;
     private List<AdditionalVolume> volumes;
@@ -181,11 +181,11 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
         "Defaults to `ClusterFirst`. " + 
         "Valid values are `ClusterFirstWithHostNet`, `ClusterFirst`, `Default` or `None`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public String getDnsPolicy() {
+    public DnsPolicy getDnsPolicy() {
         return dnsPolicy;
     }
 
-    public void setDnsPolicy(String dnsPolicy) {
+    public void setDnsPolicy(DnsPolicy dnsPolicy) {
         this.dnsPolicy = dnsPolicy;
     }
 

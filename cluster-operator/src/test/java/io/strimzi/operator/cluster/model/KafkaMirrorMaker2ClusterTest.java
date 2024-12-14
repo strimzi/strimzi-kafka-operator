@@ -50,6 +50,7 @@ import io.strimzi.api.kafka.model.common.template.AdditionalVolume;
 import io.strimzi.api.kafka.model.common.template.AdditionalVolumeBuilder;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
+import io.strimzi.api.kafka.model.common.template.DnsPolicy;
 import io.strimzi.api.kafka.model.common.template.IpFamily;
 import io.strimzi.api.kafka.model.common.template.IpFamilyPolicy;
 import io.strimzi.api.kafka.model.common.tracing.OpenTelemetryTracing;
@@ -957,7 +958,7 @@ public class KafkaMirrorMaker2ClusterTest {
                 .withIp("192.168.1.87")
                 .build();
 
-        String dnsPolicy = "None";
+        DnsPolicy dnsPolicy = DnsPolicy.NONE;
         PodDNSConfig dnsConfig = new PodDNSConfigBuilder()
             .withNameservers("192.0.2.1")
             .withSearches("ns1.svc.cluster-domain.example", "my.dns.search.suffix")
@@ -1074,7 +1075,7 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(pod.getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()), is(true));
             assertThat(pod.getSpec().getSchedulerName(), is("my-scheduler"));
             assertThat(pod.getSpec().getHostAliases(), containsInAnyOrder(hostAlias1, hostAlias2));
-            assertThat(pod.getSpec().getDnsPolicy(), is(dnsPolicy));
+            assertThat(pod.getSpec().getDnsPolicy(), is(DnsPolicy.NONE.toValue()));
             assertThat(pod.getSpec().getDnsConfig(), is(dnsConfig));
             assertThat(pod.getSpec().getEnableServiceLinks(), is(false));
             assertThat(getVolume(pod, "strimzi-tmp").getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));

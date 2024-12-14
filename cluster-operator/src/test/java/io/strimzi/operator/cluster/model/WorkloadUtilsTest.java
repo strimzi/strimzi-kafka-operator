@@ -33,6 +33,7 @@ import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
 import io.strimzi.api.kafka.model.common.template.DeploymentTemplateBuilder;
+import io.strimzi.api.kafka.model.common.template.DnsPolicy;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplateBuilder;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplateBuilder;
@@ -124,7 +125,7 @@ public class WorkloadUtilsTest {
             .withIp("127.0.0.1")
             .withHostnames("home")
             .build();
-    private static final String DEFAULT_DNS_POLICY = "None";
+    private static final DnsPolicy DEFAULT_DNS_POLICY = DnsPolicy.NONE;
     private static final PodDNSConfig DEFAULT_DNS_CONFIG = new PodDNSConfigBuilder()
             .withNameservers("192.0.2.1")
             .withSearches("ns1.svc.cluster-domain.example", "my.dns.search.suffix")
@@ -642,7 +643,7 @@ public class WorkloadUtilsTest {
         assertThat(pod.getSpec().getPriorityClassName(), is("my-priority-class"));
         assertThat(pod.getSpec().getSchedulerName(), is("my-scheduler"));
         assertThat(pod.getSpec().getHostAliases(), is(List.of(DEFAULT_HOST_ALIAS)));
-        assertThat(pod.getSpec().getDnsPolicy(), is(DEFAULT_DNS_POLICY));
+        assertThat(pod.getSpec().getDnsPolicy(), is(DEFAULT_DNS_POLICY.toValue()));
         assertThat(pod.getSpec().getDnsConfig(), is(DEFAULT_DNS_CONFIG));
         assertThat(pod.getSpec().getTopologySpreadConstraints(), is(List.of(DEFAULT_TOPOLOGY_SPREAD_CONSTRAINT)));
     }
@@ -818,7 +819,7 @@ public class WorkloadUtilsTest {
         assertThat(pod.getSpec().getPriorityClassName(), is("my-priority-class"));
         assertThat(pod.getSpec().getSchedulerName(), is("my-scheduler"));
         assertThat(pod.getSpec().getHostAliases(), is(List.of(DEFAULT_HOST_ALIAS)));
-        assertThat(pod.getSpec().getDnsPolicy(), is(DEFAULT_DNS_POLICY));
+        assertThat(pod.getSpec().getDnsPolicy(), is(DEFAULT_DNS_POLICY.toValue()));
         assertThat(pod.getSpec().getDnsConfig(), is(DEFAULT_DNS_CONFIG));
         assertThat(pod.getSpec().getTopologySpreadConstraints(), is(List.of(DEFAULT_TOPOLOGY_SPREAD_CONSTRAINT)));
     }
@@ -1014,7 +1015,7 @@ public class WorkloadUtilsTest {
         assertThat(pod.getSpec().getPriorityClassName(), is("my-priority-class"));
         assertThat(pod.getSpec().getSchedulerName(), is("my-scheduler"));
         assertThat(pod.getSpec().getHostAliases(), is(List.of(DEFAULT_HOST_ALIAS)));
-        assertThat(pod.getSpec().getDnsPolicy(), is(DEFAULT_DNS_POLICY));
+        assertThat(pod.getSpec().getDnsPolicy(), is(DEFAULT_DNS_POLICY.toValue()));
         assertThat(pod.getSpec().getDnsConfig(), is(DEFAULT_DNS_CONFIG));
         assertThat(pod.getSpec().getTopologySpreadConstraints(), is(List.of(DEFAULT_TOPOLOGY_SPREAD_CONSTRAINT)));
     }

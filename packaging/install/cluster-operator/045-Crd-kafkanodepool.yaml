@@ -753,6 +753,11 @@ spec:
                         description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
                       dnsPolicy:
                         type: string
+                        enum:
+                        - ClusterFirst
+                        - ClusterFirstWithHostNet
+                        - Default
+                        - None
                         description: "The pod's DNSPolicy. Defaults to `ClusterFirst`. Valid values are `ClusterFirstWithHostNet`, `ClusterFirst`, `Default` or `None`."
                       dnsConfig:
                         type: object
