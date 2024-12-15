@@ -17,7 +17,7 @@ crd_install:
 	$(CP) ./cluster-operator/047-Crd-kafkaconnector.yaml ../helm-charts/helm3/strimzi-kafka-operator/crds/047-Crd-kafkaconnector.yaml
 	$(CP) ./cluster-operator/048-Crd-kafkamirrormaker2.yaml ../helm-charts/helm3/strimzi-kafka-operator/crds/048-Crd-kafkamirrormaker2.yaml
 	$(CP) ./cluster-operator/049-Crd-kafkarebalance.yaml ../helm-charts/helm3/strimzi-kafka-operator/crds/049-Crd-kafkarebalance.yaml
-	$(CP) ./cluster-operator/04A-Crd-kafkanodepool.yaml ../helm-charts/helm3/strimzi-kafka-operator/crds/04A-Crd-kafkanodepool.yaml
+	$(CP) ./cluster-operator/045-Crd-kafkanodepool.yaml ../helm-charts/helm3/strimzi-kafka-operator/crds/045-Crd-kafkanodepool.yaml
 	yq eval -i '.metadata.labels.component="kafkas.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/040-Crd-kafka.yaml
 	yq eval -i '.metadata.labels.component="kafkaconnects.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/041-Crd-kafkaconnect.yaml
 	yq eval -i '.metadata.labels.component="stirmzipodsets.core.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/042-Crd-strimzipodset.yaml
@@ -27,7 +27,7 @@ crd_install:
 	yq eval -i '.metadata.labels.component="kafkaconnectors.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/047-Crd-kafkaconnector.yaml
 	yq eval -i '.metadata.labels.component="kafkamirrormaker2.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/048-Crd-kafkamirrormaker2.yaml
 	yq eval -i '.metadata.labels.component="kafkarebalances.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/049-Crd-kafkarebalance.yaml
-	yq eval -i '.metadata.labels.component="kafkanodepools.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/04A-Crd-kafkanodepool.yaml
+	yq eval -i '.metadata.labels.component="kafkanodepools.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/045-Crd-kafkanodepool.yaml
 
 release:
 	mkdir -p $(RELEASE_PATH)

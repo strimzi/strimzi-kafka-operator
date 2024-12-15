@@ -177,7 +177,7 @@
                                 <argument>io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}048-Crd-kafkamirrormaker2.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.rebalance.KafkaRebalance=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}049-Crd-kafkarebalance.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.podset.StrimziPodSet=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}042-Crd-strimzipodset.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.nodepool.KafkaNodePool=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}04A-Crd-kafkanodepool.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.nodepool.KafkaNodePool=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}045-Crd-kafkanodepool.yaml</argument>
                             </arguments>
                         </configuration>
                     </execution>
