@@ -22,7 +22,6 @@ import io.strimzi.operator.cluster.model.KafkaUpgradeException;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -1055,9 +1054,6 @@ public class ZooKeeperVersionChangeCreatorTest {
     // Creates ResourceOperatorSupplier with mocks
     private ResourceOperatorSupplier mockNewCluster(StatefulSet sts, StrimziPodSet sps, List<Pod> pods)   {
         ResourceOperatorSupplier ros = ResourceUtils.supplierWithMocks(false);
-
-        StatefulSetOperator stsOps = ros.stsOperations;
-        when(stsOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(sts));
 
         StrimziPodSetOperator spsOps = ros.strimziPodSetOperator;
         when(spsOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(sps));

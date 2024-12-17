@@ -145,7 +145,6 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                     // beginning with success. It should not reconcile any resources other than getting the Kafka
                     // resource itself.
                     verifyNoInteractions(
-                            supplier.stsOperations,
                             supplier.serviceOperations,
                             supplier.secretOperations,
                             supplier.configMapOperations,

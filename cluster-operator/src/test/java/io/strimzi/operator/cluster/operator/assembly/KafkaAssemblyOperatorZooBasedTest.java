@@ -82,7 +82,6 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.PvcOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.RouteOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceOperator;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
@@ -412,7 +411,6 @@ public class KafkaAssemblyOperatorZooBasedTest {
         var mockKafkaOps = supplier.kafkaOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
         PvcOperator mockPvcOps = supplier.pvcOperations;
         PodOperator mockPodOps = supplier.podOperations;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
@@ -459,9 +457,6 @@ public class KafkaAssemblyOperatorZooBasedTest {
                 return Future.succeededFuture(List.of());
             }
         });
-
-        // Mock StatefulSets
-        when(mockStsOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
 
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
         ArgumentCaptor<NetworkPolicy> policyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
@@ -919,7 +914,6 @@ public class KafkaAssemblyOperatorZooBasedTest {
         var mockKafkaOps = supplier.kafkaOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
         PvcOperator mockPvcOps = supplier.pvcOperations;
         PodOperator mockPodOps = supplier.podOperations;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
@@ -1178,10 +1172,6 @@ public class KafkaAssemblyOperatorZooBasedTest {
                 return Future.succeededFuture(List.of());
             }
         });
-
-        // Mock StatefulSet get
-        when(mockStsOps.getAsync(eq(clusterNamespace), eq(KafkaResources.zookeeperComponentName(clusterName)))).thenReturn(Future.succeededFuture());
-        when(mockStsOps.getAsync(eq(clusterNamespace), eq(KafkaResources.kafkaComponentName(clusterName)))).thenReturn(Future.succeededFuture());
 
         // Mock Deployment get
         if (originalEntityOperator != null) {
