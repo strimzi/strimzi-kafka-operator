@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
-import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -27,7 +26,6 @@ import io.strimzi.api.kafka.model.connector.KafkaConnectorSpec;
 import io.strimzi.api.kafka.model.connector.ListOffsets;
 import io.strimzi.api.kafka.model.kafka.Status;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
-import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.ConfigMapUtils;
@@ -46,7 +44,6 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ClusterRoleBindingOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.CrdOperator;
-import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.NetworkPolicyOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodDisruptionBudgetOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
@@ -77,7 +74,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -106,7 +102,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
     protected final Function<Vertx, KafkaConnectApi> connectClientProvider;
     protected final ImagePullPolicy imagePullPolicy;
-    protected final DeploymentOperator deploymentOperations;
     protected final StrimziPodSetOperator podSetOperations;
     protected final PodOperator podOperations;
     protected final ConfigMapOperator configMapOperations;
@@ -145,7 +140,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         super(vertx, kind, resourceOperator, new ConnectOperatorMetricsHolder(kind, config.getCustomResourceSelector(), supplier.metricsProvider), config.getCustomResourceSelector());
 
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
-        this.deploymentOperations = supplier.deploymentOperations;
         this.podSetOperations = supplier.strimziPodSetOperator;
         this.podOperations = supplier.podOperations;
         this.connectClientProvider = connectClientProvider;
@@ -177,30 +171,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         } else {
             throw new RuntimeException("MetricsHolder in AbstractConnectOperator should be always of type ConnectOperatorMetricsHolder");
         }
-    }
-
-    /**
-     * Gets the Deployment and StrimziPodSet for the Connect cluster
-     *
-     * @param reconciliation        The reconciliation
-     * @param connect               KafkaConnectCluster object
-     * @param deploymentReference   Deployment reference
-     * @param podSetReference       StrimziPodSet reference
-     *
-     * @return                      Future for tracking the asynchronous result of getting the resources
-     */
-    protected Future<Void> controllerResources(Reconciliation reconciliation,
-                                             KafkaConnectCluster connect,
-                                             AtomicReference<Deployment> deploymentReference,
-                                             AtomicReference<StrimziPodSet> podSetReference)   {
-        return Future
-                .join(deploymentOperations.getAsync(reconciliation.namespace(), connect.getComponentName()), podSetOperations.getAsync(reconciliation.namespace(), connect.getComponentName()))
-                .compose(res -> {
-                    deploymentReference.set(res.resultAt(0));
-                    podSetReference.set(res.resultAt(1));
-
-                    return Future.succeededFuture();
-                });
     }
 
     /**

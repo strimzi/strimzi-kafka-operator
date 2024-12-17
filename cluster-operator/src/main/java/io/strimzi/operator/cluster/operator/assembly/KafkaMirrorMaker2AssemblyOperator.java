@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -18,7 +17,6 @@ import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2List;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Spec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Status;
-import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
@@ -116,8 +114,6 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         Map<String, String> podAnnotations = new HashMap<>(1);
 
         final AtomicReference<String> desiredLogging = new AtomicReference<>();
-        final AtomicReference<Deployment> deployment = new AtomicReference<>();
-        final AtomicReference<StrimziPodSet> podSet = new AtomicReference<>();
 
         boolean hasZeroReplicas = mirrorMaker2Cluster.getReplicas() == 0;
         String initCrbName = KafkaMirrorMaker2Resources.initContainerClusterRoleBindingName(kafkaMirrorMaker2.getMetadata().getName(), namespace);
@@ -125,8 +121,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
 
         LOGGER.debugCr(reconciliation, "Updating Kafka MirrorMaker 2 cluster");
 
-        controllerResources(reconciliation, mirrorMaker2Cluster, deployment, podSet)
-                .compose(i -> connectServiceAccount(reconciliation, namespace, KafkaMirrorMaker2Resources.serviceAccountName(mirrorMaker2Cluster.getCluster()), mirrorMaker2Cluster))
+        connectServiceAccount(reconciliation, namespace, KafkaMirrorMaker2Resources.serviceAccountName(mirrorMaker2Cluster.getCluster()), mirrorMaker2Cluster)
                 .compose(i -> connectInitClusterRoleBinding(reconciliation, initCrbName, initCrb))
                 .compose(i -> connectNetworkPolicy(reconciliation, namespace, mirrorMaker2Cluster, true))
                 .compose(i -> manualRollingUpdate(reconciliation, mirrorMaker2Cluster))
@@ -146,21 +141,6 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                     podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash));
                     return Future.succeededFuture();
                 })
-                .compose(i -> new KafkaConnectMigration(
-                                reconciliation,
-                                mirrorMaker2Cluster,
-                                null,
-                                podAnnotations,
-                                operationTimeoutMs,
-                                pfa.isOpenshift(),
-                                imagePullPolicy,
-                                imagePullSecrets,
-                                null,
-                                deploymentOperations,
-                                podSetOperations,
-                                podOperations
-                        )
-                        .migrateFromDeploymentToStrimziPodSets(deployment.get(), podSet.get()))
                 .compose(i -> reconcilePodSet(reconciliation, mirrorMaker2Cluster, podAnnotations, null, null))
                 .compose(i -> hasZeroReplicas ? Future.succeededFuture() : reconcileConnectLoggers(reconciliation, KafkaMirrorMaker2Resources.qualifiedServiceName(reconciliation.name(), namespace), desiredLogging.get(), mirrorMaker2Cluster.defaultLogConfig()))
                 .compose(i -> hasZeroReplicas ? Future.succeededFuture() : reconcileConnectors(reconciliation, kafkaMirrorMaker2, mirrorMaker2Cluster, kafkaMirrorMaker2Status))
