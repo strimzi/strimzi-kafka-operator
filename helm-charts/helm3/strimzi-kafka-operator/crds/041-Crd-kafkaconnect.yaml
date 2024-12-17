@@ -1103,12 +1103,32 @@ spec:
                                   readOnly:
                                     type: boolean
                                 description: PersistentVolumeClaim object to use to populate the volume.
+                              csi:
+                                type: object
+                                properties:
+                                  driver:
+                                    type: string
+                                  fsType:
+                                    type: string
+                                  nodePublishSecretRef:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                  readOnly:
+                                    type: boolean
+                                  volumeAttributes:
+                                    additionalProperties:
+                                      type: string
+                                    type: object
+                                description: CSIVolumeSource object to use to populate the volume.
                             oneOf:
                               - properties:
                                   secret: {}
                                   configMap: {}
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
+                                  csi: {}
                           description: Additional volumes that can be mounted to the pod.
                       description: Template for Kafka Connect `Pods`.
                     apiService:
@@ -2096,12 +2116,32 @@ spec:
                                   readOnly:
                                     type: boolean
                                 description: PersistentVolumeClaim object to use to populate the volume.
+                              csi:
+                                type: object
+                                properties:
+                                  driver:
+                                    type: string
+                                  fsType:
+                                    type: string
+                                  nodePublishSecretRef:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                  readOnly:
+                                    type: boolean
+                                  volumeAttributes:
+                                    additionalProperties:
+                                      type: string
+                                    type: object
+                                description: CSIVolumeSource object to use to populate the volume.
                             oneOf:
                               - properties:
                                   secret: {}
                                   configMap: {}
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
+                                  csi: {}
                           description: Additional volumes that can be mounted to the pod.
                       description: Template for Kafka Connect Build `Pods`. The build pod is used only on Kubernetes.
                     buildContainer:
@@ -2426,7 +2466,7 @@ spec:
                           type: array
                           items:
                             type: string
-                          description: "Configures additional options which will be passed to the Kaniko executor when building the new Connect image. Allowed options are: --customPlatform, --insecure, --insecure-pull, --insecure-registry, --log-format, --log-timestamp, --registry-mirror, --reproducible, --single-snapshot, --skip-tls-verify, --skip-tls-verify-pull, --skip-tls-verify-registry, --verbosity, --snapshotMode, --use-new-run. These options will be used only on Kubernetes where the Kaniko executor is used. They will be ignored on OpenShift. The options are described in the link:https://github.com/GoogleContainerTools/kaniko[Kaniko GitHub repository^]. Changing this field does not trigger new build of the Kafka Connect image."
+                          description: "Configures additional options which will be passed to the Kaniko executor when building the new Connect image. Allowed options are: --customPlatform, --custom-platform, --insecure, --insecure-pull, --insecure-registry, --log-format, --log-timestamp, --registry-mirror, --reproducible, --single-snapshot, --skip-tls-verify, --skip-tls-verify-pull, --skip-tls-verify-registry, --verbosity, --snapshotMode, --use-new-run, --registry-certificate, --registry-client-cert. These options will be used only on Kubernetes where the Kaniko executor is used. They will be ignored on OpenShift. The options are described in the link:https://github.com/GoogleContainerTools/kaniko[Kaniko GitHub repository^]. Changing this field does not trigger new build of the Kafka Connect image."
                         image:
                           type: string
                           description: The name of the image which will be built. Required.
