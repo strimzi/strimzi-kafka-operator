@@ -226,13 +226,13 @@ public class KafkaClusterZooBasedTest {
         assertThat(headless.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(false));
     }
 
-    private Secret generateBrokerSecret(Set<String> externalBootstrapAddress, Map<Integer, Set<String>> externalAddresses) {
+    private List<Secret> generateBrokerSecrets(Set<String> externalBootstrapAddress, Map<Integer, Set<String>> externalAddresses) {
         ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), CLUSTER, null, null);
         clusterCa.createRenewOrReplace(NAMESPACE, emptyMap(), emptyMap(), emptyMap(), null, true);
         ClientsCa clientsCa = new ClientsCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), null, null, null, null, 365, 30, true, CertificateExpirationPolicy.RENEW_CERTIFICATE);
         clientsCa.createRenewOrReplace(NAMESPACE, emptyMap(), emptyMap(), emptyMap(), null, true);
 
-        return KC.generateCertificatesSecret(clusterCa, clientsCa, null, externalBootstrapAddress, externalAddresses, true);
+        return KC.generateCertificatesSecrets(clusterCa, clientsCa, List.of(), externalBootstrapAddress, externalAddresses, true);
     }
 
     //////////
@@ -2467,12 +2467,18 @@ public class KafkaClusterZooBasedTest {
 
     @ParallelTest
     public void testGenerateBrokerSecret() throws CertificateParsingException {
-        Secret secret = generateBrokerSecret(null, emptyMap());
-        assertThat(secret.getData().keySet(), is(Set.of(
+        List<Secret> secrets = generateBrokerSecrets(null, emptyMap());
+        Set<String> secretDataKeys = new HashSet<>();
+        Map<String, Secret> secretMap = new HashMap<>();
+        secrets.forEach(secret -> {
+            secretDataKeys.addAll(secret.getData().keySet());
+            secretMap.put(secret.getMetadata().getName(), secret);
+        });
+        assertThat(secretDataKeys, is(Set.of(
                 "foo-kafka-0.crt",  "foo-kafka-0.key",
                 "foo-kafka-1.crt", "foo-kafka-1.key",
                 "foo-kafka-2.crt", "foo-kafka-2.key")));
-        X509Certificate cert = Ca.cert(secret, "foo-kafka-0.crt");
+        X509Certificate cert = Ca.cert(secretMap.get("foo-kafka-0"), "foo-kafka-0.crt");
         assertThat(cert.getSubjectX500Principal().getName(), is("CN=foo-kafka,O=io.strimzi"));
         assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(Set.of(
                 asList(2, "foo-kafka-0.foo-kafka-brokers.test.svc.cluster.local"),
@@ -2494,12 +2500,18 @@ public class KafkaClusterZooBasedTest {
         externalAddresses.put(1, Collections.singleton("123.10.125.131"));
         externalAddresses.put(2, Collections.singleton("123.10.125.132"));
 
-        Secret secret = generateBrokerSecret(Collections.singleton("123.10.125.140"), externalAddresses);
-        assertThat(secret.getData().keySet(), is(Set.of(
+        List<Secret> secrets = generateBrokerSecrets(Collections.singleton("123.10.125.140"), externalAddresses);
+        Set<String> secretDataKeys = new HashSet<>();
+        Map<String, Secret> secretMap = new HashMap<>();
+        secrets.forEach(secret -> {
+            secretDataKeys.addAll(secret.getData().keySet());
+            secretMap.put(secret.getMetadata().getName(), secret);
+        });
+        assertThat(secretDataKeys, is(Set.of(
                 "foo-kafka-0.crt",  "foo-kafka-0.key",
                 "foo-kafka-1.crt", "foo-kafka-1.key",
                 "foo-kafka-2.crt", "foo-kafka-2.key")));
-        X509Certificate cert = Ca.cert(secret, "foo-kafka-0.crt");
+        X509Certificate cert = Ca.cert(secretMap.get("foo-kafka-0"), "foo-kafka-0.crt");
         assertThat(cert.getSubjectX500Principal().getName(), is("CN=foo-kafka,O=io.strimzi"));
         assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(Set.of(
                 asList(2, "foo-kafka-0.foo-kafka-brokers.test.svc.cluster.local"),
@@ -2523,12 +2535,18 @@ public class KafkaClusterZooBasedTest {
         externalAddresses.put(1, Set.of("123.10.125.131", "my-broker-1"));
         externalAddresses.put(2, Set.of("123.10.125.132", "my-broker-2"));
 
-        Secret secret = generateBrokerSecret(Set.of("123.10.125.140", "my-bootstrap"), externalAddresses);
-        assertThat(secret.getData().keySet(), is(Set.of(
+        List<Secret> secrets = generateBrokerSecrets(Set.of("123.10.125.140", "my-bootstrap"), externalAddresses);
+        Set<String> secretDataKeys = new HashSet<>();
+        Map<String, Secret> secretMap = new HashMap<>();
+        secrets.forEach(secret -> {
+            secretDataKeys.addAll(secret.getData().keySet());
+            secretMap.put(secret.getMetadata().getName(), secret);
+        });
+        assertThat(secretDataKeys, is(Set.of(
                 "foo-kafka-0.crt",  "foo-kafka-0.key",
                 "foo-kafka-1.crt", "foo-kafka-1.key",
                 "foo-kafka-2.crt", "foo-kafka-2.key")));
-        X509Certificate cert = Ca.cert(secret, "foo-kafka-0.crt");
+        X509Certificate cert = Ca.cert(secretMap.get("foo-kafka-0"), "foo-kafka-0.crt");
         assertThat(cert.getSubjectX500Principal().getName(), is("CN=foo-kafka,O=io.strimzi"));
         assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(Set.of(
                 asList(2, "foo-kafka-0.foo-kafka-brokers.test.svc.cluster.local"),
@@ -4345,7 +4363,7 @@ public class KafkaClusterZooBasedTest {
             assertThat(pod.getSpec().getVolumes().get(2).getName(), is(KafkaCluster.CLUSTER_CA_CERTS_VOLUME));
             assertThat(pod.getSpec().getVolumes().get(2).getSecret().getSecretName(), is("foo-cluster-ca-cert"));
             assertThat(pod.getSpec().getVolumes().get(3).getName(), is(KafkaCluster.BROKER_CERTS_VOLUME));
-            assertThat(pod.getSpec().getVolumes().get(3).getSecret().getSecretName(), is("foo-kafka-brokers"));
+            assertThat(pod.getSpec().getVolumes().get(3).getSecret().getSecretName(), is(pod.getMetadata().getName()));
             assertThat(pod.getSpec().getVolumes().get(4).getName(), is(KafkaCluster.CLIENT_CA_CERTS_VOLUME));
             assertThat(pod.getSpec().getVolumes().get(4).getSecret().getSecretName(), is("foo-clients-ca-cert"));
             assertThat(pod.getSpec().getVolumes().get(5).getName(), is("kafka-metrics-and-logging"));
@@ -4563,7 +4581,7 @@ public class KafkaClusterZooBasedTest {
             assertThat(pod.getSpec().getVolumes().get(2).getName(), is(KafkaCluster.CLUSTER_CA_CERTS_VOLUME));
             assertThat(pod.getSpec().getVolumes().get(2).getSecret().getSecretName(), is("foo-cluster-ca-cert"));
             assertThat(pod.getSpec().getVolumes().get(3).getName(), is(KafkaCluster.BROKER_CERTS_VOLUME));
-            assertThat(pod.getSpec().getVolumes().get(3).getSecret().getSecretName(), is("foo-kafka-brokers"));
+            assertThat(pod.getSpec().getVolumes().get(3).getSecret().getSecretName(), is(pod.getMetadata().getName()));
             assertThat(pod.getSpec().getVolumes().get(4).getName(), is(KafkaCluster.CLIENT_CA_CERTS_VOLUME));
             assertThat(pod.getSpec().getVolumes().get(4).getSecret().getSecretName(), is("foo-clients-ca-cert"));
             assertThat(pod.getSpec().getVolumes().get(5).getName(), is("kafka-metrics-and-logging"));

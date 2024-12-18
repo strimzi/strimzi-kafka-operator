@@ -583,9 +583,11 @@ public class KafkaAssemblyOperatorZooBasedTest {
                 KafkaResources.clientsCaCertificateSecretName(kafkaName),
                 KafkaResources.clusterCaCertificateSecretName(kafkaName),
                 KafkaResources.clusterCaKeySecretName(kafkaName),
-                KafkaResources.kafkaSecretName(kafkaName),
                 KafkaResources.zookeeperSecretName(kafkaName),
                 KafkaResources.clusterOperatorCertsSecretName(kafkaName));
+
+        // Kafka node certificate Secrets
+        kafkaCluster.nodes().forEach(node -> expectedSecrets.add(node.podName()));
 
         if (metrics)    {
             expectedSecrets.add(KafkaExporterResources.secretName(kafkaName));
