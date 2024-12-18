@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaList;
+import io.strimzi.api.kafka.model.kafka.KafkaMetadataState;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
@@ -1426,12 +1427,120 @@ public class KafkaAssemblyOperatorWithKRaftTest {
     }
 
     /**
+     * Tests that a cluster that uses ZooKeeper cannot be operated
+     *
+     * @param context   Test context
+     */
+    @Test
+    public void testClusterWithZooKeeperMetadata(VertxTestContext context)  {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editStatus()
+                    .withKafkaMetadataState(KafkaMetadataState.ZooKeeper)
+                .endStatus()
+                .build();
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
+        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(kafka));
+
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
+
+        KafkaAssemblyOperator kao = new KafkaAssemblyOperator(
+                vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                CERT_MANAGER,
+                PASSWORD_GENERATOR,
+                supplier,
+                config);
+
+        Checkpoint async = context.checkpoint();
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
+                .onComplete(context.failing(v -> context.verify(() -> {
+                    assertThat(v, instanceOf(InvalidConfigurationException.class));
+                    assertThat(v.getMessage(), containsString("supports only KRaft-based Apache Kafka clusters. Please make sure your cluster is migrated to KRaft before using Strimzi"));
+                    async.flag();
+                })));
+    }
+
+    /**
+     * Tests that a cluster in migration cannot be operated
+     *
+     * @param context   Test context
+     */
+    @Test
+    public void testClusterWithMigrationMetadata(VertxTestContext context)  {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editStatus()
+                    .withKafkaMetadataState(KafkaMetadataState.KRaftPostMigration)
+                .endStatus()
+                .build();
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
+        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(kafka));
+
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
+
+        KafkaAssemblyOperator kao = new KafkaAssemblyOperator(
+                vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                CERT_MANAGER,
+                PASSWORD_GENERATOR,
+                supplier,
+                config);
+
+        Checkpoint async = context.checkpoint();
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
+                .onComplete(context.failing(v -> context.verify(() -> {
+                    assertThat(v, instanceOf(InvalidConfigurationException.class));
+                    assertThat(v.getMessage(), containsString("supports only KRaft-based Apache Kafka clusters. Please make sure your cluster is migrated to KRaft before using Strimzi"));
+                    async.flag();
+                })));
+    }
+
+    /**
+     * Tests that a cluster cannot be deployed without using KRaft
+     *
+     * @param context   Test context
+     */
+    @Test
+    public void testClusterWithoutEnabledKRaft(VertxTestContext context)  {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editMetadata()
+                    .withAnnotations(Map.of())
+                .endMetadata()
+                .build();
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
+        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(kafka));
+
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
+
+        KafkaAssemblyOperator kao = new KafkaAssemblyOperator(
+                vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                CERT_MANAGER,
+                PASSWORD_GENERATOR,
+                supplier,
+                config);
+
+        Checkpoint async = context.checkpoint();
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
+                .onComplete(context.failing(v -> context.verify(() -> {
+                    assertThat(v, instanceOf(InvalidConfigurationException.class));
+                    assertThat(v.getMessage(), containsString("supports only KRaft-based Apache Kafka clusters. Please make sure your cluster is migrated to KRaft before using Strimzi"));
+                    async.flag();
+                })));
+    }
+
+    /**
      * Tests that KRaft cluster cannot be deployed without using NodePools
      *
      * @param context   Test context
      */
     @Test
-    public void testKRaftClusterWithoutNodePools(VertxTestContext context)  {
+    public void testKRaftClusterWithoutEnabledNodePools(VertxTestContext context)  {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editMetadata()
                     .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"))
