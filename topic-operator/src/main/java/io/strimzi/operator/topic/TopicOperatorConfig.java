@@ -15,10 +15,15 @@ import io.strimzi.operator.common.config.ConfigParameterParser;
 import io.strimzi.operator.common.featuregates.FeatureGates;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties;
+import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.config.SslConfigs;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -158,7 +163,7 @@ public record TopicOperatorConfig(
     /** Cruise Control: whether rack awareness is enabled. */
     public static final ConfigParameter<Boolean> CRUISE_CONTROL_RACK_ENABLED = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_RACK_ENABLED", ConfigParameterParser.BOOLEAN, "false", CONFIG_VALUES);
     /** Cruise Control: server hostname. */
-    public static final ConfigParameter<String> CRUISE_CONTROL_HOSTNAME = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_HOSTNAME", ConfigParameterParser.STRING, "127.0.0.1", CONFIG_VALUES);
+    public static final ConfigParameter<String> CRUISE_CONTROL_HOSTNAME = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_HOSTNAME", ConfigParameterParser.STRING, "localhost", CONFIG_VALUES);
     /** Cruise Control: server port. */
     public static final ConfigParameter<Integer> CRUISE_CONTROL_PORT = new ConfigParameter<>("STRIMZI_CRUISE_CONTROL_PORT", ConfigParameterParser.strictlyPositive(ConfigParameterParser.INTEGER), "9090", CONFIG_VALUES);
     /** Cruise Control: whether rack awareness is enabled. */
@@ -185,7 +190,7 @@ public record TopicOperatorConfig(
      * Creates the TopicOperator configuration from a map.
      * 
      * @param map Configuration map.
-     * @return TopicOperator config.
+     * @return Topic Operator configuration.
      */
     public static TopicOperatorConfig buildFromMap(Map<String, String> map) {
         Map<String, String> envMap = new HashMap<>(map);
@@ -199,7 +204,7 @@ public record TopicOperatorConfig(
     }
 
     /**
-     * Creates the TopicOperator configuration.
+     * Creates the Topic Operator configuration.
      * 
      * @param map Configuration map.
      */
@@ -361,6 +366,32 @@ public record TopicOperatorConfig(
 
         kafkaClientProps.put(SaslConfigs.SASL_MECHANISM, saslMechanism);
         kafkaClientProps.put(SaslConfigs.SASL_JAAS_CONFIG, jaasConfig);
+    }
+
+    /**
+     * @return Cruise Control client configuration.
+     */
+    public CruiseControlClient.Config cruiseControlClientConfig() {
+        return new CruiseControlClient.Config(
+            cruiseControlHostname,
+            cruiseControlPort,
+            cruiseControlRackEnabled,
+            cruiseControlSslEnabled,
+            cruiseControlSslEnabled ? getFileContent(cruiseControlCrtFilePath) : null,
+            cruiseControlAuthEnabled(),
+            cruiseControlAuthEnabled()
+                ? new String(getFileContent(cruiseControlApiUserPath), StandardCharsets.UTF_8) : null,
+            cruiseControlAuthEnabled()
+                ? new String(getFileContent(cruiseControlApiPassPath), StandardCharsets.UTF_8) : null
+        );
+    }
+
+    private static byte[] getFileContent(String filePath) {
+        try {
+            return Files.readAllBytes(Path.of(filePath));
+        } catch (IOException ioe) {
+            throw new IllegalArgumentException(String.format("File not found: %s", filePath), ioe);
+        }
     }
 
     @Override
