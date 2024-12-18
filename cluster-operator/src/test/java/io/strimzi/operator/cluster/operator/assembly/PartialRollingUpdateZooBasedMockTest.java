@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.kafka.Kafka;
@@ -49,8 +50,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -229,12 +232,14 @@ public class PartialRollingUpdateZooBasedMockTest {
     @Test
     public void testReconcileOfPartiallyRolledKafkaClusterForServerCertificates(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
-        var brokersSecret = client.secrets().inNamespace(namespace).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get();
+        Map<String, Secret> certSecrets = client.secrets().inNamespace(namespace).withLabels(Map.of(Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaComponentName(CLUSTER_NAME))).list().getItems()
+                .stream().collect(Collectors.toMap(secret -> secret.getMetadata().getName(), secret -> secret));
 
         for (int brokerId = 0; brokerId < cluster.getSpec().getKafka().getReplicas(); brokerId++) {
-            var pod = client.pods().inNamespace(namespace).withName(KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId)).get();
+            var podName = KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId);
+            var pod = client.pods().inNamespace(namespace).withName(podName).get();
             var podCertHash = pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH);
-            var expectedCertHash = CertUtils.getCertificateThumbprint(brokersSecret, Ca.SecretEntry.CRT.asKey(pod.getMetadata().getName()));
+            var expectedCertHash = CertUtils.getCertificateThumbprint(certSecrets.get(podName), Ca.SecretEntry.CRT.asKey(pod.getMetadata().getName()));
 
             assertThat("Pod " + brokerId + " had unexpected revision", podCertHash, is(expectedCertHash));
         }
@@ -248,9 +253,10 @@ public class PartialRollingUpdateZooBasedMockTest {
 
             for (int brokerId = 0; brokerId < cluster.getSpec().getKafka().getReplicas(); brokerId++) {
                 final var finalBrokerId = brokerId;
-                var pod = client.pods().inNamespace(namespace).withName(KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId)).get();
+                var podName = KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId);
+                var pod = client.pods().inNamespace(namespace).withName(podName).get();
                 var podCertHash = pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH);
-                var expectedCertHash = CertUtils.getCertificateThumbprint(brokersSecret, Ca.SecretEntry.CRT.asKey(pod.getMetadata().getName()));
+                var expectedCertHash = CertUtils.getCertificateThumbprint(certSecrets.get(podName), Ca.SecretEntry.CRT.asKey(pod.getMetadata().getName()));
 
                 context.verify(() -> assertThat("Pod " + finalBrokerId + " had unexpected revision", podCertHash, is(expectedCertHash)));
             }

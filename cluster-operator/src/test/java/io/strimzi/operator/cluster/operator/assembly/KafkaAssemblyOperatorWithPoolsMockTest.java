@@ -221,9 +221,9 @@ public class KafkaAssemblyOperatorWithPoolsMockTest {
                 spsPoolA.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0"));
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0"));
-                    var brokersSecret = client.secrets().inNamespace(namespace).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get();
+                    var certSecret = client.secrets().inNamespace(namespace).withName(pod.getMetadata().getName()).get();
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH,
-                            CertUtils.getCertificateThumbprint(brokersSecret, Ca.SecretEntry.CRT.asKey(pod.getMetadata().getName()))
+                            CertUtils.getCertificateThumbprint(certSecret, Ca.SecretEntry.CRT.asKey(pod.getMetadata().getName()))
                     ));
                 });
 
@@ -233,9 +233,9 @@ public class KafkaAssemblyOperatorWithPoolsMockTest {
                 spsPoolB.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0"));
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0"));
-                    var brokersSecret = client.secrets().inNamespace(namespace).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get();
+                    var certSecret = client.secrets().inNamespace(namespace).withName(pod.getMetadata().getName()).get();
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH,
-                            CertUtils.getCertificateThumbprint(brokersSecret, Ca.SecretEntry.CRT.asKey(pod.getMetadata().getName()))
+                            CertUtils.getCertificateThumbprint(certSecret, Ca.SecretEntry.CRT.asKey(pod.getMetadata().getName()))
                     ));
                 });
 
@@ -251,7 +251,6 @@ public class KafkaAssemblyOperatorWithPoolsMockTest {
                 assertThat(client.secrets().inNamespace(namespace).withName(KafkaResources.clientsCaKeySecretName(CLUSTER_NAME)).get(), is(notNullValue()));
                 assertThat(client.secrets().inNamespace(namespace).withName(KafkaResources.clientsCaCertificateSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
                 assertThat(client.secrets().inNamespace(namespace).withName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
-                assertThat(client.secrets().inNamespace(namespace).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
                 assertThat(client.secrets().inNamespace(namespace).withName(KafkaResources.zookeeperSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
             })));
     }
@@ -271,7 +270,11 @@ public class KafkaAssemblyOperatorWithPoolsMockTest {
         List<String> secrets = List.of(KafkaResources.clientsCaKeySecretName(CLUSTER_NAME),
                 KafkaResources.clientsCaCertificateSecretName(CLUSTER_NAME),
                 KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME),
-                KafkaResources.kafkaSecretName(CLUSTER_NAME),
+                KafkaResources.kafkaPodName(CLUSTER_NAME, "pool-a", 0),
+                KafkaResources.kafkaPodName(CLUSTER_NAME, "pool-a", 1),
+                KafkaResources.kafkaPodName(CLUSTER_NAME, "pool-a", 2),
+                KafkaResources.kafkaPodName(CLUSTER_NAME, "pool-b", 3),
+                KafkaResources.kafkaPodName(CLUSTER_NAME, "pool-b", 4),
                 KafkaResources.zookeeperSecretName(CLUSTER_NAME),
                 KafkaResources.clusterOperatorCertsSecretName(CLUSTER_NAME));
 
@@ -495,7 +498,7 @@ public class KafkaAssemblyOperatorWithPoolsMockTest {
 
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                assertThat(client.secrets().inNamespace(namespace).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get().getData().size(), is(10));
+                assertThat(client.secrets().inNamespace(namespace).withName(CLUSTER_NAME + "-pool-a-2").get(), is(notNullValue()));
                 assertThat(client.pods().inNamespace(namespace).withLabels(kafkaLabels).list().getItems().size(), is(5));
                 assertThat(client.pods().inNamespace(namespace).withName(CLUSTER_NAME + "-pool-a-2").get(), is(notNullValue()));
 
@@ -510,7 +513,7 @@ public class KafkaAssemblyOperatorWithPoolsMockTest {
             })))
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                assertThat(client.secrets().inNamespace(namespace).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get().getData().size(), is(8));
+                assertThat(client.secrets().inNamespace(namespace).withName(CLUSTER_NAME + "-pool-a-2").get(), is(nullValue()));
                 assertThat(client.pods().inNamespace(namespace).withLabels(kafkaLabels).list().getItems().size(), is(4));
                 assertThat(client.pods().inNamespace(namespace).withName(CLUSTER_NAME + "-pool-a-2").get(), is(nullValue()));
 
@@ -541,7 +544,7 @@ public class KafkaAssemblyOperatorWithPoolsMockTest {
 
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                assertThat(client.secrets().inNamespace(namespace).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get().getData().size(), is(10));
+                assertThat(client.secrets().inNamespace(namespace).withName(CLUSTER_NAME + "-pool-a-5").get(), is(nullValue()));
                 assertThat(client.pods().inNamespace(namespace).withLabels(kafkaLabels).list().getItems().size(), is(5));
                 assertThat(client.pods().inNamespace(namespace).withName(CLUSTER_NAME + "-pool-a-5").get(), is(nullValue()));
 
@@ -556,7 +559,7 @@ public class KafkaAssemblyOperatorWithPoolsMockTest {
             })))
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                assertThat(client.secrets().inNamespace(namespace).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get().getData().size(), is(12));
+                assertThat(client.secrets().inNamespace(namespace).withName(CLUSTER_NAME + "-pool-a-5").get(), is(notNullValue()));
                 assertThat(client.pods().inNamespace(namespace).withLabels(kafkaLabels).list().getItems().size(), is(6));
                 assertThat(client.pods().inNamespace(namespace).withName(CLUSTER_NAME + "-pool-a-5").get(), is(notNullValue()));
 
@@ -587,7 +590,8 @@ public class KafkaAssemblyOperatorWithPoolsMockTest {
 
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                assertThat(client.secrets().inNamespace(namespace).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get().getData().size(), is(10));
+                assertThat(client.secrets().inNamespace(namespace).withLabels(Labels.fromMap(kafkaLabels).withStrimziComponentType("kafka").toMap())
+                        .list().getItems().size(), is(5));
                 assertThat(client.pods().inNamespace(namespace).withLabels(kafkaLabels).list().getItems().size(), is(5));
 
                 KafkaNodePool poolC = new KafkaNodePoolBuilder()
@@ -613,7 +617,10 @@ public class KafkaAssemblyOperatorWithPoolsMockTest {
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Assert that the new pool is added
-                assertThat(client.secrets().inNamespace(namespace).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get().getData().size(), is(14));
+                assertThat(client.secrets().inNamespace(namespace).withLabels(Labels.fromMap(kafkaLabels).withStrimziComponentType("kafka").toMap())
+                        .list().getItems().size(), is(7));
+                assertThat(client.secrets().inNamespace(namespace).withName(CLUSTER_NAME + "-pool-c-5").get(), is(notNullValue()));
+                assertThat(client.secrets().inNamespace(namespace).withName(CLUSTER_NAME + "-pool-c-6").get(), is(notNullValue()));
                 assertThat(client.pods().inNamespace(namespace).withLabels(kafkaLabels).list().getItems().size(), is(7));
                 assertThat(client.pods().inNamespace(namespace).withName(CLUSTER_NAME + "-pool-c-5").get(), is(notNullValue()));
                 assertThat(client.pods().inNamespace(namespace).withName(CLUSTER_NAME + "-pool-c-6").get(), is(notNullValue()));
@@ -676,7 +683,11 @@ public class KafkaAssemblyOperatorWithPoolsMockTest {
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Assert that the new pool is added
-                assertThat(client.secrets().inNamespace(namespace).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get().getData().size(), is(14));
+                assertThat(client.secrets().inNamespace(namespace).withLabels(Labels.fromMap(kafkaLabels).withStrimziComponentType("kafka").toMap())
+                        .list().getItems().size(), is(7));
+                assertThat(client.secrets().inNamespace(namespace).withName(CLUSTER_NAME + "-pool-c-5").get(), is(notNullValue()));
+                assertThat(client.secrets().inNamespace(namespace).withName(CLUSTER_NAME + "-pool-c-6").get(), is(notNullValue()));
+
                 assertThat(client.pods().inNamespace(namespace).withLabels(kafkaLabels).list().getItems().size(), is(7));
                 assertThat(client.pods().inNamespace(namespace).withName(CLUSTER_NAME + "-pool-c-5").get(), is(notNullValue()));
                 assertThat(client.pods().inNamespace(namespace).withName(CLUSTER_NAME + "-pool-c-6").get(), is(notNullValue()));
@@ -710,7 +721,11 @@ public class KafkaAssemblyOperatorWithPoolsMockTest {
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Assert that pool was removed
-                assertThat(client.secrets().inNamespace(namespace).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get().getData().size(), is(10));
+                assertThat(client.secrets().inNamespace(namespace).withLabels(Labels.fromMap(kafkaLabels).withStrimziComponentType("kafka").toMap())
+                        .list().getItems().size(), is(5));
+                assertThat(client.secrets().inNamespace(namespace).withName(CLUSTER_NAME + "-pool-b-3").get(), is(nullValue()));
+                assertThat(client.secrets().inNamespace(namespace).withName(CLUSTER_NAME + "-pool-b-4").get(), is(nullValue()));
+
                 assertThat(client.pods().inNamespace(namespace).withLabels(kafkaLabels).list().getItems().size(), is(5));
                 assertThat(client.pods().inNamespace(namespace).withName(CLUSTER_NAME + "-pool-b-3").get(), is(nullValue()));
                 assertThat(client.pods().inNamespace(namespace).withName(CLUSTER_NAME + "-pool-b-4").get(), is(nullValue()));
