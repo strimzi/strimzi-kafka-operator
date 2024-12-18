@@ -47,7 +47,6 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StorageClassOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
 import io.strimzi.operator.common.AdminClientProvider;
-import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.MetricsProvider;
 import io.vertx.core.Vertx;
@@ -194,11 +193,6 @@ public class ResourceOperatorSupplier {
     public final NodeOperator nodeOperator;
 
     /**
-     * ZooKeeper Scaler provider
-     */
-    public final ZookeeperScalerProvider zkScalerProvider;
-
-    /**
      * Metrics provider
      */
     public final MetricsProvider metricsProvider;
@@ -209,19 +203,9 @@ public class ResourceOperatorSupplier {
     public final AdminClientProvider adminClientProvider;
 
     /**
-     * ZooKeeper Leader finder
-     */
-    public final ZookeeperLeaderFinder zookeeperLeaderFinder;
-
-    /**
      * Kafka Agent client provider
      */
     public final KafkaAgentClientProvider kafkaAgentClientProvider;
-
-    /**
-     * ZooKeeper Admin client provider
-     */
-    public final ZooKeeperAdminProvider zooKeeperAdminProvider;
 
     /**
      * Restart Events publisher
@@ -245,22 +229,15 @@ public class ResourceOperatorSupplier {
      * @param client                Kubernetes Client
      * @param metricsProvider       Metrics provider
      * @param pfa                   Platform Availability Features
-     * @param operationTimeoutMs    Operation timeout in milliseconds
      * @param operatorName          Name of this operator instance
      */
-    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, long operationTimeoutMs, String operatorName) {
+    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, String operatorName) {
         this(vertx,
                 client,
-                new ZookeeperLeaderFinder(vertx,
-                        // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
-                        () -> new BackOff(5_000, 2, 4)),
                 new DefaultAdminClientProvider(),
-                new DefaultZookeeperScalerProvider(),
                 new DefaultKafkaAgentClientProvider(),
                 metricsProvider,
-                new DefaultZooKeeperAdminProvider(),
                 pfa,
-                operationTimeoutMs,
                 new KubernetesRestartEventPublisher(client, operatorName)
         );
     }
@@ -268,51 +245,35 @@ public class ResourceOperatorSupplier {
     /**
      * Constructor used for tests
      *
-     * @param vertx                     Vert.x instance
-     * @param client                    Kubernetes Client
-     * @param zlf                       ZooKeeper Leader Finder
-     * @param adminClientProvider       Kafka Admin client provider
-     * @param zkScalerProvider          ZooKeeper Scaler provider
-     * @param kafkaAgentClientProvider  Kafka Agent client provider
-     * @param metricsProvider           Metrics provider
-     * @param zkAdminProvider           ZooKeeper Admin client provider
-     * @param pfa                       Platform Availability Features
-     * @param operationTimeoutMs        Operation timeout in milliseconds
+     * @param vertx                    Vert.x instance
+     * @param client                   Kubernetes Client
+     * @param adminClientProvider      Kafka Admin client provider
+     * @param kafkaAgentClientProvider Kafka Agent client provider
+     * @param metricsProvider          Metrics provider
+     * @param pfa                      Platform Availability Features
      */
     public ResourceOperatorSupplier(Vertx vertx,
                                     KubernetesClient client,
-                                    ZookeeperLeaderFinder zlf,
                                     AdminClientProvider adminClientProvider,
-                                    ZookeeperScalerProvider zkScalerProvider,
                                     KafkaAgentClientProvider kafkaAgentClientProvider,
                                     MetricsProvider metricsProvider,
-                                    ZooKeeperAdminProvider zkAdminProvider,
-                                    PlatformFeaturesAvailability pfa,
-                                    long operationTimeoutMs) {
+                                    PlatformFeaturesAvailability pfa) {
         this(vertx,
                 client,
-                zlf,
                 adminClientProvider,
-                zkScalerProvider,
                 kafkaAgentClientProvider,
                 metricsProvider,
-                zkAdminProvider,
                 pfa,
-                operationTimeoutMs,
                 new KubernetesRestartEventPublisher(client, "operatorName")
         );
     }
 
     private ResourceOperatorSupplier(Vertx vertx,
                                      KubernetesClient client,
-                                     ZookeeperLeaderFinder zlf,
                                      AdminClientProvider adminClientProvider,
-                                     ZookeeperScalerProvider zkScalerProvider,
                                      KafkaAgentClientProvider kafkaAgentClientProvider,
                                      MetricsProvider metricsProvider,
-                                     ZooKeeperAdminProvider zkAdminProvider,
                                      PlatformFeaturesAvailability pfa,
-                                     long operationTimeoutMs,
                                      KubernetesRestartEventPublisher restartEventPublisher) {
         this(new ServiceOperator(vertx, client),
                 pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
@@ -341,12 +302,9 @@ public class ResourceOperatorSupplier {
                 new StrimziPodSetOperator(vertx, client),
                 new StorageClassOperator(vertx, client),
                 new NodeOperator(vertx, client),
-                zkScalerProvider,
                 kafkaAgentClientProvider,
                 metricsProvider,
                 adminClientProvider,
-                zlf,
-                zkAdminProvider,
                 restartEventPublisher,
                 new DefaultSharedEnvironmentProvider(),
                 new BrokersInUseCheck());
@@ -382,12 +340,9 @@ public class ResourceOperatorSupplier {
      * @param strimziPodSetOperator                 StrimziPodSet operator
      * @param storageClassOperator                  StorageClass operator
      * @param nodeOperator                          Node operator
-     * @param zkScalerProvider                      ZooKeeper Scaler provider
      * @param kafkaAgentClientProvider              Kafka Agent client provider
      * @param metricsProvider                       Metrics provider
      * @param adminClientProvider                   Kafka Admin client provider
-     * @param zookeeperLeaderFinder                 ZooKeeper Leader Finder
-     * @param zooKeeperAdminProvider                ZooKeeper Admin client provider
      * @param restartEventsPublisher                Kubernetes Events publisher
      * @param sharedEnvironmentProvider             Shared environment provider
      * @param brokersInUseCheck                     Broker scale down operations
@@ -420,12 +375,9 @@ public class ResourceOperatorSupplier {
                                     StrimziPodSetOperator strimziPodSetOperator,
                                     StorageClassOperator storageClassOperator,
                                     NodeOperator nodeOperator,
-                                    ZookeeperScalerProvider zkScalerProvider,
                                     KafkaAgentClientProvider kafkaAgentClientProvider,
                                     MetricsProvider metricsProvider,
                                     AdminClientProvider adminClientProvider,
-                                    ZookeeperLeaderFinder zookeeperLeaderFinder,
-                                    ZooKeeperAdminProvider zooKeeperAdminProvider,
                                     KubernetesRestartEventPublisher restartEventsPublisher,
                                     SharedEnvironmentProvider sharedEnvironmentProvider,
                                     BrokersInUseCheck brokersInUseCheck) {
@@ -456,12 +408,9 @@ public class ResourceOperatorSupplier {
         this.kafkaNodePoolOperator = kafkaNodePoolOperator;
         this.strimziPodSetOperator = strimziPodSetOperator;
         this.nodeOperator = nodeOperator;
-        this.zkScalerProvider = zkScalerProvider;
         this.kafkaAgentClientProvider = kafkaAgentClientProvider;
         this.metricsProvider = metricsProvider;
         this.adminClientProvider = adminClientProvider;
-        this.zookeeperLeaderFinder = zookeeperLeaderFinder;
-        this.zooKeeperAdminProvider = zooKeeperAdminProvider;
         this.restartEventsPublisher = restartEventsPublisher;
         this.sharedEnvironmentProvider = sharedEnvironmentProvider;
         this.brokersInUseCheck = brokersInUseCheck;

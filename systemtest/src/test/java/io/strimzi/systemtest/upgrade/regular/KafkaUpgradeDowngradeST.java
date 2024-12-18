@@ -26,6 +26,7 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 
 import java.util.Arrays;
@@ -46,6 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  * Metadata for upgrade/downgrade procedure are loaded from kafka-versions.yaml in root dir of this repository.
  */
 @Tag(UPGRADE)
+@Disabled // ZooKeeper is being removed
 public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaUpgradeDowngradeST.class);

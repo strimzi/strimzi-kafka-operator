@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaMetadataState;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.operator.cluster.model.KafkaCluster;
@@ -43,7 +44,7 @@ import java.util.Set;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_SERVER_CERT_HASH;
 
 /**
- * Utilities used during reconciliation of different operands - mainly Kafka and ZooKeeper
+ * Utilities used during reconciliation of different operands
  */
 public class ReconcilerUtils {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ReconcilerUtils.class.getName());
@@ -391,7 +392,7 @@ public class ReconcilerUtils {
     }
 
     /**
-     * Checks whether Node pools are enabled for given Kafka custom resource using the strimzi.io/node-pools annotation
+     * Checks whether Node pools are enabled for given Kafka custom resource using the strimzi.io/node-pools annotation.
      *
      * @param kafka     The Kafka custom resource which might have the node-pools annotation
      *
@@ -399,6 +400,33 @@ public class ReconcilerUtils {
      */
     public static boolean nodePoolsEnabled(Kafka kafka) {
         return KafkaCluster.ENABLED_VALUE_STRIMZI_IO_NODE_POOLS.equals(Annotations.stringAnnotation(kafka, Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "disabled").toLowerCase(Locale.ENGLISH));
+    }
+
+    /**
+     * Checks whether KRaft is enabled for given Kafka custom resource using the strimzi.io/kraft annotation.
+     *
+     * @param kafka     The Kafka custom resource which might have the KRaft annotation
+     *
+     * @return      True when KRaft is enabled. False otherwise.
+     */
+    public static boolean kraftEnabled(Kafka kafka) {
+        return KafkaCluster.ENABLED_VALUE_STRIMZI_IO_KRAFT.equals(Annotations.stringAnnotation(kafka, Annotations.ANNO_STRIMZI_IO_KRAFT, "disabled").toLowerCase(Locale.ENGLISH));
+    }
+
+    /**
+     * Checks whether the metadata state is still in ZooKeeper or whether migration is still in progress
+     *
+     * @param kafka     The Kafka custom resource where we check the state
+     *
+     * @return      True ZooKeeper metadata are in use or when the cluster is in migration. False otherwise.
+     */
+    public static boolean nonMigratedCluster(Kafka kafka) {
+        // When the Kafka status or the metadata state are null, we cannot decide anything about KRaft (it can be a new
+        // cluster or a cluster that is still doing the first deployment). Only when it is set to one of the non-KRaft
+        // states we know that the cluster is ZooKeeper based or non-migrated.
+        return kafka.getStatus() != null
+                && kafka.getStatus().getKafkaMetadataState() != null
+                && kafka.getStatus().getKafkaMetadataState() != KafkaMetadataState.KRaft;
     }
 
     /**

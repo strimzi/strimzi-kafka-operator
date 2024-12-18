@@ -24,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -45,6 +46,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * Kafka upgrade is done as part of those tests as well, but the tests for Kafka upgrade/downgrade are in {@link KafkaUpgradeDowngradeST}.
  */
 @Tag(UPGRADE)
+@Disabled // ZooKeeper is being removed
 public class StrimziUpgradeST extends AbstractUpgradeST {
 
     private static final Logger LOGGER = LogManager.getLogger(StrimziUpgradeST.class);

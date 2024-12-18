@@ -31,7 +31,6 @@ import java.util.List;
 public class KafkaAuthorizationSimple extends KafkaAuthorization {
     public static final String TYPE_SIMPLE = "simple";
 
-    public static final String AUTHORIZER_CLASS_NAME = "kafka.security.authorizer.AclAuthorizer";
     public static final String KRAFT_AUTHORIZER_CLASS_NAME = "org.apache.kafka.metadata.authorizer.StandardAuthorizer";
 
     private List<String> superUsers;

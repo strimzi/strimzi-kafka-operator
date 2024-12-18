@@ -113,7 +113,7 @@ public class KRaftVersionChangeCreatorTest {
 
     @Test
     public void testNewClusterWithAllVersions(VertxTestContext context) {
-        VersionChangeCreator vcc = mockVersionChangeCreator(
+        KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.defaultVersion().version(), VERSIONS.defaultVersion().metadataVersion(), VERSIONS.defaultVersion().metadataVersion()),
                 mockRos(List.of())
         );
@@ -130,7 +130,7 @@ public class KRaftVersionChangeCreatorTest {
 
     @Test
     public void testNewClusterWithoutVersion(VertxTestContext context) {
-        VersionChangeCreator vcc = mockVersionChangeCreator(
+        KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(null, null, null),
                 mockRos(List.of())
         );
@@ -147,7 +147,7 @@ public class KRaftVersionChangeCreatorTest {
 
     @Test
     public void testNewClusterWithKafkaVersionOnly(VertxTestContext context) {
-        VersionChangeCreator vcc = mockVersionChangeCreator(
+        KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.defaultVersion().version(), null, null),
                 mockRos(List.of())
         );
@@ -168,7 +168,7 @@ public class KRaftVersionChangeCreatorTest {
 
     @Test
     public void testExistingClusterWithAllVersion(VertxTestContext context) {
-        VersionChangeCreator vcc = mockVersionChangeCreator(
+        KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.defaultVersion().version(), VERSIONS.defaultVersion().metadataVersion(), VERSIONS.defaultVersion().metadataVersion()),
                 mockRos(mockUniformPods(VERSIONS.defaultVersion().version()))
         );
@@ -185,7 +185,7 @@ public class KRaftVersionChangeCreatorTest {
 
     @Test
     public void testExistingClusterWithoutVersions(VertxTestContext context) {
-        VersionChangeCreator vcc = mockVersionChangeCreator(
+        KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(null, VERSIONS.defaultVersion().metadataVersion(), null),
                 mockRos(mockUniformPods(VERSIONS.defaultVersion().version()))
         );
@@ -202,7 +202,7 @@ public class KRaftVersionChangeCreatorTest {
 
     @Test
     public void testExistingClusterWithoutVersionsWithOldMetadataVersion(VertxTestContext context) {
-        VersionChangeCreator vcc = mockVersionChangeCreator(
+        KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(null, "3.4-IV2", null),
                 mockRos(mockUniformPods(VERSIONS.defaultVersion().version()))
         );
@@ -219,7 +219,7 @@ public class KRaftVersionChangeCreatorTest {
 
     @Test
     public void testExistingClusterWithNewMetadataVersion(VertxTestContext context) {
-        VersionChangeCreator vcc = mockVersionChangeCreator(
+        KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.defaultVersion().version(), "3.4-IV2", "3.6"),
                 mockRos(mockUniformPods(VERSIONS.defaultVersion().version()))
         );
@@ -236,7 +236,7 @@ public class KRaftVersionChangeCreatorTest {
 
     @Test
     public void testExistingClusterWithRemovedMetadataVersion(VertxTestContext context) {
-        VersionChangeCreator vcc = mockVersionChangeCreator(
+        KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.defaultVersion().version(), "3.4-IV2", null),
                 mockRos(mockUniformPods(VERSIONS.defaultVersion().version()))
         );
@@ -253,7 +253,7 @@ public class KRaftVersionChangeCreatorTest {
 
     @Test
     public void testExistingClusterWithWrongMetadataVersion(VertxTestContext context) {
-        VersionChangeCreator vcc = mockVersionChangeCreator(
+        KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.defaultVersion().version(), "3.4-IV2", "5.11-IV2"),
                 mockRos(mockUniformPods(VERSIONS.defaultVersion().version()))
         );
@@ -270,7 +270,7 @@ public class KRaftVersionChangeCreatorTest {
 
     @Test
     public void testExistingClusterWithPodWithoutAnnotations(VertxTestContext context) {
-        VersionChangeCreator vcc = mockVersionChangeCreator(
+        KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.defaultVersion().version(), VERSIONS.defaultVersion().metadataVersion(), VERSIONS.defaultVersion().metadataVersion()),
                 mockRos(mockUniformPods(null))
         );
@@ -290,7 +290,7 @@ public class KRaftVersionChangeCreatorTest {
 
     @Test
     public void testUpgradeWithAllVersion(VertxTestContext context) {
-        VersionChangeCreator vcc = mockVersionChangeCreator(
+        KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.defaultVersion().version(), VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion(), VERSIONS.defaultVersion().metadataVersion()),
                 mockRos(mockUniformPods(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version()))
         );
@@ -307,7 +307,7 @@ public class KRaftVersionChangeCreatorTest {
 
     @Test
     public void testUpgradeWithoutVersion(VertxTestContext context) {
-        VersionChangeCreator vcc = mockVersionChangeCreator(
+        KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(null, VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion(), null),
                 mockRos(mockUniformPods(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version()))
         );
@@ -324,7 +324,7 @@ public class KRaftVersionChangeCreatorTest {
 
     @Test
     public void testUpgradeWithAllVersionAndMixedPods(VertxTestContext context) {
-        VersionChangeCreator vcc = mockVersionChangeCreator(
+        KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.defaultVersion().version(), VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion(), VERSIONS.defaultVersion().metadataVersion()),
                 mockRos(mockMixedPods(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version(), VERSIONS.defaultVersion().version()))
         );
@@ -341,7 +341,7 @@ public class KRaftVersionChangeCreatorTest {
 
     @Test
     public void testUpgradeWithoutVersionAndMixedPods(VertxTestContext context) {
-        VersionChangeCreator vcc = mockVersionChangeCreator(
+        KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(null, VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion(), null),
                 mockRos(mockMixedPods(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version(), VERSIONS.defaultVersion().version()))
         );
@@ -358,7 +358,7 @@ public class KRaftVersionChangeCreatorTest {
 
     @Test
     public void testUpgradeWithWrongCurrentMetadataVersion(VertxTestContext context) {
-        VersionChangeCreator vcc = mockVersionChangeCreator(
+        KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.defaultVersion().version(), "5.11-IV1", VERSIONS.defaultVersion().metadataVersion()),
                 mockRos(mockUniformPods(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version()))
         );
@@ -378,7 +378,7 @@ public class KRaftVersionChangeCreatorTest {
 
     @Test
     public void testDowngradeWithAllVersion(VertxTestContext context) {
-        VersionChangeCreator vcc = mockVersionChangeCreator(
+        KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version(), VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion(), VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion()),
                 mockRos(mockUniformPods(VERSIONS.defaultVersion().version()))
         );
@@ -395,7 +395,7 @@ public class KRaftVersionChangeCreatorTest {
 
     @Test
     public void testDowngradeWithUnsetDesiredMetadataVersion(VertxTestContext context) {
-        VersionChangeCreator vcc = mockVersionChangeCreator(
+        KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version(), VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion(), null),
                 mockRos(mockUniformPods(VERSIONS.defaultVersion().version()))
         );
@@ -412,7 +412,7 @@ public class KRaftVersionChangeCreatorTest {
 
     @Test
     public void testDowngradeWithOldMetadataVersion(VertxTestContext context) {
-        VersionChangeCreator vcc = mockVersionChangeCreator(
+        KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version(), "3.4-IV2", "3.4-IV2"),
                 mockRos(mockUniformPods(VERSIONS.defaultVersion().version()))
         );
@@ -429,7 +429,7 @@ public class KRaftVersionChangeCreatorTest {
 
     @Test
     public void testDowngradeWithAllVersionAndMixedPods(VertxTestContext context) {
-        VersionChangeCreator vcc = mockVersionChangeCreator(
+        KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version(), VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion(), VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion()),
                 mockRos(mockMixedPods(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version(), VERSIONS.defaultVersion().version()))
         );
@@ -446,7 +446,7 @@ public class KRaftVersionChangeCreatorTest {
 
     @Test
     public void testDowngradeWithWrongCurrentMetadataVersion(VertxTestContext context) {
-        VersionChangeCreator vcc = mockVersionChangeCreator(
+        KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version(), "5.11-IV1", VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion()),
                 mockRos(mockUniformPods(VERSIONS.defaultVersion().version()))
         );
@@ -462,7 +462,7 @@ public class KRaftVersionChangeCreatorTest {
 
     @Test
     public void testDowngradeWithNonDowngradedCurrentMetadataVersion(VertxTestContext context) {
-        VersionChangeCreator vcc = mockVersionChangeCreator(
+        KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).version(), VERSIONS.defaultVersion().metadataVersion(), VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION).metadataVersion()),
                 mockRos(mockUniformPods(VERSIONS.defaultVersion().version()))
         );
@@ -481,7 +481,7 @@ public class KRaftVersionChangeCreatorTest {
     //////////
 
     // Creates the VersionChangeCreator with the mocks
-    private VersionChangeCreator mockVersionChangeCreator(Kafka kafka, ResourceOperatorSupplier ros)  {
+    private KRaftVersionChangeCreator mockVersionChangeCreator(Kafka kafka, ResourceOperatorSupplier ros)  {
         return new KRaftVersionChangeCreator(new Reconciliation("test", "Kafka", NAMESPACE, CLUSTER_NAME), kafka, ResourceUtils.dummyClusterOperatorConfig(), ros);
     }
 

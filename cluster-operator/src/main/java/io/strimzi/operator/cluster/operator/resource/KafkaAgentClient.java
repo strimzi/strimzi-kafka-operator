@@ -28,12 +28,10 @@ import java.security.GeneralSecurityException;
  * Creates HTTP client and interacts with Kafka Agent's REST endpoint
  */
 public class KafkaAgentClient {
-
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaAgentClient.class.getName());
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private static final String BROKER_STATE_REST_PATH = "/v1/broker-state/";
-    private static final String KRAFT_MIGRATION_PATH = "/v1/kraft-migration/";
     private static final int KAFKA_AGENT_HTTPS_PORT = 8443;
     private static final char[] KEYSTORE_PASSWORD = "changeit".toCharArray();
     private final String namespace;
@@ -141,27 +139,5 @@ public class KafkaAgentClient {
             LOGGER.warnCr(reconciliation, "Failed to get broker state", e);
         }
         return brokerstate;
-    }
-
-    /**
-     * Gets ZooKeeper to KRaft migration state by sending HTTP request to the /v1/kraft-migration endpoint of the KafkaAgent
-     *
-     * @param podName Name of the pod to interact with
-     * @return  ZooKeeper to KRaft migration state
-     */
-    public KRaftMigrationState getKRaftMigrationState(String podName) {
-        KRaftMigrationState kraftMigrationState = new KRaftMigrationState(-1);
-        String host = DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(cluster), podName);
-        try {
-            URI uri = new URI("https", null, host, KAFKA_AGENT_HTTPS_PORT, KRAFT_MIGRATION_PATH, null, null);
-            kraftMigrationState = MAPPER.readValue(doGet(uri), KRaftMigrationState.class);
-        } catch (JsonProcessingException e) {
-            LOGGER.warnCr(reconciliation, "Failed to parse ZooKeeper to KRaft migration state", e);
-        } catch (URISyntaxException e) {
-            LOGGER.warnCr(reconciliation, "Failed to get ZooKeeper to KRaft migration state due to invalid URI", e);
-        } catch (RuntimeException e) {
-            LOGGER.warnCr(reconciliation, "Failed to get ZooKeeper to KRaft migration state", e);
-        }
-        return kraftMigrationState;
     }
 }

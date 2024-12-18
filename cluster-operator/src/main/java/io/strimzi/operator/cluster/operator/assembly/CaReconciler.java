@@ -27,8 +27,6 @@ import io.strimzi.operator.cluster.model.WorkloadUtils;
 import io.strimzi.operator.cluster.operator.resource.KafkaAgentClientProvider;
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.ZooKeeperRoller;
-import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
@@ -57,7 +55,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -77,7 +74,6 @@ public class CaReconciler {
     /* test */ final PodOperator podOperator;
     private final AdminClientProvider adminClientProvider;
     private final KafkaAgentClientProvider kafkaAgentClientProvider;
-    private final ZookeeperLeaderFinder zookeeperLeaderFinder;
     private final CertManager certManager;
     private final PasswordGenerator passwordGenerator;
     private final KubernetesRestartEventPublisher eventPublisher;
@@ -131,7 +127,6 @@ public class CaReconciler {
 
         this.adminClientProvider = supplier.adminClientProvider;
         this.kafkaAgentClientProvider = supplier.kafkaAgentClientProvider;
-        this.zookeeperLeaderFinder = supplier.zookeeperLeaderFinder;
         this.certManager = certManager;
         this.passwordGenerator = passwordGenerator;
 
@@ -304,10 +299,9 @@ public class CaReconciler {
     }
 
     /**
-     * Asynchronously reconciles the cluster operator Secret used to connect to Kafka and ZooKeeper.
+     * Asynchronously reconciles the cluster operator Secret used to connect to Kafka.
      * This only updates the Secret if the latest Cluster CA is fully trusted across the cluster, otherwise if
-     * something goes wrong during reconciliation when the next loop starts it won't be able to connect to
-     * Kafka and ZooKeeper anymore.
+     * something goes wrong during reconciliation when the next loop starts it won't be able to connect to Kafka.
      *
      * @param clock    The clock for supplying the reconciler with the time instant of each reconciliation cycle.
      *                 That time is used for checking maintenance windows
@@ -355,9 +349,7 @@ public class CaReconciler {
         if (clusterCa.keyReplaced() || isClusterCaNeedFullTrust) {
             RestartReason restartReason = RestartReason.CLUSTER_CA_CERT_KEY_REPLACED;
             TlsPemIdentity coTlsPemIdentity = new TlsPemIdentity(new PemTrustSet(clusterCa.caCertSecret()), PemAuthIdentity.clusterOperator(coSecret));
-            return getZooKeeperReplicas()
-                    .compose(replicas -> rollZookeeper(replicas, restartReason, coTlsPemIdentity))
-                    .compose(i -> patchClusterCaKeyGenerationAndReturnNodes())
+            return patchClusterCaKeyGenerationAndReturnNodes()
                     .compose(nodes -> rollKafkaBrokers(nodes, RestartReasons.of(restartReason), coTlsPemIdentity))
                     .compose(i -> rollDeploymentIfExists(KafkaResources.entityOperatorDeploymentName(reconciliation.name()), restartReason))
                     .compose(i -> rollDeploymentIfExists(KafkaExporterResources.componentName(reconciliation.name()), restartReason))
@@ -436,51 +428,6 @@ public class CaReconciler {
                     }
                     return Future.succeededFuture();
                 });
-    }
-
-    /**
-     * If we need to roll the ZooKeeper cluster to roll out the trust to a new CA certificate when a CA private key is
-     * being replaced, we need to know what the current number of ZooKeeper nodes is. Getting it from the Kafka custom
-     * resource might not be good enough if a scale-up /scale-down is happening at the same time. So we get the
-     * StrimziPodSet and find out the correct number of ZooKeeper nodes from it.
-     *
-     * @return  Current number of ZooKeeper replicas
-     */
-    /* test */ Future<Integer> getZooKeeperReplicas() {
-        return strimziPodSetOperator.getAsync(reconciliation.namespace(), KafkaResources.zookeeperComponentName(reconciliation.name()))
-                .compose(podSet -> {
-                    if (podSet != null
-                            && podSet.getSpec() != null
-                            && podSet.getSpec().getPods() != null) {
-                        return Future.succeededFuture(podSet.getSpec().getPods().size());
-                    } else {
-                        return Future.succeededFuture(0);
-                    }
-                });
-    }
-
-    /**
-     * Rolls the ZooKeeper cluster to trust the new Cluster CA private key.
-     *
-     * @param replicas              Current number of ZooKeeper replicas
-     * @param podRestartReason      Reason to restart the pods
-     * @param coTlsPemIdentity      Trust set and identity for TLS client authentication for connecting to ZooKeeper
-     *
-     * @return  Future which completes when the ZooKeeper cluster has been rolled.
-     */
-    /* test */ Future<Void> rollZookeeper(int replicas, RestartReason podRestartReason, TlsPemIdentity coTlsPemIdentity) {
-        Labels zkSelectorLabels = Labels.EMPTY
-                .withStrimziKind(reconciliation.kind())
-                .withStrimziCluster(reconciliation.name())
-                .withStrimziName(KafkaResources.zookeeperComponentName(reconciliation.name()));
-
-        Function<Pod, List<String>> rollZkPodAndLogReason = pod -> {
-            List<String> reason = List.of(podRestartReason.getDefaultNote());
-            LOGGER.debugCr(reconciliation, "Rolling Pod {} to {}", pod.getMetadata().getName(), reason);
-            return reason;
-        };
-        return new ZooKeeperRoller(podOperator, zookeeperLeaderFinder, operationTimeoutMs)
-                .maybeRollingUpdate(reconciliation, replicas, zkSelectorLabels, rollZkPodAndLogReason, coTlsPemIdentity);
     }
 
     /**

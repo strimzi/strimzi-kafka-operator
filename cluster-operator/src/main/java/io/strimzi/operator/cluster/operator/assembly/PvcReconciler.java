@@ -23,7 +23,7 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * This class reconciles the PVCs for the Kafka and ZooKeeper clusters. It has two public methods:
+ * This class reconciles the PVCs for the Kafka clusters. It has two public methods:
  *   - resizeAndReconcilePvcs for creating, updating and resizing PVCs which are needed by the cluster
  *   - deletePersistentClaims method for deleting PVCs not needed anymore and marked for deletion
  */
