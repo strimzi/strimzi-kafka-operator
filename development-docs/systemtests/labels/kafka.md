@@ -8,6 +8,7 @@ These tests are crucial to ensure that Kafka clusters can handle production work
 
 <!-- generated part -->
 **Tests:**
+- [testKafkaLogSetting](../io.strimzi.systemtest.log.LogSettingST.md)
 - [testReadOnlyRootFileSystem](../io.strimzi.systemtest.kafka.KafkaST.md)
 - [testDynamicallySetKafkaLoggingLevels](../io.strimzi.systemtest.log.LoggingChangeST.md)
 - [testLabelsExistenceAndManipulation](../io.strimzi.systemtest.kafka.KafkaST.md)
