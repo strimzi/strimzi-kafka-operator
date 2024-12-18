@@ -56,6 +56,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -258,13 +259,15 @@ public class PartialRollingUpdateMockTest {
         Checkpoint async = context.checkpoint();
 
         // Check the initial state first
-        Secret brokersSecret = client.secrets().inNamespace(namespace).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get();
+        Map<String, Secret> certSecrets = client.secrets().inNamespace(namespace).withLabels(Map.of(Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaComponentName(CLUSTER_NAME))).list().getItems()
+                .stream().collect(Collectors.toMap(secret -> secret.getMetadata().getName(), secret -> secret));
+        context.verify(() -> assertThat(certSecrets.size(), is(6)));
         List<Pod> initialPods = client.pods().inNamespace(namespace).withLabels(Map.of(Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaComponentName(CLUSTER_NAME))).list().getItems();
         context.verify(() -> assertThat(initialPods.size(), is(6)));
 
         for (Pod pod : initialPods) {
             String podCertHash = pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH);
-            String expectedCertHash = CertUtils.getCertificateThumbprint(brokersSecret, Ca.SecretEntry.CRT.asKey(pod.getMetadata().getName()));
+            String expectedCertHash = CertUtils.getCertificateThumbprint(certSecrets.get(pod.getMetadata().getName()), Ca.SecretEntry.CRT.asKey(pod.getMetadata().getName()));
             context.verify(() -> assertThat(podCertHash, is(expectedCertHash)));
         }
 
@@ -280,7 +283,7 @@ public class PartialRollingUpdateMockTest {
 
                     for (Pod pod : initialPods) {
                         String podCertHash = pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH);
-                        String expectedCertHash = CertUtils.getCertificateThumbprint(brokersSecret, Ca.SecretEntry.CRT.asKey(pod.getMetadata().getName()));
+                        String expectedCertHash = CertUtils.getCertificateThumbprint(certSecrets.get(pod.getMetadata().getName()), Ca.SecretEntry.CRT.asKey(pod.getMetadata().getName()));
                         assertThat(podCertHash, is(expectedCertHash));
                     }
 

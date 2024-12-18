@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.common.Condition;
@@ -257,7 +258,7 @@ public class KafkaReconciler {
                 .compose(i -> scaleDown())
                 .compose(i -> updateNodePoolStatuses(kafkaStatus))
                 .compose(i -> listeners())
-                .compose(i -> certificateSecret(clock))
+                .compose(i -> certificateSecrets(clock))
                 .compose(i -> brokerConfigurationConfigMaps())
                 .compose(i -> jmxSecret())
                 .compose(i -> podDisruptionBudget())
@@ -731,33 +732,84 @@ public class KafkaReconciler {
     }
 
     /**
-     * Manages the Secret with the node certificates used by the Kafka brokers.
+     * Manages the Secrets with the node certificates used by the Kafka nodes.
      *
      * @param clock The clock for supplying the reconciler with the time instant of each reconciliation cycle.
      *              That time is used for checking maintenance windows
      *
-     * @return      Completes when the Secret was successfully created or updated
+     * @return      Completes when the Secrets were successfully created, deleted or updated
      */
-    protected Future<Void> certificateSecret(Clock clock) {
-        return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaSecretName(reconciliation.name()))
+    protected Future<Void> certificateSecrets(Clock clock) {
+        return secretOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels().withStrimziComponentType("kafka"))
+                .compose(existingSecrets -> {
+                    List<Secret> desiredCertSecrets = kafka.generateCertificatesSecrets(clusterCa, clientsCa, existingSecrets,
+                            listenerReconciliationResults.bootstrapDnsNames, listenerReconciliationResults.brokerDnsNames,
+                            Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
+
+                    List<String> secretsToDelete = new ArrayList<>(existingSecrets.stream().map(secret -> secret.getMetadata().getName()).toList());
+                    secretsToDelete.removeAll(desiredCertSecrets.stream().map(secret -> secret.getMetadata().getName()).toList());
+                    // Don't delete jmx secrets
+                    secretsToDelete.remove(KafkaResources.kafkaJmxSecretName(reconciliation.name()));
+
+                    Future<Void> deleteSecrets = deleteOldCertificateSecrets(secretsToDelete);
+                    Future<Void> updateSecrets = updateCertificateSecrets(desiredCertSecrets);
+                    return Future.join(deleteSecrets, updateSecrets);
+                }).mapEmpty();
+    }
+
+    /**
+     * Delete old certificate Secrets that are no longer needed.
+     *
+     * @param secrets List of Secrets to delete.
+     *
+     * @return Future that completes when the Secrets have been deleted.
+     */
+    protected Future<Void> deleteOldCertificateSecrets(List<String> secrets) {
+        List<Future<Void>> deleteFutures = secrets.stream()
+                .map(secretName -> {
+                    LOGGER.debugCr(reconciliation, "Deleting old Secret {}/{} that is no longer used.", reconciliation.namespace(), secretName);
+                    return secretOperator.deleteAsync(reconciliation, reconciliation.namespace(), secretName, false);
+                }).toList();
+
+        // Remove old Secret containing all certs if it exists
+        @SuppressWarnings("deprecation")
+        String oldSecretName = KafkaResources.kafkaSecretName(reconciliation.name());
+        return secretOperator.getAsync(reconciliation.namespace(), oldSecretName)
                 .compose(oldSecret -> {
-                    return secretOperator
-                            .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaSecretName(reconciliation.name()),
-                                    kafka.generateCertificatesSecret(clusterCa, clientsCa, oldSecret, listenerReconciliationResults.bootstrapDnsNames, listenerReconciliationResults.brokerDnsNames, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
+                    if (oldSecret != null) {
+                        LOGGER.debugCr(reconciliation, "Deleting old Secret {}/{} that is no longer needed.", reconciliation.namespace(), oldSecretName);
+                        deleteFutures.add(secretOperator.deleteAsync(reconciliation, reconciliation.namespace(), oldSecretName, false));
+                    }
+
+                    return Future.join(deleteFutures).mapEmpty();
+                });
+    }
+
+    /**
+     * Updates the Secrets with the node certificates used by the Kafka nodes.
+     *
+     * @param secrets Secrets to update
+     *
+     * @return Future that completes when the Secrets were successfully created or updated
+     */
+    protected Future<Void> updateCertificateSecrets(List<Secret> secrets) {
+        List<Future<Object>> reconcileFutures = secrets
+                .stream()
+                .map(secret -> {
+                    String secretName = secret.getMetadata().getName();
+                    return secretOperator.reconcile(reconciliation, reconciliation.namespace(), secretName, secret)
                             .compose(patchResult -> {
                                 if (patchResult != null) {
-                                    for (NodeRef node : kafka.nodes()) {
-                                        kafkaServerCertificateHash.put(
-                                                node.nodeId(),
-                                                CertUtils.getCertificateThumbprint(patchResult.resource(),
-                                                        Ca.SecretEntry.CRT.asKey(node.podName())
-                                                ));
-                                    }
+                                    kafkaServerCertificateHash.put(
+                                            ReconcilerUtils.getPodIndexFromPodName(secretName),
+                                            CertUtils.getCertificateThumbprint(patchResult.resource(),
+                                                    Ca.SecretEntry.CRT.asKey(secretName)
+                                            ));
                                 }
-
                                 return Future.succeededFuture();
                             });
-                });
+                }).toList();
+        return Future.join(reconcileFutures).mapEmpty();
     }
 
     /**

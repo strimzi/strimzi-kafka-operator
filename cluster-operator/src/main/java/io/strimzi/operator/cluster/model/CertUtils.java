@@ -132,6 +132,21 @@ public class CertUtils {
         return data;
     }
 
+    /**
+     * Constructs a Map containing the provided certificates to be stored in a Kubernetes Secret.
+     *
+     * @param certificateName Name to use to create identifier for storing the data in the Secret.
+     * @param certAndKey Private key and public cert pair to store in the Secret.
+     *
+     * @return Map of certificate identifier to base64 encoded certificate or key
+     */
+    public static Map<String, String> buildSecretData(String certificateName, CertAndKey certAndKey) {
+        return Map.of(
+                Ca.SecretEntry.KEY.asKey(certificateName), certAndKey.keyAsBase64String(),
+                Ca.SecretEntry.CRT.asKey(certificateName), certAndKey.certAsBase64String()
+        );
+    }
+
     private static byte[] decodeFromSecret(Secret secret, String key) {
         if (secret.getData().get(key) != null && !secret.getData().get(key).isEmpty()) {
             return Util.decodeBytesFromBase64(secret.getData().get(key));
