@@ -28,6 +28,7 @@ import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 
 import java.io.File;
@@ -49,6 +50,7 @@ import static org.hamcrest.Matchers.not;
  * Tests in this class use OLM for install cluster operator.
  */
 @Tag(OLM_UPGRADE)
+@Disabled // ZooKeeper is being removed
 public class OlmUpgradeST extends AbstractUpgradeST {
 
     private static final Logger LOGGER = LogManager.getLogger(OlmUpgradeST.class);

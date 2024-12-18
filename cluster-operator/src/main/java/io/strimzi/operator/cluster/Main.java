@@ -137,7 +137,6 @@ public class Main {
                 client,
                 metricsProvider,
                 pfa,
-                config.getOperationTimeoutMs(),
                 config.getOperatorName()
         );
 

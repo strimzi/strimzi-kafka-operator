@@ -28,7 +28,7 @@ import static io.strimzi.operator.cluster.model.KafkaVersion.compareDottedVersio
 /**
  * Creates the KafkaVersionChange object for a KRaft based clusters from the different versions in the Kafka CR and from the Kafka pods.
  */
-public class KRaftVersionChangeCreator implements VersionChangeCreator {
+public class KRaftVersionChangeCreator {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KRaftVersionChangeCreator.class.getName());
 
     private final Reconciliation reconciliation;

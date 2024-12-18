@@ -24,7 +24,6 @@ public class KafkaVersionTestUtils {
     public static final String LATEST_FORMAT_VERSION = "3.9";
     public static final String LATEST_PROTOCOL_VERSION = "3.9";
     public static final String LATEST_METADATA_VERSION = "3.9-IV0";
-    public static final String LATEST_ZOOKEEPER_VERSION = "3.8.4";
     public static final String LATEST_CHECKSUM = "ABCD1234";
     public static final String LATEST_THIRD_PARTY_VERSION = "3.9.x";
     public static final String LATEST_KAFKA_IMAGE = KAFKA_IMAGE_STR + LATEST_KAFKA_VERSION;
@@ -35,7 +34,6 @@ public class KafkaVersionTestUtils {
     public static final String PREVIOUS_FORMAT_VERSION = "3.8";
     public static final String PREVIOUS_PROTOCOL_VERSION = "3.8";
     public static final String PREVIOUS_METADATA_VERSION = "3.8-IV0";
-    public static final String PREVIOUS_ZOOKEEPER_VERSION = "3.8.4";
     public static final String PREVIOUS_CHECKSUM = "ABCD1234";
     public static final String PREVIOUS_THIRD_PARTY_VERSION = "3.8.x";
     public static final String PREVIOUS_KAFKA_IMAGE = KAFKA_IMAGE_STR + PREVIOUS_KAFKA_VERSION;
@@ -46,7 +44,6 @@ public class KafkaVersionTestUtils {
     public static final String DEFAULT_KAFKA_IMAGE = LATEST_KAFKA_IMAGE;
     public static final String DEFAULT_KAFKA_CONNECT_IMAGE = LATEST_KAFKA_CONNECT_IMAGE;
 
-    public static final KafkaVersionChange DEFAULT_ZOOKEEPER_VERSION_CHANGE = new KafkaVersionChange(getKafkaVersionLookup().defaultVersion(), getKafkaVersionLookup().defaultVersion(), getKafkaVersionLookup().defaultVersion().protocolVersion(), getKafkaVersionLookup().defaultVersion().messageVersion(), null);
     public static final KafkaVersionChange DEFAULT_KRAFT_VERSION_CHANGE = new KafkaVersionChange(getKafkaVersionLookup().defaultVersion(), getKafkaVersionLookup().defaultVersion(), null, null, getKafkaVersionLookup().defaultVersion().metadataVersion());
 
     private static Map<String, String> getKafkaImageMap() {

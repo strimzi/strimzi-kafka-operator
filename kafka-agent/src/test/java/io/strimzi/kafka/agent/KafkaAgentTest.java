@@ -57,7 +57,7 @@ public class KafkaAgentTest {
         @SuppressWarnings({ "rawtypes" })
         final Gauge brokerState = mock(Gauge.class);
         when(brokerState.value()).thenReturn((byte) 3);
-        KafkaAgent agent = new KafkaAgent(brokerState, null, null, null);
+        KafkaAgent agent = new KafkaAgent(brokerState, null, null);
         context.setHandler(agent.getBrokerStateHandler());
         server.setHandler(context);
         server.start();
@@ -85,7 +85,7 @@ public class KafkaAgentTest {
         final Gauge remainingSegments = mock(Gauge.class);
         when(remainingSegments.value()).thenReturn((byte) 100);
 
-        KafkaAgent agent = new KafkaAgent(brokerState, remainingLogs, remainingSegments, null);
+        KafkaAgent agent = new KafkaAgent(brokerState, remainingLogs, remainingSegments);
         context.setHandler(agent.getBrokerStateHandler());
         server.setHandler(context);
         server.start();
@@ -101,7 +101,7 @@ public class KafkaAgentTest {
 
     @Test
     public void testBrokerMetricNotFound() throws Exception {
-        KafkaAgent agent = new KafkaAgent(null, null, null, null);
+        KafkaAgent agent = new KafkaAgent(null, null, null);
         context.setHandler(agent.getBrokerStateHandler());
         server.setHandler(context);
         server.start();
@@ -119,7 +119,7 @@ public class KafkaAgentTest {
         final Gauge brokerState = mock(Gauge.class);
         when(brokerState.value()).thenReturn((byte) 3);
 
-        KafkaAgent agent = new KafkaAgent(brokerState, null, null, null);
+        KafkaAgent agent = new KafkaAgent(brokerState, null, null);
         context.setHandler(agent.getReadinessHandler());
         server.setHandler(context);
         server.start();
@@ -137,7 +137,7 @@ public class KafkaAgentTest {
         final Gauge brokerState = mock(Gauge.class);
         when(brokerState.value()).thenReturn((byte) 2);
 
-        KafkaAgent agent = new KafkaAgent(brokerState, null, null, null);
+        KafkaAgent agent = new KafkaAgent(brokerState, null, null);
         context.setHandler(agent.getReadinessHandler());
         server.setHandler(context);
         server.start();
@@ -156,7 +156,7 @@ public class KafkaAgentTest {
         final Gauge brokerState = mock(Gauge.class);
         when(brokerState.value()).thenReturn((byte) 127);
 
-        KafkaAgent agent = new KafkaAgent(brokerState, null, null, null);
+        KafkaAgent agent = new KafkaAgent(brokerState, null, null);
         context.setHandler(agent.getReadinessHandler());
         server.setHandler(context);
         server.start();
@@ -167,58 +167,5 @@ public class KafkaAgentTest {
 
         assertThat(HttpServletResponse.SC_SERVICE_UNAVAILABLE, is(response.statusCode()));
 
-    }
-
-    @Test
-    public void testZkMigrationDone() throws Exception {
-        @SuppressWarnings({ "rawtypes" })
-        final Gauge zkMigrationState = mock(Gauge.class);
-        when(zkMigrationState.value()).thenReturn(1);
-
-        KafkaAgent agent = new KafkaAgent(null, null, null, zkMigrationState);
-        context.setHandler(agent.getKRaftMigrationHandler());
-        server.setHandler(context);
-        server.start();
-
-        HttpResponse<String> response = HttpClient.newBuilder()
-                .build()
-                .send(req, HttpResponse.BodyHandlers.ofString());
-        assertThat(HttpServletResponse.SC_OK, is(response.statusCode()));
-
-        String expectedResponse = "{\"state\":1}";
-        assertThat(expectedResponse, is(response.body()));
-    }
-
-    @Test
-    public void testZkMigrationRunning() throws Exception {
-        @SuppressWarnings({ "rawtypes" })
-        final Gauge zkMigrationState = mock(Gauge.class);
-        when(zkMigrationState.value()).thenReturn(2);
-
-        KafkaAgent agent = new KafkaAgent(null, null, null, zkMigrationState);
-        context.setHandler(agent.getKRaftMigrationHandler());
-        server.setHandler(context);
-        server.start();
-
-        HttpResponse<String> response = HttpClient.newBuilder()
-                .build()
-                .send(req, HttpResponse.BodyHandlers.ofString());
-        assertThat(HttpServletResponse.SC_OK, is(response.statusCode()));
-
-        String expectedResponse = "{\"state\":2}";
-        assertThat(expectedResponse, is(response.body()));
-    }
-
-    @Test
-    public void testZkMigrationMetricNotFound() throws Exception {
-        KafkaAgent agent = new KafkaAgent(null, null, null, null);
-        context.setHandler(agent.getKRaftMigrationHandler());
-        server.setHandler(context);
-        server.start();
-
-        HttpResponse<String> response = HttpClient.newBuilder()
-                .build()
-                .send(req, HttpResponse.BodyHandlers.ofString());
-        assertThat(HttpServletResponse.SC_NOT_FOUND, is(response.statusCode()));
     }
 }

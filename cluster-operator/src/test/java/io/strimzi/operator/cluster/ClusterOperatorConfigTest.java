@@ -80,7 +80,6 @@ public class ClusterOperatorConfigTest {
         ClusterOperatorConfig config = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup())
                 .with(ClusterOperatorConfig.NAMESPACE.key(), "namespace")
                 .with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "30000")
-                .with(ClusterOperatorConfig.ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS.key(), "20000")
                 .with(ClusterOperatorConfig.CONNECT_BUILD_TIMEOUT_MS.key(), "120000")
                 .with(ClusterOperatorConfig.DNS_CACHE_TTL.key(), "10")
                 .build();
@@ -88,7 +87,6 @@ public class ClusterOperatorConfigTest {
         assertThat(config.getNamespaces(), is(singleton("namespace")));
         assertThat(config.getReconciliationIntervalMs(), is(120_000L));
         assertThat(config.getOperationTimeoutMs(), is(30_000L));
-        assertThat(config.getZkAdminSessionTimeoutMs(), is(20_000));
         assertThat(config.getConnectBuildTimeoutMs(), is(120_000L));
         assertThat(config.getDnsCacheTtlSec(), is(10));
     }

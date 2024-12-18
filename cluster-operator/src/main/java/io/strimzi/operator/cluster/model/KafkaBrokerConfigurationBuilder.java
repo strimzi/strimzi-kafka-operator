@@ -63,7 +63,6 @@ public class KafkaBrokerConfigurationBuilder {
     private final StringWriter stringWriter = new StringWriter();
     private final PrintWriter writer = new PrintWriter(stringWriter);
     private final Reconciliation reconciliation;
-    private final KafkaMetadataConfigurationState kafkaMetadataConfigState;
     private final NodeRef node;
 
     /**
@@ -71,13 +70,11 @@ public class KafkaBrokerConfigurationBuilder {
      *
      * @param reconciliation    The reconciliation
      * @param node              NodeRef instance
-     * @param kafkaMetadataConfigState  Represents the state of the Kafka metadata configuration
      */
-    public KafkaBrokerConfigurationBuilder(Reconciliation reconciliation, NodeRef node, KafkaMetadataConfigurationState kafkaMetadataConfigState) {
+    public KafkaBrokerConfigurationBuilder(Reconciliation reconciliation, NodeRef node) {
         printHeader();
         this.reconciliation = reconciliation;
         this.node = node;
-        this.kafkaMetadataConfigState = kafkaMetadataConfigState;
 
         // Render the node/broker ID into the config file
         configureNodeOrBrokerId();
@@ -88,15 +85,7 @@ public class KafkaBrokerConfigurationBuilder {
      */
     private void configureNodeOrBrokerId()   {
         printSectionHeader("Node / Broker ID");
-
-        // Node ID is ignored when not using Kraft mode => but it defaults to broker ID when not set.
-        // We set it here in the configuration explicitly to avoid never ending rolling updates.
         writer.println("node.id=" + node.nodeId());
-        // only broker in ZooKeeper-mode or during migration needs the Broker ID to be set
-        if (node.broker() && kafkaMetadataConfigState.isZooKeeperToMigration()) {
-            writer.println("broker.id=" + node.nodeId());
-        }
-
         writer.println();
     }
 
@@ -164,44 +153,8 @@ public class KafkaBrokerConfigurationBuilder {
     }
 
     /**
-     * Configures the Zookeeper connection URL.
-     *
-     * @param clusterName The name of the Kafka custom resource
-     *
-     * @return Returns the builder instance
-     */
-    public KafkaBrokerConfigurationBuilder withZookeeper(String clusterName)  {
-        printSectionHeader("Zookeeper");
-        writer.println(String.format("zookeeper.connect=%s:%d", KafkaResources.zookeeperServiceName(clusterName), ZookeeperCluster.CLIENT_TLS_PORT));
-        writer.println("zookeeper.clientCnxnSocket=org.apache.zookeeper.ClientCnxnSocketNetty");
-        writer.println("zookeeper.ssl.client.enable=true");
-        writer.println("zookeeper.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
-        writer.println("zookeeper.ssl.keystore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
-        writer.println("zookeeper.ssl.keystore.type=PKCS12");
-        writer.println("zookeeper.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
-        writer.println("zookeeper.ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
-        writer.println("zookeeper.ssl.truststore.type=PKCS12");
-        writer.println();
-
-        return this;
-    }
-
-    /**
-     * Enable the ZooKeeper migration by setting the corresponding flag to true
-     *
-     * @return the builder instance
-     */
-    public KafkaBrokerConfigurationBuilder withZooKeeperMigration() {
-        printSectionHeader("Zookeeper migration");
-        writer.println("zookeeper.metadata.migration.enable=true");
-        writer.println();
-
-        return this;
-    }
-
-    /**
-     * Adds the KRaft configuration for ZooKeeper-less Kafka. This includes the roles of the broker, the controller
-     * listener name and the list of all controllers for quorum voting.
+     * Adds the KRaft configuration. This includes the roles of the broker, the controller listener name and the list
+     * of all controllers for quorum voting.
      *
      * @param clusterName   Name of the cluster (important for the advertised hostnames)
      * @param namespace     Namespace (important for generating the advertised hostname)
@@ -211,15 +164,15 @@ public class KafkaBrokerConfigurationBuilder {
      */
     public KafkaBrokerConfigurationBuilder withKRaft(String clusterName, String namespace, Set<NodeRef> nodes)   {
         printSectionHeader("KRaft configuration");
-        if (node.controller() || (node.broker() && kafkaMetadataConfigState.isPostMigrationToKRaft())) {
-            String roles = "broker,controller";
-            if (node.broker() && !node.controller()) {
-                roles = "broker";
-            } else if (!node.broker()) {
-                roles = "controller";
-            }
-            writer.println("process.roles=" + roles);
+
+        String roles = "broker,controller";
+        if (node.broker() && !node.controller()) {
+            roles = "broker";
+        } else if (!node.broker()) {
+            roles = "controller";
         }
+        writer.println("process.roles=" + roles);
+
         writer.println("controller.listener.names=" + CONTROL_PLANE_LISTENER_NAME);
 
         // Generates the controllers quorum list
@@ -266,13 +219,12 @@ public class KafkaBrokerConfigurationBuilder {
 
         boolean isKraftControllerOnly = node.controller() && !node.broker();
 
-        // Control Plane listener is set for pure KRaft controller or combined node, and broker in ZooKeeper mode or in migration state but not when full KRaft.
-        if (node.controller() || (node.broker() && kafkaMetadataConfigState.isZooKeeperToMigration())) {
+        // Control Plane listener is set for pure KRaft controller or combined node
+        if (node.controller()) {
             listeners.add(CONTROL_PLANE_LISTENER_NAME + "://0.0.0.0:9090");
 
-            // Control Plane listener to be advertised with broker in ZooKeeper-based or migration
             // Kafka version 3.9.0 requires advertised.listeners configuration for controllers, however the previous versions forbids the configuration for controllers.
-            if ((node.broker() && kafkaMetadataConfigState.isZooKeeperToMigration()) || (KafkaVersion.compareDottedVersions(kafkaVersion.version(), "3.9.0") >= 0)) {
+            if (KafkaVersion.compareDottedVersions(kafkaVersion.version(), "3.9.0") >= 0) {
                 advertisedListeners.add(String.format("%s://%s:9090",
                         CONTROL_PLANE_LISTENER_NAME,
                         // Pod name constructed to be templatable for each individual ordinal
@@ -292,13 +244,13 @@ public class KafkaBrokerConfigurationBuilder {
         // so that brokers are able to connect to controllers as TLS clients
         configureControlPlaneListener();
 
-        // Replication Listener to be configured on brokers and KRaft controllers only but until post-migration
-        if (node.broker() || node.controller() && kafkaMetadataConfigState.isZooKeeperToPostMigration()) {
+        // Replication Listener to be configured on brokers
+        if (node.broker()) {
             securityProtocol.add(REPLICATION_LISTENER_NAME + ":SSL");
             configureReplicationListener();
         }
 
-        // Non-controller listeners are used only on ZooKeeper based brokers or KRaft brokers (including mixed nodes)
+        // Non-controller listeners are used only on brokers (including mixed nodes)
         if (!isKraftControllerOnly) {
             // Replication listener
             listeners.add(REPLICATION_LISTENER_NAME + "://0.0.0.0:9091");
@@ -347,16 +299,6 @@ public class KafkaBrokerConfigurationBuilder {
             if (advertisedListeners.size() > 0) {
                 writer.println("advertised.listeners=" + String.join(",", advertisedListeners));
             }
-
-            if (kafkaMetadataConfigState.isZooKeeperToPostMigration()) {
-                // needed for KRaft controller only as well until post-migration because it needs to contact brokers
-                writer.println("inter.broker.listener.name=" + REPLICATION_LISTENER_NAME);
-            }
-        }
-
-        // Control plane listener is on all ZooKeeper based brokers, needed during migration as well, when broker still using ZooKeeper but KRaft controllers are ready
-        if (node.broker() && kafkaMetadataConfigState.isZooKeeperToMigration()) {
-            writer.println("control.plane.listener.name=" + CONTROL_PLANE_LISTENER_NAME);
         }
 
         writer.println("sasl.enabled.mechanisms=");
@@ -671,10 +613,7 @@ public class KafkaBrokerConfigurationBuilder {
             superUsers.add(String.format("User:CN=%s,O=io.strimzi", "cluster-operator"));
 
             printSectionHeader("Authorization");
-            // when the StandardAuthorizer has to replace the AclAuthorizer during the migration depending on nodes in full KRaft
-            boolean useKRaft = (node.controller() && kafkaMetadataConfigState.isPreMigrationToKRaft()) ||
-                    (node.broker() && kafkaMetadataConfigState.isPostMigrationToKRaft());
-            configureAuthorization(clusterName, superUsers, authorization, useKRaft);
+            configureAuthorization(clusterName, superUsers, authorization);
             writer.println("super.users=" + String.join(";", superUsers));
             writer.println();
         }
@@ -685,14 +624,13 @@ public class KafkaBrokerConfigurationBuilder {
     /**
      * Configures authorization for the Kafka brokers. This method is used only internally.
      *
-     * @param clusterName Name of the cluster
-     * @param superUsers Super-users list who have all the rights on the cluster
-     * @param authorization The authorization configuration from the Kafka CR
-     * @param useKRaft      Use KRaft mode in the configuration
+     * @param clusterName       Name of the cluster
+     * @param superUsers        Super-users list who have all the rights on the cluster
+     * @param authorization     The authorization configuration from the Kafka CR
      */
-    private void configureAuthorization(String clusterName, List<String> superUsers, KafkaAuthorization authorization, boolean useKRaft) {
+    private void configureAuthorization(String clusterName, List<String> superUsers, KafkaAuthorization authorization) {
         if (authorization instanceof KafkaAuthorizationSimple simpleAuthz) {
-            configureSimpleAuthorization(simpleAuthz, superUsers, useKRaft);
+            configureSimpleAuthorization(simpleAuthz, superUsers);
         } else if (authorization instanceof KafkaAuthorizationOpa opaAuthz) {
             configureOpaAuthorization(opaAuthz, superUsers);
         } else if (authorization instanceof KafkaAuthorizationKeycloak keycloakAuthz) {
@@ -707,14 +645,9 @@ public class KafkaBrokerConfigurationBuilder {
      *
      * @param authorization     Simple authorization configuration
      * @param superUsers        Super-users list who have all the rights on the cluster
-     * @param useKRaft          Use KRaft mode in the configuration
      */
-    private void configureSimpleAuthorization(KafkaAuthorizationSimple authorization, List<String> superUsers, boolean useKRaft) {
-        if (useKRaft) {
-            writer.println("authorizer.class.name=" + KafkaAuthorizationSimple.KRAFT_AUTHORIZER_CLASS_NAME);
-        } else {
-            writer.println("authorizer.class.name=" + KafkaAuthorizationSimple.AUTHORIZER_CLASS_NAME);
-        }
+    private void configureSimpleAuthorization(KafkaAuthorizationSimple authorization, List<String> superUsers) {
+        writer.println("authorizer.class.name=" + KafkaAuthorizationSimple.KRAFT_AUTHORIZER_CLASS_NAME);
 
         // User configured super-users
         if (authorization.getSuperUsers() != null && authorization.getSuperUsers().size() > 0) {

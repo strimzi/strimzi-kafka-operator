@@ -198,9 +198,9 @@ public class KafkaAssemblyOperatorKRaftMockTest {
     }
 
     private ResourceOperatorSupplier supplierWithMocks() {
-        return new ResourceOperatorSupplier(vertx, client, null, ResourceUtils.adminClientProvider(), null,
-                ResourceUtils.kafkaAgentClientProvider(), ResourceUtils.metricsProvider(), null,
-                new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION), 2_000);
+        return new ResourceOperatorSupplier(vertx, client, ResourceUtils.adminClientProvider(),
+                ResourceUtils.kafkaAgentClientProvider(), ResourceUtils.metricsProvider(),
+                new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
     }
 
     @AfterEach

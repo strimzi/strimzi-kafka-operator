@@ -14,7 +14,6 @@ import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.KafkaCluster;
-import io.strimzi.operator.cluster.model.KafkaMetadataConfigurationState;
 import io.strimzi.operator.cluster.model.KafkaPool;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
@@ -54,7 +53,6 @@ public class KafkaClusterCreator {
     private final SecretOperator secretOperator;
     private final SharedEnvironmentProvider sharedEnvironmentProvider;
     private final BrokersInUseCheck brokerScaleDownOperations;
-    private final KafkaMetadataConfigurationState kafkaMetadataConfigState;
     // State
     private boolean scaleDownCheckFailed = false;
     private boolean usedToBeBrokersCheckFailed = false;
@@ -64,22 +62,19 @@ public class KafkaClusterCreator {
     /**
      * Constructor
      *
-     * @param vertx                     Vert.x instance
-     * @param reconciliation            Reconciliation marker
-     * @param config                    Cluster Operator configuration
-     * @param kafkaMetadataConfigState  Metadata state related to nodes configuration
-     * @param supplier                  Resource Operators supplier
+     * @param vertx             Vert.x instance
+     * @param reconciliation    Reconciliation marker
+     * @param config            Cluster Operator configuration
+     * @param supplier          Resource Operators supplier
      */
     public KafkaClusterCreator(
             Vertx vertx,
             Reconciliation reconciliation,
             ClusterOperatorConfig config,
-            KafkaMetadataConfigurationState kafkaMetadataConfigState,
             ResourceOperatorSupplier supplier
     ) {
         this.reconciliation = reconciliation;
         this.versions = config.versions();
-        this.kafkaMetadataConfigState = kafkaMetadataConfigState;
 
         this.vertx = vertx;
         this.adminClientProvider = supplier.adminClientProvider;
@@ -104,22 +99,20 @@ public class KafkaClusterCreator {
      * @param kafkaCr           Kafka custom resource
      * @param nodePools         List with Kafka Node Pool resources
      * @param oldStorage        Old storage configuration
-     * @param currentPods       Existing Kafka pods
      * @param versionChange     Version Change object describing any possible upgrades / downgrades
      * @param kafkaStatus       The KafkaStatus where any possibly warnings will be added
      * @param tryToFixProblems  Flag indicating whether recoverable configuration issues should be fixed or not
      *
-     * @return New Kafka Cluster instance
+     * @return  New Kafka Cluster instance
      */
     public Future<KafkaCluster> prepareKafkaCluster(
             Kafka kafkaCr,
             List<KafkaNodePool> nodePools,
             Map<String, Storage> oldStorage,
-            Map<String, List<String>> currentPods,
             KafkaVersionChange versionChange,
             KafkaStatus kafkaStatus,
             boolean tryToFixProblems)   {
-        return createKafkaCluster(kafkaCr, nodePools, oldStorage, currentPods, versionChange)
+        return createKafkaCluster(kafkaCr, nodePools, oldStorage, versionChange)
                 .compose(kafka -> brokerRemovalCheck(kafkaCr, kafka))
                 .compose(kafka -> {
                     if (checkFailed() && tryToFixProblems)   {
@@ -129,7 +122,7 @@ public class KafkaClusterCreator {
                         // Once we fix it, we call this method again, but this time with tryToFixProblems set to false
                         return revertScaleDown(kafka, kafkaCr, nodePools)
                                 .compose(kafkaAndNodePools -> revertRoleChange(kafkaAndNodePools.kafkaCr(), kafkaAndNodePools.nodePoolCrs()))
-                                .compose(kafkaAndNodePools -> prepareKafkaCluster(kafkaAndNodePools.kafkaCr(), kafkaAndNodePools.nodePoolCrs(), oldStorage, currentPods, versionChange, kafkaStatus, false));
+                                .compose(kafkaAndNodePools -> prepareKafkaCluster(kafkaAndNodePools.kafkaCr(), kafkaAndNodePools.nodePoolCrs(), oldStorage, versionChange, kafkaStatus, false));
                     } else if (checkFailed()) {
                         // We have a failure, but we should not try to fix it
                         List<String> errors = new ArrayList<>();
@@ -159,9 +152,8 @@ public class KafkaClusterCreator {
      * Creates a new Kafka cluster
      *
      * @param kafkaCr           Kafka custom resource
-     * @param nodePoolCrs         List with KafkaNodePool custom resources
+     * @param nodePoolCrs       List with KafkaNodePool custom resources
      * @param oldStorage        Old storage configuration
-     * @param currentPods       Current Kafka pods
      * @param versionChange     Version change descriptor containing any upgrade / downgrade changes
      *
      * @return  Future with the new KafkaCluster object
@@ -170,10 +162,9 @@ public class KafkaClusterCreator {
             Kafka kafkaCr,
             List<KafkaNodePool> nodePoolCrs,
             Map<String, Storage> oldStorage,
-            Map<String, List<String>> currentPods,
             KafkaVersionChange versionChange
     )   {
-        return Future.succeededFuture(createKafkaCluster(reconciliation, kafkaCr, nodePoolCrs, oldStorage, currentPods, versionChange, kafkaMetadataConfigState, versions, sharedEnvironmentProvider));
+        return Future.succeededFuture(createKafkaCluster(reconciliation, kafkaCr, nodePoolCrs, oldStorage, versionChange, versions, sharedEnvironmentProvider));
     }
 
     /**
@@ -341,9 +332,7 @@ public class KafkaClusterCreator {
      * @param kafkaCr                       Kafka custom resource
      * @param nodePoolCrs                   KafkaNodePool custom resources
      * @param oldStorage                    Old storage configuration
-     * @param currentPods                   List of current Kafka pods
      * @param versionChange                 Version change descriptor containing any upgrade / downgrade changes
-     * @param kafkaMetadataConfigState      Metadata state related to nodes configuration
      * @param versions                      List of supported Kafka versions
      * @param sharedEnvironmentProvider     Shared environment variables
      *
@@ -354,18 +343,16 @@ public class KafkaClusterCreator {
             Kafka kafkaCr,
             List<KafkaNodePool> nodePoolCrs,
             Map<String, Storage> oldStorage,
-            Map<String, List<String>> currentPods,
             KafkaVersionChange versionChange,
-            KafkaMetadataConfigurationState kafkaMetadataConfigState,
             KafkaVersion.Lookup versions,
             SharedEnvironmentProvider sharedEnvironmentProvider
     ) {
         // We prepare the KafkaPool models and create the KafkaCluster model
         // KRaft to be considered not only when fully enabled (KRAFT = 4) but also when a migration is about to start (PRE_MIGRATION = 1)
         // NOTE: this is important to drive the right validation happening in node pools (i.e. roles on node pools, storage, number of controllers, ...)
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(reconciliation, kafkaCr, nodePoolCrs, oldStorage, currentPods, versionChange, kafkaMetadataConfigState.isPreMigrationToKRaft(), sharedEnvironmentProvider);
-        String clusterId = kafkaMetadataConfigState.isPreMigrationToKRaft() ? NodePoolUtils.getOrGenerateKRaftClusterId(kafkaCr, nodePoolCrs) : NodePoolUtils.getClusterIdIfSet(kafkaCr, nodePoolCrs);
-        return KafkaCluster.fromCrd(reconciliation, kafkaCr, pools, versions, versionChange, kafkaMetadataConfigState, clusterId, sharedEnvironmentProvider);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(reconciliation, kafkaCr, nodePoolCrs, oldStorage, versionChange, sharedEnvironmentProvider);
+        String clusterId = NodePoolUtils.getOrGenerateKRaftClusterId(kafkaCr, nodePoolCrs);
+        return KafkaCluster.fromCrd(reconciliation, kafkaCr, pools, versions, versionChange, clusterId, sharedEnvironmentProvider);
     }
 
     /**

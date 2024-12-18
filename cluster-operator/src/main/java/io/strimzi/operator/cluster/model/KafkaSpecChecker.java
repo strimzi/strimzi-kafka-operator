@@ -5,10 +5,7 @@
 package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.common.Condition;
-import io.strimzi.api.kafka.model.kafka.EphemeralStorage;
-import io.strimzi.api.kafka.model.kafka.JbodStorage;
 import io.strimzi.api.kafka.model.kafka.KafkaSpec;
-import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
 import io.strimzi.operator.common.model.StatusUtils;
 
 import java.util.ArrayList;
@@ -51,29 +48,18 @@ public class KafkaSpecChecker {
     /**
      * Runs the SpecChecker and returns a list of warning conditions
      *
-     * @param useKRaft Flag indicating if KRaft is enabled or not. When KRaft is enabled, some additional checks
-     *                 are done.
      * @return List with warning conditions
      */
-    List<Condition> run(boolean useKRaft) {
+    List<Condition> run() {
         List<Condition> warnings = new ArrayList<>();
 
         checkKafkaReplicationConfig(warnings);
         checkKafkaBrokersStorage(warnings);
-
-        if (useKRaft)   {
-            // Additional checks done for KRaft clusters
-            checkKRaftControllerStorage(warnings);
-            checkKRaftControllerCount(warnings);
-            checkKafkaMetadataVersion(warnings);
-            checkInterBrokerProtocolVersionInKRaft(warnings);
-            checkLogMessageFormatVersionInKRaft(warnings);
-        } else {
-            // Additional checks done for ZooKeeper-based clusters
-            checkKafkaLogMessageFormatVersion(warnings);
-            checkKafkaInterBrokerProtocolVersion(warnings);
-            checkKRaftMetadataStorageConfiguredForZooBasedCLuster(warnings);
-        }
+        checkKRaftControllerStorage(warnings);
+        checkKRaftControllerCount(warnings);
+        checkKafkaMetadataVersion(warnings);
+        checkInterBrokerProtocolVersionInKRaft(warnings);
+        checkLogMessageFormatVersionInKRaft(warnings);
 
         return warnings;
     }
@@ -100,48 +86,6 @@ public class KafkaSpecChecker {
                     "min.insync.replicas option is not configured. " +
                             "It defaults to 1 which does not guarantee reliability and availability. " +
                             "You should configure this option in .spec.kafka.config."));
-        }
-    }
-
-    /**
-     * Checks if the version of the Kafka brokers matches any custom log.message.format.version config.
-     *
-     * Updating this is the final step in upgrading Kafka version, so if this doesn't match it is possibly an
-     * indication that a user has updated their Kafka cluster and is unaware that they also should update
-     * their format version to match.
-     *
-     * @param warnings List to add a warning to, if appropriate.
-     */
-    private void checkKafkaLogMessageFormatVersion(List<Condition> warnings) {
-        String logMsgFormatVersion = kafkaCluster.getConfiguration().getConfigOption(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION);
-
-        if (logMsgFormatVersion != null) {
-            Matcher m = MAJOR_MINOR_REGEX.matcher(logMsgFormatVersion);
-            if (m.matches() && !kafkaBrokerVersion.startsWith(m.group(1))) {
-                warnings.add(StatusUtils.buildWarningCondition("KafkaLogMessageFormatVersion",
-                        "log.message.format.version does not match the Kafka cluster version, which suggests that an upgrade is incomplete."));
-            }
-        }
-    }
-
-    /**
-     * Checks if the version of the Kafka brokers matches any custom inter.broker.protocol.version config.
-     *
-     * Updating this is the final step in upgrading Kafka version, so if this doesn't match it is possibly an
-     * indication that a user has updated their Kafka cluster and is unaware that they also should update
-     * their format version to match.
-     *
-     * @param warnings List to add a warning to, if appropriate.
-     */
-    private void checkKafkaInterBrokerProtocolVersion(List<Condition> warnings) {
-        String interBrokerProtocolVersion = kafkaCluster.getConfiguration().getConfigOption(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION);
-
-        if (interBrokerProtocolVersion != null) {
-            Matcher m = MAJOR_MINOR_REGEX.matcher(interBrokerProtocolVersion);
-            if (m.matches() && !kafkaBrokerVersion.startsWith(m.group(1))) {
-                warnings.add(StatusUtils.buildWarningCondition("KafkaInterBrokerProtocolVersion",
-                        "inter.broker.protocol.version does not match the Kafka cluster version, which suggests that an upgrade is incomplete."));
-            }
         }
     }
 
@@ -238,25 +182,6 @@ public class KafkaSpecChecker {
         if (interBrokerProtocolVersion != null) {
             warnings.add(StatusUtils.buildWarningCondition("KafkaLogMessageFormatVersionInKRaft",
                     "log.message.format.version is not used in KRaft-based Kafka clusters and should be removed from the Kafka custom resource."));
-        }
-    }
-
-    private void checkKRaftMetadataStorageConfiguredForZooBasedCLuster(List<Condition> warnings)   {
-        boolean usesKRaftMetadataStorage = kafkaCluster.getStorageByPoolName().entrySet().stream().anyMatch(e -> {
-            if (e.getValue() instanceof EphemeralStorage storage)  {
-                return storage.getKraftMetadata() != null;
-            } else if (e.getValue() instanceof PersistentClaimStorage storage)  {
-                return storage.getKraftMetadata() != null;
-            } else if (e.getValue() instanceof JbodStorage storage) {
-                return storage.getVolumes().stream().anyMatch(vol -> vol.getKraftMetadata() != null);
-            } else {
-                return false;
-            }
-        });
-
-        if (usesKRaftMetadataStorage)   {
-            warnings.add(StatusUtils.buildWarningCondition("KRaftMetadataStorageConfiguredWithoutKRaft",
-                    "The Kafka custom resource or one or more of the KafkaNodePool custom resources contain the kraftMetadata configuration. This configuration is supported only for KRaft-based Kafka clusters."));
         }
     }
 }

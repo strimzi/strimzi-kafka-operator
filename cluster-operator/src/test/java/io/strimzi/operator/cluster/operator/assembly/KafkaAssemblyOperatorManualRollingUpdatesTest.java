@@ -25,7 +25,6 @@ import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
-import io.strimzi.operator.cluster.model.KafkaMetadataConfigurationState;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.RestartReason;
@@ -154,9 +153,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 KAFKA,
                 List.of(POOL_CONTROLLERS, POOL_BROKERS),
                 Map.of(),
-                Map.of(),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                KafkaMetadataConfigurationState.KRAFT,
                 VERSIONS,
                 supplier.sharedEnvironmentProvider
         );
@@ -217,9 +214,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 KAFKA,
                 List.of(POOL_CONTROLLERS, POOL_BROKERS),
                 Map.of(),
-                Map.of(),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                KafkaMetadataConfigurationState.KRAFT,
                 VERSIONS,
                 supplier.sharedEnvironmentProvider
         );
@@ -291,9 +286,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 KAFKA,
                 List.of(POOL_CONTROLLERS, POOL_BROKERS),
                 Map.of(),
-                Map.of(),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                KafkaMetadataConfigurationState.KRAFT,
                 VERSIONS,
                 supplier.sharedEnvironmentProvider
         );
@@ -374,9 +367,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 KAFKA,
                 List.of(POOL_CONTROLLERS, POOL_BROKERS),
                 Map.of(),
-                Map.of(),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                KafkaMetadataConfigurationState.KRAFT,
                 VERSIONS,
                 supplier.sharedEnvironmentProvider
         );
@@ -499,7 +490,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         List<String> kafkaNodesNeedRestart = new ArrayList<>();
         private final boolean forceErrorWhenRollKafka;
         public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, List<KafkaNodePool> nodePools, KafkaCluster kafkaCluster, ClusterCa clusterCa, ClientsCa clientsCa, boolean forceErrorWhenRollKafka) {
-            super(reconciliation, kafkaAssembly, nodePools, kafkaCluster, clusterCa, clientsCa, config, supplier, pfa, vertx, new KafkaMetadataStateManager(reconciliation, kafkaAssembly));
+            super(reconciliation, kafkaAssembly, nodePools, kafkaCluster, clusterCa, clientsCa, config, supplier, pfa, vertx);
             this.forceErrorWhenRollKafka = forceErrorWhenRollKafka;
         }
 
