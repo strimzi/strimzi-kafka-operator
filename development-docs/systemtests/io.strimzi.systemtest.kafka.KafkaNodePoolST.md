@@ -15,27 +15,6 @@
 
 <hr style="border:1px solid">
 
-## testKafkaManagementTransferToAndFromKafkaNodePool
-
-**Description:** This test verifies Kafka cluster migration to and from KafkaNodePools, using the necessary Kafka and KafkaNodePool resources and annotations.
-
-**Steps:**
-
-| Step | Action | Result |
-| - | - | - |
-| 1. | Deploy a Kafka cluster with the annotation to enable KafkaNodePool management, and configure a KafkaNodePool resource to target the Kafka cluster. | Kafka is deployed, and the KafkaNodePool resource targets the cluster as expected. |
-| 2. | Modify KafkaNodePool by increasing number of Kafka replicas. | Number of Kafka Pods is increased to match specification from KafkaNodePool. |
-| 3. | Produce and consume messages in given Kafka cluster. | Clients can produce and consume messages. |
-| 4. | Disable KafkaNodePool management in the Kafka CustomResource using the KafkaNodePool annotation. |  StrimziPodSet is modified, pods are replaced, and any KafkaNodePool specifications (i.e., changed replica count) are ignored. |
-| 5. | Produce and consume messages in given Kafka cluster. | Clients can produce and consume messages. |
-| 6. | Enable KafkaNodePool management in the Kafka CustomResource using the KafkaNodePool annotation. | New StrimziPodSet is created, pods are replaced , and any KafkaNodePool specifications  (i.e., changed replica count) take priority over Kafka specifications. |
-| 7. | Produce and consume messages in given Kafka cluster. | Clients can produce and consume messages. |
-
-**Labels:**
-
-* [kafka](labels/kafka.md)
-
-
 ## testKafkaNodePoolBrokerIdsManagementUsingAnnotations
 
 **Description:** This test case verifies the management of broker IDs in KafkaNodePools using annotations.

@@ -26,7 +26,6 @@ These tests are crucial to ensure that Kafka clusters can handle production work
 - [testDynamicallySetClusterOperatorLoggingLevels](../io.strimzi.systemtest.log.LoggingChangeST.md)
 - [testMixtureOfExternalListeners](../io.strimzi.systemtest.kafka.listeners.MultipleListenersST.md)
 - [testMessagesTlsScramShaWithPredefinedPassword](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
-- [testKafkaManagementTransferToAndFromKafkaNodePool](../io.strimzi.systemtest.kafka.KafkaNodePoolST.md)
 - [testCustomSoloCertificatesForLoadBalancer](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
 - [testCustomChainCertificatesForRoute](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
 - [testCombinationOfInternalAndExternalListeners](../io.strimzi.systemtest.kafka.listeners.MultipleListenersST.md)
