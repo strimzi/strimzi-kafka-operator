@@ -1,0 +1,44 @@
+// This module is included in:
+//
+// assembly-config.adoc
+
+[id="con-mm2-recovery-{context}"]
+= Disaster recovery in an active/passive configuration
+
+[role="_abstract"]
+MirrorMaker 2 can be configured for active/passive disaster recovery.  
+To support this, the Kafka cluster should also be monitored for health and performance to detect issues that require failover promptly.
+
+If failover occurs, which can be automated, operations switch from the active cluster to the passive cluster when the active cluster becomes unavailable.
+The original active cluster is typically considered permanently lost.
+The passive cluster is promoted to active status, taking over as the source for all application traffic.
+In this state, MirrorMaker 2 no longer replicates data from the original active cluster while it remains unavailable.
+
+Failback, or restoring operations to the original active cluster, requires careful planning.
+
+It is technically possible to reverse roles in MirrorMaker 2 by swapping the source and target clusters and deploying this configuration as a new instance. 
+However, this approach risks data duplication, as records mirrored to the passive cluster may be mirrored back to the original active cluster.
+Avoiding duplicates requires resetting consumer offsets, which adds complexity.
+For a simpler and more reliable failback process, rebuild the original active cluster in a clean state and mirror data from the disaster recovery cluster.
+
+Follow these best practices for disaster recovery in the event of failure of the active cluster in an active/passive configuration:
+
+. Promote the passive recovery cluster to an active role. +
+Designate the passive cluster as the active cluster for all client connections.
+This minimizes downtime and ensures operations can continue.
+. Redirect applications to the new active recovery cluster. +
+MirrorMaker 2 synchronizes committed offsets to passive clusters, allowing consumer applications to resume from the last transferred offset when switching to the recovery cluster.
+However, because of the time lag in offset synchronization, switching consumers may result in some message duplication.
+To minimize duplication, switch all members of a consumer group together as soon as possible. 
+Keeping the group intact minimizes the chance of a consumer processing duplicate messages.
+. Remove the MirrorMaker 2 configuration for replication from the original active cluster to the passive cluster. +
+After failover, the original configuration is no longer needed and should be removed to avoid conflicts.
+. Re-create the failed cluster in a clean state, adhering to the original configuration.
+. Deploy a new MirrorMaker 2 instance to replicate data from the active recovery cluster to the rebuilt cluster. +
+Treat the rebuilt cluster as the passive cluster during this replication process.
+To prevent automatic renaming of topics, configure MirrorMaker 2 to use the `IdentityReplicationPolicy` by setting the `replication.policy.class` property in the MirrorMaker 2 configuration.
+With this configuration applied, topics retain their original names in the target cluster.
+. Ensure the rebuilt cluster mirrors all data from the now-active recovery cluster.
+. (Optional) Promote the rebuilt cluster back to active status by redirecting applications to the rebuilt cluster, after ensuring it is fully synchronized with the active cluster.
+
+NOTE: Before implementing any failover or failback processes, test your recovery approach in a controlled environment to minimize downtime and maintain data integrity.
