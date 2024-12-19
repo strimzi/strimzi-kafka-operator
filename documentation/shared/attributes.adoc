@@ -103,7 +103,6 @@
 :ApacheKafkaConsumerConfig: link:https://kafka.apache.org/documentation/#consumerconfigs[Apache Kafka configuration documentation for consumers^]
 :ApacheKafkaProducerConfig: link:https://kafka.apache.org/documentation/#producerconfigs[Apache Kafka configuration documentation for producers^]
 :ApacheKafkaFileSystem: link:https://kafka.apache.org/documentation/#filesystems[Filesystem Selection^]
-:ApacheKafkaDownload: link:http://kafka.apache.org/[Apache Kafka download^]
 :ApacheLoggers: link:https://logging.apache.org/[Apache logging services^]
 :CruiseControlProject: https://github.com/linkedin/cruise-control[Cruise Control^]
 :CruiseControlConfigDocs: link:https://github.com/linkedin/cruise-control/wiki/Configurations[Cruise Control documentation^]
