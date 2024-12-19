@@ -1218,7 +1218,7 @@ class TopicControllerIT implements TestSeparator {
             TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
 
             // then
-            assertNotExistsInKafka(TopicOperatorUtil.topicName(kt));
+            waitNotExistsInKafka(TopicOperatorUtil.topicName(kt));
         }
     }
 
