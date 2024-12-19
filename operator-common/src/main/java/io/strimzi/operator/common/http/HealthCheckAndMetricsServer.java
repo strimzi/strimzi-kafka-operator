@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.common.http;
 
-import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import io.strimzi.operator.common.MetricsProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -163,7 +163,7 @@ public class HealthCheckAndMetricsServer {
                 response.setContentType("text/plain; version=0.0.4");
                 response.setCharacterEncoding(StandardCharsets.UTF_8.toString());
                 response.setStatus(HttpServletResponse.SC_OK);
-                prometheusMeterRegistry.scrape(response.getWriter());
+                prometheusMeterRegistry.scrape(response.getOutputStream());
             } else {
                 response.setContentType("text/plain");
                 response.setStatus(HttpServletResponse.SC_NOT_IMPLEMENTED);
