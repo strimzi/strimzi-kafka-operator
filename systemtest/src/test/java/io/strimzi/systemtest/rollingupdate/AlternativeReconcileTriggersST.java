@@ -170,7 +170,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
     }
 
     // This test is affected by https://github.com/strimzi/strimzi-kafka-operator/issues/3913 so it needs longer operation timeout set in CO
-
+    
     /**
      * Test for checking that overriding of bootstrap server, triggers the rolling update and verifying that,
      * new bootstrap DNS is appended inside certificate in subject alternative names property.

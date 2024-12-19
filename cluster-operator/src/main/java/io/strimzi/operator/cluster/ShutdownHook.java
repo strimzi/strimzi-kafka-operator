@@ -61,7 +61,7 @@ public class ShutdownHook implements Runnable {
 
         CountDownLatch latch = new CountDownLatch(1);
 
-        vertx.close(ar -> {
+        vertx.close().onComplete(ar -> {
             if (!ar.succeeded()) {
                 LOGGER.error("Vert.x close failed", ar.cause());
             }
@@ -89,7 +89,7 @@ public class ShutdownHook implements Runnable {
     public static void undeployVertxVerticle(Vertx vertx, String verticleId, long timeoutMs) {
         LOGGER.info("Shutting down Vert.x verticle {}", verticleId);
         CountDownLatch latch = new CountDownLatch(1);
-        vertx.undeploy(verticleId, ar -> {
+        vertx.undeploy(verticleId).onComplete(ar -> {
             if (!ar.succeeded()) {
                 LOGGER.error("Vert.x verticle failed to undeploy", ar.cause());
             }

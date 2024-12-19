@@ -14,6 +14,9 @@ function get_gc_opts {
 
 export MALLOC_ARENA_MAX=2
 
+# Workaround for Netty bug on systems with less than 2 CPUs
+JAVA_OPTS="${JAVA_OPTS} -Dio.netty.allocator.centralQueueCapacity=2"
+
 # Make sure that we use /dev/urandom
 JAVA_OPTS="${JAVA_OPTS} -Djava.security.egd=file:/dev/./urandom"
 
