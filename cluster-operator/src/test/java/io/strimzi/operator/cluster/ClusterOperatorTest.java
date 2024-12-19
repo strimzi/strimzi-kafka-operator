@@ -177,7 +177,7 @@ public class ClusterOperatorTest {
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat("A verticle per namespace", VERTX.deploymentIDs(), hasSize(namespaceList.size()));
                 for (String deploymentId: VERTX.deploymentIDs()) {
-                    VERTX.undeploy(deploymentId, asyncResult -> {
+                    VERTX.undeploy(deploymentId).onComplete(asyncResult -> {
                         if (asyncResult.failed()) {
                             LOGGER.error("Failed to undeploy {}", deploymentId);
                             context.failNow(asyncResult.cause());
@@ -271,7 +271,7 @@ public class ClusterOperatorTest {
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat("A verticle per namespace", VERTX.deploymentIDs(), hasSize(1));
                 for (String deploymentId: VERTX.deploymentIDs()) {
-                    VERTX.undeploy(deploymentId, asyncResult -> {
+                    VERTX.undeploy(deploymentId).onComplete(asyncResult -> {
                         if (asyncResult.failed()) {
                             LOGGER.error("Failed to undeploy {}", deploymentId);
                             context.failNow(asyncResult.cause());
