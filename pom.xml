@@ -186,16 +186,12 @@
             <id>ossrh</id>
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
-        <repository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
     </distributionManagement>
 
     <repositories>
         <repository>
             <id>staging</id>
-            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1244/</url>
+            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1245/</url>
         </repository>
     </repositories>
 
