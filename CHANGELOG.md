@@ -2,8 +2,13 @@
 
 ## 0.46.0
 
+* Support for ZooKeeper-based Apache Kafka clusters and for KRaft migration has been removed
+* Support for MirrorMaker 1 has been removed
+
 ### Major changes, deprecations and removals
 
+* **Support for ZooKeeper-based clusters and for migration from ZooKeeper-based clusters to KRaft has been remove.**
+  **Please make sure all your clusters are using KRaft before upgrading to Strimzi 0.46.0 or newer!**
 * Support for MirrorMaker 1 has been removed.
   Please make sure to migrate to MirrorMaker 2 before upgrading to Strimzi 0.46 or newer.
 * [Strimzi EnvVar Configuration Provider](https://github.com/strimzi/kafka-env-var-config-provider) (deprecated in Strimzi 0.38.0) and [Strimzi MirrorMaker 2 Extensions](https://github.com/strimzi/mirror-maker-2-extensions) (deprecated in Strimzi 0.28.0) plugins were removed from Strimzi container images.

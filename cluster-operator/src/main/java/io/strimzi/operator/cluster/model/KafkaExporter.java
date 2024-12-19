@@ -278,7 +278,7 @@ public class KafkaExporter extends AbstractModel {
 
     /**
      * Generate the Secret containing the Kafka Exporter certificate signed by the cluster CA certificate used for TLS based
-     * internal communication with Kafka and Zookeeper. It also contains the related Kafka Exporter private key.
+     * internal communication with Kafka. It also contains the related Kafka Exporter private key.
      *
      * @param clusterCa                             The cluster CA.
      * @param existingSecret                        The existing secret with Kafka certificates

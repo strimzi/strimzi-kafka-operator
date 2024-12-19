@@ -107,7 +107,7 @@ public abstract class AbstractModel {
      * @param reconciliation    The reconciliation marker
      * @param resource          Custom resource with metadata containing the namespace and cluster name
      * @param componentName     Name of the Strimzi component usually consisting from the cluster name and component type
-     * @param componentType     Type of the component that the extending class is deploying (e.g. Kafka, ZooKeeper etc. )
+     * @param componentType     Type of the component that the extending class is deploying (e.g. Kafka etc. )
      * @param sharedEnvironmentProvider Shared environment provider
      */
     protected AbstractModel(Reconciliation reconciliation, HasMetadata resource, String componentName, String componentType, SharedEnvironmentProvider sharedEnvironmentProvider) {

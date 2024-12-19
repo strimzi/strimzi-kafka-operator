@@ -55,7 +55,7 @@ public class KafkaPool extends AbstractModel {
     /**
      * Process roles the nodes in this pool will take. This field is set in the fromCrd method, here it is only
      * set to null to avoid spotbugs complains. For KRaft based cluster, the nodes in this pool might be brokers,
-     * controllers or both. For ZooKeeper based clusters, nodes can be only brokers.
+     * controllers or both.
      */
     protected Set<ProcessRoles> processRoles = null;
 

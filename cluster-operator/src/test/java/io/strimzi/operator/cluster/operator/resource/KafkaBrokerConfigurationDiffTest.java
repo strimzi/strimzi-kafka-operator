@@ -201,15 +201,6 @@ public class KafkaBrokerConfigurationDiffTest {
     }
 
     @Test
-    public void testChangedZookeeperConnect() {
-        List<ConfigEntry> ces = singletonList(new ConfigEntry("zookeeper.connect", "karel"));
-        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()),
-                getDesiredConfiguration(ces), kafkaVersion, nodeRef);
-        assertThat(kcd.getDiffSize(), is(0));
-        assertThat(kcd.canBeUpdatedDynamically(), is(true));
-    }
-
-    @Test
     public void testChangedLogDirs() {
         List<ConfigEntry> ces = singletonList(new ConfigEntry("log.dirs", "/var/lib/kafka/data/karel"));
         KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()),

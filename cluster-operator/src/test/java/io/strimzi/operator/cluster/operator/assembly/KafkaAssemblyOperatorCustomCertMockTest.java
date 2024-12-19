@@ -182,14 +182,11 @@ public class KafkaAssemblyOperatorCustomCertMockTest {
         ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(
                 vertx,
                 client,
-                null,
                 ResourceUtils.adminClientProvider(),
-                null,
                 ResourceUtils.kafkaAgentClientProvider(),
                 ResourceUtils.metricsProvider(),
-                null,
-                pfa,
-                60_000L);
+                pfa
+        );
 
         podSetController = new StrimziPodSetController(namespace, Labels.EMPTY, supplier.kafkaOperator, supplier.connectOperator, supplier.mirrorMaker2Operator, supplier.strimziPodSetOperator, supplier.podOperations, supplier.metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));
         podSetController.start();

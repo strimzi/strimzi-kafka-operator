@@ -34,7 +34,7 @@ public class KafkaVersionTest {
 
     @ParallelTest
     public void parsingInvalidVersionTest() {
-        KafkaVersion kv = new KafkaVersion("2.8.0", "2.8", "2.8", "2.8", "3.6.9", false, true, "");
+        KafkaVersion kv = new KafkaVersion("2.8.0", "2.8", "2.8", "2.8", false, true, "");
         assertThat(KafkaVersion.compareDottedIVVersions("2.7-IV1", kv.protocolVersion()), lessThan(0));
         assertThat(KafkaVersion.compareDottedIVVersions("2.9-IV1", kv.protocolVersion()), greaterThan(0));
 

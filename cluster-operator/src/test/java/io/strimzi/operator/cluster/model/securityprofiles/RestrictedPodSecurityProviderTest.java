@@ -36,11 +36,6 @@ public class RestrictedPodSecurityProviderTest extends BaselinePodSecurityProvid
         PodSecurityProvider provider = createProvider();
         provider.configure(ON_KUBERNETES);
 
-        assertThat(provider.zooKeeperContainerSecurityContext(new ContainerSecurityProviderContextImpl(null, null)), CoreMatchers.is(RESTRICTED_CONTAINER_SECURITY_CONTEXT));
-        assertThat(provider.zooKeeperContainerSecurityContext(new ContainerSecurityProviderContextImpl(EPHEMERAL, null)), CoreMatchers.is(RESTRICTED_CONTAINER_SECURITY_CONTEXT));
-        assertThat(provider.zooKeeperContainerSecurityContext(new ContainerSecurityProviderContextImpl(PERSISTENT, null)), CoreMatchers.is(RESTRICTED_CONTAINER_SECURITY_CONTEXT));
-        assertThat(provider.zooKeeperContainerSecurityContext(new ContainerSecurityProviderContextImpl(JBOD, null)), CoreMatchers.is(RESTRICTED_CONTAINER_SECURITY_CONTEXT));
-
         assertThat(provider.kafkaContainerSecurityContext(new ContainerSecurityProviderContextImpl(null, null)), CoreMatchers.is(RESTRICTED_CONTAINER_SECURITY_CONTEXT));
         assertThat(provider.kafkaContainerSecurityContext(new ContainerSecurityProviderContextImpl(EPHEMERAL, null)), CoreMatchers.is(RESTRICTED_CONTAINER_SECURITY_CONTEXT));
         assertThat(provider.kafkaContainerSecurityContext(new ContainerSecurityProviderContextImpl(PERSISTENT, null)), CoreMatchers.is(RESTRICTED_CONTAINER_SECURITY_CONTEXT));
@@ -97,11 +92,6 @@ public class RestrictedPodSecurityProviderTest extends BaselinePodSecurityProvid
         PodSecurityProvider provider = createProvider();
         provider.configure(ON_KUBERNETES);
 
-        assertThat(provider.zooKeeperContainerSecurityContext(new ContainerSecurityProviderContextImpl(null, new ContainerTemplate())), CoreMatchers.is(RESTRICTED_CONTAINER_SECURITY_CONTEXT));
-        assertThat(provider.zooKeeperContainerSecurityContext(new ContainerSecurityProviderContextImpl(EPHEMERAL, new ContainerTemplate())), CoreMatchers.is(RESTRICTED_CONTAINER_SECURITY_CONTEXT));
-        assertThat(provider.zooKeeperContainerSecurityContext(new ContainerSecurityProviderContextImpl(PERSISTENT, new ContainerTemplate())), CoreMatchers.is(RESTRICTED_CONTAINER_SECURITY_CONTEXT));
-        assertThat(provider.zooKeeperContainerSecurityContext(new ContainerSecurityProviderContextImpl(JBOD, new ContainerTemplate())), CoreMatchers.is(RESTRICTED_CONTAINER_SECURITY_CONTEXT));
-
         assertThat(provider.kafkaContainerSecurityContext(new ContainerSecurityProviderContextImpl(null, new ContainerTemplate())), CoreMatchers.is(RESTRICTED_CONTAINER_SECURITY_CONTEXT));
         assertThat(provider.kafkaContainerSecurityContext(new ContainerSecurityProviderContextImpl(EPHEMERAL, new ContainerTemplate())), CoreMatchers.is(RESTRICTED_CONTAINER_SECURITY_CONTEXT));
         assertThat(provider.kafkaContainerSecurityContext(new ContainerSecurityProviderContextImpl(PERSISTENT, new ContainerTemplate())), CoreMatchers.is(RESTRICTED_CONTAINER_SECURITY_CONTEXT));
@@ -157,11 +147,6 @@ public class RestrictedPodSecurityProviderTest extends BaselinePodSecurityProvid
     public void testRestrictedContainerContextWithUserProvidedContext() {
         PodSecurityProvider provider = createProvider();
         provider.configure(ON_KUBERNETES);
-
-        assertThat(provider.zooKeeperContainerSecurityContext(new ContainerSecurityProviderContextImpl(null, CUSTOM_CONTAINER_SECURITY_CONTEXT)), CoreMatchers.is(CUSTOM_CONTAINER_SECURITY_CONTEXT.getSecurityContext()));
-        assertThat(provider.zooKeeperContainerSecurityContext(new ContainerSecurityProviderContextImpl(EPHEMERAL, CUSTOM_CONTAINER_SECURITY_CONTEXT)), CoreMatchers.is(CUSTOM_CONTAINER_SECURITY_CONTEXT.getSecurityContext()));
-        assertThat(provider.zooKeeperContainerSecurityContext(new ContainerSecurityProviderContextImpl(PERSISTENT, CUSTOM_CONTAINER_SECURITY_CONTEXT)), CoreMatchers.is(CUSTOM_CONTAINER_SECURITY_CONTEXT.getSecurityContext()));
-        assertThat(provider.zooKeeperContainerSecurityContext(new ContainerSecurityProviderContextImpl(JBOD, CUSTOM_CONTAINER_SECURITY_CONTEXT)), CoreMatchers.is(CUSTOM_CONTAINER_SECURITY_CONTEXT.getSecurityContext()));
 
         assertThat(provider.kafkaContainerSecurityContext(new ContainerSecurityProviderContextImpl(null, CUSTOM_CONTAINER_SECURITY_CONTEXT)), CoreMatchers.is(CUSTOM_CONTAINER_SECURITY_CONTEXT.getSecurityContext()));
         assertThat(provider.kafkaContainerSecurityContext(new ContainerSecurityProviderContextImpl(EPHEMERAL, CUSTOM_CONTAINER_SECURITY_CONTEXT)), CoreMatchers.is(CUSTOM_CONTAINER_SECURITY_CONTEXT.getSecurityContext()));

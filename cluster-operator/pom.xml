@@ -226,15 +226,6 @@
             <artifactId>kafka-server-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.zookeeper</groupId>
-            <artifactId>zookeeper</artifactId>
-        </dependency>
-        <!-- ZooKeeper Jute is needed for the ZooKeeper client to work -->
-        <dependency>
-            <groupId>org.apache.zookeeper</groupId>
-            <artifactId>zookeeper-jute</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-transport</artifactId>
         </dependency>
@@ -340,8 +331,6 @@
                                 <ignoredUnusedDeclaredDependency>io.fabric8:kubernetes-model-common</ignoredUnusedDeclaredDependency>
                                 <!-- Needed at runtime by Fabric8 -->
                                 <ignoredUnusedDeclaredDependency>io.fabric8:kubernetes-model-coordination</ignoredUnusedDeclaredDependency>
-                                <!-- Jute is needed for the ZooKeeper client to work (not just in tests) - but Maven believes it is only a test dependency -->
-                                <ignoredNonTestScopedDependency>org.apache.zookeeper:zookeeper-jute</ignoredNonTestScopedDependency>
                             </ignoredNonTestScopedDependencies>
                         </configuration>
                     </execution>

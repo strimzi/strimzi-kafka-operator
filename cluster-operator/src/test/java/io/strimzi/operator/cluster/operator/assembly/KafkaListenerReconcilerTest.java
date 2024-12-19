@@ -20,7 +20,6 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
-import io.strimzi.operator.cluster.model.KafkaMetadataConfigurationState;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.IngressOperator;
@@ -150,9 +149,7 @@ public class KafkaListenerReconcilerTest {
                 kafka,
                 List.of(POOL_CONTROLLERS, POOL_BROKERS),
                 Map.of(),
-                Map.of(),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                KafkaMetadataConfigurationState.KRAFT,
                 VERSIONS,
                 supplier.sharedEnvironmentProvider
         );
@@ -223,9 +220,7 @@ public class KafkaListenerReconcilerTest {
                 kafka,
                 List.of(POOL_CONTROLLERS, POOL_BROKERS),
                 Map.of(),
-                Map.of(),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                KafkaMetadataConfigurationState.KRAFT,
                 VERSIONS,
                 supplier.sharedEnvironmentProvider
         );
@@ -311,9 +306,7 @@ public class KafkaListenerReconcilerTest {
                 kafka,
                 List.of(POOL_CONTROLLERS, POOL_BROKERS),
                 Map.of(),
-                Map.of(),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                KafkaMetadataConfigurationState.KRAFT,
                 VERSIONS,
                 supplier.sharedEnvironmentProvider
         );
@@ -386,9 +379,7 @@ public class KafkaListenerReconcilerTest {
                 kafka,
                 List.of(POOL_CONTROLLERS, POOL_BROKERS),
                 Map.of(),
-                Map.of(),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                KafkaMetadataConfigurationState.KRAFT,
                 VERSIONS,
                 supplier.sharedEnvironmentProvider
         );
@@ -454,9 +445,7 @@ public class KafkaListenerReconcilerTest {
                 kafka,
                 List.of(POOL_CONTROLLERS, POOL_BROKERS),
                 Map.of(),
-                Map.of(),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                KafkaMetadataConfigurationState.KRAFT,
                 VERSIONS,
                 supplier.sharedEnvironmentProvider
         );
@@ -516,9 +505,7 @@ public class KafkaListenerReconcilerTest {
                 kafka,
                 List.of(POOL_CONTROLLERS, POOL_BROKERS),
                 Map.of(),
-                Map.of(),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                KafkaMetadataConfigurationState.KRAFT,
                 VERSIONS,
                 supplier.sharedEnvironmentProvider
         );

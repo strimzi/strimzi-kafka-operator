@@ -148,60 +148,6 @@ public class ClusterCa extends Ca {
     }
 
     /**
-     * Prepares the ZooKeeper node certificates. It either reuses the existing certificates, renews them or generates new
-     * certificates if needed.
-     *
-     * @param namespace                             Namespace of the Kafka cluster
-     * @param clusterName                           Name of the Kafka cluster
-     * @param existingCertificates                  Existing certificates (or null if they do not exist yet)
-     * @param nodes                                 Nodes that are part of the ZooKeeper cluster
-     * @param isMaintenanceTimeWindowsSatisfied     Flag indicating whether we can do maintenance tasks or not
-     * @param caCertGenerationChanged               Flag indicating whether the CA cert generation has changed since the existing certificates were issued
-     *
-     * @return Map with CertAndKey objects containing the public and private keys for the different nodes
-     *
-     * @throws IOException IOException is thrown when it is raised while working with the certificates
-     */
-    protected Map<String, CertAndKey> generateZkCerts(
-            String namespace,
-            String clusterName,
-            Map<String, CertAndKey> existingCertificates,
-            Set<NodeRef> nodes,
-            boolean isMaintenanceTimeWindowsSatisfied,
-            boolean caCertGenerationChanged
-    ) throws IOException {
-        DnsNameGenerator zkDnsGenerator = DnsNameGenerator.of(namespace, KafkaResources.zookeeperServiceName(clusterName));
-        DnsNameGenerator zkHeadlessDnsGenerator = DnsNameGenerator.of(namespace, KafkaResources.zookeeperHeadlessServiceName(clusterName));
-
-        Function<NodeRef, Subject> subjectFn = node -> {
-            Subject.Builder subject = new Subject.Builder()
-                    .withOrganizationName("io.strimzi")
-                    .withCommonName(KafkaResources.zookeeperComponentName(clusterName));
-            subject.addDnsName(KafkaResources.zookeeperServiceName(clusterName));
-            subject.addDnsName(String.format("%s.%s", KafkaResources.zookeeperServiceName(clusterName), namespace));
-            subject.addDnsName(zkDnsGenerator.serviceDnsNameWithoutClusterDomain());
-            subject.addDnsName(zkDnsGenerator.serviceDnsName());
-            subject.addDnsName(node.podName());
-            subject.addDnsName(DnsNameGenerator.podDnsName(namespace, KafkaResources.zookeeperHeadlessServiceName(clusterName), node.podName()));
-            subject.addDnsName(DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.zookeeperHeadlessServiceName(clusterName), node.podName()));
-            subject.addDnsName(zkDnsGenerator.wildcardServiceDnsNameWithoutClusterDomain());
-            subject.addDnsName(zkDnsGenerator.wildcardServiceDnsName());
-            subject.addDnsName(zkHeadlessDnsGenerator.wildcardServiceDnsNameWithoutClusterDomain());
-            subject.addDnsName(zkHeadlessDnsGenerator.wildcardServiceDnsName());
-            return subject.build();
-        };
-
-        LOGGER.debugCr(reconciliation, "{}: Reconciling ZooKeeper certificates", this);
-        return maybeCopyOrGenerateCerts(
-            reconciliation,
-            nodes,
-            subjectFn,
-            existingCertificates,
-            isMaintenanceTimeWindowsSatisfied,
-            caCertGenerationChanged);
-    }
-
-    /**
      * Prepares the Kafka broker certificates. It either reuses the existing certificates, renews them or generates new
      * certificates if needed.
      *

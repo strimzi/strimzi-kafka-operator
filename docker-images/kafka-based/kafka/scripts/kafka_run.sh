@@ -55,57 +55,28 @@ echo ""
 # Configure heap based on the available resources if needed
 . ./dynamic_resources.sh
 
-STRIMZI_KAFKA_METADATA_CONFIG_STATE=$(cat "$KAFKA_HOME"/custom-config/metadata.state)
-echo "Kafka metadata config state [${STRIMZI_KAFKA_METADATA_CONFIG_STATE}]"
-echo "$STRIMZI_KAFKA_METADATA_CONFIG_STATE" > /tmp/kafka/strimzi.kafka.metadata.config.state
+# Format the KRaft storage
+STRIMZI_CLUSTER_ID=$(cat "$KAFKA_HOME/custom-config/cluster.id")
+METADATA_VERSION=$(cat "$KAFKA_HOME/custom-config/metadata.version")
+echo "Making sure the Kraft storage is formatted with cluster ID $STRIMZI_CLUSTER_ID and metadata version $METADATA_VERSION"
+# Using "=" to assign arguments for the Kafka storage tool to avoid issues if the generated
+# cluster ID starts with a "-". See https://issues.apache.org/jira/browse/KAFKA-15754.
+# The -g option makes sure the tool will ignore any volumes that are already formatted.
+./bin/kafka-storage.sh format -t="$STRIMZI_CLUSTER_ID" -r="$METADATA_VERSION" -c=/tmp/strimzi.properties -g
+echo "KRaft storage formatting is done"
 
-source ./kraft_utils.sh
-USE_KRAFT=$(useKRaft)
-echo "Using KRaft [${USE_KRAFT}]"
-
-# Prepare for Kraft
-if [ "$USE_KRAFT" == "true" ]; then
-  # Format the KRaft storage
-  STRIMZI_CLUSTER_ID=$(cat "$KAFKA_HOME/custom-config/cluster.id")
-  METADATA_VERSION=$(cat "$KAFKA_HOME/custom-config/metadata.version")
-  echo "Making sure the Kraft storage is formatted with cluster ID $STRIMZI_CLUSTER_ID and metadata version $METADATA_VERSION"
-  # Using "=" to assign arguments for the Kafka storage tool to avoid issues if the generated
-  # cluster ID starts with a "-". See https://issues.apache.org/jira/browse/KAFKA-15754.
-  # The -g option makes sure the tool will ignore any volumes that are already formatted.
-  ./bin/kafka-storage.sh format -t="$STRIMZI_CLUSTER_ID" -r="$METADATA_VERSION" -c=/tmp/strimzi.properties -g
-  echo "KRaft storage formatting is done"
-
-  # Manage the metadata log file changes
-  KRAFT_METADATA_LOG_DIR=$(grep "metadata\.log\.dir=" /tmp/strimzi.properties | sed "s/metadata\.log\.dir=*//")
-  CURRENT_KRAFT_METADATA_LOG_DIR=$(ls -d /var/lib/kafka/data-*/kafka-log"$STRIMZI_BROKER_ID"/__cluster_metadata-0 2> /dev/null || true)
-  if [[ -d "$CURRENT_KRAFT_METADATA_LOG_DIR" && "$CURRENT_KRAFT_METADATA_LOG_DIR" != $KRAFT_METADATA_LOG_DIR* ]]; then
-    echo "The desired KRaft metadata log directory ($KRAFT_METADATA_LOG_DIR) and the current one ($CURRENT_KRAFT_METADATA_LOG_DIR) differ. The current directory will be deleted."
-    rm -rf "$CURRENT_KRAFT_METADATA_LOG_DIR"
-  else
-    # remove quorum-state file so that we won't enter voter not match error after scaling up/down
-    if [ -f "$KRAFT_METADATA_LOG_DIR/__cluster_metadata-0/quorum-state" ]; then
-      echo "Removing quorum-state file"
-      rm -f "$KRAFT_METADATA_LOG_DIR/__cluster_metadata-0/quorum-state"
-    fi
-  fi
-
-  # # In KRaft mode, the file paths for Kafka readiness and ZooKeeper connection are empty as they are not required by the agent.
-  KAFKA_READY=
-  ZK_CONNECTED=
+# Manage the metadata log file changes
+KRAFT_METADATA_LOG_DIR=$(grep "metadata\.log\.dir=" /tmp/strimzi.properties | sed "s/metadata\.log\.dir=*//")
+CURRENT_KRAFT_METADATA_LOG_DIR=$(ls -d /var/lib/kafka/data-*/kafka-log"$STRIMZI_BROKER_ID"/__cluster_metadata-0 2> /dev/null || true)
+if [[ -d "$CURRENT_KRAFT_METADATA_LOG_DIR" && "$CURRENT_KRAFT_METADATA_LOG_DIR" != $KRAFT_METADATA_LOG_DIR* ]]; then
+  echo "The desired KRaft metadata log directory ($KRAFT_METADATA_LOG_DIR) and the current one ($CURRENT_KRAFT_METADATA_LOG_DIR) differ. The current directory will be deleted."
+  rm -rf "$CURRENT_KRAFT_METADATA_LOG_DIR"
 else
-  # when in ZooKeeper mode, the __cluster_metadata folder should not exist.
-  # if it does, it means a KRaft migration rollback is ongoing and it has to be removed.
-  # also checking that metadata state is ZK (0), because if it's MIGRATION (2) it means we are rolling back but not finalized yet and KRaft quorum is still in place.
-  CURRENT_KRAFT_METADATA_LOG_DIR=$(ls -d /var/lib/kafka/data*/kafka-log"$STRIMZI_BROKER_ID"/__cluster_metadata-0 2> /dev/null || true)
-  if [[ -d "$CURRENT_KRAFT_METADATA_LOG_DIR" ]] && [ "$STRIMZI_KAFKA_METADATA_CONFIG_STATE" -eq 0 ]; then
-    echo "Removing __cluster_metadata folder"
-    rm -rf "$CURRENT_KRAFT_METADATA_LOG_DIR"
+  # remove quorum-state file so that we won't enter voter not match error after scaling up/down
+  if [ -f "$KRAFT_METADATA_LOG_DIR/__cluster_metadata-0/quorum-state" ]; then
+    echo "Removing quorum-state file"
+    rm -f "$KRAFT_METADATA_LOG_DIR/__cluster_metadata-0/quorum-state"
   fi
-
-  # when in ZooKeeper mode, the Kafka ready and ZooKeeper connected file paths are defined because used by the agent
-  KAFKA_READY=/var/opt/kafka/kafka-ready
-  ZK_CONNECTED=/var/opt/kafka/zk-connected
-  rm -f $KAFKA_READY $ZK_CONNECTED 2> /dev/null
 fi
 
 # Generate the Kafka Agent configuration file
@@ -120,7 +91,7 @@ sslTrustStorePass=${CERTS_STORE_PASSWORD}
 EOF
 echo ""
 
-KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$KAFKA_HOME"/libs/kafka-agent*.jar)=$KAFKA_READY:$ZK_CONNECTED:/tmp/kafka-agent.properties"
+KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$KAFKA_HOME"/libs/kafka-agent*.jar)=/tmp/kafka-agent.properties"
 export KAFKA_OPTS
 
 # Configure Garbage Collection logging

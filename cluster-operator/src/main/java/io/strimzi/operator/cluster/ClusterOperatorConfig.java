@@ -191,11 +191,6 @@ public class ClusterOperatorConfig {
     public static final ConfigParameter<Integer> OPERATIONS_THREAD_POOL_SIZE = new ConfigParameter<>("STRIMZI_OPERATIONS_THREAD_POOL_SIZE", INTEGER, "10", CONFIG_VALUES);
 
     /**
-     * Session timeout for the Zookeeper Admin client used in ZK scaling operations
-     */
-    public static final ConfigParameter<Integer> ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS = new ConfigParameter<>("STRIMZI_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS", INTEGER, "10000", CONFIG_VALUES);
-
-    /**
      * Number of seconds to cache a successful DNS name lookup
      */
     /* test */ static final ConfigParameter<Integer> DNS_CACHE_TTL = new ConfigParameter<>("STRIMZI_DNS_CACHE_TTL", INTEGER, "30", CONFIG_VALUES);
@@ -471,13 +466,6 @@ public class ClusterOperatorConfig {
     }
 
     /**
-     * @return  how many milliseconds should we wait for Zookeeper Admin Sessions to timeout
-     */
-    public int getZkAdminSessionTimeoutMs() {
-        return get(ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS);
-    }
-
-    /**
      * @return  How many milliseconds should we wait for Kafka Connect build to complete
      */
     public long getConnectBuildTimeoutMs() {
@@ -615,7 +603,6 @@ public class ClusterOperatorConfig {
                 "\n\toperatorNamespaceLabels='" + getOperatorNamespaceLabels() + '\'' +
                 "\n\tcustomResourceSelector='" + getCustomResourceSelector() + '\'' +
                 "\n\tfeatureGates='" + featureGates() + '\'' +
-                "\n\tzkAdminSessionTimeoutMs=" + getZkAdminSessionTimeoutMs() +
                 "\n\tdnsCacheTtlSec=" + getDnsCacheTtlSec() +
                 "\n\tpodSetReconciliationOnly=" + isPodSetReconciliationOnly() +
                 "\n\tpodSetControllerWorkQueueSize=" + getPodSetControllerWorkQueueSize() +

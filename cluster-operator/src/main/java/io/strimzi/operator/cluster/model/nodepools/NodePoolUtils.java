@@ -38,76 +38,39 @@ public class NodePoolUtils {
      * @param nodePools                     List of node pools belonging to this cluster
      * @param oldStorage                    Maps with old storage configurations, where the key is the name of the controller
      *                                      resource (e.g. my-cluster-pool-a) and the value is the current storage configuration
-     * @param currentPods                   Map with current pods, where the key is the name of the controller resource
-     *                                      (e.g. my-cluster-pool-a) and the value is a list with Pod names
      * @param versionChange                 Describes Kafka versions used by this cluster
-     * @param useKRaft                      Flag indicating if KRaft is enabled
      * @param sharedEnvironmentProvider     Shared environment provider
      *
-     * @return List of KafkaPool instances belonging to given Kafka cluster
+     * @return  List of KafkaPool instances belonging to given Kafka cluster
      */
     public static List<KafkaPool> createKafkaPools(
             Reconciliation reconciliation,
             Kafka kafka,
             List<KafkaNodePool> nodePools,
             Map<String, Storage> oldStorage,
-            Map<String, List<String>> currentPods,
             KafkaVersionChange versionChange,
-            boolean useKRaft,
             SharedEnvironmentProvider sharedEnvironmentProvider)    {
         // We create the Kafka pool resources
         List<KafkaPool> pools = new ArrayList<>();
 
-        if (nodePools == null)   {
-            // Node pools are not used => we create the default virtual node pool
+        validateNodePools(reconciliation, kafka, nodePools, versionChange);
 
-            // Name of the controller resource for the virtual node pool
-            String virtualNodePoolComponentName = kafka.getMetadata().getName() + "-" + VirtualNodePoolConverter.DEFAULT_NODE_POOL_NAME;
+        // We prepare ID Assignment
+        NodeIdAssignor assignor = new NodeIdAssignor(reconciliation, nodePools);
 
-            int currentReplicas = 0;
-            if (currentPods.get(virtualNodePoolComponentName) != null) {
-                // We are converting from regular Kafka resource which is not using node pools. So the pods will be numbered
-                // continuously from 0. So we can use this to create the list of currently used Node IDs.
-                currentReplicas = currentPods.get(virtualNodePoolComponentName).size();
-            }
-
-            // We create the virtual KafkaNodePool custom resource
-            KafkaNodePool virtualNodePool = VirtualNodePoolConverter.convertKafkaToVirtualNodePool(kafka, currentReplicas);
-
-            // We prepare ID Assignment
-            NodeIdAssignor assignor = new NodeIdAssignor(reconciliation, List.of(virtualNodePool));
-
+        // We create the Kafka pool resources
+        for (KafkaNodePool nodePool : nodePools) {
             pools.add(
                     KafkaPool.fromCrd(
                             reconciliation,
                             kafka,
-                            virtualNodePool,
-                            assignor.assignmentForPool(virtualNodePool.getMetadata().getName()),
-                            oldStorage.get(virtualNodePoolComponentName),
-                            ModelUtils.createOwnerReference(kafka, false),
+                            nodePool,
+                            assignor.assignmentForPool(nodePool.getMetadata().getName()),
+                            oldStorage.get(KafkaPool.componentName(kafka, nodePool)),
+                            ModelUtils.createOwnerReference(nodePool, false),
                             sharedEnvironmentProvider
                     )
             );
-        } else {
-            validateNodePools(reconciliation, kafka, nodePools, versionChange, useKRaft);
-
-            // We prepare ID Assignment
-            NodeIdAssignor assignor = new NodeIdAssignor(reconciliation, nodePools);
-
-            // We create the Kafka pool resources
-            for (KafkaNodePool nodePool : nodePools) {
-                pools.add(
-                        KafkaPool.fromCrd(
-                                reconciliation,
-                                kafka,
-                                nodePool,
-                                assignor.assignmentForPool(nodePool.getMetadata().getName()),
-                                oldStorage.get(KafkaPool.componentName(kafka, nodePool)),
-                                ModelUtils.createOwnerReference(nodePool, false),
-                                sharedEnvironmentProvider
-                        )
-                );
-            }
         }
 
         return pools;
@@ -116,13 +79,12 @@ public class NodePoolUtils {
     /**
      * Validates KafkaNodePools
      *
-     * @param reconciliation Reconciliation marker
-     * @param kafka          The Kafka custom resource
-     * @param nodePools      The list with KafkaNodePool resources
-     * @param versionChange  Describes Kafka versions used by this cluster
-     * @param useKRaft       Flag indicating whether KRaft is enabled or not
+     * @param reconciliation    Reconciliation marker
+     * @param kafka             The Kafka custom resource
+     * @param nodePools         The list with KafkaNodePool resources
+     * @param versionChange     Describes Kafka versions used by this cluster
      */
-    public static void validateNodePools(Reconciliation reconciliation, Kafka kafka, List<KafkaNodePool> nodePools, KafkaVersionChange versionChange, boolean useKRaft)    {
+    public static void validateNodePools(Reconciliation reconciliation, Kafka kafka, List<KafkaNodePool> nodePools, KafkaVersionChange versionChange)    {
         // If there are no node pools, the rest of the validation makes no sense, so we throw an exception right away
         if (nodePools.isEmpty()
                 || nodePools.stream().noneMatch(np -> np.getSpec().getReplicas() > 0))    {
@@ -131,17 +93,13 @@ public class NodePoolUtils {
         } else {
             List<String> errors = new ArrayList<>();
 
-            if (useKRaft) {
-                // Validate process roles
-                errors.addAll(validateKRaftProcessRoles(nodePools));
+            // Validate process roles
+            errors.addAll(validateKRaftProcessRoles(nodePools));
 
-                // Validate JBOD storage
-                errors.addAll(validateKRaftJbodStorage(nodePools, versionChange));
-            } else {
-                // Validate process roles
-                errors.addAll(validateZooKeeperBasedProcessRoles(nodePools));
-            }
+            // Validate JBOD storage
+            errors.addAll(validateKRaftJbodStorage(nodePools, versionChange));
 
+            // Validate ID ranges
             validateNodeIdRanges(reconciliation, nodePools);
 
             // Throw an exception if there are any errors
@@ -149,30 +107,6 @@ public class NodePoolUtils {
                 throw new InvalidResourceException("The Kafka cluster " + kafka.getMetadata().getName() + " is invalid: " + errors);
             }
         }
-    }
-
-    /**
-     * ZooKeeper based cluster needs to have only the broker role. This method checks if this condition is fulfilled.
-     *
-     * @param nodePools     Node pools
-     *
-     * @return  List with errors found during the validation
-     */
-    private static List<String> validateZooKeeperBasedProcessRoles(List<KafkaNodePool> nodePools)    {
-        List<String> errors = new ArrayList<>();
-
-        for (KafkaNodePool pool : nodePools)    {
-            if (pool.getSpec().getRoles() == null || pool.getSpec().getRoles().isEmpty())   {
-                // Pools need to have at least one role
-                errors.add("KafkaNodePool " + pool.getMetadata().getName() + " has no role defined in .spec.roles");
-            } else if (pool.getSpec().getRoles().contains(ProcessRoles.CONTROLLER))   {
-                // ZooKeeper based cluster allows only the broker tole
-                errors.add("KafkaNodePool " + pool.getMetadata().getName() + " contains invalid roles configuration. " +
-                        "In a ZooKeeper-based Kafka cluster, the KafkaNodePool role has to be always set only to the 'broker' role.");
-            }
-        }
-
-        return errors;
     }
 
     /**
