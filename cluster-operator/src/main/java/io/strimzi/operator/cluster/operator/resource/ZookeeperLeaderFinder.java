@@ -173,53 +173,52 @@ public class ZookeeperLeaderFinder {
      * Returns whether the given pod is the zookeeper leader.
      */
     protected Future<Boolean> isLeader(Reconciliation reconciliation, String podName, NetClientOptions netClientOptions) {
-
         Promise<Boolean> promise = Promise.promise();
         String host = host(reconciliation, podName);
         int port = port(podName);
         LOGGER.debugCr(reconciliation, "Connecting to zookeeper on {}:{}", host, port);
         vertx.createNetClient(netClientOptions)
-            .connect(port, host, ar -> {
-                if (ar.failed()) {
-                    LOGGER.warnCr(reconciliation, "ZK {}:{}: failed to connect to zookeeper:", host, port, ar.cause().getMessage());
-                    promise.fail(ar.cause());
-                } else {
-                    LOGGER.debugCr(reconciliation, "ZK {}:{}: connected", host, port);
-                    NetSocket socket = ar.result();
-                    socket.exceptionHandler(ex -> {
-                        if (!promise.tryFail(ex)) {
-                            LOGGER.debugCr(reconciliation, "ZK {}:{}: Ignoring error, since leader status of pod {} is already known: {}",
-                                    host, port, podName, ex);
-                        }
-                    });
-                    StringBuilder sb = new StringBuilder();
-                    // We could use socket idle timeout, but this times out even if the server just responds
-                    // very slowly
-                    long timerId = vertx.setTimer(10_000, tid -> {
-                        LOGGER.debugCr(reconciliation, "ZK {}:{}: Timeout waiting for Zookeeper {} to close socket",
-                                host, port, socket.remoteAddress());
-                        socket.close();
-                    });
-                    socket.closeHandler(v -> {
-                        vertx.cancelTimer(timerId);
-                        Matcher matcher = LEADER_MODE_PATTERN.matcher(sb);
-                        boolean isLeader = matcher.find();
-                        LOGGER.debugCr(reconciliation, "ZK {}:{}: {} leader", host, port, isLeader ? "is" : "is not");
-                        if (!promise.tryComplete(isLeader)) {
-                            LOGGER.debugCr(reconciliation, "ZK {}:{}: Ignoring leader result: Future is already complete",
-                                    host, port);
-                        }
-                    });
-                    LOGGER.debugCr(reconciliation, "ZK {}:{}: upgrading to TLS", host, port);
-                    socket.handler(buffer -> {
-                        LOGGER.traceCr(reconciliation, "buffer: {}", buffer);
-                        sb.append(buffer.toString());
-                    });
-                    LOGGER.debugCr(reconciliation, "ZK {}:{}: sending stat", host, port);
-                    socket.write("stat");
-                }
-
-            });
+                .connect(port, host)
+                .onComplete(ar -> {
+                    if (ar.failed()) {
+                        LOGGER.warnCr(reconciliation, "ZK {}:{}: failed to connect to zookeeper:", host, port, ar.cause().getMessage());
+                        promise.fail(ar.cause());
+                    } else {
+                        LOGGER.debugCr(reconciliation, "ZK {}:{}: connected", host, port);
+                        NetSocket socket = ar.result();
+                        socket.exceptionHandler(ex -> {
+                            if (!promise.tryFail(ex)) {
+                                LOGGER.debugCr(reconciliation, "ZK {}:{}: Ignoring error, since leader status of pod {} is already known: {}",
+                                        host, port, podName, ex);
+                            }
+                        });
+                        StringBuilder sb = new StringBuilder();
+                        // We could use socket idle timeout, but this times out even if the server just responds
+                        // very slowly
+                        long timerId = vertx.setTimer(10_000, tid -> {
+                            LOGGER.debugCr(reconciliation, "ZK {}:{}: Timeout waiting for Zookeeper {} to close socket",
+                                    host, port, socket.remoteAddress());
+                            socket.close();
+                        });
+                        socket.closeHandler(v -> {
+                            vertx.cancelTimer(timerId);
+                            Matcher matcher = LEADER_MODE_PATTERN.matcher(sb);
+                            boolean isLeader = matcher.find();
+                            LOGGER.debugCr(reconciliation, "ZK {}:{}: {} leader", host, port, isLeader ? "is" : "is not");
+                            if (!promise.tryComplete(isLeader)) {
+                                LOGGER.debugCr(reconciliation, "ZK {}:{}: Ignoring leader result: Future is already complete",
+                                        host, port);
+                            }
+                        });
+                        LOGGER.debugCr(reconciliation, "ZK {}:{}: upgrading to TLS", host, port);
+                        socket.handler(buffer -> {
+                            LOGGER.traceCr(reconciliation, "buffer: {}", buffer);
+                            sb.append(buffer.toString());
+                        });
+                        LOGGER.debugCr(reconciliation, "ZK {}:{}: sending stat", host, port);
+                        socket.write("stat");
+                    }
+                });
 
         return promise.future().recover(error -> {
             LOGGER.debugOp("ZK {}:{}: Error trying to determine leader ({}) => not leader", host, port, error);

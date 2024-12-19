@@ -393,7 +393,7 @@ public abstract class AbstractOperator<
         String name = reconciliation.name();
         final String lockName = getLockName(namespace, name);
         LOGGER.debugCr(reconciliation, "Try to acquire lock {}", lockName);
-        vertx.sharedData().getLockWithTimeout(lockName, lockTimeoutMs, res -> {
+        vertx.sharedData().getLockWithTimeout(lockName, lockTimeoutMs).onComplete(res -> {
             if (res.succeeded()) {
                 LOGGER.debugCr(reconciliation, "Lock {} acquired", lockName);
 
