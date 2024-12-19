@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.strimzi.api.ResourceAnnotations;
@@ -1664,11 +1663,6 @@ public class CaReconcilerTest {
 
         List<Secret> clientsCaSecrets = initialClientsCaSecrets(certificateAuthority);
 
-        // Kafka brokers Secret with old annotation
-        Secret kafkaBrokersSecret = kafkaBrokersSecretWithAnnotations(Map.of(
-                Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0",
-                Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0"));
-
         Map<String, String> generationAnnotations =
                 Map.of(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0",
                         Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "0",
@@ -1686,8 +1680,7 @@ public class CaReconcilerTest {
 
         initTrustRolloutTestMocks(supplier,
                 List.of(clusterCaKeySecret, clusterCaCertSecret,
-                        clientsCaSecrets.get(0), clientsCaSecrets.get(1),
-                        kafkaBrokersSecret),
+                        clientsCaSecrets.get(0), clientsCaSecrets.get(1)),
                 controllerPods,
                 brokerPods);
 
@@ -1754,11 +1747,6 @@ public class CaReconcilerTest {
 
         List<Secret> clientsCaSecrets = initialClientsCaSecrets(certificateAuthority);
 
-        // Kafka brokers Secret with old annotation
-        Secret kafkaBrokersSecret = kafkaBrokersSecretWithAnnotations(Map.of(
-                Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0",
-                Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0"));
-
         Map<String, String> generationAnnotations =
                 Map.of(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0",
                         Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "0",
@@ -1776,8 +1764,7 @@ public class CaReconcilerTest {
 
         initTrustRolloutTestMocks(supplier,
                 List.of(clusterCaSecrets.get(0), clusterCaCertSecret,
-                        clientsCaSecrets.get(0), clientsCaSecrets.get(1),
-                        kafkaBrokersSecret),
+                        clientsCaSecrets.get(0), clientsCaSecrets.get(1)),
                 controllerPods,
                 brokerPods);
 
@@ -1985,11 +1972,6 @@ public class CaReconcilerTest {
                 .endMetadata()
                 .build();
 
-        // Kafka brokers Secret with old annotation
-        Secret kafkaBrokersSecret = kafkaBrokersSecretWithAnnotations(Map.of(
-                Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0",
-                Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0"));
-
         Map<String, String> generationAnnotations =
                 Map.of(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0",
                         Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "0",
@@ -2007,8 +1989,7 @@ public class CaReconcilerTest {
 
         initTrustRolloutTestMocks(supplier,
                 List.of(clusterCaSecrets.get(0), clusterCaSecrets.get(1),
-                        clientsCaKeySecret, clientsCaCertSecret,
-                        kafkaBrokersSecret),
+                        clientsCaKeySecret, clientsCaCertSecret),
                 controllerPods,
                 brokerPods);
 
@@ -2051,11 +2032,6 @@ public class CaReconcilerTest {
                 .endMetadata()
                 .build();
 
-        // Kafka brokers Secret with old annotation
-        Secret kafkaBrokersSecret = kafkaBrokersSecretWithAnnotations(Map.of(
-                Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0",
-                Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0"));
-
         Map<String, String> generationAnnotations =
                 Map.of(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0",
                         Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "0",
@@ -2073,8 +2049,7 @@ public class CaReconcilerTest {
 
         initTrustRolloutTestMocks(supplier,
                 List.of(clusterCaSecrets.get(0), clusterCaSecrets.get(1),
-                        clientsCaSecrets.get(0), clientsCaCertSecret,
-                        kafkaBrokersSecret),
+                        clientsCaSecrets.get(0), clientsCaCertSecret),
                 controllerPods,
                 brokerPods);
 
@@ -2192,15 +2167,6 @@ public class CaReconcilerTest {
         return new DeploymentBuilder()
                 .withNewMetadata()
                     .withName(name)
-                .endMetadata()
-                .build();
-    }
-
-    private static Secret kafkaBrokersSecretWithAnnotations(Map<String, String> annotations) {
-        return new SecretBuilder()
-                .withNewMetadata()
-                    .withName(KafkaResources.kafkaSecretName(NAME))
-                    .withAnnotations(annotations)
                 .endMetadata()
                 .build();
     }
