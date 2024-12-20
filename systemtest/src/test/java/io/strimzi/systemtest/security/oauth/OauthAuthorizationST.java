@@ -36,7 +36,6 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.specific.KeycloakUtils;
 import io.strimzi.test.WaitException;
-import io.vertx.core.cli.annotations.Description;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
@@ -86,7 +85,9 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
     private static final String TEST_REALM = "kafka-authz";
 
-    @Description("As a member of team A, I should be able to read and write to all topics starting with a-")
+    /**
+     * As a member of team A, I should be able to read and write to all topics starting with a-.
+     */
     @ParallelTest
     @Order(1)
     void smokeTestForClients() {
@@ -117,8 +118,10 @@ public class OauthAuthorizationST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, teamAConsumerName, testStorage.getMessageCount());
     }
 
-    @Description("As a member of team A, I should be able to write to topics that starts with x- on any cluster and " +
-            "and should also write and read to topics starting with 'a-'")
+    /**
+     * As a member of team A, I should be able to write to topics that starts with x- on any cluster and " +
+     * and should also write and read to topics starting with 'a-'.
+     */
     @ParallelTest
     @Order(2)
     void testTeamAWriteToTopic() {
@@ -181,7 +184,9 @@ public class OauthAuthorizationST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, teamAProducerName, testStorage.getMessageCount());
     }
 
-    @Description("As a member of team A, I should be able only read from consumer that starts with a_")
+    /**
+     * As a member of team A, I should be able only read from consumer that starts with a_.
+     */
     @ParallelTest
     @Order(3)
     void testTeamAReadFromTopic() {
@@ -232,7 +237,9 @@ public class OauthAuthorizationST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, teamAProducerName, testStorage.getMessageCount());
     }
 
-    @Description("As a member of team B, I should be able to write and read from topics that starts with b-")
+    /**
+     * As a member of team B, I should be able to write and read from topics that starts with b-.
+     */
     @ParallelTest
     @Order(4)
     void testTeamBWriteToTopic() {
@@ -276,8 +283,10 @@ public class OauthAuthorizationST extends OauthAbstractST {
         ClientUtils.waitForClientsSuccess(Environment.TEST_SUITE_NAMESPACE, teamBConsumerName, teamBProducerName, testStorage.getMessageCount());
     }
 
-    @Description("As a member of team A, I can write to topics starting with 'x-' and " +
-            "as a member of team B can read from topics starting with 'x-'")
+    /**
+     * As a member of team A, I can write to topics starting with 'x-' and " +
+     *             "as a member of team B can read from topics starting with 'x-'.
+     */
     @ParallelTest
     @Order(5)
     void testTeamAWriteToTopicStartingWithXAndTeamBReadFromTopicStartingWithX() {
@@ -330,7 +339,9 @@ public class OauthAuthorizationST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, teamBConsumerName, testStorage.getMessageCount());
     }
 
-    @Description("As a superuser of team A and team B, i am able to break defined authorization rules")
+    /**
+     * As a superuser of team A and team B, i am able to break defined authorization rules.
+     */
     @ParallelTest
     @Order(6)
     void testSuperUserWithOauthAuthorization() {

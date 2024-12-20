@@ -55,7 +55,6 @@ import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.WaitException;
 import io.strimzi.test.k8s.KubeClusterResource;
-import io.vertx.core.cli.annotations.Description;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -109,9 +108,10 @@ public class OauthPlainST extends OauthAbstractST {
 
     private MetricsCollector metricsCollector;
 
-    @Description(
-            "As an OAuth producer, I should be able to produce messages to the Kafka Broker\n" +
-            "As an OAuth consumer, I should be able to consumer messages from the Kafka Broker.")
+    /**
+     * As an OAuth producer, I should be able to produce messages to the Kafka Broker,
+     * As an OAuth consumer, I should be able to consumer messages from the Kafka Broker."
+     */
     @ParallelTest
     @Tag(METRICS)
     void testProducerConsumerWithOauthMetrics() {
@@ -289,7 +289,9 @@ public class OauthPlainST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, consumerName, testStorage.getMessageCount());
     }
 
-    @Description("As an OAuth KafkaConnect, I should be able to sink messages from kafka Broker Topic.")
+    /**
+     * As an OAuth KafkaConnect, I should be able to sink messages from kafka Broker Topic.
+     */
     @ParallelTest
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
@@ -531,7 +533,9 @@ public class OauthPlainST extends OauthAbstractST {
         );
     }
 
-    @Description("As a OAuth bridge, I should be able to send messages to bridge endpoint.")
+    /**
+     * As a OAuth bridge, I should be able to send messages to bridge endpoint.
+     */
     @ParallelTest
     @Tag(BRIDGE)
     @Tag(METRICS)
