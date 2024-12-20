@@ -20,7 +20,7 @@ import static java.util.Collections.emptyList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class KafkaBrokerLoggingConfigurationDiffTest {
+public class KafkaNodeLoggingConfigurationDiffTest {
 
     private String getDesiredConfiguration(List<ConfigEntry> additional) {
         StringBuilder desiredConfigString = new StringBuilder();
@@ -51,7 +51,7 @@ public class KafkaBrokerLoggingConfigurationDiffTest {
 
     @Test
     public void testReplaceRootLogger() {
-        KafkaBrokerLoggingConfigurationDiff klcd = new KafkaBrokerLoggingConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()), getDesiredConfiguration(emptyList()));
+        KafkaNodeLoggingConfigurationDiff klcd = new KafkaNodeLoggingConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()), getDesiredConfiguration(emptyList()));
         assertThat(klcd.getDiffSize(), is(0));
     }
 
@@ -63,7 +63,7 @@ public class KafkaBrokerLoggingConfigurationDiffTest {
         // Prepare currentConfig
         Config currentConfig = getRealisticConfig();
 
-        KafkaBrokerLoggingConfigurationDiff diff = new KafkaBrokerLoggingConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, currentConfig, desiredConfig);
+        KafkaNodeLoggingConfigurationDiff diff = new KafkaNodeLoggingConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, currentConfig, desiredConfig);
         assertThat(diff.getLoggingDiff(), is(getRealisticConfigDiff()));
     }
 
@@ -162,7 +162,7 @@ public class KafkaBrokerLoggingConfigurationDiffTest {
                 "log4j.logger.kafka.authorizer.logger=INFO\n" +
                 "monitorInterval=30\n";
 
-        KafkaBrokerLoggingConfigurationDiff kdiff = new KafkaBrokerLoggingConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, null, null);
+        KafkaNodeLoggingConfigurationDiff kdiff = new KafkaNodeLoggingConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, null, null);
 
         Map<String, String> res = kdiff.readLog4jConfig(input);
         assertThat(res.get("root"), is("INFO"));

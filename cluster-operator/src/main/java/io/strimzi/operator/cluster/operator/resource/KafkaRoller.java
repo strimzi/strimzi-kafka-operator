@@ -20,7 +20,6 @@ import io.strimzi.operator.cluster.operator.VertxUtil;
 import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.PodOperator;
 import io.strimzi.operator.common.AdminClientProvider;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -209,19 +208,10 @@ public class KafkaRoller {
      * Initializes controllerAdminClient if it has not been initialized yet
      * @return true if the creation of AC succeeded, false otherwise
      */
-    private boolean maybeInitControllerAdminClient(String currentVersion) {
+    private boolean maybeInitControllerAdminClient() {
         if (this.controllerAdminClient == null) {
-            // Prior to 3.9.0, Kafka did not support directly connecting to controllers nodes
-            // via Kafka Admin API when running in KRaft mode.
-            // Therefore, use brokers to initialise adminClient for quorum health check
-            // when the version is older than 3.9.0.
             try {
-                if (KafkaVersion.compareDottedVersions(currentVersion, "3.9.0") >= 0) {
-                    this.controllerAdminClient = controllerAdminClient(nodes);
-                } else {
-                    this.controllerAdminClient = brokerAdminClient(Set.of());
-
-                }
+                this.controllerAdminClient = controllerAdminClient(nodes);
             } catch (ForceableProblem | FatalProblem e) {
                 LOGGER.warnCr(reconciliation, "Failed to create controllerAdminClient.", e);
                 return false;
@@ -315,8 +305,8 @@ public class KafkaRoller {
         boolean needsReconfig;
         boolean forceRestart;
         boolean podStuck;
-        KafkaBrokerConfigurationDiff brokerConfigDiff;
-        KafkaBrokerLoggingConfigurationDiff brokerLoggingDiff;
+        KafkaNodeConfigurationDiff nodeConfigDiff;
+        KafkaNodeLoggingConfigurationDiff nodeLoggingDiff;
         KafkaQuorumCheck quorumCheck;
 
         RestartContext(Supplier<BackOff> backOffSupplier) {
@@ -455,11 +445,9 @@ public class KafkaRoller {
         // change and the desired roles still apply.
         boolean isBroker = Labels.booleanLabel(pod, Labels.STRIMZI_BROKER_ROLE_LABEL, nodeRef.broker());
         boolean isController = Labels.booleanLabel(pod, Labels.STRIMZI_CONTROLLER_ROLE_LABEL, nodeRef.controller());
-        // This is relevant when creating admin client for controllers
-        String currentVersion = Annotations.stringAnnotation(pod, KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION, "0.0.0", null);
 
         try {
-            checkIfRestartOrReconfigureRequired(nodeRef, isController, isBroker, restartContext, currentVersion);
+            checkIfRestartOrReconfigureRequired(nodeRef, isController, isBroker, restartContext);
             if (restartContext.forceRestart) {
                 LOGGER.debugCr(reconciliation, "Pod {} can be rolled now", nodeRef);
                 restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
@@ -558,7 +546,7 @@ public class KafkaRoller {
 
         if (restartContext.needsReconfig) {
             try {
-                dynamicUpdateBrokerConfig(nodeRef, brokerAdminClient, restartContext.brokerConfigDiff, restartContext.brokerLoggingDiff);
+                dynamicUpdateBrokerConfig(nodeRef, restartContext.nodeConfigDiff, restartContext.nodeLoggingDiff);
                 updatedDynamically = true;
             } catch (ForceableProblem e) {
                 LOGGER.debugCr(reconciliation, "Pod {} could not be updated dynamically ({}), will restart", nodeRef, e);
@@ -581,15 +569,15 @@ public class KafkaRoller {
         restartContext.needsRestart = false;
         restartContext.needsReconfig = false;
         restartContext.forceRestart = true;
-        restartContext.brokerConfigDiff = null;
-        restartContext.brokerLoggingDiff = null;
+        restartContext.nodeConfigDiff = null;
+        restartContext.nodeLoggingDiff = null;
     }
 
     /**
      * Determine whether the pod should be restarted, or the broker reconfigured.
      */
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
-    private void checkIfRestartOrReconfigureRequired(NodeRef nodeRef, boolean isController, boolean isBroker, RestartContext restartContext, String currentVersion) throws ForceableProblem, InterruptedException, FatalProblem, UnforceableProblem {
+    private void checkIfRestartOrReconfigureRequired(NodeRef nodeRef, boolean isController, boolean isBroker, RestartContext restartContext) throws ForceableProblem, InterruptedException, FatalProblem {
         RestartReasons reasonToRestartPod = restartContext.restartReasons;
         if (restartContext.podStuck && !reasonToRestartPod.contains(RestartReason.POD_HAS_OLD_REVISION)) {
             // If the pod is unschedulable then deleting it, or trying to open an Admin client to it will make no difference
@@ -606,16 +594,19 @@ public class KafkaRoller {
         }
 
         boolean needsRestart = reasonToRestartPod.shouldRestart();
-        KafkaBrokerConfigurationDiff brokerConfigDiff = null;
-        KafkaBrokerLoggingConfigurationDiff brokerLoggingDiff = null;
+        KafkaNodeConfigurationDiff nodeConfigDiff = null;
+        KafkaNodeLoggingConfigurationDiff nodeLoggingDiff = null;
         boolean needsReconfig = false;
 
         // if it is a pure controller, initialise the admin client specifically for controllers
         if (isController && !isBroker) {
-            if (!maybeInitControllerAdminClient(currentVersion)) {
-                handleFailedAdminClientForController(nodeRef, restartContext, reasonToRestartPod, currentVersion);
+            if (!maybeInitControllerAdminClient()) {
+                LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, because it does not seem to responding to connection attempts", nodeRef);
+                reasonToRestartPod.add(RestartReason.POD_UNRESPONSIVE);
+                markRestartContextWithForceRestart(restartContext);
                 return;
             }
+            LOGGER.debugCr(reconciliation, "Initialising KafkaQuorumCheck for controller pod {}", nodeRef);
             restartContext.quorumCheck = quorumCheck(controllerAdminClient, nodeRef);
         }
 
@@ -629,67 +620,53 @@ public class KafkaRoller {
 
             // If it is a mixed node, initialise quorum check with the broker admin client
             if (isController) {
+                LOGGER.debugCr(reconciliation, "Initialising KafkaQuorumCheck for mixed roles pod {}", nodeRef);
                 restartContext.quorumCheck = quorumCheck(brokerAdminClient, nodeRef);
             }
+        }
 
-            // Always get the broker config. This request gets sent to that specific broker, so it's a proof that we can
-            // connect to the broker and that it's capable of responding.
-            Config brokerConfig;
-            try {
-                brokerConfig = brokerConfig(nodeRef);
-            } catch (ForceableProblem e) {
-                if (restartContext.backOff.done()) {
-                    needsRestart = true;
-                    brokerConfig = null;
+        // Always get the node config. This request gets sent to that specific node, so it's a proof that we can
+        // connect to the node and that it's capable of responding.
+        Config nodeConfig;
+        try {
+            nodeConfig = nodeConfig(nodeRef, isController && !isBroker);
+        } catch (ForceableProblem e) {
+            if (restartContext.backOff.done()) {
+                needsRestart = true;
+                nodeConfig = null;
+            } else {
+                throw e;
+            }
+        }
+
+        if (!needsRestart && allowReconfiguration) {
+            LOGGER.traceCr(reconciliation, "Pod {}: description {}", nodeRef, nodeConfig);
+            nodeConfigDiff = new KafkaNodeConfigurationDiff(reconciliation, nodeConfig, kafkaConfigProvider.apply(nodeRef.nodeId()), kafkaVersion, nodeRef, isController, isBroker);
+            nodeLoggingDiff = logging(nodeRef, isController && !isBroker);
+
+            if (nodeConfigDiff.getDiffSize() > 0) {
+                if (nodeConfigDiff.canBeUpdatedDynamically()) {
+                    LOGGER.debugCr(reconciliation, "Pod {} needs to be reconfigured.", nodeRef);
+                    needsReconfig = true;
                 } else {
-                    throw e;
+                    LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, dynamic update cannot be done.", nodeRef);
+                    restartContext.restartReasons.add(RestartReason.CONFIG_CHANGE_REQUIRES_RESTART);
+                    needsRestart = true;
                 }
             }
 
-            if (!needsRestart && allowReconfiguration) {
-                LOGGER.traceCr(reconciliation, "Pod {}: description {}", nodeRef, brokerConfig);
-                brokerConfigDiff = new KafkaBrokerConfigurationDiff(reconciliation, brokerConfig, kafkaConfigProvider.apply(nodeRef.nodeId()), kafkaVersion, nodeRef);
-                brokerLoggingDiff = logging(nodeRef);
-
-                if (brokerConfigDiff.getDiffSize() > 0) {
-                    if (brokerConfigDiff.canBeUpdatedDynamically()) {
-                        LOGGER.debugCr(reconciliation, "Pod {} needs to be reconfigured.", nodeRef);
-                        needsReconfig = true;
-                    } else {
-                        LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, dynamic update cannot be done.", nodeRef);
-                        restartContext.restartReasons.add(RestartReason.CONFIG_CHANGE_REQUIRES_RESTART);
-                        needsRestart = true;
-                    }
-                }
-
-                // needsRestart value might have changed from the check in the parent if. So we need to check it again.
-                if (!needsRestart && brokerLoggingDiff.getDiffSize() > 0) {
-                    LOGGER.debugCr(reconciliation, "Pod {} logging needs to be reconfigured.", nodeRef);
-                    needsReconfig = true;
-                }
+            // needsRestart value might have changed from the check in the parent if. So we need to check it again.
+            if (!needsRestart && nodeLoggingDiff.getDiffSize() > 0) {
+                LOGGER.debugCr(reconciliation, "Pod {} logging needs to be reconfigured.", nodeRef);
+                needsReconfig = true;
             }
         }
 
         restartContext.needsRestart = needsRestart;
         restartContext.needsReconfig = needsReconfig;
         restartContext.forceRestart = false;
-        restartContext.brokerConfigDiff = brokerConfigDiff;
-        restartContext.brokerLoggingDiff = brokerLoggingDiff;
-    }
-
-    private void handleFailedAdminClientForController(NodeRef nodeRef, RestartContext restartContext, RestartReasons reasonToRestartPod, String currentVersion) throws UnforceableProblem {
-        if (KafkaVersion.compareDottedVersions(currentVersion, "3.9.0") >= 0) {
-            // If the version supports talking to controllers, force restart this pod when the admin client cannot be initialised.
-            // There is no reason to continue as we won't be able to connect an admin client to this pod for other checks later.
-            LOGGER.infoCr(reconciliation, "KafkaQuorumCheck cannot be initialised for {} because none of the controllers do not seem to responding to connection attempts.", nodeRef);
-            reasonToRestartPod.add(RestartReason.POD_UNRESPONSIVE);
-            markRestartContextWithForceRestart(restartContext);
-        } else {
-            // If the version does not support talking to controllers, the admin client should be connecting to the broker nodes.
-            // Since connection to the brokers failed, throw an UnforceableProblem so that broker nodes can be checked later
-            // which may potentially resolve the connection issue.
-            throw new UnforceableProblem("KafkaQuorumCheck cannot be initialised for " + nodeRef + " because none of the brokers do not seem to responding to connection attempts");
-        }
+        restartContext.nodeConfigDiff = nodeConfigDiff;
+        restartContext.nodeLoggingDiff = nodeLoggingDiff;
     }
 
     /**
@@ -697,59 +674,75 @@ public class KafkaRoller {
      * @param nodeRef The reference of the broker.
      * @return a Future which completes with the config of the given broker.
      */
-    /* test */ Config brokerConfig(NodeRef nodeRef) throws ForceableProblem, InterruptedException {
+    /* test */ Config nodeConfig(NodeRef nodeRef, boolean isPureController) throws ForceableProblem, InterruptedException {
         ConfigResource resource = new ConfigResource(ConfigResource.Type.BROKER, String.valueOf(nodeRef.nodeId()));
-        return await(VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, brokerAdminClient.describeConfigs(singletonList(resource)).values().get(resource)),
-            30, TimeUnit.SECONDS,
-            error -> new ForceableProblem("Error getting broker config", error)
-        );
+        if (isPureController) {
+            return await(VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, controllerAdminClient.describeConfigs(singletonList(resource)).values().get(resource)),
+                    30, TimeUnit.SECONDS,
+                    error -> new ForceableProblem("Error getting controller config: " + error, error)
+            );
+        } else {
+            return await(VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, brokerAdminClient.describeConfigs(singletonList(resource)).values().get(resource)),
+                    30, TimeUnit.SECONDS,
+                    error -> new ForceableProblem("Error getting broker config: " + error, error)
+            );
+        }
+
     }
 
     /**
-     * Returns logging of the given broker.
-     * @param brokerId The id of the broker.
-     * @return a Future which completes with the logging of the given broker.
+     * Returns logging of the given node.
+     * @param nodeId The id of the node.
+     * @return a Future which completes with the logging of the given node.
      */
-    /* test */ Config brokerLogging(int brokerId) throws ForceableProblem, InterruptedException {
-        ConfigResource resource = Util.getBrokersLogging(brokerId);
-        return await(VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, brokerAdminClient.describeConfigs(singletonList(resource)).values().get(resource)),
-                30, TimeUnit.SECONDS,
-            error -> new ForceableProblem("Error getting broker logging", error)
-        );
+    /* test */ Config nodeLogging(int nodeId, boolean isPureController) throws ForceableProblem, InterruptedException {
+        ConfigResource resource = Util.getBrokersLogging(nodeId);
+        if (isPureController) {
+            return await(VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, controllerAdminClient.describeConfigs(singletonList(resource)).values().get(resource)),
+                    30, TimeUnit.SECONDS,
+                    error -> new ForceableProblem("Error getting controller logging", error)
+            );
+        } else {
+            return await(VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, brokerAdminClient.describeConfigs(singletonList(resource)).values().get(resource)),
+                    30, TimeUnit.SECONDS,
+                    error -> new ForceableProblem("Error getting broker logging", error)
+            );
+        }
     }
 
-    /* test */ void dynamicUpdateBrokerConfig(NodeRef nodeRef, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff)
+    /* test */ void dynamicUpdateBrokerConfig(NodeRef nodeRef, KafkaNodeConfigurationDiff configurationDiff, KafkaNodeLoggingConfigurationDiff logDiff)
             throws ForceableProblem, InterruptedException {
         Map<ConfigResource, Collection<AlterConfigOp>> updatedConfig = new HashMap<>(2);
         var podId = nodeRef.nodeId();
         updatedConfig.put(Util.getBrokersConfig(podId), configurationDiff.getConfigDiff());
         updatedConfig.put(Util.getBrokersLogging(podId), logDiff.getLoggingDiff());
 
-        LOGGER.debugCr(reconciliation, "Updating broker configuration {}", nodeRef);
-        LOGGER.traceCr(reconciliation, "Updating broker configuration {} with {}", nodeRef, updatedConfig);
+        LOGGER.debugCr(reconciliation, "Updating node configuration {}", nodeRef);
+        LOGGER.traceCr(reconciliation, "Updating node configuration {} with {}", nodeRef, updatedConfig);
 
+        Admin ac = nodeRef.controller() && !nodeRef.broker() ? controllerAdminClient : brokerAdminClient;
         AlterConfigsResult alterConfigResult = ac.incrementalAlterConfigs(updatedConfig);
         KafkaFuture<Void> brokerConfigFuture = alterConfigResult.values().get(Util.getBrokersConfig(podId));
         KafkaFuture<Void> brokerLoggingConfigFuture = alterConfigResult.values().get(Util.getBrokersLogging(podId));
         await(VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, brokerConfigFuture), 30, TimeUnit.SECONDS,
             error -> {
-                LOGGER.errorCr(reconciliation, "Error updating broker configuration for pod {}", nodeRef, error);
+                LOGGER.errorCr(reconciliation, "Error updating node configuration for pod {}", nodeRef, error);
                 return new ForceableProblem("Error updating broker configuration for pod " + nodeRef, error);
             });
         await(VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, brokerLoggingConfigFuture), 30, TimeUnit.SECONDS,
             error -> {
-                LOGGER.errorCr(reconciliation, "Error updating broker logging configuration pod {}", nodeRef, error);
+                LOGGER.errorCr(reconciliation, "Error updating node logging configuration pod {}", nodeRef, error);
                 return new ForceableProblem("Error updating broker logging configuration pod " + nodeRef, error);
             });
 
         LOGGER.infoCr(reconciliation, "Dynamic update of pod {} was successful.", nodeRef);
     }
 
-    private KafkaBrokerLoggingConfigurationDiff logging(NodeRef nodeRef)
+    private KafkaNodeLoggingConfigurationDiff logging(NodeRef nodeRef, boolean isPureController)
             throws ForceableProblem, InterruptedException {
-        Config brokerLogging = brokerLogging(nodeRef.nodeId());
+        Config brokerLogging = nodeLogging(nodeRef.nodeId(), isPureController);
         LOGGER.traceCr(reconciliation, "Pod {}: logging description {}", nodeRef, brokerLogging);
-        return new KafkaBrokerLoggingConfigurationDiff(reconciliation, brokerLogging, kafkaLogging);
+        return new KafkaNodeLoggingConfigurationDiff(reconciliation, brokerLogging, kafkaLogging);
     }
 
     /** Exceptions which we're prepared to ignore (thus forcing a restart) in some circumstances. */
@@ -907,15 +900,7 @@ public class KafkaRoller {
      * empty set, use the brokers service to bootstrap the client.
      */
     /* test */ Admin brokerAdminClient(Set<NodeRef> nodes) throws ForceableProblem, FatalProblem {
-        // If no nodes are passed, initialize the admin client using the bootstrap service
-        // This is still needed for versions older than 3.9.0, so that when only controller nodes being rolled,
-        // it can use brokers to get quorum information via AdminClient.
-        String bootstrapHostnames;
-        if (nodes.isEmpty()) {
-            bootstrapHostnames = String.format("%s:%s", DnsNameGenerator.of(namespace, KafkaResources.bootstrapServiceName(cluster)).serviceDnsName(), KafkaCluster.REPLICATION_PORT);
-        } else {
-            bootstrapHostnames = nodes.stream().filter(NodeRef::broker).map(node -> DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(cluster), node.podName()) + ":" + KafkaCluster.REPLICATION_PORT).collect(Collectors.joining(","));
-        }
+        String bootstrapHostnames = nodes.stream().filter(NodeRef::broker).map(node -> DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(cluster), node.podName()) + ":" + KafkaCluster.REPLICATION_PORT).collect(Collectors.joining(","));
 
         try {
             LOGGER.debugCr(reconciliation, "Creating AdminClient for {}", bootstrapHostnames);
