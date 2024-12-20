@@ -525,11 +525,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                 templatePodSet,
                 replicas,
                 podSetAnnotations,
-                // The Kafka Connect / Mirror Maker 2 requires to use a selector with the PodSetController. This is
-                // required because of how it migrates from Deployment to PodSets and the other way around, where the
-                // old pods are deleted and new pods are created as part of the migration. This differs form Kafka and
-                // ZooKeeper, because when migrating from StatefulSet to PodSet or the other way around, the pods are
-                // re-used as they share the pod names.
                 labels.strimziSelectorLabels().withStrimziPodSetController(componentName),
                 podId -> WorkloadUtils.createStatefulPod(
                         reconciliation,

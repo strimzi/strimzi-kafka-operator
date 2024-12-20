@@ -190,8 +190,8 @@ public class LoggingUtilsTest {
                                 log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
                                 log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
                                 log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n
-                                zookeeper.root.logger=INFO
-                                log4j.rootLogger=${zookeeper.root.logger}, CONSOLE
+                                kafka.root.logger=INFO
+                                log4j.rootLogger=${kafka.root.logger}, CONSOLE
                                 """))
                         .build()
         );
@@ -200,8 +200,8 @@ public class LoggingUtilsTest {
                 log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
                 log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
                 log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n
-                zookeeper.root.logger=INFO
-                log4j.rootLogger=${zookeeper.root.logger}, CONSOLE
+                kafka.root.logger=INFO
+                log4j.rootLogger=${kafka.root.logger}, CONSOLE
                 """));
     }
 
@@ -225,8 +225,8 @@ public class LoggingUtilsTest {
                                 log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
                                 log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
                                 log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n
-                                zookeeper.root.logger=INFO
-                                log4j.rootLogger=${zookeeper.root.logger}, CONSOLE
+                                kafka.root.logger=INFO
+                                log4j.rootLogger=${kafka.root.logger}, CONSOLE
                                 """))
                         .build()
         );
@@ -235,8 +235,8 @@ public class LoggingUtilsTest {
                 log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
                 log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
                 log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n
-                zookeeper.root.logger=INFO
-                log4j.rootLogger=${zookeeper.root.logger}, CONSOLE
+                kafka.root.logger=INFO
+                log4j.rootLogger=${kafka.root.logger}, CONSOLE
                                 
                 monitorInterval=30
                 """));

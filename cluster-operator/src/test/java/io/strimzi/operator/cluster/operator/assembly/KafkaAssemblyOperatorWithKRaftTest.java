@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaList;
+import io.strimzi.api.kafka.model.kafka.KafkaMetadataState;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
@@ -34,7 +35,6 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
-import io.strimzi.operator.cluster.model.KafkaMetadataConfigurationState;
 import io.strimzi.operator.cluster.model.KafkaPool;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.MetricsAndLogging;
@@ -89,6 +89,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -171,8 +172,8 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 .withResources(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("6"))).build())
             .endSpec()
             .build();
-    private static final List<KafkaPool> POOLS = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(CONTROLLERS, BROKERS), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
-    private static final KafkaCluster KAFKA_CLUSTER = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, POOLS, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+    private static final List<KafkaPool> POOLS = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(CONTROLLERS, BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
+    private static final KafkaCluster KAFKA_CLUSTER = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, POOLS, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
 
     private static final Map<Integer, Map<String, String>> ADVERTISED_HOSTNAMES = Map.of(
             3, Map.of("PLAIN_9092", "broker-3"),
@@ -445,7 +446,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 .endSpec()
                 .build();
 
-        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, POOLS, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, POOLS, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
         List<StrimziPodSet> oldKafkaPodSets = oldKafkaCluster.generatePodSets(false, null, null, node -> null);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -543,8 +544,8 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 .endStatus()
                 .build();
 
-        List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(CONTROLLERS, oldBrokersPool), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
-        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, oldPools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(CONTROLLERS, oldBrokersPool), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
+        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, oldPools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
         List<StrimziPodSet> oldKafkaPodSets = oldKafkaCluster.generatePodSets(false, null, null, node -> null);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -680,8 +681,8 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 .endStatus()
                 .build();
 
-        List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaWithStatus, List.of(CONTROLLERS, oldBrokersPool), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
-        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaWithStatus, oldPools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaWithStatus, List.of(CONTROLLERS, oldBrokersPool), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
+        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaWithStatus, oldPools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
         List<StrimziPodSet> oldKafkaPodSets = oldKafkaCluster.generatePodSets(false, null, null, node -> null);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -831,8 +832,8 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 .endStatus()
                 .build();
 
-        List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaWithStatus, List.of(CONTROLLERS, oldBrokersPool), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
-        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaWithStatus, oldPools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaWithStatus, List.of(CONTROLLERS, oldBrokersPool), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
+        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaWithStatus, oldPools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
         List<StrimziPodSet> oldKafkaPodSets = oldKafkaCluster.generatePodSets(false, null, null, node -> null);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -991,8 +992,8 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 .endStatus()
                 .build();
 
-        List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaWithStatus, List.of(CONTROLLERS, oldBrokersPool), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
-        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaWithStatus, oldPools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaWithStatus, List.of(CONTROLLERS, oldBrokersPool), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
+        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaWithStatus, oldPools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
         List<StrimziPodSet> oldKafkaPodSets = oldKafkaCluster.generatePodSets(false, null, null, node -> null);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -1207,9 +1208,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 KAFKA,
                 List.of(CONTROLLERS, BROKERS, newPool),
                 Map.of(),
-                Map.of(),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                KafkaMetadataConfigurationState.KRAFT,
                 VERSIONS,
                 supplier.sharedEnvironmentProvider);
         MockKafkaReconciler kr = new MockKafkaReconciler(
@@ -1298,8 +1297,8 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 .endStatus()
                 .build();
 
-        List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(CONTROLLERS, BROKERS, newPool), Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, true, SHARED_ENV_PROVIDER);
-        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, oldPools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(CONTROLLERS, BROKERS, newPool), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
+        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, oldPools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
         List<StrimziPodSet> oldKafkaPodSets = oldKafkaCluster.generatePodSets(false, null, null, node -> null);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -1428,12 +1427,120 @@ public class KafkaAssemblyOperatorWithKRaftTest {
     }
 
     /**
+     * Tests that a cluster that uses ZooKeeper cannot be operated
+     *
+     * @param context   Test context
+     */
+    @Test
+    public void testClusterWithZooKeeperMetadata(VertxTestContext context)  {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editStatus()
+                    .withKafkaMetadataState(KafkaMetadataState.ZooKeeper)
+                .endStatus()
+                .build();
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
+        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(kafka));
+
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
+
+        KafkaAssemblyOperator kao = new KafkaAssemblyOperator(
+                vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                CERT_MANAGER,
+                PASSWORD_GENERATOR,
+                supplier,
+                config);
+
+        Checkpoint async = context.checkpoint();
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
+                .onComplete(context.failing(v -> context.verify(() -> {
+                    assertThat(v, instanceOf(InvalidConfigurationException.class));
+                    assertThat(v.getMessage(), containsString("supports only KRaft-based Apache Kafka clusters. Please make sure your cluster is migrated to KRaft before using Strimzi"));
+                    async.flag();
+                })));
+    }
+
+    /**
+     * Tests that a cluster in migration cannot be operated
+     *
+     * @param context   Test context
+     */
+    @Test
+    public void testClusterWithMigrationMetadata(VertxTestContext context)  {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editStatus()
+                    .withKafkaMetadataState(KafkaMetadataState.KRaftPostMigration)
+                .endStatus()
+                .build();
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
+        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(kafka));
+
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
+
+        KafkaAssemblyOperator kao = new KafkaAssemblyOperator(
+                vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                CERT_MANAGER,
+                PASSWORD_GENERATOR,
+                supplier,
+                config);
+
+        Checkpoint async = context.checkpoint();
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
+                .onComplete(context.failing(v -> context.verify(() -> {
+                    assertThat(v, instanceOf(InvalidConfigurationException.class));
+                    assertThat(v.getMessage(), containsString("supports only KRaft-based Apache Kafka clusters. Please make sure your cluster is migrated to KRaft before using Strimzi"));
+                    async.flag();
+                })));
+    }
+
+    /**
+     * Tests that a cluster cannot be deployed without using KRaft
+     *
+     * @param context   Test context
+     */
+    @Test
+    public void testClusterWithoutEnabledKRaft(VertxTestContext context)  {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editMetadata()
+                    .withAnnotations(Map.of())
+                .endMetadata()
+                .build();
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
+        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(kafka));
+
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
+
+        KafkaAssemblyOperator kao = new KafkaAssemblyOperator(
+                vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                CERT_MANAGER,
+                PASSWORD_GENERATOR,
+                supplier,
+                config);
+
+        Checkpoint async = context.checkpoint();
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
+                .onComplete(context.failing(v -> context.verify(() -> {
+                    assertThat(v, instanceOf(InvalidConfigurationException.class));
+                    assertThat(v.getMessage(), containsString("supports only KRaft-based Apache Kafka clusters. Please make sure your cluster is migrated to KRaft before using Strimzi"));
+                    async.flag();
+                })));
+    }
+
+    /**
      * Tests that KRaft cluster cannot be deployed without using NodePools
      *
      * @param context   Test context
      */
     @Test
-    public void testKRaftClusterWithoutNodePools(VertxTestContext context)  {
+    public void testKRaftClusterWithoutEnabledNodePools(VertxTestContext context)  {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editMetadata()
                     .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"))
@@ -1458,7 +1565,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
                 .onComplete(context.failing(v -> context.verify(() -> {
                     assertThat(v, instanceOf(InvalidConfigurationException.class));
-                    assertThat(v.getMessage(), is("KRaft can only be used with a Kafka cluster that uses KafkaNodePool resources."));
+                    assertThat(v.getMessage(), containsString("supports only KRaft-based Apache Kafka clusters. Please make sure your cluster is migrated to KRaft before using Strimzi"));
                     async.flag();
                 })));
     }
@@ -1808,7 +1915,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         Function<Pod, RestartReasons> kafkaPodNeedsRestart = null;
 
         public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, List<KafkaNodePool> nodePools, KafkaCluster kafkaCluster, ClusterCa clusterCa, ClientsCa clientsCa) {
-            super(reconciliation, kafkaAssembly, nodePools, kafkaCluster, clusterCa, clientsCa, config, supplier, pfa, vertx, new KafkaMetadataStateManager(reconciliation, kafkaAssembly));
+            super(reconciliation, kafkaAssembly, nodePools, kafkaCluster, clusterCa, clientsCa, config, supplier, pfa, vertx);
 
             this.coTlsPemIdentity = new TlsPemIdentity(null, null);
         }

@@ -31,7 +31,6 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
-import io.strimzi.operator.cluster.model.KafkaMetadataConfigurationState;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.NodeOperator;
@@ -950,7 +949,7 @@ public class KafkaReconcilerStatusTest {
         private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(MockKafkaReconcilerStatusTasks.class.getName());
 
         public MockKafkaReconcilerStatusTasks(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr, List<KafkaNodePool> kafkaNodePools) {
-            super(reconciliation, kafkaCr, null, createKafkaCluster(reconciliation, supplier, kafkaCr, kafkaNodePools), CLUSTER_CA, CLIENTS_CA, CO_CONFIG, supplier, PFA, vertx, new KafkaMetadataStateManager(reconciliation, kafkaCr));
+            super(reconciliation, kafkaCr, null, createKafkaCluster(reconciliation, supplier, kafkaCr, kafkaNodePools), CLUSTER_CA, CLIENTS_CA, CO_CONFIG, supplier, PFA, vertx);
         }
 
         private static KafkaCluster createKafkaCluster(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr, List<KafkaNodePool> kafkaNodePools)   {
@@ -959,9 +958,7 @@ public class KafkaReconcilerStatusTest {
                     kafkaCr,
                     kafkaNodePools,
                     Map.of(),
-                    Map.of(),
                     KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                    new KafkaMetadataStateManager(reconciliation, kafkaCr).getMetadataConfigurationState(),
                     VERSIONS,
                     supplier.sharedEnvironmentProvider);
         }
@@ -1001,7 +998,7 @@ public class KafkaReconcilerStatusTest {
         private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(MockKafkaReconcilerStatusTasks.class.getName());
 
         public MockKafkaReconcilerFailsWithVersionUpdate(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr, List<KafkaNodePool> kafkaNodePools) {
-            super(reconciliation, kafkaCr, kafkaNodePools, createKafkaCluster(reconciliation, supplier, kafkaCr, kafkaNodePools), CLUSTER_CA, CLIENTS_CA, CO_CONFIG, supplier, PFA, vertx, new KafkaMetadataStateManager(reconciliation, kafkaCr));
+            super(reconciliation, kafkaCr, kafkaNodePools, createKafkaCluster(reconciliation, supplier, kafkaCr, kafkaNodePools), CLUSTER_CA, CLIENTS_CA, CO_CONFIG, supplier, PFA, vertx);
         }
 
         private static KafkaCluster createKafkaCluster(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr, List<KafkaNodePool> kafkaNodePools)   {
@@ -1010,9 +1007,7 @@ public class KafkaReconcilerStatusTest {
                     kafkaCr,
                     kafkaNodePools,
                     Map.of(),
-                    Map.of(),
                     KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                    KafkaMetadataConfigurationState.KRAFT,
                     VERSIONS,
                     supplier.sharedEnvironmentProvider);
         }

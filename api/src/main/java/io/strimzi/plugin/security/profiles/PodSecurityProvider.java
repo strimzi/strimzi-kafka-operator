@@ -24,27 +24,31 @@ public interface PodSecurityProvider {
     void configure(PlatformFeatures platformFeatures);
 
     /**
-     * Provides the Pod security context for the ZooKeeper pods. The default implementation just returns the security
-     * context configured by the user in the template section or null (no Pod security context).
+     * Provides the Pod security context for the ZooKeeper pods. However, since Zookeeper is no longer supported, this
+     * method has been deprecated and throws an UnsupportedOperationException exception.
      *
      * @param context   Provides the context which can be used to generate the Pod security context
      *
      * @return  Pod security context which will be set for the ZooKeeper pods
      */
+    @Deprecated
+    @SuppressWarnings("unused")
     default PodSecurityContext zooKeeperPodSecurityContext(PodSecurityProviderContext context) {
-        return podSecurityContextOrNull(context);
+        throw new UnsupportedOperationException("ZooKeeper pods are not supported anymore");
     }
 
     /**
-     * Provides the (container) security context for the ZooKeeper containers. The default implementation just
-     * returns the security context configured by the user in the template section or null (no security context).
+     * Provides the (container) security context for the ZooKeeper containers. However, since Zookeeper is no longer
+     * supported, this method has been deprecated and throws an UnsupportedOperationException exception.
      *
      * @param context   Provides the context which can be used to generate the security context
      *
      * @return  Security context which will be set for the ZooKeeper containers
      */
+    @Deprecated
+    @SuppressWarnings("unused")
     default SecurityContext zooKeeperContainerSecurityContext(ContainerSecurityProviderContext context) {
-        return securityContextOrNull(context);
+        throw new UnsupportedOperationException("ZooKeeper container is not supported anymore");
     }
 
     /**
@@ -120,8 +124,8 @@ public interface PodSecurityProvider {
     }
 
     /**
-     * Provides the (container) security context for the TLS sidecar container. The default implementation just
-     * returns the security context configured by the user in the template section or null (no security context).
+     * Provides the (container) security context for the TLS sidecar container. TLS sidecar is not used anymore and this
+     * method always throws an UnsupportedOperationException exception.
      *
      * @param context   Provides the context which can be used to generate the security context
      *
@@ -183,7 +187,8 @@ public interface PodSecurityProvider {
 
     /**
      * Previously, this method was responsible for providing PodSecurityContext for the JMXTrans deployment in Strimzi.
-     * However, since JMXTrans is no longer supported, this method has been deprecated and always returns null.
+     * However, since JMXTrans is no longer supported, this method has been deprecated and throws an
+     * UnsupportedOperationException exception.
      *
      * @param context   Provides the context which can be used to generate the Pod security context
      *
@@ -197,7 +202,8 @@ public interface PodSecurityProvider {
 
     /**
      * Previously, this method was responsible for providing SecurityContext for the JMXTrans container in Strimzi.
-     * However, since JMXTrans is no longer supported, this method has been deprecated and always returns null.
+     * However, since JMXTrans is no longer supported, this method has been deprecated and throws an
+     * UnsupportedOperationException exception.
      *
      * @param context   Provides the context which can be used to generate the security context
      *
@@ -272,7 +278,7 @@ public interface PodSecurityProvider {
 
     /**
      * Previously, this method provided the Pod security context for the Kafka Mirror Maker 1 pods. As Mirror Maker 1 is
-     * not supported anymore, this method is deprecated and always returns null.
+     * not supported anymore, this method is deprecated and throws an UnsupportedOperationException exception.
      *
      * @param context   Provides the context which can be used to generate the Pod security context
      *
@@ -286,7 +292,7 @@ public interface PodSecurityProvider {
 
     /**
      * Previously, this method provided the security context for the Kafka Mirror Maker 1 containers. As Mirror Maker 1
-     * is not supported anymore, this method is deprecated and always returns null.
+     * is not supported anymore, this method is deprecated and throws an UnsupportedOperationException exception.
      *
      * @param context   Provides the context which can be used to generate the security context
      *

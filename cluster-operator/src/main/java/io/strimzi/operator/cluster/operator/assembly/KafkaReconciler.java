@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.Kafka;
+import io.strimzi.api.kafka.model.kafka.KafkaMetadataState;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.UsedNodePoolStatus;
@@ -37,7 +38,6 @@ import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
-import io.strimzi.operator.cluster.model.KafkaMetadataConfigurationState;
 import io.strimzi.operator.cluster.model.KafkaPool;
 import io.strimzi.operator.cluster.model.ListenersUtils;
 import io.strimzi.operator.cluster.model.MetricsAndLogging;
@@ -46,7 +46,6 @@ import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.operator.resource.ConcurrentDeletionException;
-import io.strimzi.operator.cluster.operator.resource.KafkaAgentClient;
 import io.strimzi.operator.cluster.operator.resource.KafkaAgentClientProvider;
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -165,8 +164,6 @@ public class KafkaReconciler {
     /* test */ TlsPemIdentity coTlsPemIdentity;
     /* test */ KafkaListenersReconciler.ReconciliationResult listenerReconciliationResults; // Result of the listener reconciliation with the listener details
 
-    private final KafkaMetadataStateManager kafkaMetadataStateManager;
-
     private final KafkaAutoRebalanceStatus kafkaAutoRebalanceStatus;
 
     /**
@@ -182,7 +179,6 @@ public class KafkaReconciler {
      * @param supplier                  Supplier with Kubernetes Resource Operators
      * @param pfa                       PlatformFeaturesAvailability describing the environment we run in
      * @param vertx                     Vert.x instance
-     * @param kafkaMetadataStateManager Instance of the Kafka metadata state manager
      */
     public KafkaReconciler(
             Reconciliation reconciliation,
@@ -194,15 +190,13 @@ public class KafkaReconciler {
             ClusterOperatorConfig config,
             ResourceOperatorSupplier supplier,
             PlatformFeaturesAvailability pfa,
-            Vertx vertx,
-            KafkaMetadataStateManager kafkaMetadataStateManager
+            Vertx vertx
     ) {
         this.reconciliation = reconciliation;
         this.vertx = vertx;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
         this.kafkaNodePoolCrs = nodePools;
         this.kafka = kafka;
-        this.kafkaMetadataStateManager = kafkaMetadataStateManager;
 
         this.clusterCa = clusterCa;
         this.clientsCa = clientsCa;
@@ -282,7 +276,6 @@ public class KafkaReconciler {
                 .compose(i -> nodePortExternalListenerStatus())
                 .compose(i -> addListenersToKafkaStatus(kafkaStatus))
                 .compose(i -> updateKafkaVersion(kafkaStatus))
-                .compose(i -> updateKafkaMetadataMigrationState())
                 .compose(i -> updateKafkaMetadataState(kafkaStatus));
     }
 
@@ -974,8 +967,7 @@ public class KafkaReconciler {
     protected Future<Void> nodeUnregistration(KafkaStatus kafkaStatus) {
         List<Integer> currentNodeIds = kafka.nodes().stream().map(NodeRef::nodeId).sorted().toList();
 
-        if (kafkaMetadataStateManager.getMetadataConfigurationState().isKRaft()
-                && previousNodeIds != null
+        if (previousNodeIds != null
                 && !new HashSet<>(currentNodeIds).containsAll(previousNodeIds)) {
             // We are in KRaft mode and there are some nodes that were removed => we should unregister them
             List<Integer> nodeIdsToUnregister = new ArrayList<>(previousNodeIds);
@@ -1022,11 +1014,7 @@ public class KafkaReconciler {
      * @return  Future which completes when the KRaft metadata version is set to the current version or updated.
      */
     protected Future<Void> metadataVersion(KafkaStatus kafkaStatus) {
-        if (kafkaMetadataStateManager.getMetadataConfigurationState().isKRaft()) {
-            return KRaftMetadataManager.maybeUpdateMetadataVersion(reconciliation, vertx, this.coTlsPemIdentity, adminClientProvider, kafka.getMetadataVersion(), kafkaStatus);
-        } else {
-            return Future.succeededFuture();
-        }
+        return KRaftMetadataManager.maybeUpdateMetadataVersion(reconciliation, vertx, this.coTlsPemIdentity, adminClientProvider, kafka.getMetadataVersion(), kafkaStatus);
     }
 
     /**
@@ -1155,47 +1143,7 @@ public class KafkaReconciler {
 
     // Updates the KRaft migration state into the Kafka Status instance
     /* test */ Future<Void> updateKafkaMetadataState(KafkaStatus kafkaStatus) {
-        kafkaStatus.setKafkaMetadataState(kafkaMetadataStateManager.computeNextMetadataState(kafkaStatus));
-        return Future.succeededFuture();
-    }
-
-    /**
-     * This method checks if a migration is still ongoing on the Kafka side, through the KafkaMetadataStateManager instance.
-     * A ZooKeeper to KRaft migration can take some time and, on each reconcile, the operator checks its status by calling this method.
-     * Internally, the KafkaMetadataStateManager instance is leveraging the endpoint exposed by the Kafka Agent which provides
-     * the KRaft migration state through a corresponding metric.
-     *
-     * @return  Future which completes when the check on the migration is done
-     */
-    protected Future<Void> updateKafkaMetadataMigrationState() {
-        KafkaMetadataConfigurationState kafkaMetadataConfigState = this.kafkaMetadataStateManager.getMetadataConfigurationState();
-        // on each reconcile, would be useless to check migration status if it's not going on
-        if (kafkaMetadataConfigState.isMigration()) {
-            // we should get the quorum controller leader using the Admin Client API describeMetadataQuorum() but
-            // it's not supported by brokers during migration because they are still connected to ZooKeeper so ...
-            // going through the controllers set to get metrics from one of them, because all expose the needed metrics
-            boolean zkMigrationStateChecked = false;
-            for (NodeRef controller : kafka.controllerNodes()) {
-                try {
-                    LOGGER.debugCr(reconciliation, "Checking ZooKeeper migration state on controller {}", controller.podName());
-                    KafkaAgentClient kafkaAgentClient = kafkaAgentClientProvider.createKafkaAgentClient(
-                            reconciliation,
-                            this.coTlsPemIdentity
-                    );
-                    this.kafkaMetadataStateManager.setMigrationDone(
-                            KRaftMigrationUtils.checkMigrationInProgress(
-                                    reconciliation,
-                                    kafkaAgentClient,
-                                    controller.podName()
-                            ));
-                    zkMigrationStateChecked = true;
-                    break;
-                } catch (RuntimeException e) {
-                    LOGGER.debugCr(reconciliation, "Error on checking ZooKeeper migration state on controller {}", controller.podName());
-                }
-            }
-            return zkMigrationStateChecked ? Future.succeededFuture() : Future.failedFuture(new Throwable("Failed to check ZooKeeper migration state"));
-        }
+        kafkaStatus.setKafkaMetadataState(KafkaMetadataState.KRaft);
         return Future.succeededFuture();
     }
 

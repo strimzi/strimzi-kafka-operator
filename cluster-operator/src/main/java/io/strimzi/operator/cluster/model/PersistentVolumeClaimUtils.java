@@ -31,7 +31,7 @@ import java.util.Set;
  */
 public class PersistentVolumeClaimUtils {
     /**
-     * Creates list of PersistentVolumeClaims required by stateful deployments (Kafka and Zoo). This method calls itself
+     * Creates list of PersistentVolumeClaims required by stateful deployments (Kafka). This method calls itself
      * recursively to handle volumes inside JBOD storage. When it calls itself to handle the volumes inside JBOD array,
      * the {@code jbod} flag should be set to {@code true}. When called from outside, it should be set to {@code false}.
      *

@@ -16,7 +16,6 @@ import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.KafkaMetadataConfigurationState;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
@@ -183,8 +182,6 @@ public class KafkaClusterCreatorTest {
             .endStatus()
             .build();
 
-    private static final Map<String, List<String>> CURRENT_PODS_5_NODES = Map.of("my-cluster-kafka", List.of("my-cluster-kafka-0", "my-cluster-kafka-1", "my-cluster-kafka-2", "my-cluster-kafka-3", "my-cluster-kafka-4"));
-
     private static Vertx vertx;
     private static WorkerExecutor sharedWorkerExecutor;
 
@@ -209,10 +206,10 @@ public class KafkaClusterCreatorTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, KafkaMetadataConfigurationState.KRAFT, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
-        creator.prepareKafkaCluster(KAFKA, List.of(POOL_CONTROLLERS, POOL_A, POOL_B), Map.of(), null, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
+        creator.prepareKafkaCluster(KAFKA, List.of(POOL_CONTROLLERS, POOL_A, POOL_B), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
                 .onComplete(context.succeeding(kc -> context.verify(() -> {
                     // Kafka cluster is created
                     assertThat(kc, is(notNullValue()));
@@ -235,10 +232,10 @@ public class KafkaClusterCreatorTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, KafkaMetadataConfigurationState.KRAFT, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
-        creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED), Map.of(), null, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
+        creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
                 .onComplete(context.succeeding(kc -> context.verify(() -> {
                     // Kafka cluster is created
                     assertThat(kc, is(notNullValue()));
@@ -261,10 +258,10 @@ public class KafkaClusterCreatorTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, KafkaMetadataConfigurationState.KRAFT, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
-        creator.prepareKafkaCluster(KAFKA, List.of(POOL_CONTROLLERS_WITH_STATUS, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), null, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
+        creator.prepareKafkaCluster(KAFKA, List.of(POOL_CONTROLLERS_WITH_STATUS, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
                 .onComplete(context.succeeding(kc -> context.verify(() -> {
                     // Kafka cluster is created
                     assertThat(kc, is(notNullValue()));
@@ -287,10 +284,10 @@ public class KafkaClusterCreatorTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, KafkaMetadataConfigurationState.KRAFT, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
-        creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_WITH_STATUS), Map.of(), null, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
+        creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_WITH_STATUS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
                 .onComplete(context.succeeding(kc -> context.verify(() -> {
                     // Kafka cluster is created
                     assertThat(kc, is(notNullValue()));
@@ -317,10 +314,10 @@ public class KafkaClusterCreatorTest {
         when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1000, 1001, 1002, 1003, 2004)));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, KafkaMetadataConfigurationState.KRAFT, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
-        creator.prepareKafkaCluster(KAFKA, List.of(POOL_CONTROLLERS_WITH_STATUS_5_NODES, POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), null, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
+        creator.prepareKafkaCluster(KAFKA, List.of(POOL_CONTROLLERS_WITH_STATUS_5_NODES, POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
                 .onComplete(context.succeeding(kc -> context.verify(() -> {
                     // Kafka cluster is created
                     assertThat(kc, is(notNullValue()));
@@ -355,10 +352,10 @@ public class KafkaClusterCreatorTest {
         when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(3000, 3001, 3002, 3003)));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, KafkaMetadataConfigurationState.KRAFT, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
-        creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_WITH_STATUS_5_NODES), Map.of(), null, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
+        creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_WITH_STATUS_5_NODES), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
                 .onComplete(context.succeeding(kc -> context.verify(() -> {
                     // Kafka cluster is created
                     assertThat(kc, is(notNullValue()));
@@ -389,10 +386,10 @@ public class KafkaClusterCreatorTest {
         when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1000, 1001, 1002, 2000, 2001, 2002, 3000, 3001, 3002)));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, KafkaMetadataConfigurationState.KRAFT, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
-        creator.prepareKafkaCluster(KAFKA, List.of(POOL_CONTROLLERS_WITH_STATUS_5_NODES, POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), CURRENT_PODS_5_NODES, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
+        creator.prepareKafkaCluster(KAFKA, List.of(POOL_CONTROLLERS_WITH_STATUS_5_NODES, POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
                 .onComplete(context.succeeding(kc -> context.verify(() -> {
                     // Kafka cluster is created
                     assertThat(kc, is(notNullValue()));
@@ -419,10 +416,10 @@ public class KafkaClusterCreatorTest {
         when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1003, 1004, 2003, 2004)));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, KafkaMetadataConfigurationState.KRAFT, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
-        creator.prepareKafkaCluster(KAFKA, List.of(POOL_CONTROLLERS_WITH_STATUS_5_NODES, POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), null, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, false)
+        creator.prepareKafkaCluster(KAFKA, List.of(POOL_CONTROLLERS_WITH_STATUS_5_NODES, POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, false)
                 .onComplete(context.failing(ex -> context.verify(() -> {
                     // Check exception
                     assertThat(ex, instanceOf(InvalidResourceException.class));
@@ -449,10 +446,10 @@ public class KafkaClusterCreatorTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, KafkaMetadataConfigurationState.KRAFT, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
-        creator.prepareKafkaCluster(kafka, List.of(POOL_CONTROLLERS_WITH_STATUS_5_NODES, POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), null, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, false)
+        creator.prepareKafkaCluster(kafka, List.of(POOL_CONTROLLERS_WITH_STATUS_5_NODES, POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, false)
                 .onComplete(context.succeeding(kc -> context.verify(() -> {
                     // Kafka cluster is created
                     assertThat(kc, is(notNullValue()));
@@ -479,10 +476,10 @@ public class KafkaClusterCreatorTest {
         when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1000, 1001, 1002, 2000, 2001, 2002, 3000, 3001, 3002)));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, KafkaMetadataConfigurationState.KRAFT, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
-        creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), null, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
+        creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
                 .onComplete(context.succeeding(kc -> context.verify(() -> {
                     // Kafka cluster is created
                     assertThat(kc, is(notNullValue()));
@@ -522,10 +519,10 @@ public class KafkaClusterCreatorTest {
         when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1000, 1001, 1002, 2000, 2001, 2002, 3000, 3001, 3002)));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, KafkaMetadataConfigurationState.KRAFT, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
-        creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_WITH_STATUS, POOL_A_WITH_STATUS, poolBFromBrokerToControllerOnly), Map.of(), null, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
+        creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_WITH_STATUS, POOL_A_WITH_STATUS, poolBFromBrokerToControllerOnly), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
                 .onComplete(context.succeeding(kc -> context.verify(() -> {
                     // Kafka cluster is created
                     assertThat(kc, is(notNullValue()));
@@ -559,10 +556,10 @@ public class KafkaClusterCreatorTest {
         when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1000, 1001, 1002, 2000, 2001, 20022)));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, KafkaMetadataConfigurationState.KRAFT, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
-        creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), CURRENT_PODS_5_NODES, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
+        creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, true)
                 .onComplete(context.succeeding(kc -> context.verify(() -> {
                     // Kafka cluster is created
                     assertThat(kc, is(notNullValue()));
@@ -590,10 +587,10 @@ public class KafkaClusterCreatorTest {
         when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(3000, 3002)));
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, KafkaMetadataConfigurationState.KRAFT, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
-        creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), null, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, false)
+        creator.prepareKafkaCluster(KAFKA, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, false)
                 .onComplete(context.failing(ex -> context.verify(() -> {
                     // Check exception
                     assertThat(ex, instanceOf(InvalidResourceException.class));
@@ -620,10 +617,10 @@ public class KafkaClusterCreatorTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         KafkaStatus kafkaStatus = new KafkaStatus();
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, KafkaMetadataConfigurationState.KRAFT, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
 
         Checkpoint async = context.checkpoint();
-        creator.prepareKafkaCluster(kafka, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), null, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, false)
+        creator.prepareKafkaCluster(kafka, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, kafkaStatus, false)
                 .onComplete(context.succeeding(kc -> context.verify(() -> {
                     // Kafka cluster is created
                     assertThat(kc, is(notNullValue()));

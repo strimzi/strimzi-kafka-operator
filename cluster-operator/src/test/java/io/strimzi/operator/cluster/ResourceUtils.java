@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster;
 
 import io.fabric8.kubernetes.api.model.LoadBalancerIngressBuilder;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
@@ -18,35 +17,18 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridgeBuilder;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeConsumerSpec;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeHttpConfig;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeProducerSpec;
-import io.strimzi.api.kafka.model.common.Logging;
-import io.strimzi.api.kafka.model.common.Probe;
-import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
-import io.strimzi.api.kafka.model.kafka.KafkaClusterSpec;
-import io.strimzi.api.kafka.model.kafka.KafkaSpec;
-import io.strimzi.api.kafka.model.kafka.SingleVolumeStorage;
-import io.strimzi.api.kafka.model.kafka.Storage;
-import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
-import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterSpec;
-import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Builder;
-import io.strimzi.api.kafka.model.zookeeper.ZookeeperClusterSpec;
 import io.strimzi.operator.cluster.ClusterOperatorConfig.ClusterOperatorConfigBuilder;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.operator.assembly.BrokersInUseCheck;
-import io.strimzi.operator.cluster.operator.resource.KRaftMigrationState;
 import io.strimzi.operator.cluster.operator.resource.KafkaAgentClient;
 import io.strimzi.operator.cluster.operator.resource.KafkaAgentClientProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.ZooKeeperAdminProvider;
-import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
-import io.strimzi.operator.cluster.operator.resource.ZookeeperScaler;
-import io.strimzi.operator.cluster.operator.resource.ZookeeperScalerProvider;
 import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.BuildConfigOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.BuildOperator;
@@ -70,17 +52,13 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StorageClassOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOperator;
 import io.strimzi.operator.common.AdminClientProvider;
-import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
-import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.auth.PemAuthIdentity;
 import io.strimzi.operator.common.auth.PemTrustSet;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
-import io.vertx.core.net.NetClientOptions;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.DescribeClientQuotasResult;
@@ -100,8 +78,6 @@ import org.apache.kafka.common.Node;
 import org.apache.kafka.common.internals.KafkaFutureImpl;
 import org.apache.kafka.common.quota.ClientQuotaEntity;
 import org.apache.kafka.server.common.MetadataVersion;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.admin.ZooKeeperAdmin;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -119,7 +95,6 @@ import java.util.Properties;
 import java.util.stream.Stream;
 
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonList;
 import static org.mockito.AdditionalMatchers.or;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
@@ -162,73 +137,6 @@ public class ResourceUtils {
                 .endMetadata()
                 .addToData("ca.key", caKey)
                 .build();
-    }
-
-    @SuppressWarnings({"checkstyle:ParameterNumber"})
-    public static Kafka createKafka(String namespace, String name, int replicas,
-                                    String image, int healthDelay, int healthTimeout,
-                                    MetricsConfig metricsConfig,
-                                    Map<String, Object> kafkaConfiguration,
-                                    Map<String, Object> zooConfiguration,
-                                    Storage kafkaStorage,
-                                    SingleVolumeStorage zkStorage,
-                                    Logging kafkaLogging, Logging zkLogging,
-                                    KafkaExporterSpec keSpec,
-                                    CruiseControlSpec ccSpec) {
-
-        Kafka result = new Kafka();
-        ObjectMeta meta = new ObjectMetaBuilder()
-            .withNamespace(namespace)
-            .withName(name)
-            .withLabels(Labels.fromMap(Map.of(Labels.KUBERNETES_DOMAIN + "part-of", "tests", "my-user-label", "cromulent")).toMap())
-            .build();
-        result.setMetadata(meta);
-
-        KafkaSpec spec = new KafkaSpec();
-
-        KafkaClusterSpec kafkaClusterSpec = new KafkaClusterSpec();
-        kafkaClusterSpec.setReplicas(replicas);
-        kafkaClusterSpec.setListeners(singletonList(new GenericKafkaListenerBuilder().withName("plain").withPort(9092).withTls(false).withType(KafkaListenerType.INTERNAL).build()));
-        kafkaClusterSpec.setImage(image);
-        if (kafkaLogging != null) {
-            kafkaClusterSpec.setLogging(kafkaLogging);
-        }
-        Probe livenessProbe = new Probe();
-        livenessProbe.setInitialDelaySeconds(healthDelay);
-        livenessProbe.setTimeoutSeconds(healthTimeout);
-        livenessProbe.setSuccessThreshold(4);
-        livenessProbe.setFailureThreshold(10);
-        livenessProbe.setPeriodSeconds(33);
-        kafkaClusterSpec.setLivenessProbe(livenessProbe);
-        kafkaClusterSpec.setReadinessProbe(livenessProbe);
-        kafkaClusterSpec.setMetricsConfig(metricsConfig);
-
-        if (kafkaConfiguration != null) {
-            kafkaClusterSpec.setConfig(kafkaConfiguration);
-        }
-        kafkaClusterSpec.setStorage(kafkaStorage);
-        spec.setKafka(kafkaClusterSpec);
-
-        ZookeeperClusterSpec zk = new ZookeeperClusterSpec();
-        zk.setReplicas(replicas);
-        zk.setImage(image + "-zk");
-        if (zkLogging != null) {
-            zk.setLogging(zkLogging);
-        }
-        zk.setLivenessProbe(livenessProbe);
-        zk.setReadinessProbe(livenessProbe);
-        if (zooConfiguration != null) {
-            zk.setConfig(zooConfiguration);
-        }
-        zk.setStorage(zkStorage);
-        zk.setMetricsConfig(metricsConfig);
-
-        spec.setKafkaExporter(keSpec);
-        spec.setCruiseControl(ccSpec);
-        spec.setZookeeper(zk);
-        result.setSpec(spec);
-
-        return result;
     }
 
     /**
@@ -328,15 +236,6 @@ public class ResourceUtils {
         } catch (IOException e) {
             // Nothing to do
         }
-    }
-
-    public static ZookeeperLeaderFinder zookeeperLeaderFinder(Vertx vertx) {
-        return new ZookeeperLeaderFinder(vertx, () -> new BackOff(5_000, 2, 4)) {
-                @Override
-                protected Future<Boolean> isLeader(Reconciliation reconciliation, String podName, NetClientOptions options) {
-                    return Future.succeededFuture(true);
-                }
-            };
     }
 
     public static Admin adminClient()   {
@@ -479,21 +378,8 @@ public class ResourceUtils {
         };
     }
 
-    public static ZookeeperScalerProvider zookeeperScalerProvider() {
-        return (reconciliation, vertx, zookeeperConnectionString, zkNodeAddress, zkTlsPkcs12Identity, operationTimeoutMs, zkAdminSessionTimoutMs) -> {
-            ZookeeperScaler mockZooScaler = mock(ZookeeperScaler.class);
-            when(mockZooScaler.scale(anyInt())).thenReturn(Future.succeededFuture());
-            return mockZooScaler;
-        };
-    }
-
     public static KafkaAgentClient kafkaAgentClient() {
-        KafkaAgentClient mock = mock(KafkaAgentClient.class);
-        // simulating a longer KRaft migration, returning it's ended on the second call
-        when(mock.getKRaftMigrationState(any()))
-                .thenReturn(new KRaftMigrationState(KRaftMigrationState.PRE_MIGRATION))
-                .thenReturn(new KRaftMigrationState(KRaftMigrationState.MIGRATION));
-        return mock;
+        return mock(KafkaAgentClient.class);
     }
 
     public static KafkaAgentClientProvider kafkaAgentClientProvider() {
@@ -502,20 +388,6 @@ public class ResourceUtils {
 
     public static KafkaAgentClientProvider kafkaAgentClientProvider(KafkaAgentClient mockKafkaAgentClient) {
         return (reconciliation, tlsPemIdentity) -> mockKafkaAgentClient;
-    }
-
-    public static ZooKeeperAdmin zooKeeperAdmin() {
-        ZooKeeperAdmin mock = mock(ZooKeeperAdmin.class);
-        when(mock.getState()).thenReturn(ZooKeeper.States.CONNECTED);
-        return mock;
-    }
-
-    public static ZooKeeperAdminProvider zooKeeperAdminProvider() {
-        return zooKeeperAdminProvider(zooKeeperAdmin());
-    }
-
-    public static ZooKeeperAdminProvider zooKeeperAdminProvider(ZooKeeperAdmin mockZooKeeperAdmin) {
-        return (connectString, sessionTimeout, watcher, operationTimeoutMs, trustStoreFile, keyStoreFile) -> mockZooKeeperAdmin;
     }
 
     public static MetricsProvider metricsProvider() {
@@ -555,12 +427,9 @@ public class ResourceUtils {
                 mock(StrimziPodSetOperator.class),
                 mock(StorageClassOperator.class),
                 mock(NodeOperator.class),
-                zookeeperScalerProvider(),
                 kafkaAgentClientProvider(),
                 metricsProvider(),
                 adminClientProvider(),
-                mock(ZookeeperLeaderFinder.class),
-                mock(ZooKeeperAdminProvider.class),
                 mock(KubernetesRestartEventPublisher.class),
                 new MockSharedEnvironmentProvider(),
                 mock(BrokersInUseCheck.class));

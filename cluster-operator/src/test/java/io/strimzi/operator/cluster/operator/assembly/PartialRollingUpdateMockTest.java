@@ -203,12 +203,10 @@ public class PartialRollingUpdateMockTest {
     ResourceOperatorSupplier supplier(KubernetesClient bootstrapClient, PlatformFeaturesAvailability pfa) {
         return new ResourceOperatorSupplier(vertx,
                 bootstrapClient,
-                ResourceUtils.zookeeperLeaderFinder(vertx),
-                ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(), ResourceUtils.kafkaAgentClientProvider(),
+                ResourceUtils.adminClientProvider(), ResourceUtils.kafkaAgentClientProvider(),
                 ResourceUtils.metricsProvider(),
-                ResourceUtils.zooKeeperAdminProvider(),
-                pfa,
-                60_000L);
+                pfa
+        );
     }
 
     private void updatePodAnnotation(String podName, String annotationKey, String annotationValue)  {

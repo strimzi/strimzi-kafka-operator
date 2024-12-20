@@ -98,8 +98,8 @@ public class KafkaSpecCheckerTest {
             .build();
 
     private KafkaSpecChecker generateChecker(Kafka kafka, List<KafkaNodePool> kafkaNodePools, KafkaVersionChange versionChange) {
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, kafkaNodePools, Map.of(), Map.of(), versionChange, true, SHARED_ENV_PROVIDER);
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, versionChange, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, kafkaNodePools, Map.of(), versionChange, SHARED_ENV_PROVIDER);
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, versionChange, null, SHARED_ENV_PROVIDER);
 
         return new KafkaSpecChecker(kafka.getSpec(), VERSIONS, kafkaCluster);
     }
@@ -107,10 +107,10 @@ public class KafkaSpecCheckerTest {
     @Test
     public void checkEmptyWarnings() {
         KafkaSpecChecker checker = generateChecker(KAFKA, List.of(CONTROLLERS, POOL_A), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
-        assertThat(checker.run(true), empty());
+        assertThat(checker.run(), empty());
 
         checker = generateChecker(KAFKA, List.of(MIXED), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
-        assertThat(checker.run(true), empty());
+        assertThat(checker.run(), empty());
     }
 
     @Test
@@ -135,7 +135,7 @@ public class KafkaSpecCheckerTest {
             .build();
 
         KafkaSpecChecker checker = generateChecker(kafka, List.of(CONTROLLERS, singleNode), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
-        List<Condition> warnings = checker.run(true);
+        List<Condition> warnings = checker.run();
         assertThat(warnings, hasSize(1));
         Condition warning = warnings.get(0);
         assertThat(warning.getReason(), is("KafkaStorage"));
@@ -153,7 +153,7 @@ public class KafkaSpecCheckerTest {
             .build();
 
         KafkaSpecChecker checker = generateChecker(KAFKA, List.of(singleNode, POOL_A), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
-        List<Condition> warnings = checker.run(true);
+        List<Condition> warnings = checker.run();
         assertThat(warnings, hasSize(1));
         Condition warning = warnings.get(0);
         assertThat(warning.getReason(), is("KafkaStorage"));
@@ -183,7 +183,7 @@ public class KafkaSpecCheckerTest {
             .build();
 
         KafkaSpecChecker checker = generateChecker(kafka, List.of(singleNode), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
-        List<Condition> warnings = checker.run(true);
+        List<Condition> warnings = checker.run();
         assertThat(warnings, hasSize(2));
 
         Condition warning = warnings.get(0);
@@ -223,7 +223,7 @@ public class KafkaSpecCheckerTest {
             .build();
 
         KafkaSpecChecker checker = generateChecker(kafka, List.of(CONTROLLERS, singleNode), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
-        List<Condition> warnings = checker.run(true);
+        List<Condition> warnings = checker.run();
         assertThat(warnings, hasSize(1));
         Condition warning = warnings.get(0);
         assertThat(warning.getReason(), is("KafkaStorage"));
@@ -245,7 +245,7 @@ public class KafkaSpecCheckerTest {
             .build();
 
         KafkaSpecChecker checker = generateChecker(KAFKA, List.of(singleNode, POOL_A), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
-        List<Condition> warnings = checker.run(true);
+        List<Condition> warnings = checker.run();
         assertThat(warnings, hasSize(1));
         Condition warning = warnings.get(0);
         assertThat(warning.getReason(), is("KafkaStorage"));
@@ -279,7 +279,7 @@ public class KafkaSpecCheckerTest {
             .build();
 
         KafkaSpecChecker checker = generateChecker(kafka, List.of(singleNode), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
-        List<Condition> warnings = checker.run(true);
+        List<Condition> warnings = checker.run();
         assertThat(warnings, hasSize(2));
 
         Condition warning = warnings.get(0);
@@ -320,7 +320,7 @@ public class KafkaSpecCheckerTest {
             .build();
 
         KafkaSpecChecker checker = generateChecker(kafka, List.of(singleController, singleBroker), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
-        List<Condition> warnings = checker.run(true);
+        List<Condition> warnings = checker.run();
         assertThat(warnings, hasSize(0));
     }
 
@@ -345,7 +345,7 @@ public class KafkaSpecCheckerTest {
             .build();
 
         KafkaSpecChecker checker = generateChecker(kafka, List.of(singleNode), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
-        List<Condition> warnings = checker.run(true);
+        List<Condition> warnings = checker.run();
         assertThat(warnings, hasSize(0));
     }
 
@@ -362,7 +362,7 @@ public class KafkaSpecCheckerTest {
 
         KafkaSpecChecker checker = generateChecker(kafka, List.of(CONTROLLERS, POOL_A), new KafkaVersionChange(VERSIONS.defaultVersion(), VERSIONS.defaultVersion(), null, null, KafkaVersionTestUtils.PREVIOUS_METADATA_VERSION));
 
-        List<Condition> warnings = checker.run(true);
+        List<Condition> warnings = checker.run();
 
         assertThat(warnings, hasSize(1));
         assertThat(warnings.get(0).getReason(), is("KafkaMetadataVersion"));
@@ -381,7 +381,7 @@ public class KafkaSpecCheckerTest {
 
         KafkaSpecChecker checker = generateChecker(kafka, List.of(CONTROLLERS, POOL_A), new KafkaVersionChange(VERSIONS.defaultVersion(), VERSIONS.defaultVersion(), null, null, KafkaVersionTestUtils.PREVIOUS_METADATA_VERSION));
 
-        List<Condition> warnings = checker.run(true);
+        List<Condition> warnings = checker.run();
 
         assertThat(warnings, hasSize(1));
         assertThat(warnings.get(0).getReason(), is("KafkaMetadataVersion"));
@@ -401,7 +401,7 @@ public class KafkaSpecCheckerTest {
 
         KafkaSpecChecker checker = generateChecker(kafka, List.of(CONTROLLERS, POOL_A), new KafkaVersionChange(VERSIONS.defaultVersion(), VERSIONS.defaultVersion(), null, null, KafkaVersionTestUtils.PREVIOUS_METADATA_VERSION));
 
-        List<Condition> warnings = checker.run(true);
+        List<Condition> warnings = checker.run();
 
         assertThat(warnings, hasSize(1));
         assertThat(warnings.get(0).getReason(), is("KafkaMetadataVersion"));
@@ -421,7 +421,7 @@ public class KafkaSpecCheckerTest {
 
         KafkaSpecChecker checker = generateChecker(kafka, List.of(CONTROLLERS, POOL_A), new KafkaVersionChange(VERSIONS.defaultVersion(), VERSIONS.defaultVersion(), null, null, KafkaVersionTestUtils.LATEST_METADATA_VERSION));
 
-        List<Condition> warnings = checker.run(true);
+        List<Condition> warnings = checker.run();
 
         assertThat(warnings, hasSize(0));
     }
@@ -438,7 +438,7 @@ public class KafkaSpecCheckerTest {
 
         KafkaSpecChecker checker = generateChecker(kafka, List.of(CONTROLLERS, POOL_A), new KafkaVersionChange(VERSIONS.defaultVersion(), VERSIONS.defaultVersion(), null, null, KafkaVersionTestUtils.LATEST_METADATA_VERSION));
 
-        List<Condition> warnings = checker.run(true);
+        List<Condition> warnings = checker.run();
 
         assertThat(warnings, hasSize(0));
     }
@@ -456,7 +456,7 @@ public class KafkaSpecCheckerTest {
 
         KafkaSpecChecker checker = generateChecker(kafka, List.of(CONTROLLERS, POOL_A), new KafkaVersionChange(VERSIONS.defaultVersion(), VERSIONS.defaultVersion(), null, null, KafkaVersionTestUtils.LATEST_METADATA_VERSION));
 
-        List<Condition> warnings = checker.run(true);
+        List<Condition> warnings = checker.run();
 
         assertThat(warnings, hasSize(0));
     }
@@ -476,7 +476,7 @@ public class KafkaSpecCheckerTest {
 
         KafkaSpecChecker checker = generateChecker(kafka, List.of(CONTROLLERS, POOL_A), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
 
-        List<Condition> warnings = checker.run(true);
+        List<Condition> warnings = checker.run();
 
         assertThat(warnings, hasSize(2));
         assertThat(warnings.get(0).getReason(), is("KafkaInterBrokerProtocolVersionInKRaft"));
@@ -495,7 +495,7 @@ public class KafkaSpecCheckerTest {
 
         KafkaSpecChecker checker = generateChecker(KAFKA, List.of(controllers, POOL_A), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
 
-        List<Condition> warnings = checker.run(true);
+        List<Condition> warnings = checker.run();
 
         assertThat(warnings, hasSize(1));
         assertThat(warnings.get(0).getReason(), is("KafkaKRaftControllerNodeCount"));
@@ -524,7 +524,7 @@ public class KafkaSpecCheckerTest {
 
         KafkaSpecChecker checker = generateChecker(kafka, List.of(mixed), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
 
-        List<Condition> warnings = checker.run(true);
+        List<Condition> warnings = checker.run();
 
         assertThat(warnings, hasSize(1));
         assertThat(warnings.get(0).getReason(), is("KafkaKRaftControllerNodeCount"));
@@ -541,7 +541,7 @@ public class KafkaSpecCheckerTest {
 
         KafkaSpecChecker checker = generateChecker(KAFKA, List.of(controllers, POOL_A), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
 
-        List<Condition> warnings = checker.run(true);
+        List<Condition> warnings = checker.run();
 
         assertThat(warnings, hasSize(1));
         assertThat(warnings.get(0).getReason(), is("KafkaKRaftControllerNodeCount"));
@@ -570,7 +570,7 @@ public class KafkaSpecCheckerTest {
 
         KafkaSpecChecker checker = generateChecker(kafka, List.of(mixed), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
 
-        List<Condition> warnings = checker.run(true);
+        List<Condition> warnings = checker.run();
 
         assertThat(warnings, hasSize(1));
         assertThat(warnings.get(0).getReason(), is("KafkaKRaftControllerNodeCount"));
@@ -580,7 +580,7 @@ public class KafkaSpecCheckerTest {
     @Test
     public void checkReplicationFactorAndMinInSyncReplicasSet() {
         KafkaSpecChecker checker = generateChecker(KAFKA, List.of(CONTROLLERS, POOL_A), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
-        List<Condition> warnings = checker.run(true);
+        List<Condition> warnings = checker.run();
         assertThat(warnings, hasSize(0));
     }
 
@@ -598,7 +598,7 @@ public class KafkaSpecCheckerTest {
             .build();
 
         KafkaSpecChecker checker = generateChecker(kafka, List.of(CONTROLLERS, POOL_A), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
-        List<Condition> warnings = checker.run(true);
+        List<Condition> warnings = checker.run();
         assertThat(warnings, hasSize(0));
     }
 
@@ -613,7 +613,7 @@ public class KafkaSpecCheckerTest {
             .build();
 
         KafkaSpecChecker checker = generateChecker(kafka, List.of(CONTROLLERS, POOL_A), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
-        List<Condition> warnings = checker.run(true);
+        List<Condition> warnings = checker.run();
         assertThat(warnings, hasSize(2));
 
         assertThat(warnings.get(0).getReason(), is("KafkaDefaultReplicationFactor"));
@@ -636,7 +636,7 @@ public class KafkaSpecCheckerTest {
 
         KafkaSpecChecker checker = generateChecker(KAFKA, List.of(CONTROLLERS, ephemeralPool), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
 
-        List<Condition> warnings = checker.run(true);
+        List<Condition> warnings = checker.run();
         assertThat(warnings, hasSize(0));
 
         // Kafka with Persistent storage
@@ -651,7 +651,7 @@ public class KafkaSpecCheckerTest {
 
         checker = generateChecker(KAFKA, List.of(CONTROLLERS, persistentPool), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
 
-        warnings = checker.run(true);
+        warnings = checker.run();
         assertThat(warnings, hasSize(0));
 
         // Kafka with JBOD storage
@@ -673,7 +673,7 @@ public class KafkaSpecCheckerTest {
 
         checker = generateChecker(KAFKA, List.of(CONTROLLERS, jbodPool), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
 
-        warnings = checker.run(true);
+        warnings = checker.run();
         assertThat(warnings, hasSize(0));
     }
 
@@ -689,7 +689,7 @@ public class KafkaSpecCheckerTest {
 
         KafkaSpecChecker checker = generateChecker(KAFKA, List.of(CONTROLLERS, ephemeralPool), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
 
-        List<Condition> warnings = checker.run(true);
+        List<Condition> warnings = checker.run();
         assertThat(warnings, hasSize(0));
 
         // Kafka with Persistent storage
@@ -703,7 +703,7 @@ public class KafkaSpecCheckerTest {
 
         checker = generateChecker(KAFKA, List.of(CONTROLLERS, persistentPool), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
 
-        warnings = checker.run(true);
+        warnings = checker.run();
         assertThat(warnings, hasSize(0));
 
         // Kafka with JBOD storage
@@ -724,7 +724,7 @@ public class KafkaSpecCheckerTest {
 
         checker = generateChecker(KAFKA, List.of(CONTROLLERS, jbodPool), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE);
 
-        warnings = checker.run(true);
+        warnings = checker.run();
         assertThat(warnings, hasSize(0));
     }
 }

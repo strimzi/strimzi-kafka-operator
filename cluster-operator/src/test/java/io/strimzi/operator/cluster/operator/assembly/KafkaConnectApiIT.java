@@ -246,7 +246,6 @@ public class KafkaConnectApiIT {
     @Test
     public void testChangeLoggers() {
         String desired = "log4j.rootLogger=TRACE, CONSOLE\n" +
-                "log4j.logger.org.apache.zookeeper=WARN\n" +
                 "log4j.logger.org.reflections.Reflection=INFO\n" +
                 "log4j.logger.org.reflections=FATAL\n" +
                 "log4j.logger.foo=WARN\n" +
@@ -263,7 +262,6 @@ public class KafkaConnectApiIT {
                 .thenCompose(a -> client.listConnectLoggers(Reconciliation.DUMMY_RECONCILIATION, "localhost", port)
                         .whenComplete((map, error) -> {
                             assertThat(map.get("root"), is("TRACE"));
-                            assertThat(map.get("org.apache.zookeeper"), is("WARN"));
                             assertThat(map.get("org.reflections"), is("FATAL"));
                             assertThat(map.get("org.reflections.Reflection"), is("INFO"));
                             assertThat(map.get("org.reflections.Reflection"), is("INFO"));
@@ -282,7 +280,6 @@ public class KafkaConnectApiIT {
     public void testHierarchy() {
         String rootLevel = "TRACE";
         String desired = "log4j.rootLogger=" + rootLevel + ", CONSOLE\n" +
-                "log4j.logger.oorg.apache.zookeeper=WARN\n" +
                 "log4j.logger.oorg.reflections.Reflection=INFO\n" +
                 "log4j.logger.oorg.reflections=FATAL\n" +
                 "log4j.logger.foo=WARN\n" +

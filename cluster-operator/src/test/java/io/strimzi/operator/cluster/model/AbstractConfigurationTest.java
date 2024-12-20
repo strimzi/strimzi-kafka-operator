@@ -225,24 +225,6 @@ public class AbstractConfigurationTest {
     }
 
     @ParallelTest
-    public void testKafkaZookeeperTimeout() {
-        Map<String, Object> conf = new HashMap<>();
-        conf.put("valid", "validValue");
-        conf.put("zookeeper.connection.whatever", "invalid");
-        conf.put("security.invalid1", "invalid");
-        conf.put("zookeeper.connection.timeout.ms", "42"); // valid
-        conf.put("zookeeper.connection.timeout", "42"); // invalid
-
-        KafkaConfiguration kc = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, conf.entrySet());
-
-        assertThat(kc.asOrderedProperties().asMap().get("valid"), is("validValue"));
-        assertThat(kc.asOrderedProperties().asMap().get("zookeeper.connection.whatever"), is(nullValue()));
-        assertThat(kc.asOrderedProperties().asMap().get("security.invalid1"), is(nullValue()));
-        assertThat(kc.asOrderedProperties().asMap().get("zookeeper.connection.timeout.ms"), is("42"));
-        assertThat(kc.asOrderedProperties().asMap().get("zookeeper.connection.timeout"), is(nullValue()));
-    }
-
-    @ParallelTest
     public void testKafkaCipherSuiteOverride() {
         Map<String, Object> conf = new HashMap<>();
         conf.put("ssl.cipher.suites", "cipher1,cipher2,cipher3"); // valid

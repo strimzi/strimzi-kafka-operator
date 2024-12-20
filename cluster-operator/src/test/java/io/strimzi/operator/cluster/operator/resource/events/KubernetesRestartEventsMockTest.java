@@ -41,14 +41,12 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
-import io.strimzi.operator.cluster.model.KafkaMetadataConfigurationState;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.operator.assembly.CaReconciler;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaClusterCreator;
-import io.strimzi.operator.cluster.operator.assembly.KafkaMetadataStateManager;
 import io.strimzi.operator.cluster.operator.assembly.KafkaReconciler;
 import io.strimzi.operator.cluster.operator.assembly.StrimziPodSetController;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -214,14 +212,11 @@ public class KubernetesRestartEventsMockTest {
 
         supplier = new ResourceOperatorSupplier(vertx,
                 client,
-                null,
                 ResourceUtils.adminClientProvider(),
-                null,
                 ResourceUtils.kafkaAgentClientProvider(),
                 ResourceUtils.metricsProvider(),
-                null,
-                PFA,
-                60_000);
+                PFA
+        );
 
         podSetController = new StrimziPodSetController(namespace, Labels.EMPTY, supplier.kafkaOperator, supplier.connectOperator, supplier.mirrorMaker2Operator, supplier.strimziPodSetOperator, supplier.podOperations, supplier.metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));
         podSetController.start();
@@ -265,9 +260,7 @@ public class KubernetesRestartEventsMockTest {
                 kafka,
                 List.of(kafkaNodePool),
                 Map.of(),
-                Map.of(POD_SET_NAME, List.of(KafkaResources.kafkaPodName(CLUSTER_NAME, NODE_POOL_NAME, 0))),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                KafkaMetadataConfigurationState.KRAFT,
                 VERSIONS,
                 supplier.sharedEnvironmentProvider);
         KafkaReconciler lowerVolumes = new KafkaReconciler(reconciliation,
@@ -279,8 +272,7 @@ public class KubernetesRestartEventsMockTest {
                 clusterOperatorConfig,
                 supplier,
                 PFA,
-                vertx,
-                new KafkaMetadataStateManager(reconciliation, kafka)
+                vertx
         );
 
         lowerVolumes.reconcile(new KafkaStatus(), Clock.systemUTC()).onComplete(verifyEventPublished(POD_HAS_OLD_REVISION, context));
@@ -311,9 +303,7 @@ public class KubernetesRestartEventsMockTest {
                 kafka,
                 List.of(kafkaNodePool),
                 Map.of(),
-                Map.of(POD_SET_NAME, List.of(KafkaResources.kafkaPodName(CLUSTER_NAME, NODE_POOL_NAME, 0))),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                KafkaMetadataConfigurationState.KRAFT,
                 VERSIONS,
                 supplier.sharedEnvironmentProvider);
         KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
@@ -325,8 +315,7 @@ public class KubernetesRestartEventsMockTest {
                 clusterOperatorConfig,
                 supplier,
                 PFA,
-                vertx,
-                new KafkaMetadataStateManager(reconciliation, kafka));
+                vertx);
 
         reconciler.reconcile(new KafkaStatus(), Clock.systemUTC()).onComplete(verifyEventPublished(CA_CERT_HAS_OLD_GENERATION, context));
     }
@@ -344,9 +333,7 @@ public class KubernetesRestartEventsMockTest {
                 kafka,
                 List.of(kafkaNodePool),
                 Map.of(),
-                Map.of(POD_SET_NAME, List.of(KafkaResources.kafkaPodName(CLUSTER_NAME, NODE_POOL_NAME, 0))),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                KafkaMetadataConfigurationState.KRAFT,
                 VERSIONS,
                 supplier.sharedEnvironmentProvider);
         KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
@@ -358,8 +345,7 @@ public class KubernetesRestartEventsMockTest {
                 clusterOperatorConfig,
                 supplier,
                 PFA,
-                vertx,
-                new KafkaMetadataStateManager(reconciliation, kafka));
+                vertx);
 
         reconciler.reconcile(new KafkaStatus(), Clock.systemUTC()).onComplete(verifyEventPublished(CA_CERT_REMOVED, context));
     }
@@ -377,9 +363,7 @@ public class KubernetesRestartEventsMockTest {
                 kafka,
                 List.of(kafkaNodePool),
                 Map.of(),
-                Map.of(POD_SET_NAME, List.of(KafkaResources.kafkaPodName(CLUSTER_NAME, NODE_POOL_NAME, 0))),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                KafkaMetadataConfigurationState.KRAFT,
                 VERSIONS,
                 supplier.sharedEnvironmentProvider);
         KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
@@ -391,8 +375,7 @@ public class KubernetesRestartEventsMockTest {
                 clusterOperatorConfig,
                 supplier,
                 PFA,
-                vertx,
-                new KafkaMetadataStateManager(reconciliation, kafka));
+                vertx);
 
         reconciler.reconcile(new KafkaStatus(), Clock.systemUTC()).onComplete(verifyEventPublished(CA_CERT_RENEWED, context));
     }
@@ -416,9 +399,7 @@ public class KubernetesRestartEventsMockTest {
                 kafka,
                 List.of(kafkaNodePool),
                 Map.of(),
-                Map.of(POD_SET_NAME, List.of(KafkaResources.kafkaPodName(CLUSTER_NAME, NODE_POOL_NAME, 0))),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                KafkaMetadataConfigurationState.KRAFT,
                 VERSIONS,
                 supplier.sharedEnvironmentProvider);
         KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
@@ -430,8 +411,7 @@ public class KubernetesRestartEventsMockTest {
                 clusterOperatorConfig,
                 supplierWithModifiedAdmin,
                 PFA,
-                vertx,
-                new KafkaMetadataStateManager(reconciliation, kafka));
+                vertx);
 
         reconciler.reconcile(new KafkaStatus(), Clock.systemUTC()).onComplete(verifyEventPublished(CONFIG_CHANGE_REQUIRES_RESTART, context));
     }
@@ -484,9 +464,7 @@ public class KubernetesRestartEventsMockTest {
                     kafka,
                     List.of(kafkaNodePool),
                     Map.of(),
-                    Map.of(POD_SET_NAME, List.of(KafkaResources.kafkaPodName(CLUSTER_NAME, NODE_POOL_NAME, 0))),
                     KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                    KafkaMetadataConfigurationState.KRAFT,
                     VERSIONS,
                     supplier.sharedEnvironmentProvider);
             KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
@@ -498,8 +476,7 @@ public class KubernetesRestartEventsMockTest {
                     clusterOperatorConfig,
                     supplierWithModifiedAdmin,
                     PFA,
-                    vertx,
-                    new KafkaMetadataStateManager(reconciliation, kafka));
+                    vertx);
 
             reconciler.reconcile(new KafkaStatus(), Clock.systemUTC()).onComplete(verifyEventPublished(POD_UNRESPONSIVE, context));
         }
@@ -548,9 +525,7 @@ public class KubernetesRestartEventsMockTest {
                 kafka,
                 List.of(kafkaNodePool),
                 Map.of(),
-                Map.of(POD_SET_NAME, List.of(KafkaResources.kafkaPodName(CLUSTER_NAME, NODE_POOL_NAME, 0))),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                KafkaMetadataConfigurationState.KRAFT,
                 VERSIONS,
                 supplier.sharedEnvironmentProvider);
         KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
@@ -562,8 +537,7 @@ public class KubernetesRestartEventsMockTest {
                 clusterOperatorConfig,
                 supplier,
                 PFA,
-                vertx,
-                new KafkaMetadataStateManager(reconciliation, kafka));
+                vertx);
         reconciler.reconcile(new KafkaStatus(), Clock.systemUTC()).onComplete(verifyEventPublished(KAFKA_CERTIFICATES_CHANGED, context));
     }
 
@@ -591,9 +565,7 @@ public class KubernetesRestartEventsMockTest {
                 kafka,
                 List.of(kafkaNodePool),
                 Map.of(),
-                Map.of(POD_SET_NAME, List.of(KafkaResources.kafkaPodName(CLUSTER_NAME, NODE_POOL_NAME, 0))),
                 KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
-                KafkaMetadataConfigurationState.KRAFT,
                 VERSIONS,
                 supplier.sharedEnvironmentProvider);
         return new KafkaReconciler(reconciliation,
@@ -605,8 +577,7 @@ public class KubernetesRestartEventsMockTest {
                 clusterOperatorConfig,
                 supplier,
                 PFA,
-                vertx,
-                new KafkaMetadataStateManager(reconciliation, kafka));
+                vertx);
     }
 
     private ResourceOperatorSupplier supplierWithAdmin(Vertx vertx, Supplier<Admin> adminClientSupplier) {
@@ -634,14 +605,11 @@ public class KubernetesRestartEventsMockTest {
 
         return new ResourceOperatorSupplier(vertx,
                 client,
-                null,
                 adminClientProvider,
-                null,
                 ResourceUtils.kafkaAgentClientProvider(),
                 ResourceUtils.metricsProvider(),
-                null,
-                PFA,
-                60_000);
+                PFA
+        );
     }
 
     private Admin withChangedBrokerConf(Admin preMockedAdminClient) {

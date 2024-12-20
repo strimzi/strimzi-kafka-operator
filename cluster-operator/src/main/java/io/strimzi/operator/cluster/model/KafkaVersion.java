@@ -87,7 +87,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
         /**
          * Constructor
          *
-         * @param kafkaImages               Map with container images for various Kafka versions to be used for Kafka brokers and ZooKeeper
+         * @param kafkaImages               Map with container images for various Kafka versions to be used for Kafka brokers
          * @param kafkaConnectImages        Map with container images for various Kafka versions to be used for Kafka Connect
          * @param kafkaMirrorMaker2Images   Map with container images for various Kafka versions to be used for Kafka Mirror Maker 2
          */
@@ -373,7 +373,6 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
     private final String protocolVersion;
     private final String messageVersion;
     private final String metadataVersion;
-    private final String zookeeperVersion;
     private final boolean isDefault;
     private final boolean isSupported;
     private final String unsupportedFeatures;
@@ -385,7 +384,6 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
      * @param protocolVersion       Inter-broker protocol version
      * @param messageVersion        Log message format version
      * @param metadataVersion       KRaft Metadata version
-     * @param zookeeperVersion      ZooKeeper version
      * @param isDefault             Flag indicating if this Kafka version is default
      * @param isSupported           Flag indicating if this Kafka version is supported by this operator version
      * @param unsupportedFeatures   Unsupported features
@@ -395,7 +393,6 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
                         @JsonProperty("protocol") String protocolVersion,
                         @JsonProperty("format") String messageVersion,
                         @JsonProperty("metadata") String metadataVersion,
-                        @JsonProperty("zookeeper") String zookeeperVersion,
                         @JsonProperty("default") boolean isDefault,
                         @JsonProperty("supported") boolean isSupported,
                         @JsonProperty("unsupported-features") String unsupportedFeatures) {
@@ -403,7 +400,6 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
         this.version = version;
         this.protocolVersion = protocolVersion;
         this.messageVersion = messageVersion;
-        this.zookeeperVersion = zookeeperVersion;
         this.metadataVersion = metadataVersion;
         this.isDefault = isDefault;
         this.isSupported = isSupported;
@@ -416,7 +412,6 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
                 "version='" + version + '\'' +
                 ", protocolVersion='" + protocolVersion + '\'' +
                 ", messageVersion='" + messageVersion + '\'' +
-                ", zookeeperVersion='" + zookeeperVersion + '\'' +
                 ", metadataVersion='" + metadataVersion + '\'' +
                 ", isDefault=" + isDefault +
                 ", isSupported=" + isSupported +
@@ -450,13 +445,6 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
      */
     public String metadataVersion() {
         return metadataVersion;
-    }
-
-    /**
-     * @return  ZooKeeper version
-     */
-    public String zookeeperVersion() {
-        return zookeeperVersion;
     }
 
     /**
