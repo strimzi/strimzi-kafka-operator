@@ -85,7 +85,7 @@ public class MetricsUtils {
     }
 
     public static void assertCoMetricResourceStateNotExists(String namespaceName, String kind, String name, BaseMetricsCollector collector) {
-        String metric = "strimzi_resource_state\\{kind=\"" + kind + "\",name=\"" + name + "\",resource_namespace=\"" + namespaceName + "\",}";
+        String metric = "strimzi_resource_state\\{kind=\"" + kind + "\",name=\"" + name + "\",resource_namespace=\"" + namespaceName + "\"}";
         List<Double> values = createPatternAndCollectWithoutWait(collector, metric);
         assertThat(values.isEmpty(), is(true));
     }
@@ -95,7 +95,7 @@ public class MetricsUtils {
     }
 
     public static void assertMetricResourceState(String namespaceName, String kind, String name, BaseMetricsCollector collector, int value, String reason) {
-        String metric = "strimzi_resource_state\\{kind=\"" + kind + "\",name=\"" + name + "\",reason=\"" + reason + ".*\",resource_namespace=\"" + namespaceName + "\",}";
+        String metric = "strimzi_resource_state\\{kind=\"" + kind + "\",name=\"" + name + "\",reason=\"" + reason + ".*\",resource_namespace=\"" + namespaceName + "\"}";
         assertMetricValue(collector, metric, value);
     }
 
