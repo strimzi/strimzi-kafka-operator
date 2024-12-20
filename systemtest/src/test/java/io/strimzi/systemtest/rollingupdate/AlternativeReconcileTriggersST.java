@@ -42,7 +42,6 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
-import io.vertx.core.cli.annotations.Description;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -179,8 +178,11 @@ class AlternativeReconcileTriggersST extends AbstractST {
     }
 
     // This test is affected by https://github.com/strimzi/strimzi-kafka-operator/issues/3913 so it needs longer operation timeout set in CO
-    @Description("Test for checking that overriding of bootstrap server, triggers the rolling update and verifying that" +
-            " new bootstrap DNS is appended inside certificate in subject alternative names property.")
+
+    /**
+     * Test for checking that overriding of bootstrap server, triggers the rolling update and verifying that,
+     * new bootstrap DNS is appended inside certificate in subject alternative names property.
+     */
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     void testTriggerRollingUpdateAfterOverrideBootstrap() throws CertificateException {

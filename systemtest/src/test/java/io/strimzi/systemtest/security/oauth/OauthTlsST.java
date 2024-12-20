@@ -46,7 +46,6 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.WaitException;
 import io.strimzi.test.k8s.KubeClusterResource;
-import io.vertx.core.cli.annotations.Description;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -75,9 +74,10 @@ public class OauthTlsST extends OauthAbstractST {
 
     private final String oauthClusterName = "oauth-cluster-tls-name";
 
-    @Description(
-            "As an OAuth producer, I am able to produce messages to the Kafka Broker\n" +
-            "As an OAuth consumer, I am able to consumer messages from the Kafka Broker using encrypted communication")
+    /**
+     * As an OAuth producer, I am able to produce messages to the Kafka Brokers,
+     * As an OAuth consumer, I am able to consumer messages from the Kafka Broker using encrypted communication
+     */
     @ParallelTest
     void testProducerConsumer() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -105,7 +105,9 @@ public class OauthTlsST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, consumerName, testStorage.getMessageCount());
     }
 
-    @Description("As an OAuth KafkaConnect, I am able to sink messages from Kafka Broker topic using encrypted communication.")
+    /**
+     * As an OAuth KafkaConnect, I am able to sink messages from Kafka Broker topic using encrypted communication.
+     */
     @ParallelTest
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
@@ -180,7 +182,9 @@ public class OauthTlsST extends OauthAbstractST {
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(Environment.TEST_SUITE_NAMESPACE, kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
     }
 
-    @Description("As a OAuth bridge, i am able to send messages to bridge endpoint using encrypted communication")
+    /**
+     * As a OAuth bridge, i am able to send messages to bridge endpoint using encrypted communication
+     */
     @ParallelTest
     @Tag(BRIDGE)
     @Tag(ACCEPTANCE)
@@ -251,7 +255,9 @@ public class OauthTlsST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, producerName, testStorage.getMessageCount());
     }
 
-    @Description("As a OAuth MirrorMaker 2, I am able to replicate Topic data using using encrypted communication")
+    /**
+     * As a OAuth MirrorMaker 2, I am able to replicate Topic data using encrypted communication
+     */
     @IsolatedTest("Using more tha one Kafka cluster in one Namespace")
     @Tag(MIRROR_MAKER2)
     @Tag(NODEPORT_SUPPORTED)
