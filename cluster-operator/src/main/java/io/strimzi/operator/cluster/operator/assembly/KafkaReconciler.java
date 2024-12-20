@@ -1143,7 +1143,6 @@ public class KafkaReconciler {
 
     // Updates the KRaft migration state into the Kafka Status instance
     /* test */ Future<Void> updateKafkaMetadataState(KafkaStatus kafkaStatus) {
-        // TODO: Do we need this as a separate method?
         kafkaStatus.setKafkaMetadataState(KafkaMetadataState.KRaft);
         return Future.succeededFuture();
     }

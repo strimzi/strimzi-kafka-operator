@@ -7,7 +7,7 @@
 
 ### Major changes, deprecations and removals
 
-* **Support for ZooKeeper-based clusters and for migration from ZooKeeper-based clusters to KRaft has been remove.**
+* **Support for ZooKeeper-based clusters and for migration from ZooKeeper-based clusters to KRaft has been removed.**
   **Please make sure all your clusters are using KRaft before upgrading to Strimzi 0.46.0 or newer!**
 * Support for MirrorMaker 1 has been removed.
   Please make sure to migrate to MirrorMaker 2 before upgrading to Strimzi 0.46 or newer.
