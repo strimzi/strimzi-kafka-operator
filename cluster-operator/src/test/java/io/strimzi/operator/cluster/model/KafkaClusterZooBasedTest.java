@@ -466,8 +466,8 @@ public class KafkaClusterZooBasedTest {
         assertThat(clusterIp.getSpec().getIpFamilyPolicy(), is(nullValue()));
         assertThat(clusterIp.getSpec().getIpFamilies(), is(nullValue()));
         assertThat(clusterIp.getSpec().getPublishNotReadyAddresses(), is(nullValue()));
-        
-        assertThat(clusterIp.getMetadata().getAnnotations(), hasKey("strimzi.io/discovery"));        
+
+        assertThat(clusterIp.getMetadata().getAnnotations(), hasKey("strimzi.io/discovery"));
         JsonArray annotation = new JsonArray(clusterIp.getMetadata().getAnnotations().get("strimzi.io/discovery"));
         JsonObject listener1 = annotation.getJsonObject(0);
         assertThat(listener1.getString("port"), is("9092"));
@@ -1301,7 +1301,7 @@ public class KafkaClusterZooBasedTest {
 
         podSets.stream().forEach(podSet -> PodSetUtils.podSetToPods(podSet).stream().forEach(pod -> {
             Container cont = pod.getSpec().getContainers().stream().findAny().orElseThrow();
-            
+
             // Test Env Vars
             assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
             assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
@@ -1812,7 +1812,7 @@ public class KafkaClusterZooBasedTest {
             List<ContainerPort> ports = pod.getSpec().getContainers().stream().findAny().orElseThrow().getPorts();
             assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
         }));
-        
+
         // Check external bootstrap service
         Service ext = kc.generateExternalBootstrapServices().get(0);
         assertThat(ext.getMetadata().getName(), is(KafkaResources.externalBootstrapServiceName(CLUSTER)));
@@ -2217,7 +2217,7 @@ public class KafkaClusterZooBasedTest {
             List<ContainerPort> ports = pod.getSpec().getContainers().stream().findAny().orElseThrow().getPorts();
             assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
         }));
-        
+
         // Check external bootstrap service
         Service ext = kc.generateExternalBootstrapServices().get(0);
         assertThat(ext.getMetadata().getName(), is(KafkaResources.externalBootstrapServiceName(CLUSTER)));
@@ -2312,7 +2312,7 @@ public class KafkaClusterZooBasedTest {
             List<ContainerPort> ports = pod.getSpec().getContainers().stream().findAny().orElseThrow().getPorts();
             assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
         }));
-        
+
         // Check external bootstrap service
         Service ext = kc.generateExternalBootstrapServices().get(0);
         assertThat(ext.getMetadata().getName(), is(KafkaResources.externalBootstrapServiceName(CLUSTER)));
@@ -3157,7 +3157,7 @@ public class KafkaClusterZooBasedTest {
             List<ContainerPort> ports = pod.getSpec().getContainers().stream().findAny().orElseThrow().getPorts();
             assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
         }));
-        
+
         // Check external bootstrap service
         Service ext = kc.generateExternalBootstrapServices().get(0);
         assertThat(ext.getMetadata().getName(), is(KafkaResources.externalBootstrapServiceName(CLUSTER)));
@@ -3534,7 +3534,7 @@ public class KafkaClusterZooBasedTest {
                 .endSpec()
                 .build();
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, SHARED_ENV_PROVIDER);
-        KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);       
+        KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, KafkaMetadataConfigurationState.KRAFT, null, SHARED_ENV_PROVIDER);
     }
 
     @ParallelTest
@@ -3739,9 +3739,8 @@ public class KafkaClusterZooBasedTest {
 
     @ParallelTest
     public void testMetricsParsingNoMetrics() {
-        assertThat(KC.metrics().isEnabled(), is(false));
-        assertThat(KC.metrics().getConfigMapName(), is(nullValue()));
-        assertThat(KC.metrics().getConfigMapKey(), is(nullValue()));
+        assertThat(KC.metrics(), is(nullValue()));
+        assertThat(KC.strimziReporterMetrics(), is(nullValue()));
     }
 
     @ParallelTest

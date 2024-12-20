@@ -30,6 +30,7 @@ import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorageCustom;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.kafka.oauth.server.plain.ServerPlainConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
+import io.strimzi.operator.cluster.model.metrics.StrimziReporterMetricsModel;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 
@@ -59,7 +60,6 @@ public class KafkaBrokerConfigurationBuilder {
     // Names of environment variables expanded through config providers inside the Kafka node
     private final static String PLACEHOLDER_CERT_STORE_PASSWORD = "${strimzienv:CERTS_STORE_PASSWORD}";
     private final static String PLACEHOLDER_OAUTH_CLIENT_SECRET = "${strimzienv:STRIMZI_%s_OAUTH_CLIENT_SECRET}";
-
     private final StringWriter stringWriter = new StringWriter();
     private final PrintWriter writer = new PrintWriter(stringWriter);
     private final Reconciliation reconciliation;
@@ -139,6 +139,28 @@ public class KafkaBrokerConfigurationBuilder {
                 writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=" + ccMetricsReporter.minInSyncReplicas());
             }
 
+            writer.println();
+        }
+
+        return this;
+    }
+    /**
+     * Configures the Strimzi Metrics Reporter. It is set only if user enabled Strimzi Metrics Reporter.
+     *
+     * @param model     Cruise Control Metrics Reporter configuration
+     *
+     * @return Returns the builder instance
+     */
+    public KafkaBrokerConfigurationBuilder withStrimziMetricsReporter(StrimziReporterMetricsModel model)   {
+        if (model != null && model.isEnabled()) {
+            printSectionHeader("Strimzi Metrics Reporter configuration");
+            writer.println("kafka.metrics.reporters=io.strimzi.kafka.metrics.YammerPrometheusMetricsReporter");
+            // ** This is not final.... return to this because we can have other user added plugins, also CC etc. Setting for now so we can manually test!!
+            // Look at withUserConfiguration
+            writer.println("metric.reporters=io.strimzi.kafka.metrics.KafkaPrometheusMetricsReporter");
+            writer.println("prometheus.metrics.reporter.listener.enable=true");
+            writer.println("prometheus.metrics.reporter.listener=http://0.0.0.0:" + StrimziReporterMetricsModel.METRICS_PORT);
+            model.getAllowList().ifPresent(allowList -> writer.println("prometheus.metrics.reporter.allowlist=" + allowList));
             writer.println();
         }
 
