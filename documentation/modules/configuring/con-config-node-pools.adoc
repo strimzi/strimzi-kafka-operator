@@ -7,9 +7,11 @@
 
 [role="_abstract"]
 Update the `spec` properties of the `KafkaNodePool` custom resource to configure a node pool deployment.
+A node pool is a distinct group of Kafka nodes within a Kafka cluster.
+The `strimzi.io/cluster` metadata label identifies the name of the Kafka custom resource the pool belongs to.
 
-A node pool refers to a distinct group of Kafka nodes within a Kafka cluster.
-Each pool has its own unique configuration, which includes mandatory settings for the number of replicas, roles, and storage allocation.
+Each pool has its own unique configuration, including mandatory settings for the number of replicas, roles, and storage allocation.
+The `.spec.roles` property defines whether the nodes in the pool act as controllers, brokers, or both.
 
 Optionally, you can also specify values for the following properties:
 

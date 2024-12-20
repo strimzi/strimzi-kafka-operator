@@ -62,20 +62,13 @@ Before upgrading from Strimzi 0.38.0 or older to 0.46.0 or newer, make sure the 
 [id='ref-operator-kafka-node-pools-feature-gate-{context}']
 === KafkaNodePools feature gate
 
-The `KafkaNodePools` feature gate introduced a new `KafkaNodePool` custom resource that enables the configuration of different _pools_ of Apache Kafka nodes.
+The `KafkaNodePools` feature gate introduced the `KafkaNodePool` custom resource, enabling the configuration of distinct _pools_ of Apache Kafka nodes within a Kafka cluster. 
+Each pool can have its own unique configuration, as described in xref:config-node-pools-str[].
 
-A node pool refers to a distinct group of Kafka nodes within a Kafka cluster.
-Each pool has its own unique configuration, which includes mandatory settings such as the number of replicas, storage configuration, and a list of assigned roles.
-You can assign the _controller_ role, _broker_ role, or both roles to all nodes in the pool using the `.spec.roles` property.
-When used with a ZooKeeper-based Apache Kafka cluster, it must be set to the `broker` role.
-When used with a KRaft-based Apache Kafka cluster, it can be set to `broker`, `controller`, or both.
+To use node pools, ensure the following configuration is present:
 
-In addition, a node pool can have its own configuration of resource requests and limits, Java JVM options, and resource templates.
-Configuration options not set in the `KafkaNodePool` resource are inherited from the `Kafka` custom resource.
-
-The `KafkaNodePool` resources use a `strimzi.io/cluster` label to indicate to which Kafka cluster they belong.
-The label must be set to the name of the `Kafka` custom resource.
-The `Kafka` resource configuration must also include the `strimzi.io/node-pools: enabled` annotation, which is required when using node pools.
+* The `strimzi.io/node-pools: enabled` annotation in the `Kafka` resource.
+* The `strimzi.io/cluster: <cluster_name>` label in each `KafkaNodePool` resource to associate it with the `Kafka` resource.
 
 Examples of the `KafkaNodePool` resources can be found in the xref:config-examples-{context}[example configuration files] provided by Strimzi.
 
