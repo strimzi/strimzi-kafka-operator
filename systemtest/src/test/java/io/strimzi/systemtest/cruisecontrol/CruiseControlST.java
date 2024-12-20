@@ -301,6 +301,7 @@ public class CruiseControlST extends AbstractST {
             @Label(value = TestDocsLabels.CRUISE_CONTROL),
         }
     )
+    @SuppressWarnings("deprecation") // Replicas in Kafka CR are deprecated, but some API methods are still called here
     void testCruiseControlWithSingleNodeKafka() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -527,6 +528,7 @@ public class CruiseControlST extends AbstractST {
             @Label(value = TestDocsLabels.CRUISE_CONTROL),
         }
     )
+    @SuppressWarnings("deprecation") // Replicas in Kafka CR are deprecated, but some API methods are still called here
     void testCruiseControlDuringBrokerScaleUpAndDown() {
         TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
         final int initialReplicas = 3;
@@ -681,6 +683,7 @@ public class CruiseControlST extends AbstractST {
             @Label(value = TestDocsLabels.CRUISE_CONTROL),
         }
     )
+    @SuppressWarnings("deprecation") // Replicas in Kafka CR are deprecated, but some API methods are still called here
     void testAutoKafkaRebalanceScaleUpScaleDown() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String scaleUpKafkaRebalanceTemplateName = testStorage.getClusterName() + "-scale-up";

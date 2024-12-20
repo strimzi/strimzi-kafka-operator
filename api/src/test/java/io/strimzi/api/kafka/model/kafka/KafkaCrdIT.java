@@ -29,6 +29,16 @@ public class KafkaCrdIT extends AbstractCrdIT {
     public static final String NAMESPACE = "kafkacrd-it";
 
     @Test
+    void testKafka() {
+        createDeleteCustomResource("Kafka.yaml");
+    }
+
+    @Test
+    void testKafkaWithZooKeeper() {
+        createDeleteCustomResource("Kafka-with-zookeeper.yaml");
+    }
+
+    @Test
     void testKafkaIsNotScaling() {
         assertThrows(KubernetesClientException.class, () -> createScaleDelete(Kafka.class, "Kafka.yaml"));
     }
@@ -79,15 +89,6 @@ public class KafkaCrdIT extends AbstractCrdIT {
     }
 
     @Test
-    public void testKafkaWithJbodStorageOnZookeeper() {
-        Throwable exception = assertThrows(
-                KubernetesClientException.class,
-                () -> createDeleteCustomResource("Kafka-with-jbod-storage-on-zookeeper.yaml"));
-
-        assertThat(exception.getMessage(), containsStringIgnoringCase("spec.zookeeper.storage.type: Unsupported value: \"jbod\": supported values: \"ephemeral\", \"persistent-claim\""));
-    }
-
-    @Test
     public void testKafkaWithInvalidStorage() {
         Throwable exception = assertThrows(
                 KubernetesClientException.class,
@@ -103,15 +104,6 @@ public class KafkaCrdIT extends AbstractCrdIT {
                 () -> createDeleteCustomResource("Kafka-with-invalid-jmx-authentication.yaml"));
 
         assertThat(exception.getMessage(), containsStringIgnoringCase("spec.kafka.jmxOptions.authentication.type: Unsupported value: \"not-right\": supported values: \"password\""));
-    }
-
-    @Test
-    public void testKafkaWithInvalidZookeeperJmxAuthentication() {
-        Throwable exception = assertThrows(
-                KubernetesClientException.class,
-                () -> createDeleteCustomResource("Kafka-with-invalid-zookeeper-jmx-authentication.yaml"));
-
-        assertThat(exception.getMessage(), containsStringIgnoringCase("spec.zookeeper.jmxOptions.authentication.type: Unsupported value: \"not-right\": supported values: \"password\""));
     }
 
     @Test

@@ -36,9 +36,6 @@ import java.util.Map;
 @Deprecated
 @DeprecatedType(replacedWithType = void.class)
 public class JmxTransSpec implements UnknownPropertyPreserving {
-    public static final int DEFAULT_HEALTHCHECK_DELAY = 15;
-    public static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
-
     protected String image;
     private String logLevel;
     private List<JmxTransOutputDefinitionTemplate> outputDefinitions = null;

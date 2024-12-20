@@ -209,8 +209,6 @@ public class KafkaClusterCreator {
         }
     }
 
-
-
     /**
      * Reverts the broker scale down if it is not allowed because the brokers are not empty
      *
@@ -220,6 +218,7 @@ public class KafkaClusterCreator {
      *
      * @return  Future with KafkaAndNodePools record containing the fixed Kafka and KafkaNodePool CRs
      */
+    @SuppressWarnings("deprecation") // Replicas in Kafka CR are deprecated and its use here will be removed in the future in a separate PR
     private Future<KafkaAndNodePools> revertScaleDown(KafkaCluster kafka, Kafka kafkaCr, List<KafkaNodePool> nodePoolCrs)   {
         if (scaleDownCheckFailed) {
             if (nodePoolCrs == null || nodePoolCrs.isEmpty()) {

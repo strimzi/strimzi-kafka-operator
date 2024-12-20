@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.HasConfigurableLogging;
 import io.strimzi.api.kafka.model.common.HasConfigurableMetrics;
@@ -30,6 +31,7 @@ import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.MinimumItems;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -144,8 +146,10 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
         this.rack = rack;
     }
 
-    @Description("Storage configuration (disk). Cannot be updated. " +
-            "This property is required when node pools are not used.")
+    @Deprecated
+    @DeprecatedProperty(description = "For KRaft-based Apache Kafka clusters, storage is configured in the KafkaNodePool resources and this option is ignored.")
+    @PresentInVersions("v1alpha1-v1beta2")
+    @Description("For KRaft-based Apache Kafka clusters, storage is configured in the KafkaNodePool resources and this option is ignored.")
     public Storage getStorage() {
         return storage;
     }
@@ -166,13 +170,16 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
         this.logging = logging;
     }
 
-    @Description("The number of pods in the cluster. " +
-            "This property is required when node pools are not used.")
+    @Deprecated
+    @DeprecatedProperty(description = "For KRaft-based Apache Kafka clusters, number of replicas is configured in the KafkaNodePool resources and this option is ignored.")
+    @PresentInVersions("v1alpha1-v1beta2")
+    @Description("For KRaft-based Apache Kafka clusters, number of replicas is configured in the KafkaNodePool resources and this option is ignored.")
     @Minimum(1)
     public Integer getReplicas() {
         return replicas;
     }
 
+    @Deprecated
     public void setReplicas(Integer replicas) {
         this.replicas = replicas;
     }

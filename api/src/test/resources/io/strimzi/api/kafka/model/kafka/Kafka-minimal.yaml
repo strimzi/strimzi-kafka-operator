@@ -1,13 +1,9 @@
 apiVersion: kafka.strimzi.io/v1beta2
 kind: Kafka
 metadata:
-  name: strimzi-ephemeral
+  name: strimzi-minimal
 spec:
   kafka:
-    replicas: 3
-    storage:
-      type: persistent-claim
-      size: 500Gi
     listeners:
       - name: plain
         type: internal
@@ -17,7 +13,3 @@ spec:
         type: internal
         tls: true
         port: 9093
-  zookeeper:
-    replicas: 3
-    storage:
-      type: ephemeral
