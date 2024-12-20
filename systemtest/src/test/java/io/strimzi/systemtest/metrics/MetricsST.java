@@ -286,7 +286,7 @@ public class MetricsST extends AbstractST {
 
         kubeClient().listPods(namespaceFirst, brokerPodsSelector).forEach(pod -> {
             String address = pod.getMetadata().getName() + "." + kafkaClusterFirstName + "-kafka-brokers." + namespaceFirst + ".svc";
-            Pattern pattern = Pattern.compile("kafka_broker_info\\{address=\"" + address + ".*\",.*} ([\\d])");
+            Pattern pattern = Pattern.compile("kafka_broker_info\\{address=\"" + address + ".*\".*} ([\\d])");
             List<Double> values = kafkaExporterCollector.waitForSpecificMetricAndCollect(pattern);
             assertThat(String.format("metric %s is not null", pattern), values, notNullValue());
         });
