@@ -12,6 +12,9 @@ and stability of Kafka deployments in production environments.
 
 <!-- generated part -->
 **Tests:**
+- [testConnectLogSetting](../io.strimzi.systemtest.log.LogSettingST.md)
+- [testKafkaLogSetting](../io.strimzi.systemtest.log.LogSettingST.md)
+- [testBridgeLogSetting](../io.strimzi.systemtest.log.LogSettingST.md)
 - [testDynamicallySetKafkaLoggingLevels](../io.strimzi.systemtest.log.LoggingChangeST.md)
 - [testDynamicallySetUnknownKafkaLogger](../io.strimzi.systemtest.log.LoggingChangeST.md)
 - [testDynamicallySetMM2LoggingLevels](../io.strimzi.systemtest.log.LoggingChangeST.md)
@@ -22,7 +25,9 @@ and stability of Kafka deployments in production environments.
 - [testChangingInternalToExternalLoggingTriggerRollingUpdate](../io.strimzi.systemtest.log.LoggingChangeST.md)
 - [testLoggingHierarchy](../io.strimzi.systemtest.log.LoggingChangeST.md)
 - [testNotExistingCMSetsDefaultLogging](../io.strimzi.systemtest.log.LoggingChangeST.md)
+- [testMirrorMaker2LogSetting](../io.strimzi.systemtest.log.LogSettingST.md)
 - [testDynamicallyAndNonDynamicSetConnectLoggingLevels](../io.strimzi.systemtest.log.LoggingChangeST.md)
 - [testDynamicallySetClusterOperatorLoggingLevels](../io.strimzi.systemtest.log.LoggingChangeST.md)
+- [testCruiseControlLogChange](../io.strimzi.systemtest.log.LogSettingST.md)
 - [testDynamicallySetUnknownKafkaLoggerValue](../io.strimzi.systemtest.log.LoggingChangeST.md)
 - [testDynamicallySetEOloggingLevels](../io.strimzi.systemtest.log.LoggingChangeST.md)
