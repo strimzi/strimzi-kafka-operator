@@ -6,7 +6,7 @@ package io.strimzi.operator.cluster;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.leaderelection.LeaderElectionManager;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderFactory;
@@ -177,21 +177,20 @@ public class Main {
                     kafkaBridgeAssemblyOperator,
                     kafkaRebalanceAssemblyOperator,
                     resourceOperatorSupplier);
-            vertx.deployVerticle(operator,
-                res -> {
-                    if (res.succeeded()) {
-                        shutdownHook.register(() -> ShutdownHook.undeployVertxVerticle(vertx, res.result(), SHUTDOWN_TIMEOUT));
+            vertx.deployVerticle(operator).onComplete(res -> {
+                if (res.succeeded()) {
+                    shutdownHook.register(() -> ShutdownHook.undeployVertxVerticle(vertx, res.result(), SHUTDOWN_TIMEOUT));
 
-                        if (config.getCustomResourceSelector() != null) {
-                            LOGGER.info("Cluster Operator verticle started in namespace {} with label selector {}", namespace, config.getCustomResourceSelector());
-                        } else {
-                            LOGGER.info("Cluster Operator verticle started in namespace {} without label selector", namespace);
-                        }
+                    if (config.getCustomResourceSelector() != null) {
+                        LOGGER.info("Cluster Operator verticle started in namespace {} with label selector {}", namespace, config.getCustomResourceSelector());
                     } else {
-                        LOGGER.error("Cluster Operator verticle in namespace {} failed to start", namespace, res.cause());
+                        LOGGER.info("Cluster Operator verticle started in namespace {} without label selector", namespace);
                     }
-                    prom.handle(res);
-                });
+                } else {
+                    LOGGER.error("Cluster Operator verticle in namespace {} failed to start", namespace, res.cause());
+                }
+                prom.handle(res);
+            });
         }
         return Future.join(futures);
     }
@@ -270,7 +269,7 @@ public class Main {
                                 .end(metrics.scrape());
                     }
                 })
-                .listen(HEALTH_SERVER_PORT, ar -> {
+                .listen(HEALTH_SERVER_PORT).onComplete(ar -> {
                     if (ar.succeeded()) {
                         LOGGER.info("Health and metrics server is ready on port {})", HEALTH_SERVER_PORT);
                     } else {

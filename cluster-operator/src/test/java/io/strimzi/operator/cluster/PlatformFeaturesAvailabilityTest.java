@@ -347,7 +347,6 @@ public class PlatformFeaturesAvailabilityTest {
         server = httpServer.listen(0).toCompletionStage().toCompletableFuture().get();
     }
 
-
     @AfterEach()
     void teardown() throws ExecutionException, InterruptedException {
         if (server == null) {
@@ -355,7 +354,7 @@ public class PlatformFeaturesAvailabilityTest {
         }
 
         Promise<Void> serverStopped = Promise.promise();
-        server.close(x -> serverStopped.complete());
+        server.close().onComplete(x -> serverStopped.complete());
         serverStopped.future().toCompletionStage().toCompletableFuture().get();
     }
 }
