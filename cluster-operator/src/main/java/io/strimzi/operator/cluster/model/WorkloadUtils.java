@@ -279,7 +279,7 @@ public class WorkloadUtils {
                     .withPriorityClassName(template != null ? template.getPriorityClassName() : null)
                     .withSchedulerName(template != null && template.getSchedulerName() != null ? template.getSchedulerName() : "default-scheduler")
                     .withHostAliases(template != null ? template.getHostAliases() : null)
-                    .withDnsPolicy(template != null ? template.getDnsPolicy() != null ? template.getDnsPolicy().toValue() : null : null)
+                    .withDnsPolicy(template != null && template.getDnsPolicy() != null ? template.getDnsPolicy().toValue() : null)
                     .withDnsConfig(template != null ? template.getDnsConfig() : null)
                     .withTopologySpreadConstraints(template != null ? template.getTopologySpreadConstraints() : null)
                 .endSpec()
