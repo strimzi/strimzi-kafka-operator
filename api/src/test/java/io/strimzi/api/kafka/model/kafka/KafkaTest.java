@@ -16,7 +16,6 @@ import io.strimzi.test.ReadWriteUtils;
 import org.junit.jupiter.api.Test;
 
 import java.net.URISyntaxException;
-import java.text.ParseException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -53,16 +52,8 @@ public class KafkaTest extends AbstractCrdTest<Kafka> {
                     .withNamespace("my-namespace")
                 .endMetadata()
                 .withNewSpec()
-                    .withNewZookeeper()
-                        .withReplicas(1)
-                        .withNewEphemeralStorage()
-                        .endEphemeralStorage()
-                    .endZookeeper()
                     .withNewKafka()
-                        .withReplicas(1)
                         .withListeners(listeners)
-                        .withNewEphemeralStorage()
-                        .endEphemeralStorage()
                     .endKafka()
                     .withNewEntityOperator()
                         .withNewTopicOperator()
@@ -100,16 +91,8 @@ public class KafkaTest extends AbstractCrdTest<Kafka> {
                     .withNamespace("my-namespace")
                 .endMetadata()
                 .withNewSpec()
-                    .withNewZookeeper()
-                        .withReplicas(1)
-                        .withNewEphemeralStorage()
-                        .endEphemeralStorage()
-                    .endZookeeper()
                     .withNewKafka()
-                        .withReplicas(1)
                         .withListeners(listeners)
-                        .withNewEphemeralStorage()
-                        .endEphemeralStorage()
                     .endKafka()
                     .withNewEntityOperator()
                         .withNewTopicOperator()
@@ -138,7 +121,7 @@ public class KafkaTest extends AbstractCrdTest<Kafka> {
     }
 
     @Test
-    public void testListenerTypeAndNameInStatus() throws ParseException, URISyntaxException {
+    public void testListenerTypeAndNameInStatus() throws URISyntaxException {
 
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
@@ -148,21 +131,13 @@ public class KafkaTest extends AbstractCrdTest<Kafka> {
                 .endMetadata()
                 .withNewSpec()
                     .withNewKafka()
-                        .withReplicas(3)
                         .withListeners(new GenericKafkaListenerBuilder()
                             .withName("plain")
                             .withPort(9092)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(false)
                             .build())
-                        .withNewEphemeralStorage()
-                        .endEphemeralStorage()
                     .endKafka()
-                    .withNewZookeeper()
-                         .withReplicas(3)
-                         .withNewEphemeralStorage()
-                         .endEphemeralStorage()
-                    .endZookeeper()
                 .endSpec()
                 .withNewStatus()
                     .withObservedGeneration(1L)

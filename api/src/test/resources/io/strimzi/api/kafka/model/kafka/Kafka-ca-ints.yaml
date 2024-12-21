@@ -6,18 +6,11 @@ metadata:
   namespace: "my-namespace"
 spec:
   kafka:
-    replicas: 1
     listeners:
     - name: "lst"
       port: 9092
       type: "internal"
       tls: true
-    storage:
-      type: "ephemeral"
-  zookeeper:
-    replicas: 1
-    storage:
-      type: "ephemeral"
   entityOperator:
     topicOperator: {}
     userOperator: {}

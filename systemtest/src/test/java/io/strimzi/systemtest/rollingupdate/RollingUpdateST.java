@@ -109,6 +109,7 @@ class RollingUpdateST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     @KRaftNotSupported("ZooKeeper is not supported by KRaft mode and is used in this test case")
+    @SuppressWarnings("deprecation") // ZooKeeper is deprecated, but some APi methods are still called here
     void testRecoveryDuringZookeeperBasedRollingUpdate() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -304,6 +305,7 @@ class RollingUpdateST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
     @Tag(COMPONENT_SCALING)
+    @SuppressWarnings("deprecation") // Replicas in Kafka CR are deprecated, but some API methods are still called here
     void testKafkaScaleUpScaleDown() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -458,6 +460,7 @@ class RollingUpdateST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(COMPONENT_SCALING)
     @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test case")
+    @SuppressWarnings("deprecation") // ZooKeeper is deprecated, but some APi methods are still called here
     void testZookeeperScaleUpScaleDown() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -609,6 +612,7 @@ class RollingUpdateST extends AbstractST {
      */
     @IsolatedTest("Deleting Pod of Shared Cluster Operator")
     @Tag(ROLLING_UPDATE)
+    @SuppressWarnings("deprecation") // ZooKeeper is deprecated, but some APi methods are still called here
     void testClusterOperatorFinishAllRollingUpdates() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -677,7 +681,7 @@ class RollingUpdateST extends AbstractST {
     @IsolatedTest
     @Tag(ROLLING_UPDATE)
     @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test class")
-    @SuppressWarnings("checkstyle:MethodLength")
+    @SuppressWarnings({"checkstyle:MethodLength", "deprecation"}) // ZooKeeper is deprecated, but some APi methods are still called here
     void testMetricsChange() throws JsonProcessingException {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 

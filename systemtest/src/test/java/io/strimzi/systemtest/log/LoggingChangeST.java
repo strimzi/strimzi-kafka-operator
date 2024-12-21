@@ -107,7 +107,7 @@ class LoggingChangeST extends AbstractST {
     private static final Pattern DEFAULT_LOG4J_PATTERN = Pattern.compile("^(?<date>[\\d-]+) (?<time>[\\d:,]+) (?<status>\\w+) (?<message>.+)");
 
     @ParallelNamespaceTest
-    @SuppressWarnings({"checkstyle:MethodLength"})
+    @SuppressWarnings({"checkstyle:MethodLength", "deprecation"}) // ZooKeeper is deprecated, but some APi methods are still called here
     @TestDoc(
         description = @Desc("Test verifying that the logging in JSON format works correctly across Kafka, Zookeeper, and operators."),
         steps = {
@@ -1779,6 +1779,7 @@ class LoggingChangeST extends AbstractST {
             @Label(value = TestDocsLabels.LOGGING)
         }
     )
+    @SuppressWarnings("deprecation") // ZooKeeper is deprecated, but some APi methods are still called here
     void testChangingInternalToExternalLoggingTriggerRollingUpdate() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 

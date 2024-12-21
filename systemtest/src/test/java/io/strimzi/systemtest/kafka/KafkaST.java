@@ -126,7 +126,7 @@ class KafkaST extends AbstractST {
     private static final String OPENSHIFT_CLUSTER_NAME = "openshift-my-cluster";
 
     @ParallelNamespaceTest
-    @SuppressWarnings({"checkstyle:MethodLength"})
+    @SuppressWarnings({"checkstyle:MethodLength", "deprecation"}) // ZooKeeper is deprecated, but some API methods are still called in this method
     @TestDoc(
         description = @Desc("This test case verifies that Pod's resources (limits and requests), custom JVM configurations, and expected Java configuration are propagated correctly to Pods, containers, and processes."),
         steps = {
@@ -407,6 +407,7 @@ class KafkaST extends AbstractST {
             @Label(value = TestDocsLabels.KAFKA)
         }
     )
+    @SuppressWarnings("deprecation") // Storage is deprecated, but some API methods are still called here
     void testKafkaJBODDeleteClaimsTrueFalse() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int kafkaReplicas = 2;
@@ -548,7 +549,7 @@ class KafkaST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @SuppressWarnings({"checkstyle:JavaNCSS", "checkstyle:NPathComplexity", "checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
+    @SuppressWarnings({"checkstyle:JavaNCSS", "checkstyle:NPathComplexity", "checkstyle:MethodLength", "checkstyle:CyclomaticComplexity", "deprecation"}) // ZooKeeper is deprecated, but some methods from the API are still called here
     @TestDoc(
         description = @Desc("This test case verifies the presence of expected Strimzi specific labels, also labels and annotations specified by user. Some user-specified labels are later modified (new one is added, one is modified) which triggers rolling update after which all changes took place as expected."),
         steps = {
@@ -974,6 +975,7 @@ class KafkaST extends AbstractST {
             @Label(value = TestDocsLabels.KAFKA)
         }
     )
+    @SuppressWarnings("deprecation") // ZooKeeper is deprecated, but some APi methods are still called here
     void testReadOnlyRootFileSystem() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -1112,6 +1114,7 @@ class KafkaST extends AbstractST {
             @Label(value = TestDocsLabels.KAFKA)
         }
     )
+    @SuppressWarnings("deprecation") // Storage is deprecated, but some API methods are still called here
     void testResizeJbodVolumes() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int numberOfKafkaReplicas = 3;

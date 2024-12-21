@@ -2,9 +2,10 @@
 apiVersion: "kafka.strimzi.io/v1beta2"
 kind: "Kafka"
 metadata:
-  name: "strimzi"
+  name: "strimzi-ephemeral"
 spec:
   kafka:
+    replicas: 3
     image: "strimzi/kafka:latest"
     listeners:
     - name: "plain"
@@ -31,6 +32,9 @@ spec:
         type: "tls"
     config:
       min.insync.replicas: 3
+    storage:
+      type: "persistent-claim"
+      size: "500Gi"
     authorization:
       type: "simple"
       superUsers:
@@ -62,6 +66,23 @@ spec:
         configMapKeyRef:
           key: "my-key"
           name: "my-config-map"
+  zookeeper:
+    replicas: 3
+    image: "strimzi/zookeeper:latest"
+    storage:
+      type: "ephemeral"
+    livenessProbe:
+      initialDelaySeconds: 5
+      timeoutSeconds: 1
+    readinessProbe:
+      initialDelaySeconds: 10
+      timeoutSeconds: 4
+    jvmOptions:
+      "-Xmx": "512M"
+      "-Xms": "512M"
+    resources:
+      limits:
+        memory: "512Mi"
   entityOperator:
     topicOperator:
       watchedNamespace: "my-ns"

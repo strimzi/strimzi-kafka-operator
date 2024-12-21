@@ -451,6 +451,7 @@ class SecurityST extends AbstractST {
         }
     }
 
+    @SuppressWarnings("deprecation") // ZooKeeper is deprecated, but some APi methods are still called here
     private void createKafkaCluster(TestStorage testStorage) {
         LOGGER.info("Creating a cluster");
 

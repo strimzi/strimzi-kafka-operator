@@ -4,10 +4,6 @@ metadata:
   name: strimzi-ephemeral
 spec:
   kafka:
-    replicas: 3
-    storage:
-      type: persistent-claim
-      size: 500Gi
     listeners:
       - name: plain
         type: internal
@@ -17,9 +13,5 @@ spec:
         type: internal
         tls: true
         port: 9093
-  zookeeper:
-    replicas: 3
-    storage:
-      type: ephemeral
   maintenanceTimeWindows:
     -

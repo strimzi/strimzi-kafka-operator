@@ -4,11 +4,8 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaSpec;
-import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.operator.common.model.InvalidResourceException;
-import io.strimzi.operator.common.model.StatusUtils;
 import org.apache.kafka.server.common.MetadataVersion;
 
 import java.util.HashSet;
@@ -54,47 +51,6 @@ public class KRaftUtils {
             }
         } catch (IllegalArgumentException e)    {
             throw new InvalidResourceException("Metadata version " + metadataVersion + " is invalid", e);
-        }
-    }
-
-    /**
-     * Generates Kafka CR status warnings about the fields ignored in Kraft mode if they are set - the ZooKeeper section
-     * and Kafka replicas and storage configuration.
-     *
-     * @param kafkaCr       The Kafka custom resource
-     * @param kafkaStatus   The Kafka Status to add the warnings to
-     */
-    public static void kraftWarnings(Kafka kafkaCr, KafkaStatus kafkaStatus)   {
-        if (kafkaCr.getSpec().getZookeeper() != null)   {
-            kafkaStatus.addCondition(StatusUtils.buildWarningCondition("UnusedZooKeeperConfiguration",
-                    "The .spec.zookeeper section in the Kafka custom resource is ignored in KRaft mode and " +
-                            "should be removed from the custom resource."));
-        }
-
-        nodePoolWarnings(kafkaCr, kafkaStatus);
-    }
-
-    /**
-     * Generates Kafka CR status warnings about the fields ignored when node pools are used if they are set - the
-     * replicas and storage configuration.
-     *
-     * @param kafkaCr       The Kafka custom resource
-     * @param kafkaStatus   The Kafka Status to add the warnings to
-     */
-    private static void nodePoolWarnings(Kafka kafkaCr, KafkaStatus kafkaStatus)   {
-        if (kafkaCr.getSpec().getKafka() != null
-                && kafkaCr.getSpec().getKafka().getReplicas() != null
-                && kafkaCr.getSpec().getKafka().getReplicas() > 0) {
-            kafkaStatus.addCondition(StatusUtils.buildWarningCondition("UnusedReplicasConfiguration",
-                    "The .spec.kafka.replicas property in the Kafka custom resource is ignored when node pools " +
-                            "are used and should be removed from the custom resource."));
-        }
-
-        if (kafkaCr.getSpec().getKafka() != null
-                && kafkaCr.getSpec().getKafka().getStorage() != null) {
-            kafkaStatus.addCondition(StatusUtils.buildWarningCondition("UnusedStorageConfiguration",
-                    "The .spec.kafka.storage section in the Kafka custom resource is ignored when node pools " +
-                            "are used and should be removed from the custom resource."));
         }
     }
 }

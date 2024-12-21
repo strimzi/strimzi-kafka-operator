@@ -10,10 +10,10 @@
 |Property |Property type |Description
 |spec
 |xref:type-KafkaSpec-{context}[`KafkaSpec`]
-|The specification of the Kafka and ZooKeeper clusters, and Topic Operator.
+|The specification of the Kafka cluster.
 |status
 |xref:type-KafkaStatus-{context}[`KafkaStatus`]
-|The status of the Kafka and ZooKeeper clusters, and Topic Operator.
+|The status of the Kafka cluster.
 |====
 
 [id='type-KafkaSpec-{context}']
@@ -30,7 +30,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |Configuration of the Kafka cluster.
 |zookeeper
 |xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
-|Configuration of the ZooKeeper cluster. This section is required when running a ZooKeeper-based Apache Kafka cluster.
+|**The `zookeeper` property has been deprecated.** ZooKeeper-based Apache Kafka clusters are not supported anymore since Strimzi 0.46.0. As of Strimzi 0.46.0, ZooKeeper-based Apache Kafka clusters are not supported anymore and this option is ignored.
 |entityOperator
 |xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |Configuration of the Entity Operator.
@@ -78,7 +78,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.adoc[leveloffs
 |Added in Strimzi 0.39.0. The KRaft metadata version used by the Kafka cluster. This property is ignored when running in ZooKeeper mode. If the property is not set, it defaults to the metadata version that corresponds to the `version` property.
 |replicas
 |integer
-|The number of pods in the cluster. This property is required when node pools are not used.
+|**The `replicas` property has been deprecated.** For KRaft-based Apache Kafka clusters, number of replicas is configured in the KafkaNodePool resources and this option is ignored. For KRaft-based Apache Kafka clusters, number of replicas is configured in the KafkaNodePool resources and this option is ignored.
 |image
 |string
 |The container image used for Kafka pods. If the property is not set, the default Kafka image version is determined based on the `version` configuration. The image names are specifically mapped to corresponding versions in the Cluster Operator configuration. Changing the Kafka image version does not automatically update the image versions for other components, such as Kafka Exporter. 
@@ -90,7 +90,7 @@ include::../api/io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.adoc[leveloffs
 |Kafka broker config properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., log.dir, zookeeper.connect, zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers, node.id, process.roles, controller., metadata.log.dir, zookeeper.metadata.migration.enable, client.quota.callback.static.kafka.admin., client.quota.callback.static.produce, client.quota.callback.static.fetch, client.quota.callback.static.storage.per.volume.limit.min.available., client.quota.callback.static.excluded.principal.name.list (with the exception of: zookeeper.connection.timeout.ms, sasl.server.max.receive.size, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, ssl.secure.random.implementation, cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms, cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms, cruise.control.metrics.topic.min.insync.replicas, controller.quorum.election.backoff.max.ms, controller.quorum.election.timeout.ms, controller.quorum.fetch.timeout.ms).
 |storage
 |xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`], xref:type-JbodStorage-{context}[`JbodStorage`]
-|Storage configuration (disk). Cannot be updated. This property is required when node pools are not used.
+|**The `storage` property has been deprecated.** For KRaft-based Apache Kafka clusters, storage is configured in the KafkaNodePool resources and this option is ignored. For KRaft-based Apache Kafka clusters, storage is configured in the KafkaNodePool resources and this option is ignored.
 |authorization
 |xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`], xref:type-KafkaAuthorizationCustom-{context}[`KafkaAuthorizationCustom`]
 |Authorization configuration for Kafka brokers.
@@ -1510,6 +1510,8 @@ It must have the value `strimzi` for the type `QuotasPluginStrimzi`.
 [id='type-ZookeeperClusterSpec-{context}']
 = `ZookeeperClusterSpec` schema reference
 
+*The type `ZookeeperClusterSpec` has been deprecated.*
+
 Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
 xref:type-ZookeeperClusterSpec-schema-{context}[Full list of `ZookeeperClusterSpec` schema properties]
@@ -1563,6 +1565,8 @@ include::../api/io.strimzi.api.kafka.model.zookeeper.ZookeeperClusterSpec.adoc[l
 
 [id='type-ZookeeperClusterTemplate-{context}']
 = `ZookeeperClusterTemplate` schema reference
+
+*The type `ZookeeperClusterTemplate` has been deprecated.*
 
 Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 

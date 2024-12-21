@@ -4,10 +4,6 @@ metadata:
   name: strimzi-ephemeral
 spec:
   kafka:
-    replicas: 3
-    storage:
-      type: persistent-claim
-      size: 500Gi
     listeners:
       - name: plain
         type: internal
@@ -121,64 +117,6 @@ spec:
             key1: label1
             key2: label2
         maxUnavailable: 1
-  zookeeper:
-    replicas: 3
-    storage:
-      type: ephemeral
-    template:
-      statefulset:
-        metadata:
-          labels:
-            key1: label1
-            key2: label2
-          annotations:
-            key1: label1
-            key2: label2
-      pod:
-        metadata:
-          labels:
-            key1: label1
-            key2: label2
-          annotations:
-            key1: label1
-            key2: label2
-        volumes:
-          - name: example-secret
-            secret: 
-              secretName: secret-name
-          - name: example-configmap
-            configMap:
-              name: config-map-name
-          - name: temp
-            emptyDir: {}
-          - name: example-pvc-volume
-            persistentVolumeClaim:
-              claimName: example-pvc-volume
-      zookeeperContainer:
-        volumeMounts:
-          - name: example-secret
-            mountPath: /mnt/secret-volume
-            subPath: subPath1
-          - name: example-configmap
-            mountPath: /mnt/cm-volume
-          - name: example-pvc-volume
-            mountPath: "/mnt/data"
-      clientService:
-        metadata:
-          labels:
-            key1: label1
-            key2: label2
-          annotations:
-            key1: label1
-            key2: label2
-      nodesService:
-        metadata:
-          labels:
-            key1: label1
-            key2: label2
-          annotations:
-            key1: label1
-            key2: label2
   entityOperator:
     topicOperator: {}
     userOperator: {}

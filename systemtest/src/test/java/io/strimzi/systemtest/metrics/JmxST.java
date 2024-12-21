@@ -52,6 +52,7 @@ public class JmxST extends AbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     @FIPSNotSupported("JMX with auth is not working with FIPS")
+    @SuppressWarnings("deprecation") // ZooKeeper is deprecated, but some APi methods are still called here
     void testKafkaZookeeperAndKafkaConnectWithJMX() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String zkSecretName = testStorage.getClusterName() + "-zookeeper-jmx";

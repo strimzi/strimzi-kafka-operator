@@ -183,6 +183,7 @@ class LogSettingST extends AbstractST {
     };
 
     @IsolatedTest("Using shared Kafka")
+    @SuppressWarnings("deprecation") // ZooKeeper is deprecated, but some APi methods are still called here
     void testKafkaLogSetting() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -488,6 +489,7 @@ class LogSettingST extends AbstractST {
     }
 
     @BeforeAll
+    @SuppressWarnings("deprecation") // ZooKeeper is deprecated, but some APi methods are still called here
     void setup() {
         this.clusterOperator = this.clusterOperator
             .defaultInstallation()

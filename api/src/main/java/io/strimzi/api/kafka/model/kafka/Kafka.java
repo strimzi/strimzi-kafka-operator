@@ -52,11 +52,6 @@ import java.util.function.Predicate;
                 jsonPath = ".spec.kafka.replicas",
                 type = "integer"),
             @Crd.Spec.AdditionalPrinterColumn(
-                name = "Desired ZK replicas",
-                description = "The desired number of ZooKeeper replicas in the cluster",
-                jsonPath = ".spec.zookeeper.replicas",
-                type = "integer"),
-            @Crd.Spec.AdditionalPrinterColumn(
                 name = "Ready",
                 description = "The state of the custom resource",
                 jsonPath = ".status.conditions[?(@.type==\"Ready\")].status",
@@ -120,13 +115,13 @@ public class Kafka extends CustomResource<KafkaSpec, KafkaStatus> implements Nam
     }
 
     @Override
-    @Description("The specification of the Kafka and ZooKeeper clusters, and Topic Operator.")
+    @Description("The specification of the Kafka cluster.")
     public KafkaSpec getSpec() {
         return super.getSpec();
     }
 
     @Override
-    @Description("The status of the Kafka and ZooKeeper clusters, and Topic Operator.")
+    @Description("The status of the Kafka cluster.")
     public KafkaStatus getStatus() {
         return super.getStatus();
     }

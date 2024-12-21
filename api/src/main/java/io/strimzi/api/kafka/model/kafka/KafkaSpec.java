@@ -38,6 +38,7 @@ import java.util.List;
 @ToString(callSuper = true)
 public class KafkaSpec extends Spec {
     private KafkaClusterSpec kafka;
+    @SuppressWarnings("deprecation")
     private ZookeeperClusterSpec zookeeper;
     private EntityOperatorSpec entityOperator;
     private CertificateAuthority clusterCa;
@@ -59,11 +60,15 @@ public class KafkaSpec extends Spec {
         this.kafka = kafka;
     }
 
-    @Description("Configuration of the ZooKeeper cluster. This section is required when running a ZooKeeper-based Apache Kafka cluster.")
+    @Deprecated
+    @DeprecatedProperty(description = "ZooKeeper-based Apache Kafka clusters are not supported anymore since Strimzi 0.46.0.")
+    @PresentInVersions("v1alpha1-v1beta2")
+    @Description("As of Strimzi 0.46.0, ZooKeeper-based Apache Kafka clusters are not supported anymore and this option is ignored.")
     public ZookeeperClusterSpec getZookeeper() {
         return zookeeper;
     }
 
+    @Deprecated
     public void setZookeeper(ZookeeperClusterSpec zookeeper) {
         this.zookeeper = zookeeper;
     }
