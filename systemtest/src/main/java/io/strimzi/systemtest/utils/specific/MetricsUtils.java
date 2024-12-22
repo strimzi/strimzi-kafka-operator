@@ -115,8 +115,8 @@ public class MetricsUtils {
     }
 
     public static String getResourceMetricPattern(String namespaceName, String kind) {
-        String metric = "strimzi_resources\\{kind=\"" + kind + "\",";
-        metric += namespaceName == null ? ".*}" : "namespace=\"" + namespaceName + "\".*}";
+        String metric = "strimzi_resources\\{kind=\"" + kind + "\"";
+        metric += namespaceName == null ? ".*}" : ",namespace=\"" + namespaceName + "\".*}";
         return metric;
     }
 
@@ -185,12 +185,12 @@ public class MetricsUtils {
     }
 
     private static List<Double> createPatternAndCollect(BaseMetricsCollector collector, String metric) {
-        Pattern pattern = Pattern.compile(metric + " ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
+        Pattern pattern = Pattern.compile(metric + " ([\\d.^\\n]+)", Pattern.CASE_INSENSITIVE);
         return collector.waitForSpecificMetricAndCollect(pattern);
     }
 
     private static List<Double> createPatternAndCollectWithoutWait(BaseMetricsCollector collector, String metric) {
-        Pattern pattern = Pattern.compile(metric + " ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
+        Pattern pattern = Pattern.compile(metric + " ([\\d.^\\n]+)", Pattern.CASE_INSENSITIVE);
         return collector.collectSpecificMetric(pattern);
     }
 
