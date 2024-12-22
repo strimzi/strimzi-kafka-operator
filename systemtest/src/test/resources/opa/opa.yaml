@@ -27,12 +27,13 @@ items:
           serviceAccountName: opa
           containers:
             - name: opa
-              image: openpolicyagent/opa:latest-static
+              image: openpolicyagent/opa:1.0.0-static
               ports:
                 - name: http
                   containerPort: 8181
               args:
                 - "run"
+                - "--addr=0.0.0.0:8181"
                 - "--ignore=.*"  # exclude hidden dirs created by Kubernetes
                 - "--log-level=debug"
                 - "--server"
@@ -82,19 +83,19 @@ items:
       kafka_simple_authz.rego: |
         package kafka.simple.authz
         
-        default allow = false
+        default allow := false
         
-        allow {
+        allow if {
           not deny
         }
         
-        deny {
+        deny if {
           is_topic_resource
           is_read_operation
           not consumer_is_on_allowlist
         }
         
-        deny {
+        deny if {
           is_topic_resource
           is_write_operation
           not producer_is_on_allowlist
@@ -106,19 +107,19 @@ items:
         # be loaded into OPA as raw JSON data.
         ###############################################################################
         
-        producer_allowlist = ["good-user"]
+        producer_allowlist := ["good-user"]
         
-        consumer_allowlist = ["good-user"]
+        consumer_allowlist := ["good-user"]
         
         ###############################################################################
         # Helper rules for checking allowlists.
         ###############################################################################
         
-        consumer_is_on_allowlist {
+        consumer_is_on_allowlist if {
           consumer_allowlist[_] == principal.name
         }
         
-        producer_is_on_allowlist {
+        producer_is_on_allowlist if {
           producer_allowlist[_] == principal.name
         }
         
@@ -126,23 +127,23 @@ items:
         # Helper rules for input processing.
         ###############################################################################
         
-        is_write_operation {
+        is_write_operation if {
           input.action.operation == "WRITE"
         }
         
-        is_read_operation {
+        is_read_operation if {
           input.action.operation == "READ"
         }
         
-        is_topic_resource {
+        is_topic_resource if {
           input.action.resourcePattern.resourceType == "TOPIC"
         }
         
-        principal = {"name": parsed.CN} {
+        principal := {"name": parsed.CN} if {
           parsed := parse_user(urlquery.decode(input.requestContext.principal.name))
         }
         
-        parse_user(user) = {key: value |
+        parse_user(user) := {key: value |
           parts := split(user, ",")
           [key, value] := split(parts[_], "=")
         }
