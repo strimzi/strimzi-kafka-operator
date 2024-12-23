@@ -30,10 +30,6 @@ spec:
       description: The desired number of Kafka replicas in the cluster
       jsonPath: .spec.kafka.replicas
       type: integer
-    - name: Desired ZK replicas
-      description: The desired number of ZooKeeper replicas in the cluster
-      jsonPath: .spec.zookeeper.replicas
-      type: integer
     - name: Ready
       description: The state of the custom resource
       jsonPath: ".status.conditions[?(@.type==\"Ready\")].status"
@@ -73,7 +69,7 @@ spec:
                   replicas:
                     type: integer
                     minimum: 1
-                    description: The number of pods in the cluster. This property is required when node pools are not used.
+                    description: "For KRaft-based Apache Kafka clusters, number of replicas is configured in the KafkaNodePool resources and this option is ignored."
                   image:
                     type: string
                     description: "The container image used for Kafka pods. If the property is not set, the default Kafka image version is determined based on the `version` configuration. The image names are specifically mapped to corresponding versions in the Cluster Operator configuration. Changing the Kafka image version does not automatically update the image versions for other components, such as Kafka Exporter. "
@@ -661,7 +657,7 @@ spec:
                         description: List of volumes as Storage objects representing the JBOD disks array.
                     required:
                     - type
-                    description: Storage configuration (disk). Cannot be updated. This property is required when node pools are not used.
+                    description: "For KRaft-based Apache Kafka clusters, storage is configured in the KafkaNodePool resources and this option is ignored."
                   authorization:
                     type: object
                     properties:
@@ -3443,7 +3439,7 @@ spec:
                 required:
                 - replicas
                 - storage
-                description: Configuration of the ZooKeeper cluster. This section is required when running a ZooKeeper-based Apache Kafka cluster.
+                description: "As of Strimzi 0.46.0, ZooKeeper-based Apache Kafka clusters are not supported anymore and this option is ignored."
               entityOperator:
                 type: object
                 properties:
@@ -8233,7 +8229,7 @@ spec:
                 description: "A list of time windows for maintenance tasks (that is, certificates renewal). Each time window is defined by a cron expression."
             required:
             - kafka
-            description: "The specification of the Kafka and ZooKeeper clusters, and Topic Operator."
+            description: The specification of the Kafka cluster.
           status:
             type: object
             properties:
@@ -8360,4 +8356,4 @@ spec:
                           description: "List of broker IDs involved in an auto-rebalancing operation related to the current mode. \nThe list contains one of the following: \n\n* Broker IDs for a current auto-rebalance. \n* Broker IDs for a queued auto-rebalance (if a previous auto-rebalance is still in progress). \n"
                     description: "List of modes where an auto-rebalancing operation is either running or queued. \nEach mode entry (`add-brokers` or `remove-brokers`) includes one of the following: \n\n* Broker IDs for a current auto-rebalance. \n* Broker IDs for a queued auto-rebalance (if a previous rebalance is still in progress)."
                 description: The status of an auto-rebalancing triggered by a cluster scaling request.
-            description: "The status of the Kafka and ZooKeeper clusters, and Topic Operator."
+            description: The status of the Kafka cluster.

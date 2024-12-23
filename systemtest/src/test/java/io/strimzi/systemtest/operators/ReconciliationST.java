@@ -63,6 +63,7 @@ public class ReconciliationST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
+    @SuppressWarnings("deprecation") // Replicas in Kafka CR are deprecated, but some API methods are still called here
     void testPauseReconciliationInKafkaAndKafkaConnectWithConnector() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 

@@ -252,6 +252,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
      */
     @IsolatedTest
     @Tag(CRUISE_CONTROL)
+    @SuppressWarnings("deprecation") // Replicas in Kafka CR are deprecated, but some API methods are still called here
     void testKafkaCCAndRebalanceWithMultipleCOs() {
         assumeFalse(Environment.isNamespaceRbacScope());
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), DEFAULT_NAMESPACE);

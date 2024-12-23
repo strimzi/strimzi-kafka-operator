@@ -7,18 +7,11 @@ metadata:
   namespace: "my-namespace"
 spec:
   kafka:
-    replicas: 3
     listeners:
     - name: "plain"
       port: 9092
       type: "internal"
       tls: false
-    storage:
-      type: "ephemeral"
-  zookeeper:
-    replicas: 3
-    storage:
-      type: "ephemeral"
 status:
   conditions:
   - type: "Ready"

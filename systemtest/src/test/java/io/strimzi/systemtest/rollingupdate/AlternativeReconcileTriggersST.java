@@ -337,6 +337,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
      *  - persistent-volume-claims
      */
     @ParallelNamespaceTest
+    @SuppressWarnings("deprecation") // Storage is deprecated, but some API methods are still called here
     void testAddingAndRemovingJbodVolumes() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -484,6 +485,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
      * - KRaft metadata log
      */
     @ParallelNamespaceTest
+    @SuppressWarnings("deprecation") // Storage is deprecated, but some API methods are still called here
     void testJbodMetadataLogRelocation() {
         // This test makes sense only in KRaft mode
         assumeTrue(Environment.isKRaftModeEnabled());

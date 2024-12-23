@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model.zookeeper;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.annotations.DeprecatedProperty;
+import io.strimzi.api.annotations.DeprecatedType;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.UnknownPropertyPreserving;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
@@ -37,6 +38,8 @@ import java.util.Map;
     "podDisruptionBudget", "zookeeperContainer", "serviceAccount", "jmxSecret"})
 @EqualsAndHashCode
 @ToString
+@Deprecated
+@DeprecatedType(replacedWithType = void.class)
 public class ZookeeperClusterTemplate implements HasJmxSecretTemplate, UnknownPropertyPreserving {
     private StatefulSetTemplate statefulset;
     private ResourceTemplate podSet;

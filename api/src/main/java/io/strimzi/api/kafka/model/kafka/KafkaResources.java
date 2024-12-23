@@ -142,16 +142,6 @@ public class KafkaResources {
     }
 
     /**
-     * Returns the name of the {@code Service} for a specific Kafka {@code Pod} of a {@code Kafka} cluster of the given name.
-     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @param podNum The number of the Kafka pod corresponding to the service
-     * @return The name of the corresponding Kafka {@code Service}.
-     */
-    public static String brokerSpecificService(String clusterName, int podNum) {
-        return clusterName + "-kafka-" + podNum;
-    }
-
-    /**
      * Returns the name of the Kafka metrics and log {@code ConfigMap} for a {@code Kafka} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
      * @return The name of the corresponding Kafka metrics and log {@code ConfigMap}.
@@ -205,7 +195,7 @@ public class KafkaResources {
     }
 
     ////////
-    // ZooKeeper methods
+    // ZooKeeper methods => still used in system tests
     ////////
 
     /**
@@ -237,43 +227,12 @@ public class KafkaResources {
     }
 
     /**
-     * Returns the name of the ZooKeeper service name for a {@code Kafka} cluster of the given name.
-     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @return The name of the corresponding ZooKeeper service name.
-     */
-    public static String zookeeperServiceName(String clusterName) {
-        return clusterName + "-zookeeper-client";
-    }
-
-    /**
      * Returns the name of the ZooKeeper headless service name for a {@code Kafka} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
      * @return The name of the corresponding ZooKeeper headless service name.
      */
     public static String zookeeperHeadlessServiceName(String clusterName) {
         return clusterName + "-zookeeper-nodes";
-    }
-
-    /**
-     * Returns the name of the ZooKeeper Secret with server certificates.
-     *
-     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     *
-     * @return The name of the corresponding ZooKeeper Secret.
-     */
-    public static String zookeeperSecretName(String clusterName) {
-        return clusterName + "-zookeeper-nodes";
-    }
-
-    /**
-     * Returns the name of the ZooKeeper Secret with JMX credentials.
-     *
-     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     *
-     * @return The name of the corresponding ZooKeeper JMX Secret.
-     */
-    public static String zookeeperJmxSecretName(String clusterName) {
-        return clusterName + "-zookeeper-jmx";
     }
 
     /**
