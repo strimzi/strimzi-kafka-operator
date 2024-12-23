@@ -53,4 +53,4 @@
     kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
     kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
     kafkaKRaftBefore: "/examples/kafka/kraft/kafka.yaml"
-    kafkaKRaftAfter: "/examples/kafka/kraft/kafka.yaml"
+    kafkaKRaftAfter: "/examples/kafka/kafka-persistent.yaml"

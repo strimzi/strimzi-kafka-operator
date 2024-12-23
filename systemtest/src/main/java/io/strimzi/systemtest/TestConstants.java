@@ -203,8 +203,6 @@ public interface TestConstants {
     String PATH_TO_KAFKA_BRIDGE_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/bridge/kafka-bridge.yaml";
     String PATH_TO_KAFKA_REBALANCE_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/cruise-control/kafka-rebalance-full.yaml";
     String PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/cruise-control/kafka-cruise-control.yaml";
-    String PATH_TO_KAFKA_EPHEMERAL_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/kafka/kafka-ephemeral.yaml";
-    String PATH_TO_KAFKA_PERSISTENT_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/kafka/kafka-persistent.yaml";
     String PATH_TO_KAFKA_CRUISE_CONTROL_METRICS_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/metrics/kafka-cruise-control-metrics.yaml";
     String PATH_TO_KAFKA_TOPIC_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/topic/kafka-topic.yaml";
     String PATH_TO_KAFKA_CONNECTOR_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/connect/source-connector.yaml";

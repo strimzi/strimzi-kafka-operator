@@ -30,10 +30,6 @@ data:
     logger.kafka.name = org.apache.kafka
     logger.kafka.level = WARN
 
-    # Zookeeper is very verbose even on INFO level -> We set it to WARN by default
-    logger.zookeepertrustmanager.name = org.apache.zookeeper
-    logger.zookeepertrustmanager.level = WARN
-
     # Keeps separate level for Netty logging -> to not be changed by the root logger
     logger.netty.name = io.netty
     logger.netty.level = INFO

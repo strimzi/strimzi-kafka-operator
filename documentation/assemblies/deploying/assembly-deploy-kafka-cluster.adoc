@@ -14,7 +14,6 @@ After you have deployed the Cluster Operator, use a `Kafka` resource to deploy t
 
 * A Kafka cluster that uses KRaft or ZooKeeper:
 ** xref:deploying-kafka-cluster-kraft-{context}[KRaft-based Kafka cluster]
-** xref:deploying-kafka-cluster-zookeeper-{context}[ZooKeeper-based Kafka cluster]
 * xref:deploying-the-topic-operator-using-the-cluster-operator-{context}[Topic Operator]
 * xref:deploying-the-user-operator-using-the-cluster-operator-{context}[User Operator]
 
@@ -29,8 +28,6 @@ You can also deploy and use other Kafka components with a Kafka cluster not mana
 
 //Deploy Kafka in KRaft mode
 include::../../modules/deploying/proc-deploy-kafka-cluster-kraft.adoc[leveloffset=+1]
-//Deploy ZooKeeper-based Kafka cluster
-include::../../modules/deploying/proc-deploy-kafka-cluster-zookeeper.adoc[leveloffset=+1]
 //Include Topic Operator in deployment
 include::../../modules/deploying/proc-deploy-topic-operator-with-cluster-operator.adoc[leveloffset=+1]
 //Include User Operator in deployment
