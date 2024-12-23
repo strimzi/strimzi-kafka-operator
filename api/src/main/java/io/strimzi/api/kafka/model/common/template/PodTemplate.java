@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.HostAlias;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.PodDNSConfig;
 import io.fabric8.kubernetes.api.model.PodSecurityContext;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
@@ -37,7 +38,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({"metadata", "imagePullSecrets", "securityContext", "terminationGracePeriodSeconds", "affinity",
-    "tolerations", "topologySpreadConstraints", "priorityClassName", "schedulerName", "hostAliases",
+    "tolerations", "topologySpreadConstraints", "priorityClassName", "schedulerName", "hostAliases", "dnsPolicy", "dnsConfig", 
     "enableServiceLinks", "tmpDirSizeLimit", "volumes"})
 @EqualsAndHashCode
 @ToString
@@ -53,6 +54,8 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
     private String priorityClassName;
     private String schedulerName;
     private List<HostAlias> hostAliases;
+    private PodDNSConfig dnsConfig;
+    private DnsPolicy dnsPolicy;
     private Boolean enableServiceLinks;
     private String tmpDirSizeLimit;
     private List<AdditionalVolume> volumes;
@@ -172,6 +175,30 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
 
     public void setHostAliases(List<HostAlias> hostAliases) {
         this.hostAliases = hostAliases;
+    }
+
+    @Description("The pod's DNSPolicy. " + 
+        "Defaults to `ClusterFirst`. " + 
+        "Valid values are `ClusterFirstWithHostNet`, `ClusterFirst`, `Default` or `None`.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public DnsPolicy getDnsPolicy() {
+        return dnsPolicy;
+    }
+
+    public void setDnsPolicy(DnsPolicy dnsPolicy) {
+        this.dnsPolicy = dnsPolicy;
+    }
+
+    @Description("The pod's DNSConfig. " + 
+        "If specified, it will be merged to the generated DNS configuration based on the DNSPolicy.")
+    @KubeLink(group = "core", version = "v1", kind = "poddnsconfig")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public PodDNSConfig getDnsConfig() {
+        return dnsConfig;
+    }
+
+    public void setDnsConfig(PodDNSConfig dnsConfig) {
+        this.dnsConfig = dnsConfig;
     }
 
     @Description("Indicates whether information about services should be injected into Pod's environment variables.")

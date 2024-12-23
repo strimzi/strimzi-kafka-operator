@@ -98,6 +98,11 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "valueFrom");
     }
 
+    @Test
+    public void testKafkaConnectWithDnsConfig() {
+        createDeleteCustomResource("KafkaConnect-with-dnsConfig.yaml");
+    }
+
     @BeforeAll
     void setupEnvironment() {
         client = new KubernetesClientBuilder().withConfig(new ConfigBuilder().withNamespace(NAMESPACE).build()).build();

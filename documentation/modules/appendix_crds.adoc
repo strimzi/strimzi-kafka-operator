@@ -1240,6 +1240,12 @@ include::../api/io.strimzi.api.kafka.model.common.template.PodTemplate.adoc[leve
 |hostAliases
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#hostalias-v1-core[HostAlias] array
 |The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+|dnsPolicy
+|string (one of [ClusterFirstWithHostNet, ClusterFirst, Default, None])
+|The pod's DNSPolicy. Defaults to `ClusterFirst`. Valid values are `ClusterFirstWithHostNet`, `ClusterFirst`, `Default` or `None`.
+|dnsConfig
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.25/#poddnsconfig-v1-core[PodDNSConfig]
+|The pod's DNSConfig. If specified, it will be merged to the generated DNS configuration based on the DNSPolicy.
 |enableServiceLinks
 |boolean
 |Indicates whether information about services should be injected into Pod's environment variables.

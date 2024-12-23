@@ -1,0 +1,87 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaMirrorMaker2
+metadata:
+  name: test-kafka-mirror-maker-2
+spec:
+  image: foo
+  replicas: 6
+  connectCluster: target
+  clusters:
+  - alias: source
+    bootstrapServers: my-source-kafka:9092
+  - alias: target
+    bootstrapServers: my-target-kafka:9092
+  mirrors:
+  - sourceCluster: source
+    targetCluster: target
+    sourceConnector: {}
+    topicsPattern: my-topic
+  template:
+    deployment:
+      metadata:
+        labels:
+          key1: label1
+          key2: label2
+        annotations:
+          key1: label1
+          key2: label2
+    pod:
+      metadata:
+        labels:
+          key1: label1
+          key2: label2
+        annotations:
+          key1: label1
+          key2: label2
+      imagePullSecrets:
+        - name: some-secret
+        - name: some-other-secret
+      dnsPolicy: "None"
+      dnsConfig:
+        nameservers:
+          - 192.0.2.1 
+        searches:
+          - ns1.svc.cluster-domain.example
+          - my.dns.search.suffix
+        options:
+          - name: ndots
+            value: "2"
+          - name: edns0
+      securityContext:
+        runAsUser: 1000001
+        runAsGroup: 1000001
+        fsGroup: 0
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: example-secret
+          secret: 
+            secretName: secret-name
+        - name: example-configmap
+          configMap:
+            name: config-map-name
+    connectContainer:
+      volumeMounts:
+        - name: example-secret
+          mountPath: /path/to/mount/secret-volume
+          subPath: subPath1
+    initContainer:
+      volumeMounts:
+        - name: example-configmap
+          mountPath: /path/to/mount/cm-volume
+    podDisruptionBudget:
+      metadata:
+        labels:
+          key1: label1
+          key2: label2
+        annotations:
+          key1: label1
+          key2: label2
+      maxUnavailable: 1
+    apiService:
+      metadata:
+        labels:
+          key1: label1
+          key2: label2
+        annotations:
+          key1: label1
+          key2: label2
