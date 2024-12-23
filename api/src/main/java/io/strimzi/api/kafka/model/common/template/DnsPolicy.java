@@ -8,8 +8,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum DnsPolicy {
-    CLUSTERFIRST,
-    CLUSTERFIRSTWITHHOSTNET,
+    CLUSTER_FIRST,
+    CLUSTER_FIRST_WITH_HOST_NET,
     DEFAULT,
     NONE;
 
@@ -17,9 +17,9 @@ public enum DnsPolicy {
     public static DnsPolicy forValue(String value) {
         switch (value) {
             case "ClusterFirst":
-                return CLUSTERFIRST;
+                return CLUSTER_FIRST;
             case "ClusterFirstWithHostNet":
-                return CLUSTERFIRSTWITHHOSTNET;
+                return CLUSTER_FIRST_WITH_HOST_NET;
             case "Default":
                 return DEFAULT;
             case "None":
@@ -32,9 +32,9 @@ public enum DnsPolicy {
     @JsonValue
     public String toValue() {
         switch (this) {
-            case CLUSTERFIRST:
+            case CLUSTER_FIRST:
                 return "ClusterFirst";
-            case CLUSTERFIRSTWITHHOSTNET:
+            case CLUSTER_FIRST_WITH_HOST_NET:
                 return "ClusterFirstWithHostNet";
             case DEFAULT:
                 return "Default";
