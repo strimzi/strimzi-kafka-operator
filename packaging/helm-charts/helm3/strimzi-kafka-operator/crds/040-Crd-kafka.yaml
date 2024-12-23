@@ -1523,7 +1523,7 @@ spec:
                                   type: array
                                   items:
                                     type: string
-                              description: "The pod's DNSConfig. If specified, the parameters specified here will be merged to the generated DNS configuration based on the DNSPolicy."
+                              description: "The pod's DNSConfig. If specified, it will be merged to the generated DNS configuration based on the DNSPolicy."
                             enableServiceLinks:
                               type: boolean
                               description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -3106,7 +3106,7 @@ spec:
                                   type: array
                                   items:
                                     type: string
-                              description: "The pod's DNSConfig. If specified, the parameters specified here will be merged to the generated DNS configuration based on the DNSPolicy."
+                              description: "The pod's DNSConfig. If specified, it will be merged to the generated DNS configuration based on the DNSPolicy."
                             enableServiceLinks:
                               type: boolean
                               description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -4503,7 +4503,7 @@ spec:
                                   type: array
                                   items:
                                     type: string
-                              description: "The pod's DNSConfig. If specified, the parameters specified here will be merged to the generated DNS configuration based on the DNSPolicy."
+                              description: "The pod's DNSConfig. If specified, it will be merged to the generated DNS configuration based on the DNSPolicy."
                             enableServiceLinks:
                               type: boolean
                               description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -5951,7 +5951,7 @@ spec:
                                   type: array
                                   items:
                                     type: string
-                              description: "The pod's DNSConfig. If specified, the parameters specified here will be merged to the generated DNS configuration based on the DNSPolicy."
+                              description: "The pod's DNSConfig. If specified, it will be merged to the generated DNS configuration based on the DNSPolicy."
                             enableServiceLinks:
                               type: boolean
                               description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -7186,7 +7186,7 @@ spec:
                                   type: array
                                   items:
                                     type: string
-                              description: "The pod's DNSConfig. If specified, the parameters specified here will be merged to the generated DNS configuration based on the DNSPolicy."
+                              description: "The pod's DNSConfig. If specified, it will be merged to the generated DNS configuration based on the DNSPolicy."
                             enableServiceLinks:
                               type: boolean
                               description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -8113,7 +8113,7 @@ spec:
                                   type: array
                                   items:
                                     type: string
-                              description: "The pod's DNSConfig. If specified, the parameters specified here will be merged to the generated DNS configuration based on the DNSPolicy."
+                              description: "The pod's DNSConfig. If specified, it will be merged to the generated DNS configuration based on the DNSPolicy."
                             enableServiceLinks:
                               type: boolean
                               description: Indicates whether information about services should be injected into Pod's environment variables.

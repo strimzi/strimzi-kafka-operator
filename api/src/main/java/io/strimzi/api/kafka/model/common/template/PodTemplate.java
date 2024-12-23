@@ -190,7 +190,7 @@ public class PodTemplate implements HasMetadataTemplate, UnknownPropertyPreservi
     }
 
     @Description("The pod's DNSConfig. " + 
-        "If specified, the parameters specified here will be merged to the generated DNS configuration based on the DNSPolicy.")
+        "If specified, it will be merged to the generated DNS configuration based on the DNSPolicy.")
     @KubeLink(group = "core", version = "v1", kind = "poddnsconfig")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public PodDNSConfig getDnsConfig() {
