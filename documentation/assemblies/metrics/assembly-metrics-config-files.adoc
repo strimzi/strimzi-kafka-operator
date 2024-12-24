@@ -24,7 +24,6 @@ metrics
 │   ├── strimzi-kafka.json
 |   ├── strimzi-kraft.json
 │   ├── strimzi-operators.json
-│   └── strimzi-zookeeper.json
 ├── grafana-install
 │   └── grafana.yaml <2>
 ├── prometheus-additional-properties

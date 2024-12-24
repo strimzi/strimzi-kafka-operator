@@ -30,8 +30,8 @@ The dashboards are populated with a representative set of metrics for monitoring
 |Kafka
 |`strimzi-kafka.json`
 
-|ZooKeeper
-|`strimzi-zookeeper.json`
+|Kafka KRaft controllers
+|`strimzi-kraft.json`
 
 |Kafka Connect
 |`strimzi-kafka-connect.json`

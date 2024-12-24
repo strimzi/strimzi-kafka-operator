@@ -53,7 +53,7 @@ rules:
   - apiGroups:
       - "core.strimzi.io"
     resources:
-      # The cluster operator uses StrimziPodSets to manage the Kafka and ZooKeeper pods
+      # The cluster operator uses StrimziPodSets to manage the Kafka, Kafka Connect, and Kafka MirrorMaker 2 pods
       - strimzipodsets
     verbs:
       - get

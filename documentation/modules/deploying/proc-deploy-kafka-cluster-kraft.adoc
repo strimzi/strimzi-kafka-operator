@@ -13,7 +13,7 @@ The deployment uses a YAML file to provide the specification to create a `Kafka`
 Strimzi provides the following xref:config-examples-{context}[example deployment files] that you can use to create a Kafka cluster that uses node pools:
 
 `kafka/kraft/kafka-with-dual-role-nodes.yaml`:: Deploys a Kafka cluster with one pool of nodes that share the broker and controller roles.
-`kafka/kraft/kafka.yaml`:: Deploys a persistent Kafka cluster with one pool of controller nodes and one pool of broker nodes.
+`kafka/kraft/kafka-persistent.yaml`:: Deploys a persistent Kafka cluster with one pool of controller nodes and one pool of broker nodes.
 `kafka/kraft/kafka-ephemeral.yaml`:: Deploys an ephemeral Kafka cluster with one pool of controller nodes and one pool of broker nodes.
 `kafka/kraft/kafka-single-node.yaml`:: Deploys a Kafka cluster with a single node.
 `kafka/kraft/kafka-jbod.yaml`:: Deploys a Kafka cluster with multiple volumes in each broker node.
@@ -44,7 +44,7 @@ To change the cluster name before you deploy the cluster, edit the `Kafka.metada
 To deploy a Kafka cluster with a single node pool that uses dual-role nodes:
 +
 [source,shell]
-kubectl apply -f examples/kafka/kraft/kafka-with-dual-role-nodes.yaml
+kubectl apply -f examples/kafka/kafka-with-dual-role-nodes.yaml
 
 . Check the status of the deployment:
 +

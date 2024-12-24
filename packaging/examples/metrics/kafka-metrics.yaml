@@ -1,11 +1,54 @@
 apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaNodePool
+metadata:
+  name: controller
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  replicas: 3
+  roles:
+    - controller
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 100Gi
+        kraftMetadata: shared
+        deleteClaim: false
+---
+
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaNodePool
+metadata:
+  name: broker
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  replicas: 3
+  roles:
+    - broker
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 100Gi
+        kraftMetadata: shared
+        deleteClaim: false
+---
+
+apiVersion: kafka.strimzi.io/v1beta2
 kind: Kafka
 metadata:
   name: my-cluster
+  annotations:
+    strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
 spec:
   kafka:
     version: 3.9.0
-    replicas: 3
+    metadataVersion: 3.9-IV0
     listeners:
       - name: plain
         port: 9092
@@ -21,32 +64,12 @@ spec:
       transaction.state.log.min.isr: 2
       default.replication.factor: 3
       min.insync.replicas: 2
-      inter.broker.protocol.version: "3.9"
-    storage:
-      type: jbod
-      volumes:
-      - id: 0
-        type: persistent-claim
-        size: 100Gi
-        deleteClaim: false
     metricsConfig:
       type: jmxPrometheusExporter
       valueFrom:
         configMapKeyRef:
           name: kafka-metrics
           key: kafka-metrics-config.yml
-  zookeeper:
-    replicas: 3
-    storage:
-      type: persistent-claim
-      size: 100Gi
-      deleteClaim: false
-    metricsConfig:
-      type: jmxPrometheusExporter
-      valueFrom:
-        configMapKeyRef:
-          name: kafka-metrics
-          key: zookeeper-metrics-config.yml
   entityOperator:
     topicOperator: {}
     userOperator: {}
@@ -223,34 +246,3 @@ data:
     - pattern: "kafka.server<type=broker-metadata-metrics><>(.+):"
       name: kafka_server_brokermetadatametrics_$1
       type: GAUGE
-  zookeeper-metrics-config.yml: |
-    # See https://github.com/prometheus/jmx_exporter for more info about JMX Prometheus Exporter metrics
-    lowercaseOutputName: true
-    rules:
-    # replicated Zookeeper
-    - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+)><>(\\w+)"
-      name: "zookeeper_$2"
-      type: GAUGE
-    - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+)><>(\\w+)"
-      name: "zookeeper_$3"
-      type: GAUGE
-      labels:
-        replicaId: "$2"
-    - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+), name2=(\\w+)><>(Packets\\w+)"
-      name: "zookeeper_$4"
-      type: COUNTER
-      labels:
-        replicaId: "$2"
-        memberType: "$3"
-    - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+), name2=(\\w+)><>(\\w+)"
-      name: "zookeeper_$4"
-      type: GAUGE
-      labels:
-        replicaId: "$2"
-        memberType: "$3"
-    - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+), name2=(\\w+), name3=(\\w+)><>(\\w+)"
-      name: "zookeeper_$4_$5"
-      type: GAUGE
-      labels:
-        replicaId: "$2"
-        memberType: "$3"

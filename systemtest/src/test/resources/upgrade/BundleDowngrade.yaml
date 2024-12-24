@@ -55,5 +55,5 @@
   filePaths:
     kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
     kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
-    kafkaKRaftBefore: "/examples/kafka/kraft/kafka.yaml"
+    kafkaKRaftBefore: "/examples/kafka/kafka-persistent.yaml"
     kafkaKRaftAfter: "/examples/kafka/kraft/kafka.yaml"
