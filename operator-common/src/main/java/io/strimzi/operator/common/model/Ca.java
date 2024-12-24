@@ -1057,13 +1057,13 @@ public abstract class Ca {
 
     /**
      * @return the name of the annotation bringing the generation of the specific CA certificate type (cluster or clients)
-     *         on the Secrets containing certificates signed by that CA (i.e. ZooKeeper nodes, Kafka brokers, ...)
+     *         on the Secrets containing certificates signed by that CA (i.e. Kafka brokers, ...)
      */
     protected abstract String caCertGenerationAnnotation();
 
     /**
      * It checks if the current (cluster or clients) CA certificate generation is changed compared to the one
-     * brought by the corresponding annotation on the provided Secret (i.e. ZooKeeper nodes, Kafka brokers, ...)
+     * brought by the corresponding annotation on the provided Secret (i.e. Kafka brokers, ...)
      *
      * @param secret Secret containing certificates signed by the current (clients or cluster) CA
      * @return if the current (cluster or clients) CA certificate generation is changed compared to the one

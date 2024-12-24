@@ -3,7 +3,7 @@ kind: Kafka
 metadata:
   annotations:
     kubectl.kubernetes.io/last-applied-configuration: |
-      {"apiVersion":"kafka.strimzi.io/v1beta2","kind":"Kafka","metadata":{"annotations":{},"name":"my-cluster","namespace":"myproject"},"spec":{"kafka":{"config":{"log.message.format.version":"2.1","offsets.topic.replication.factor":3,"transaction.state.log.min.isr":2,"transaction.state.log.replication.factor":3},"foo":"bar","listeners":{"plain":{},"tls":{}},"replicas":3,"storage":{"type":"ephemeral"},"version":"2.1.0"},"topicOperator":{},"zookeeper":{"replicas":3,"storage":{"type":"ephemeral"}}}}
+      {"apiVersion":"kafka.strimzi.io/v1beta2","kind":"Kafka","metadata":{"annotations":{},"name":"my-cluster","namespace":"myproject"},"spec":{"kafka":{"config":{"log.message.format.version":"2.1","offsets.topic.replication.factor":3,"transaction.state.log.min.isr":2,"transaction.state.log.replication.factor":3},"foo":"bar","listeners":{"plain":{},"tls":{}},"replicas":3,"storage":{"type":"ephemeral"},"version":"2.1.0"},"topicOperator":{}}}
   creationTimestamp: 2019-01-31T09:45:40Z
   generation: 1
   name: my-cluster
@@ -32,19 +32,12 @@ spec:
         authentication:
           type: oauth
           enableECDSA: true
-    replicas: 3
-    storage:
-      type: ephemeral
     version: 2.8.0
     template:
       pod:
         securityContext:
           supplementalGroups:
             - 971001234
-  zookeeper:
-    replicas: 3
-    storage:
-      type: ephemeral
   kafkaExporter:
     template:
       service:

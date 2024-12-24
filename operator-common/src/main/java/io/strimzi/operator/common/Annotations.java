@@ -25,7 +25,7 @@ import static java.lang.Integer.parseInt;
 public class Annotations extends ResourceAnnotations {
 
     /**
-     * Annotation for keeping Kafka and ZooKeeper servers' certificate thumbprints.
+     * Annotation for keeping Kafka servers' certificate thumbprints.
      */
     public static final String ANNO_STRIMZI_SERVER_CERT_HASH = STRIMZI_DOMAIN + "server-cert-hash";
 

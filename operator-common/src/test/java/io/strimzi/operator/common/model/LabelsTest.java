@@ -14,6 +14,8 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
@@ -153,21 +155,14 @@ public class LabelsTest {
     @Test
     public void testFromResourceWithoutLabels()   {
         Kafka kafka = new KafkaBuilder()
-                    .withNewMetadata()
-                        .withName("my-kafka")
-                    .endMetadata()
-                    .withNewSpec()
-                        .withNewZookeeper()
-                            .withReplicas(3)
-                            .withNewEphemeralStorage()
-                            .endEphemeralStorage()
-                        .endZookeeper()
-                        .withNewKafka()
-                            .withReplicas(3)
-                            .withNewEphemeralStorage()
-                            .endEphemeralStorage()
-                        .endKafka()
-                    .endSpec()
+                .withNewMetadata()
+                    .withName("my-kafka")
+                .endMetadata()
+                .withNewSpec()
+                    .withNewKafka()
+                        .withListeners(new GenericKafkaListenerBuilder().withName("tls").withPort(9093).withType(KafkaListenerType.INTERNAL).withTls(true).build())
+                    .endKafka()
+                .endSpec()
                 .build();
 
         Labels l = Labels.fromResource(kafka);
@@ -190,15 +185,8 @@ public class LabelsTest {
                     .withLabels(userProvidedLabels)
                 .endMetadata()
                 .withNewSpec()
-                    .withNewZookeeper()
-                        .withReplicas(3)
-                        .withNewEphemeralStorage()
-                        .endEphemeralStorage()
-                    .endZookeeper()
                     .withNewKafka()
-                        .withReplicas(3)
-                        .withNewEphemeralStorage()
-                        .endEphemeralStorage()
+                        .withListeners(new GenericKafkaListenerBuilder().withName("tls").withPort(9093).withType(KafkaListenerType.INTERNAL).withTls(true).build())
                     .endKafka()
                 .endSpec()
                 .build();
