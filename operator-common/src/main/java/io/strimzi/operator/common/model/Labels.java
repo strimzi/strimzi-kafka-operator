@@ -481,7 +481,7 @@ public class Labels extends ResourceLabels {
      * @param resource              Kubernetes resource with metadata. It is used to get the resource name as well as copy
      *                              its labels. This is typically a custom resource which owns the whole deployment.
      * @param strimziComponentName  Name of the component used for the strimzi.io/name label
-     * @param strimziComponentType  Type of the component (e.g. kafka, zookeeper, etc.) used for the strimzi.io/component-type label
+     * @param strimziComponentType  Type of the component (e.g. kafka, etc.) used for the strimzi.io/component-type label
      * @param managedBy             Name of the component managing this resource (e.g. strimzi-cluster-operator)
      *
      * @return  The default set of labels used for the Kubernetes resources

@@ -3,7 +3,7 @@ kind: Kafka
 metadata:
   annotations:
     kubectl.kubernetes.io/last-applied-configuration: |
-      {"apiVersion":"kafka.strimzi.io/v1beta2","kind":"Kafka","metadata":{"annotations":{},"name":"my-cluster","namespace":"myproject"},"spec":{"kafka":{"config":{"log.message.format.version":"2.1","offsets.topic.replication.factor":3,"transaction.state.log.min.isr":2,"transaction.state.log.replication.factor":3},"foo":"bar","listeners":{"plain":{},"tls":{}},"replicas":3,"storage":{"type":"ephemeral"},"version":"2.1.0"},"topicOperator":{},"zookeeper":{"replicas":3,"storage":{"type":"ephemeral"}}}}
+      {"apiVersion":"kafka.strimzi.io/v1beta2","kind":"Kafka","metadata":{"annotations":{},"name":"my-cluster","namespace":"myproject"},"spec":{"kafka":{"config":{"log.message.format.version":"2.1","offsets.topic.replication.factor":3,"transaction.state.log.min.isr":2,"transaction.state.log.replication.factor":3},"foo":"bar","listeners":{"plain":{},"tls":{}},"replicas":3,"storage":{"type":"ephemeral"},"version":"2.1.0"},"topicOperator":{}}}
   creationTimestamp: 2019-01-31T09:45:40Z
   generation: 1
   name: my-cluster
@@ -28,9 +28,6 @@ spec:
         port: 9093
         type: internal
         tls: true
-    replicas: 3
-    storage:
-      type: ephemeral
     version: 2.8.0
     template:
       bootstrapService:
@@ -39,7 +36,3 @@ spec:
           - IPv6
     tlsSidecar: {}
   topicOperator: {}
-  zookeeper:
-    replicas: 3
-    storage:
-      type: ephemeral
