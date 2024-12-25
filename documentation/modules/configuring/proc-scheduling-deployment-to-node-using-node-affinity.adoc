@@ -41,8 +41,6 @@ spec:
                     values:
                     - fast-network
     # ...
-  zookeeper:
-    # ...
 ----
 
 . Create or update the resource.

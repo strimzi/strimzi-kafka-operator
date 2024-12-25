@@ -23,7 +23,6 @@ import io.strimzi.api.kafka.model.common.jmx.KafkaJmxOptions;
 import io.strimzi.api.kafka.model.common.metrics.MetricsConfig;
 import io.strimzi.api.kafka.model.kafka.SingleVolumeStorage;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
@@ -36,7 +35,6 @@ import java.util.Map;
 /**
  * Representation of a Strimzi-managed ZooKeeper "cluster".
  */
-@DescriptionFile 
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API

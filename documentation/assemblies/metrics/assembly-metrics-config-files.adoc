@@ -54,7 +54,7 @@ metrics
 <9> Kafka Bridge resource with metrics enabled.
 <10> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka Connect.
 <11> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Cruise Control.
-<12> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka and ZooKeeper.
+<12> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka.
 <13> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for MirrorMaker 2.
 <14> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for OAuth 2.0.
 

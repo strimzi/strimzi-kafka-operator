@@ -137,7 +137,7 @@ env:
     value: "__KEYSTORE-PASSWORD__"
 # ...
 ----
-<1> The truststore contains the public keys of the Certificate Authorities used to sign the Kafka and ZooKeeper server certificates.
+<1> The truststore contains the public keys of the Certificate Authorities used to sign the Kafka server certificates.
 <2> The password for accessing the truststore.
 <3> The keystore contains the private key for mTLS authentication.
 <4> The password for accessing the keystore.

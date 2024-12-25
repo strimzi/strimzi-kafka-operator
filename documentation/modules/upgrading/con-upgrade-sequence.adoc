@@ -18,6 +18,5 @@ You can xref:con-upgrade-cluster-{context}[upgrade Kubernetes with minimal downt
 
 . Upgrade Kafka depending on the cluster configuration:
 .. If using Kafka in KRaft mode, update the Kafka version and `spec.kafka.metadataVersion` to xref:proc-upgrade-kafka-kraft-{context}[upgrade all Kafka brokers and client applications].
-.. If using ZooKeeper-based Kafka, update the Kafka version and `inter.broker.protocol.version` to xref:assembly-upgrade-zookeeper-{context}[upgrade all Kafka brokers and client applications].
 
 NOTE: From Strimzi 0.39, upgrades and downgrades between KRaft-based clusters are supported.   

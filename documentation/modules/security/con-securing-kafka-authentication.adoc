@@ -88,7 +88,7 @@ spec:
 [id='con-mutual-tls-authentication-{context}']
 == mTLS authentication
 
-mTLS authentication is always used for the communication between Kafka brokers and ZooKeeper pods.
+mTLS authentication is always used for the communication between Kafka nodes.
 
 Strimzi can configure Kafka to use TLS (Transport Layer Security) to provide encrypted communication between Kafka brokers and clients either with or without mutual authentication.
 For mutual, or two-way, authentication, both the server and the client present certificates.

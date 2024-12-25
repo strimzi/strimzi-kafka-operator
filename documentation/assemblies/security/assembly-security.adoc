@@ -41,20 +41,6 @@ External clients (producers and consumers) connect to the Kafka brokers through 
 IMPORTANT: When configuring listeners for client access to brokers, you can use port 9092 or higher (9093, 9094, and so on), but with a few exceptions.
 The listeners cannot be configured to use the ports reserved for interbroker communication (9090 and 9091), Prometheus metrics (9404), and JMX (Java Management Extensions) monitoring (9999).
 
-If you are using ZooKeeper for cluster management, there are TLS connections between ZooKeeper and Kafka brokers and Strimzi operators. 
-
-The following diagram shows the connections for secure communication when using ZooKeeper.   
-
-.Kafka and ZooKeeper communication secured by TLS encryption
-image::secure_communication_zookeeper.png[Secure Communication]
-
-The ZooKeeper ports are used as follows:
-
-ZooKeeper port (2181):: ZooKeeper port for connection to Kafka brokers.
-Additionally, the Cluster Operator communicates with ZooKeeper through this port.
-ZooKeeper internodal communication port (2888):: ZooKeeper port for internodal communication between ZooKeeper nodes.
-ZooKeeper leader election port (3888):: ZooKeeper port for leader election among ZooKeeper nodes in a ZooKeeper cluster.
-
 .Node status monitoring using the `KafkaAgent` (8443)
 
 Strimzi includes a component called `KafkaAgent` that runs inside each Kafka node. 

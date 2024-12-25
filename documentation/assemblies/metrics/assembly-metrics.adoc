@@ -48,7 +48,6 @@ For more information on the metrics and monitoring tools, refer to the supportin
 * {kafka-exporter-project}
 * {GrafanaHome}
 * link:http://kafka.apache.org/documentation/#monitoring[Apache Kafka Monitoring] describes JMX metrics exposed by Apache Kafka
-* link:https://zookeeper.apache.org/doc/current/zookeeperJMX.html[ZooKeeper JMX] describes JMX metrics exposed by Apache ZooKeeper
 
 //what is Consumer lag?
 include::../../modules/metrics/con_kafka-exporter-lag.adoc[leveloffset=+1]

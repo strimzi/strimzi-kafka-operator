@@ -42,9 +42,6 @@ include::assembly-upgrade-cluster-operator.adoc[leveloffset=+1]
 //upgrading kafka: KRaft-based
 include::../../modules/upgrading/proc-upgrade-kafka-kraft.adoc[leveloffset=+1]
 
-//upgrading Kafka: ZooKeeper-based
-include::assembly-upgrade-zookeeper.adoc[leveloffset=+1]
-
 //checking the status of an upgrade
 include::../../modules/upgrading/con-upgrade-status.adoc[leveloffset=+1]
 //Using FIPS

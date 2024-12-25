@@ -1,6 +1,6 @@
 Configures JMX connection options.
 
-Get JMX metrics from Kafka brokers, ZooKeeper nodes, Kafka Connect, and MirrorMaker 2. by connecting to port 9999.
+Get JMX metrics from Kafka brokers, Kafka Connect, and MirrorMaker 2. by connecting to port 9999.
 Use the `jmxOptions` property to configure a password-protected or an unprotected JMX port.
 Using password protection prevents unauthorized pods from accessing the port.
 
@@ -11,7 +11,7 @@ or the request rate of the network of the broker.
 
 To enable security for the JMX port, set the `type` parameter in the `authentication` field to `password`.
 
-.Example password-protected JMX configuration for Kafka brokers and ZooKeeper nodes
+.Example password-protected JMX configuration for Kafka brokers
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaApiVersion}
@@ -25,12 +25,6 @@ spec:
       authentication:
         type: "password"
     # ...
-  zookeeper:
-    # ...
-    jmxOptions:
-      authentication:
-        type: "password"
-    #...
 ----
 
 You can then deploy a pod into a cluster and obtain JMX metrics using the headless
@@ -51,7 +45,7 @@ deployment of your pod.
 For an unprotected JMX port, use an empty object `{}` to open the JMX port on the headless service.
 You deploy a pod and obtain metrics in the same way as for the protected port, but in this case any pod can read from the JMX port.
 
-.Example open port JMX configuration for Kafka brokers and ZooKeeper nodes
+.Example open port JMX configuration for Kafka brokers
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaApiVersion}
@@ -60,10 +54,6 @@ metadata:
   name: my-cluster
 spec:
   kafka:
-    # ...
-    jmxOptions: {}
-    # ...
-  zookeeper:
     # ...
     jmxOptions: {}
     # ...

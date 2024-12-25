@@ -13,7 +13,7 @@ You can add replicas with leader election so that additional Cluster Operators a
 
 The Cluster Operator manages the clusters of the following Kafka components:
 
-* Kafka (including ZooKeeper, Entity Operator, Kafka Exporter, and Cruise Control)
+* Kafka (including Entity Operator, Kafka Exporter, and Cruise Control)
 * Kafka Connect
 * Kafka MirrorMaker
 * Kafka Bridge
@@ -39,4 +39,4 @@ The annotation informs the Cluster Operator to perform the rolling update.
 
 .Example architecture for the Cluster Operator
 
-image:cluster-operator.png[The Cluster Operator creates and deploys Kafka and ZooKeeper clusters]
+image:cluster-operator.png[The Cluster Operator creates and deploys Kafka clusters]

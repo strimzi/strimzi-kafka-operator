@@ -6,7 +6,7 @@
 = Scheduling maintenance time windows
 
 [role="_abstract"]
-Schedule certificate renewal updates by the Cluster Operator to Kafka or ZooKeeper clusters for minimal impact on client applications.
+Schedule certificate renewal updates by the Cluster Operator to Kafka cluster for minimal impact on client applications.
 Use time windows in conjunction with the xref:con-certificate-renewal-str[renewal periods of the CA certificates created by the Cluster Operator] (`Kafka.spec.clusterCa.renewalDays` and `Kafka.spec.clusterCa.renewalDays`).
 
 Updates are usually triggered by changes to the `Kafka` resource by the user or through user tooling.

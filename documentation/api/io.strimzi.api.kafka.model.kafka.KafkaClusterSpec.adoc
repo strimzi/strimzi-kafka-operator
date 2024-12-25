@@ -42,7 +42,6 @@ However, Strimzi takes care of configuring and managing options related to the f
 * Broker ID configuration
 * Configuration of log data directories
 * Inter-broker communication
-* ZooKeeper connectivity
 
 Properties with the following prefixes cannot be set:
 
@@ -74,8 +73,7 @@ If the `config` property contains an option that cannot be changed, it is disreg
 All other supported options are forwarded to Kafka, including the following exceptions to the options configured by Strimzi:
 
 * Any `ssl` configuration for xref:con-common-configuration-ssl-reference[supported TLS versions and cipher suites]
-* Configuration for the `zookeeper.connection.timeout.ms` property to set the maximum time allowed for establishing a ZooKeeper connection
-* Cruise Control metrics properties: 
+* Cruise Control metrics properties:
 ** `cruise.control.metrics.topic.num.partitions`
 ** `cruise.control.metrics.topic.replication.factor`
 ** `cruise.control.metrics.topic.retention.ms`

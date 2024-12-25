@@ -10,7 +10,7 @@ To use a ConfigMap to define logging properties, you create the ConfigMap and th
 
 The ConfigMap must contain the appropriate logging configuration.
 
-* `log4j.properties` for Kafka components, ZooKeeper, and the Kafka Bridge
+* `log4j.properties` for Kafka components and the Kafka Bridge
 * `log4j2.properties` for the Topic Operator and User Operator
 
 The configuration must be placed under these properties.

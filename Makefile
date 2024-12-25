@@ -101,7 +101,6 @@ helm_pkg: dashboard_install
 	rm strimzi-kafka-operator-$(CHART_SEMANTIC_RELEASE_VERSION).tgz
 
 docu_versions:
-	documentation/snip-kafka-versions.sh > documentation/modules/snip-kafka-versions.adoc
 	documentation/version-dependent-attrs.sh > documentation/shared/version-dependent-attrs.adoc
 	documentation/snip-images.sh > documentation/modules/snip-images.adoc
 

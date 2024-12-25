@@ -25,8 +25,6 @@ The `Kafka` resource configuration for each example includes the `strimzi.io/nod
 
 The example YAML files specify the latest supported Kafka version and KRaft metadata version used by the Kafka cluster.
 
-NOTE: You can perform the steps outlined here to deploy a new Kafka cluster with `KafkaNodePool` resources or xref:proc-migrating-clusters-node-pools-{context}[migrate your existing Kafka cluster].  
-
 .Prerequisites
 
 * xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]  
@@ -79,5 +77,5 @@ NOTE: Node IDs are assigned sequentially starting at 0 (zero) across all node po
 [role="_additional-resources"]
 .Additional resources
 
-* xref:con-config-kafka-str[Kafka cluster configuration]
+* xref:con-config-kafka-kraft-str[Kafka cluster configuration]
 * xref:config-node-pools-{context}[Node pool configuration]

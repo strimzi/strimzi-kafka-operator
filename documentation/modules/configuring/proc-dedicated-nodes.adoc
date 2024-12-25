@@ -54,8 +54,6 @@ spec:
                   values:
                   - Kafka
     # ...
-  zookeeper:
-    # ...
 ----
 
 . Create or update the resource.

@@ -13,22 +13,6 @@ Any changes to a Kafka topic managed outside the `KafkaTopic` resource are rever
 
 If you are reverting back to a version of Strimzi earlier than 0.41, which uses internal topics for the storage of topic metadata, you still downgrade your Cluster Operator to the previous version, then downgrade Kafka brokers and client applications to the previous Kafka version as standard.
 
-== Downgrading to a Strimzi version that uses ZooKeeper to store topic metadata
-
-If you are reverting back to a version of Strimzi earlier than 0.22, which uses ZooKeeper for the storage of topic metadata, you still downgrade your Cluster Operator to the previous version, then downgrade Kafka brokers and client applications to the previous Kafka version as standard.
-
-However, you must also delete the topics that were created for the topic store using a `kafka-topics` command, specifying the bootstrap address of the Kafka cluster.
-For example:
-
-[source,shell,subs="+attributes"]
-----
-kubectl run kafka-admin -ti --image={DockerKafkaImageCurrent} --rm=true --restart=Never -- ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi-topic-operator-kstreams-topic-store-changelog --delete && ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi_store_topic --delete
-----
-
-The command must correspond to the type of listener and authentication used to access the Kafka cluster.
-
-The Topic Operator will reconstruct the ZooKeeper topic metadata from the state of the topics in Kafka.
-
 == Automatic creation of topics
 
 Applications can trigger the automatic creation of topics in the Kafka cluster.

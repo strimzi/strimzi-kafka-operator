@@ -12,12 +12,11 @@ You can use these files to deploy the Topic Operator and User Operator at the sa
 
 After you have deployed the Cluster Operator, use a `Kafka` resource to deploy the following components:
 
-* A Kafka cluster that uses KRaft or ZooKeeper:
-** xref:deploying-kafka-cluster-kraft-{context}[KRaft-based Kafka cluster]
+* xref:deploying-kafka-cluster-kraft-{context}[KRaft-based Kafka cluster]
 * xref:deploying-the-topic-operator-using-the-cluster-operator-{context}[Topic Operator]
 * xref:deploying-the-user-operator-using-the-cluster-operator-{context}[User Operator]
 
-Node pools are used in the deployment of a Kafka cluster in KRaft (Kafka Raft metadata) mode, and may be used for the deployment of a Kafka cluster with ZooKeeper.
+Node pools are used in the deployment of a Kafka cluster in KRaft (Kafka Raft metadata) mode.
 Node pools represent a distinct group of Kafka nodes within the Kafka cluster that share the same configuration.
 For each Kafka node in the node pool, any configuration not defined in node pool is inherited from the cluster configuration in the `Kafka` resource. 
 
@@ -32,7 +31,5 @@ include::../../modules/deploying/proc-deploy-kafka-cluster-kraft.adoc[leveloffse
 include::../../modules/deploying/proc-deploy-topic-operator-with-cluster-operator.adoc[leveloffset=+1]
 //Include User Operator in deployment
 include::../../modules/deploying/proc-deploy-user-operator-with-cluster-operator.adoc[leveloffset=+1]
-//Connecting to ZooKeeper from terminal
-include::../../modules/configuring/proc-connecting-to-zookeeper.adoc[leveloffset=+1]
 //Kafka cluster resources created
 include::../../modules/configuring/ref-list-of-kafka-cluster-resources.adoc[leveloffset=+1]

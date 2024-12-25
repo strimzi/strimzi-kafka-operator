@@ -33,7 +33,6 @@ Strimzi image for running Kafka, including:
 * Kafka Broker
 * Kafka Connect
 * Kafka MirrorMaker 2
-* ZooKeeper
 * Cruise Control
 
 |Operator

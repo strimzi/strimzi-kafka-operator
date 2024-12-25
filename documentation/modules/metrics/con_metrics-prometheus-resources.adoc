@@ -8,7 +8,7 @@
 
 When you apply the Prometheus configuration, the following resources are created in your Kubernetes cluster and managed by the Prometheus Operator:
 
-* A `ClusterRole` that grants permissions to Prometheus to read the health endpoints exposed by the Kafka and ZooKeeper pods, cAdvisor and the kubelet for container metrics.
+* A `ClusterRole` that grants permissions to Prometheus to read the health endpoints exposed by the Kafka pods, cAdvisor and the kubelet for container metrics.
 * A `ServiceAccount` for the Prometheus pods to run under.
 * A `ClusterRoleBinding` which binds the `ClusterRole` to the `ServiceAccount`.
 * A `Deployment` to manage the Prometheus Operator pod.

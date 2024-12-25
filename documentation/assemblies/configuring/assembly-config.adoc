@@ -81,13 +81,6 @@ include::../../modules/managing/proc-setting-broker-limits.adoc[leveloffset=+2]
 //Delete kafka nodes using annotations
 include::../../modules/configuring/proc-manual-delete-pod-pvc-kafka.adoc[leveloffset=+2]
 
-//zookeeper-specific
-include::../../modules/configuring/con-config-kafka-zookeeper.adoc[leveloffset=+1]
-//Zookeeper's default configuration
-include::../../modules/configuring/con-zookeeper-default-config.adoc[leveloffset=+2]
-//Delete zookeeper nodes using annotations
-include::../../modules/configuring/proc-manual-delete-pod-pvc-zookeeper.adoc[leveloffset=+2]
-
 //configuring node pools
 include::../../modules/configuring/con-config-node-pools.adoc[leveloffset=+1]
 include::../../modules/configuring/proc-managing-node-pools-ids.adoc[leveloffset=+2]
@@ -98,7 +91,6 @@ include::../../modules/configuring/proc-moving-node-pools.adoc[leveloffset=+2]
 include::../../modules/configuring/con-config-node-pool-roles.adoc[leveloffset=+2]
 include::../../modules/configuring/proc-splitting-node-pool-roles.adoc[leveloffset=+2]
 include::../../modules/configuring/proc-joining-node-pool-roles.adoc[leveloffset=+2]
-include::../../modules/configuring/proc-migrating-clusters-node-pools.adoc[leveloffset=+2]
 
 //configuring storage
 include::assembly-storage.adoc[leveloffset=+1]

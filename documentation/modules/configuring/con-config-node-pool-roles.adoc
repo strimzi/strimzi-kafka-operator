@@ -6,9 +6,8 @@
 = Changing node pool roles
 
 [role="_abstract"]
-Node pools can be used with Kafka clusters that operate in KRaft mode (using Kafka Raft metadata) or use ZooKeeper for metadata management.
+Node pools are used with Kafka clusters that operate in KRaft mode (using Kafka Raft metadata).
 If you are using KRaft mode, you can specify roles for all nodes in the node pool to operate as brokers, controllers, or both.
-If you are using ZooKeeper, nodes must be set as brokers only.
 
 In certain circumstances you might want to change the roles assigned to a node pool.
 For example, you may have a node pool that contains nodes that perform dual broker and controller roles, and then decide to split the roles between two node pools.

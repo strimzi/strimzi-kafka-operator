@@ -138,9 +138,6 @@ This allows the Cluster Operator to follow the principle of least privilege and 
 | Name
 | Used by
 
-|<cluster_name>-zookeeper
-|ZooKeeper pods
-
 |<cluster_name>-kafka
 |Kafka broker pods
 

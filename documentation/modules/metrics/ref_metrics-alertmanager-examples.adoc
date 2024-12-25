@@ -13,7 +13,6 @@ The rules are specified in the example `prometheus-rules.yaml` file for use in a
 The `prometheus-rules.yaml` file contains example rules for the following components:
 
 * Kafka
-* ZooKeeper
 * Entity Operator
 * Kafka Connect
 * Kafka Bridge
@@ -33,8 +32,7 @@ Alertmanager then sends out a notification using the communication method config
 General points about the alerting rule definitions:
 
 * A `for` property is used with the rules to determine the period of time a condition must persist before an alert is triggered.
-* A tick is a basic ZooKeeper time unit, which is measured in milliseconds and configured using the `tickTime` parameter of `Kafka.spec.zookeeper.config`. For example, if ZooKeeper `tickTime=3000`, 3 ticks (3 x 3000) equals 9000 milliseconds.
-* The availability of the `ZookeeperRunningOutOfSpace` metric and alert is dependent on the Kubernetes configuration and storage implementation used. Storage implementations for certain platforms may not be able to supply the information on available space required for the metric to provide an alert.
+* The availability of the `KafkaRunningOutOfSpace` metric and alert is dependent on the Kubernetes configuration and storage implementation used. Storage implementations for certain platforms may not be able to supply the information on available space required for the metric to provide an alert.
 
 Alertmanager can be configured to use email, chat messages or other notification methods.
 Adapt the default configuration of the example rules according to your specific needs.

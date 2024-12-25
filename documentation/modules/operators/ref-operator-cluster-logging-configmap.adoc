@@ -21,7 +21,7 @@ kubectl edit configmap strimzi-cluster-operator
 
 With this ConfigMap, you can control various aspects of logging, including the root logger level, log output format, and log levels for different components. 
 The `monitorInterval` setting, determines how often the logging configuration is reloaded. 
-You can also control the logging levels for the Kafka `AdminClient`, ZooKeeper `ZKTrustManager`, Netty, and the OkHttp client.
+You can also control the logging levels for the Kafka `AdminClient` or Netty.
 Netty is a framework used in Strimzi for network communication, and OkHttp is a library used for making HTTP requests.
   
 If the `ConfigMap` is missing when the Cluster Operator is deployed, the default logging values are used.

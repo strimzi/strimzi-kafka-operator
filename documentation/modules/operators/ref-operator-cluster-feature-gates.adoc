@@ -74,7 +74,7 @@ Examples of the `KafkaNodePool` resources can be found in the xref:config-exampl
 
 .Downgrading from KafkaNodePools
 
-If your cluster already uses `KafkaNodePool` custom resources, and you wish to downgrade to an older version of Strimzi that does not support them or with the `KafkaNodePools` feature gate disabled, you must first migrate from `KafkaNodePool` custom resources to managing Kafka nodes using only `Kafka` custom resources. For more information, see the instructions for xref:proc-migrating-clusters-node-pools-str[reversing a migration to node pools].
+KRaft.based Apache Kafka cluster always use KafkaNodePools and downgrading from them is not possible anymore.
 
 [id='ref-operator-unidirectional-topic-operator-feature-gate-{context}']
 === UnidirectionalTopicOperator feature gate
@@ -109,7 +109,6 @@ The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate has a defa
 The `ContinueReconciliationOnManualRollingUpdateFailure` feature gate allows the Cluster Operator to continue a reconciliation if the manual rolling update of the operands fails.
 It applies to the following operands that support manual rolling updates using the `strimzi.io/manual-rolling-update` annotation:
 
-* ZooKeeper
 * Kafka
 * Kafka Connect
 * Kafka MirrorMaker 2

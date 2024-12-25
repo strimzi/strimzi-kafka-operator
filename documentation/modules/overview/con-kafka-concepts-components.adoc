@@ -30,7 +30,3 @@ Kafka Connect can be configured to build custom container images with the requir
 Kafka MirrorMaker:: Kafka MirrorMaker replicates data between two Kafka clusters, either in the same data center or across different locations.
 Kafka Bridge:: Kafka Bridge provides an API for integrating HTTP-based clients with a Kafka cluster.
 Kafka Exporter:: Kafka Exporter extracts data for analysis as Prometheus metrics, primarily data relating to offsets, consumer groups, consumer lag and topics. Consumer lag is the delay between the last message written to a partition and the message currently being picked up from that partition by a consumer
-
-Apache ZooKeeper (optional):: Apache ZooKeeper provides a cluster coordination service, storing and tracking the status of brokers and consumers. 
-ZooKeeper is also used for controller election. If ZooKeeper is used, the ZooKeeper cluster must be ready before running Kafka. 
-However, since the introduction of KRaft, ZooKeeper is no longer required as Kafka nodes handle cluster coordination and control natively.
