@@ -27,7 +27,6 @@ import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.ClusterCa;
-import io.strimzi.operator.cluster.model.KRaftUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.ModelUtils;
@@ -44,7 +43,6 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.config.ConfigParameter;
 import io.strimzi.operator.common.model.ClientsCa;
-import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.PasswordGenerator;
@@ -232,13 +230,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         if (nonMigratedCluster || !kraftEnabled || !nodePoolsEnabled) {
             throw new InvalidConfigurationException("Strimzi " + OPERATOR_VERSION + " supports only KRaft-based Apache Kafka clusters. Please make sure your cluster is migrated to KRaft before using Strimzi " + OPERATOR_VERSION + ".");
-        } else {
-            // Validates features which are currently not supported in KRaft mode
-            try {
-                KRaftUtils.validateKafkaCrForKRaft(reconcileState.kafkaAssembly.getSpec());
-            } catch (InvalidResourceException e)    {
-                return Future.failedFuture(e);
-            }
         }
 
         reconcileState.initialStatus()
