@@ -61,9 +61,6 @@ spec:
       app.kubernetes.io/name: kube-state-metrics
       app.kubernetes.io/instance: strimzi-kube-state-metrics
   replicas: 1
-  strategy:
-    type: RollingUpdate
-  revisionHistoryLimit: 10
   template:
     metadata:
       labels:
