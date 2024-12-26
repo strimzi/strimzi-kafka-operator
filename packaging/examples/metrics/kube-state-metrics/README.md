@@ -5,5 +5,5 @@ This folder contains examples of how Strimzi integrates [kube-state-metrics](htt
 [ConfigMap](./configmap.yaml):
 * Contains the KSM configuration represented as `ConfigMap`
 [PrometheusRules](./prometheus-rules.yaml)
-* Contains the alerting based on metrics collected by KSM
+* Contains the alerting based on metrics produced by KSM and collected by Prometheus
 * Compatible with [Prometheus-Operator](https://github.com/prometheus-operator/prometheus-operator)
