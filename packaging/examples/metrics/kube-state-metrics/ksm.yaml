@@ -1,5 +1,4 @@
 ---
-# Source: kube-state-metrics/templates/serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
 automountServiceAccountToken: true
