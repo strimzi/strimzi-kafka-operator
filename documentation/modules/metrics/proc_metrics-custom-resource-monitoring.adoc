@@ -1,0 +1,68 @@
+// This assembly is included in the following assemblies:
+//
+// metrics/assembly_metrics-custom-resource-monitoring.adoc
+
+[id='proc-metrics-custom-resource-monitoring-{context}']
+
+= Custom resource monitoring
+
+[role="_abstract"]
+Use kube-state-metrics to provide custom resource monitoring.
+link:https://github.com/kubernetes/kube-state-metrics/[Kube-state-metrics^](KSM) is a scalable Kubernetes native service which listens to the Kubernetes API server and generates metrics about the state of the objects.
+Strimzi provides monitoring for the following custom resources via KSM: `KafkaUser` and `KafkaTopic`.
+
+You can use your own KSM deployment or deploy KSM using the xref:assembly-metrics-config-files-{context}[example metrics configuration files] provided by Strimzi.
+The example files include a configuration file for a KSM deployment
+
+* `examples/metrics/kube-state-metrics/ksm.yaml`
+
+Strimzi also provides xref:ref-metrics-custom-resource-monitoring-{context}[example configuration ConfigMap for KSM].
+
+* `examples/metrics/kube-state-metrics/configmap.yaml`
+
+This procedure uses the example KSM deployment and configuration file.
+
+.Prerequisites
+* xref:assembly-metrics-prometheus-{context}[Prometheus and Prometheus Alertmanager are deployed]
+
+.Procedure
+
+. Deploy KSM.
++
+[source,shell,subs="+quotes,attributes"]
+kubectl apply -f configmap.yaml
+kubectl apply -f ksm.yaml
+
+. Get the details of the KSM service.
++
+[source,shell]
+----
+kubectl get service strimzi-kube-state-metrics
+----
++
+For example:
++
+[table,stripes=none]
+|===
+|NAME     |TYPE      |CLUSTER-IP    |PORT(S)
+
+|strimzi-kube-state-metrics  |ClusterIP |172.40.156.40 |8080/TCP
+|===
++
+Note the port number for port forwarding.
+
+. Use `port-forward` to redirect the KSM metrics endpoint to `localhost:8080`:
++
+[source,shell]
+----
+kubectl port-forward svc/strimzi-kube-state-metrics 8080:8080
+----
+
+. In a web browser, access the KSM metrics page using the URL `http://localhost:8080/metrics`.
++
+The Prometheus endpoint page appears.
+All of these metrics also get scraped by Prometheus via the provided `ServiceMonitor` in order to act on in Prometheus.
+
+Please check the provided `PrometheusRule` resources for alerting on these metrics:
+
+* `examples/metrics/kube-state-metrics/prometheus-rules.yaml`
