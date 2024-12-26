@@ -45,7 +45,7 @@ spec:
       protocol: TCP
       port: 8080
       targetPort: 8080
-  selector:    
+  selector:
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/instance: strimzi-kube-state-metrics
 ---
@@ -57,7 +57,7 @@ metadata:
     app.kubernetes.io/instance: strimzi-kube-state-metrics
 spec:
   selector:
-    matchLabels:      
+    matchLabels:
       app.kubernetes.io/name: kube-state-metrics
       app.kubernetes.io/instance: strimzi-kube-state-metrics
   replicas: 1
@@ -66,7 +66,7 @@ spec:
   revisionHistoryLimit: 10
   template:
     metadata:
-      labels:        
+      labels:
         app.kubernetes.io/name: kube-state-metrics
         app.kubernetes.io/instance: strimzi-kube-state-metrics
     spec:
@@ -137,7 +137,7 @@ metadata:
 spec:
   jobLabel: app.kubernetes.io/name  
   selector:
-    matchLabels:      
+    matchLabels:
       app.kubernetes.io/name: kube-state-metrics
       app.kubernetes.io/instance: strimzi-kube-state-metrics
   endpoints:
