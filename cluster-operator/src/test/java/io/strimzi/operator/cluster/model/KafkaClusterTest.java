@@ -2190,7 +2190,31 @@ public class KafkaClusterTest {
     }
 
     @ParallelTest
-    public void testKRaftMetadataVersionValidation()   {
+    public void testKRaftMetadataVersionValidation()    {
+        // Valid values
+        assertDoesNotThrow(() -> KafkaCluster.validateMetadataVersion("3.6"));
+        assertDoesNotThrow(() -> KafkaCluster.validateMetadataVersion("3.6-IV2"));
+
+        // Minimum supported versions
+        assertDoesNotThrow(() -> KafkaCluster.validateMetadataVersion("3.3"));
+        assertDoesNotThrow(() -> KafkaCluster.validateMetadataVersion("3.3-IV0"));
+
+        // Invalid Values
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaCluster.validateMetadataVersion("3.6-IV9"));
+        assertThat(e.getMessage(), containsString("Metadata version 3.6-IV9 is invalid"));
+
+        e = assertThrows(InvalidResourceException.class, () -> KafkaCluster.validateMetadataVersion("3"));
+        assertThat(e.getMessage(), containsString("Metadata version 3 is invalid"));
+
+        e = assertThrows(InvalidResourceException.class, () -> KafkaCluster.validateMetadataVersion("3.2"));
+        assertThat(e.getMessage(), containsString("The oldest supported metadata version is 3.3-IV0"));
+
+        e = assertThrows(InvalidResourceException.class, () -> KafkaCluster.validateMetadataVersion("3.2-IV0"));
+        assertThat(e.getMessage(), containsString("The oldest supported metadata version is 3.3-IV0"));
+    }
+
+    @ParallelTest
+    public void testKRaftMetadataVersionValidationInFromCrd()   {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()

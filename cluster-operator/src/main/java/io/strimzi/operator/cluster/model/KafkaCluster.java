@@ -87,6 +87,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.StatusUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.apache.kafka.server.common.MetadataVersion;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -305,7 +306,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
         // Validates and sets the metadata version used in KRaft
         if (versionChange.metadataVersion() != null) {
-            KRaftUtils.validateMetadataVersion(versionChange.metadataVersion());
+            validateMetadataVersion(versionChange.metadataVersion());
             result.metadataVersion = versionChange.metadataVersion();
         }
 
@@ -542,6 +543,27 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         }
 
         throw new NodePoolNotFoundException("Node ID " + nodeId + " does not belong to any known node pool!");
+    }
+
+    /**
+     * Validates the metadata version
+     *
+     * @param metadataVersion   Metadata version that should be validated
+     */
+    /* test */ static void validateMetadataVersion(String metadataVersion)   {
+        try {
+            MetadataVersion version = MetadataVersion.fromVersionString(metadataVersion);
+
+            // KRaft is supposed to be supported from metadata version 3.0-IV1. But only from metadata version 3.3-IV0,
+            // the initial metadata version can be set using the kafka-storage.sh utility. And since most metadata
+            // versions do not support downgrade, that means 3.3-IV0 is the oldest metadata version that can be used
+            // with Strimzi.
+            if (version.isLessThan(MetadataVersion.IBP_3_3_IV0)) {
+                throw new InvalidResourceException("The oldest supported metadata version is 3.3-IV0");
+            }
+        } catch (IllegalArgumentException e)    {
+            throw new InvalidResourceException("Metadata version " + metadataVersion + " is invalid", e);
+        }
     }
 
     /**
