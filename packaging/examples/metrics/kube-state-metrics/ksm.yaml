@@ -135,7 +135,7 @@ metadata:
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/instance: strimzi-kube-state-metrics
 spec:
-  jobLabel: app.kubernetes.io/name  
+  jobLabel: app.kubernetes.io/name
   selector:
     matchLabels:
       app.kubernetes.io/name: kube-state-metrics
