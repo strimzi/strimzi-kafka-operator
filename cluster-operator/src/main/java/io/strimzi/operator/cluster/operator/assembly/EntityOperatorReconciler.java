@@ -116,7 +116,6 @@ public class EntityOperatorReconciler {
                 .compose(i -> topicOperatorConfigMap())
                 .compose(i -> userOperatorConfigMap())
                 .compose(i -> topicOperatorCruiseControlApiSecret())
-                .compose(i -> deleteOldEntityOperatorSecret())
                 .compose(i -> topicOperatorSecret(clock))
                 .compose(i -> userOperatorSecret(clock))
                 .compose(i -> deployment(isOpenShift, imagePullPolicy, imagePullSecrets))
@@ -340,19 +339,6 @@ public class EntityOperatorReconciler {
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityUserOperatorLoggingConfigMapName(reconciliation.name()), null)
                     .map((Void) null);
         }
-    }
-
-    /**
-     * Deletes the Entity Operator secret. This Secret was used in the past when both Topic and User operators were
-     * using the same user account. It is not used anymore, but we delete it if it exists from previous version.
-     *
-     * @return  Future which completes when the reconciliation is done
-     */
-    @SuppressWarnings("deprecation")
-    protected Future<Void> deleteOldEntityOperatorSecret() {
-        return secretOperator
-                .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityOperatorSecretName(reconciliation.name()), null)
-                .map((Void) null);
     }
 
     /**
