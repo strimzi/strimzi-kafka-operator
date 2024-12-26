@@ -28,6 +28,7 @@ metrics
 │   └── grafana.yaml <2>
 ├── kube-state-metrics <3>
 │   ├── configmap.yaml
+│   ├── ksm.yaml
 │   └── prometheus-rules.yaml
 ├── prometheus-additional-properties
 │   └── prometheus-additional.yaml <4>
