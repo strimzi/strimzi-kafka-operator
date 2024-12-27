@@ -55,7 +55,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@SuppressWarnings("deprecation") // Because of deprecated KafkaResources.entityOperatorSecretName
 @ExtendWith(VertxExtension.class)
 public class EntityOperatorReconcilerTest {
     private static final String NAMESPACE = "namespace";
@@ -103,8 +102,6 @@ public class EntityOperatorReconcilerTest {
 
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorSecretName(NAME)))).thenReturn(Future.succeededFuture());
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.entityUserOperatorSecretName(NAME)))).thenReturn(Future.succeededFuture());
-        ArgumentCaptor<Secret> operatorSecretCaptor = ArgumentCaptor.forClass(Secret.class);
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorSecretName(NAME)), operatorSecretCaptor.capture())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<Secret> toSecretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorSecretName(NAME)), toSecretCaptor.capture())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<Secret> uoSecretCaptor = ArgumentCaptor.forClass(Secret.class);
@@ -156,8 +153,6 @@ public class EntityOperatorReconcilerTest {
                     assertThat(saCaptor.getAllValues().size(), is(1));
                     assertThat(saCaptor.getValue(), is(notNullValue()));
 
-                    assertThat(operatorSecretCaptor.getAllValues().size(), is(1));
-                    assertThat(operatorSecretCaptor.getAllValues().get(0), is(nullValue()));
                     assertThat(toSecretCaptor.getAllValues().size(), is(1));
                     assertThat(toSecretCaptor.getAllValues().get(0), is(notNullValue()));
                     assertThat(uoSecretCaptor.getAllValues().size(), is(1));
@@ -208,8 +203,6 @@ public class EntityOperatorReconcilerTest {
 
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorSecretName(NAME)))).thenReturn(Future.succeededFuture());
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.entityUserOperatorSecretName(NAME)))).thenReturn(Future.succeededFuture());
-        ArgumentCaptor<Secret> operatorSecretCaptor = ArgumentCaptor.forClass(Secret.class);
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorSecretName(NAME)), operatorSecretCaptor.capture())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<Secret> toSecretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorSecretName(NAME)), toSecretCaptor.capture())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<Secret> uoSecretCaptor = ArgumentCaptor.forClass(Secret.class);
@@ -269,8 +262,6 @@ public class EntityOperatorReconcilerTest {
                     assertThat(saCaptor.getAllValues().size(), is(1));
                     assertThat(saCaptor.getValue(), is(notNullValue()));
 
-                    assertThat(operatorSecretCaptor.getAllValues().size(), is(1));
-                    assertThat(operatorSecretCaptor.getAllValues().get(0), is(nullValue()));
                     assertThat(toSecretCaptor.getAllValues().size(), is(1));
                     assertThat(toSecretCaptor.getAllValues().get(0), is(notNullValue()));
                     assertThat(uoSecretCaptor.getAllValues().size(), is(1));
@@ -325,8 +316,6 @@ public class EntityOperatorReconcilerTest {
         when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
 
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorSecretName(NAME)))).thenReturn(Future.succeededFuture());
-        ArgumentCaptor<Secret> operatorSecretCaptor = ArgumentCaptor.forClass(Secret.class);
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorSecretName(NAME)), operatorSecretCaptor.capture())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<Secret> toSecretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorSecretName(NAME)), toSecretCaptor.capture())).thenReturn(Future.succeededFuture());
         if (cruiseControlEnabled) {
@@ -383,8 +372,6 @@ public class EntityOperatorReconcilerTest {
                     assertThat(saCaptor.getAllValues().size(), is(1));
                     assertThat(saCaptor.getValue(), is(notNullValue()));
 
-                    assertThat(operatorSecretCaptor.getAllValues().size(), is(1));
-                    assertThat(operatorSecretCaptor.getAllValues().get(0), is(nullValue()));
                     if (cruiseControlEnabled) {
                         assertThat(toSecretCaptor.getAllValues().size(), is(2));
                         assertThat(toSecretCaptor.getAllValues().get(0), is(notNullValue()));
@@ -437,8 +424,6 @@ public class EntityOperatorReconcilerTest {
         when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
 
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.entityUserOperatorSecretName(NAME)))).thenReturn(Future.succeededFuture());
-        ArgumentCaptor<Secret> operatorSecretCaptor = ArgumentCaptor.forClass(Secret.class);
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorSecretName(NAME)), operatorSecretCaptor.capture())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<Secret> toSecretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorSecretName(NAME)), toSecretCaptor.capture())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<Secret> uoSecretCaptor = ArgumentCaptor.forClass(Secret.class);
@@ -488,8 +473,6 @@ public class EntityOperatorReconcilerTest {
                     assertThat(saCaptor.getAllValues().size(), is(1));
                     assertThat(saCaptor.getValue(), is(notNullValue()));
 
-                    assertThat(operatorSecretCaptor.getAllValues().size(), is(1));
-                    assertThat(operatorSecretCaptor.getAllValues().get(0), is(nullValue()));
                     assertThat(toSecretCaptor.getAllValues().size(), is(1));
                     assertThat(toSecretCaptor.getAllValues().get(0), is(nullValue()));
                     assertThat(uoSecretCaptor.getAllValues().size(), is(1));
@@ -535,8 +518,6 @@ public class EntityOperatorReconcilerTest {
         ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
         when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        ArgumentCaptor<Secret> operatorSecretCaptor = ArgumentCaptor.forClass(Secret.class);
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorSecretName(NAME)), operatorSecretCaptor.capture())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<Secret> toSecretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorSecretName(NAME)), toSecretCaptor.capture())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<Secret> uoSecretCaptor = ArgumentCaptor.forClass(Secret.class);
@@ -584,8 +565,6 @@ public class EntityOperatorReconcilerTest {
                     assertThat(saCaptor.getAllValues().size(), is(1));
                     assertThat(saCaptor.getValue(), is(nullValue()));
 
-                    assertThat(operatorSecretCaptor.getAllValues().size(), is(1));
-                    assertThat(operatorSecretCaptor.getAllValues().get(0), is(nullValue()));
                     assertThat(toSecretCaptor.getAllValues().size(), is(1));
                     assertThat(toSecretCaptor.getAllValues().get(0), is(nullValue()));
                     assertThat(uoSecretCaptor.getAllValues().size(), is(1));
@@ -628,8 +607,6 @@ public class EntityOperatorReconcilerTest {
         ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
         when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        ArgumentCaptor<Secret> operatorSecretCaptor = ArgumentCaptor.forClass(Secret.class);
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorSecretName(NAME)), operatorSecretCaptor.capture())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<Secret> toSecretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorSecretName(NAME)), toSecretCaptor.capture())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<Secret> uoSecretCaptor = ArgumentCaptor.forClass(Secret.class);
@@ -670,8 +647,6 @@ public class EntityOperatorReconcilerTest {
                     assertThat(saCaptor.getAllValues().size(), is(1));
                     assertThat(saCaptor.getValue(), is(nullValue()));
 
-                    assertThat(operatorSecretCaptor.getAllValues().size(), is(1));
-                    assertThat(operatorSecretCaptor.getAllValues().get(0), is(nullValue()));
                     assertThat(toSecretCaptor.getAllValues().size(), is(1));
                     assertThat(toSecretCaptor.getAllValues().get(0), is(nullValue()));
                     assertThat(uoSecretCaptor.getAllValues().size(), is(1));
