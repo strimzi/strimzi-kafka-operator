@@ -274,9 +274,7 @@ public class KafkaReconciler {
                 .compose(i -> sharedKafkaConfigurationCleanup())
                 // This has to run after all possible rolling updates which might move the pods to different nodes
                 .compose(i -> nodePortExternalListenerStatus())
-                .compose(i -> addListenersToKafkaStatus(kafkaStatus))
-                .compose(i -> updateKafkaVersion(kafkaStatus))
-                .compose(i -> updateKafkaMetadataState(kafkaStatus));
+                .compose(i -> updateKafkaStatus(kafkaStatus));
     }
 
     private Future<Void> updateKafkaAutoRebalanceStatus(KafkaStatus kafkaStatus) {
@@ -1129,21 +1127,20 @@ public class KafkaReconciler {
         }
     }
 
-    // Adds prepared Listener Statuses to the Kafka Status instance
-    protected Future<Void> addListenersToKafkaStatus(KafkaStatus kafkaStatus) {
+    /**
+     * Updates various fields in the Kafka CR .status section such as listener information, Kafka version, metadata
+     * state etc. This includes the parts of the status that do not need to be updated at a specific point in the
+     * reconciliation.
+     *
+     * @param kafkaStatus   Kafka status where the values should be set
+     *
+     * @return  Future that completes once the status is updated
+     */
+    /* test */ Future<Void> updateKafkaStatus(KafkaStatus kafkaStatus) {
         kafkaStatus.setListeners(listenerReconciliationResults.listenerStatuses);
-        return Future.succeededFuture();
-    }
-
-    // Adds Kafka version to the Kafka Status instance
-    /* test */ Future<Void> updateKafkaVersion(KafkaStatus kafkaStatus) {
         kafkaStatus.setKafkaVersion(kafka.getKafkaVersion().version());
-        return Future.succeededFuture();
-    }
-
-    // Updates the KRaft migration state into the Kafka Status instance
-    /* test */ Future<Void> updateKafkaMetadataState(KafkaStatus kafkaStatus) {
         kafkaStatus.setKafkaMetadataState(KafkaMetadataState.KRaft);
+
         return Future.succeededFuture();
     }
 
