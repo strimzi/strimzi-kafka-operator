@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
+import io.strimzi.api.kafka.model.kafka.KafkaMetadataState;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
@@ -173,6 +174,9 @@ public class KafkaReconcilerStatusTest {
 
             // Check kafka version
             assertThat(status.getKafkaVersion(), is(VERSIONS.defaultVersion().version()));
+
+            // Check Kafka metadata state
+            assertThat(status.getKafkaMetadataState(), is(KafkaMetadataState.KRaft));
 
             // Check model warning conditions
             assertThat(status.getConditions().size(), is(2));
@@ -970,8 +974,7 @@ public class KafkaReconcilerStatusTest {
                     .compose(i -> listeners())
                     .compose(i -> clusterId(kafkaStatus))
                     .compose(i -> nodePortExternalListenerStatus())
-                    .compose(i -> addListenersToKafkaStatus(kafkaStatus))
-                    .compose(i -> updateKafkaVersion(kafkaStatus))
+                    .compose(i -> updateKafkaStatus(kafkaStatus))
                     .recover(error -> {
                         LOGGER.errorCr(reconciliation, "Reconciliation failed", error);
                         return Future.failedFuture(error);
@@ -1016,7 +1019,7 @@ public class KafkaReconcilerStatusTest {
         public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
             return modelWarnings(kafkaStatus)
                     .compose(i -> Future.failedFuture("Reconciliation step failed"))
-                    .compose(i -> updateKafkaVersion(kafkaStatus))
+                    .compose(i -> updateKafkaStatus(kafkaStatus))
                     .recover(error -> {
                         LOGGER.errorCr(reconciliation, "Reconciliation failed", error);
                         return Future.failedFuture(error);
