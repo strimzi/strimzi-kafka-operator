@@ -81,10 +81,10 @@ public class KafkaBrokerConfigurationBuilder {
     }
 
     /**
-     * Renders the broker.id or node.id configurations
+     * Renders the node ID configurations
      */
     private void configureNodeOrBrokerId()   {
-        printSectionHeader("Node / Broker ID");
+        printSectionHeader("Node ID");
         writer.println("node.id=" + node.nodeId());
         writer.println();
     }
@@ -204,7 +204,6 @@ public class KafkaBrokerConfigurationBuilder {
      *                                   This is used to configure the user-configurable listeners.
      * @return Returns the builder instance
      */
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
     public KafkaBrokerConfigurationBuilder withListeners(
             String clusterName,
             KafkaVersion kafkaVersion,
@@ -217,9 +216,19 @@ public class KafkaBrokerConfigurationBuilder {
         List<String> advertisedListeners = new ArrayList<>();
         List<String> securityProtocol = new ArrayList<>();
 
-        boolean isKraftControllerOnly = node.controller() && !node.broker();
+        ////////////////////
+        // Listeners that are on all nodes
+        ////////////////////
 
-        // Control Plane listener is set for pure KRaft controller or combined node
+        // Control plane listener is configured for all nodes. Even brokers need to connect and talk to controllers, so
+        // they need to know what is the security protocol and security configuration
+        securityProtocol.add(CONTROL_PLANE_LISTENER_NAME + ":SSL");
+        configureControlPlaneListener();
+
+        ////////////////////
+        // Listeners for nodes with controller role
+        ////////////////////
+
         if (node.controller()) {
             listeners.add(CONTROL_PLANE_LISTENER_NAME + "://0.0.0.0:9090");
 
@@ -233,33 +242,22 @@ public class KafkaBrokerConfigurationBuilder {
             }
         }
 
-        // Security protocol and Control Plane Listener are configured everywhere
+        ////////////////////
+        // Listeners for nodes with broker role
+        ////////////////////
 
-        // Brokers need to know how to connect to the controllers on the Control Plane listener and what security (encryption/authentication) they should use.
-        // For that reason, we have to configure the Control Plane listener in the broker-only configuration as well,
-        // even though they do not listen at the Control Plane listener port.
-        // The brokers use this configuration to detect how to connect to the controllers, what certificates to use etc.
-        securityProtocol.add(CONTROL_PLANE_LISTENER_NAME + ":SSL");
-        // Control Plane listener is configured on KRaft broker only nodes as well for allowing TLS certificates keystore generation
-        // so that brokers are able to connect to controllers as TLS clients
-        configureControlPlaneListener();
-
-        // Replication Listener to be configured on brokers
         if (node.broker()) {
+            // Replication Listener to be configured only on brokers
             securityProtocol.add(REPLICATION_LISTENER_NAME + ":SSL");
-            configureReplicationListener();
-        }
-
-        // Non-controller listeners are used only on brokers (including mixed nodes)
-        if (!isKraftControllerOnly) {
-            // Replication listener
             listeners.add(REPLICATION_LISTENER_NAME + "://0.0.0.0:9091");
             advertisedListeners.add(String.format("%s://%s:9091",
                     REPLICATION_LISTENER_NAME,
                     // Pod name constructed to be templatable for each individual ordinal
                     DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(clusterName), node.podName())
             ));
+            configureReplicationListener();
 
+            // User-configured listeners
             for (GenericKafkaListener listener : kafkaListeners) {
                 int port = listener.getPort();
                 String listenerName = ListenersUtils.identifier(listener).toUpperCase(Locale.ENGLISH);
@@ -285,6 +283,10 @@ public class KafkaBrokerConfigurationBuilder {
             }
         }
 
+        ////////////////////
+        // Shared configurations with values dependent on all listeners
+        ////////////////////
+
         // configure OAuth principal builder for all the nodes - brokers, controllers, and mixed
         configureOAuthPrincipalBuilderIfNeeded(writer, kafkaListeners);
 
@@ -292,13 +294,14 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println("listener.security.protocol.map=" + String.join(",", securityProtocol));
         writer.println("listeners=" + String.join(",", listeners));
 
-        if (!isKraftControllerOnly) {
-            writer.println("advertised.listeners=" + String.join(",", advertisedListeners));
+        if (node.broker()) {
+            // Inter-broker listener is configured only for nodes with broker role
             writer.println("inter.broker.listener.name=" + REPLICATION_LISTENER_NAME);
-        } else if (node.controller()) {
-            if (advertisedListeners.size() > 0) {
-                writer.println("advertised.listeners=" + String.join(",", advertisedListeners));
-            }
+        }
+
+        if (!advertisedListeners.isEmpty()) {
+            // Advertised listeners might be empty for controller-only nodes with Kafka versions older than 3.9.0
+            writer.println("advertised.listeners=" + String.join(",", advertisedListeners));
         }
 
         writer.println("sasl.enabled.mechanisms=");
@@ -323,10 +326,8 @@ public class KafkaBrokerConfigurationBuilder {
      * rather static, it always uses TLS with TLS client auth.
      */
     private void configureControlPlaneListener() {
-        final String controlPlaneListenerName = CONTROL_PLANE_LISTENER_NAME.toLowerCase(Locale.ENGLISH);
-
         printSectionHeader("Control Plane listener");
-        configureListener(controlPlaneListenerName);
+        configureListener(CONTROL_PLANE_LISTENER_NAME.toLowerCase(Locale.ENGLISH));
     }
 
     /**
@@ -334,10 +335,8 @@ public class KafkaBrokerConfigurationBuilder {
      * rather static, it always uses TLS with TLS client auth.
      */
     private void configureReplicationListener() {
-        final String replicationListenerName = REPLICATION_LISTENER_NAME.toLowerCase(Locale.ENGLISH);
-
         printSectionHeader("Replication listener");
-        configureListener(replicationListenerName);
+        configureListener(REPLICATION_LISTENER_NAME.toLowerCase(Locale.ENGLISH));
     }
 
     /**
@@ -365,7 +364,7 @@ public class KafkaBrokerConfigurationBuilder {
      */
     private void configureListener(String listenerName, GenericKafkaListenerConfiguration configuration) {
         if (configuration != null)  {
-            String listenerNameInProperty = listenerName.toLowerCase(Locale.ENGLISH);
+            final String listenerNameInProperty = listenerName.toLowerCase(Locale.ENGLISH);
 
             if (configuration.getMaxConnections() != null)  {
                 writer.println(String.format("listener.name.%s.max.connections=%d", listenerNameInProperty, configuration.getMaxConnections()));
@@ -384,7 +383,7 @@ public class KafkaBrokerConfigurationBuilder {
      * @param serverCertificate The custom certificate configuration (null if not specified by the user in the Kafka CR)
      */
     private void configureTls(String listenerName, CertAndKeySecretSource serverCertificate) {
-        String listenerNameInProperty = listenerName.toLowerCase(Locale.ENGLISH);
+        final String listenerNameInProperty = listenerName.toLowerCase(Locale.ENGLISH);
 
         if (serverCertificate != null)  {
             writer.println(String.format("listener.name.%s.ssl.keystore.location=/tmp/kafka/custom-%s.keystore.p12", listenerNameInProperty, listenerNameInProperty));
@@ -408,8 +407,8 @@ public class KafkaBrokerConfigurationBuilder {
      * @param auth  The authentication configuration from the Kafka CR
      */
     private void configureAuthentication(String listenerName, List<String> securityProtocol, boolean tls, KafkaListenerAuthentication auth)    {
-        String listenerNameInProperty = listenerName.toLowerCase(Locale.ENGLISH);
-        String listenerNameInEnvVar = listenerName.replace("-", "_");
+        final String listenerNameInProperty = listenerName.toLowerCase(Locale.ENGLISH);
+        final String listenerNameInEnvVar = listenerName.replace("-", "_");
 
         if (auth instanceof KafkaListenerAuthenticationOAuth oauth) {
             securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, true)));
@@ -421,7 +420,7 @@ public class KafkaBrokerConfigurationBuilder {
                 addOptionIfNotNull(jaasOptions, "oauth.client.secret", String.format(PLACEHOLDER_OAUTH_CLIENT_SECRET, listenerNameInEnvVar));
             }
 
-            if (oauth.getTlsTrustedCertificates() != null && oauth.getTlsTrustedCertificates().size() > 0)    {
+            if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty())    {
                 addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.location", String.format("/tmp/kafka/oauth-%s.truststore.p12", listenerNameInProperty));
                 addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.password", PLACEHOLDER_CERT_STORE_PASSWORD);
                 addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.type", "PKCS12");
@@ -443,7 +442,7 @@ public class KafkaBrokerConfigurationBuilder {
                 writer.println(String.format("listener.name.%s.plain.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.plain.JaasServerOauthOverPlainValidatorCallbackHandler", listenerNameInProperty));
                 writer.println(String.format("listener.name.%s.plain.sasl.jaas.config=%s", listenerNameInProperty,
                         AuthenticationUtils.jaasConfig("org.apache.kafka.common.security.plain.PlainLoginModule", jaasOptions)));
-                if (enabledMechanisms.length() > 0) {
+                if (!enabledMechanisms.isEmpty()) {
                     enabledMechanisms.append(",");
                 }
                 enabledMechanisms.append("PLAIN");
@@ -474,7 +473,7 @@ public class KafkaBrokerConfigurationBuilder {
             securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, customAuth.isSasl())));
             Map<String, Object> listenerConfig = customAuth.getListenerConfig();
             if (listenerConfig == null) {
-                listenerConfig = new HashMap<String, Object>();
+                listenerConfig = new HashMap<>();
             }
             KafkaListenerCustomAuthConfiguration config = new KafkaListenerCustomAuthConfiguration(reconciliation, listenerConfig.entrySet());
             config.asOrderedProperties().asMap().forEach((key, value) -> writer.println(String.format("listener.name.%s.%s=%s", listenerNameInProperty, key, value)));
@@ -603,7 +602,7 @@ public class KafkaBrokerConfigurationBuilder {
         if (authorization != null) {
             List<String> superUsers = new ArrayList<>();
 
-            // Broker super users
+            // Broker superusers
             superUsers.add(String.format("User:CN=%s,O=io.strimzi", KafkaResources.kafkaComponentName(clusterName)));
             superUsers.add(String.format("User:CN=%s-%s,O=io.strimzi", clusterName, "entity-topic-operator"));
             superUsers.add(String.format("User:CN=%s-%s,O=io.strimzi", clusterName, "entity-user-operator"));
@@ -650,7 +649,7 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println("authorizer.class.name=" + KafkaAuthorizationSimple.KRAFT_AUTHORIZER_CLASS_NAME);
 
         // User configured super-users
-        if (authorization.getSuperUsers() != null && authorization.getSuperUsers().size() > 0) {
+        if (authorization.getSuperUsers() != null && !authorization.getSuperUsers().isEmpty()) {
             superUsers.addAll(authorization.getSuperUsers().stream().map(e -> String.format("User:%s", e)).toList());
         }
     }
@@ -671,14 +670,14 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println(String.format("%s=%d", "opa.authorizer.cache.maximum.size", authorization.getMaximumCacheSize()));
         writer.println(String.format("%s=%d", "opa.authorizer.cache.expire.after.seconds", Duration.ofMillis(authorization.getExpireAfterMs()).getSeconds()));
 
-        if (authorization.getTlsTrustedCertificates() != null && authorization.getTlsTrustedCertificates().size() > 0)    {
+        if (authorization.getTlsTrustedCertificates() != null && !authorization.getTlsTrustedCertificates().isEmpty())    {
             writer.println("opa.authorizer.truststore.path=/tmp/kafka/authz-opa.truststore.p12");
             writer.println("opa.authorizer.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
             writer.println("opa.authorizer.truststore.type=PKCS12");
         }
 
         // User configured super-users
-        if (authorization.getSuperUsers() != null && authorization.getSuperUsers().size() > 0) {
+        if (authorization.getSuperUsers() != null && !authorization.getSuperUsers().isEmpty()) {
             superUsers.addAll(authorization.getSuperUsers().stream().map(e -> String.format("User:%s", e)).toList());
         }
     }
@@ -714,7 +713,7 @@ public class KafkaBrokerConfigurationBuilder {
 
         writer.println("strimzi.authorization.kafka.cluster.name=" + clusterName);
 
-        if (authorization.getTlsTrustedCertificates() != null && authorization.getTlsTrustedCertificates().size() > 0)    {
+        if (authorization.getTlsTrustedCertificates() != null && !authorization.getTlsTrustedCertificates().isEmpty())    {
             writer.println("strimzi.authorization.ssl.truststore.location=/tmp/kafka/authz-keycloak.truststore.p12");
             writer.println("strimzi.authorization.ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
             writer.println("strimzi.authorization.ssl.truststore.type=PKCS12");
@@ -723,7 +722,7 @@ public class KafkaBrokerConfigurationBuilder {
         }
 
         // User configured super-users
-        if (authorization.getSuperUsers() != null && authorization.getSuperUsers().size() > 0) {
+        if (authorization.getSuperUsers() != null && !authorization.getSuperUsers().isEmpty()) {
             superUsers.addAll(authorization.getSuperUsers().stream().map(e -> String.format("User:%s", e)).toList());
         }
     }
@@ -738,7 +737,7 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println("authorizer.class.name=" + authorization.getAuthorizerClass());
 
         // User configured super-users
-        if (authorization.getSuperUsers() != null && authorization.getSuperUsers().size() > 0) {
+        if (authorization.getSuperUsers() != null && !authorization.getSuperUsers().isEmpty()) {
             superUsers.addAll(authorization.getSuperUsers().stream().map(e -> String.format("User:%s", e)).toList());
         }
     }
