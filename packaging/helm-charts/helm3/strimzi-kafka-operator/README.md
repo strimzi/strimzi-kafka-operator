@@ -6,14 +6,12 @@ See our [website](https://strimzi.io) for more details about the project.
 
 **!!! IMPORTANT !!!**
 
-* **Strimzi 0.45 is the last Strimzi version with support for ZooKeeper-based Apache Kafka clusters and MirrorMaker 1 deployments.**
-  **Please make sure to [migrate to KRaft](https://strimzi.io/docs/operators/latest/full/deploying.html#assembly-kraft-mode-str) and MirrorMaker 2 before upgrading to Strimzi 0.46 or newer.**
-* Strimzi 0.45 is the last Strimzi version to include the [Strimzi EnvVar Configuration Provider](https://github.com/strimzi/kafka-env-var-config-provider) (deprecated in Strimzi 0.38.0) and [Strimzi MirrorMaker 2 Extensions](https://github.com/strimzi/mirror-maker-2-extensions) (deprecated in Strimzi 0.28.0).
+* **Support for ZooKeeper-based clusters and for migration from ZooKeeper-based clusters to KRaft has been removed.**
+  **Please make sure all your clusters are using KRaft before upgrading to Strimzi 0.46.0 or newer!**
+* Support for MirrorMaker 1 has been removed.
+  Please make sure to migrate to MirrorMaker 2 before upgrading to Strimzi 0.46 or newer.
+* [Strimzi EnvVar Configuration Provider](https://github.com/strimzi/kafka-env-var-config-provider) (deprecated in Strimzi 0.38.0) and [Strimzi MirrorMaker 2 Extensions](https://github.com/strimzi/mirror-maker-2-extensions) (deprecated in Strimzi 0.28.0) plugins were removed from Strimzi container images.
   Please use the Apache Kafka [EnvVarConfigProvider](https://github.com/strimzi/kafka-env-var-config-provider?tab=readme-ov-file#deprecation-notice) and [Identity Replication Policy](https://github.com/strimzi/mirror-maker-2-extensions?tab=readme-ov-file#identity-replication-policy) instead.
-* From Strimzi 0.44.0 on, we support only Kubernetes 1.25 and newer.
-  Kubernetes 1.23 and 1.24 are not supported anymore.
-* Upgrading to Strimzi 0.32 and newer directly from Strimzi 0.22 and earlier is no longer possible.
-  Please follow the [documentation](https://strimzi.io/docs/operators/latest/full/deploying.html#assembly-upgrade-str) for more details.
 
 ## Introduction
 
@@ -40,9 +38,14 @@ cluster using the [Helm](https://helm.sh) package manager.
 ### Upgrading your Clusters
 
 To upgrade the Strimzi operator, you can use the `helm upgrade` command.
-The `helm upgrade` command does not upgrade the [Custom Resource Definitions](https://helm.sh/docs/chart_best_practices/custom_resource_definitions/).
-Install the new CRDs manually after upgrading the Cluster Operator.
+**The `helm upgrade` command does not upgrade the [Custom Resource Definitions](https://helm.sh/docs/chart_best_practices/custom_resource_definitions/).**
+**Update the CRDs manually after upgrading the Cluster Operator.**
 You can access the CRDs from our [GitHub release page](https://github.com/strimzi/strimzi-kafka-operator/releases) or find them in the `crd` subdirectory inside the Helm Chart.
+For example, when upgrading to Strimzi 0.46.0, you can do:
+
+```bash
+kubectl apply -f https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.46.0/strimzi-crds-0.46.0.yaml 
+```
 
 The Strimzi Operator understands how to run and upgrade between a set of Kafka versions.
 When specifying a new version in your config, check to make sure you aren't using any features that may have been removed.
@@ -72,7 +75,7 @@ Strimzi is licensed under the [Apache License, Version 2.0](https://github.com/s
 To install the chart with the release name `my-strimzi-cluster-operator`:
 
 ```bash
-$ helm install my-strimzi-cluster-operator oci://quay.io/strimzi-helm/strimzi-kafka-operator
+helm install my-strimzi-cluster-operator oci://quay.io/strimzi-helm/strimzi-kafka-operator
 ```
 
 The command deploys the Strimzi Cluster Operator on the Kubernetes cluster with the default configuration.
@@ -83,7 +86,7 @@ The [configuration](#configuration) section lists the parameters that can be con
 To uninstall/delete the `my-strimzi-cluster-operator` deployment:
 
 ```bash
-$ helm delete my-strimzi-cluster-operator
+helm delete my-strimzi-cluster-operator
 ```
 
 The command removes all the Kubernetes components associated with the operator and deletes the release.
@@ -216,5 +219,5 @@ the documentation for more details.
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
 
 ```bash
-$ helm install my-strimzi-cluster-operator --set replicas=2 oci://quay.io/strimzi-helm/strimzi-kafka-operator
+helm install my-strimzi-cluster-operator --set replicas=2 oci://quay.io/strimzi-helm/strimzi-kafka-operator
 ```
