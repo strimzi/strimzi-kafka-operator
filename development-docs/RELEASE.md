@@ -6,11 +6,11 @@
 * Set version of the main Maven projects (`topic-operator` and `cluster-operator`) to `RELEASE_VERSION` 
 * Create TAR.GZ and ZIP archives with the Kubernetes and OpenShift YAML files which can be used for deployment and documentation in HTML format.
  
-The `release` target will not build the Docker images - they should be built and pushed automatically by Travis CI when the release is tagged in the GitHub repository. It also doesn't deploy the Java artifacts anywhere. They are only used to create the Docker images.
+The `release` target will not build the Docker images - they should be built and pushed automatically by the Azure Pipelines when the release is tagged in the GitHub repository. It also doesn't deploy the Java artifacts anywhere. They are only used to create the Docker images.
 
 The release process should normally look like this:
 
-1. Create a release branch starting from the `main` one. The new release branch has to be named like `release-M.m.x`, for example `release-0.45.x` to be used for all patch releases for the 0.45.
+1. Create a release branch starting from the `main` one. The new release branch has to be named like `release-<Major>.<minor>.x`, for example `release-0.45.x` to be used for all patch releases for the 0.45.
 2. On the `main` git branch of the repository:
    * Update the versions to the next SNAPSHOT version using the `next_version` `make` target. For example to update the next version to `0.46.0-SNAPSHOT` run: `NEXT_VERSION=0.46.0-SNAPSHOT make next_version`.
    * Update the product version in the `documentation/shared/attributes.adoc` file to the next version by setting the `ProductVersion` variable
