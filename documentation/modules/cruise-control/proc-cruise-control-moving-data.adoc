@@ -169,7 +169,7 @@ The JBOD volumes used for log directories are mounted at `/var/lib/kafka/data-<v
 Without specific configuration, the default rebalance goals are used. 
 +
 .Example Cruise Control configuration
-[source,shell]
+[source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaRebalanceApiVersion}
 kind: KafkaRebalance
@@ -190,6 +190,7 @@ In this example, `my-rebalance` reassigns partitions from volumes with IDs 1 and
 
 . (Optional) To approve the optimization proposal automatically, set the `strimzi.io/rebalance-auto-approval` annotation to `true`:
 +
+[source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaRebalanceApiVersion}
 kind: KafkaRebalance
@@ -218,7 +219,7 @@ kubectl get kafkarebalance my-rebalance -n my-project -o yaml
 ----
 +
 .Example summary of changes
-[source,shell]
+[source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaRebalanceApiVersion}
 kind: KafkaRebalance
