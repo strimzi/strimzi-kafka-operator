@@ -428,17 +428,19 @@ public class TopicOperatorConfig {
      * @return Cruise Control client configuration.
      */
     public CruiseControlClient.Config cruiseControlClientConfig() {
+        var sslCertificate = cruiseControlSslEnabled() ? getFileContent(cruiseControlCrtFilePath()) : null;
+        var apiUsername = cruiseControlAuthEnabled() ? new String(getFileContent(cruiseControlApiUserPath()), StandardCharsets.UTF_8) : null;
+        var apiPassword = cruiseControlAuthEnabled() ? new String(getFileContent(cruiseControlApiPassPath()), StandardCharsets.UTF_8) : null;
+        
         return new CruiseControlClient.Config(
             cruiseControlHostname(),
             cruiseControlPort(),
             cruiseControlRackEnabled(),
             cruiseControlSslEnabled(),
-            cruiseControlSslEnabled() ? getFileContent(cruiseControlCrtFilePath()) : null,
+            sslCertificate,
             cruiseControlAuthEnabled(),
-            cruiseControlAuthEnabled()
-                ? new String(getFileContent(cruiseControlApiUserPath()), StandardCharsets.UTF_8) : null,
-            cruiseControlAuthEnabled()
-                ? new String(getFileContent(cruiseControlApiPassPath()), StandardCharsets.UTF_8) : null
+            apiUsername,
+            apiPassword
         );
     }
 
