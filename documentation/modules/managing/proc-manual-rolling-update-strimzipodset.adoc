@@ -6,19 +6,19 @@
 = Performing a rolling update using a pod management annotation
 
 [role="_abstract"]
-This procedure describes how to trigger a rolling update of Kafka, Kafka Connect, MirrorMaker 2, or ZooKeeper clusters.
+This procedure describes how to trigger a rolling update of Kafka, Kafka Connect, or MirrorMaker 2 clusters.
 To trigger the update, you add an annotation to the `StrimziPodSet` that manages the pods running on the cluster.
 
 .Prerequisites
 
 To perform a manual rolling update, you need a running Cluster Operator.
-The cluster for the component you are updating, whether it's Kafka, Kafka Connect, MirrorMaker 2, or ZooKeeper, must also be running.
+The cluster for the component you are updating, whether it's Kafka, Kafka Connect, or MirrorMaker 2 must also be running.
 
 .Procedure
 
 . Find the name of the resource that controls the pods you want to manually update.
 +
-For example, if your Kafka cluster is named _my-cluster_, the corresponding names are _my-cluster-kafka_ and _my-cluster-zookeeper_.
+For example, if your Kafka cluster is named _my-cluster_, the corresponding name is _my-cluster-kafka_.
 For a Kafka Connect cluster named _my-connect-cluster_, the corresponding name is _my-connect-cluster-connect_.
 And for a MirrorMaker 2 cluster named _my-mm2-cluster_, the corresponding name is _my-mm2-cluster-mirrormaker2_.
 
@@ -28,8 +28,6 @@ And for a MirrorMaker 2 cluster named _my-mm2-cluster_, the corresponding name i
 [source,shell,subs=+quotes]
 ----
 kubectl annotate strimzipodset <cluster_name>-kafka strimzi.io/manual-rolling-update="true"
-
-kubectl annotate strimzipodset <cluster_name>-zookeeper strimzi.io/manual-rolling-update="true"
 
 kubectl annotate strimzipodset <cluster_name>-connect strimzi.io/manual-rolling-update="true"
 

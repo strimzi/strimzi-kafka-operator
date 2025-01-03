@@ -44,7 +44,7 @@ sed -i '' 's/namespace: .*/namespace: _my-namespace_/' prometheus.yaml
 +
 Update the `namespaceSelector.matchNames` property with the namespace where the pods to scrape the metrics from are running.
 +
-`PodMonitor` is used to scrape data directly from pods for Apache Kafka, ZooKeeper, Operators, the Kafka Bridge and Cruise Control.
+`PodMonitor` is used to scrape data directly from pods for Apache Kafka, Operators, the Kafka Bridge and Cruise Control.
 
 . Edit the `prometheus.yaml` installation file to include additional configuration for scraping metrics directly from nodes.
 +

@@ -95,6 +95,6 @@ type: Opaque
 <1> New base64-encoded CA certificate
 <2> New CA certificate generation annotation value
 
-On the next reconciliation, the Cluster Operator performs a rolling update of ZooKeeper, Kafka, and other components to trust the new CA certificate.
+On the next reconciliation, the Cluster Operator performs a rolling update of Kafka and other components to trust the new CA certificate.
 
 If maintenance time windows are configured, the Cluster Operator will roll the pods at the first reconciliation within the next maintenance time window.

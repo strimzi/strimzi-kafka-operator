@@ -98,7 +98,6 @@
 :KubernetesExternalDNS: link:https://github.com/kubernetes-incubator/external-dns[External DNS^]
 :ApacheKafkaBrokerConfig: link:https://kafka.apache.org/documentation/#brokerconfigs[Apache Kafka documentation^]
 :ApacheKafkaConnectConfig: link:https://kafka.apache.org/documentation/#connectconfigs[Apache Kafka documentation^]
-:ApacheZookeeperConfig: link:https://zookeeper.apache.org/doc/r3.8.3/[ZooKeeper documentation^]
 :ApacheKafkaConnectAPI: link:https://kafka.apache.org/documentation#connect_rest[Apache Kafka Connect API documentation^]
 :ApacheKafkaConsumerConfig: link:https://kafka.apache.org/documentation/#consumerconfigs[Apache Kafka configuration documentation for consumers^]
 :ApacheKafkaProducerConfig: link:https://kafka.apache.org/documentation/#producerconfigs[Apache Kafka configuration documentation for producers^]
@@ -143,7 +142,6 @@
 :BridgeDockerTag: {BridgeVersion}
 :DrainCleanerDockerTag: {DrainCleanerVersion}
 :DockerRepository: https://quay.io/organization/strimzi[Container Registry^]
-:DockerZookeeper: quay.io/strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerKafkaImageCurrent: quay.io/strimzi/kafka:{DockerTag}-kafka-{KafkaVersionHigher}
 :DockerKafkaImagePrevious: quay.io/strimzi/kafka:{DockerTag}-kafka-{KafkaVersionLower}
 :DockerKafka: quay.io/strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}

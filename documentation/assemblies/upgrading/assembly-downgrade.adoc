@@ -22,6 +22,3 @@ include::../../modules/upgrading/proc-downgrade-cluster-operator.adoc[leveloffse
 
 //steps to downgrade KRaft-based Kafka
 include::../../modules/upgrading/proc-downgrade-kafka-kraft.adoc[leveloffset=+1]
-
-//steps to downgrade ZooKeeper-based Kafka
-include::assembly-downgrade-zookeeper.adoc[leveloffset=+1]

@@ -253,7 +253,7 @@ You can also do the same by removing the `pause-reconciliation` annotation.
 kubectl annotate Kafka <name_of_custom_resource> strimzi.io/pause-reconciliation-
 ----
 +
-On the next reconciliation, the Cluster Operator performs a rolling update of ZooKeeper, Kafka, and other components to trust the new CA certificate.
+On the next reconciliation, the Cluster Operator performs a rolling update of Kafka and other components to trust the new CA certificate.
 When the rolling update is complete, the Cluster Operator will start a new one to generate new server certificates signed by the new CA key.
 +
 If maintenance time windows are configured, the Cluster Operator will roll the pods at the first reconciliation within the next maintenance time window.

@@ -50,7 +50,6 @@ However, Strimzi takes care of configuring and managing options related to the f
 * Security (encryption, authentication, and authorization)
 * Connection to the Kafka cluster
 * Client ID configuration
-* ZooKeeper connectivity
 * Web server configuration
 * Self healing
 

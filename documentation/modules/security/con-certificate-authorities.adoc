@@ -17,7 +17,7 @@ A second internal CA, named the _clients CA_, is used to sign certificates for t
 Both the cluster CA and clients CA have a self-signed public key certificate.
 
 Kafka brokers are configured to trust certificates signed by either the cluster CA or clients CA.
-Components that clients do not need to connect to, such as ZooKeeper, only trust certificates signed by the cluster CA.
+Components that clients do not need to connect to only trust certificates signed by the cluster CA.
 Unless TLS encryption for external listeners is disabled, client applications must trust certificates signed by the cluster CA.
 This is also true for client applications that perform mTLS authentication. 
 

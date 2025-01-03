@@ -5,9 +5,9 @@
 [id='configuring-pod-anti-affinity-to-schedule-each-kafka-broker-on-a-different-worker-node-{context}']
 = Configuring pod anti-affinity to schedule each Kafka broker on a different worker node
 
-Many Kafka brokers or ZooKeeper nodes can run on the same Kubernetes worker node.
+Many Kafka nodes can run on the same Kubernetes worker node.
 If the worker node fails, they will all become unavailable at the same time. 
-To improve reliability, you can use `podAntiAffinity` configuration to schedule each Kafka broker or ZooKeeper node on a different Kubernetes worker node.
+To improve reliability, you can use `podAntiAffinity` configuration to schedule each Kafka node on a different Kubernetes worker node.
 
 .Prerequisites
 
@@ -17,9 +17,9 @@ To improve reliability, you can use `podAntiAffinity` configuration to schedule 
 .Procedure
 
 . Edit the `affinity` property in the resource specifying the cluster deployment.
-To make sure that no worker nodes are shared by Kafka brokers or ZooKeeper nodes, use the `strimzi.io/name` label.
+To make sure that no worker nodes are shared by Kafka nodes, use the `strimzi.io/name` label.
 Set the `topologyKey` to `kubernetes.io/hostname` to specify that the selected pods are not scheduled on nodes with the same hostname.
-This will still allow the same worker node to be shared by a single Kafka broker and a single ZooKeeper node.
+This will still allow the same worker node to be shared by a single Kafka node.
 For example:
 +
 [source,yaml,subs="+quotes,attributes+"]
@@ -42,26 +42,11 @@ spec:
                         - _CLUSTER-NAME_-kafka
                 topologyKey: "kubernetes.io/hostname"
     # ...
-  zookeeper:
-    # ...
-    template:
-      pod:
-        affinity:
-          podAntiAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              - labelSelector:
-                  matchExpressions:
-                    - key: strimzi.io/name
-                      operator: In
-                      values:
-                        - _CLUSTER-NAME_-zookeeper
-                topologyKey: "kubernetes.io/hostname"
-    # ...
 ----
 +
 Where `_CLUSTER-NAME_` is the name of your Kafka custom resource.
 
-. If you even want to make sure that a Kafka broker and ZooKeeper node do not share the same worker node, use the `strimzi.io/cluster` label.
+. If you even want to make sure that a Kafka node do not share the same worker node, use the `strimzi.io/cluster` label.
 For example:
 +
 [source,yaml,subs="+quotes,attributes+"]
@@ -70,21 +55,6 @@ apiVersion: {KafkaApiVersion}
 kind: Kafka
 spec:
   kafka:
-    # ...
-    template:
-      pod:
-        affinity:
-          podAntiAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              - labelSelector:
-                  matchExpressions:
-                    - key: strimzi.io/cluster
-                      operator: In
-                      values:
-                        - _CLUSTER-NAME_
-                topologyKey: "kubernetes.io/hostname"
-    # ...
-  zookeeper:
     # ...
     template:
       pod:

@@ -42,13 +42,6 @@ The interval between xref:ref-operator-cluster-periodic-reconciliation-{context}
 `STRIMZI_OPERATION_TIMEOUT_MS`:: Optional, default 300000 ms.
 The timeout for internal operations, in milliseconds. Increase this value when using Strimzi on clusters where regular Kubernetes operations take longer than usual (due to factors such as prolonged download times for container images, for example).
 
-`STRIMZI_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS`:: Optional, default 10000 ms.
-The session timeout for the Cluster Operator's ZooKeeper admin client, in milliseconds.
-Increase the value if ZooKeeper requests from the Cluster Operator are regularly failing due to timeout issues.
-There is a maximum allowed session time set on the ZooKeeper server side via the `maxSessionTimeout` config.
-By default, the maximum session timeout value is 20 times the default `tickTime` (whose default is 2000) at 40000 ms.
-If you require a higher timeout, change the `maxSessionTimeout` ZooKeeper server configuration value.
-
 `STRIMZI_OPERATIONS_THREAD_POOL_SIZE`:: Optional, default 10.
 The worker thread pool size, which is used for various asynchronous and blocking operations that are run by the Cluster Operator.
 
@@ -106,7 +99,6 @@ Labels can be applied to the following components:
 * `KAFKA`
 * `KAFKA_CONNECT`
 * `KAFKA_CONNECT_BUILD`
-* `ZOOKEEPER`
 * `ENTITY_OPERATOR`
 * `KAFKA_MIRROR_MAKER2`
 * `KAFKA_MIRROR_MAKER`

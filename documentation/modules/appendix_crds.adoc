@@ -1520,13 +1520,6 @@ It must have the value `strimzi` for the type `QuotasPluginStrimzi`.
 
 Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
-xref:type-ZookeeperClusterSpec-schema-{context}[Full list of `ZookeeperClusterSpec` schema properties]
-
-include::../api/io.strimzi.api.kafka.model.zookeeper.ZookeeperClusterSpec.adoc[leveloffset=+1]
-
-[id='type-ZookeeperClusterSpec-schema-{context}']
-== `ZookeeperClusterSpec` schema properties
-
 
 [cols="2,2,3a",options="header"]
 |====

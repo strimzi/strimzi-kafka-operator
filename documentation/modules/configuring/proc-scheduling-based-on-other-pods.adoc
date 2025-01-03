@@ -41,8 +41,6 @@ spec:
                         - mongodb
                 topologyKey: "kubernetes.io/hostname"
     # ...
-  zookeeper:
-    # ...
 ----
 
 . Create or update the resource.

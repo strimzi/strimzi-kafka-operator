@@ -2,10 +2,7 @@ Configures the `Kafka` custom resource to use simple authorization and define Ac
 
 ACLs allow you to define which users have access to which resources at a granular level.
 
-Strimzi uses Kafka's built-in authorization plugins as follows: 
-
-* `StandardAuthorizer` for Kafka in KRaft mode 
-* `AclAuthorizer` for ZooKeeper-based Kafka
+Strimzi uses Kafka's built-in `StandardAuthorizer` authorization plugin.
 
 Set the `type` property in the `authorization` section to the value `simple`,
 and configure a list of super users.

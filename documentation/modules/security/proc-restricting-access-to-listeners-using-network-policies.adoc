@@ -49,8 +49,6 @@ spec:
               matchLabels:
                 app: kafka-client
     # ...
-  zookeeper:
-    # ...
 ----
 
 . Apply the changes to the `Kafka` resource configuration.

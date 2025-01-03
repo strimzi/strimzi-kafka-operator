@@ -326,7 +326,7 @@ The Kafka image used in this example contains Kafka producer and consumer binari
 
 .Prerequisites
 
-* ZooKeeper and Kafka are running in the Kubernetes cluster to be able to send and receive messages.
+* A Kafka cluster is running in the Kubernetes cluster to be able to send and receive messages.
 * The xref:proc-oauth-authorization-keycloak-example-authentication_{context}[interactive CLI Kafka client session] is started.
 +
 {ApacheKafkaDownload}.

@@ -13,23 +13,7 @@ The following resources are created by the Cluster Operator in the Kubernetes cl
 `<kafka_cluster_name>-cluster-ca-cert`:: Secret with the Cluster CA public key. This key can be used to verify the identity of the Kafka brokers.
 `<kafka_cluster_name>-clients-ca`::  Secret with the Clients CA private key used to sign user certificates
 `<kafka_cluster_name>-clients-ca-cert`:: Secret with the Clients CA public key. This key can be used to verify the identity of the Kafka users.
-`<kafka_cluster_name>-cluster-operator-certs`:: Secret with Cluster operators keys for communication with Kafka and ZooKeeper.
-
-.ZooKeeper nodes
-
-`<kafka_cluster_name>-zookeeper`:: Name given to the following ZooKeeper resources:
-+
-- StrimziPodSet for managing the ZooKeeper node pods.
-- Service account used by the ZooKeeper nodes.
-- PodDisruptionBudget configured for the ZooKeeper nodes.
-
-`<kafka_cluster_name>-zookeeper-<pod_id>`:: Pods created by the StrimziPodSet.
-`<kafka_cluster_name>-zookeeper-nodes`:: Headless Service needed to have DNS resolve the ZooKeeper pods IP addresses directly.
-`<kafka_cluster_name>-zookeeper-client`:: Service used by Kafka brokers to connect to ZooKeeper nodes as clients.
-`<kafka_cluster_name>-zookeeper-config`:: ConfigMap that contains the ZooKeeper ancillary configuration, and is mounted as a volume by the ZooKeeper node pods.
-`<kafka_cluster_name>-zookeeper-nodes`:: Secret with ZooKeeper node keys.
-`<kafka_cluster_name>-network-policy-zookeeper`:: Network policy managing access to the ZooKeeper services.
-`data-<kafka_cluster_name>-zookeeper-<pod_id>`:: Persistent Volume Claim for the volume used for storing data for a specific ZooKeeper node. This resource will be created only if persistent storage is selected for provisioning persistent volumes to store data.
+`<kafka_cluster_name>-cluster-operator-certs`:: Secret with Cluster operators keys for communication with Kafka.
 
 .Kafka brokers
 
@@ -90,8 +74,8 @@ These resources are only created if the Entity Operator is deployed using the Cl
 `<kafka_cluster_name>-entity-operator-<random_string>`:: Pod created by the Entity Operator deployment.
 `<kafka_cluster_name>-entity-topic-operator-config`:: ConfigMap with ancillary configuration for Topic Operators.
 `<kafka_cluster_name>-entity-user-operator-config`:: ConfigMap with ancillary configuration for User Operators.
-`<kafka_cluster_name>-entity-topic-operator-certs`:: Secret with Topic Operator keys for communication with Kafka and ZooKeeper.
-`<kafka_cluster_name>-entity-user-operator-certs`:: Secret with User Operator keys for communication with Kafka and ZooKeeper.
+`<kafka_cluster_name>-entity-topic-operator-certs`:: Secret with Topic Operator keys for communication with Kafka.
+`<kafka_cluster_name>-entity-user-operator-certs`:: Secret with User Operator keys for communication with Kafka.
 `strimzi-<kafka_cluster_name>-entity-topic-operator`:: Role binding used by the Entity Topic Operator.
 `strimzi-<kafka_cluster_name>-entity-user-operator`:: Role binding used by the Entity User Operator.
 
@@ -120,5 +104,5 @@ These resources are only created if Cruise Control was deployed using the Cluste
 
 `<kafka_cluster_name>-cruise-control-<random_string>`:: Pod created by the Cruise Control deployment.
 `<kafka_cluster_name>-cruise-control-config`:: ConfigMap that contains the Cruise Control ancillary configuration, and is mounted as a volume by the Cruise Control pods.
-`<kafka_cluster_name>-cruise-control-certs`:: Secret with Cruise Control keys for communication with Kafka and ZooKeeper.
+`<kafka_cluster_name>-cruise-control-certs`:: Secret with Cruise Control keys for communication with Kafka.
 `<kafka_cluster_name>-network-policy-cruise-control`:: Network policy managing access to the Cruise Control service.

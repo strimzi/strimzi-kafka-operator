@@ -14,7 +14,6 @@ The following components require `metricsConfig` configuration to expose metrics
 * KafkaConnect
 * MirrorMaker
 * Cruise Control
-* ZooKeeper
 
 This configuration enables the {JMXExporter} to expose metrics through an HTTP endpoint.
 The port for the JMX exporter HTTP endpoint is 9404. 

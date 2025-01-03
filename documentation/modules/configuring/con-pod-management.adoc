@@ -7,7 +7,6 @@
 
 [role="_abstract"]
 The `StrimziPodSet` custom resource is used by Strimzi to create and manage Kafka, Kafka Connect, and MirrorMaker 2 pods.
-If you are using ZooKeeper, ZooKeeper pods are also created and managed using `StrimziPodSet` resources.
 
 You must not create, update, or delete `StrimziPodSet` resources.
 The `StrimziPodSet` custom resource is used internally and resources are managed solely by the Cluster Operator.

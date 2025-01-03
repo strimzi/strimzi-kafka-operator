@@ -39,7 +39,5 @@ include::../../modules/configuring/con-considerations-for-data-storage.adoc[leve
 include::../../modules/configuring/con-config-storage-kraft.adoc[leveloffset=+1]
 include::../../modules/configuring/proc-managing-storage-node-pools.adoc[leveloffset=+2]
 include::../../modules/configuring/proc-managing-storage-affinity-node-pools.adoc[leveloffset=+2]
-//ZooKeeper storage
-include::../../modules/configuring/con-config-storage-zookeeper.adoc[leveloffset=+1]
 //tiered storage
 include::../../modules/configuring/ref-storage-tiered.adoc[leveloffset=+1]

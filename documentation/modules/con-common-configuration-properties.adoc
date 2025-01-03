@@ -160,15 +160,10 @@ Kubernetes will not kill containers unless they exceed their limits.
 
 Configure resource requests and limits for components using `resources` properties in the `spec` of following custom resources:
 
-Use the `KafkaNodePool` custom resource for the following components:
-
-* KRaft-based Kafka nodes (`spec.resources`)
-* ZooKeeper-based Kafka nodes using node pools (`spec.resources`)
+Use the `KafkaNodePool` custom resource for Kafka nodes (`spec.resources`)
 
 Use the `Kafka` custom resource for the following components:
 
-* Kafka for ZooKeeper-based clusters without node pools (`spec.kafka.resources`)
-* ZooKeeper (`spec.zookeeper.resources`)
 * Topic Operator (`spec.entityOperator.topicOperator.resources`)
 * User Operator (`spec.entityOperator.userOperator.resources`)
 * Cruise Control (`spec.cruiseControl.resources`)
@@ -303,7 +298,6 @@ A copy of the container image might also be customized and used for debugging.
 You can specify which container image to use for a component using the `image` property in the following resources:
 
 * `Kafka.spec.kafka`
-* `Kafka.spec.zookeeper`
 * `Kafka.spec.entityOperator.topicOperator`
 * `Kafka.spec.entityOperator.userOperator`
 * `Kafka.spec.cruiseControl`
@@ -400,8 +394,6 @@ spec:
     # ...
     image: my-org/my-image:latest
     # ...
-  zookeeper:
-    # ...
 ----
 
 [id='con-common-configuration-healthchecks-{context}']
@@ -443,7 +435,7 @@ For more information about the `livenessProbe` and `readinessProbe` options, see
 Use the `metricsConfig` property to enable and configure Prometheus metrics.
 
 The `metricsConfig` property contains a reference to a ConfigMap that has additional configurations for the {JMXExporter}.
-Strimzi supports Prometheus metrics using Prometheus JMX exporter to convert the JMX metrics supported by Apache Kafka and ZooKeeper to Prometheus metrics.
+Strimzi supports Prometheus metrics using Prometheus JMX exporter to convert the JMX metrics supported by Apache Kafka to Prometheus metrics.
 
 To enable Prometheus metrics export without further configuration, you can reference a ConfigMap containing an empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
 When referencing an empty file, all metrics are exposed as long as they have not been renamed.
@@ -487,8 +479,6 @@ spec:
           name: my-config-map
           key: my-key
     # ...
-  zookeeper:
-    # ...
 ----
 
 When metrics are enabled, they are exposed on port 9404.
@@ -503,7 +493,6 @@ For more information about setting up and deploying Prometheus and Grafana, see 
 The following Strimzi components run inside a Java Virtual Machine (JVM):
 
 * Apache Kafka
-* Apache ZooKeeper
 * Apache Kafka Connect
 * Apache Kafka MirrorMaker
 * Kafka Bridge
@@ -511,7 +500,6 @@ The following Strimzi components run inside a Java Virtual Machine (JVM):
 To optimize their performance on different platforms and architectures, you configure the `jvmOptions` property in the following resources:
 
 * `Kafka.spec.kafka`
-* `Kafka.spec.zookeeper`
 * `Kafka.spec.entityOperator.userOperator`
 * `Kafka.spec.entityOperator.topicOperator`
 * `Kafka.spec.cruiseControl`
@@ -556,10 +544,6 @@ The following table shows the default heap values.
 |Kafka
 |50%
 |5 GB
-
-|ZooKeeper
-|75%
-|2 GB
 
 |Kafka Connect
 |75%
@@ -677,7 +661,6 @@ Strimzi supports specifying additional volumes and volume mounts in the followin
 * Entity Operator
 * Cruise Control
 * Kafka Exporter
-* Zookeeper
 * User Operator
 * Topic Operator
 

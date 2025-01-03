@@ -78,8 +78,6 @@ spec:
           bootstrap:
             host: bootstrap.myingress.com # <4>
     # ...
-  zookeeper:
-    # ...
 ----
 <1> For `ingress` type listeners, TLS encryption must be enabled (`true`).
 <2> (Optional) Class that specifies the ingress controller to use. You might need to add a class if you have not set up a default and a class name is missing in the ingresses created.

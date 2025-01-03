@@ -26,7 +26,7 @@ When deploying Prometheus metrics configuration, you can can deploy the example 
 |Custom resource
 |Example YAML file
 
-|Kafka and ZooKeeper
+|Kafka nodes
 |`Kafka`
 |`kafka-metrics.yaml`
 

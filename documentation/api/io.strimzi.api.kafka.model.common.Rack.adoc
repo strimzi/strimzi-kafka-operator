@@ -38,7 +38,7 @@ Use Cruise Control and the `KafkaRebalance` resource with the `RackAwareGoal` to
 
 When rack awareness is enabled in the `Kafka` custom resource, Strimzi will automatically add the Kubernetes `preferredDuringSchedulingIgnoredDuringExecution` affinity rule to distribute the Kafka brokers across the different racks.
 However, the _preferred_ rule does not guarantee that the brokers will be spread.
-Depending on your exact Kubernetes and Kafka configurations, you should add additional `affinity` rules or configure `topologySpreadConstraints` for both ZooKeeper and Kafka to make sure the nodes are properly distributed accross as many racks as possible.
+Depending on your exact Kubernetes and Kafka configurations, you should add additional `affinity` rules or configure `topologySpreadConstraints` for Kafka to make sure the nodes are properly distributed across as many racks as possible.
 For more information see link:{BookURLDeploying}#assembly-scheduling-str[Configuring pod scheduling^].
 
 = Consuming messages from the closest replicas

@@ -144,8 +144,6 @@ metadata:
 spec:
   kafka:
     # ...
-  zookeeper:
-    # ...
   entityOperator:
     topicOperator: {}
     userOperator: {}
@@ -413,7 +411,7 @@ The `After` score is based on the predicted workload model after applying the ge
 These topics are excluded from the calculation of partition replica/leader movements in the optimization proposal.
 
 | numLeaderMovements
-| The number of partitions whose leaders will be switched to different replicas. This involves a change to ZooKeeper configuration.
+| The number of partitions whose leaders will be switched to different replicas.
 
 *Performance impact during rebalance operation*: Relatively low.
 

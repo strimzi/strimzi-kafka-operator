@@ -77,33 +77,3 @@ spec:
 <6> Requests for reservation of supported resources, currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
 
 NOTE: The configuration for the `Kafka` resource must be suitable for KRaft mode. Currently, KRaft mode has xref:assembly-kraft-mode-{context}[a number of limitations]. 
-
-.Example configuration for a node pool in a cluster using ZooKeeper
-[source,yaml,subs="+attributes"]
-----
-apiVersion: {KafkaNodePoolApiVersion}
-kind: KafkaNodePool
-metadata:
-  name: pool-a
-  labels:
-    strimzi.io/cluster: my-cluster
-spec:
-  replicas: 3
-  roles:
-    - broker # <1>
-  storage:
-    type: jbod
-    volumes:
-      - id: 0
-        type: persistent-claim
-        size: 100Gi
-        deleteClaim: false
-  resources:
-      requests:
-        memory: 64Gi
-        cpu: "8"
-      limits:
-        memory: 64Gi
-        cpu: "12"      
-----
-<1> Roles for the nodes in the node pool, which can only be `broker` when using Kafka with ZooKeeper.

@@ -9,7 +9,6 @@ Use affinity, tolerations and topology spread constraints to schedule the pods o
 Affinity, tolerations and topology spread constraints are configured using the `affinity`, `tolerations`, and `topologySpreadConstraint` properties in following resources:
 
 * `Kafka.spec.kafka.template.pod`
-* `Kafka.spec.zookeeper.template.pod`
 * `Kafka.spec.entityOperator.template.pod`
 * `KafkaConnect.spec.template.pod`
 * `KafkaBridge.spec.template.pod`

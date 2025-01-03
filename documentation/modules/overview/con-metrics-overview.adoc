@@ -17,7 +17,7 @@ Example metrics configuration files are provided with Strimzi.
 
 You can employ the following tools for metrics and monitoring:
 
-Prometheus:: {PrometheusHome} pulls metrics from Kafka, ZooKeeper and Kafka Connect clusters. 
+Prometheus:: {PrometheusHome} pulls metrics from Kafka, Kafka Connect, and other clusters.
 The Prometheus *Alertmanager* plugin handles alerts and routes them to a notification service.
 Kafka Exporter:: {kafka-exporter-project} adds additional Prometheus metrics.
 Grafana:: {GrafanaHome} provides dashboard visualizations of Prometheus metrics.

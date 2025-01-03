@@ -78,15 +78,18 @@ When it's time to renew CA certificates, the Cluster Operator follows these step
 +
 The new certificate replaces the old one with the name `ca.crt` within the corresponding `Secret`.
 
-. Generates new client certificates (for ZooKeeper nodes, Kafka brokers, and the Entity Operator).
+. Generates new client certificates (for Kafka nodes, Entity Operator, Kafka Exporter, and Cruise Control).
 +
 This is not strictly necessary because the signing key has not changed, but it keeps the validity period of the client certificate in sync with the CA certificate.
 
-. Restarts ZooKeeper nodes to trust the new CA certificate and use the new client certificates.
-
-. Restarts Kafka brokers to trust the new CA certificate and use the new client certificates.
+. Restarts Kafka nodes to trust the new CA certificate and use the new client certificates.
 
 . Restarts the Topic Operator and User Operator to trust the new CA certificate and use the new client certificates.
+
+. Restarts Cruise Control to trust the new CA certificate and use the new client certificates.
+
+. Restarts the Kafka Exporter to trust the new CA certificate and use the new client certificates.
+
 +
 User certificates are signed by the clients CA. 
 The User Operator handles renewing user certificates when the client's CA is renewed. 

@@ -45,8 +45,6 @@ metadata:
 spec:
   kafka:
     # ...
-  zookeeper:
-    # ...
   entityOperator:
     topicOperator: {}
     userOperator: {}

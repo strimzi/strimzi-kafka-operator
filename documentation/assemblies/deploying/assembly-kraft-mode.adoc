@@ -94,6 +94,3 @@ For instance, when modifying node pool roles to combine controller and broker fu
 However, this approach would require reassigning more data, which may temporarily affect cluster performance.
 
 Once migration is possible, Strimzi plans to assess introducing support for dynamic quorums.
-
-//migrating to KRaft
-include::../../modules/deploying/proc-deploy-migrate-kraft.adoc[leveloffset=+1]

@@ -5,13 +5,13 @@
 [id='proc-manual-rolling-update-pods-{context}']
 = Performing a rolling update using a pod annotation
 
-This procedure describes how to manually trigger a rolling update of existing Kafka, Kafka Connect, MirrorMaker 2, or ZooKeeper clusters using a Kubernetes `Pod` annotation.
+This procedure describes how to manually trigger a rolling update of existing Kafka, Kafka Connect, or MirrorMaker 2 clusters using a Kubernetes `Pod` annotation.
 When multiple pods are annotated, consecutive rolling updates are performed within the same reconciliation run.
 
 .Prerequisites
 
 To perform a manual rolling update, you need a running Cluster Operator.
-The cluster for the component you are updating, whether it's Kafka, Kafka Connect, MirrorMaker 2, or ZooKeeper, must also be running.
+The cluster for the component you are updating, whether it's Kafka, Kafka Connect, or MirrorMaker 2, must also be running.
 
 You can perform a rolling update on a Kafka cluster regardless of the topic replication factor used.
 But for Kafka to stay operational during the update, you'll need the following:
@@ -47,7 +47,6 @@ Pod naming conventions are as follows:
 +
 --
 * `<cluster_name>-kafka-<index_number>` for a Kafka cluster
-* `<cluster_name>-zookeeper-<index_number>` for a ZooKeeper cluster
 * `<cluster_name>-connect-<index_number>` for a Kafka Connect cluster
 * `<cluster_name>-mirrormaker2-<index_number>` for a MirrorMaker 2 cluster
 --
@@ -59,8 +58,6 @@ The `<index_number>` assigned to a pod starts at zero and ends at the total numb
 [source,shell,subs=+quotes]
 ----
 kubectl annotate pod <cluster_name>-kafka-<index_number> strimzi.io/manual-rolling-update="true"
-
-kubectl annotate pod <cluster_name>-zookeeper-<index_number> strimzi.io/manual-rolling-update="true"
 
 kubectl annotate pod <cluster_name>-connect-<index_number> strimzi.io/manual-rolling-update="true"
 

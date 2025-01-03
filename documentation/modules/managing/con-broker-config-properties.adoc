@@ -31,7 +31,6 @@ socket.send.buffer.bytes=102400
 socket.receive.buffer.bytes=102400
 socket.request.max.bytes=104857600
 group.initial.rebalance.delay.ms=0
-zookeeper.connection.timeout.ms=6000
 # ...
 ----
 

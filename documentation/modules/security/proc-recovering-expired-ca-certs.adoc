@@ -66,9 +66,6 @@ The command returns a `notBefore` and `notAfter` date, which is the valid start 
 . Delete the component pods and secrets that use the CA certificates. 
 +
 --
-.. Delete the ZooKeeper secret.
-.. Wait for the Cluster Operator to detect the missing ZooKeeper secret and recreate it.
-.. Delete all ZooKeeper pods.
 .. Delete the Kafka secret.
 .. Wait for the Cluster Operator to detect the missing Kafka secret and recreate it.
 .. Delete all Kafka pods. 
@@ -85,7 +82,7 @@ kubectl get <resource_type> --all-namespaces | grep <kafka_cluster_name>
 +
 Replace `<resource_type>` with the type of the resource, such as `Pod` or `Secret`.
 
-. Wait for the Cluster Operator to detect the missing Kafka and ZooKeeper pods and recreate them with the updated CA certificates.
+. Wait for the Cluster Operator to detect the missing Kafka pods and recreate them with the updated CA certificates.
 +
 On reconciliation, the Cluster Operator automatically updates other components to trust the new CA certificates.
 
