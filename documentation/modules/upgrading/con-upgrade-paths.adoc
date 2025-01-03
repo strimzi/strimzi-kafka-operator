@@ -34,42 +34,7 @@ You can review supported Kafka versions in the link:https://strimzi.io/downloads
 ====
 endif::Section[]
 
-[id='con-upgrade-paths-earlier-versions-{context}']
-== Upgrading from a Strimzi version earlier than 0.22
+== Upgrading from a Strimzi version earlier than 0.39
 
-If you are upgrading to the latest version of Strimzi from a version prior to version 0.22, do the following:
-
-. Upgrade Strimzi to version 0.22 following the xref:con-upgrade-sequence-{context}[standard sequence].
-. Convert Strimzi custom resources to `v1beta2` using the _API conversion tool_ provided with Strimzi.
-. Do one of the following:
-+
-* Upgrade Strimzi to a version between 0.23 and 0.26 (where the `ControlPlaneListener` feature gate is disabled by default).
-* Upgrade Strimzi to a version between 0.27 and 0.31 (where the `ControlPlaneListener` feature gate is enabled by default) with the `ControlPlaneListener` feature gate disabled.
-. Enable the `ControlPlaneListener` feature gate.
-. Upgrade to Strimzi {ProductVersion} following the xref:con-upgrade-sequence-{context}[standard sequence].
-
-Strimzi custom resources started using the `v1beta2` API version in release 0.22.
-CRDs and custom resources must be converted *before* upgrading to Strimzi 0.23 or newer.
-For information on using the API conversion tool, see the {UpgradeGuide}.
-
-NOTE: As an alternative to first upgrading to version 0.22, you can install the custom resources from version 0.22 and then convert the resources.
-
-The `ControlPlaneListener` feature is now permanently enabled in Strimzi.
-You must upgrade to a version of Strimzi where it is disabled, then enable it using the 
-`STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
-
-.Disabling the `ControlPlaneListener` feature gate
-[source,yaml,options="nowrap"]
-----
-env:
-  - name: STRIMZI_FEATURE_GATES
-    value: -ControlPlaneListener
-----
-
-.Enabling the `ControlPlaneListener` feature gate
-[source,yaml,options="nowrap"]
-----
-env:
-  - name: STRIMZI_FEATURE_GATES
-    value: +ControlPlaneListener
-----
+Strimzi {ProductVersion} supports upgrades only for KRaft-based Apache Kafka clusters managed by Strimzi 0.39 and newer.
+When upgrading from older Strimzi versions, please make sure to first upgrade to a Strimzi version from 0.39 to 0.45 and migrate to KRaft before upgradint to Strimzi {ProductVersion}.

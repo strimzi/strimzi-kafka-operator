@@ -14,6 +14,10 @@ Strimzi {ProductVersion} requires Kubernetes {KubernetesVersion}.
 +
 You can xref:con-upgrade-cluster-{context}[upgrade Kubernetes with minimal downtime].
 
+. Make sure you use Strimzi 0.39 or newer and all your Apache Kafka clusters are Kraft-based.
++
+ZooKeeper-based Apache Kafka clusters are not supported anymore and need to be migrated to KRaft before upgrading the Cluster Operator or Apache Kafka.
+
 . xref:assembly-upgrade-{context}[Upgrade the Cluster Operator].
 
 . Update the xref:proc-upgrade-kafka-kraft-{context}[Kafka `version` and `metadataVersion`].

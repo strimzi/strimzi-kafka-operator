@@ -14,10 +14,6 @@
 
 //Latest Strimzi version
 :ProductVersion: 0.46.0
-//Strimzi versions used in upgrades sections
-:ConvertAfterProductVersion: 0.22
-:LastReleaseWithCRDUpgrade: 0.24
-:UpgradeGuide: link:https://strimzi.io/docs/operators/0.24.0/deploying.html#assembly-upgrade-resources-str[Strimzi 0.24.0 upgrade documentation^]
 
 // Kubernetes versions
 :KubernetesVersion: 1.25 and later
