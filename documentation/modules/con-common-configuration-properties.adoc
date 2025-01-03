@@ -160,7 +160,7 @@ Kubernetes will not kill containers unless they exceed their limits.
 
 Configure resource requests and limits for components using `resources` properties in the `spec` of following custom resources:
 
-Use the `KafkaNodePool` custom resource for the KRaft-based Kafka nodes (`spec.resources`)
+Use the `KafkaNodePool` custom resource for Kafka nodes (`spec.resources`)
 
 Use the `Kafka` custom resource for the following components:
 

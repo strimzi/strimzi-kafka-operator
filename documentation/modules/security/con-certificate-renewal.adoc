@@ -86,7 +86,7 @@ This is not strictly necessary because the signing key has not changed, but it k
 
 . Restarts the Topic Operator and User Operator to trust the new CA certificate and use the new client certificates.
 
-. Restarts the Cruise Control to trust the new CA certificate and use the new client certificates.
+. Restarts Cruise Control to trust the new CA certificate and use the new client certificates.
 
 . Restarts the Kafka Exporter to trust the new CA certificate and use the new client certificates.
 

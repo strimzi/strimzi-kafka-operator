@@ -74,7 +74,8 @@ Examples of the `KafkaNodePool` resources can be found in the xref:config-exampl
 
 .Downgrading from KafkaNodePools
 
-KRaft.based Apache Kafka cluster always use KafkaNodePools and downgrading from them is not possible anymore.
+KRaft-based Kafka clusters always use `KafkaNodePools`. 
+Downgrading to a cluster without node pools is not possible.
 
 [id='ref-operator-unidirectional-topic-operator-feature-gate-{context}']
 === UnidirectionalTopicOperator feature gate
