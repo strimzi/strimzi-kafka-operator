@@ -37,4 +37,4 @@ endif::Section[]
 == Upgrading from a Strimzi version earlier than 0.39
 
 Strimzi {ProductVersion} supports upgrades only for KRaft-based Apache Kafka clusters managed by Strimzi 0.39 and newer.
-When upgrading from older Strimzi versions, please make sure to first upgrade to a Strimzi version from 0.39 to 0.45 and migrate to KRaft before upgradint to Strimzi {ProductVersion}.
+When upgrading from older Strimzi versions, please make sure to first upgrade to a Strimzi version from 0.39 to 0.45 and migrate to KRaft before upgrading to Strimzi {ProductVersion}.
