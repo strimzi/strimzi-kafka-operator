@@ -25,6 +25,4 @@ WARNING: Make sure you use the appropriate update channel.
 Installing Strimzi from the default _stable_ channel is generally safe.
 However, we do not recommend enabling _automatic_ OLM updates on the stable channel.
 An automatic upgrade will skip any necessary steps prior to upgrade.
-For example, to upgrade from {ConvertAfterProductVersion} or earlier
-you must first xref:con-upgrade-paths-earlier-versions-{context}[update custom resources to support the `v1beta2` API version].
 Use automatic upgrades only on version-specific channels.
