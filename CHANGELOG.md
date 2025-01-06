@@ -5,6 +5,7 @@
 * Support for ZooKeeper-based Apache Kafka clusters and for KRaft migration has been removed
 * Support for MirrorMaker 1 has been removed
 * Added support to configure `dnsPolicy` and `dnsConfig` using the `template` sections.
+* Store Kafka node certificates in separate Secrets, one Secret per pod.
 
 ### Major changes, deprecations and removals
 
