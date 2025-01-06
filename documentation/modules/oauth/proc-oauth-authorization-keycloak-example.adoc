@@ -328,8 +328,6 @@ The Kafka image used in this example contains Kafka producer and consumer binari
 
 * A Kafka cluster is running in the Kubernetes cluster to be able to send and receive messages.
 * The xref:proc-oauth-authorization-keycloak-example-authentication_{context}[interactive CLI Kafka client session] is started.
-+
-{ApacheKafkaDownload}.
 
 .Setting up client and admin user configuration
 
@@ -348,7 +346,7 @@ sasl.mechanism=OAUTHBEARER
 sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
   oauth.client.id="team-a-client" \
   oauth.client.secret="team-a-client-secret" \
-  oauth.ssl.truststore.location="/tmp/truststore.p12" \
+  oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \
   oauth.ssl.truststore.password="$STOREPASS" \
   oauth.ssl.truststore.type="PKCS12" \
   oauth.token.endpoint.uri="https://$SSO_HOST/realms/kafka-authz/protocol/openid-connect/token" ;
@@ -373,7 +371,7 @@ sasl.mechanism=OAUTHBEARER
 sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
   oauth.client.id="team-b-client" \
   oauth.client.secret="team-b-client-secret" \
-  oauth.ssl.truststore.location="/tmp/truststore.p12" \
+  oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \
   oauth.ssl.truststore.password="$STOREPASS" \
   oauth.ssl.truststore.type="PKCS12" \
   oauth.token.endpoint.uri="https://$SSO_HOST/realms/kafka-authz/protocol/openid-connect/token" ;
@@ -408,7 +406,7 @@ sasl.mechanism=OAUTHBEARER
 sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
   oauth.refresh.token="$REFRESH_TOKEN" \
   oauth.client.id="kafka-cli" \
-  oauth.ssl.truststore.location="/tmp/truststore.p12" \
+  oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \
   oauth.ssl.truststore.password="$STOREPASS" \
   oauth.ssl.truststore.type="PKCS12" \
   oauth.token.endpoint.uri="https://$SSO_HOST/realms/kafka-authz/protocol/openid-connect/token" ;
