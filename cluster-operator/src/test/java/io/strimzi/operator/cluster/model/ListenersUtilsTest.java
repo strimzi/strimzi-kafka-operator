@@ -420,6 +420,15 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.backwardsCompatibleBootstrapServiceName(clusterName, newTls), is(clusterName + "-kafka-bootstrap"));
         assertThat(ListenersUtils.backwardsCompatibleBootstrapServiceName(clusterName, newLoadBalancer), is(clusterName + "-kafka-lb1-bootstrap"));
         assertThat(ListenersUtils.backwardsCompatibleBootstrapServiceName(clusterName, newNodePort), is(clusterName + "-kafka-np1-bootstrap"));
+
+        // Test internal listener with old external naming -> should have a regular internal service name
+        GenericKafkaListener internalWithOldExternalNaming = new GenericKafkaListenerBuilder()
+                .withName("external")
+                .withPort(9094)
+                .withType(KafkaListenerType.INTERNAL)
+                .withTls(true)
+                .build();
+        assertThat(ListenersUtils.backwardsCompatibleBootstrapServiceName(clusterName, internalWithOldExternalNaming), is(clusterName + "-kafka-bootstrap"));
     }
 
     @ParallelTest

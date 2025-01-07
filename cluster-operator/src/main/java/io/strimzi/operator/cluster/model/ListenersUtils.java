@@ -259,13 +259,7 @@ public class ListenersUtils {
      * @return          Name of the bootstrap service
      */
     public static String backwardsCompatibleBootstrapServiceName(String clusterName, GenericKafkaListener listener) {
-        if (listener.getPort() == 9092 && "plain".equals(listener.getName()) && KafkaListenerType.INTERNAL == listener.getType())   {
-            return clusterName + "-kafka-bootstrap";
-        } else if (listener.getPort() == 9093 && "tls".equals(listener.getName()) && KafkaListenerType.INTERNAL == listener.getType())   {
-            return clusterName + "-kafka-bootstrap";
-        } else if (listener.getPort() == 9094 && "external".equals(listener.getName()))   {
-            return clusterName + "-kafka-external-bootstrap";
-        } else if (KafkaListenerType.INTERNAL == listener.getType()) {
+        if (KafkaListenerType.INTERNAL == listener.getType()) {
             return clusterName + "-kafka-bootstrap";
         } else {
             return clusterName + "-kafka-" + listener.getName() + "-bootstrap";
@@ -280,14 +274,10 @@ public class ListenersUtils {
      * @return          Name of the bootstrap service
      */
     public static String backwardsCompatibleBootstrapRouteOrIngressName(String clusterName, GenericKafkaListener listener) {
-        if (listener.getPort() == 9092 && "plain".equals(listener.getName()) && KafkaListenerType.INTERNAL == listener.getType())   {
-            throw new UnsupportedOperationException("Bootstrap routes or ingresses are not used for internal listeners");
-        } else if (listener.getPort() == 9093 && "tls".equals(listener.getName()) && KafkaListenerType.INTERNAL == listener.getType())   {
+        if (KafkaListenerType.INTERNAL == listener.getType()) {
             throw new UnsupportedOperationException("Bootstrap routes or ingresses are not used for internal listeners");
         } else if (listener.getPort() == 9094 && "external".equals(listener.getName()))   {
             return clusterName + "-kafka-bootstrap";
-        } else if (KafkaListenerType.INTERNAL == listener.getType()) {
-            throw new UnsupportedOperationException("Bootstrap routes or ingresses are not used for internal listeners");
         } else {
             return clusterName + "-kafka-" + listener.getName() + "-bootstrap";
         }
@@ -306,14 +296,10 @@ public class ListenersUtils {
      * @return          Name of the bootstrap service
      */
     public static String backwardsCompatiblePerBrokerServiceName(String baseName, int pod, GenericKafkaListener listener) {
-        if (listener.getPort() == 9092 && "plain".equals(listener.getName()) && KafkaListenerType.INTERNAL == listener.getType())   {
-            throw new UnsupportedOperationException("Per-broker services are not used for internal listener");
-        } else if (listener.getPort() == 9093 && "tls".equals(listener.getName()) && KafkaListenerType.INTERNAL == listener.getType())   {
+        if (KafkaListenerType.INTERNAL == listener.getType()) {
             throw new UnsupportedOperationException("Per-broker services are not used for internal listener");
         } else if (listener.getPort() == 9094 && "external".equals(listener.getName()))   {
             return baseName + "-" + pod;
-        } else if (KafkaListenerType.INTERNAL == listener.getType()) {
-            throw new UnsupportedOperationException("Per-broker services are not used for internal listener");
         } else {
             return baseName + "-" + listener.getName() + "-" + pod;
         }
