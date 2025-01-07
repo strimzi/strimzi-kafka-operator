@@ -13,7 +13,6 @@ import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.topic.KafkaTopicStatus;
-import io.strimzi.operator.common.featuregates.FeatureGates;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.topic.model.KubeRef;
 import io.strimzi.operator.topic.model.TopicOperatorException;
@@ -98,8 +97,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 
 /**
- * This integration test suite provides coverage of the {@link BatchingTopicController}.
- * If you need to test individual units of code, use the the {@link BatchingTopicController}.
+ * This integration test covers the {@link BatchingTopicController}.
+ * This test requires a connection to a Kubernetes cluster.
  */
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
 class TopicControllerIT implements TestSeparator {
@@ -1273,17 +1272,17 @@ class TopicControllerIT implements TestSeparator {
     }
 
     private static TopicOperatorConfig topicOperatorConfig(String ns, StrimziKafkaCluster kafkaCluster, boolean useFinalizer, long fullReconciliationIntervalMs) {
-        return new TopicOperatorConfig(ns,
-            Labels.fromMap(SELECTOR),
-            kafkaCluster.getBootstrapServers(),
-            TopicControllerIT.class.getSimpleName(),
-            fullReconciliationIntervalMs,
-            false, "", "", "", "", "",
-            false, "", "", "", "", "",
-            useFinalizer,
-            100, 100, 10, false, new FeatureGates(""),
-            false, false, "", 9090, false, false, "", "", "",
-            "all", false);
+        return TopicOperatorConfig.buildFromMap(Map.of(
+            TopicOperatorConfig.NAMESPACE.key(), ns,
+            TopicOperatorConfig.RESOURCE_LABELS.key(), Labels.fromMap(SELECTOR).toSelectorString(),
+            TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), kafkaCluster.getBootstrapServers(),
+            TopicOperatorConfig.CLIENT_ID.key(), TopicControllerIT.class.getSimpleName(),
+            TopicOperatorConfig.FULL_RECONCILIATION_INTERVAL_MS.key(), String.valueOf(fullReconciliationIntervalMs),
+            TopicOperatorConfig.USE_FINALIZERS.key(), String.valueOf(useFinalizer),
+            TopicOperatorConfig.MAX_QUEUE_SIZE.key(), "100",
+            TopicOperatorConfig.MAX_BATCH_SIZE.key(), "100",
+            TopicOperatorConfig.MAX_BATCH_LINGER_MS.key(), "10"
+        ));
     }
 
     @Test
@@ -2038,14 +2037,17 @@ class TopicControllerIT implements TestSeparator {
         // given
         String ns = createNamespace(NAMESPACE);
 
-        var config = new TopicOperatorConfig(ns, Labels.fromMap(SELECTOR),
-            kafkaCluster.getBootstrapServers(), TopicControllerIT.class.getSimpleName(), 10_000,
-            false, "", "", "", "", "",
-            false, "", "", "", "", "",
-            true,
-            1, 100, 5_0000, false, new FeatureGates(""),
-            false, false, "", 9090, false, false, "", "", "",
-            "all", false);
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+            TopicOperatorConfig.NAMESPACE.key(), ns,
+            TopicOperatorConfig.RESOURCE_LABELS.key(), Labels.fromMap(SELECTOR).toSelectorString(),
+            TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), kafkaCluster.getBootstrapServers(),
+            TopicOperatorConfig.CLIENT_ID.key(), TopicControllerIT.class.getSimpleName(),
+            TopicOperatorConfig.FULL_RECONCILIATION_INTERVAL_MS.key(), "10000",
+            TopicOperatorConfig.USE_FINALIZERS.key(), "true",
+            TopicOperatorConfig.MAX_QUEUE_SIZE.key(), "1",
+            TopicOperatorConfig.MAX_BATCH_SIZE.key(), "100",
+            TopicOperatorConfig.MAX_BATCH_LINGER_MS.key(), "5000"
+        ));
 
         maybeStartOperator(config);
 
