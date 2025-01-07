@@ -157,6 +157,8 @@ include::../../modules/configuring/proc-manual-stop-pause-mirrormaker2-connector
 include::../../modules/configuring/proc-manual-restart-mirrormaker2-connector.adoc[leveloffset=+2]
 //Procedure to restart an MM2 connector task
 include::../../modules/configuring/proc-manual-restart-mirrormaker2-connector-task.adoc[leveloffset=+2]
+//Disaster recovery 
+include::../../modules/configuring/con-mm2-recovery.adoc[leveloffset=+2]
 
 //`KafkaBridge` resource config
 include::../../modules/configuring/con-config-kafka-bridge.adoc[leveloffset=+1]
