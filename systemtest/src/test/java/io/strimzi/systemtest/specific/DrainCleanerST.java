@@ -5,9 +5,7 @@
 package io.strimzi.systemtest.specific;
 
 import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
@@ -73,16 +71,6 @@ public class DrainCleanerST extends AbstractST {
             continuousClients.consumerStrimzi());
 
         List<String> brokerPods = kubeClient().listPodNames(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getBrokerSelector());
-
-        if (!Environment.isKRaftModeEnabled()) {
-            String zkPodName = KafkaResources.zookeeperPodName(testStorage.getClusterName(), 0);
-
-            Map<String, String> zkPod = PodUtils.podSnapshot(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getControllerSelector()).entrySet()
-                    .stream().filter(snapshot -> snapshot.getKey().equals(zkPodName)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-            evictPodWithName(zkPodName);
-            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getControllerSelector(), replicas, zkPod);
-        }
 
         String kafkaPodName = brokerPods.get(0);
 

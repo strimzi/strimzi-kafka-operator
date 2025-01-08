@@ -189,7 +189,6 @@ public class KafkaNodePoolST extends AbstractST {
         }
     )
     void testNodePoolsRolesChanging() {
-        assumeTrue(Environment.isKRaftModeEnabled());
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         // volatile KNP which will be transitioned from mixed to -> controller only role and afterward to mixed role again

@@ -67,7 +67,6 @@ These tests are crucial to ensure that Kafka clusters can handle production work
 - [testCustomCertNodePortAndTlsRollingUpdate](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)
 - [testChangingInternalToExternalLoggingTriggerRollingUpdate](../io.strimzi.systemtest.log.LoggingChangeST.md)
 - [testKafkaQuotasPluginWithBandwidthLimitation](../io.strimzi.systemtest.kafka.QuotasST.md)
-- [testKRaftMode](../io.strimzi.systemtest.kafka.KafkaST.md)
 - [testLoggingHierarchy](../io.strimzi.systemtest.log.LoggingChangeST.md)
 - [testKafkaNodePoolBrokerIdsManagementUsingAnnotations](../io.strimzi.systemtest.kafka.KafkaNodePoolST.md)
 - [testLoadBalancer](../io.strimzi.systemtest.kafka.listeners.ListenersST.md)

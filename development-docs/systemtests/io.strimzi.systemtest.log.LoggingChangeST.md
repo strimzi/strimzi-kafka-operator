@@ -229,14 +229,14 @@
 
 ## testJSONFormatLogging
 
-**Description:** Test verifying that the logging in JSON format works correctly across Kafka, Zookeeper, and operators.
+**Description:** Test verifying that the logging in JSON format works correctly across Kafka and operators.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
 | 1. | Assume non-Helm and non-OLM installation. | Assumption holds true. |
-| 2. | Create ConfigMaps for Kafka, Zookeeper, and operators with JSON logging configuration. | ConfigMaps created and applied. |
+| 2. | Create ConfigMaps for Kafka and operators with JSON logging configuration. | ConfigMaps created and applied. |
 | 3. | Deploy Kafka cluster with the configured logging setup. | Kafka cluster deployed successfully. |
 | 4. | Perform pod snapshot for controllers, brokers, and entity operators. | Pod snapshots successfully captured. |
 | 5. | Verify logs are in JSON format for all components. | Logs are in JSON format. |

@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.metrics;
 
-import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxAuthenticationPassword;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
@@ -30,7 +29,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 
@@ -41,7 +39,6 @@ import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag(REGRESSION)
 public class JmxST extends AbstractST {
@@ -52,10 +49,8 @@ public class JmxST extends AbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     @FIPSNotSupported("JMX with auth is not working with FIPS")
-    @SuppressWarnings("deprecation") // ZooKeeper is deprecated, but some APi methods are still called here
-    void testKafkaZookeeperAndKafkaConnectWithJMX() {
+    void testKafkaAndKafkaConnectWithJMX() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
-        final String zkSecretName = testStorage.getClusterName() + "-zookeeper-jmx";
         final String connectJmxSecretName = testStorage.getClusterName() + "-kafka-connect-jmx";
         final String kafkaJmxSecretName = testStorage.getClusterName() + "-kafka-jmx";
 
@@ -74,11 +69,6 @@ public class JmxST extends AbstractST {
                     .withNewJmxOptions()
                         .withAuthentication(new KafkaJmxAuthenticationPassword())
                     .endJmxOptions()
-                .endKafka()
-                .editOrNewZookeeper()
-                    .withNewJmxOptions()
-                        .withAuthentication(new KafkaJmxAuthenticationPassword())
-                    .endJmxOptions()
                     .editOrNewTemplate()
                         .withNewJmxSecret()
                             .withNewMetadata()
@@ -87,13 +77,9 @@ public class JmxST extends AbstractST {
                             .endMetadata()
                         .endJmxSecret()
                     .endTemplate()
-                .endZookeeper()
+                .endKafka()
             .endSpec()
             .build();
-
-        if (Environment.isKRaftModeEnabled()) {
-            kafka.getSpec().setZookeeper(null);
-        }
 
         resourceManager.createResourceWithWait(kafka, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
         String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
@@ -116,20 +102,6 @@ public class JmxST extends AbstractST {
         String kafkaConnectResults = JmxUtils.collectJmxMetricsWithWait(testStorage.getNamespaceName(), KafkaConnectResources.serviceName(testStorage.getClusterName()), connectJmxSecretName, scraperPodName, "bean kafka.connect:type=app-info\nget -i *");
         assertThat("Result from Kafka JMX doesn't contain right version of Kafka, result: " + kafkaResults, kafkaResults, containsString("version = " + Environment.ST_KAFKA_VERSION));
         assertThat("Result from KafkaConnect JMX doesn't contain right version of Kafka, result: " + kafkaConnectResults, kafkaConnectResults, containsString("version = " + Environment.ST_KAFKA_VERSION));
-
-        if (!Environment.isKRaftModeEnabled()) {
-            Secret jmxZkSecret = kubeClient().getSecret(testStorage.getNamespaceName(), zkSecretName);
-
-            String zkBeans = JmxUtils.collectJmxMetricsWithWait(testStorage.getNamespaceName(), KafkaResources.zookeeperHeadlessServiceName(testStorage.getClusterName()), zkSecretName, scraperPodName, "domain org.apache.ZooKeeperService\nbeans");
-            String zkBean = Arrays.stream(zkBeans.split("\\n")).filter(bean -> bean.matches("org.apache.ZooKeeperService:name[0-9]+=ReplicatedServer_id[0-9]+")).findFirst().orElseThrow();
-
-            String zkResults = JmxUtils.collectJmxMetricsWithWait(testStorage.getNamespaceName(), KafkaResources.zookeeperHeadlessServiceName(testStorage.getClusterName()), zkSecretName, scraperPodName, "bean " + zkBean + "\nget -i *");
-            assertThat("Result from ZooKeeper JMX doesn't contain right quorum size, result: " + zkResults, zkResults, containsString("QuorumSize = 3"));
-
-            LOGGER.info("Checking that ZooKeeper JMX Secret is created with custom labels and annotations");
-            assertTrue(jmxZkSecret.getMetadata().getLabels().entrySet().containsAll(jmxSecretLabels.entrySet()));
-            assertTrue(jmxZkSecret.getMetadata().getAnnotations().entrySet().containsAll(jmxSecretAnnotations.entrySet()));
-        }
     }
 
     @BeforeAll

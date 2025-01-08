@@ -16,7 +16,6 @@ import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
@@ -47,7 +46,6 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.RECOVERY;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Suite for testing topic recovery in case of namespace deletion.
@@ -318,8 +316,6 @@ class NamespaceDeletionRecoveryST extends AbstractST {
 
     @BeforeAll
     void createStorageClass() {
-        assumeTrue(Environment.isKRaftModeEnabled() && Environment.isKafkaNodePoolsEnabled());
-
         // Delete specific StorageClass if present from previous
         kubeClient().getClient().storage().v1().storageClasses().withName(storageClassName).delete();
 
@@ -346,7 +342,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         kubeClient().deleteStorageClassWithName(storageClassName);
 
         kubeClient().getClient().persistentVolumes().list().getItems().stream()
-            .filter(pv -> pv.getSpec().getClaimRef().getName().contains("kafka") || pv.getSpec().getClaimRef().getName().contains("zookeeper"))
+            .filter(pv -> pv.getSpec().getClaimRef().getName().contains("kafka"))
             .forEach(pv -> kubeClient().getClient().persistentVolumes().resource(pv).delete());
     }
 }

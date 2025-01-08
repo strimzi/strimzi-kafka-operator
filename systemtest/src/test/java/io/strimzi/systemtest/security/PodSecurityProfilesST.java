@@ -55,7 +55,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * only some Volume types etc.).
  *
  * Test cases are design to verify common behaviour of Pod Security profiles. Specifically, (i.) we check if containers such
- * as Kafka, ZooKeeper, Entity Operator, KafkaBridge has properly set .securityContext (ii.) then we check if these
+ * as Kafka, Entity Operator, KafkaBridge has properly set .securityContext (ii.) then we check if these
  * resources working and are stable with exchanging messages.
  */
 @Tag(REGRESSION)
@@ -75,7 +75,7 @@ public class PodSecurityProfilesST extends AbstractST {
      *     - All components are deployed targeting respective Kafka Clusters
      *  4. - Deploy producer which will produce data into Topic residing in Kafka Cluster serving as Source for KafkaMirrorMakers and is targeted by other Operands
      *     - Messages are sent into KafkaTopic
-     *  5. - Verify that containers such as Kafka, ZooKeeper, Entity Operator, KafkaBridge has properly set .securityContext
+     *  5. - Verify that containers such as Kafka, Entity Operator, KafkaBridge has properly set .securityContext
      *     - All containers and Pods have expected properties
      *  6. - Verify KafkaConnect and KafkaConnector are working by checking presence of Data in file targeted by FileSink KafkaConnector
      *     - Data are present here
@@ -208,7 +208,7 @@ public class PodSecurityProfilesST extends AbstractST {
 
     @BeforeAll
     void beforeAll() {
-        // we configure Pod Security via provider class, which sets SecurityContext to all containers (e.g., Kafka, ZooKeeper,
+        // we configure Pod Security via provider class, which sets SecurityContext to all containers (e.g., Kafka,
         // Entity Operator, Bridge). Another alternative but more complicated is to set it via .template section inside each CR.
         clusterOperator = clusterOperator
             .defaultInstallation()

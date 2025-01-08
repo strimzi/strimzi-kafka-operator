@@ -101,9 +101,7 @@ public class TopicReplicasChangeST extends AbstractST {
         KafkaTopicUtils.waitForKafkaTopicNotReady(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
         KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(sharedTestStorage.getNamespaceName()).withName(testStorage.getTopicName()).get().getStatus();
 
-        String errorMessage = Environment.isKRaftModeEnabled() ?
-                "org.apache.kafka.common.errors.InvalidReplicationFactorException: Unable to replicate the partition 5 time(s): The target replication factor of 5 cannot be reached because only 3 broker(s) are registered." :
-                "org.apache.kafka.common.errors.InvalidReplicationFactorException: Replication factor: 5 larger than available brokers: 3";
+        String errorMessage = "org.apache.kafka.common.errors.InvalidReplicationFactorException: Unable to replicate the partition 5 time(s): The target replication factor of 5 cannot be reached because only 3 broker(s) are registered.";
 
         assertThat(kafkaTopicStatus.getConditions().get(0).getMessage(), containsString(errorMessage));
         assertThat(kafkaTopicStatus.getConditions().get(0).getReason(), containsString("KafkaError"));

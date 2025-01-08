@@ -213,8 +213,6 @@ public class DynamicConfSharedST extends AbstractST {
 
             // skipping these configuration exceptions
             testCases.remove("ssl.cipher.suites");
-            testCases.remove("zookeeper.connection.timeout.ms");
-            testCases.remove("zookeeper.connect");
         });
 
         return testCases;
