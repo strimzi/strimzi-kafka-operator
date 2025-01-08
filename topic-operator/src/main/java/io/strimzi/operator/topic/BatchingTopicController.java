@@ -535,8 +535,8 @@ public class BatchingTopicController {
         reconcilableTopics.forEach(reconcilableTopic -> {
             var configChanges = results.getConfigChanges().stream()
                 .filter(pair -> pair.getKey().equals(reconcilableTopic)).findFirst();
-            if (configChanges != null && configChanges.isEmpty()) {
-                LOGGER.debugCr(reconcilableTopic.reconciliation(), "Config changes {}", configChanges);
+            if (configChanges.isPresent()) {
+                LOGGER.debugCr(reconcilableTopic.reconciliation(), "Config changes: {}", configChanges.get());
             } else {
                 LOGGER.debugCr(reconcilableTopic.reconciliation(), "No config change");
             }
