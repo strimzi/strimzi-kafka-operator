@@ -489,9 +489,9 @@ class KafkaST extends AbstractST {
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), testStorage.getClusterName(), 3, 1).build());
 
-        final String brokerSecret = testStorage.getClusterName() + "-kafka-brokers";
-
-        Secret secretsWithoutExt = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), brokerSecret);
+        Map<String, Secret> secretsWithoutExt = kubeClient(testStorage.getNamespaceName()).listSecrets()
+                .stream()
+                .collect(Collectors.toMap(secret -> secret.getMetadata().getName(), secret -> secret));
 
         LOGGER.info("Editing Kafka with external listener");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
@@ -517,13 +517,12 @@ class KafkaST extends AbstractST {
 
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector()));
 
-        Secret secretsWithExt = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), brokerSecret);
-
         LOGGER.info("Checking Secrets");
         kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(testStorage.getNamespaceName(), StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName())).forEach(kafkaPod -> {
             String kafkaPodName = kafkaPod.getMetadata().getName();
-            assertThat(secretsWithExt.getData().get(kafkaPodName + ".crt"), is(not(secretsWithoutExt.getData().get(kafkaPodName + ".crt"))));
-            assertThat(secretsWithExt.getData().get(kafkaPodName + ".key"), is(not(secretsWithoutExt.getData().get(kafkaPodName + ".key"))));
+            Secret secretWithExt = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), kafkaPodName);
+            assertThat(secretWithExt.getData().get(kafkaPodName + ".crt"), is(not(secretsWithoutExt.get(kafkaPodName).getData().get(kafkaPodName + ".crt"))));
+            assertThat(secretWithExt.getData().get(kafkaPodName + ".key"), is(not(secretsWithoutExt.get(kafkaPodName).getData().get(kafkaPodName + ".key"))));
         });
     }
 
