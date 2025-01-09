@@ -206,15 +206,6 @@ public class KafkaMirrorMaker2ClusterTest {
         return expected;
     }
 
-    private static Volume getVolume(Pod pod, String volumeName) {
-        return pod.getSpec().getVolumes().stream().filter(volume -> volumeName.equals(volume.getName())).iterator().next();
-    }
-
-    private static VolumeMount getVolumeMount(Container container, String volumeName) {
-        return container.getVolumeMounts().stream().filter(volumeMount -> volumeName.equals(volumeMount.getName())).iterator().next();
-    }
-
-
     @ParallelTest
     public void testDefaultValues() {
         KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ResourceUtils.createEmptyKafkaMirrorMaker2(namespace, clusterName), VERSIONS, SHARED_ENV_PROVIDER);
@@ -993,13 +984,13 @@ public class KafkaMirrorMaker2ClusterTest {
                 .build();
 
         VolumeMount additionalVolumeMountConfigMap = new VolumeMountBuilder()
-                .withName("config-map-volume-name-2")
+                .withName("config-map-volume-name")
                 .withMountPath("/mnt/myconfigmap")
                 .withSubPath("def")
                 .build();
 
         VolumeMount additionalVolumeMountPvc = new VolumeMountBuilder()
-                .withName("pvc-volume-name-2")
+                .withName("pvc-volume-name")
                 .withMountPath("/mnt/mypvc")
                 .build();
 
@@ -1078,13 +1069,38 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(pod.getSpec().getDnsPolicy(), is(DnsPolicy.NONE.toValue()));
             assertThat(pod.getSpec().getDnsConfig(), is(dnsConfig));
             assertThat(pod.getSpec().getEnableServiceLinks(), is(false));
-            assertThat(getVolume(pod, "strimzi-tmp").getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
-            assertThat(getVolume(pod, additionalVolumeConfigMap.getName()).getConfigMap(), is(configMap));
-            assertThat(getVolume(pod, additionalVolumePvc.getName()).getPersistentVolumeClaim(), is(pvc));
-            assertThat(getVolumeMount(pod.getSpec().getContainers().get(0), additionalVolumeMountConfigMap.getName()), is(additionalVolumeMountConfigMap));
-            assertThat(getVolumeMount(pod.getSpec().getInitContainers().get(0), additionalVolumeMountPvc.getName()), is(additionalVolumeMountPvc));
 
+            assertThat(pod.getSpec().getVolumes().size(), is(5));
+            assertThat(pod.getSpec().getVolumes().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+            assertThat(pod.getSpec().getVolumes().get(0).getEmptyDir(), is(notNullValue()));
+            assertThat(pod.getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
+            assertThat(pod.getSpec().getVolumes().get(1).getName(), is("kafka-metrics-and-logging"));
+            assertThat(pod.getSpec().getVolumes().get(1).getConfigMap().getName(), is("foo-mirrormaker2-config"));
+            assertThat(pod.getSpec().getVolumes().get(2).getName(), is("rack-volume"));
+            assertThat(pod.getSpec().getVolumes().get(2).getEmptyDir(), is(notNullValue()));
+            assertThat(pod.getSpec().getVolumes().get(2).getEmptyDir().getSizeLimit(), is(new Quantity("1Mi")));
+            assertThat(pod.getSpec().getVolumes().get(3).getName(), is("config-map-volume-name"));
+            assertThat(pod.getSpec().getVolumes().get(3).getConfigMap().getName(), is("configMap1"));
+            assertThat(pod.getSpec().getVolumes().get(4).getName(), is("pvc-volume-name"));
+            assertThat(pod.getSpec().getVolumes().get(4).getPersistentVolumeClaim().getClaimName(), is("pvc-name"));
+
+            assertThat(pod.getSpec().getInitContainers().get(0).getVolumeMounts().size(), is(2));
+            assertThat(pod.getSpec().getInitContainers().get(0).getVolumeMounts().get(0).getName(), is("rack-volume"));
+            assertThat(pod.getSpec().getInitContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/opt/kafka/init"));
+            assertThat(pod.getSpec().getInitContainers().get(0).getVolumeMounts().get(1).getName(), is("pvc-volume-name"));
+            assertThat(pod.getSpec().getInitContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/mnt/mypvc"));
+
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(4));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is("kafka-metrics-and-logging"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/opt/kafka/custom-config/"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is("rack-volume"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is("/opt/kafka/init"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getName(), is("config-map-volume-name"));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(3).getMountPath(), is("/mnt/myconfigmap"));
         });
+
         // Check Service
         Service svc = kmm2.generateService();
         assertThat(svc.getMetadata().getLabels().entrySet().containsAll(svcLabels.entrySet()), is(true));
