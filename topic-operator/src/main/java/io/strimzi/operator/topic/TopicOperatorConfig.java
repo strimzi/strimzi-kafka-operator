@@ -132,8 +132,7 @@ public class TopicOperatorConfig {
         LOGGER.infoOp("TopicOperator configuration is {}", topicOperatorConfig);
         return topicOperatorConfig;
     }
-
-<<<<<<< HEAD
+    
     private static Set<String> keyNames() {
         return Collections.unmodifiableSet(CONFIG_VALUES.keySet());
     }
