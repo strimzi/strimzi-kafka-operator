@@ -58,9 +58,9 @@ public class TopicOperatorMain implements Liveness, Readiness {
 
     TopicOperatorMain(TopicOperatorConfig config, Admin kafkaAdminClient) {
         Objects.requireNonNull(config.namespace());
-        Objects.requireNonNull(config.labelSelector());
+        Objects.requireNonNull(config.resourceLabels());
         this.config = config;
-        var selector = config.labelSelector().toMap();
+        var selector = config.resourceLabels().toMap();
         this.kubernetesClient = new OperatorKubernetesClientBuilder("strimzi-topic-operator", TopicOperatorMain.class.getPackage().getImplementationVersion()).build();
         this.kafkaAdminClient = kafkaAdminClient;
         this.cruiseControlClient = TopicOperatorUtil.createCruiseControlClient(config);

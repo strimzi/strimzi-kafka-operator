@@ -72,8 +72,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 /**
- * This test is not intended to provide lots of coverage of the {@link BatchingTopicController}, 
- * rather it aims to cover some parts that a difficult to test via {@link TopicControllerIT}.
+ * This test covers some parts that a difficult to test via {@link TopicControllerIT}.
  */
 @SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
 class BatchingTopicControllerIT implements TestSeparator {
