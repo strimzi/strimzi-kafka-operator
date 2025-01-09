@@ -754,6 +754,12 @@ class KafkaST extends AbstractST {
             resource.getSpec().getTemplate().getPersistentVolumeClaim().getMetadata().setAnnotations(customSpecifiedLabelOrAnnotationPvc);
         });
 
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), resource -> {
+            for (Map.Entry<String, String> label : customSpecifiedLabels.entrySet()) {
+                resource.getMetadata().getLabels().put(label.getKey(), label.getValue());
+            }
+        });
+
         LOGGER.info("Waiting for rolling update of Kafka");
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 1, controllerPods);
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);

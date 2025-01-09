@@ -662,7 +662,7 @@ class LoggingChangeST extends AbstractST {
             "    # Kafka AdminClient logging is a bit noisy at INFO level\n" +
             "    logger.kafka.name = org.apache.kafka\n" +
             "    logger.kafka.level = OFF\n" +
-            "    logger.kafka.additivity = false\n";
+            "    logger.kafka.additivity = false";
 
         ConfigMap coMap = new ConfigMapBuilder()
             .withNewMetadata()
