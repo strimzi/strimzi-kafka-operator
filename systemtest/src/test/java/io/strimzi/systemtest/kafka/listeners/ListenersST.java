@@ -2762,12 +2762,12 @@ public class ListenersST extends AbstractST {
                 .endSpec()
                 .build());
 
-        Map<String, String> secretData = kubeClient().getSecret(testStorage.getNamespaceName(), KafkaResources.brokersServiceName(testStorage.getClusterName())).getData();
         List<String> brokerPods = kubeClient().listPodNamesInSpecificNamespace(testStorage.getNamespaceName(), Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND)
             .stream().filter(podName -> podName.contains("kafka")).collect(Collectors.toList());
 
         int index = 0;
         for (String kafkaBroker : brokerPods) {
+            Map<String, String> secretData = kubeClient().getSecret(testStorage.getNamespaceName(), kafkaBroker).getData();
             String cert = secretData.get(kafkaBroker + ".crt");
 
             LOGGER.info("Encoding {}.crt", kafkaBroker);

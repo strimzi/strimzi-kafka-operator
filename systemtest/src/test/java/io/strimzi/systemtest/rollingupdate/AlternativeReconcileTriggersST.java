@@ -223,18 +223,16 @@ class AlternativeReconcileTriggersST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
         KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
-        Map<String, String> secretData = kubeClient().getSecret(testStorage.getNamespaceName(), KafkaResources.brokersServiceName(testStorage.getClusterName())).getData();
+        for (String podName : brokerPods.keySet()) {
+            Map<String, String> secretData = kubeClient().getSecret(testStorage.getNamespaceName(), podName).getData();
+            String certKey = podName + ".crt";
+            LOGGER.info("Encoding {} cert", certKey);
+            ByteArrayInputStream publicCert = new ByteArrayInputStream(Util.decodeBytesFromBase64(secretData.get(certKey).getBytes()));
+            CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+            Certificate certificate = certificateFactory.generateCertificate(publicCert);
 
-        for (Map.Entry<String, String> item : secretData.entrySet()) {
-            if (item.getKey().endsWith(".crt") && !item.getKey().contains(testStorage.getControllerComponentName())) {
-                LOGGER.info("Encoding {} cert", item.getKey());
-                ByteArrayInputStream publicCert = new ByteArrayInputStream(Util.decodeBytesFromBase64(item.getValue().getBytes()));
-                CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-                Certificate certificate = certificateFactory.generateCertificate(publicCert);
-
-                LOGGER.info("Verifying that new DNS is in certificate subject alternative names");
-                assertThat(certificate.toString(), containsString(bootstrapDns));
-            }
+            LOGGER.info("Verifying that new DNS is in certificate subject alternative names");
+            assertThat(certificate.toString(), containsString(bootstrapDns));
         }
     }
 
