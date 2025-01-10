@@ -102,7 +102,6 @@ class LogSettingST extends AbstractST {
         {
             put("kafka.root.logger.level", INFO);
             put("test.kafka.logger.level", INFO);
-            put("log4j.logger.org.apache.zookeeper", WARN);
             put("log4j.logger.kafka", TRACE);
             put("log4j.logger.org.apache.kafka", DEBUG);
             put("log4j.logger.kafka.request.logger", FATAL);
@@ -114,13 +113,6 @@ class LogSettingST extends AbstractST {
             put("log4j.logger.kafka.log.LogCleaner", TRACE);
             put("log4j.logger.state.change.logger", DEBUG);
             put("log4j.logger.kafka.authorizer.logger", FATAL);
-        }
-    };
-
-    private static final Map<String, String> ZOOKEEPER_LOGGERS = new HashMap<>() {
-        {
-            put("zookeeper.root.logger", OFF);
-            put("test.zookeeper.logger.level", DEBUG);
         }
     };
 
@@ -183,11 +175,9 @@ class LogSettingST extends AbstractST {
     };
 
     @IsolatedTest("Using shared Kafka")
-    @SuppressWarnings("deprecation") // ZooKeeper is deprecated, but some APi methods are still called here
     void testKafkaLogSetting() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
-        String zookeeperMap = KafkaResources.zookeeperMetricsAndLogConfigMapName(LOG_SETTING_CLUSTER_NAME);
         String topicOperatorMap = String.format("%s-%s", LOG_SETTING_CLUSTER_NAME, "entity-topic-operator-config");
         String userOperatorMap = String.format("%s-%s", LOG_SETTING_CLUSTER_NAME, "entity-user-operator-config");
 
@@ -205,60 +195,48 @@ class LogSettingST extends AbstractST {
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), LOG_SETTING_CLUSTER_NAME).build());
         resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername(), LOG_SETTING_CLUSTER_NAME).build());
 
-        LOGGER.info("Checking if Kafka, ZooKeeper, TO and UO of cluster: {} has log level set properly", LOG_SETTING_CLUSTER_NAME);
+        LOGGER.info("Checking if Kafka, TO and UO of cluster: {} has log level set properly", LOG_SETTING_CLUSTER_NAME);
         StUtils.getKafkaConfigurationConfigMaps(Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME)
                 .forEach(cmName -> {
                     assertThat("Kafka's log level is set properly", checkLoggersLevel(Environment.TEST_SUITE_NAMESPACE, KAFKA_LOGGERS, cmName), is(true));
                 });
-        if (!Environment.isKRaftModeEnabled()) {
-            assertThat("ZooKeeper's log level is set properly", checkLoggersLevel(Environment.TEST_SUITE_NAMESPACE, ZOOKEEPER_LOGGERS, zookeeperMap), is(true));
-            assertThat("Topic Operator's log level is set properly", checkLoggersLevel(Environment.TEST_SUITE_NAMESPACE, OPERATORS_LOGGERS, topicOperatorMap), is(true));
-        }
+        assertThat("Topic Operator's log level is set properly", checkLoggersLevel(Environment.TEST_SUITE_NAMESPACE, OPERATORS_LOGGERS, topicOperatorMap), is(true));
         assertThat("User operator's log level is set properly", checkLoggersLevel(Environment.TEST_SUITE_NAMESPACE, OPERATORS_LOGGERS, userOperatorMap), is(true));
 
-        LOGGER.info("Checking if Kafka, ZooKeeper, TO and UO of cluster: {} has GC logging enabled in stateful sets/deployments", LOG_SETTING_CLUSTER_NAME);
+        LOGGER.info("Checking if Kafka, TO and UO of cluster: {} has GC logging enabled in StrimziPodSets/Deployments", LOG_SETTING_CLUSTER_NAME);
         checkGcLoggingPods(Environment.TEST_SUITE_NAMESPACE, brokerSelector, true);
-        if (!Environment.isKRaftModeEnabled()) {
-            checkGcLoggingPods(Environment.TEST_SUITE_NAMESPACE, controllerSelector, true);
-            assertThat("TO GC logging is enabled", checkGcLoggingDeployments(Environment.TEST_SUITE_NAMESPACE, eoDepName, "topic-operator"), is(true));
-        }
+        checkGcLoggingPods(Environment.TEST_SUITE_NAMESPACE, controllerSelector, true);
+
+        assertThat("TO GC logging is enabled", checkGcLoggingDeployments(Environment.TEST_SUITE_NAMESPACE, eoDepName, "topic-operator"), is(true));
         assertThat("UO GC logging is enabled", checkGcLoggingDeployments(Environment.TEST_SUITE_NAMESPACE, eoDepName, "user-operator"), is(true));
 
         LOGGER.info("Changing JVM options - setting GC logging to false");
-        if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getBrokerPoolName(LOG_SETTING_CLUSTER_NAME),
-                knp -> knp.getSpec().setJvmOptions(JVM_OPTIONS));
-        }
+        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getBrokerPoolName(LOG_SETTING_CLUSTER_NAME),
+            knp -> knp.getSpec().setJvmOptions(JVM_OPTIONS));
+        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getControllerPoolName(LOG_SETTING_CLUSTER_NAME),
+            knp -> knp.getSpec().setJvmOptions(JVM_OPTIONS));
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME, kafka -> {
-            kafka.getSpec().getKafka().setJvmOptions(JVM_OPTIONS);
-            if (!Environment.isKRaftModeEnabled()) {
-                kafka.getSpec().getZookeeper().setJvmOptions(JVM_OPTIONS);
-                kafka.getSpec().getEntityOperator().getTopicOperator().setJvmOptions(JVM_OPTIONS);
-            }
+            kafka.getSpec().getEntityOperator().getTopicOperator().setJvmOptions(JVM_OPTIONS);
             kafka.getSpec().getEntityOperator().getUserOperator().setJvmOptions(JVM_OPTIONS);
         });
 
-        if (!Environment.isKRaftModeEnabled()) {
-            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Environment.TEST_SUITE_NAMESPACE, controllerSelector, 1, controllerPods);
-        }
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Environment.TEST_SUITE_NAMESPACE, controllerSelector, 1, controllerPods);
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Environment.TEST_SUITE_NAMESPACE, brokerSelector, 3, brokerPods);
         DeploymentUtils.waitTillDepHasRolled(Environment.TEST_SUITE_NAMESPACE, eoDepName, 1, eoPods);
 
-        LOGGER.info("Checking if Kafka, ZooKeeper, TO and UO of cluster: {} has GC logging disabled in stateful sets/deployments", LOG_SETTING_CLUSTER_NAME);
+        LOGGER.info("Checking if Kafka, TO and UO of cluster: {} has GC logging disabled in stateful sets/deployments", LOG_SETTING_CLUSTER_NAME);
         checkGcLoggingPods(Environment.TEST_SUITE_NAMESPACE, brokerSelector, false);
-        if (!Environment.isKRaftModeEnabled()) {
-            checkGcLoggingPods(Environment.TEST_SUITE_NAMESPACE, controllerSelector, false);
-            assertThat("TO GC logging is disabled", checkGcLoggingDeployments(Environment.TEST_SUITE_NAMESPACE, eoDepName, "topic-operator"), is(false));
-        }
+        checkGcLoggingPods(Environment.TEST_SUITE_NAMESPACE, controllerSelector, false);
+
+        assertThat("TO GC logging is disabled", checkGcLoggingDeployments(Environment.TEST_SUITE_NAMESPACE, eoDepName, "topic-operator"), is(false));
         assertThat("UO GC logging is disabled", checkGcLoggingDeployments(Environment.TEST_SUITE_NAMESPACE, eoDepName, "user-operator"), is(false));
 
-        LOGGER.info("Checking if Kafka, ZooKeeper, TO and UO of cluster: {} has GC logging disabled in stateful sets/deployments", GC_LOGGING_SET_NAME);
+        LOGGER.info("Checking if Kafka, TO and UO of cluster: {} has GC logging disabled in StrimziPodSets/Deployments", GC_LOGGING_SET_NAME);
         checkGcLoggingPods(Environment.TEST_SUITE_NAMESPACE, brokerSelector, false);
-        if (!Environment.isKRaftModeEnabled()) {
-            checkGcLoggingPods(Environment.TEST_SUITE_NAMESPACE, controllerSelector, false);
-            assertThat("TO GC logging is enabled", checkGcLoggingDeployments(Environment.TEST_SUITE_NAMESPACE, eoDepName, "topic-operator"), is(false));
-        }
+        checkGcLoggingPods(Environment.TEST_SUITE_NAMESPACE, controllerSelector, false);
+
+        assertThat("TO GC logging is enabled", checkGcLoggingDeployments(Environment.TEST_SUITE_NAMESPACE, eoDepName, "topic-operator"), is(false));
         assertThat("UO GC logging is enabled", checkGcLoggingDeployments(Environment.TEST_SUITE_NAMESPACE, eoDepName, "user-operator"), is(false));
 
         kubectlGetStrimziUntilOperationIsSuccessful(Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME);
@@ -428,7 +406,7 @@ class LogSettingST extends AbstractST {
 
     private synchronized String configMap(String namespaceName, String configMapName) {
         Map<String, String> configMapData = kubeClient(namespaceName).getConfigMap(configMapName).getData();
-        // tries to get a log4j2 configuration file first (operator, bridge, ...) otherwise log4j one (kafka, zookeeper, ...)
+        // tries to get a log4j2 configuration file first (operator, bridge, ...) otherwise log4j one (kafka, ...)
         String configMapKey = configMapData.keySet()
                 .stream()
                 .filter(key -> key.equals("log4j2.properties") || key.equals("log4j.properties"))
@@ -489,7 +467,6 @@ class LogSettingST extends AbstractST {
     }
 
     @BeforeAll
-    @SuppressWarnings("deprecation") // ZooKeeper is deprecated, but some APi methods are still called here
     void setup() {
         this.clusterOperator = this.clusterOperator
             .defaultInstallation()
@@ -537,14 +514,6 @@ class LogSettingST extends AbstractST {
                         .withGcLoggingEnabled(true)
                     .endJvmOptions()
                 .endKafka()
-                .editZookeeper()
-                    .withNewInlineLogging()
-                        .withLoggers(ZOOKEEPER_LOGGERS)
-                    .endInlineLogging()
-                    .withNewJvmOptions()
-                        .withGcLoggingEnabled(true)
-                    .endJvmOptions()
-                .endZookeeper()
                 .editEntityOperator()
                     .editOrNewUserOperator()
                         .withNewInlineLogging()
@@ -577,10 +546,6 @@ class LogSettingST extends AbstractST {
                     .withNewJvmOptions()
                     .endJvmOptions()
                 .endKafka()
-                .editZookeeper()
-                    .withNewJvmOptions()
-                    .endJvmOptions()
-                .endZookeeper()
                 .editEntityOperator()
                     .editTopicOperator()
                         .withNewJvmOptions()
@@ -594,10 +559,6 @@ class LogSettingST extends AbstractST {
             .endSpec()
             .build();
 
-        if (Environment.isKRaftModeEnabled()) {
-            logSettingKafka.getSpec().setZookeeper(null);
-            gcLoggingKafka.getSpec().setZookeeper(null);
-        }
         resourceManager.createResourceWithoutWait(logSettingKafka, gcLoggingKafka);
 
         // sync point wait for all resources

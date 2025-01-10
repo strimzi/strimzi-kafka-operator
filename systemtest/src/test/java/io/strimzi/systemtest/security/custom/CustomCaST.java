@@ -11,7 +11,6 @@ import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.NodePoolsConverter;
@@ -51,7 +50,6 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -107,8 +105,8 @@ public class CustomCaST extends AbstractST {
         manuallyRenewCa(testStorage, clusterCa, newClusterCa);
 
         // On the next reconciliation, the Cluster Operator performs a `rolling update`:
-        //      a) ZooKeeper
-        //      b) Kafka
+        //      a) Kafka controllers
+        //      b) Kafka brokers
         //      c) and other components to trust the new CA certificate. (i.e., Entity Operator)
         // When the rolling update is complete, the Cluster Operator
         // will start a new one to generate new server certificates signed by the new CA key.
@@ -153,7 +151,7 @@ public class CustomCaST extends AbstractST {
      * When annotation is removed, kafka resumes and tries to renew clients certificates using the new CA keypair.
      * Note: There is a need to keep an old CA key in the secret and remove it only after all components successfully
      * roll several times (due to the fact that it takes multiple rolling updates to finally update from old keypair to the new one).
-     * Because this test specifically targets clients certificates, EO and ZK must NOT roll, only broker pods should.
+     * Because this test specifically targets clients certificates, EO must NOT roll, only Kafka pods should.
      * Test also verifies communication by producing and consuming messages.
      */
     @ParallelNamespaceTest
@@ -184,13 +182,8 @@ public class CustomCaST extends AbstractST {
         // `Kafka pods`. When the rolling update is complete, the Cluster Operator will start a new one to
         // generate new server certificates signed by the new CA key.
 
-        // Zookeper must not roll
-        if (!Environment.isKRaftModeEnabled()) {
-            RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), testStorage.getControllerSelector(), controllerPods);
-            assertThat(RollingUpdateUtils.componentHasRolled(testStorage.getNamespaceName(), testStorage.getControllerSelector(), controllerPods), is(Boolean.FALSE));
-        }
-
         // Kafka has to roll
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, brokerPods);
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
 
         // EO must not roll
@@ -207,7 +200,7 @@ public class CustomCaST extends AbstractST {
      * This tests focuses on verifying the functionality of custom cluster and clients CAs.
      * Steps are following. Before deploying kafka a clients and cluster CAs are created and deployed as secrets.
      * Kafka is then deployed with those, forcing it NOT to generate own certificate authority.
-     * After verification of correct certificates on zookeeper, user certificates are checked for correctness as well.
+     * After verification of correct certificates on user certificates are checked for correctness as well.
      * Then a producer / consumer jos are deployed to verify communication.
      */
     @ParallelNamespaceTest
@@ -254,19 +247,12 @@ public class CustomCaST extends AbstractST {
             .build()
         );
 
-        LOGGER.info("Check Kafka(s) and ZooKeeper(s) certificates");
+        LOGGER.info("Check Kafka(s) certificates");
         String brokerPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
         final X509Certificate kafkaCert = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(),
             testStorage.getClusterName() + "-kafka-brokers"), brokerPodName + ".crt");
         assertThat("KafkaCert does not have expected test Issuer: " + kafkaCert.getIssuerDN(),
                 SystemTestCertManager.containsAllDN(kafkaCert.getIssuerX500Principal().getName(), clusterCa.getSubjectDn()));
-
-        if (!Environment.isKRaftModeEnabled()) {
-            X509Certificate zookeeperCert = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(),
-                    testStorage.getClusterName() + "-zookeeper-nodes"), testStorage.getClusterName() + "-zookeeper-0.crt");
-            assertThat("ZookeeperCert does not have expected test Subject: " + zookeeperCert.getIssuerDN(),
-                    SystemTestCertManager.containsAllDN(zookeeperCert.getIssuerX500Principal().getName(), clusterCa.getSubjectDn()));
-        }
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
@@ -323,19 +309,6 @@ public class CustomCaST extends AbstractST {
         final Date initialKafkaBrokerCertStartTime = kafkaBrokerCert.getNotBefore();
         final Date initialKafkaBrokerCertEndTime = kafkaBrokerCert.getNotAfter();
 
-        // Check Zookeeper certificate dates
-        Secret zkCertCreationSecret;
-        X509Certificate zkBrokerCert;
-        Date initialZkCertStartTime = null;
-        Date initialZkCertEndTime = null;
-
-        if (!Environment.isKRaftModeEnabled()) {
-            zkCertCreationSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), testStorage.getClusterName() + "-zookeeper-nodes");
-            zkBrokerCert = SecretUtils.getCertificateFromSecret(zkCertCreationSecret, testStorage.getClusterName() + "-zookeeper-0.crt");
-            initialZkCertStartTime = zkBrokerCert.getNotBefore();
-            initialZkCertEndTime = zkBrokerCert.getNotAfter();
-        }
-
         // Pause Kafka reconciliation
         LOGGER.info("Pause the reconciliation of the Kafka CustomResource ({})", StrimziPodSetResource.getBrokerComponentName(testStorage.getClusterName()));
         KafkaUtils.annotateKafka(testStorage.getNamespaceName(), testStorage.getClusterName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
@@ -356,12 +329,10 @@ public class CustomCaST extends AbstractST {
         KafkaUtils.removeAnnotation(testStorage.getNamespaceName(), testStorage.getClusterName(), Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION);
 
         // On the next reconciliation, the Cluster Operator performs a `rolling update`:
-        //   a) ZooKeeper
-        //   b) Kafka
+        //   a) controllers
+        //   b) brokers
         //   c) and other components to trust the new Cluster CA certificate. (i.e., Entity Operator)
-        if (!Environment.isKRaftModeEnabled()) {
-            RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerPods);
-        }
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerPods);
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1, eoPod);
 
@@ -377,34 +348,16 @@ public class CustomCaST extends AbstractST {
         final Date changedKafkaBrokerCertStartTime = kafkaBrokerCert.getNotBefore();
         final Date changedKafkaBrokerCertEndTime = kafkaBrokerCert.getNotAfter();
 
-        // Check renewed Zookeeper certificate dates
-        Date changedZkCertStartTime = null;
-        Date changedZkCertEndTime = null;
-        if (!Environment.isKRaftModeEnabled()) {
-            zkCertCreationSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), testStorage.getClusterName() + "-zookeeper-nodes");
-            zkBrokerCert = SecretUtils.getCertificateFromSecret(zkCertCreationSecret, testStorage.getClusterName() + "-zookeeper-0.crt");
-            changedZkCertStartTime = zkBrokerCert.getNotBefore();
-            changedZkCertEndTime = zkBrokerCert.getNotAfter();
-        }
-
         // Print out certificate dates for debug
         LOGGER.info("Initial ClusterCA cert dates: " + initialCertStartTime + " --> " + initialCertEndTime);
         LOGGER.info("Changed ClusterCA cert dates: " + changedCertStartTime + " --> " + changedCertEndTime);
         LOGGER.info("Kafka Broker cert creation dates: " + initialKafkaBrokerCertStartTime + " --> " + initialKafkaBrokerCertEndTime);
         LOGGER.info("Kafka Broker cert changed dates:  " + changedKafkaBrokerCertStartTime + " --> " + changedKafkaBrokerCertEndTime);
-        if (!Environment.isKRaftModeEnabled()) {
-            LOGGER.info("ZooKeeper cert creation dates: " + initialZkCertStartTime + " --> " + initialZkCertEndTime);
-            LOGGER.info("ZooKeeper cert changed dates:  " + changedZkCertStartTime + " --> " + changedZkCertEndTime);
-        }
 
         // Verify renewal result
         assertThat("ClusterCA cert should not have changed start date.", initialCertEndTime.compareTo(changedCertEndTime) == 0);
         assertThat("Broker certificates start dates should have been renewed.", initialKafkaBrokerCertStartTime.compareTo(changedKafkaBrokerCertStartTime) < 0);
         assertThat("Broker certificates end dates should have been renewed.", initialKafkaBrokerCertEndTime.compareTo(changedKafkaBrokerCertEndTime) < 0);
-        if (!Environment.isKRaftModeEnabled()) {
-            assertThat("Zookeeper certificates start dates should have been renewed.", initialZkCertStartTime.compareTo(changedZkCertStartTime) < 0);
-            assertThat("Zookeeper certificates end dates should have been renewed.", initialZkCertEndTime.compareTo(changedZkCertEndTime) < 0);
-        }
     }
 
     /**

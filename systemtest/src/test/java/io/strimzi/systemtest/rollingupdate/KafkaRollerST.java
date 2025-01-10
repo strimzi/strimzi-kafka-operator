@@ -70,7 +70,6 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
 @Tag(ROLLING_UPDATE)
@@ -119,11 +118,7 @@ public class KafkaRollerST extends AbstractST {
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
         LOGGER.info("Scale Kafka up from 3 to 4 brokers");
-        if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp -> knp.getSpec().setReplicas(scaledUpBrokerReplicaCount));
-        } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().getKafka().setReplicas(scaledUpBrokerReplicaCount));
-        }
+        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp -> knp.getSpec().setReplicas(scaledUpBrokerReplicaCount));
         RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), scaledUpBrokerReplicaCount);
 
         LOGGER.info("Create kafkaTopic: {}/{} with replica on each broker", testStorage.getNamespaceName(), topicNameWith4Replicas);
@@ -131,7 +126,7 @@ public class KafkaRollerST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaTopicWith4Replicas);
 
         // last pod has index 3 (as it is 4th) or 6 (being 7th) as there are also 3 controllers
-        final int scaledBrokerPodIndex = !Environment.isKRaftModeEnabled() ? 3 : 6;
+        final int scaledBrokerPodIndex = 6;
         String uid = kubeClient(testStorage.getNamespaceName()).getPodUid(KafkaResource.getKafkaPodName(testStorage.getClusterName(), KafkaNodePoolResource.getBrokerPoolName(testStorage.getClusterName()),  scaledBrokerPodIndex));
         List<Event> events = kubeClient(testStorage.getNamespaceName()).listEventsByResourceUid(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
@@ -148,14 +143,9 @@ public class KafkaRollerST extends AbstractST {
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
         LOGGER.info("Scaling down to {}", initialBrokerReplicaCount);
-        if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp -> knp.getSpec().setReplicas(initialBrokerReplicaCount));
-            KafkaNodePoolUtils.waitForKafkaNodePoolStatusUpdate(testStorage.getNamespaceName(), testStorage.getBrokerPoolName());
-            assertThat("NodePool still has old number of replicas", KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getBrokerPoolName()).get().getStatus().getReplicas(), is(4));
-        } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().getKafka().setReplicas(initialBrokerReplicaCount));
-            KafkaUtils.waitForKafkaStatusUpdate(testStorage.getNamespaceName(), testStorage.getClusterName());
-        }
+        KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp -> knp.getSpec().setReplicas(initialBrokerReplicaCount));
+        KafkaNodePoolUtils.waitForKafkaNodePoolStatusUpdate(testStorage.getNamespaceName(), testStorage.getBrokerPoolName());
+        assertThat("NodePool still has old number of replicas", KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getBrokerPoolName()).get().getStatus().getReplicas(), is(4));
 
         LOGGER.info("Scale-down should have been reverted and the cluster should be still Ready");
         KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName());
@@ -287,7 +277,6 @@ public class KafkaRollerST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @SuppressWarnings("deprecation") // ZooKeeper is deprecated, but some APi methods are still called here
     void testKafkaPodImagePullBackOff() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -303,10 +292,6 @@ public class KafkaRollerST extends AbstractST {
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setImage("quay.io/strimzi/kafka:not-existent-tag");
-
-            if (!Environment.isKRaftModeEnabled()) {
-                kafka.getSpec().getZookeeper().setImage(kafkaImage);
-            }
         });
 
         KafkaUtils.waitForKafkaNotReady(testStorage.getNamespaceName(), testStorage.getClusterName());
@@ -416,8 +401,6 @@ public class KafkaRollerST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testKafkaRollingUpdatesOfSingleRoleNodePools() {
-        assumeTrue(Environment.isKRaftModeEnabled());
-
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
         final int brokerPoolReplicas = 3, controllerPoolReplicas = 3;
@@ -507,8 +490,6 @@ public class KafkaRollerST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testKafkaRollingUpdatesOfMixedNodes() {
-        assumeTrue(Environment.isKRaftModeEnabled());
-
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int mixedPoolReplicas = 6;
 

@@ -107,12 +107,11 @@ class LoggingChangeST extends AbstractST {
     private static final Pattern DEFAULT_LOG4J_PATTERN = Pattern.compile("^(?<date>[\\d-]+) (?<time>[\\d:,]+) (?<status>\\w+) (?<message>.+)");
 
     @ParallelNamespaceTest
-    @SuppressWarnings({"checkstyle:MethodLength", "deprecation"}) // ZooKeeper is deprecated, but some APi methods are still called here
     @TestDoc(
-        description = @Desc("Test verifying that the logging in JSON format works correctly across Kafka, Zookeeper, and operators."),
+        description = @Desc("Test verifying that the logging in JSON format works correctly across Kafka and operators."),
         steps = {
             @Step(value = "Assume non-Helm and non-OLM installation.", expected = "Assumption holds true."),
-            @Step(value = "Create ConfigMaps for Kafka, Zookeeper, and operators with JSON logging configuration.", expected = "ConfigMaps created and applied."),
+            @Step(value = "Create ConfigMaps for Kafka and operators with JSON logging configuration.", expected = "ConfigMaps created and applied."),
             @Step(value = "Deploy Kafka cluster with the configured logging setup.", expected = "Kafka cluster deployed successfully."),
             @Step(value = "Perform pod snapshot for controllers, brokers, and entity operators.", expected = "Pod snapshots successfully captured."),
             @Step(value = "Verify logs are in JSON format for all components.", expected = "Logs are in JSON format."),
@@ -133,7 +132,6 @@ class LoggingChangeST extends AbstractST {
             "log4j.appender.CONSOLE.layout=net.logstash.log4j.JSONEventLayoutV1\n" +
             "kafka.root.logger.level=INFO\n" +
             "log4j.rootLogger=${kafka.root.logger.level}, CONSOLE\n" +
-            "log4j.logger.org.apache.zookeeper=INFO\n" +
             "log4j.logger.kafka=INFO\n" +
             "log4j.logger.org.apache.kafka=INFO\n" +
             "log4j.logger.kafka.request.logger=WARN, CONSOLE\n" +
@@ -153,11 +151,6 @@ class LoggingChangeST extends AbstractST {
             "rootLogger.appenderRef.console.ref=STDOUT\n" +
             "rootLogger.additivity=false";
 
-        String loggersConfigZookeeper = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
-            "log4j.appender.CONSOLE.layout=net.logstash.log4j.JSONEventLayoutV1\n" +
-            "zookeeper.root.logger=INFO\n" +
-            "log4j.rootLogger=${zookeeper.root.logger}, CONSOLE";
-
         String loggersConfigCO = "name = COConfig\n" +
             "appender.console.type = Console\n" +
             "appender.console.name = STDOUT\n" +
@@ -171,7 +164,6 @@ class LoggingChangeST extends AbstractST {
             "logger.kafka.additivity = false";
 
         String configMapOpName = "json-layout-operators";
-        String configMapZookeeperName = "json-layout-zookeeper";
         String configMapKafkaName = "json-layout-kafka";
         String configMapCOName = TestConstants.STRIMZI_DEPLOYMENT_NAME;
 
@@ -204,19 +196,6 @@ class LoggingChangeST extends AbstractST {
                 .withKey("log4j2.properties")
                 .build();
 
-        ConfigMap configMapZookeeper = new ConfigMapBuilder()
-            .withNewMetadata()
-                .withName(configMapZookeeperName)
-                .withNamespace(testStorage.getNamespaceName())
-            .endMetadata()
-            .addToData("log4j-custom.properties", loggersConfigZookeeper)
-            .build();
-
-        ConfigMapKeySelector zkLoggingCMselector = new ConfigMapKeySelectorBuilder()
-                .withName(configMapZookeeperName)
-                .withKey("log4j-custom.properties")
-                .build();
-
         ConfigMap configMapCO = new ConfigMapBuilder()
             .withNewMetadata()
                 .withName(configMapCOName)
@@ -228,7 +207,6 @@ class LoggingChangeST extends AbstractST {
 
         kubeClient().createConfigMapInNamespace(testStorage.getNamespaceName(), configMapKafka);
         kubeClient().createConfigMapInNamespace(testStorage.getNamespaceName(), configMapOperators);
-        kubeClient().createConfigMapInNamespace(testStorage.getNamespaceName(), configMapZookeeper);
         kubeClient().updateConfigMapInNamespace(clusterOperator.getDeploymentNamespace(), configMapCO);
 
         resourceManager.createResourceWithWait(
@@ -240,20 +218,12 @@ class LoggingChangeST extends AbstractST {
         Kafka kafka = KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), testStorage.getClusterName(), 3, 3)
             .editOrNewSpec()
                 .editKafka()
-                    //.withLogging(new ExternalLoggingBuilder().withName(configMapKafkaName).build())
                     .withLogging(new ExternalLoggingBuilder()
                             .withNewValueFrom()
                                 .withConfigMapKeyRef(kafkaLoggingCMselector)
                             .endValueFrom()
                             .build())
                 .endKafka()
-                .editZookeeper()
-                    .withLogging(new ExternalLoggingBuilder()
-                            .withNewValueFrom()
-                                .withConfigMapKeyRef(zkLoggingCMselector)
-                            .endValueFrom()
-                            .build())
-                .endZookeeper()
                 .editEntityOperator()
                     .editTopicOperator()
                         .withLogging(new ExternalLoggingBuilder()
@@ -272,10 +242,6 @@ class LoggingChangeST extends AbstractST {
                 .endEntityOperator()
             .endSpec()
             .build();
-
-        if (Environment.isKRaftModeEnabled()) {
-            kafka.getSpec().setZookeeper(null);
-        }
 
         resourceManager.createResourceWithWait(kafka);
 
@@ -696,12 +662,7 @@ class LoggingChangeST extends AbstractST {
             "    # Kafka AdminClient logging is a bit noisy at INFO level\n" +
             "    logger.kafka.name = org.apache.kafka\n" +
             "    logger.kafka.level = OFF\n" +
-            "    logger.kafka.additivity = false\n" +
-            "\n" +
-            "    # Zookeeper is very verbose even on INFO level -> We set it to WARN by default\n" +
-            "    logger.zookeepertrustmanager.name = org.apache.zookeeper\n" +
-            "    logger.zookeepertrustmanager.level = OFF\n" +
-            "    logger.zookeepertrustmanager.additivity = false";
+            "    logger.kafka.additivity = false";
 
         ConfigMap coMap = new ConfigMapBuilder()
             .withNewMetadata()
@@ -858,7 +819,6 @@ class LoggingChangeST extends AbstractST {
             log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
             log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %X{connector.context}%m (%c) [%t]%n
             log4j.rootLogger=OFF, CONSOLE
-            log4j.logger.org.apache.zookeeper=ERROR
             log4j.logger.org.reflections=ERROR""";
 
         final String externalCmName = "external-cm";
@@ -955,7 +915,6 @@ class LoggingChangeST extends AbstractST {
         InlineLogging ilOff = new InlineLogging();
         Map<String, String> log4jConfig = new HashMap<>();
         log4jConfig.put("kafka.root.logger.level", "OFF");
-        log4jConfig.put("log4j.logger.org.apache.zookeeper", "OFF");
         log4jConfig.put("log4j.logger.kafka", "OFF");
         log4jConfig.put("log4j.logger.org.apache.kafka", "OFF");
         log4jConfig.put("log4j.logger.kafka.request.logger", "OFF, CONSOLE");
@@ -1036,7 +995,6 @@ class LoggingChangeST extends AbstractST {
                 "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
                 "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
                 "log4j.rootLogger=INFO, CONSOLE\n" +
-                "log4j.logger.org.apache.zookeeper=INFO\n" +
                 "log4j.logger.kafka=INFO\n" +
                 "log4j.logger.org.apache.kafka=INFO\n" +
                 "log4j.logger.kafka.request.logger=WARN\n" +
@@ -1200,7 +1158,6 @@ class LoggingChangeST extends AbstractST {
                         "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
                         "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
                         "log4j.rootLogger=INFO, CONSOLE\n" +
-                        "log4j.logger.org.apache.zookeeper=INFO\n" +
                         "log4j.logger.kafka=INFO\n" +
                         "log4j.logger.org.apache.kafka=INFO\n" +
                         "log4j.logger.kafka.request.logger=WARN\n" +
@@ -1259,7 +1216,6 @@ class LoggingChangeST extends AbstractST {
                         "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
                         "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
                         "log4j.rootLogger=INFO, CONSOLE\n" +
-                        "log4j.logger.org.apache.zookeeper=ERROR\n" +
                         "log4j.logger.kafka=ERROR\n" +
                         "log4j.logger.org.apache.kafka=ERROR\n" +
                         "log4j.logger.kafka.request.logger=WARN\n" +
@@ -1290,7 +1246,6 @@ class LoggingChangeST extends AbstractST {
                         "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
                         "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]\n" +
                         "log4j.rootLogger=INFO, CONSOLE\n" +
-                        "log4j.logger.org.apache.zookeeper=ERROR\n" +
                         "log4j.logger.kafka=ERROR\n" +
                         "log4j.logger.org.apache.kafka=ERROR\n" +
                         "log4j.logger.kafka.request.logger=WARN\n" +
@@ -1338,7 +1293,6 @@ class LoggingChangeST extends AbstractST {
         InlineLogging ilOff = new InlineLogging();
         Map<String, String> loggers = new HashMap<>();
         loggers.put("connect.root.logger.level", "OFF");
-        loggers.put("log4j.logger.org.apache.zookeeper", "OFF");
         loggers.put("log4j.logger.org.reflections", "OFF");
 
         ilOff.setLoggers(loggers);
@@ -1402,7 +1356,6 @@ class LoggingChangeST extends AbstractST {
                         "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
                         "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %X{connector.context}%m (%c) [%t]%n\n" +
                         "log4j.rootLogger=OFF, CONSOLE\n" +
-                        "log4j.logger.org.apache.zookeeper=ERROR\n" +
                         "log4j.logger.org.reflections=ERROR";
 
         String externalCmName = "external-cm";
@@ -1490,7 +1443,6 @@ class LoggingChangeST extends AbstractST {
                         "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
                         "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
                         "log4j.rootLogger=OFF, CONSOLE\n" +
-                        "log4j.logger.org.apache.zookeeper=ERROR\n" +
                         "log4j.logger.org.eclipse.jetty.util.thread=FATAL\n" +
                         "log4j.logger.org.apache.kafka.connect.runtime.WorkerTask=OFF\n" +
                         "log4j.logger.org.eclipse.jetty.util.thread.strategy.EatWhatYouKill=OFF\n" +
@@ -1542,7 +1494,6 @@ class LoggingChangeST extends AbstractST {
                         "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
                         "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
                         "log4j.rootLogger=INFO, CONSOLE\n" +
-                        "log4j.logger.org.apache.zookeeper=ERROR\n" +
                         "log4j.logger.org.eclipse.jetty.util.thread=WARN\n" +
                         "log4j.logger.org.reflections=ERROR";
 
@@ -1592,7 +1543,6 @@ class LoggingChangeST extends AbstractST {
             "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
             "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
             "log4j.rootLogger=INFO, CONSOLE\n" +
-            "log4j.logger.org.apache.zookeeper=INFO\n" +
             "log4j.logger.kafka=INFO\n" +
             "log4j.logger.org.apache.kafka=INFO";
 
@@ -1779,7 +1729,6 @@ class LoggingChangeST extends AbstractST {
             @Label(value = TestDocsLabels.LOGGING)
         }
     )
-    @SuppressWarnings("deprecation") // ZooKeeper is deprecated, but some APi methods are still called here
     void testChangingInternalToExternalLoggingTriggerRollingUpdate() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
@@ -1793,17 +1742,13 @@ class LoggingChangeST extends AbstractST {
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(testStorage.getNamespaceName(), testStorage.getClusterName(), 3, 3).build());
 
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
-        Map<String, String> controllerPods = null;
-        if (!Environment.isKRaftModeEnabled()) {
-            controllerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getControllerSelector());
-        }
+        Map<String, String> controllerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getControllerSelector());
 
         final String loggersConfig = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
             "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
             "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]\n" +
             "kafka.root.logger.level=INFO\n" +
             "log4j.rootLogger=${kafka.root.logger.level}, CONSOLE\n" +
-            "log4j.logger.org.apache.zookeeper=INFO\n" +
             "log4j.logger.kafka=INFO\n" +
             "log4j.logger.org.apache.kafka=INFO\n" +
             "log4j.logger.kafka.request.logger=WARN, CONSOLE\n" +
@@ -1837,31 +1782,21 @@ class LoggingChangeST extends AbstractST {
                 .withConfigMapKeyRef(log4jLoggimgCMselector)
                 .endValueFrom()
                 .build());
-            if (!Environment.isKRaftModeEnabled()) {
-                kafka.getSpec().getZookeeper().setLogging(new ExternalLoggingBuilder()
-                    .withNewValueFrom()
-                    .withConfigMapKeyRef(log4jLoggimgCMselector)
-                    .endValueFrom()
-                    .build());
-            }
         });
 
-        if (!Environment.isKRaftModeEnabled()) {
-            LOGGER.info("Waiting for Zookeeper pods to roll after change in logging");
-            controllerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerPods);
-        }
+        LOGGER.info("Waiting for controller pods to roll after change in logging");
+        controllerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerPods);
 
-        LOGGER.info("Waiting for Kafka pods to roll after change in logging");
+        LOGGER.info("Waiting for broker pods to roll after change in logging");
         brokerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
 
         configMapLoggers.getData().put("log4j-custom.properties", loggersConfig.replace("%p %m (%c) [%t]", "%p %m (%c) [%t]%n"));
         kubeClient().updateConfigMapInNamespace(testStorage.getNamespaceName(), configMapLoggers);
 
-        if (!Environment.isKRaftModeEnabled()) {
-            LOGGER.info("Waiting for Zookeeper pods to roll after change in logging properties config map");
-            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerPods);
-        }
-        LOGGER.info("Waiting for Kafka pods to roll after change in logging properties config map");
+        LOGGER.info("Waiting for controller pods to roll after change in logging properties config map");
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerPods);
+
+        LOGGER.info("Waiting for broker pods to roll after change in logging properties config map");
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
     }
 

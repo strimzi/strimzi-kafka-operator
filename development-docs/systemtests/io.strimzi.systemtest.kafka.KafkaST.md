@@ -60,26 +60,9 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy Kafka and its components with custom specifications, including specifying resources and JVM configuration. | Kafka and its components (ZooKeeper, Entity Operator) are deployed. |
-| 2. | For each component (Kafka, ZooKeeper, Topic Operator, User Operator), verify specified configuration of JVM, resources, and also environment variables. | Each of the components has requests and limits assigned correctly, JVM, and environment variables configured according to the specification. |
+| 1. | Deploy Kafka and its components with custom specifications, including specifying resources and JVM configuration. | Kafka and Entity Operator are deployed. |
+| 2. | For each component (Kafka, Topic Operator, User Operator), verify specified configuration of JVM, resources, and also environment variables. | Each of the components has requests and limits assigned correctly, JVM, and environment variables configured according to the specification. |
 | 3. | Wait for a time to observe that no initiated components need rolling update. | All Kafka components remain in stable state. |
-
-**Labels:**
-
-* [kafka](labels/kafka.md)
-
-
-## testKRaftMode
-
-**Description:** This test case verifies basic working of Kafka Cluster managed by Cluster Operator with KRaft.
-
-**Steps:**
-
-| Step | Action | Result |
-| - | - | - |
-| 1. | Deploy Kafka annotated to enable KRaft (and additionally annotated to enable KafkaNodePool management), and configure a KafkaNodePool resource to target the Kafka cluster. | Kafka is deployed, and the KafkaNodePool resource targets the cluster as expected. |
-| 2. | Produce and consume messages in given Kafka Cluster. | Clients can produce and consume messages. |
-| 3. | Trigger manual Rolling Update. | Rolling update is triggered and completed shortly after. |
 
 **Labels:**
 
@@ -144,13 +127,13 @@
 
 ## testReadOnlyRootFileSystem
 
-**Description:** This test case verifies that Kafka (with all its components, including Zookeeper, Entity Operator, KafkaExporter, CruiseControl) configured with 'withReadOnlyRootFilesystem' can be deployed and also works correctly.
+**Description:** This test case verifies that Kafka (with all its components, including Entity Operator, KafkaExporter, CruiseControl) configured with 'withReadOnlyRootFilesystem' can be deployed and also works correctly.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy persistent Kafka with 3 Kafka and Zookeeper replicas, Entity Operator, CruiseControl, and KafkaExporter. Each component has configuration 'withReadOnlyRootFilesystem' set to true. | Kafka and its components are deployed. |
+| 1. | Deploy persistent Kafka with 3 replicas, Entity Operator, CruiseControl, and KafkaExporter. Each component has configuration 'withReadOnlyRootFilesystem' set to true. | Kafka and its components are deployed. |
 | 2. | Create Kafka producer and consumer. | Kafka clients are successfully created. |
 | 3. | Produce and consume messages using created clients. | Messages are successfully sent and received. |
 

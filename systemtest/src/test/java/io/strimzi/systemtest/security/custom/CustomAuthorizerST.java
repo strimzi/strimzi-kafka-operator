@@ -180,7 +180,7 @@ public class CustomAuthorizerST extends AbstractST {
                 .editKafka()
                     .addToConfig("auto.create.topics.enable", "true")
                     .withNewKafkaAuthorizationCustom()
-                        .withAuthorizerClass(Environment.isKRaftModeEnabled() ? KafkaAuthorizationSimple.KRAFT_AUTHORIZER_CLASS_NAME : "kafka.security.authorizer.AclAuthorizer")
+                        .withAuthorizerClass(KafkaAuthorizationSimple.KRAFT_AUTHORIZER_CLASS_NAME)
                         .withSupportsAdminApi(true)
                         .withSuperUsers("CN=" + ADMIN)
                     .endKafkaAuthorizationCustom()

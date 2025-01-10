@@ -238,7 +238,7 @@ class RackAwarenessST extends AbstractST {
      * @description This test case verifies that Rack awareness configuration works as expected in KafkaMirrorMaker2 by configuring it and also using given CLuster.
      *
      * @steps
-     *  1. - Deploy target and source Kafka Clusters, both with 1 Kafka and 1 Zookeeper replica.
+     *  1. - Deploy target and source Kafka Clusters, both with 1 broker and 1 controller replica.
      *     - Kafka Clusters and its components are deployed.
      *  2. - Deploy KafkaMirrorMaker2 Cluster with rack configuration set to 'kubernetes.io/hostname'.
      *     - KafkaMirrorMaker2 Cluster is deployed with according configuration in pod affinity, and consumer client rack on a given node.

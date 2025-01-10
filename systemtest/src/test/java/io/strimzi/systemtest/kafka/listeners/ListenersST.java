@@ -2443,10 +2443,6 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        if (!Environment.isKRaftModeEnabled()) {
-            PodUtils.waitForPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 1, true);
-        }
-
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getNamespaceName(), testStorage.getClusterName(), ".*Secret " + nonExistingCertName + " with custom TLS certificate does not exist.*");
     }
 
@@ -2497,10 +2493,6 @@ public class ListenersST extends AbstractST {
                 .endKafka()
             .endSpec()
             .build());
-
-        if (!Environment.isKRaftModeEnabled()) {
-            PodUtils.waitForPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 1, true);
-        }
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getNamespaceName(), testStorage.getClusterName(),
             ".*Secret " + clusterCustomCertServer1 + " does not contain certificate under the key " + nonExistingCertName + ".*");
@@ -2553,10 +2545,6 @@ public class ListenersST extends AbstractST {
                 .endKafka()
             .endSpec()
             .build());
-
-        if (!Environment.isKRaftModeEnabled()) {
-            PodUtils.waitForPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 1, true);
-        }
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getNamespaceName(), testStorage.getClusterName(),
             ".*Secret " + clusterCustomCertServer1 + " does not contain custom certificate private key under the key " + nonExistingCertKey + ".*");

@@ -29,7 +29,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
@@ -133,7 +132,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
  *     - All KafkaUsers and KafkaTopics are Ready
  *  7. - Setup NetworkPolicies to grant access to Operator Pods and KafkaExporter
  *     - NetworkPolicies created
- *  8. - Create collectors for Cluster Operator, Kafka, KafkaExporter, and Zookeeper (Non-KRaft)
+ *  8. - Create collectors for Cluster Operator, Kafka, and KafkaExporter
  *     - Metrics collected in collectors structs
  *
  * @afterAll
@@ -158,16 +157,13 @@ public class MetricsST extends AbstractST {
     private final String bridgeClusterName = "my-bridge";
 
     private String coScraperPodName;
-    private String testSuiteScraperPodName;
     private String scraperPodName;
-    private String secondNamespaceScraperPodName;
 
     private String bridgeTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
     private String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
     private final String kafkaExporterTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
     private BaseMetricsCollector kafkaCollector;
-    private BaseMetricsCollector zookeeperCollector;
     private BaseMetricsCollector kafkaExporterCollector;
     private BaseMetricsCollector clusterOperatorCollector;
 
@@ -188,25 +184,6 @@ public class MetricsST extends AbstractST {
         assertMetricValueCount(kafkaCollector, "kafka_server_replicamanager_leadercount", 3);
         assertMetricCountHigherThan(kafkaCollector, "kafka_server_replicamanager_partitioncount", 2);
         assertMetricValue(kafkaCollector, "kafka_server_replicamanager_underreplicatedpartitions", 0);
-    }
-
-    /**
-     * @description This test case check several random metrics exposed by Zookeeper.
-     *
-     * @steps
-     *  1. - Check if specific metric is available in collected metrics from Zookeeper Pods
-     *     - Metric is available with expected value
-     *
-     * @usecase
-     *  - metrics
-     *  - zookeeper-metrics
-     */
-    @ParallelTest
-    @KRaftNotSupported("ZooKeeper is not supported by KRaft mode and is used in this test case")
-    void testZookeeperMetrics() {
-        assertMetricValueNotNull(zookeeperCollector, "zookeeper_quorumsize");
-        assertMetricCountHigherThan(zookeeperCollector, "zookeeper_numaliveconnections\\{.*\\}", 0L);
-        assertMetricCountHigherThan(zookeeperCollector, "zookeeper_inmemorydatatree_watchcount\\{.*\\}", 0L);
     }
 
     /**
@@ -307,12 +284,6 @@ public class MetricsST extends AbstractST {
         ClientUtils.waitForClientsSuccess(namespaceFirst, testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount(), false);
 
         assertMetricValueNotNull(kafkaExporterCollector, "kafka_consumergroup_current_offset\\{.*\\}");
-
-        if (!Environment.isKRaftModeEnabled()) {
-            Pattern pattern = Pattern.compile("kafka_topic_partitions\\{topic=\"" + kafkaExporterTopicName + "\"} ([\\d])");
-            List<Double> values = kafkaExporterCollector.waitForSpecificMetricAndCollect(pattern);
-            assertThat(String.format("metric %s doesn't contain correct value", pattern), values.stream().mapToDouble(i -> i).sum(), is(7.0));
-        }
 
         kubeClient().listPods(namespaceFirst, brokerPodsSelector).forEach(pod -> {
             String address = pod.getMetadata().getName() + "." + kafkaClusterFirstName + "-kafka-brokers." + namespaceFirst + ".svc";
@@ -749,9 +720,7 @@ public class MetricsST extends AbstractST {
         resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(namespaceFirst, KafkaUserUtils.generateRandomNameOfKafkaUser(), kafkaClusterFirstName).build());
 
         coScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(TestConstants.CO_NAMESPACE, coScraperName).get(0).getMetadata().getName();
-        testSuiteScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, testSuiteScraperName).get(0).getMetadata().getName();
         scraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(namespaceFirst, scraperName).get(0).getMetadata().getName();
-        secondNamespaceScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(namespaceSecond, secondScraperName).get(0).getMetadata().getName();
 
         // Allow connections from clients to operators pods when NetworkPolicies are set to denied by default
         NetworkPolicyResource.allowNetworkPolicySettingsForClusterOperator(TestConstants.CO_NAMESPACE);
@@ -766,13 +735,6 @@ public class MetricsST extends AbstractST {
             .withNamespaceName(namespaceFirst)
             .withComponent(KafkaMetricsComponent.create(kafkaClusterFirstName))
             .build();
-
-        if (!Environment.isKRaftModeEnabled()) {
-            zookeeperCollector = kafkaCollector.toBuilder()
-                .withComponent(ZookeeperMetricsComponent.create(kafkaClusterFirstName))
-                .build();
-            zookeeperCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
-        }
 
         kafkaExporterCollector = kafkaCollector.toBuilder()
             .withComponent(KafkaExporterMetricsComponent.create(namespaceFirst, kafkaClusterFirstName))

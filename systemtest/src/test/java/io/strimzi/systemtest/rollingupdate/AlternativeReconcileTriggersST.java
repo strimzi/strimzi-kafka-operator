@@ -62,7 +62,6 @@ import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
 @Tag(ROLLING_UPDATE)
@@ -135,24 +134,22 @@ class AlternativeReconcileTriggersST extends AbstractST {
         resourceManager.createResourceWithWait(instantClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
-        if (!Environment.isKRaftModeEnabled()) {
-            // rolling update for zookeeper
-            // set annotation to trigger Zookeeper rolling update
-            LOGGER.info("Annotate ZooKeeper: {} - {}/{} with manual rolling update annotation", StrimziPodSet.RESOURCE_KIND, testStorage.getNamespaceName(), testStorage.getControllerComponentName());
+        // rolling update for controller pods
+        // set annotation to trigger controller rolling update
+        LOGGER.info("Annotate controller: {} - {}/{} with manual rolling update annotation", StrimziPodSet.RESOURCE_KIND, testStorage.getNamespaceName(), testStorage.getControllerComponentName());
 
-            StrimziPodSetUtils.annotateStrimziPodSet(testStorage.getNamespaceName(), testStorage.getControllerComponentName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
+        StrimziPodSetUtils.annotateStrimziPodSet(testStorage.getNamespaceName(), testStorage.getControllerComponentName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
 
-            // check annotation to trigger rolling update
-            assertThat(Boolean.parseBoolean(StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getControllerComponentName())
-                    .get(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE)), is(true));
+        // check annotation to trigger rolling update
+        assertThat(Boolean.parseBoolean(StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getControllerComponentName())
+                .get(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE)), is(true));
 
-            RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerPods);
 
-            // wait when annotation will be removed
-            TestUtils.waitFor("CO removes rolling update annotation", TestConstants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
-                    () -> StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getControllerComponentName()) == null
-                            || !StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getControllerComponentName()).containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
-        }
+        // wait when annotation will be removed
+        TestUtils.waitFor("CO removes rolling update annotation", TestConstants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
+                () -> StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getControllerComponentName()) == null
+                        || !StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getControllerComponentName()).containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
 
         instantClients.generateNewConsumerGroup();
         resourceManager.createResourceWithWait(instantClients.consumerTlsStrimzi(testStorage.getClusterName()));
@@ -253,20 +250,18 @@ class AlternativeReconcileTriggersST extends AbstractST {
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
 
-        Pod kafkaPod = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0);
-        String kafkaPodName = kafkaPod.getMetadata().getName();
+        Pod brokerPod = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0);
+        String brokerPodName = brokerPod.getMetadata().getName();
+
+        Pod controllerPod = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0);
+        String controllerPodName = controllerPod.getMetadata().getName();
 
         // snapshot of one single Kafka pod
-        Map<String, String> kafkaSnapshot = Collections.singletonMap(kafkaPod.getMetadata().getName(), kafkaPod.getMetadata().getUid());
-        Map<String, String> zkSnapshot = null;
-        if (!Environment.isKRaftModeEnabled()) {
-            Pod zkPod = kubeClient(testStorage.getNamespaceName()).getPod(KafkaResources.zookeeperPodName(testStorage.getClusterName(), 0));
-            // snapshot of one single ZK pod
-            zkSnapshot = Collections.singletonMap(zkPod.getMetadata().getName(), zkPod.getMetadata().getUid());
-        }
+        Map<String, String> brokerSnapshot = Collections.singletonMap(brokerPodName, brokerPod.getMetadata().getUid());
+        Map<String, String> controllerSnapshot = Collections.singletonMap(controllerPodName, controllerPod.getMetadata().getUid());
 
-        LOGGER.info("Trying to roll just single Kafka and single ZK Pod");
-        kubeClient(testStorage.getNamespaceName()).editPod(kafkaPodName).edit(pod -> new PodBuilder(pod)
+        LOGGER.info("Trying to roll just single broker and single controller Pod");
+        kubeClient(testStorage.getNamespaceName()).editPod(brokerPodName).edit(pod -> new PodBuilder(pod)
             .editMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
             .endMetadata()
@@ -274,21 +269,19 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         // here we are waiting just to one pod's snapshot will be changed and all 3 pods ready -> if we set expectedPods to 1,
         // the check will pass immediately without waiting for all pods to be ready -> the method picks first ready pod and return true
-        kafkaSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, kafkaSnapshot);
+        brokerSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerSnapshot);
 
-        if (!Environment.isKRaftModeEnabled()) {
-            kubeClient(testStorage.getNamespaceName()).editPod(KafkaResources.zookeeperPodName(testStorage.getClusterName(), 0)).edit(pod -> new PodBuilder(pod)
-                .editMetadata()
-                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-                .endMetadata()
-                .build());
+        kubeClient(testStorage.getNamespaceName()).editPod(controllerPodName).edit(pod -> new PodBuilder(pod)
+            .editMetadata()
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
+            .endMetadata()
+            .build());
 
-            // same as above
-            zkSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, zkSnapshot);
-        }
+        // same as above
+        controllerSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerSnapshot);
 
-        LOGGER.info("Adding anno to all ZK and Kafka Pods");
-        kafkaSnapshot.keySet().forEach(podName -> {
+        LOGGER.info("Adding anno to all broker and controller Pods");
+        brokerSnapshot.keySet().forEach(podName -> {
             kubeClient(testStorage.getNamespaceName()).editPod(podName).edit(pod -> new PodBuilder(pod)
                 .editMetadata()
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
@@ -296,21 +289,19 @@ class AlternativeReconcileTriggersST extends AbstractST {
                 .build());
         });
 
-        LOGGER.info("Checking if the rolling update will be successful for Kafka");
-        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, kafkaSnapshot);
+        LOGGER.info("Checking if the rolling update will be successful for brokers");
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerSnapshot);
 
-        if (!Environment.isKRaftModeEnabled()) {
-            zkSnapshot.keySet().forEach(podName -> {
-                kubeClient(testStorage.getNamespaceName()).editPod(podName).edit(pod -> new PodBuilder(pod)
-                    .editMetadata()
-                        .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-                    .endMetadata()
-                    .build());
-            });
+        controllerSnapshot.keySet().forEach(podName -> {
+            kubeClient(testStorage.getNamespaceName()).editPod(podName).edit(pod -> new PodBuilder(pod)
+                .editMetadata()
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
+                .endMetadata()
+                .build());
+        });
 
-            LOGGER.info("Checking if the rolling update will be successful for ZK");
-            RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, zkSnapshot);
-        }
+        LOGGER.info("Checking if the rolling update will be successful for controllers");
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerSnapshot);
     }
 
     /**
@@ -487,9 +478,6 @@ class AlternativeReconcileTriggersST extends AbstractST {
     @ParallelNamespaceTest
     @SuppressWarnings("deprecation") // Storage is deprecated, but some API methods are still called here
     void testJbodMetadataLogRelocation() {
-        // This test makes sense only in KRaft mode
-        assumeTrue(Environment.isKRaftModeEnabled());
-
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int numberOfKafkaReplicas = 3;
 

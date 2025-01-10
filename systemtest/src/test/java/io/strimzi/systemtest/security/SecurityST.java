@@ -109,8 +109,6 @@ class SecurityST extends AbstractST {
     @Tag("ClusterCaCerts")
     void testAutoRenewClusterCaCertsTriggeredByAnno() {
         autoRenewSomeCaCertsTriggeredByAnno(
-                /* ZK node need new certs */
-                true,
                 /* brokers need new certs */
                 true,
                 /* eo needs new cert */
@@ -124,8 +122,6 @@ class SecurityST extends AbstractST {
     @Tag("ClientsCaCerts")
     void testAutoRenewClientsCaCertsTriggeredByAnno() {
         autoRenewSomeCaCertsTriggeredByAnno(
-                /* no communication between clients and zk, so no need to roll */
-                false,
                 /* brokers need to trust client certs with new cert */
                 true,
                 /* eo needs to generate new client certs */
@@ -143,13 +139,11 @@ class SecurityST extends AbstractST {
         autoRenewSomeCaCertsTriggeredByAnno(
                 true,
                 true,
-                true,
                 true);
     }
 
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:NPathComplexity"})
     void autoRenewSomeCaCertsTriggeredByAnno(
-            boolean zkShouldRoll,
             boolean kafkaShouldRoll,
             boolean eoShouldRoll,
             boolean keAndCCShouldRoll) {
@@ -202,14 +196,9 @@ class SecurityST extends AbstractST {
             kubeClient().patchSecret(testStorage.getNamespaceName(), secretName, annotated);
         }
 
-        if (!Environment.isKRaftModeEnabled()) {
-            if (zkShouldRoll) {
-                LOGGER.info("Waiting for ZK rolling restart");
-                RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerPods);
-            }
-        }
         if (kafkaShouldRoll) {
             LOGGER.info("Waiting for Kafka rolling restart");
+            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, brokerPods);
             RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
         }
         if (eoShouldRoll) {
@@ -249,12 +238,8 @@ class SecurityST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
-        if (!Environment.isKRaftModeEnabled()) {
-            if (!zkShouldRoll) {
-                assertThat("ZK Pods should not roll, but did.", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getControllerSelector()), is(controllerPods));
-            }
-        }
         if (!kafkaShouldRoll) {
+            assertThat("Kafka Pods should not roll, but did.", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector()), is(brokerPods));
             assertThat("Kafka Pods should not roll, but did.", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector()), is(brokerPods));
         }
         if (!eoShouldRoll) {
@@ -275,7 +260,6 @@ class SecurityST extends AbstractST {
                 3, // additional third rolling due to the removal of the older cluster CA certificate
                 true,
                 true,
-                true,
                 true);
     }
 
@@ -286,7 +270,6 @@ class SecurityST extends AbstractST {
     void testAutoReplaceClientsCaKeysTriggeredByAnno() {
         autoReplaceSomeKeysTriggeredByAnno(
                 1,
-                false,
                 true,
                 false,
                 false);
@@ -301,13 +284,11 @@ class SecurityST extends AbstractST {
                 3, // additional third rolling due to the removal of the older cluster CA certificate
                 true,
                 true,
-                true,
                 true);
     }
 
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:NPathComplexity", "checkstyle:CyclomaticComplexity"})
     void autoReplaceSomeKeysTriggeredByAnno(int expectedRolls,
-                                            boolean zkShouldRoll,
                                             boolean kafkaShouldRoll,
                                             boolean eoShouldRoll,
                                             boolean keAndCCShouldRoll) {
@@ -367,17 +348,13 @@ class SecurityST extends AbstractST {
                 Pod coPod = kubeClient().listPodsByPrefixInName(clusterOperator.getDeploymentNamespace(), clusterOperator.getClusterOperatorName()).get(0);
                 kubeClient().deletePod(clusterOperator.getDeploymentNamespace(), coPod);
             }
-            if (!Environment.isKRaftModeEnabled()) {
-                if (zkShouldRoll) {
-                    LOGGER.info("Waiting for ZK rolling restart ({})", i);
-                    controllerPods = i < expectedRolls ?
-                            RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getControllerSelector(), controllerPods) :
-                            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerPods);
-                }
-            }
 
             if (kafkaShouldRoll) {
                 LOGGER.info("Waiting for Kafka rolling restart ({})", i);
+                controllerPods = i < expectedRolls ?
+                    RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getControllerSelector(), controllerPods) :
+                    RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerPods);
+
                 brokerPods = i < expectedRolls ?
                         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), brokerPods) :
                         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
@@ -431,14 +408,9 @@ class SecurityST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
-        if (!Environment.isKRaftModeEnabled()) {
-            if (!zkShouldRoll) {
-                assertThat("ZK Pods should not roll, but did.", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getControllerSelector()), is(controllerPods));
-            }
-        }
-
         if (!kafkaShouldRoll) {
-            assertThat("Kafka Pods should not roll, but did.", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector()), is(brokerPods));
+            assertThat("Controller Pods should not roll, but did.", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getControllerSelector()), is(controllerPods));
+            assertThat("Broker Pods should not roll, but did.", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector()), is(brokerPods));
         }
 
         if (!eoShouldRoll) {
@@ -451,7 +423,6 @@ class SecurityST extends AbstractST {
         }
     }
 
-    @SuppressWarnings("deprecation") // ZooKeeper is deprecated, but some APi methods are still called here
     private void createKafkaCluster(TestStorage testStorage) {
         LOGGER.info("Creating a cluster");
 
@@ -499,22 +470,12 @@ class SecurityST extends AbstractST {
                         .withDeleteClaim(true)
                     .endPersistentClaimStorage()
                 .endKafka()
-                .editZookeeper()
-                    .withNewPersistentClaimStorage()
-                        .withSize("2Gi")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endZookeeper()
                 .withNewCruiseControl()
                 .endCruiseControl()
                 .withNewKafkaExporter()
                 .endKafkaExporter()
             .endSpec()
             .build();
-
-        if (Environment.isKRaftModeEnabled()) {
-            kafka.getSpec().setZookeeper(null);
-        }
 
         resourceManager.createResourceWithWait(kafka);
     }
@@ -1042,9 +1003,7 @@ class SecurityST extends AbstractST {
 
         // Wait for the certificates to get replaced
         SecretUtils.waitForCertToChange(testStorage.getNamespaceName(), clusterCaCert, KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()));
-        if (!Environment.isKRaftModeEnabled()) {
-            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerPods);
-        }
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerPods);
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1, eoPods);
 
@@ -1243,12 +1202,8 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Deleting Kafka: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
         KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolUtils.deleteKafkaNodePoolWithPodSetAndWait(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getBrokerPoolName());
-            if (Environment.isKRaftModeEnabled()) {
-                KafkaNodePoolUtils.deleteKafkaNodePoolWithPodSetAndWait(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getControllerPoolName());
-            }
-        }
+        KafkaNodePoolUtils.deleteKafkaNodePoolWithPodSetAndWait(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getBrokerPoolName());
+        KafkaNodePoolUtils.deleteKafkaNodePoolWithPodSetAndWait(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getControllerPoolName());
         KafkaUtils.waitForKafkaDeletion(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         LOGGER.info("Checking actual Secrets after Kafka deletion");
@@ -1331,18 +1286,6 @@ class SecurityST extends AbstractST {
         Date initialKafkaBrokerCertStartTime = kafkaBrokerCert.getNotBefore();
         Date initialKafkaBrokerCertEndTime = kafkaBrokerCert.getNotAfter();
 
-        Date initialZkCertStartTime = null;
-        Date initialZkCertEndTime = null;
-        Secret zkCertCreationSecret = null;
-        X509Certificate zkBrokerCert = null;
-        if (!Environment.isKRaftModeEnabled()) {
-            // Check Zookeeper certificate dates
-            zkCertCreationSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), testStorage.getClusterName() + "-zookeeper-nodes");
-            zkBrokerCert = SecretUtils.getCertificateFromSecret(zkCertCreationSecret, testStorage.getClusterName() + "-zookeeper-0.crt");
-            initialZkCertStartTime = zkBrokerCert.getNotBefore();
-            initialZkCertEndTime = zkBrokerCert.getNotAfter();
-        }
-
         LOGGER.info("Change of Kafka validity and renewal days - reconciliation should start");
         CertificateAuthority newClusterCA = new CertificateAuthority();
         newClusterCA.setRenewalDays(150);
@@ -1351,12 +1294,10 @@ class SecurityST extends AbstractST {
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().setClusterCa(newClusterCA));
 
         // On the next reconciliation, the Cluster Operator performs a `rolling update`:
-        //   a) ZooKeeper
-        //   b) Kafka
+        //   a) Controller pods
+        //   b) Broker pods
         //   c) and other components to trust the new Cluster CA certificate. (i.e., Entity Operator)
-        if (!Environment.isKRaftModeEnabled()) {
-            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerPods);
-        }
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerPods);
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1, eoPod);
 
@@ -1384,22 +1325,6 @@ class SecurityST extends AbstractST {
                 initialKafkaBrokerCertStartTime.compareTo(changedKafkaBrokerCertStartTime) < 0);
         assertThat("Broker certificates end dates have not been renewed.",
                 initialKafkaBrokerCertEndTime.compareTo(changedKafkaBrokerCertEndTime) < 0);
-
-        if (!Environment.isKRaftModeEnabled()) {
-            // Check renewed Zookeeper certificate dates
-            zkCertCreationSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), testStorage.getClusterName() + "-zookeeper-nodes");
-            zkBrokerCert = SecretUtils.getCertificateFromSecret(zkCertCreationSecret, testStorage.getClusterName() + "-zookeeper-0.crt");
-            Date changedZkCertStartTime = zkBrokerCert.getNotBefore();
-            Date changedZkCertEndTime = zkBrokerCert.getNotAfter();
-
-            LOGGER.info("ZooKeeper cert creation dates: " + initialZkCertStartTime + " --> " + initialZkCertEndTime);
-            LOGGER.info("ZooKeeper cert changed dates:  " + changedZkCertStartTime + " --> " + changedZkCertEndTime);
-
-            assertThat("ZooKeeper certificates start dates have not been renewed.",
-                    initialZkCertStartTime.compareTo(changedZkCertStartTime) < 0);
-            assertThat("ZooKeeper certificates end dates have not been renewed.",
-                    initialZkCertEndTime.compareTo(changedZkCertEndTime) < 0);
-        }
     }
 
     @ParallelNamespaceTest
@@ -1446,14 +1371,11 @@ class SecurityST extends AbstractST {
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), k -> k.getSpec().setClientsCa(newClientsCA));
 
-        // On the next reconciliation, the Cluster Operator performs a `rolling update` only for the
-        // `Kafka pods`.
-        // a) ZooKeeper must not roll
-        if (!Environment.isKRaftModeEnabled()) {
-            RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), testStorage.getControllerSelector(), controllerPods);
-        }
+        // On the next reconciliation, the Cluster Operator performs a `rolling update`
+        // a) controllers have to roll
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, controllerPods);
 
-        // b) Kafka has to roll
+        // b) brokers have to roll
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
 
         // c) EO must roll (because User Operator uses Clients CA for issuing user certificates)
