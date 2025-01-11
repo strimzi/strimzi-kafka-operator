@@ -545,7 +545,7 @@ public class ListenersST extends AbstractST {
                 if (listenerStatus.getName().equals(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)) {
                     List<String> listStatusAddresses = listenerStatus.getAddresses().stream().map(ListenerAddress::getHost).sorted(Comparator.comparing(String::toString)).toList();
                     List<Integer> listStatusPorts = listenerStatus.getAddresses().stream().map(ListenerAddress::getPort).toList();
-                    Integer nodePort = kubeClient(testStorage.getNamespaceName()).getService(testStorage.getNamespaceName(), KafkaResources.externalBootstrapServiceName(testStorage.getClusterName())).getSpec().getPorts().get(0).getNodePort();
+                    Integer nodePort = kubeClient(testStorage.getNamespaceName()).getService(testStorage.getNamespaceName(), testStorage.getClusterName() + "-kafka-external-bootstrap").getSpec().getPorts().get(0).getNodePort();
 
                     List<String> nodeIPsBrokers = kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getBrokerSelector())
                             .stream().map(pods -> pods.getStatus().getHostIP()).distinct().sorted(Comparator.comparing(String::toString)).toList();
@@ -643,9 +643,8 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        LOGGER.info("Checking nodePort to {} for bootstrap service {}", clusterBootstrapNodePort,
-                KafkaResources.externalBootstrapServiceName(testStorage.getClusterName()));
-        assertThat(kubeClient(testStorage.getNamespaceName()).getService(testStorage.getNamespaceName(), KafkaResources.externalBootstrapServiceName(testStorage.getClusterName()))
+        LOGGER.info("Checking nodePort to {} for bootstrap service {}", clusterBootstrapNodePort, testStorage.getClusterName() + "-kafka-external-bootstrap");
+        assertThat(kubeClient(testStorage.getNamespaceName()).getService(testStorage.getNamespaceName(), testStorage.getClusterName() + "-kafka-external-bootstrap")
                 .getSpec().getPorts().get(0).getNodePort(), is(clusterBootstrapNodePort));
         String firstExternalService = KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), KafkaNodePoolResource.getBrokerPoolName(testStorage.getClusterName())) + "-" + TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME + "-" + 0;
         LOGGER.info("Checking nodePort to {} for kafka-broker service {}", brokerNodePort, firstExternalService);

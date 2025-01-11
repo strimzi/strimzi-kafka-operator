@@ -71,7 +71,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.strimzi.api.kafka.model.kafka.KafkaResources.externalBootstrapServiceName;
 import static io.strimzi.systemtest.TestTags.BRIDGE;
 import static io.strimzi.systemtest.TestTags.CONNECT;
 import static io.strimzi.systemtest.TestTags.CONNECTOR_OPERATOR;
@@ -432,7 +431,7 @@ class CustomResourceStatusST extends AbstractST {
                 case TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME:
                     Service extBootstrapService = kubeClient(Environment.TEST_SUITE_NAMESPACE).getClient().services()
                             .inNamespace(Environment.TEST_SUITE_NAMESPACE)
-                            .withName(externalBootstrapServiceName(sharedTestStorage.getClusterName()))
+                            .withName(sharedTestStorage.getClusterName() + "-kafka-external-bootstrap")
                             .get();
                     assertThat("External bootstrap has incorrect port", listener.getAddresses().get(0).getPort(), is(extBootstrapService.getSpec().getPorts().get(0).getNodePort()));
                     assertThat("External bootstrap has incorrect host", listener.getAddresses().get(0).getHost() != null);
