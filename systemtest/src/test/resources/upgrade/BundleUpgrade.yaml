@@ -23,10 +23,8 @@
 #  featureGatesBefore: String - FG added to `STRIMZI_FEATURE_GATES` environment variable, on initial deploy of CO
 #  featureGatesAfter: String - FG added to `STRIMZI_FEATURE_GATES` environment variable, on upgrade of CO
 #  filePaths: path to example files for particular resources
-#    kafkaBefore: path to Kafka resource (ZK mode) in the version of Strimzi, from which we are doing the upgrade
-#    kafkaAfter: path to Kafka resource (ZK mode) in the version of Strimzi, to which we are doing the upgrade
-#    kafkaKRaftBefore: path to Kafka and KafkaNodePool resources (KRaft mode), collected in one file, in the version of Strimzi, from which we are doing the upgrade
-#    kafkaKRaftAfter: path to Kafka and KafkaNodePool resources (KRaft mode), collected in one file, in the version of Strimzi, to which we are doing the upgrade
+#    kafkaBefore: path to Kafka and KafkaNodePool resources, collected in one file, in the version of Strimzi, from which we are doing the upgrade
+#    kafkaAfter: path to Kafka and KafkaNodePool resources, collected in one file, in the version of Strimzi, to which we are doing the upgrade
 #  --- Structure ---
 
 - fromVersion: 0.45.0
@@ -50,7 +48,5 @@
   featureGatesBefore: ""
   featureGatesAfter: ""
   filePaths:
-    kafkaBefore: "/examples/kafka/kafka-persistent.yaml"
+    kafkaBefore: "/examples/kafka/kraft/kafka.yaml"
     kafkaAfter: "/examples/kafka/kafka-persistent.yaml"
-    kafkaKRaftBefore: "/examples/kafka/kraft/kafka.yaml"
-    kafkaKRaftAfter: "/examples/kafka/kafka-persistent.yaml"

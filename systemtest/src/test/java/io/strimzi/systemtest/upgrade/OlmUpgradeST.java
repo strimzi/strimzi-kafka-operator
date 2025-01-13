@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.upgrade.regular;
+package io.strimzi.systemtest.upgrade;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -16,9 +16,6 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.configuration.OlmConfiguration;
 import io.strimzi.systemtest.resources.operator.configuration.OlmConfigurationBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
-import io.strimzi.systemtest.upgrade.AbstractUpgradeST;
-import io.strimzi.systemtest.upgrade.OlmVersionModificationData;
-import io.strimzi.systemtest.upgrade.VersionModificationDataLoader;
 import io.strimzi.systemtest.upgrade.VersionModificationDataLoader.ModificationType;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
@@ -28,7 +25,6 @@ import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 
 import java.io.File;
@@ -50,7 +46,6 @@ import static org.hamcrest.Matchers.not;
  * Tests in this class use OLM for install cluster operator.
  */
 @Tag(OLM_UPGRADE)
-@Disabled // ZooKeeper is being removed
 public class OlmUpgradeST extends AbstractUpgradeST {
 
     private static final Logger LOGGER = LogManager.getLogger(OlmUpgradeST.class);
@@ -75,7 +70,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
 
         // In this test we intend to setup Kafka once at the beginning and then upgrade it with CO
         File dir = FileUtils.downloadAndUnzip(olmUpgradeData.getFromUrl());
-        File kafkaYaml = new File(dir, olmUpgradeData.getFromExamples() + "/examples/kafka/kafka-persistent.yaml");
+        File kafkaYaml = new File(dir, olmUpgradeData.getFromExamples() + olmUpgradeData.getKafkaFilePathBefore());
 
         LOGGER.info("Deploying Kafka in Namespace: {} from file: {}", CO_NAMESPACE, kafkaYaml.getPath());
         KubeClusterResource.cmdKubeClient(CO_NAMESPACE).create(kafkaYaml);
@@ -104,7 +99,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withNamespaceName(CO_NAMESPACE)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
             .withTopicName(topicUpgradeName)
             .withMessageCount(testStorage.getMessageCount())
             .withDelayMs(1000)
@@ -136,7 +131,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         // Wait for Rolling Update to finish
         controllerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(CO_NAMESPACE, controllerSelector, 3, controllerPods);
         brokerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(CO_NAMESPACE, brokerSelector, 3, brokerPods);
-        eoPods = DeploymentUtils.waitTillDepHasRolled(CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
+        eoPods = DeploymentUtils.waitTillDepHasRolled(CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPods);
         // ======== Cluster Operator upgrade ends ========
 
         // ======== Kafka upgrade starts ========

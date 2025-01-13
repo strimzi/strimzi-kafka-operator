@@ -101,14 +101,6 @@ public class CommonVersionModificationData {
         return getFilePaths().get("kafkaAfter");
     }
 
-    public String getKafkaKRaftFilePathBefore() {
-        return getFilePaths().get("kafkaKRaftBefore");
-    }
-
-    public String getKafkaKRaftFilePathAfter() {
-        return getFilePaths().get("kafkaKRaftAfter");
-    }
-
     @Override
     public String toString() {
         return "\n" +

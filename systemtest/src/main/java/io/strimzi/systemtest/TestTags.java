@@ -27,11 +27,6 @@ public interface TestTags {
     String UPGRADE = "upgrade";
 
     /**
-     * Tag for KRaft to KRaft tests.
-     */
-    String KRAFT_UPGRADE = "kraftupgrade";
-
-    /**
      * Tag for olm upgrade tests
      */
     String OLM_UPGRADE = "olmupgrade";

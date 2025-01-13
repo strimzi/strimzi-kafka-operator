@@ -68,8 +68,7 @@ public class ExecutionListener implements TestExecutionListener {
             TestTags.TRACING,  // Tracing, because we deploy Jaeger operator inside additional namespace
             TestTags.KAFKA_SMOKE, // KafkaVersionsST, MigrationST because here we use @ParameterizedTest
             TestTags.MIGRATION,
-            TestTags.UPGRADE,
-            TestTags.KRAFT_UPGRADE
+            TestTags.UPGRADE
         );
 
         for (TestIdentifier testIdentifier : testCases) {
