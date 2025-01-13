@@ -16,7 +16,6 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
-import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -427,36 +426,35 @@ public class TopicReplicasChangeST extends AbstractST {
         sharedTestStorage = new TestStorage(ResourceManager.getTestContext(), Environment.TEST_SUITE_NAMESPACE);
 
         clusterOperator = clusterOperator
-                .defaultInstallation()
-                .createInstallation()
-                .runInstallation();
+            .defaultInstallation()
+            .createInstallation()
+            .runInstallation();
 
         LOGGER.info("Deploying shared Kafka: {}/{} across all test cases", sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName());
 
         resourceManager.createResourceWithWait(
-                NodePoolsConverter.convertNodePoolsIfNeeded(
-                        KafkaNodePoolTemplates.brokerPool(sharedTestStorage.getNamespaceName(), sharedTestStorage.getBrokerPoolName(), sharedTestStorage.getClusterName(), 3).build(),
-                        KafkaNodePoolTemplates.controllerPool(sharedTestStorage.getNamespaceName(), sharedTestStorage.getControllerPoolName(), sharedTestStorage.getClusterName(), 1).build()
-                )
+            KafkaNodePoolTemplates.brokerPool(sharedTestStorage.getNamespaceName(), sharedTestStorage.getBrokerPoolName(), sharedTestStorage.getClusterName(), 3).build(),
+            KafkaNodePoolTemplates.controllerPool(sharedTestStorage.getNamespaceName(), sharedTestStorage.getControllerPoolName(), sharedTestStorage.getClusterName(), 1).build()
         );
         
         // we need to deploy Kafka with CC enabled (to have RF feature)
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaWithCruiseControlTunedForFastModelGeneration(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), 3, 3)
-                    .editSpec()
-                        .editEntityOperator()
-                            .editOrNewTopicOperator()
-                                .withReconciliationIntervalMs(10_000L)
-                            .endTopicOperator()
-                        .endEntityOperator()
-                        .editCruiseControl()
-                            // reserve some resources at startup for faster cluster model generation
-                            .withResources(new ResourceRequirementsBuilder()
-                                .addToLimits("memory", new Quantity("1Gi"))
-                                .addToRequests("memory", new Quantity("1Gi"))
-                                .build())
-                        .endCruiseControl()
-                        .endSpec()
-                    .build(),
+        resourceManager.createResourceWithWait(
+            KafkaTemplates.kafkaWithCruiseControlTunedForFastModelGeneration(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), 3)
+                .editSpec()
+                    .editEntityOperator()
+                        .editOrNewTopicOperator()
+                            .withReconciliationIntervalMs(10_000L)
+                        .endTopicOperator()
+                    .endEntityOperator()
+                    .editCruiseControl()
+                        // reserve some resources at startup for faster cluster model generation
+                        .withResources(new ResourceRequirementsBuilder()
+                            .addToLimits("memory", new Quantity("1Gi"))
+                            .addToRequests("memory", new Quantity("1Gi"))
+                            .build())
+                    .endCruiseControl()
+                    .endSpec()
+                .build(),
             ScraperTemplates.scraperPod(sharedTestStorage.getNamespaceName(), sharedTestStorage.getScraperName()).build()
         );
 

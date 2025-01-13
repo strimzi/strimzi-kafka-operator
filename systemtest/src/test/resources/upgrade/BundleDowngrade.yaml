@@ -9,8 +9,7 @@
 #  additionalTopics: int - number of additional topics, which will be created
 #  oldestKafka: String - version of Kafka, used in initial deployment of Kafka CR
 #  imagesAfterOperations:  Strings - images that corresponding pods should contain. They are checked after downgrade
-#    zookeeper: 
-#    kafka: 
+#    kafka:
 #    topicOperator: 
 #    userOperator: 
 #  deployKafkaVersion: String - version of Kafka, used in deployment
@@ -36,7 +35,6 @@
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:0.45.0-kafka-3.8.0
     kafka: strimzi/kafka:0.45.0-kafka-3.8.0
     topicOperator: strimzi/operator:0.45.0
     userOperator: strimzi/operator:0.45.0

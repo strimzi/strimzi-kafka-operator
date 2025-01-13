@@ -80,9 +80,6 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         // Make snapshots of all Pods
         makeComponentsSnapshots(testStorage.getNamespaceName());
 
-        // Check if UTO is used before changing the CO -> used for check for KafkaTopics
-        boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(testStorage.getNamespaceName(), eoSelector);
-
         // Upgrade CO
         changeClusterOperator(CO_NAMESPACE, testStorage.getNamespaceName(), acrossUpgradeData);
         logClusterOperatorPodImage(CO_NAMESPACE);
@@ -96,7 +93,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         // Verify that Pods are stable
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), CLUSTER_NAME);
         // Verify upgrade
-        verifyProcedure(testStorage.getNamespaceName(), acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), wasUTOUsedBefore);
+        verifyProcedure(testStorage.getNamespaceName(), acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName());
 
         String controllerPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(CLUSTER_NAME, CONTROLLER_NODE_NAME)).get(0).getMetadata().getName();
         String brokerPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(CLUSTER_NAME, BROKER_NODE_NAME)).get(0).getMetadata().getName();
@@ -116,9 +113,6 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         // Make snapshots of all Pods
         makeComponentsSnapshots(testStorage.getNamespaceName());
 
-        // Check if UTO is used before changing the CO -> used for check for KafkaTopics
-        boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(testStorage.getNamespaceName(), eoSelector);
-
         // Upgrade CO
         changeClusterOperator(CO_NAMESPACE, testStorage.getNamespaceName(), acrossUpgradeData);
 
@@ -137,7 +131,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), CLUSTER_NAME);
 
         // Verify upgrade
-        verifyProcedure(testStorage.getNamespaceName(), acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), wasUTOUsedBefore);
+        verifyProcedure(testStorage.getNamespaceName(), acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName());
     }
 
     @IsolatedTest
@@ -146,9 +140,6 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
 
         // Setup env
         setupEnvAndUpgradeClusterOperator(CO_NAMESPACE, testStorage, acrossUpgradeData, null);
-
-        // Check if UTO is used before changing the CO -> used for check for KafkaTopics
-        boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(testStorage.getNamespaceName(), eoSelector);
 
         // Upgrade CO
         changeClusterOperator(CO_NAMESPACE, testStorage.getNamespaceName(), acrossUpgradeData);
@@ -170,7 +161,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), CLUSTER_NAME);
 
         // Verify upgrade
-        verifyProcedure(testStorage.getNamespaceName(), acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), wasUTOUsedBefore);
+        verifyProcedure(testStorage.getNamespaceName(), acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName());
     }
 
     @BeforeEach

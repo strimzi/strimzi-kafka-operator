@@ -58,10 +58,6 @@ public class BundleVersionModificationData extends CommonVersionModificationData
         return imagesAfterOperations;
     }
 
-    public String getZookeeperImage() {
-        return imagesAfterOperations.get("zookeeper");
-    }
-
     public String getKafkaImage() {
         return imagesAfterOperations.get("kafka");
     }

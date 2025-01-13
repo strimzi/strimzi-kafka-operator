@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.systemtest.enums.ClusterOperatorInstallType;
-import io.strimzi.systemtest.enums.NodePoolsRoleMode;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -140,21 +139,6 @@ public class Environment {
     public static final String STRIMZI_FEATURE_GATES_ENV = "STRIMZI_FEATURE_GATES";
 
     /**
-     * Controls whether tests should run with KRaft or not
-     */
-    public static final String STRIMZI_USE_KRAFT_IN_TESTS_ENV = "STRIMZI_USE_KRAFT_IN_TESTS";
-
-    /**
-     * Controls whether tests should run with KafkaNodePools or not
-     */
-    public static final String STRIMZI_USE_NODE_POOLS_IN_TESTS_ENV = "STRIMZI_USE_NODE_POOLS_IN_TESTS";
-
-    /**
-     * Switch for changing NodePool roles in STs - separate roles or mixed roles
-     */
-    public static final String STRIMZI_NODE_POOLS_ROLE_MODE_ENV = "STRIMZI_NODE_POOLS_ROLE_MODE";
-
-    /**
      * CO PodSet-only reconciliation env variable <br>
      * Only SPS will be reconciled, when this env variable will be true
      */
@@ -236,9 +220,6 @@ public class Environment {
     public static final boolean SKIP_TEARDOWN = getOrDefault(SKIP_TEARDOWN_ENV, Boolean::parseBoolean, false);
     public static final String STRIMZI_RBAC_SCOPE = getOrDefault(STRIMZI_RBAC_SCOPE_ENV, STRIMZI_RBAC_SCOPE_DEFAULT);
     public static final String STRIMZI_FEATURE_GATES = getOrDefault(STRIMZI_FEATURE_GATES_ENV, STRIMZI_FEATURE_GATES_DEFAULT);
-    public static final boolean STRIMZI_USE_KRAFT_IN_TESTS = getOrDefault(STRIMZI_USE_KRAFT_IN_TESTS_ENV, Boolean::parseBoolean, true);
-    public static final boolean STRIMZI_USE_NODE_POOLS_IN_TESTS = getOrDefault(STRIMZI_USE_NODE_POOLS_IN_TESTS_ENV, Boolean::parseBoolean, true);
-    public static final NodePoolsRoleMode STRIMZI_NODE_POOLS_ROLE_MODE = getOrDefault(STRIMZI_NODE_POOLS_ROLE_MODE_ENV, value -> NodePoolsRoleMode.valueOf(value.toUpperCase(Locale.ENGLISH)), NodePoolsRoleMode.SEPARATE);
 
     // variables for kafka client app images
     private static final String TEST_CLIENTS_VERSION = getOrDefault(TEST_CLIENTS_VERSION_ENV, TEST_CLIENTS_VERSION_DEFAULT);
@@ -306,25 +287,6 @@ public class Environment {
 
     public static boolean isNamespaceRbacScope() {
         return STRIMZI_RBAC_SCOPE_NAMESPACE.equals(STRIMZI_RBAC_SCOPE);
-    }
-
-    /**
-     * Determine wheter KRaft mode of Kafka cluster is enabled in Cluster Operator or not.
-     * @return true if KRaft mode is enabled, otherwise false
-     */
-    public static boolean isKRaftModeEnabled() {
-        return STRIMZI_USE_KRAFT_IN_TESTS;
-    }
-
-    public static boolean isKafkaNodePoolsEnabled() {
-        return STRIMZI_USE_NODE_POOLS_IN_TESTS;
-    }
-
-    /**
-     * Determine whether separate roles mode for KafkaNodePools is used or not
-     */
-    public static boolean isSeparateRolesMode() {
-        return STRIMZI_NODE_POOLS_ROLE_MODE.equals(NodePoolsRoleMode.SEPARATE);
     }
 
     /**
