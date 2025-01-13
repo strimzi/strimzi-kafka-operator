@@ -42,13 +42,13 @@ import static org.hamcrest.Matchers.not;
 
 /**
  * This test class contains tests for Strimzi downgrade from version X to version X - 1.
- * The difference between this class and {@link StrimziUpgradeST} is in cluster operator install type.
+ * The difference between this class and {@link KRaftStrimziUpgradeST} is in cluster operator install type.
  * Tests in this class use OLM for install cluster operator.
  */
 @Tag(OLM_UPGRADE)
-public class OlmUpgradeST extends AbstractUpgradeST {
+public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
 
-    private static final Logger LOGGER = LogManager.getLogger(OlmUpgradeST.class);
+    private static final Logger LOGGER = LogManager.getLogger(KRaftOlmUpgradeST.class);
     private final OlmVersionModificationData olmUpgradeData = new VersionModificationDataLoader(ModificationType.OLM_UPGRADE).getOlmUpgradeData();
 
     @IsolatedTest

@@ -28,7 +28,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
-import static io.strimzi.systemtest.TestTags.UPGRADE;
+import static io.strimzi.systemtest.TestTags.KRAFT_UPGRADE;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -39,10 +39,10 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  *      -> KRaft to KRaft upgrades
  * Metadata for the following tests are collected from systemtest/src/test/resources/upgrade/BundleUpgrade.yaml
  */
-@Tag(UPGRADE)
-public class StrimziUpgradeST extends AbstractUpgradeST {
+@Tag(KRAFT_UPGRADE)
+public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
 
-    private static final Logger LOGGER = LogManager.getLogger(StrimziUpgradeST.class);
+    private static final Logger LOGGER = LogManager.getLogger(KRaftStrimziUpgradeST.class);
     private final BundleVersionModificationData acrossUpgradeData = new VersionModificationDataLoader(VersionModificationDataLoader.ModificationType.BUNDLE_UPGRADE).buildDataForUpgradeAcrossVersionsForKRaft();
 
     @MicroShiftNotSupported("Due to lack of Kafka Connect build feature")

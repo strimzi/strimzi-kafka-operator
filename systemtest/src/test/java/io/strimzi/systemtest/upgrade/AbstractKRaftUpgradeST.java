@@ -81,9 +81,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class AbstractUpgradeST extends AbstractST {
+public class AbstractKRaftUpgradeST extends AbstractST {
 
-    private static final Logger LOGGER = LogManager.getLogger(AbstractUpgradeST.class);
+    private static final Logger LOGGER = LogManager.getLogger(AbstractKRaftUpgradeST.class);
 
     protected File dir = null;
     protected File coDir = null;

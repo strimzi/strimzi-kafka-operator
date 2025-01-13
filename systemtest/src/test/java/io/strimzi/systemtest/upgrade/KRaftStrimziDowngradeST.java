@@ -20,7 +20,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.io.IOException;
 
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
-import static io.strimzi.systemtest.TestTags.UPGRADE;
+import static io.strimzi.systemtest.TestTags.KRAFT_UPGRADE;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
@@ -28,9 +28,9 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  *      -> KRaft to KRaft downgrades
  * Metadata for the following tests are collected from systemtest/src/test/resources/upgrade/BundleDowngrade.yaml
  */
-@Tag(UPGRADE)
-public class StrimziDowngradeST extends AbstractUpgradeST {
-    private static final Logger LOGGER = LogManager.getLogger(StrimziDowngradeST.class);
+@Tag(KRAFT_UPGRADE)
+public class KRaftStrimziDowngradeST extends AbstractKRaftUpgradeST {
+    private static final Logger LOGGER = LogManager.getLogger(KRaftStrimziDowngradeST.class);
 
     @MicroShiftNotSupported("Due to lack of Kafka Connect build feature")
     @KindIPv6NotSupported("Our current CI setup doesn't allow pushing into internal registries that is needed in this test")

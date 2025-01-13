@@ -34,7 +34,7 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.Environment.TEST_SUITE_NAMESPACE;
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
-import static io.strimzi.systemtest.TestTags.UPGRADE;
+import static io.strimzi.systemtest.TestTags.KRAFT_UPGRADE;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -44,9 +44,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  * This test class contains tests for Kafka upgrade/downgrade from version X to X +/- 1, running in KRaft mode.
  * Metadata for upgrade/downgrade procedure are loaded from kafka-versions.yaml in root dir of this repository.
  */
-@Tag(UPGRADE)
-public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
-    private static final Logger LOGGER = LogManager.getLogger(KafkaUpgradeDowngradeST.class);
+@Tag(KRAFT_UPGRADE)
+public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
+    private static final Logger LOGGER = LogManager.getLogger(KRaftKafkaUpgradeDowngradeST.class);
     private final int continuousClientsMessageCount = 300;
 
     @IsolatedTest
