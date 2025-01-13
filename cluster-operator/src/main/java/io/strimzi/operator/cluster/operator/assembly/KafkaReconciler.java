@@ -162,6 +162,7 @@ public class KafkaReconciler {
     private final Map<Integer, String> brokerLoggingHash = new HashMap<>();
     private final Map<Integer, String> brokerConfigurationHash = new HashMap<>();
     private final Map<Integer, String> kafkaServerCertificateHash = new HashMap<>();
+    private final List<String> secretsToDelete = new ArrayList<>();
     /* test */ TlsPemIdentity coTlsPemIdentity;
     /* test */ KafkaListenersReconciler.ReconciliationResult listenerReconciliationResults; // Result of the listener reconciliation with the listener details
 
@@ -273,6 +274,7 @@ public class KafkaReconciler {
                 .compose(i -> metadataVersion(kafkaStatus))
                 .compose(i -> deletePersistentClaims())
                 .compose(i -> sharedKafkaConfigurationCleanup())
+                .compose(i -> deleteOldCertificateSecrets())
                 // This has to run after all possible rolling updates which might move the pods to different nodes
                 .compose(i -> nodePortExternalListenerStatus())
                 .compose(i -> updateKafkaStatus(kafkaStatus));
@@ -746,26 +748,25 @@ public class KafkaReconciler {
                             listenerReconciliationResults.bootstrapDnsNames, listenerReconciliationResults.brokerDnsNames,
                             Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
 
-                    List<String> secretsToDelete = new ArrayList<>(existingSecrets.stream().map(secret -> secret.getMetadata().getName()).toList());
-                    secretsToDelete.removeAll(desiredCertSecrets.stream().map(secret -> secret.getMetadata().getName()).toList());
-                    // Don't delete jmx secrets
-                    secretsToDelete.remove(KafkaResources.kafkaJmxSecretName(reconciliation.name()));
-
-                    Future<Void> deleteSecrets = deleteOldCertificateSecrets(secretsToDelete);
-                    Future<Void> updateSecrets = updateCertificateSecrets(desiredCertSecrets);
-                    return Future.join(deleteSecrets, updateSecrets);
+                    List<String> desiredCertSecretNames = desiredCertSecrets.stream().map(secret -> secret.getMetadata().getName()).toList();
+                    existingSecrets.forEach(secret -> {
+                        String secretName = secret.getMetadata().getName();
+                        // Don't delete desired secrets or jmx secrets
+                        if (!desiredCertSecretNames.contains(secretName) && !KafkaResources.kafkaJmxSecretName(reconciliation.name()).equals(secretName)) {
+                            secretsToDelete.add(secretName);
+                        }
+                    });
+                    return updateCertificateSecrets(desiredCertSecrets);
                 }).mapEmpty();
     }
 
     /**
      * Delete old certificate Secrets that are no longer needed.
      *
-     * @param secrets List of Secrets to delete.
-     *
      * @return Future that completes when the Secrets have been deleted.
      */
-    protected Future<Void> deleteOldCertificateSecrets(List<String> secrets) {
-        List<Future<Void>> deleteFutures = secrets.stream()
+    protected Future<Void> deleteOldCertificateSecrets() {
+        List<Future<Void>> deleteFutures = secretsToDelete.stream()
                 .map(secretName -> {
                     LOGGER.debugCr(reconciliation, "Deleting old Secret {}/{} that is no longer used.", reconciliation.namespace(), secretName);
                     return secretOperator.deleteAsync(reconciliation, reconciliation.namespace(), secretName, false);
@@ -777,7 +778,7 @@ public class KafkaReconciler {
         return secretOperator.getAsync(reconciliation.namespace(), oldSecretName)
                 .compose(oldSecret -> {
                     if (oldSecret != null) {
-                        LOGGER.debugCr(reconciliation, "Deleting old Secret {}/{} that is no longer needed.", reconciliation.namespace(), oldSecretName);
+                        LOGGER.debugCr(reconciliation, "Deleting legacy Secret {}/{} that is replaced by pod specific Secret.", reconciliation.namespace(), oldSecretName);
                         deleteFutures.add(secretOperator.deleteAsync(reconciliation, reconciliation.namespace(), oldSecretName, false));
                     }
 

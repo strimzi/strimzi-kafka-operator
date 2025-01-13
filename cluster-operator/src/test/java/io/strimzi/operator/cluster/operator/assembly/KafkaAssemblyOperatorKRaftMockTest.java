@@ -632,7 +632,13 @@ public class KafkaAssemblyOperatorKRaftMockTest {
         operator.reconcile(new Reconciliation("initial-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat(client.secrets().inNamespace(namespace).withLabels(Labels.fromMap(kafkaLabels).withStrimziComponentType("kafka").toMap()).list().getItems().size(), is(6));
-                assertThat(client.pods().inNamespace(namespace).withLabels(kafkaLabels).list().getItems().size(), is(6));
+                List<Pod> initialPods = client.pods().inNamespace(namespace).withLabels(kafkaLabels).list().getItems();
+                assertThat(initialPods.size(), is(6));
+                for (Pod pod : initialPods) {
+                    Secret certSecret = client.secrets().inNamespace(namespace).withName(pod.getMetadata().getName()).get();
+                    assertThat(certSecret, is(notNullValue()));
+                    assertThat(certSecret.getData().keySet(), hasItems(pod.getMetadata().getName() + ".crt", pod.getMetadata().getName() + ".key"));
+                }
 
                 KafkaNodePool newPool = new KafkaNodePoolBuilder()
                         .withNewMetadata()
@@ -658,9 +664,17 @@ public class KafkaAssemblyOperatorKRaftMockTest {
                 // Assert that the new pool is added
                 assertThat(client.secrets().inNamespace(namespace).withLabels(Labels.fromMap(kafkaLabels).withStrimziComponentType("kafka").toMap()).list().getItems().size(), is(9));
                 assertThat(client.pods().inNamespace(namespace).withLabels(kafkaLabels).list().getItems().size(), is(9));
-                assertThat(client.pods().inNamespace(namespace).withName(CLUSTER_NAME + "-new-pool-13").get(), is(notNullValue()));
-                assertThat(client.pods().inNamespace(namespace).withName(CLUSTER_NAME + "-new-pool-14").get(), is(notNullValue()));
-                assertThat(client.pods().inNamespace(namespace).withName(CLUSTER_NAME + "-new-pool-15").get(), is(notNullValue()));
+                List<String> expectedNewResources = List.of(
+                        CLUSTER_NAME + "-new-pool-13",
+                        CLUSTER_NAME + "-new-pool-14",
+                        CLUSTER_NAME + "-new-pool-15"
+                );
+                for (String resourceName : expectedNewResources) {
+                    assertThat(client.pods().inNamespace(namespace).withName(resourceName).get(), is(notNullValue()));
+                    Secret certSecret = client.secrets().inNamespace(namespace).withName(resourceName).get();
+                    assertThat(certSecret, is(notNullValue()));
+                    assertThat(certSecret.getData().keySet(), hasItems(resourceName + ".crt", resourceName + ".key"));
+                }
 
                 Kafka kafka = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
                 assertThat(kafka.getStatus().getKafkaNodePools().size(), is(3));
@@ -694,9 +708,15 @@ public class KafkaAssemblyOperatorKRaftMockTest {
                 // Assert that the new pool is deleted
                 assertThat(client.secrets().inNamespace(namespace).withLabels(Labels.fromMap(kafkaLabels).withStrimziComponentType("kafka").toMap()).list().getItems().size(), is(6));
                 assertThat(client.pods().inNamespace(namespace).withLabels(kafkaLabels).list().getItems().size(), is(6));
-                assertThat(client.pods().inNamespace(namespace).withName(CLUSTER_NAME + "-new-pool-13").get(), is(nullValue()));
-                assertThat(client.pods().inNamespace(namespace).withName(CLUSTER_NAME + "-new-pool-14").get(), is(nullValue()));
-                assertThat(client.pods().inNamespace(namespace).withName(CLUSTER_NAME + "-new-pool-15").get(), is(nullValue()));
+                List<String> expectedDeletedResources = List.of(
+                        CLUSTER_NAME + "-new-pool-13",
+                        CLUSTER_NAME + "-new-pool-14",
+                        CLUSTER_NAME + "-new-pool-15"
+                );
+                for (String resourceName : expectedDeletedResources) {
+                    assertThat(client.pods().inNamespace(namespace).withName(resourceName).get(), is(nullValue()));
+                    assertThat(client.secrets().inNamespace(namespace).withName(resourceName).get(), is(nullValue()));
+                }
 
                 Kafka kafka = Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME).get();
                 assertThat(kafka.getStatus().getKafkaNodePools().size(), is(2));

@@ -1268,6 +1268,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
             throw new RuntimeException("Failed to prepare Kafka certificates", e);
         }
+
         return updatedCerts.entrySet()
                 .stream()
                 .map(entry -> ModelUtils.createSecret(entry.getKey(), namespace, labels, ownerReference,
