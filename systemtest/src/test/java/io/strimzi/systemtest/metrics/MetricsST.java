@@ -409,7 +409,7 @@ public class MetricsST extends AbstractST {
         labels = {
             @Label(value = TestDocsLabels.KAFKA),
             @Label(value = TestDocsLabels.METRICS),
-            @Label(value = TestDocsLabels.MIRROR_MAKER)
+            @Label(value = TestDocsLabels.MIRROR_MAKER_2)
         }
     )
     void testMirrorMaker2Metrics() {

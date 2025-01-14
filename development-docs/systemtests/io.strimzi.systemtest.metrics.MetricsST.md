@@ -202,7 +202,7 @@
 
 * [kafka](labels/kafka.md)
 * [metrics](labels/metrics.md)
-* `mirror-maker` (description file doesn't exist)
+* `mirror-maker-2` (description file doesn't exist)
 
 
 ## testUserOperatorMetrics
