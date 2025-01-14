@@ -10,6 +10,7 @@ maintaining data consistency and availability in a streaming ecosystem.
 
 <!-- generated part -->
 **Tests:**
+- [testConnectLogSetting](../io.strimzi.systemtest.log.LogSettingST.md)
 - [testBuildFailsWithWrongChecksumOfArtifact](../io.strimzi.systemtest.connect.ConnectBuilderST.md)
 - [testScaleConnectWithoutConnectorToZero](../io.strimzi.systemtest.connect.ConnectST.md)
 - [testBuildWithJarTgzAndZip](../io.strimzi.systemtest.connect.ConnectBuilderST.md)

@@ -8,15 +8,16 @@ These tests ensure that the bridge behaves as expected under various configurati
 
 <!-- generated part -->
 **Tests:**
+- [testReceiveSimpleMessageTlsScramSha](../io.strimzi.systemtest.bridge.HttpBridgeScramShaST.md)
+- [testBridgeLogSetting](../io.strimzi.systemtest.log.LogSettingST.md)
+- [testSendSimpleMessageTls](../io.strimzi.systemtest.bridge.HttpBridgeTlsST.md)
+- [testCustomAndUpdatedValues](../io.strimzi.systemtest.bridge.HttpBridgeST.md)
 - [testScaleBridgeSubresource](../io.strimzi.systemtest.bridge.HttpBridgeST.md)
 - [testSendSimpleMessage](../io.strimzi.systemtest.bridge.HttpBridgeST.md)
-- [testReceiveSimpleMessageTlsScramSha](../io.strimzi.systemtest.bridge.HttpBridgeScramShaST.md)
 - [testReceiveSimpleMessage](../io.strimzi.systemtest.bridge.HttpBridgeST.md)
 - [testCorsOriginAllowed](../io.strimzi.systemtest.bridge.HttpBridgeCorsST.md)
-- [testSendSimpleMessageTls](../io.strimzi.systemtest.bridge.HttpBridgeTlsST.md)
 - [testCorsForbidden](../io.strimzi.systemtest.bridge.HttpBridgeCorsST.md)
 - [testReceiveSimpleMessageTls](../io.strimzi.systemtest.bridge.HttpBridgeTlsST.md)
 - [testConfigureDeploymentStrategy](../io.strimzi.systemtest.bridge.HttpBridgeST.md)
-- [testCustomAndUpdatedValues](../io.strimzi.systemtest.bridge.HttpBridgeST.md)
 - [testSendSimpleMessageTlsScramSha](../io.strimzi.systemtest.bridge.HttpBridgeScramShaST.md)
 - [testScaleBridgeToZero](../io.strimzi.systemtest.bridge.HttpBridgeST.md)
