@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -27,7 +26,6 @@ import io.strimzi.operator.cluster.model.KafkaBridgeCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
-import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ClusterRoleBindingOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ConfigMapOperator;
@@ -38,12 +36,12 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.platform.KubernetesVersion;
-import io.strimzi.test.TestUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -57,7 +55,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,7 +86,6 @@ public class KafkaBridgeAssemblyOperatorTest {
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
 
     protected static Vertx vertx;
-    private static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
 
     private static final String BOOTSTRAP_SERVERS = "foo-kafka:9092";
     private static final KafkaBridgeConsumerSpec KAFKA_BRIDGE_CONSUMER_SPEC = new KafkaBridgeConsumerSpec();
@@ -141,7 +137,8 @@ public class KafkaBridgeAssemblyOperatorTest {
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        ArgumentCaptor<ConfigMap> cmCaptor = ArgumentCaptor.forClass(ConfigMap.class);
+        when(mockCmOps.reconcile(any(), anyString(), any(), cmCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<KafkaBridge> bridgeCaptor = ArgumentCaptor.forClass(KafkaBridge.class);
         when(mockBridgeOps.updateStatusAsync(any(), bridgeCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -167,8 +164,15 @@ public class KafkaBridgeAssemblyOperatorTest {
                 List<Deployment> capturedDc = dcCaptor.getAllValues();
                 assertThat(capturedDc, hasSize(1));
                 Deployment dc = capturedDc.get(0);
+                // getting the bridge ConfigMap to process the hash of the configuration to be checked on the corresponding Deployment annotation
+                List<ConfigMap> captureCm = cmCaptor.getAllValues();
+                assertThat(captureCm, hasSize(1));
+                ConfigMap cm = captureCm.get(0);
                 assertThat(dc.getMetadata().getName(), is(bridge.getComponentName()));
-                assertThat(dc, is(bridge.generateDeployment(Collections.singletonMap(Annotations.ANNO_STRIMZI_AUTH_HASH, "0"), true, null, null)));
+                assertThat(dc, is(bridge.generateDeployment(Map.of(
+                        Annotations.ANNO_STRIMZI_AUTH_HASH, "0",
+                        KafkaBridgeCluster.ANNO_STRIMZI_IO_CONFIGURATION_HASH, "0ff4f460"
+                        ), true, null, null)));
 
                 // Verify PodDisruptionBudget
                 List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
@@ -309,24 +313,9 @@ public class KafkaBridgeAssemblyOperatorTest {
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
 
-        // Mock CM get
-        when(mockBridgeOps.get(kbNamespace, kbName)).thenReturn(kb);
-        ConfigMap metricsCm = new ConfigMapBuilder().withNewMetadata()
-                    .withName(KafkaBridgeResources.metricsAndLogConfigMapName(kbName))
-                    .withNamespace(kbNamespace)
-                .endMetadata()
-                .withData(Collections.singletonMap(MetricsModel.CONFIG_MAP_KEY, METRICS_CONFIG))
-                .build();
-        when(mockCmOps.get(kbNamespace, KafkaBridgeResources.metricsAndLogConfigMapName(kbName))).thenReturn(metricsCm);
-
-        // Mock CM patch
-        Set<String> metricsCms = TestUtils.modifiableSet();
-        doAnswer(invocation -> {
-            metricsCms.add(invocation.getArgument(1));
-            return Future.succeededFuture();
-        }).when(mockCmOps).reconcile(any(), eq(kbNamespace), anyString(), any());
+        ArgumentCaptor<ConfigMap> cmCaptor = ArgumentCaptor.forClass(ConfigMap.class);
+        when(mockCmOps.reconcile(any(), anyString(), any(), cmCaptor.capture())).thenReturn(Future.succeededFuture());
 
         KafkaBridgeAssemblyOperator ops = new KafkaBridgeAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
@@ -351,8 +340,15 @@ public class KafkaBridgeAssemblyOperatorTest {
                 List<Deployment> capturedDc = dcCaptor.getAllValues();
                 assertThat(capturedDc, hasSize(1));
                 Deployment dc = capturedDc.get(0);
+                // getting the bridge ConfigMap to process the hash of the configuration to be checked on the corresponding Deployment annotation
+                List<ConfigMap> captureCm = cmCaptor.getAllValues();
+                assertThat(captureCm, hasSize(1));
+                ConfigMap cm = captureCm.get(0);
                 assertThat(dc.getMetadata().getName(), is(compareTo.getComponentName()));
-                assertThat(dc, is(compareTo.generateDeployment(Collections.singletonMap(Annotations.ANNO_STRIMZI_AUTH_HASH, "0"), true, null, null)));
+                assertThat(dc, is(compareTo.generateDeployment(Map.of(
+                        Annotations.ANNO_STRIMZI_AUTH_HASH, "0",
+                        KafkaBridgeCluster.ANNO_STRIMZI_IO_CONFIGURATION_HASH, "0ff4f460"
+                ), true, null, null)));
 
                 // Verify PodDisruptionBudget
                 List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();

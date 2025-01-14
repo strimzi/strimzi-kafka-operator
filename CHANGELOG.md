@@ -8,6 +8,7 @@
 * Added support to configure `dnsPolicy` and `dnsConfig` using the `template` sections.
 * Store Kafka node certificates in separate Secrets, one Secret per pod.
 * Allow configuring `ssl.principal.mapping.rules` and custom trusted CAs in Kafka brokers with `type: custom` authentication
+* Moved HTTP bridge configuration to the ConfigMap setup by the operator.
 
 ### Major changes, deprecations and removals
 
