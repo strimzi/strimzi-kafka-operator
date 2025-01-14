@@ -91,7 +91,7 @@ spec:
                           broker:
                             type: integer
                             description: Id of the kafka broker (broker identifier).
-                      description: Overrides for individual brokers. The `overrides` field allows you to specify a different configuration for different brokers.
+                      description: "As of Strimzi 0.46.0, the storage overrides for individual brokers are not supported anymore and this option is ignored."
                     selector:
                       additionalProperties:
                         type: string
@@ -142,7 +142,7 @@ spec:
                                 broker:
                                   type: integer
                                   description: Id of the kafka broker (broker identifier).
-                            description: Overrides for individual brokers. The `overrides` field allows you to specify a different configuration for different brokers.
+                            description: "As of Strimzi 0.46.0, the storage overrides for individual brokers are not supported anymore and this option is ignored."
                           selector:
                             additionalProperties:
                               type: string

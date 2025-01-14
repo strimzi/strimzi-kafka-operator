@@ -207,44 +207,6 @@ public class KafkaClusterStorageTest {
     }
 
     @ParallelTest
-    public void testGeneratePersistentVolumeClaimsPersistentWithOverride() {
-        KafkaNodePool brokers = new KafkaNodePoolBuilder(POOL_BROKERS)
-                .editSpec()
-                    .withNewPersistentClaimStorage()
-                        .withStorageClass("gp2-ssd")
-                        .withDeleteClaim(false)
-                        .withSize("100Gi")
-                        .withOverrides(new PersistentClaimStorageOverrideBuilder()
-                                .withBroker(6)
-                                .withStorageClass("gp2-ssd-az1")
-                                .build())
-                    .endPersistentClaimStorage()
-                .endSpec()
-                .build();
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_CONTROLLERS, POOL_MIXED, brokers), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
-        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
-
-        // Check PVCs
-        List<PersistentVolumeClaim> pvcs = kc.generatePersistentVolumeClaims();
-        assertThat(pvcs.size(), is(8));
-
-        for (PersistentVolumeClaim pvc : pvcs) {
-            if (pvc.getMetadata().getName().contains("brokers")) {
-                assertThat(pvc.getSpec().getResources().getRequests().get("storage"), is(new Quantity("100Gi")));
-                assertThat(pvc.getMetadata().getName().startsWith(VolumeUtils.DATA_VOLUME_NAME), is(true));
-                assertThat(pvc.getMetadata().getOwnerReferences().size(), is(0));
-                assertThat(pvc.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_DELETE_CLAIM), is("false"));
-
-                if (pvc.getMetadata().getName().contains("brokers-6"))  {
-                    assertThat(pvc.getSpec().getStorageClassName(), is("gp2-ssd-az1"));
-                } else {
-                    assertThat(pvc.getSpec().getStorageClassName(), is("gp2-ssd"));
-                }
-            }
-        }
-    }
-
-    @ParallelTest
     public void testGeneratePersistentVolumeClaimsJbod() {
         KafkaNodePool brokers = new KafkaNodePoolBuilder(POOL_BROKERS)
                 .editSpec()
@@ -298,14 +260,14 @@ public class KafkaClusterStorageTest {
                                         .withDeleteClaim(false)
                                         .withId(0)
                                         .withSize("100Gi")
-                                        .withOverrides(new PersistentClaimStorageOverrideBuilder().withBroker(6).withStorageClass("gp2-ssd-az1").build())
+                                        .withOverrides(new PersistentClaimStorageOverrideBuilder().withBroker(6).withStorageClass("gp2-ssd-az1").build()) // The override is set, but the test checks that it is ignored
                                         .build(),
                                 new PersistentClaimStorageBuilder()
                                         .withStorageClass("gp2-st1")
                                         .withDeleteClaim(true)
                                         .withId(1)
                                         .withSize("1000Gi")
-                                        .withOverrides(new PersistentClaimStorageOverrideBuilder().withBroker(6).withStorageClass("gp2-st1-az1").build())
+                                        .withOverrides(new PersistentClaimStorageOverrideBuilder().withBroker(6).withStorageClass("gp2-st1-az1").build()) // The override is set, but the test checks that it is ignored
                                         .build())
                     .endJbodStorage()
                 .endSpec()
@@ -324,23 +286,13 @@ public class KafkaClusterStorageTest {
                     assertThat(pvc.getMetadata().getName().startsWith(VolumeUtils.DATA_VOLUME_NAME), is(true));
                     assertThat(pvc.getMetadata().getOwnerReferences().size(), is(0));
                     assertThat(pvc.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_DELETE_CLAIM), is("false"));
-
-                    if (pvc.getMetadata().getName().contains("brokers-6")) {
-                        assertThat(pvc.getSpec().getStorageClassName(), is("gp2-ssd-az1"));
-                    } else {
-                        assertThat(pvc.getSpec().getStorageClassName(), is("gp2-ssd"));
-                    }
+                    assertThat(pvc.getSpec().getStorageClassName(), is("gp2-ssd"));
                 } else if (pvc.getMetadata().getName().contains("data-1")) {
                     assertThat(pvc.getSpec().getResources().getRequests().get("storage"), is(new Quantity("1000Gi")));
                     assertThat(pvc.getMetadata().getName().startsWith(VolumeUtils.DATA_VOLUME_NAME), is(true));
                     assertThat(pvc.getMetadata().getOwnerReferences().size(), is(1));
                     assertThat(pvc.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_DELETE_CLAIM), is("true"));
-
-                    if (pvc.getMetadata().getName().contains("brokers-6")) {
-                        assertThat(pvc.getSpec().getStorageClassName(), is("gp2-st1-az1"));
-                    } else {
-                        assertThat(pvc.getSpec().getStorageClassName(), is("gp2-st1"));
-                    }
+                    assertThat(pvc.getSpec().getStorageClassName(), is("gp2-st1"));
                 }
             }
         }

@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.kafka.JbodStorage;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageOverride;
 import io.strimzi.api.kafka.model.kafka.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.operator.common.Annotations;
@@ -61,7 +60,7 @@ public class PersistentVolumeClaimUtils {
                 String namePrefix = VolumeUtils.createVolumePrefix(persistentStorage.getId(), jbod);
 
                 for (NodeRef node : nodes) {
-                    pvcs.add(createPersistentVolumeClaim(namePrefix + "-" + node.podName(), namespace, node.nodeId(), persistentStorage, labels, ownerReference, template));
+                    pvcs.add(createPersistentVolumeClaim(namePrefix + "-" + node.podName(), namespace, persistentStorage, labels, ownerReference, template));
                 }
             } else if (storage instanceof JbodStorage jbodStorage) {
                 for (SingleVolumeStorage volume : jbodStorage.getVolumes()) {
@@ -75,42 +74,10 @@ public class PersistentVolumeClaimUtils {
     }
 
     /**
-     * Gets the storage class configured for given PVC. This either the regularly configured storage class or the
-     * storage class from the per-broker configuration overrides. If not storage class is specified, it returns null
-     * and the default storage class will be used.
-     *
-     * @param brokerId          ID of the broker to which this PVC belongs. It is used to find configuration overrides
-     *                          for Storage class.
-     * @param storage           The user supplied configuration of the PersistentClaimStorage
-     *
-     * @return  Storage class which should be used for this PVC
-     */
-    @SuppressWarnings("deprecation") // Storage overrides are deprecated
-    private static String storageClassNameForBrokerId(int brokerId, PersistentClaimStorage storage)    {
-        String storageClass = storage.getStorageClass();
-
-        if (storage.getOverrides() != null) {
-            storageClass = storage.getOverrides().stream()
-                    .filter(broker -> broker != null
-                            && broker.getBroker() != null
-                            && broker.getBroker() == brokerId
-                            && broker.getStorageClass() != null)
-                    .map(PersistentClaimStorageOverride::getStorageClass)
-                    .findAny()
-                    // if none are found for broker do not change storage class from overrides
-                    .orElse(storageClass);
-        }
-
-        return storageClass;
-    }
-
-    /**
      * Generates a persistent volume claim for a given broker ID.
      *
      * @param name              Name of the PVC
      * @param namespace         Namespace of the PVC
-     * @param brokerId          ID of the broker to which this PVC belongs. It is used to find configuration
-     *                          overrides for Storage class.
      * @param storage           The user supplied configuration of the PersistentClaimStorage
      * @param labels            Labels of the PVC
      * @param ownerReference    OwnerReference of the PVC
@@ -121,7 +88,6 @@ public class PersistentVolumeClaimUtils {
     private static PersistentVolumeClaim createPersistentVolumeClaim(
             String name,
             String namespace,
-            int brokerId,
             PersistentClaimStorage storage,
             Labels labels,
             OwnerReference ownerReference,
@@ -147,7 +113,7 @@ public class PersistentVolumeClaimUtils {
                     .withNewResources()
                         .withRequests(requests)
                     .endResources()
-                    .withStorageClassName(storageClassNameForBrokerId(brokerId, storage))
+                    .withStorageClassName(storage.getStorageClass())
                     .withSelector(storageSelector)
                     .withVolumeMode("Filesystem")
                 .endSpec()
