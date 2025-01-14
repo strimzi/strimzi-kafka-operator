@@ -40,12 +40,15 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaNodePoolUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
@@ -55,6 +58,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.systemtest.TestConstants.STRIMZI_DEPLOYMENT_NAME;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.TestTags.ROLLING_UPDATE;
 import static io.strimzi.systemtest.k8s.Events.Created;
@@ -481,6 +485,37 @@ public class KafkaRollerST extends AbstractST {
         int runningKafkaPods = (int) kafkaPods.stream().filter(pod -> pod.getStatus().getPhase().equals("Running")).count();
 
         return runningKafkaPods == (kafkaPods.size() - 1);
+    }
+
+    @ParallelNamespaceTest
+    void testKRaftClusterNotStuckDuringControllerQuorumTimeout() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final int brokerNodes = 3;
+        final int controllerNodes = 3;
+
+        LOGGER.info("Deploying KRaft cluster with dedicated controllers ({} replicas) and brokers ({} replicas).", controllerNodes, brokerNodes);
+
+        // Create dedicated controller and broker KafkaNodePools and Kafka CR
+        resourceManager.createResourceWithWait(
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(),
+                testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerNodes).build(),
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(),
+                testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerNodes).build(),
+            KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), testStorage.getClusterName(), brokerNodes).build()
+        );
+
+        Map<String, String> controllerPoolPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getControllerSelector());
+        Map<String, String> brokerPoolPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerPoolSelector());
+
+        LOGGER.info("Modifying Kafka CR to enable auto.create.topics.enable=false, expecting rolling update without CO getting stuck.");
+
+        KafkaUtils.updateSpecificConfiguration(testStorage.getNamespaceName(), testStorage.getClusterName(), "auto.create.topics.enable", "false");
+
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getControllerSelector(), controllerNodes, controllerPoolPodsSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getBrokerPoolSelector(), brokerNodes, brokerPoolPodsSnapshot);
+
+        // The cluster should remain Ready and CO should not be stuck with TimeoutException
+        KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName());
     }
 
     @BeforeAll
