@@ -21,6 +21,7 @@ Ensuring the correctness of Cruise Control behavior under different configuratio
 - [testCruiseControlIntraBrokerBalancing](../io.strimzi.systemtest.cruisecontrol.CruiseControlST.md)
 - [testDeployAndUnDeployCruiseControl](../io.strimzi.systemtest.cruisecontrol.CruiseControlConfigurationST.md)
 - [testCruiseControlRemoveDisksMode](../io.strimzi.systemtest.cruisecontrol.CruiseControlST.md)
+- [testCruiseControlMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)
 - [testCruiseControlReplicaMovementStrategy](../io.strimzi.systemtest.cruisecontrol.CruiseControlST.md)
 - [testCruiseControlLogChange](../io.strimzi.systemtest.log.LogSettingST.md)
 - [testCruiseControlBasicAPIRequestsWithSecurityDisabled](../io.strimzi.systemtest.cruisecontrol.CruiseControlApiST.md)
