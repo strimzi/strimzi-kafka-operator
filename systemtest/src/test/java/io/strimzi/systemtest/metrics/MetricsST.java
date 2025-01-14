@@ -69,7 +69,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -126,7 +125,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
         @Step(value = "Deploy Cluster Operator.", expected = "Cluster Operator is deployed."),
         @Step(value = "Deploy Kafka {@kafkaClusterFirstName} with metrics and CruiseControl configured.", expected = "Kafka @{kafkaClusterFirstName} is deployed."),
         @Step(value = "Deploy Kafka {@kafkaClusterSecondtName} with metrics configured.", expected = "Kafka @{kafkaClusterFirstName} is deployed."),
-        @Step(value = "Deploy scraper Pods in namespace {@namespaceFirst} and {@namespaceSecond} for collecting metrics from Strimzi pods.", expected = "Scraper Pods are deployed.")
+        @Step(value = "Deploy scraper Pods in namespace {@namespaceFirst} and {@namespaceSecond} for collecting metrics from Strimzi pods.", expected = "Scraper Pods are deployed."),
         @Step(value = "Create KafkaUsers and KafkaTopics.", expected = "All KafkaUsers and KafkaTopics are Ready."),
         @Step(value = "Setup NetworkPolicies to grant access to Operator Pods and KafkaExporter.", expected = "NetworkPolicies created."),
         @Step(value = "Create collectors for Cluster Operator, Kafka, and KafkaExporter.", expected = "Metrics collected in collectors structs.")
@@ -191,7 +190,7 @@ public class MetricsST extends AbstractST {
             @Step(value = "Check if specific metric is available in collected metrics from KafkaConnect Pods.", expected = "Metric is available with expected value."),
             @Step(value = "Collect current metrics from Cluster Operator Pod.", expected = "Cluster Operator metrics are collected."),
             @Step(value = "Check that CO metrics contain data about KafkaConnect and KafkaConnector in namespace {@namespaceFirst}.", expected = "CO metrics contain expected data."),
-            @Step(value = "Check that CO metrics don't contain data about KafkaConnect and KafkaConnector in namespace {@namespaceFirst}.", expected = "CO metrics don't contain expected data.")
+            @Step(value = "Check that CO metrics don't contain data about KafkaConnect and KafkaConnector in namespace {@namespaceFirst}.", expected = "CO metrics don't contain expected data."),
             @Step(value = "Check that CO metrics contain data about KafkaConnect state.", expected = "CO metrics contain expected data.")
         },
         labels = {
