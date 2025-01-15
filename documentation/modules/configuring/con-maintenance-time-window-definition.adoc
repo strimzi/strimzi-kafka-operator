@@ -7,7 +7,7 @@
 
 [role="_abstract"]
 Schedule Cluster Operator certificate renewals for Kafka clusters to minimize impact on client applications.
-Use time windows in conjunction with the xref:con-certificate-renewal-str[renewal periods of the CA certificates created by the Cluster Operator] (`Kafka.spec.clusterCa.renewalDays` and `Kafka.spec.clusterCa.renewalDays`).
+Use time windows in conjunction with the xref:con-certificate-renewal-str[renewal periods of the CA certificates created by the Cluster Operator] (`Kafka.spec.clusterCa.renewalDays` and `Kafka.spec.clientsCa.renewalDays`).
 
 Updates are usually triggered by changes to the `Kafka` resource by the user or through user tooling.
 Rolling restarts for certificate expiration may occur without `Kafka` resource changes.
