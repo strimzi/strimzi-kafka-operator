@@ -181,58 +181,6 @@ public class KafkaResources {
     }
 
     ////////
-    // ZooKeeper methods => still used in system tests
-    ////////
-
-    /**
-     * Returns the name of the ZooKeeper {@code StrimziPodSet} for a {@code Kafka} cluster of the given name.
-     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @return The name of the corresponding ZooKeeper {@code StrimziPodSet}.
-     */
-    public static String zookeeperComponentName(String clusterName) {
-        return clusterName + "-zookeeper";
-    }
-
-    /**
-     * Returns the name of the ZooKeeper {@code Pod} for a {@code Kafka} cluster of the given name.
-     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @param podNum The number of the ZooKeeper pod
-     * @return The name of the corresponding ZooKeeper {@code Pod}.
-     */
-    public static String zookeeperPodName(String clusterName, int podNum) {
-        return zookeeperComponentName(clusterName) + "-" + podNum;
-    }
-
-    /**
-     * Returns the name of the ZooKeeper metrics and log {@code ConfigMap} for a {@code Kafka} cluster of the given name.
-     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @return The name of the corresponding ZooKeeper metrics and log {@code ConfigMap}.
-     */
-    public static String zookeeperMetricsAndLogConfigMapName(String clusterName) {
-        return clusterName + "-zookeeper-config";
-    }
-
-    /**
-     * Returns the name of the ZooKeeper headless service name for a {@code Kafka} cluster of the given name.
-     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @return The name of the corresponding ZooKeeper headless service name.
-     */
-    public static String zookeeperHeadlessServiceName(String clusterName) {
-        return clusterName + "-zookeeper-nodes";
-    }
-
-    /**
-     * Returns the name of the ZooKeeper Network Policy.
-     *
-     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     *
-     * @return The name of the corresponding ZooKeeper Network Policy.
-     */
-    public static String zookeeperNetworkPolicyName(String clusterName) {
-        return clusterName + "-network-policy-zookeeper";
-    }
-
-    ////////
     // Entity Operator methods
     ////////
 

@@ -2114,7 +2114,6 @@ public class CaReconcilerTest {
         when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
 
         StrimziPodSetOperator spsOps = supplier.strimziPodSetOperator;
-        when(spsOps.getAsync(eq(NAMESPACE), eq(KafkaResources.zookeeperComponentName(NAME)))).thenReturn(Future.succeededFuture());
         StrimziPodSet controllerPodSet = new StrimziPodSetBuilder()
                 .withNewMetadata()
                     .withName(NAME + "-controller")
