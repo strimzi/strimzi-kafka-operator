@@ -186,6 +186,8 @@ public class Environment {
     public static final String KAFKA_TIERED_STORAGE_BASE_IMAGE_ENV = "KAFKA_TIERED_STORAGE_BASE_IMAGE";
     public static final String KANIKO_IMAGE_ENV = "KANIKO_IMAGE";
 
+    public static final String POSTGRES_IMAGE_ENV = "POSTGRES_IMAGE";
+
     /**
      * Defaults
      */
@@ -220,6 +222,8 @@ public class Environment {
 
     public static final String KAFKA_TIERED_STORAGE_BASE_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + STRIMZI_ORG_DEFAULT + "/kafka:latest-kafka-" + ST_KAFKA_VERSION_DEFAULT;
     public static final String KANIKO_IMAGE_DEFAULT = "gcr.io/kaniko-project/executor:v1.23.2";
+
+    public static final String POSTGRES_IMAGE_DEFAULT = "postgres:latest";
 
     /**
      * Set values
@@ -280,6 +284,8 @@ public class Environment {
 
     public static final String KAFKA_TIERED_STORAGE_BASE_IMAGE = getOrDefault(KAFKA_TIERED_STORAGE_BASE_IMAGE_ENV, KAFKA_TIERED_STORAGE_BASE_IMAGE_DEFAULT);
     public static final String KANIKO_IMAGE = getOrDefault(KANIKO_IMAGE_ENV, KANIKO_IMAGE_DEFAULT);
+
+    public static final String POSTGRES_IMAGE = getOrDefault(POSTGRES_IMAGE_ENV, POSTGRES_IMAGE_DEFAULT);
 
     private Environment() { }
 
