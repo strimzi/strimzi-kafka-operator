@@ -46,35 +46,7 @@ This procedure uses the example KSM deployment and configuration file.
 kubectl apply -f configmap.yaml
 kubectl apply -f ksm.yaml
 
-. Get the details of the KSM service.
-+
-[source,shell]
-----
-kubectl get service strimzi-kube-state-metrics
-----
-+
-For example:
-+
-[table,stripes=none]
-|===
-|NAME     |TYPE      |CLUSTER-IP    |PORT(S)
-
-|strimzi-kube-state-metrics  |ClusterIP |172.40.156.40 |8080/TCP
-|===
-+
-Note the port number for port forwarding.
-
-. Use `port-forward` to redirect the KSM metrics endpoint to `localhost:8080`:
-+
-[source,shell]
-----
-kubectl port-forward svc/strimzi-kube-state-metrics 8080:8080
-----
-
-. In a web browser, access the KSM metrics page using the URL `http://localhost:8080/metrics`.
-+
-The Prometheus endpoint page appears.
-All of these metrics also get scraped by Prometheus via the provided `ServiceMonitor` in order to act on in Prometheus.
+After deploying KSM, you can check that all of these metrics get scraped by Prometheus via the provided `ServiceMonitor` in order to act on in Prometheus.
 
 Please check the provided `PrometheusRule` resources for alerting on these metrics:
 
