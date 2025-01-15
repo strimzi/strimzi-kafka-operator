@@ -154,6 +154,7 @@ public class KafkaResources {
      *
      * @return The name of the corresponding Kafka Secret.
      */
+    @Deprecated // Kafka server certificates are now kept in per-node Secrets
     public static String kafkaSecretName(String clusterName) {
         return clusterName + "-kafka-brokers";
     }

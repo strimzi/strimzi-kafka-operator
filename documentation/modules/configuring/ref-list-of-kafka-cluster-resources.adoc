@@ -39,7 +39,7 @@ The following resources are created by the Cluster Operator in the Kubernetes cl
 `<kafka_cluster_name>-kafka-<listener_name>-bootstrap`:: Bootstrap route for clients connecting from outside the Kubernetes cluster. This resource is created only when an external listener is enabled and set to type `route`. The new route name will be used for all other external listeners.
 `<kafka_cluster_name>-kafka-<listener_name>-<pod_id>`:: Route for traffic from outside the Kubernetes cluster to individual pods. This resource is created only when an external listener is enabled and set to type `route`. The new route name will be used for all other external listeners.
 `<kafka_cluster_name>-kafka-config`:: ConfigMap containing the Kafka ancillary configuration, which is mounted as a volume by the broker pods when the `UseStrimziPodSets` feature gate is disabled.
-`<kafka_cluster_name>-kafka-brokers`:: Secret with Kafka broker keys.
+`<kafka_cluster_name>-<pool_name>-<pod_id>_`:: Secret with Kafka node public and private keys.
 `<kafka_cluster_name>-network-policy-kafka`:: Network policy managing access to the Kafka services.
 `strimzi-_namespace-name_-<kafka_cluster_name>-kafka-init`:: Cluster role binding used by the Kafka brokers.
 `<kafka_cluster_name>-jmx`:: Secret with JMX username and password used to secure the Kafka broker port. This resource is created only when JMX is enabled in Kafka.

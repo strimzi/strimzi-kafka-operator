@@ -108,7 +108,10 @@ import static java.util.Collections.singletonMap;
  */
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public class KafkaCluster extends AbstractModel implements SupportsMetrics, SupportsLogging, SupportsJmx {
-    protected static final String COMPONENT_TYPE = "kafka";
+    /**
+     * Component type used by Kubernetes labels
+     */
+    public static final String COMPONENT_TYPE = "kafka";
 
     protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
     private static final String ENV_VAR_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
@@ -1230,37 +1233,55 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
-     * Generates the private keys for the Kafka brokers (if needed) and the secret with them which contains both the
+     * Generates the private keys for the Kafka nodes (if needed) and the Secrets with them which contain both the
      * public and private keys.
      *
      * @param clusterCa                             The CA for cluster certificates
      * @param clientsCa                             The CA for clients certificates
-     * @param existingSecret                        The existing secret with Kafka certificates
+     * @param existingSecrets                       The existing secrets containing Kafka certificates
      * @param externalBootstrapDnsName              Map with bootstrap DNS names which should be added to the certificate
      * @param externalDnsNames                      Map with broker DNS names  which should be added to the certificate
      * @param isMaintenanceTimeWindowsSatisfied     Indicates whether we are in a maintenance window or not
      *
-     * @return  The generated Secret with broker certificates
+     * @return  The generated Secrets containing Kafka node certificates
      */
-    public Secret generateCertificatesSecret(ClusterCa clusterCa, ClientsCa clientsCa, Secret existingSecret, Set<String> externalBootstrapDnsName, Map<Integer, Set<String>> externalDnsNames, boolean isMaintenanceTimeWindowsSatisfied) {
+    public List<Secret> generateCertificatesSecrets(ClusterCa clusterCa, ClientsCa clientsCa, List<Secret> existingSecrets, Set<String> externalBootstrapDnsName, Map<Integer, Set<String>> externalDnsNames, boolean isMaintenanceTimeWindowsSatisfied) {
+        Map<String, Secret> existingSecretWithName = existingSecrets.stream().collect(Collectors.toMap(secret -> secret.getMetadata().getName(), secret -> secret));
         Set<NodeRef> nodes = nodes();
-        Map<String, CertAndKey> brokerCerts;
+        Map<String, CertAndKey> existingCerts = new HashMap<>();
+        for (NodeRef node : nodes) {
+            String podName = node.podName();
+            // Reuse existing certificate if it exists and the CA cert generation hasn't changed since they were generated
+            if (existingSecretWithName.get(podName) != null) {
+                if (clusterCa.hasCaCertGenerationChanged(existingSecretWithName.get(podName))) {
+                    LOGGER.debugCr(reconciliation, "Certificate for pod {}/{} has old cert generation", namespace, podName);
+                } else {
+                    existingCerts.put(podName, CertUtils.keyStoreCertAndKey(existingSecretWithName.get(podName), podName));
+                }
+            } else {
+                LOGGER.debugCr(reconciliation, "No existing certificate found for pod {}/{}", namespace, podName);
+            }
+        }
 
+        Map<String, CertAndKey> updatedCerts;
         try {
-            brokerCerts = clusterCa.generateBrokerCerts(namespace, cluster, CertUtils.extractCertsAndKeysFromSecret(existingSecret, nodes),
-                    nodes, externalBootstrapDnsName, externalDnsNames, isMaintenanceTimeWindowsSatisfied, clusterCa.hasCaCertGenerationChanged(existingSecret));
+            updatedCerts = clusterCa.generateBrokerCerts(namespace, cluster, existingCerts,
+                    nodes, externalBootstrapDnsName, externalDnsNames, isMaintenanceTimeWindowsSatisfied);
         } catch (IOException e) {
             LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
             throw new RuntimeException("Failed to prepare Kafka certificates", e);
         }
 
-        return ModelUtils.createSecret(KafkaResources.kafkaSecretName(cluster), namespace, labels, ownerReference,
-                CertUtils.buildSecretData(brokerCerts),
-                Map.ofEntries(
-                        clusterCa.caCertGenerationFullAnnotation(),
-                        clientsCa.caCertGenerationFullAnnotation()
-                ),
-                emptyMap());
+        return updatedCerts.entrySet()
+                .stream()
+                .map(entry -> ModelUtils.createSecret(entry.getKey(), namespace, labels, ownerReference,
+                        CertUtils.buildSecretData(entry.getKey(), entry.getValue()),
+                        Map.ofEntries(
+                                clusterCa.caCertGenerationFullAnnotation(),
+                                clientsCa.caCertGenerationFullAnnotation()
+                        ),
+                        emptyMap()))
+                .toList();
     }
 
     /**
@@ -1354,7 +1375,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
         volumeList.add(VolumeUtils.createSecretVolume(CLUSTER_CA_CERTS_VOLUME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
-        volumeList.add(VolumeUtils.createSecretVolume(BROKER_CERTS_VOLUME, KafkaResources.kafkaSecretName(cluster), isOpenShift));
+        volumeList.add(VolumeUtils.createSecretVolume(BROKER_CERTS_VOLUME, node.podName(), isOpenShift));
         volumeList.add(VolumeUtils.createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaResources.clientsCaCertificateSecretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, node.podName()));
         volumeList.add(VolumeUtils.createEmptyDirVolume("ready-files", "1Ki", "Memory"));
