@@ -32,7 +32,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: strimzi-kube-state-metrics
-    namespace: my-namespace
+    namespace: myproject
 ---
 apiVersion: v1
 kind: Service
