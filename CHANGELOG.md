@@ -6,6 +6,7 @@
 * Support for MirrorMaker 1 has been removed
 * Added support to configure `dnsPolicy` and `dnsConfig` using the `template` sections.
 * Store Kafka node certificates in separate Secrets, one Secret per pod.
+* Moved HTTP bridge configuration to the ConfigMap setup by the operator.
 
 ### Major changes, deprecations and removals
 
