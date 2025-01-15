@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.upgrade.kraft;
+package io.strimzi.systemtest.upgrade;
 
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.annotations.IsolatedTest;
@@ -11,9 +11,6 @@ import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.storage.TestStorage;
-import io.strimzi.systemtest.upgrade.BundleVersionModificationData;
-import io.strimzi.systemtest.upgrade.UpgradeKafkaVersion;
-import io.strimzi.systemtest.upgrade.VersionModificationDataLoader;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
@@ -93,16 +90,16 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
 
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), controllerSelector, 3, controllerSnapshot);
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), brokerSelector, 3, brokerSnapshot);
-        DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoSnapshot);
+        DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoSnapshot);
         checkAllComponentsImages(testStorage.getNamespaceName(), acrossUpgradeData);
 
         // Verify that Pods are stable
-        PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), clusterName);
+        PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), CLUSTER_NAME);
         // Verify upgrade
         verifyProcedure(testStorage.getNamespaceName(), acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), wasUTOUsedBefore);
 
-        String controllerPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(clusterName, CONTROLLER_NODE_NAME)).get(0).getMetadata().getName();
-        String brokerPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(clusterName, BROKER_NODE_NAME)).get(0).getMetadata().getName();
+        String controllerPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(CLUSTER_NAME, CONTROLLER_NODE_NAME)).get(0).getMetadata().getName();
+        String brokerPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(CLUSTER_NAME, BROKER_NODE_NAME)).get(0).getMetadata().getName();
 
         assertThat(KafkaUtils.getVersionFromKafkaPodLibs(testStorage.getNamespaceName(), controllerPodName), containsString(acrossUpgradeData.getProcedures().getVersion()));
         assertThat(KafkaUtils.getVersionFromKafkaPodLibs(testStorage.getNamespaceName(), brokerPodName), containsString(acrossUpgradeData.getProcedures().getVersion()));
@@ -137,7 +134,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         checkAllComponentsImages(testStorage.getNamespaceName(), acrossUpgradeData);
 
         // Verify that Pods are stable
-        PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), clusterName);
+        PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), CLUSTER_NAME);
 
         // Verify upgrade
         verifyProcedure(testStorage.getNamespaceName(), acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), wasUTOUsedBefore);
@@ -159,7 +156,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         // Wait till first upgrade finished
         controllerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), controllerSelector, 3, controllerPods);
         brokerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), brokerSelector, 3, brokerPods);
-        eoPods = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
+        eoPods = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1, eoPods);
 
         LOGGER.info("Rolling to new images has finished!");
         logPodImages(CO_NAMESPACE, coSelector);
@@ -170,7 +167,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
         checkAllComponentsImages(testStorage.getNamespaceName(), acrossUpgradeData);
 
         // Verify that Pods are stable
-        PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), clusterName);
+        PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), CLUSTER_NAME);
 
         // Verify upgrade
         verifyProcedure(testStorage.getNamespaceName(), acrossUpgradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), wasUTOUsedBefore);

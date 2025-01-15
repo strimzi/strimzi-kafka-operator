@@ -22,11 +22,6 @@ public interface TestTags {
     String REGRESSION = "regression";
 
     /**
-     * Tag for upgrade tests.
-     */
-    String UPGRADE = "upgrade";
-
-    /**
      * Tag for KRaft to KRaft tests.
      */
     String KRAFT_UPGRADE = "kraftupgrade";
@@ -155,11 +150,6 @@ public interface TestTags {
      * Tag for tests using Openshift Route
      */
     String ROUTE = "route";
-
-    /**
-     * Tag for tests that focus on migration from ZK to KRaft
-     */
-    String MIGRATION = "migration";
 
     /**
      * Tag for tests that focus on performance
