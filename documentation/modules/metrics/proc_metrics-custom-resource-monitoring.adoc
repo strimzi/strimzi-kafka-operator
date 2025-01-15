@@ -16,6 +16,19 @@ The example files include a configuration file for a KSM deployment
 
 * `examples/metrics/kube-state-metrics/ksm.yaml`
 
+NOTE: Update the namespace by replacing the example `my-namespace` with your own:
++
+On Linux, use:
++
+[source,shell,subs="+quotes,attributes+"]
+sed -E -i '/[[:space:]]\*namespace: [a-zA-Z0-9-]*$/s/namespace:[[:space:]]\*[a-zA-Z0-9-]*$/namespace: _my-namespace_/' examples/metrics/kube-state-metrics/ksm.yaml
++
+On MacOS, use:
++
+[source,shell,subs="+quotes,attributes+"]
+sed -i '' -e '/[[:space:]]\*namespace: [a-zA-Z0-9-]*$/s/namespace:[[:space:]]\*[a-zA-Z0-9-]*$/namespace: _my-namespace_/' examples/metrics/kube-state-metrics/ksm.yaml
++
+
 Strimzi also provides xref:ref-metrics-custom-resource-monitoring-{context}[example configuration ConfigMap for KSM].
 
 * `examples/metrics/kube-state-metrics/configmap.yaml`
