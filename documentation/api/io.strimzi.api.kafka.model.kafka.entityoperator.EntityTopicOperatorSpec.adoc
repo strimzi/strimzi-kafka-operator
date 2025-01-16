@@ -42,15 +42,12 @@ spec:
           logger.top.level: DEBUG # <2> 
           logger.toc.name: io.strimzi.operator.topic.TopicOperator # <3>
           logger.toc.level: TRACE # <4>
-          logger.clients.level: DEBUG # <5>
   # ...
 ----
 <1> Creates a logger for the `topic` package.
 <2> Sets the logging level for the `topic` package.
 <3> Creates a logger for the `TopicOperator` class.
 <4> Sets the logging level for the `TopicOperator` class.
-<5> Changes the logging level for the default `clients` logger. The `clients` logger is part of the logging configuration provided with Strimzi.
-By default, it is set to `INFO`.   
 
 NOTE: When investigating an issue with the operator, it's usually sufficient to change the `rootLogger` to `DEBUG` to get more detailed logs. 
 However, keep in mind that setting the log level to `DEBUG` may result in a large amount of log output and may have performance implications.
