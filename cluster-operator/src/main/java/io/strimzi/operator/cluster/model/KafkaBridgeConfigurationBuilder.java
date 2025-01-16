@@ -130,7 +130,7 @@ public class KafkaBridgeConfigurationBuilder {
      * @param tls   client TLS configuration
      * @return  the builder instance
      */
-    public KafkaBridgeConfigurationBuilder withTls(ClientTls tls/*, KafkaClientAuthentication authentication*/) {
+    public KafkaBridgeConfigurationBuilder withTls(ClientTls tls) {
         if (tls != null) {
             securityProtocol = "SSL";
 
