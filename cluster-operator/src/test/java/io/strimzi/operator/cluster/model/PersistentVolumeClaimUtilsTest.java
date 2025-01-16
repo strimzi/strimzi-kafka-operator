@@ -250,7 +250,7 @@ public class PersistentVolumeClaimUtilsTest {
                         .withId(0)
                         .withStorageClass("my-storage-class")
                         .withSize("100Gi")
-                        .withOverrides(new PersistentClaimStorageOverrideBuilder().withBroker(0).withStorageClass("special-storage-class").build())
+                        .withOverrides(new PersistentClaimStorageOverrideBuilder().withBroker(0).withStorageClass("special-storage-class").build()) // The override is set, but the test checks that it is ignored
                         .build())
                 .build();
 
@@ -268,7 +268,7 @@ public class PersistentVolumeClaimUtilsTest {
         assertThat(pvcs.get(0).getSpec().getAccessModes(), is(List.of("ReadWriteOnce")));
         assertThat(pvcs.get(0).getSpec().getSelector(), is(nullValue()));
         assertThat(pvcs.get(0).getSpec().getResources().getRequests(), is(Map.of("storage", new Quantity("100Gi", null))));
-        assertThat(pvcs.get(0).getSpec().getStorageClassName(), is("special-storage-class"));
+        assertThat(pvcs.get(0).getSpec().getStorageClassName(), is("my-storage-class"));
     }
 
     @ParallelTest
@@ -280,7 +280,7 @@ public class PersistentVolumeClaimUtilsTest {
                                 .withStorageClass("my-storage-class")
                                 .withSize("100Gi")
                                 .withDeleteClaim(false)
-                                .withOverrides(new PersistentClaimStorageOverrideBuilder().withBroker(0).withStorageClass("special-storage-class").build())
+                                .withOverrides(new PersistentClaimStorageOverrideBuilder().withBroker(0).withStorageClass("special-storage-class").build()) // The override is set, but the test checks that it is ignored
                                 .build(),
                         new PersistentClaimStorageBuilder()
                                 .withId(1)
@@ -306,7 +306,7 @@ public class PersistentVolumeClaimUtilsTest {
             assertThat(pvcs.get(i).getSpec().getAccessModes(), is(List.of("ReadWriteOnce")));
             assertThat(pvcs.get(i).getSpec().getSelector(), is(nullValue()));
             assertThat(pvcs.get(i).getSpec().getResources().getRequests(), is(Map.of("storage", new Quantity("100Gi", null))));
-            assertThat(pvcs.get(i).getSpec().getStorageClassName(), is(i == 0 ? "special-storage-class" : "my-storage-class"));
+            assertThat(pvcs.get(i).getSpec().getStorageClassName(), is("my-storage-class"));
         }
 
         for (int i = 3; i < 6; i++)  {
