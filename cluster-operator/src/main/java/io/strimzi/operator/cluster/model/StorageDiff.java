@@ -111,7 +111,7 @@ public class StorageDiff extends AbstractJsonDiff {
                 String pathValue = d.get("path").asText();
 
                 if (IGNORABLE_PATHS.matcher(pathValue).matches()) {
-                    LOGGER.infoCr(reconciliation, "Ignoring Storage {}diff {}", volumeDesc, d);
+                    LOGGER.debugCr(reconciliation, "Ignoring Storage {}diff {}", volumeDesc, d);
                     continue;
                 }
 
@@ -129,10 +129,10 @@ public class StorageDiff extends AbstractJsonDiff {
                     }
                 }
 
-                if (LOGGER.isInfoEnabled()) {
-                    LOGGER.infoCr(reconciliation, "Storage {}differs: {}", volumeDesc, d);
-                    LOGGER.infoCr(reconciliation, "Current Storage {}path {} has value {}", volumeDesc, pathValue, lookupPath(source, pathValue));
-                    LOGGER.infoCr(reconciliation, "Desired Storage {}path {} has value {}", volumeDesc, pathValue, lookupPath(target, pathValue));
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debugCr(reconciliation, "Storage {}differs: {}", volumeDesc, d);
+                    LOGGER.debugCr(reconciliation, "Current Storage {}path {} has value {}", volumeDesc, pathValue, lookupPath(source, pathValue));
+                    LOGGER.debugCr(reconciliation, "Desired Storage {}path {} has value {}", volumeDesc, pathValue, lookupPath(target, pathValue));
                 }
 
                 num++;
