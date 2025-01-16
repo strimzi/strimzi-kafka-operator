@@ -56,7 +56,6 @@ public class KafkaBridgeConfigurationBuilder {
         printHeader();
         configureBridgeId(bridgeId);
         configureBootstrapServers(bootstrapServers);
-        configureConfigProviders();
     }
 
     /**
@@ -82,10 +81,20 @@ public class KafkaBridgeConfigurationBuilder {
     }
 
     /**
+     * Configure the Kafka security protocol to be used
+     * This internal method is used when the configuration is build, because the security protocol depends on
+     * TLS and SASL authentication configurations and if they are set
+     */
+    private void configureSecurityProtocol() {
+        printSectionHeader("Kafka Security protocol");
+        writer.println("kafka.security.protocol=" + securityProtocol);
+    }
+
+    /**
      * Configures the Kafka config providers used for loading some parameters from env vars and files
      * (i.e. user and password for authentication)
      */
-    private void configureConfigProviders() {
+    public KafkaBridgeConfigurationBuilder withConfigProviders() {
         printSectionHeader("Config providers");
         writer.println("kafka.config.providers=strimzienv,strimzifile,strimzidir");
         writer.println("kafka.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider");
@@ -95,16 +104,7 @@ public class KafkaBridgeConfigurationBuilder {
         writer.println("kafka.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider");
         writer.println("kafka.config.providers.strimzidir.param.allowed.paths=/opt/strimzi");
         writer.println();
-    }
-
-    /**
-     * Configure the Kafka security protocol to be used
-     * This internal method is used when the configuration is build, because the security protocol depends on
-     * TLS and SASL authentication configurations and if they are set
-     */
-    private void configureSecurityProtocol() {
-        printSectionHeader("Kafka Security protocol");
-        writer.println("kafka.security.protocol=" + securityProtocol);
+        return this;
     }
 
     /**

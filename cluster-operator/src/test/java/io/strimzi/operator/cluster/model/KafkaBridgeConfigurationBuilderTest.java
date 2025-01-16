@@ -30,6 +30,7 @@ import io.strimzi.test.annotations.ParallelTest;
 
 import java.util.Map;
 
+import static io.strimzi.operator.cluster.TestUtils.IsEquivalent.isEquivalent;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -44,9 +45,31 @@ public class KafkaBridgeConfigurationBuilderTest {
     public void testBaseConfiguration()  {
         // test base/default bridge configuration
         String configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS).build();
-        assertThat(configuration, containsString("bridge.id=my-bridge"));
-        assertThat(configuration, containsString("kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092"));
-        assertThat(configuration, containsString("kafka.security.protocol=PLAINTEXT"));
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=PLAINTEXT"
+        ));
+    }
+
+    @ParallelTest
+    public void testConfigProviders() {
+        // test config providers setting
+        String configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+                .withConfigProviders()
+                .build();
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=PLAINTEXT",
+                "kafka.config.providers=strimzienv,strimzifile,strimzidir",
+                "kafka.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+                "kafka.config.providers.strimzienv.param.allowlist.pattern=.*",
+                "kafka.config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
+                "kafka.config.providers.strimzifile.param.allowed.paths=/opt/strimzi",
+                "kafka.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
+                "kafka.config.providers.strimzidir.param.allowed.paths=/opt/strimzi"
+        ));
     }
 
     @ParallelTest
@@ -59,7 +82,12 @@ public class KafkaBridgeConfigurationBuilderTest {
         configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withTracing(new OpenTelemetryTracing())
                 .build();
-        assertThat(configuration, containsString("bridge.tracing=opentelemetry"));
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=PLAINTEXT",
+                "bridge.tracing=opentelemetry"
+        ));
     }
 
     @ParallelTest
@@ -75,11 +103,14 @@ public class KafkaBridgeConfigurationBuilderTest {
         String configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withTls(clientTls)
                 .build();
-        assertThat(configuration, containsString("kafka.ssl.truststore.location=/tmp/strimzi/bridge.truststore.p12"));
-        assertThat(configuration, containsString("kafka.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}"));
-        assertThat(configuration, containsString("kafka.ssl.truststore.type=PKCS12"));
-        assertThat(configuration, not(containsString("kafka.ssl.keystore.")));
-        assertThat(configuration, containsString("kafka.security.protocol=SSL"));
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=SSL",
+                "kafka.ssl.truststore.location=/tmp/strimzi/bridge.truststore.p12",
+                "kafka.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
+                "kafka.ssl.truststore.type=PKCS12"
+        ));
 
         // test TLS with mutual authentication (mTLS, server and client authentication)
         KafkaClientAuthenticationTls tlsAuth = new KafkaClientAuthenticationTlsBuilder()
@@ -93,13 +124,17 @@ public class KafkaBridgeConfigurationBuilderTest {
                 .withTls(clientTls)
                 .withAuthentication(tlsAuth)
                 .build();
-        assertThat(configuration, containsString("kafka.ssl.truststore.location=/tmp/strimzi/bridge.truststore.p12"));
-        assertThat(configuration, containsString("kafka.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}"));
-        assertThat(configuration, containsString("kafka.ssl.truststore.type=PKCS12"));
-        assertThat(configuration, containsString("kafka.ssl.keystore.location=/tmp/strimzi/bridge.keystore.p12"));
-        assertThat(configuration, containsString("kafka.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}"));
-        assertThat(configuration, containsString("kafka.ssl.keystore.type=PKCS12"));
-        assertThat(configuration, containsString("kafka.security.protocol=SSL"));
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=SSL",
+                "kafka.ssl.truststore.location=/tmp/strimzi/bridge.truststore.p12",
+                "kafka.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
+                "kafka.ssl.truststore.type=PKCS12",
+                "kafka.ssl.keystore.location=/tmp/strimzi/bridge.keystore.p12",
+                "kafka.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
+                "kafka.ssl.keystore.type=PKCS12"
+        ));
     }
 
     @ParallelTest
@@ -114,9 +149,13 @@ public class KafkaBridgeConfigurationBuilderTest {
         String configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withAuthentication(authPlain)
                 .build();
-        assertThat(configuration, containsString("kafka.sasl.mechanism=PLAIN"));
-        assertThat(configuration, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=${strimzienv:KAFKA_BRIDGE_SASL_USERNAME} password=${strimzidir:/opt/strimzi/bridge-password/my-auth-secret:my-password-key};"));
-        assertThat(configuration, containsString("kafka.security.protocol=SASL_PLAINTEXT"));
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=SASL_PLAINTEXT",
+                "kafka.sasl.mechanism=PLAIN",
+                "kafka.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=${strimzienv:KAFKA_BRIDGE_SASL_USERNAME} password=${strimzidir:/opt/strimzi/bridge-password/my-auth-secret:my-password-key};"
+        ));
 
         // test plain authentication but with TLS as well (server authentication only, encryption)
         ClientTls clientTls = new ClientTlsBuilder()
@@ -129,9 +168,16 @@ public class KafkaBridgeConfigurationBuilderTest {
                 .withTls(clientTls)
                 .withAuthentication(authPlain)
                 .build();
-        assertThat(configuration, containsString("kafka.sasl.mechanism=PLAIN"));
-        assertThat(configuration, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=${strimzienv:KAFKA_BRIDGE_SASL_USERNAME} password=${strimzidir:/opt/strimzi/bridge-password/my-auth-secret:my-password-key};"));
-        assertThat(configuration, containsString("kafka.security.protocol=SASL_SSL"));
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=SASL_SSL",
+                "kafka.sasl.mechanism=PLAIN",
+                "kafka.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=${strimzienv:KAFKA_BRIDGE_SASL_USERNAME} password=${strimzidir:/opt/strimzi/bridge-password/my-auth-secret:my-password-key};",
+                "kafka.ssl.truststore.location=/tmp/strimzi/bridge.truststore.p12",
+                "kafka.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
+                "kafka.ssl.truststore.type=PKCS12"
+                ));
 
         // test scram-sha-256 authentication
         KafkaClientAuthenticationScramSha256 authScramSha256 = new KafkaClientAuthenticationScramSha256Builder()
@@ -143,9 +189,13 @@ public class KafkaBridgeConfigurationBuilderTest {
         configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withAuthentication(authScramSha256)
                 .build();
-        assertThat(configuration, containsString("kafka.sasl.mechanism=SCRAM-SHA-256"));
-        assertThat(configuration, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=${strimzienv:KAFKA_BRIDGE_SASL_USERNAME} password=${strimzidir:/opt/strimzi/bridge-password/my-auth-secret:my-password-key};"));
-        assertThat(configuration, containsString("kafka.security.protocol=SASL_PLAINTEXT"));
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=SASL_PLAINTEXT",
+                "kafka.sasl.mechanism=SCRAM-SHA-256",
+                "kafka.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=${strimzienv:KAFKA_BRIDGE_SASL_USERNAME} password=${strimzidir:/opt/strimzi/bridge-password/my-auth-secret:my-password-key};"
+        ));
 
         // test scram-sha-512 authentication
         KafkaClientAuthenticationScramSha512 authScramSha512 = new KafkaClientAuthenticationScramSha512Builder()
@@ -157,9 +207,13 @@ public class KafkaBridgeConfigurationBuilderTest {
         configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withAuthentication(authScramSha512)
                 .build();
-        assertThat(configuration, containsString("kafka.sasl.mechanism=SCRAM-SHA-512"));
-        assertThat(configuration, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=${strimzienv:KAFKA_BRIDGE_SASL_USERNAME} password=${strimzidir:/opt/strimzi/bridge-password/my-auth-secret:my-password-key};"));
-        assertThat(configuration, containsString("kafka.security.protocol=SASL_PLAINTEXT"));
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=SASL_PLAINTEXT",
+                "kafka.sasl.mechanism=SCRAM-SHA-512",
+                "kafka.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=${strimzienv:KAFKA_BRIDGE_SASL_USERNAME} password=${strimzidir:/opt/strimzi/bridge-password/my-auth-secret:my-password-key};"
+        ));
 
         // test oauth authentication
         KafkaClientAuthenticationOAuth authOAuth = new KafkaClientAuthenticationOAuthBuilder()
@@ -190,16 +244,20 @@ public class KafkaBridgeConfigurationBuilderTest {
         configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withAuthentication(authOAuth)
                 .build();
-        assertThat(configuration, containsString("kafka.sasl.mechanism=OAUTHBEARER"));
-        assertThat(configuration, containsString("kafka.sasl.jaas.config=" +
-                "org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ${strimzienv:KAFKA_BRIDGE_OAUTH_CONFIG}" +
-                " oauth.client.secret=${strimzienv:KAFKA_BRIDGE_OAUTH_CLIENT_SECRET}" +
-                " oauth.refresh.token=${strimzienv:KAFKA_BRIDGE_OAUTH_REFRESH_TOKEN}" +
-                " oauth.access.token=${strimzienv:KAFKA_BRIDGE_OAUTH_ACCESS_TOKEN}" +
-                " oauth.password.grant.password=${strimzienv:KAFKA_BRIDGE_OAUTH_PASSWORD_GRANT_PASSWORD}" +
-                " oauth.ssl.truststore.location=\"/tmp/strimzi/oauth.truststore.p12\" oauth.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD} oauth.ssl.truststore.type=\"PKCS12\""));
-        assertThat(configuration, containsString("kafka.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
-        assertThat(configuration, containsString("kafka.security.protocol=SASL_PLAINTEXT"));
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=SASL_PLAINTEXT",
+                "kafka.sasl.mechanism=OAUTHBEARER",
+                "kafka.sasl.jaas.config=" +
+                        "org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ${strimzienv:KAFKA_BRIDGE_OAUTH_CONFIG}" +
+                        " oauth.client.secret=${strimzienv:KAFKA_BRIDGE_OAUTH_CLIENT_SECRET}" +
+                        " oauth.refresh.token=${strimzienv:KAFKA_BRIDGE_OAUTH_REFRESH_TOKEN}" +
+                        " oauth.access.token=${strimzienv:KAFKA_BRIDGE_OAUTH_ACCESS_TOKEN}" +
+                        " oauth.password.grant.password=${strimzienv:KAFKA_BRIDGE_OAUTH_PASSWORD_GRANT_PASSWORD}" +
+                        " oauth.ssl.truststore.location=\"/tmp/strimzi/oauth.truststore.p12\" oauth.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD} oauth.ssl.truststore.type=\"PKCS12\";",
+                "kafka.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"
+        ));
     }
 
     @ParallelTest
@@ -222,10 +280,15 @@ public class KafkaBridgeConfigurationBuilderTest {
         configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withKafkaProducer(kafkaBridgeProducer)
                 .build();
-        assertThat(configuration, containsString("kafka.producer.acks=1"));
-        assertThat(configuration, containsString("kafka.producer.linger.ms=100"));
-        assertThat(configuration, containsString("kafka.producer.key.serializer=my-producer-key-serializer"));
-        assertThat(configuration, containsString("kafka.producer.value.serializer=my-producer-value-serializer"));
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=PLAINTEXT",
+                "kafka.producer.acks=1",
+                "kafka.producer.linger.ms=100",
+                "kafka.producer.key.serializer=my-producer-key-serializer",
+                "kafka.producer.value.serializer=my-producer-value-serializer"
+        ));
     }
 
     @ParallelTest
@@ -247,9 +310,15 @@ public class KafkaBridgeConfigurationBuilderTest {
         configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withKafkaConsumer(kafkaBridgeConsumer)
                 .build();
-        assertThat(configuration, containsString("kafka.consumer.auto.offset.reset=earliest"));
-        assertThat(configuration, containsString("kafka.consumer.key.deserializer=my-consumer-key-deserializer"));
-        assertThat(configuration, containsString("kafka.consumer.value.deserializer=my-consumer-value-deserializer"));
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=PLAINTEXT",
+                "kafka.consumer.auto.offset.reset=earliest",
+                "kafka.consumer.key.deserializer=my-consumer-key-deserializer",
+                "kafka.consumer.value.deserializer=my-consumer-value-deserializer",
+                "kafka.consumer.client.rack=${strimzidir:/opt/strimzi/init:rack.id}"
+        ));
     }
 
     @ParallelTest
@@ -270,8 +339,13 @@ public class KafkaBridgeConfigurationBuilderTest {
         configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withKafkaAdminClient(kafkaBridgeAdminClient)
                 .build();
-        assertThat(configuration, containsString("kafka.admin.client.id=my-admin-client"));
-        assertThat(configuration, containsString("kafka.admin.bootstrap.controllers=my-bootstrap-controllers"));
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=PLAINTEXT",
+                "kafka.admin.client.id=my-admin-client",
+                "kafka.admin.bootstrap.controllers=my-bootstrap-controllers"
+        ));
     }
 
     @ParallelTest
@@ -283,12 +357,17 @@ public class KafkaBridgeConfigurationBuilderTest {
         String configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withHttp(http, null, null)
                 .build();
-        assertThat(configuration, containsString("http.host=0.0.0.0"));
-        assertThat(configuration, containsString("http.port=8080"));
-        assertThat(configuration, containsString("http.cors.enabled=false"));
-        assertThat(configuration, containsString("http.consumer.enabled=true"));
-        assertThat(configuration, containsString("http.timeoutSeconds=-1"));
-        assertThat(configuration, containsString("http.producer.enabled=true"));
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=PLAINTEXT",
+                "http.host=0.0.0.0",
+                "http.port=8080",
+                "http.cors.enabled=false",
+                "http.consumer.enabled=true",
+                "http.timeoutSeconds=-1",
+                "http.producer.enabled=true"
+        ));
 
         // test different consumer timeout
         KafkaBridgeConsumerSpec kafkaBridgeConsumer = new KafkaBridgeConsumerSpecBuilder()
@@ -297,8 +376,17 @@ public class KafkaBridgeConfigurationBuilderTest {
         configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withHttp(http, null, kafkaBridgeConsumer)
                 .build();
-        assertThat(configuration, containsString("http.consumer.enabled=true"));
-        assertThat(configuration, containsString("http.timeoutSeconds=10000"));
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=PLAINTEXT",
+                "http.host=0.0.0.0",
+                "http.port=8080",
+                "http.cors.enabled=false",
+                "http.consumer.enabled=true",
+                "http.timeoutSeconds=10000",
+                "http.producer.enabled=true"
+        ));
 
         // test disabling HTTP part of the consumer and producer
         kafkaBridgeConsumer = new KafkaBridgeConsumerSpecBuilder()
@@ -310,8 +398,17 @@ public class KafkaBridgeConfigurationBuilderTest {
         configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withHttp(http, kafkaBridgeProducer, kafkaBridgeConsumer)
                 .build();
-        assertThat(configuration, containsString("http.consumer.enabled=false"));
-        assertThat(configuration, containsString("http.producer.enabled=false"));
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=PLAINTEXT",
+                "http.host=0.0.0.0",
+                "http.port=8080",
+                "http.cors.enabled=false",
+                "http.consumer.enabled=false",
+                "http.timeoutSeconds=-1",
+                "http.producer.enabled=false"
+        ));
 
         // test different HTTP port
         http = new KafkaBridgeHttpConfigBuilder()
@@ -320,8 +417,17 @@ public class KafkaBridgeConfigurationBuilderTest {
         configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withHttp(http, null, null)
                 .build();
-        assertThat(configuration, containsString("http.host=0.0.0.0"));
-        assertThat(configuration, containsString("http.port=8081"));
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=PLAINTEXT",
+                "http.host=0.0.0.0",
+                "http.port=8081",
+                "http.cors.enabled=false",
+                "http.consumer.enabled=true",
+                "http.timeoutSeconds=-1",
+                "http.producer.enabled=true"
+        ));
 
         // test CORS configuration
         http = new KafkaBridgeHttpConfigBuilder()
@@ -333,8 +439,18 @@ public class KafkaBridgeConfigurationBuilderTest {
         configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withHttp(http, null, null)
                 .build();
-        assertThat(configuration, containsString("http.cors.enabled=true"));
-        assertThat(configuration, containsString("http.cors.allowedOrigins=https://strimzi.io,https://cncf.io"));
-        assertThat(configuration, containsString("http.cors.allowedMethods=GET,POST,PUT,DELETE,PATCH"));
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=PLAINTEXT",
+                "http.host=0.0.0.0",
+                "http.port=8080",
+                "http.cors.enabled=true",
+                "http.cors.allowedOrigins=https://strimzi.io,https://cncf.io",
+                "http.cors.allowedMethods=GET,POST,PUT,DELETE,PATCH",
+                "http.consumer.enabled=true",
+                "http.timeoutSeconds=-1",
+                "http.producer.enabled=true"
+        ));
     }
 }

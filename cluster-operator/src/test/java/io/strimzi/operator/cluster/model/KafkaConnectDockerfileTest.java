@@ -21,7 +21,7 @@ import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
-import static io.strimzi.operator.cluster.model.KafkaBrokerConfigurationBuilderTest.IsEquivalent.isEquivalent;
+import static io.strimzi.operator.cluster.TestUtils.IsEquivalent.isEquivalent;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
