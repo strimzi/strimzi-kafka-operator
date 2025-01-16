@@ -17,4 +17,5 @@ public interface TestDocsLabels {
     String DYNAMIC_CONFIGURATION = "dynamic-configuration";
     String LOGGING = "logging";
     String MIRROR_MAKER_2 = "mirror-maker-2";
+    String METRICS = "metrics";
 }

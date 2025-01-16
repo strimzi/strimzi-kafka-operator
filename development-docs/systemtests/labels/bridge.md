@@ -10,6 +10,7 @@ These tests ensure that the bridge behaves as expected under various configurati
 **Tests:**
 - [testReceiveSimpleMessageTlsScramSha](../io.strimzi.systemtest.bridge.HttpBridgeScramShaST.md)
 - [testBridgeLogSetting](../io.strimzi.systemtest.log.LogSettingST.md)
+- [testKafkaBridgeMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)
 - [testSendSimpleMessageTls](../io.strimzi.systemtest.bridge.HttpBridgeTlsST.md)
 - [testCustomAndUpdatedValues](../io.strimzi.systemtest.bridge.HttpBridgeST.md)
 - [testScaleBridgeSubresource](../io.strimzi.systemtest.bridge.HttpBridgeST.md)
