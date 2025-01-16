@@ -93,6 +93,8 @@ public class KafkaBridgeConfigurationBuilder {
     /**
      * Configures the Kafka config providers used for loading some parameters from env vars and files
      * (i.e. user and password for authentication)
+     *
+     * @return  the builder instance
      */
     public KafkaBridgeConfigurationBuilder withConfigProviders() {
         printSectionHeader("Config providers");
