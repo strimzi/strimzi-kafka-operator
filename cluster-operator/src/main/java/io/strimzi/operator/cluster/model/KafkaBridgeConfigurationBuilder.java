@@ -29,7 +29,7 @@ import java.io.StringWriter;
  */
 public class KafkaBridgeConfigurationBuilder {
 
-    // Names of environment variables expanded through config providers inside the bridge node
+    // placeholders expanded through config providers inside the bridge node
     private static final String PLACEHOLDER_CERT_STORE_PASSWORD = "${strimzienv:CERTS_STORE_PASSWORD}";
     private static final String PLACEHOLDER_SASL_USERNAME = "${strimzienv:KAFKA_BRIDGE_SASL_USERNAME}";
     private static final String PASSWORD_VOLUME_MOUNT = "/opt/strimzi/bridge-password/";
@@ -133,6 +133,7 @@ public class KafkaBridgeConfigurationBuilder {
     public KafkaBridgeConfigurationBuilder withTls(ClientTls tls/*, KafkaClientAuthentication authentication*/) {
         if (tls != null) {
             securityProtocol = "SSL";
+
             if (tls.getTrustedCertificates() != null && !tls.getTrustedCertificates().isEmpty()) {
                 printSectionHeader("TLS/SSL");
                 writer.println("kafka.ssl.truststore.location=/tmp/strimzi/bridge.truststore.p12");
@@ -162,36 +163,45 @@ public class KafkaBridgeConfigurationBuilder {
                 securityProtocol = securityProtocol.equals("SSL") ? "SASL_SSL" : "SASL_PLAINTEXT";
                 String saslMechanism = null;
                 StringBuilder jaasConfig = new StringBuilder();
+
                 if (authentication instanceof KafkaClientAuthenticationPlain passwordAuth) {
                     saslMechanism = "PLAIN";
                     String passwordFilePath = String.format(PLACEHOLDER_SASL_PASSWORD_FILE_TEMPLATE, PASSWORD_VOLUME_MOUNT, passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getPassword());
                     jaasConfig.append("org.apache.kafka.common.security.plain.PlainLoginModule required username=" + PLACEHOLDER_SASL_USERNAME + " password=" + passwordFilePath + ";");
                 } else if (authentication instanceof KafkaClientAuthenticationScram scramAuth) {
+
                     if (scramAuth.getType().equals(KafkaClientAuthenticationScramSha256.TYPE_SCRAM_SHA_256)) {
                         saslMechanism = "SCRAM-SHA-256";
                     } else if (scramAuth.getType().equals(KafkaClientAuthenticationScramSha512.TYPE_SCRAM_SHA_512)) {
                         saslMechanism = "SCRAM-SHA-512";
                     }
+
                     String passwordFilePath = String.format(PLACEHOLDER_SASL_PASSWORD_FILE_TEMPLATE, PASSWORD_VOLUME_MOUNT, scramAuth.getPasswordSecret().getSecretName(), scramAuth.getPasswordSecret().getPassword());
                     jaasConfig.append("org.apache.kafka.common.security.scram.ScramLoginModule required username=" + PLACEHOLDER_SASL_USERNAME + " password=" + passwordFilePath + ";");
                 } else if (authentication instanceof KafkaClientAuthenticationOAuth oauth) {
                     saslMechanism = "OAUTHBEARER";
                     jaasConfig.append("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " + PLACEHOLDER_OAUTH_CONFIG);
+
                     if (oauth.getClientSecret() != null) {
                         jaasConfig.append(" oauth.client.secret=" + PLACEHOLDER_OAUTH_CLIENT_SECRET);
                     }
+
                     if (oauth.getRefreshToken() != null) {
                         jaasConfig.append(" oauth.refresh.token=" + PLACEHOLDER_OAUTH_REFRESH_TOKEN);
                     }
+
                     if (oauth.getAccessToken() != null) {
                         jaasConfig.append(" oauth.access.token=" + PLACEHOLDER_OAUTH_ACCESS_TOKEN);
                     }
+
                     if (oauth.getPasswordSecret() != null) {
                         jaasConfig.append(" oauth.password.grant.password=" + PLACEHOLDER_OAUTH_PASSWORD_GRANT_PASSWORD);
                     }
+
                     if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
                         jaasConfig.append(" oauth.ssl.truststore.location=\"/tmp/strimzi/oauth.truststore.p12\" oauth.ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD + " oauth.ssl.truststore.type=\"PKCS12\"");
                     }
+
                     jaasConfig.append(";");
                     writer.println("kafka.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler");
                 }
@@ -264,9 +274,11 @@ public class KafkaBridgeConfigurationBuilder {
         writer.println("http.port=" + (http != null ? http.getPort() : KafkaBridgeHttpConfig.HTTP_DEFAULT_PORT));
         if (http != null && http.getCors() != null) {
             writer.println("http.cors.enabled=true");
+
             if (http.getCors().getAllowedOrigins() != null) {
                 writer.println("http.cors.allowedOrigins=" + String.join(",", http.getCors().getAllowedOrigins()));
             }
+
             if (http.getCors().getAllowedMethods() != null) {
                 writer.println("http.cors.allowedMethods=" + String.join(",", http.getCors().getAllowedMethods()));
             }
