@@ -54,31 +54,17 @@ public class CruiseControlClientImpl implements CruiseControlClient {
     private final ExecutorService httpClientExecutor;
     private HttpClient httpClient;
     private final ObjectMapper objectMapper;
-    
-    private CruiseControlClientImpl(Config config) {
+
+    /**
+     * Create a new instance.
+     * 
+     * @param config Cruise Control configuration.
+     */
+    public CruiseControlClientImpl(Config config) {
         this.config = config;
         this.httpClientExecutor = Executors.newCachedThreadPool();
         this.httpClient = buildHttpClient();
         this.objectMapper = new ObjectMapper();
-    }
-    
-    static CruiseControlClient createInternal(Config config) {
-        if (config.serverHostname() == null || config.serverHostname().isBlank()) {
-            throw new IllegalArgumentException("Hostname is not set");
-        }
-        if (config.serverPort() <= 0) {
-            throw new IllegalArgumentException("Port number is invalid");
-        }
-        if (config.sslEnabled() && (config.sslCertificate() == null || config.sslCertificate().length == 0)) {
-            throw new IllegalArgumentException("SSL certificate is not set");
-        }
-        if (config.authEnabled() && (config.authUsername() == null || config.authUsername().isBlank())) {
-            throw new IllegalArgumentException("Authentication username is not set");
-        }
-        if (config.authEnabled() && (config.authPassword() == null || config.authPassword().isBlank())) {
-            throw new IllegalArgumentException("Authentication password is not set");
-        }
-        return new CruiseControlClientImpl(config);
     }
 
     @Override
