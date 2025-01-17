@@ -2035,8 +2035,7 @@ class TopicControllerIT implements TestSeparator {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false", "num.partitions", "4", "default.replication.factor", "1"));
 
         // given
-        String ns = createNamespace(NAMESPACE);
-
+        var ns = createNamespace(NAMESPACE);
         var config = TopicOperatorConfig.buildFromMap(Map.of(
             TopicOperatorConfig.NAMESPACE.key(), ns,
             TopicOperatorConfig.RESOURCE_LABELS.key(), Labels.fromMap(SELECTOR).toSelectorString(),

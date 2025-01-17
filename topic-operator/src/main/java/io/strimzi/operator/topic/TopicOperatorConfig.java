@@ -15,10 +15,15 @@ import io.strimzi.operator.common.config.ConfigParameterParser;
 import io.strimzi.operator.common.featuregates.FeatureGates;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties;
+import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.config.SslConfigs;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -127,7 +132,7 @@ public class TopicOperatorConfig {
         LOGGER.infoOp("TopicOperator configuration is {}", topicOperatorConfig);
         return topicOperatorConfig;
     }
-
+    
     private static Set<String> keyNames() {
         return Collections.unmodifiableSet(CONFIG_VALUES.keySet());
     }
@@ -416,6 +421,34 @@ public class TopicOperatorConfig {
 
         kafkaClientProps.put(SaslConfigs.SASL_MECHANISM, saslMechanism);
         kafkaClientProps.put(SaslConfigs.SASL_JAAS_CONFIG, jaasConfig);
+    }
+
+    /**
+     * @return Cruise Control client configuration.
+     */
+    public CruiseControlClient.Config cruiseControlClientConfig() {
+        var sslCertificate = cruiseControlSslEnabled() ? getFileContent(cruiseControlCrtFilePath()) : null;
+        var apiUsername = cruiseControlAuthEnabled() ? new String(getFileContent(cruiseControlApiUserPath()), StandardCharsets.UTF_8) : null;
+        var apiPassword = cruiseControlAuthEnabled() ? new String(getFileContent(cruiseControlApiPassPath()), StandardCharsets.UTF_8) : null;
+        
+        return new CruiseControlClient.Config(
+            cruiseControlHostname(),
+            cruiseControlPort(),
+            cruiseControlRackEnabled(),
+            cruiseControlSslEnabled(),
+            sslCertificate,
+            cruiseControlAuthEnabled(),
+            apiUsername,
+            apiPassword
+        );
+    }
+
+    private static byte[] getFileContent(String filePath) {
+        try {
+            return Files.readAllBytes(Path.of(filePath));
+        } catch (IOException ioe) {
+            throw new IllegalArgumentException(String.format("File not found: %s", filePath), ioe);
+        }
     }
 
     @Override
