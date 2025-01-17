@@ -109,10 +109,10 @@ public class RollingUpdateUtils {
     }
 
     /**
-     *  Method to wait when Kafka or Zookeeper starts rolling update by rolling first Pod
+     *  Method to wait when Kafka starts rolling update by rolling first Pod
      * @param namespaceName     Namespace name
      * @param selector          {@link LabelSelector} for the Pods we want to check
-     * @param snapshot          Snapshot of Kafka or Zookeeper Pods before the rolling update
+     * @param snapshot          Snapshot of Kafka Pods before the rolling update
      * @return The new Snapshot of actually present Pods after the first successful roll
      */
     public static Map<String, String> waitTillComponentHasStartedRolling(String namespaceName, LabelSelector selector, Map<String, String> snapshot) {
@@ -212,7 +212,7 @@ public class RollingUpdateUtils {
         return PodUtils.podSnapshot(namespaceName, selector);
     }
 
-    public static void waitForNoKafkaAndZKRollingUpdate(String namespaceName, String clusterName, Map<String, String> brokerPods) {
+    public static void waitForNoKafkaRollingUpdate(String namespaceName, String clusterName, Map<String, String> brokerPods) {
         int[] i = {0};
 
         LabelSelector brokerSelector = KafkaResource.getLabelSelector(clusterName, StrimziPodSetResource.getBrokerComponentName(clusterName));

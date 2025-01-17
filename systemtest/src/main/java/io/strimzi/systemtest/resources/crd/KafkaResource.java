@@ -16,7 +16,6 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.KafkaStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
@@ -133,10 +132,7 @@ public class KafkaResource implements ResourceType<Kafka> {
     public static LabelSelector getLabelSelector(String clusterName, String componentName) {
         Map<String, String> matchLabels = getCommonKafkaMatchLabels(clusterName);
 
-        if (Environment.isKafkaNodePoolsEnabled()
-            && !componentName.contains("zookeeper")
-            && !componentName.contains("entity-operator")
-        ) {
+        if (!componentName.contains("entity-operator")) {
             matchLabels.put(Labels.STRIMZI_CONTROLLER_NAME_LABEL, componentName);
         } else {
             matchLabels.put(Labels.STRIMZI_NAME_LABEL, componentName);
@@ -187,25 +183,15 @@ public class KafkaResource implements ResourceType<Kafka> {
     }
 
     public static String getStrimziPodSetName(String clusterName, String nodePoolName) {
-        if (Environment.isKafkaNodePoolsEnabled() && nodePoolName == null) {
-            return String.join("-", clusterName, KafkaNodePoolResource.getBrokerPoolName(clusterName));
-        } else if (Environment.isKafkaNodePoolsEnabled()) {
-            return String.join("-", clusterName, nodePoolName);
-        } else {
-            return KafkaResources.kafkaComponentName(clusterName);
-        }
+        return String.join("-", clusterName, Objects.requireNonNullElseGet(nodePoolName, () -> KafkaNodePoolResource.getBrokerPoolName(clusterName)));
     }
 
     public static String getKafkaPodName(String clusterName, String nodePoolName, int podNum) {
-        if (Environment.isKafkaNodePoolsEnabled()) {
-            return String.join("-",
-                clusterName,
-                Objects.requireNonNullElseGet(nodePoolName, () -> KafkaNodePoolResource.getBrokerPoolName(clusterName)),
-                String.valueOf(podNum)
-            );
-        }
-
-        return KafkaResources.kafkaPodName(clusterName, podNum);
+        return String.join("-",
+            clusterName,
+            Objects.requireNonNullElseGet(nodePoolName, () -> KafkaNodePoolResource.getBrokerPoolName(clusterName)),
+            String.valueOf(podNum)
+        );
     }
 
     public static int getPodNumFromPodName(String componentName, String podName) {

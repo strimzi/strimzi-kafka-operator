@@ -57,7 +57,6 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.FORBIDDEN_PREFIXES;
 import static io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS;
-import static io.strimzi.api.kafka.model.kafka.KafkaResources.kafkaComponentName;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -151,8 +150,10 @@ public class KafkaUtils {
 
     @SuppressWarnings("unchecked")
     public static void waitForClusterStability(String namespaceName, String clusterName) {
-        LabelSelector brokerSelector = KafkaResource.getLabelSelector(clusterName, kafkaComponentName(clusterName));
+        LabelSelector brokerSelector = KafkaResource.getLabelSelector(clusterName, StrimziPodSetResource.getBrokerComponentName(clusterName));
+        LabelSelector controllerSelector = KafkaResource.getLabelSelector(clusterName, StrimziPodSetResource.getControllerComponentName(clusterName));
 
+        Map<String, String>[] controllerPods = new Map[1];
         Map<String, String>[] brokerPods = new Map[1];
         Map<String, String>[] eoPods = new Map[1];
 
@@ -161,22 +162,29 @@ public class KafkaUtils {
         int[] count = {0};
 
         brokerPods[0] = PodUtils.podSnapshot(namespaceName, brokerSelector);
+        controllerPods[0] = PodUtils.podSnapshot(namespaceName, controllerSelector);
         eoPods[0] = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
 
         TestUtils.waitFor("Cluster to be stable and ready", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
-            Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(namespaceName, brokerSelector);
+            Map<String, String> brokerSnapshot = PodUtils.podSnapshot(namespaceName, brokerSelector);
+            Map<String, String> controllerSnapshot = PodUtils.podSnapshot(namespaceName, controllerSelector);
             Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
-            boolean kafkaSameAsLast = kafkaSnapshot.equals(brokerPods[0]);
+
+            boolean brokersSameAsLast = brokerSnapshot.equals(brokerPods[0]);
+            boolean controllersSameAsLast = controllerSnapshot.equals(controllerPods[0]);
             boolean eoSameAsLast = eoSnapshot.equals(eoPods[0]);
 
-            if (!kafkaSameAsLast) {
-                LOGGER.warn("Kafka cluster not stable");
+            if (!brokersSameAsLast) {
+                LOGGER.warn("Broker Pods are not stable");
+            }
+            if (!controllersSameAsLast) {
+                LOGGER.warn("Controller Pods are not stable");
             }
             if (!eoSameAsLast) {
                 LOGGER.warn("EO not stable");
             }
 
-            if (kafkaSameAsLast && eoSameAsLast) {
+            if (brokersSameAsLast && controllersSameAsLast && eoSameAsLast) {
                 int c = count[0]++;
                 LOGGER.debug("All stable after: {} polls", c);
                 if (c > 60) {
@@ -186,7 +194,8 @@ public class KafkaUtils {
                 return false;
             }
 
-            brokerPods[0] = kafkaSnapshot;
+            brokerPods[0] = brokerSnapshot;
+            controllerPods[0] = controllerSnapshot;
             eoPods[0] = eoSnapshot;
 
             count[0] = 0;
@@ -372,9 +381,10 @@ public class KafkaUtils {
         LOGGER.info("Waiting for deletion of Kafka: {}/{}", namespaceName, kafkaClusterName);
         TestUtils.waitFor("deletion of Kafka: " + namespaceName + "/" + kafkaClusterName, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
             () -> {
-                if (KafkaResource.kafkaClient().inNamespace(namespaceName).withName(kafkaClusterName).get() == null
-                        && StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(KafkaResources.kafkaComponentName(kafkaClusterName)).get() == null
-                        && kubeClient(namespaceName).getDeployment(namespaceName, KafkaResources.entityOperatorDeploymentName(kafkaClusterName)) == null) {
+                if (KafkaResource.kafkaClient().inNamespace(namespaceName).withName(kafkaClusterName).get() == null &&
+                    StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(StrimziPodSetResource.getControllerComponentName(kafkaClusterName)).get() == null  &&
+                    StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(StrimziPodSetResource.getBrokerComponentName(kafkaClusterName)).get() == null  &&
+                    kubeClient(namespaceName).getDeployment(namespaceName, KafkaResources.entityOperatorDeploymentName(kafkaClusterName)) == null) {
                     return true;
                 } else {
                     cmdKubeClient(namespaceName).deleteByName(Kafka.RESOURCE_KIND, kafkaClusterName);

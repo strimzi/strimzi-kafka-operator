@@ -30,16 +30,14 @@ public class StatefulSetUtils {
      * @param expectPods The number of pods expected.
      */
     public static void waitForAllStatefulSetPodsReady(String namespaceName, String statefulSetName, int expectPods, long timeout) {
-        String resourceName = statefulSetName.contains("-kafka") ? statefulSetName.replace("-kafka", "") : statefulSetName.replace("-zookeeper", "");
-
         LOGGER.info("Waiting for StatefulSet: {}/{} to be ready", namespaceName, statefulSetName);
         TestUtils.waitFor("readiness of StatefulSet: " + namespaceName + "/" + statefulSetName, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, timeout,
             () -> kubeClient(namespaceName).getStatefulSetStatus(namespaceName, statefulSetName),
-            () -> ResourceManager.logCurrentResourceStatus(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(resourceName).get()));
+            () -> ResourceManager.logCurrentResourceStatus(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(statefulSetName).get()));
 
         LOGGER.info("Waiting for {} Pod(s) of StatefulSet: {}/{} to be ready", expectPods, namespaceName, statefulSetName);
         PodUtils.waitForPodsReady(namespaceName, kubeClient(namespaceName).getStatefulSetSelectors(namespaceName, statefulSetName), expectPods, true,
-            () -> ResourceManager.logCurrentResourceStatus(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(resourceName).get()));
+            () -> ResourceManager.logCurrentResourceStatus(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(statefulSetName).get()));
         LOGGER.info("StatefulSet: {}/{} is ready", namespaceName, statefulSetName);
     }
 

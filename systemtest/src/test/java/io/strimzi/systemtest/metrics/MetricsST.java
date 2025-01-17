@@ -37,7 +37,6 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.logs.CollectorElement;
 import io.strimzi.systemtest.performance.gather.collectors.BaseMetricsCollector;
 import io.strimzi.systemtest.resources.NamespaceManager;
-import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -679,18 +678,16 @@ public class MetricsST extends AbstractST {
 
         // create resources without wait to deploy them simultaneously
         resourceManager.createResourceWithWait(
-            NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPool(namespaceFirst, KafkaNodePoolResource.getBrokerPoolName(kafkaClusterFirstName), kafkaClusterFirstName, 3).build(),
-                KafkaNodePoolTemplates.controllerPool(namespaceFirst, KafkaNodePoolResource.getControllerPoolName(kafkaClusterFirstName), kafkaClusterFirstName, 3).build(),
-                KafkaNodePoolTemplates.brokerPool(namespaceSecond, KafkaNodePoolResource.getBrokerPoolName(kafkaClusterSecondName), kafkaClusterSecondName, 1).build(),
-                KafkaNodePoolTemplates.controllerPool(namespaceSecond, KafkaNodePoolResource.getControllerPoolName(kafkaClusterSecondName), kafkaClusterSecondName, 1).build()
-            )
+            KafkaNodePoolTemplates.brokerPool(namespaceFirst, KafkaNodePoolResource.getBrokerPoolName(kafkaClusterFirstName), kafkaClusterFirstName, 3).build(),
+            KafkaNodePoolTemplates.controllerPool(namespaceFirst, KafkaNodePoolResource.getControllerPoolName(kafkaClusterFirstName), kafkaClusterFirstName, 3).build(),
+            KafkaNodePoolTemplates.brokerPool(namespaceSecond, KafkaNodePoolResource.getBrokerPoolName(kafkaClusterSecondName), kafkaClusterSecondName, 1).build(),
+            KafkaNodePoolTemplates.controllerPool(namespaceSecond, KafkaNodePoolResource.getControllerPoolName(kafkaClusterSecondName), kafkaClusterSecondName, 1).build()
         );
         resourceManager.createResourceWithoutWait(
             KafkaTemplates.kafkaMetricsConfigMap(namespaceFirst, kafkaClusterFirstName),
             KafkaTemplates.cruiseControlMetricsConfigMap(namespaceFirst, kafkaClusterFirstName),
             // Kafka with CruiseControl and metrics
-            KafkaTemplates.kafkaWithMetricsAndCruiseControlWithMetrics(namespaceFirst, kafkaClusterFirstName, 3, 3)
+            KafkaTemplates.kafkaWithMetricsAndCruiseControlWithMetrics(namespaceFirst, kafkaClusterFirstName, 3)
                 .editOrNewSpec()
                     .editEntityOperator()
                         .editTopicOperator()
@@ -703,7 +700,7 @@ public class MetricsST extends AbstractST {
                 .endSpec()
                 .build(),
             KafkaTemplates.kafkaMetricsConfigMap(namespaceSecond, kafkaClusterSecondName),
-            KafkaTemplates.kafkaWithMetrics(namespaceSecond, kafkaClusterSecondName, 1, 1).build(),
+            KafkaTemplates.kafkaWithMetrics(namespaceSecond, kafkaClusterSecondName, 1).build(),
             ScraperTemplates.scraperPod(TestConstants.CO_NAMESPACE, coScraperName).build(),
             ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, testSuiteScraperName).build(),
             ScraperTemplates.scraperPod(namespaceFirst, scraperName).build(),

@@ -15,7 +15,6 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
-import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -104,12 +103,10 @@ public class OpaIntegrationST extends AbstractST {
         cmdKubeClient(Environment.TEST_SUITE_NAMESPACE).apply(FileUtils.updateNamespaceOfYamlFile(Environment.TEST_SUITE_NAMESPACE, TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml"));
 
         resourceManager.createResourceWithWait(
-            NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPool(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getBrokerPoolName(CLUSTER_NAME), CLUSTER_NAME, 3).build(),
-                KafkaNodePoolTemplates.controllerPool(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getControllerPoolName(CLUSTER_NAME), CLUSTER_NAME, 1).build()
-            )
+            KafkaNodePoolTemplates.brokerPool(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getBrokerPoolName(CLUSTER_NAME), CLUSTER_NAME, 3).build(),
+            KafkaNodePoolTemplates.controllerPool(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getControllerPoolName(CLUSTER_NAME), CLUSTER_NAME, 1).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(Environment.TEST_SUITE_NAMESPACE, CLUSTER_NAME, 3, 1)
+        resourceManager.createResourceWithWait(KafkaTemplates.kafka(Environment.TEST_SUITE_NAMESPACE, CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
                     .withNewKafkaAuthorizationOpa()

@@ -134,7 +134,7 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
         if (KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(CLUSTER_NAME).get() == null) {
             LOGGER.info("Deploying initial Kafka version {} with metadataVersion={}", initialVersion.version(), initMetadataVersion);
 
-            KafkaBuilder kafka = KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), CLUSTER_NAME, controllerReplicas, brokerReplicas)
+            KafkaBuilder kafka = KafkaTemplates.kafka(testStorage.getNamespaceName(), CLUSTER_NAME, brokerReplicas)
                 .editMetadata()
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")

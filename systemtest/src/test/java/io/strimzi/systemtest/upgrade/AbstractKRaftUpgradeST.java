@@ -30,7 +30,6 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
@@ -128,9 +127,6 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         setupEnvAndUpgradeClusterOperator(clusterOperatorNamespaceName, testStorage, upgradeDowngradeData, upgradeKafkaVersion);
         deployKafkaConnectAndKafkaConnectorWithWaitForReadiness(testStorage, upgradeDowngradeData, upgradeKafkaVersion);
 
-        // Check if UTO is used before changing the CO -> used for check for KafkaTopics
-        boolean wasUTOUsedBefore = StUtils.isUnidirectionalTopicOperatorUsed(testStorage.getNamespaceName(), eoSelector);
-
         final KafkaClients clients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
             .withNamespaceName(testStorage.getNamespaceName())
             .withUsername(USER_NAME)
@@ -180,7 +176,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), CLUSTER_NAME);
 
         // Verify upgrade
-        verifyProcedure(testStorage.getNamespaceName(), upgradeDowngradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName(), wasUTOUsedBefore);
+        verifyProcedure(testStorage.getNamespaceName(), upgradeDowngradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName());
     }
 
     protected void setupEnvAndUpgradeClusterOperator(String clusterOperatorNamespaceName, TestStorage testStorage, BundleVersionModificationData upgradeData, UpgradeKafkaVersion upgradeKafkaVersion) throws IOException {
@@ -275,7 +271,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                 resourceManager.createResourceWithWait(
                     KafkaNodePoolTemplates.controllerPoolPersistentStorage(componentsNamespaceName, CONTROLLER_NODE_NAME, CLUSTER_NAME, 3).build(),
                     KafkaNodePoolTemplates.brokerPoolPersistentStorage(componentsNamespaceName, BROKER_NODE_NAME, CLUSTER_NAME, 3).build(),
-                    KafkaTemplates.kafkaPersistentKRaft(componentsNamespaceName, CLUSTER_NAME, 3)
+                    KafkaTemplates.kafka(componentsNamespaceName, CLUSTER_NAME, 3)
                         .editMetadata()
                             .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
                             .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
@@ -639,15 +635,13 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         return ReadWriteUtils.readFile(kafkaTopicYaml).replace(initialName, newName);
     }
     
-    protected void verifyProcedure(String componentsNamespaceNames, BundleVersionModificationData upgradeData, String producerName, String consumerName,  boolean wasUTOUsedBefore) {
+    protected void verifyProcedure(String componentsNamespaceNames, BundleVersionModificationData upgradeData, String producerName, String consumerName) {
 
         if (upgradeData.getAdditionalTopics() != null) {
-            boolean isUTOUsed = StUtils.isUnidirectionalTopicOperatorUsed(componentsNamespaceNames, eoSelector);
-
             // Check that topics weren't deleted/duplicated during upgrade procedures
             String listedTopics = cmdKubeClient(componentsNamespaceNames).getResources(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL));
             int additionalTopics = upgradeData.getAdditionalTopics();
-            assertThat("KafkaTopic list doesn't have expected size", Long.valueOf(listedTopics.lines().count() - 1).intValue(), greaterThanOrEqualTo(getExpectedTopicCount(isUTOUsed, wasUTOUsedBefore) + additionalTopics));
+            assertThat("KafkaTopic list doesn't have expected size", Long.valueOf(listedTopics.lines().count() - 1).intValue(), greaterThanOrEqualTo(UPGRADE_TOPIC_COUNT + additionalTopics));
             assertThat("KafkaTopic " + TOPIC_NAME + " is not in expected Topic list",
                 listedTopics.contains(TOPIC_NAME), is(true));
             for (int x = 0; x < UPGRADE_TOPIC_COUNT; x++) {
@@ -716,14 +710,6 @@ public class AbstractKRaftUpgradeST extends AbstractST {
 
     protected void cleanUpKafkaTopics(String componentsNamespaceName) {
         if (CrdUtils.isCrdPresent(KafkaTopic.RESOURCE_PLURAL, KafkaTopic.RESOURCE_GROUP)) {
-            List<KafkaTopic> topics = KafkaTopicResource.kafkaTopicClient().inNamespace(componentsNamespaceName).list().getItems();
-            boolean finalizersAreSet = topics.stream().anyMatch(kafkaTopic -> kafkaTopic.getFinalizers() != null);
-
-            // in case that we are upgrading/downgrading from UTO to BTO, we have to set finalizers on topics to null before deleting them
-            if (!StUtils.isUnidirectionalTopicOperatorUsed(componentsNamespaceName, eoSelector) && finalizersAreSet) {
-                KafkaTopicUtils.setFinalizersInAllTopicsToNull(componentsNamespaceName);
-            }
-
             // delete all topics created in test
             cmdKubeClient(componentsNamespaceName).deleteAllByResource(KafkaTopic.RESOURCE_KIND);
             KafkaTopicUtils.waitForTopicWithPrefixDeletion(componentsNamespaceName, TOPIC_NAME);
