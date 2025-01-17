@@ -86,8 +86,10 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                         Map<String, Object> t = OBJECT_MAPPER.convertValue(json, TREE_TYPE);
                         LOGGER.debugCr(reconciliation, "Got {} response to PUT request to {}: {}", statusCode, path, t);
                         return CompletableFuture.completedFuture(t);
+                    } else if (statusCode == 409) {
+                        return withBackoff(reconciliation, new BackOff(200L, 2, 10), connectorName, Collections.singleton(409),
+                                () -> createOrUpdatePutRequest(reconciliation, host, port, connectorName, configJson), "create/update");
                     } else {
-                        // TODO Handle 409 (Conflict) indicating a rebalance in progress (https://github.com/strimzi/strimzi-kafka-operator/issues/10933)
                         LOGGER.debugCr(reconciliation, "Got {} response to PUT request to {}", statusCode, path);
                         return CompletableFuture.failedFuture(new ConnectRestException(response, tryToExtractErrorMessage(reconciliation, response.body())));
                     }
@@ -137,7 +139,6 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                         LOGGER.debugCr(reconciliation, "Got {} response to GET request to {}: {}", statusCode, path, json.asText());
                         return CompletableFuture.completedFuture(OBJECT_MAPPER.convertValue(json, type));
                     } else {
-                        // TODO Handle 409 (Conflict) indicating a rebalance in progress (https://github.com/strimzi/strimzi-kafka-operator/issues/10933)
                         LOGGER.debugCr(reconciliation, "Got {} response to GET request to {}", statusCode, path);
                         return CompletableFuture.failedFuture(new ConnectRestException(response, tryToExtractErrorMessage(reconciliation, response.body())));
                     }
@@ -179,8 +180,10 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                         LOGGER.debugCr(reconciliation, "Connector was deleted. Waiting for status deletion!");
                         return withBackoff(reconciliation, new BackOff(200L, 2, 10), connectorName, Collections.singleton(200),
                                 () -> status(reconciliation, host, port, connectorName, Collections.singleton(404)), "status").thenApply(r -> null);
+                    } else if (statusCode == 409) {
+                        return withBackoff(reconciliation, new BackOff(200L, 2, 10), connectorName, Collections.singleton(409),
+                                () -> delete(reconciliation, host, port, connectorName), "delete").thenApply(r -> null);
                     } else {
-                        // TODO Handle 409 (Conflict) indicating a rebalance in progress (https://github.com/strimzi/strimzi-kafka-operator/issues/10933)
                         LOGGER.debugCr(reconciliation, "Got {} response to PUT request to {}", statusCode, path);
                         return CompletableFuture.failedFuture(new ConnectRestException(response, tryToExtractErrorMessage(reconciliation, response.body())));
                     }
