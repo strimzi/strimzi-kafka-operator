@@ -7,6 +7,7 @@
 * Support for storage class overrides has been removed
 * Added support to configure `dnsPolicy` and `dnsConfig` using the `template` sections.
 * Store Kafka node certificates in separate Secrets, one Secret per pod.
+* Allow configuring `ssl.principal.mapping.rules` and custom trusted CAs in Kafka brokers with `type: custom` authentication
 
 ### Major changes, deprecations and removals
 

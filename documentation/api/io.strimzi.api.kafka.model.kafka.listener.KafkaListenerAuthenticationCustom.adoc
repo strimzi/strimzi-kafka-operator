@@ -27,7 +27,7 @@ spec:
             oauthbearer.sasl.jaas.config: |
               org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ;
           secrets:
-            - name: example
+            - secretName: example
 ----
 
 A protocol map is generated that uses the `sasl` and `tls` values to determine which protocol to map to the listener.
@@ -40,7 +40,37 @@ A protocol map is generated that uses the `sasl` and `tls` values to determine w
 Secrets are mounted to `/opt/kafka/custom-authn-secrets/custom-listener-<listener_name>-<port>/<secret_name>` in the Kafka broker nodes' containers.
 For example, the mounted secret (`example`) in the example configuration would be located at `/opt/kafka/custom-authn-secrets/custom-listener-oauth-bespoke-9093/example`.
 
+= Configuring customized TLS Client Authentication
+
+You can also use the `custom` authentication to also configure customized TLS Client Authentication
+That allows you to configure options not allowed with `type: tls` authentication.
+For example a custom truststore with multiple trusted CAs or options such as `ssl.principal.mapping.rules`.
+
+.Example custom TLS Client Authentication configuration
+[source,yaml,subs="attributes+"]
+----
+spec:
+  kafka:
+    listeners:
+      - name: tls
+        port: 9093
+        tls: true
+        type: internal
+        authentication:
+          type: custom
+          sasl: false
+          listenerConfig:
+            ssl.client.auth: required
+            ssl.principal.mapping.rules: RULE:^CN=(.*?),(.*)$/$1@my-cluster.com/
+            ssl.truststore.location: /opt/kafka/custom-authn-secrets/custom-listener-tls-9093/custom-truststore/ca.crt
+            ssl.truststore.type: PEM
+          secrets:
+            - key: ca.crt
+              secretName: custom-truststore
+----
+
 = Setting a custom principal builder
+
 You can set a custom principal builder in the Kafka cluster configuration.
 However, the principal builder is subject to the following requirements:
 
