@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -103,6 +104,16 @@ public class SetupKeycloak {
 
     private static void deployPostgres(String namespaceName) {
         LOGGER.info("Deploying Postgres into Namespace: {}", namespaceName);
+
+        try {
+            final String postgresYaml = Files.readString(Paths.get(POSTGRES_FILE_PATH)).replace(
+                "${POSTGRES_IMAGE}", Environment.POSTGRES_IMAGE
+            );
+            Files.writeString(Paths.get(POSTGRES_FILE_PATH), postgresYaml);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to update the Postgres deployment YAML", e);
+        }
+
         cmdKubeClient(namespaceName).apply(POSTGRES_FILE_PATH);
 
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, "postgres", 1);

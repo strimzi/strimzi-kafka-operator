@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: postgres:latest
+          image: ${POSTGRES_IMAGE}
           envFrom:
             - configMapRef:
                 name: postgres-config
