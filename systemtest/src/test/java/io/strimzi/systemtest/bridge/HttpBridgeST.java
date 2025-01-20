@@ -48,6 +48,8 @@ import org.junit.jupiter.api.Tag;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -59,6 +61,7 @@ import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 
@@ -165,6 +168,118 @@ class HttpBridgeST extends AbstractST {
         resourceManager.createResourceWithWait(kafkaClients.producerStrimzi());
 
         ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
+    }
+
+    @ParallelTest
+    @TestDoc(
+        description = @Desc("Test that validates the creation, update, and verification of a Kafka Bridge with specific initial and updated configurations."),
+        steps = {
+            @Step(value = "Create a Kafka Bridge resource with initial configuration.", expected = "Kafka Bridge is created and deployed with the specified initial configuration."),
+            @Step(value = "Remove an environment variable that is in use.", expected = "Environment variable TEST_ENV_1 is removed from the initial configuration."),
+            @Step(value = "Verify initial probe values and environment variables.", expected = "The probe values and environment variables match the initial configuration."),
+            @Step(value = "Update Kafka Bridge resource with new configuration.", expected = "Kafka Bridge is updated and redeployed with the new configuration."),
+            @Step(value = "Verify updated probe values and environment variables.", expected = "The probe values and environment variables match the updated configuration."),
+            @Step(value = "Verify Kafka Bridge configurations for producer and consumer.", expected = "Producer and consumer configurations match the updated settings.")
+        },
+        labels = {
+            @Label(TestDocsLabels.BRIDGE)
+        }
+    )
+    void testCustomAndUpdatedValues() {
+
+        String bridgeName = "custom-bridge";
+        String usedVariable = "KAFKA_BRIDGE_PRODUCER_CONFIG";
+        LinkedHashMap<String, String> envVarGeneral = new LinkedHashMap<>();
+        envVarGeneral.put("TEST_ENV_1", "test.env.one");
+        envVarGeneral.put("TEST_ENV_2", "test.env.two");
+        envVarGeneral.put(usedVariable, "test.value");
+
+        LinkedHashMap<String, String> envVarUpdated = new LinkedHashMap<>();
+        envVarUpdated.put("TEST_ENV_2", "updated.test.env.two");
+        envVarUpdated.put("TEST_ENV_3", "test.env.three");
+
+        Map<String, Object> producerConfig = new HashMap<>();
+        producerConfig.put("acks", "1");
+
+        Map<String, Object> consumerConfig = new HashMap<>();
+        consumerConfig.put("auto.offset.reset", "earliest");
+
+        int initialDelaySeconds = 30;
+        int timeoutSeconds = 10;
+        int updatedInitialDelaySeconds = 31;
+        int updatedTimeoutSeconds = 11;
+        int periodSeconds = 10;
+        int successThreshold = 1;
+        int failureThreshold = 3;
+        int updatedPeriodSeconds = 5;
+        int updatedFailureThreshold = 1;
+
+        resourceManager.createResourceWithWait(KafkaBridgeTemplates.kafkaBridge(Environment.TEST_SUITE_NAMESPACE, bridgeName, KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()), 1)
+            .editSpec()
+                .withNewTemplate()
+                    .withNewBridgeContainer()
+                        .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
+                    .endBridgeContainer()
+                .endTemplate()
+                .withNewProducer()
+                .endProducer()
+                .withNewConsumer()
+                .endConsumer()
+                .withNewReadinessProbe()
+                    .withInitialDelaySeconds(initialDelaySeconds)
+                    .withTimeoutSeconds(timeoutSeconds)
+                    .withPeriodSeconds(periodSeconds)
+                    .withSuccessThreshold(successThreshold)
+                    .withFailureThreshold(failureThreshold)
+                .endReadinessProbe()
+                .withNewLivenessProbe()
+                    .withInitialDelaySeconds(initialDelaySeconds)
+                    .withTimeoutSeconds(timeoutSeconds)
+                    .withPeriodSeconds(periodSeconds)
+                    .withSuccessThreshold(successThreshold)
+                    .withFailureThreshold(failureThreshold)
+                .endLivenessProbe()
+            .endSpec()
+            .build());
+
+        Map<String, String> bridgeSnapshot = DeploymentUtils.depSnapshot(Environment.TEST_SUITE_NAMESPACE, KafkaBridgeResources.componentName(bridgeName));
+
+        // Remove variable which is already in use
+        envVarGeneral.remove(usedVariable);
+        LOGGER.info("Verifying values before update");
+        VerificationUtils.verifyReadinessAndLivenessProbes(Environment.TEST_SUITE_NAMESPACE, KafkaBridgeResources.componentName(bridgeName), KafkaBridgeResources.componentName(bridgeName), initialDelaySeconds, timeoutSeconds,
+                periodSeconds, successThreshold, failureThreshold);
+        VerificationUtils.verifyContainerEnvVariables(Environment.TEST_SUITE_NAMESPACE, KafkaBridgeResources.componentName(bridgeName), KafkaBridgeResources.componentName(bridgeName), envVarGeneral);
+
+        LOGGER.info("Check if actual env variable {} has different value than {}", usedVariable, "test.value");
+        assertThat(
+                StUtils.checkEnvVarInPod(Environment.TEST_SUITE_NAMESPACE, kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE, suiteTestStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND).get(0).getMetadata().getName(), usedVariable),
+                is(not("test.value"))
+        );
+
+        LOGGER.info("Updating values in Bridge container");
+        KafkaBridgeResource.replaceBridgeResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, bridgeName, kb -> {
+            kb.getSpec().getTemplate().getBridgeContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
+            kb.getSpec().getProducer().setConfig(producerConfig);
+            kb.getSpec().getConsumer().setConfig(consumerConfig);
+            kb.getSpec().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            kb.getSpec().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+            kb.getSpec().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            kb.getSpec().getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+            kb.getSpec().getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            kb.getSpec().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
+            kb.getSpec().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
+            kb.getSpec().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
+        });
+
+        DeploymentUtils.waitTillDepHasRolled(Environment.TEST_SUITE_NAMESPACE, KafkaBridgeResources.componentName(bridgeName), 1, bridgeSnapshot);
+
+        LOGGER.info("Verifying values after update");
+        VerificationUtils.verifyReadinessAndLivenessProbes(Environment.TEST_SUITE_NAMESPACE, KafkaBridgeResources.componentName(bridgeName), KafkaBridgeResources.componentName(bridgeName), updatedInitialDelaySeconds, updatedTimeoutSeconds,
+                updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
+        VerificationUtils.verifyContainerEnvVariables(Environment.TEST_SUITE_NAMESPACE, KafkaBridgeResources.componentName(bridgeName), KafkaBridgeResources.componentName(bridgeName), envVarUpdated);
+        VerificationUtils.verifyComponentConfiguration(Environment.TEST_SUITE_NAMESPACE, KafkaBridgeResources.componentName(bridgeName), KafkaBridgeResources.componentName(bridgeName), "KAFKA_BRIDGE_PRODUCER_CONFIG", producerConfig);
+        VerificationUtils.verifyComponentConfiguration(Environment.TEST_SUITE_NAMESPACE, KafkaBridgeResources.componentName(bridgeName), KafkaBridgeResources.componentName(bridgeName), "KAFKA_BRIDGE_CONSUMER_CONFIG", consumerConfig);
     }
 
     @ParallelTest

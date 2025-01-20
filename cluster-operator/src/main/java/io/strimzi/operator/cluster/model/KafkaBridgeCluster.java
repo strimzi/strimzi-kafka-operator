@@ -87,7 +87,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     // Kafka Bridge configuration keys (EnvVariables)
     protected static final String ENV_VAR_PREFIX = "KAFKA_BRIDGE_";
     protected static final String ENV_VAR_KAFKA_BRIDGE_METRICS_ENABLED = "KAFKA_BRIDGE_METRICS_ENABLED";
-    protected static final String ENV_VAR_KAFKA_BRIDGE_TLS = "KAFKA_BRIDGE_TLS";
     protected static final String ENV_VAR_KAFKA_BRIDGE_TRUSTED_CERTS = "KAFKA_BRIDGE_TRUSTED_CERTS";
     protected static final String OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/strimzi/oauth-certs/";
 

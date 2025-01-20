@@ -34,6 +34,26 @@
 * [bridge](labels/bridge.md)
 
 
+## testCustomAndUpdatedValues
+
+**Description:** Test that validates the creation, update, and verification of a Kafka Bridge with specific initial and updated configurations.
+
+**Steps:**
+
+| Step | Action | Result |
+| - | - | - |
+| 1. | Create a Kafka Bridge resource with initial configuration. | Kafka Bridge is created and deployed with the specified initial configuration. |
+| 2. | Remove an environment variable that is in use. | Environment variable TEST_ENV_1 is removed from the initial configuration. |
+| 3. | Verify initial probe values and environment variables. | The probe values and environment variables match the initial configuration. |
+| 4. | Update Kafka Bridge resource with new configuration. | Kafka Bridge is updated and redeployed with the new configuration. |
+| 5. | Verify updated probe values and environment variables. | The probe values and environment variables match the updated configuration. |
+| 6. | Verify Kafka Bridge configurations for producer and consumer. | Producer and consumer configurations match the updated settings. |
+
+**Labels:**
+
+* [bridge](labels/bridge.md)
+
+
 ## testCustomBridgeLabelsAreProperlySet
 
 **Description:** Test verifying if custom labels and annotations for Kafka Bridge services are properly set and validated.
