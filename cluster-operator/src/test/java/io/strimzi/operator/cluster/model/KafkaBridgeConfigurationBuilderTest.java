@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.common.tracing.OpenTelemetryTracing;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
@@ -44,7 +45,7 @@ public class KafkaBridgeConfigurationBuilderTest {
     @ParallelTest
     public void testBaseConfiguration()  {
         // test base/default bridge configuration
-        String configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS).build();
+        String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS).build();
         assertThat(configuration, isEquivalent(
                 "bridge.id=my-bridge",
                 "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
@@ -55,7 +56,7 @@ public class KafkaBridgeConfigurationBuilderTest {
     @ParallelTest
     public void testConfigProviders() {
         // test config providers setting
-        String configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+        String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withConfigProviders()
                 .build();
         assertThat(configuration, isEquivalent(
@@ -75,11 +76,11 @@ public class KafkaBridgeConfigurationBuilderTest {
     @ParallelTest
     public void testTracing() {
         // test no tracing configured
-        String configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS).build();
+        String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS).build();
         assertThat(configuration, not(containsString("bridge.tracing")));
 
         // test opentelemetry tracing enabled
-        configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+        configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withTracing(new OpenTelemetryTracing())
                 .build();
         assertThat(configuration, isEquivalent(
@@ -100,7 +101,7 @@ public class KafkaBridgeConfigurationBuilderTest {
                 .endTrustedCertificate()
                 .build();
 
-        String configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+        String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withTls(clientTls)
                 .build();
         assertThat(configuration, isEquivalent(
@@ -120,7 +121,7 @@ public class KafkaBridgeConfigurationBuilderTest {
                 .endCertificateAndKey()
                 .build();
 
-        configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+        configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withTls(clientTls)
                 .withAuthentication(tlsAuth)
                 .build();
@@ -146,7 +147,7 @@ public class KafkaBridgeConfigurationBuilderTest {
                     .withPassword("my-password-key")
                 .endPasswordSecret()
                 .build();
-        String configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+        String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withAuthentication(authPlain)
                 .build();
         assertThat(configuration, isEquivalent(
@@ -164,7 +165,7 @@ public class KafkaBridgeConfigurationBuilderTest {
                     .withCertificate("pem-content")
                 .endTrustedCertificate()
                 .build();
-        configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+        configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withTls(clientTls)
                 .withAuthentication(authPlain)
                 .build();
@@ -186,7 +187,7 @@ public class KafkaBridgeConfigurationBuilderTest {
                     .withPassword("my-password-key")
                 .endPasswordSecret()
                 .build();
-        configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+        configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withAuthentication(authScramSha256)
                 .build();
         assertThat(configuration, isEquivalent(
@@ -204,7 +205,7 @@ public class KafkaBridgeConfigurationBuilderTest {
                     .withPassword("my-password-key")
                 .endPasswordSecret()
                 .build();
-        configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+        configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withAuthentication(authScramSha512)
                 .build();
         assertThat(configuration, isEquivalent(
@@ -241,7 +242,7 @@ public class KafkaBridgeConfigurationBuilderTest {
                     .withCertificate("pem-content")
                 .endTlsTrustedCertificate()
                 .build();
-        configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+        configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withAuthentication(authOAuth)
                 .build();
         assertThat(configuration, isEquivalent(
@@ -263,7 +264,7 @@ public class KafkaBridgeConfigurationBuilderTest {
     @ParallelTest
     public void testKafkaProducer() {
         // test missing Kafka Producer configuration
-        String configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+        String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .build();
         assertThat(configuration, not(containsString("kafka.producer.")));
 
@@ -277,7 +278,7 @@ public class KafkaBridgeConfigurationBuilderTest {
                                 "value.serializer", "my-producer-value-serializer"
                         ))
                 .build();
-        configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+        configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withKafkaProducer(kafkaBridgeProducer)
                 .build();
         assertThat(configuration, isEquivalent(
@@ -294,7 +295,7 @@ public class KafkaBridgeConfigurationBuilderTest {
     @ParallelTest
     public void testKafkaConsumer() {
         // test missing Kafka Consumer configuration
-        String configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+        String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .build();
         assertThat(configuration, not(containsString("kafka.consumer.")));
 
@@ -307,7 +308,7 @@ public class KafkaBridgeConfigurationBuilderTest {
                                 "value.deserializer", "my-consumer-value-deserializer"
                         ))
                 .build();
-        configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+        configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withKafkaConsumer(kafkaBridgeConsumer)
                 .build();
         assertThat(configuration, isEquivalent(
@@ -324,7 +325,7 @@ public class KafkaBridgeConfigurationBuilderTest {
     @ParallelTest
     public void testKafkaAdminClient() {
         // test missing Kafka Admin configuration
-        String configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+        String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .build();
         assertThat(configuration, not(containsString("kafka.admin.")));
 
@@ -336,7 +337,7 @@ public class KafkaBridgeConfigurationBuilderTest {
                                 "bootstrap.controllers", "my-bootstrap-controllers"
                         ))
                 .build();
-        configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+        configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withKafkaAdminClient(kafkaBridgeAdminClient)
                 .build();
         assertThat(configuration, isEquivalent(
@@ -354,7 +355,7 @@ public class KafkaBridgeConfigurationBuilderTest {
         // NOTE: the "http" section is mandatory when using the KafkaBridge custom resource, so we define and set it
         KafkaBridgeHttpConfig http = new KafkaBridgeHttpConfigBuilder()
                 .build();
-        String configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+        String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withHttp(http, null, null)
                 .build();
         assertThat(configuration, isEquivalent(
@@ -373,7 +374,7 @@ public class KafkaBridgeConfigurationBuilderTest {
         KafkaBridgeConsumerSpec kafkaBridgeConsumer = new KafkaBridgeConsumerSpecBuilder()
                 .withTimeoutSeconds(10000)
                 .build();
-        configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+        configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withHttp(http, null, kafkaBridgeConsumer)
                 .build();
         assertThat(configuration, isEquivalent(
@@ -395,7 +396,7 @@ public class KafkaBridgeConfigurationBuilderTest {
         KafkaBridgeProducerSpec kafkaBridgeProducer = new KafkaBridgeProducerSpecBuilder()
                 .withEnabled(false)
                 .build();
-        configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+        configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withHttp(http, kafkaBridgeProducer, kafkaBridgeConsumer)
                 .build();
         assertThat(configuration, isEquivalent(
@@ -414,7 +415,7 @@ public class KafkaBridgeConfigurationBuilderTest {
         http = new KafkaBridgeHttpConfigBuilder()
                 .withPort(8081)
                 .build();
-        configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+        configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withHttp(http, null, null)
                 .build();
         assertThat(configuration, isEquivalent(
@@ -436,7 +437,7 @@ public class KafkaBridgeConfigurationBuilderTest {
                     .withAllowedMethods("GET", "POST", "PUT", "DELETE", "PATCH")
                 .endCors()
                 .build();
-        configuration = new KafkaBridgeConfigurationBuilder(BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+        configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
                 .withHttp(http, null, null)
                 .build();
         assertThat(configuration, isEquivalent(

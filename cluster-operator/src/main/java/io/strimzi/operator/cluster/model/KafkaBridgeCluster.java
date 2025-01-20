@@ -407,12 +407,8 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
         JvmOptionUtils.javaOptions(varList, jvmOptions);
 
-        if (tls != null) {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_TLS, "true"));
-
-            if (tls.getTrustedCertificates() != null && !tls.getTrustedCertificates().isEmpty()) {
-                varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_TRUSTED_CERTS, CertUtils.trustedCertsEnvVar(tls.getTrustedCertificates())));
-            }
+        if (tls != null && tls.getTrustedCertificates() != null && !tls.getTrustedCertificates().isEmpty()) {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_TRUSTED_CERTS, CertUtils.trustedCertsEnvVar(tls.getTrustedCertificates())));
         }
 
         AuthenticationUtils.configureClientAuthenticationEnvVars(authentication, varList, name -> ENV_VAR_PREFIX + name);
@@ -567,7 +563,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         // add the ConfigMap data entry for the bridge HTTP and Kafka clients related configuration
         data.put(
                 BRIDGE_CONFIGURATION_FILENAME,
-                new KafkaBridgeConfigurationBuilder(cluster, bootstrapServers)
+                new KafkaBridgeConfigurationBuilder(reconciliation, cluster, bootstrapServers)
                         .withConfigProviders()
                         .withTracing(tracing)
                         .withTls(tls)
