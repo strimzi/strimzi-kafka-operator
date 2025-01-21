@@ -42,9 +42,9 @@ For example, the mounted secret (`example`) in the example configuration would b
 
 = Configuring customized TLS Client Authentication
 
-You can also use the `custom` authentication to also configure customized TLS Client Authentication
-That allows you to configure options not allowed with `type: tls` authentication.
-For example a custom truststore with multiple trusted CAs or options such as `ssl.principal.mapping.rules`.
+You can also use the `custom` authentication to configure customized TLS client authentication.
+This allows configuration options that are not permissible with `type: tls` authentication.
+For example, it's possible to configure a custom truststore with multiple trusted CAs or options such as `ssl.principal.mapping.rules`.
 
 .Example custom TLS Client Authentication configuration
 [source,yaml,subs="attributes+"]
