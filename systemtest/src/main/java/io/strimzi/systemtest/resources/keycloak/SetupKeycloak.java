@@ -106,15 +106,13 @@ public class SetupKeycloak {
         LOGGER.info("Deploying Postgres into Namespace: {}", namespaceName);
 
         try {
-            final String postgresYaml = Files.readString(Paths.get(POSTGRES_FILE_PATH)).replace(
+            final String postgresYaml =  Files.readString(Paths.get(POSTGRES_FILE_PATH)).replace(
                 "${POSTGRES_IMAGE}", Environment.POSTGRES_IMAGE
             );
-            Files.writeString(Paths.get(POSTGRES_FILE_PATH), postgresYaml);
+            cmdKubeClient(namespaceName).applyContent(postgresYaml);
         } catch (IOException e) {
             throw new RuntimeException("Failed to update the Postgres deployment YAML", e);
         }
-
-        cmdKubeClient(namespaceName).apply(POSTGRES_FILE_PATH);
 
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, "postgres", 1);
 
