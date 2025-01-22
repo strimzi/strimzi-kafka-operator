@@ -10,7 +10,6 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
