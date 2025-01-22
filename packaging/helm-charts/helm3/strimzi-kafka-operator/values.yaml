@@ -13,10 +13,10 @@ defaultImageRepository: strimzi
 defaultImageTag: latest
 
 image:
-  registry: ""
-  repository: ""
+  registry: "quay.io"
+  repository: "ppatierno"
   name: operator
-  tag: ""
+  tag: "bridge-config"
   # imagePullSecrets:
   #   - name: secretname
 logVolume: co-config-volume

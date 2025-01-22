@@ -563,7 +563,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         data.put(
                 BRIDGE_CONFIGURATION_FILENAME,
                 new KafkaBridgeConfigurationBuilder(reconciliation, cluster, bootstrapServers)
-                        .withConfigProviders()
                         .withTracing(tracing)
                         .withTls(tls)
                         .withAuthentication(authentication)

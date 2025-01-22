@@ -57,19 +57,35 @@ public class KafkaBridgeConfigurationBuilderTest {
     public void testConfigProviders() {
         // test config providers setting
         String configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
-                .withConfigProviders()
+                .withKafkaAdminClient(null)
+                .withKafkaProducer(null)
+                .withKafkaConsumer(null)
                 .build();
         assertThat(configuration, isEquivalent(
                 "bridge.id=my-bridge",
                 "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
                 "kafka.security.protocol=PLAINTEXT",
-                "kafka.config.providers=strimzienv,strimzifile,strimzidir",
-                "kafka.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
-                "kafka.config.providers.strimzienv.param.allowlist.pattern=.*",
-                "kafka.config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
-                "kafka.config.providers.strimzifile.param.allowed.paths=/opt/strimzi",
-                "kafka.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
-                "kafka.config.providers.strimzidir.param.allowed.paths=/opt/strimzi"
+                "kafka.admin.config.providers=strimzienv,strimzifile,strimzidir",
+                "kafka.admin.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+                "kafka.admin.config.providers.strimzienv.param.allowlist.pattern=.*",
+                "kafka.admin.config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
+                "kafka.admin.config.providers.strimzifile.param.allowed.paths=/opt/strimzi",
+                "kafka.admin.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
+                "kafka.admin.config.providers.strimzidir.param.allowed.paths=/opt/strimzi",
+                "kafka.producer.config.providers=strimzienv,strimzifile,strimzidir",
+                "kafka.producer.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+                "kafka.producer.config.providers.strimzienv.param.allowlist.pattern=.*",
+                "kafka.producer.config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
+                "kafka.producer.config.providers.strimzifile.param.allowed.paths=/opt/strimzi",
+                "kafka.producer.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
+                "kafka.producer.config.providers.strimzidir.param.allowed.paths=/opt/strimzi",
+                "kafka.consumer.config.providers=strimzienv,strimzifile,strimzidir",
+                "kafka.consumer.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+                "kafka.consumer.config.providers.strimzienv.param.allowlist.pattern=.*",
+                "kafka.consumer.config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
+                "kafka.consumer.config.providers.strimzifile.param.allowed.paths=/opt/strimzi",
+                "kafka.consumer.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
+                "kafka.consumer.config.providers.strimzidir.param.allowed.paths=/opt/strimzi"
         ));
     }
 
@@ -288,7 +304,47 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.producer.acks=1",
                 "kafka.producer.linger.ms=100",
                 "kafka.producer.key.serializer=my-producer-key-serializer",
-                "kafka.producer.value.serializer=my-producer-value-serializer"
+                "kafka.producer.value.serializer=my-producer-value-serializer",
+                "kafka.producer.config.providers=strimzienv,strimzifile,strimzidir",
+                "kafka.producer.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+                "kafka.producer.config.providers.strimzienv.param.allowlist.pattern=.*",
+                "kafka.producer.config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
+                "kafka.producer.config.providers.strimzifile.param.allowed.paths=/opt/strimzi",
+                "kafka.producer.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
+                "kafka.producer.config.providers.strimzidir.param.allowed.paths=/opt/strimzi"
+        ));
+
+        // Kafka Producer with config providers
+        kafkaBridgeProducer = new KafkaBridgeProducerSpecBuilder()
+                .withConfig(
+                        Map.of(
+                                "acks", 1,
+                                "linger.ms", 100,
+                                "key.serializer", "my-producer-key-serializer",
+                                "value.serializer", "my-producer-value-serializer",
+                                "config.providers", "env",
+                                "config.providers.env.class", "org.apache.kafka.common.config.provider.EnvVarConfigProvider"
+                        ))
+                .build();
+        configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+                .withKafkaProducer(kafkaBridgeProducer)
+                .build();
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=PLAINTEXT",
+                "kafka.producer.acks=1",
+                "kafka.producer.linger.ms=100",
+                "kafka.producer.key.serializer=my-producer-key-serializer",
+                "kafka.producer.value.serializer=my-producer-value-serializer",
+                "kafka.producer.config.providers=env,strimzienv,strimzifile,strimzidir",
+                "kafka.producer.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+                "kafka.producer.config.providers.strimzienv.param.allowlist.pattern=.*",
+                "kafka.producer.config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
+                "kafka.producer.config.providers.strimzifile.param.allowed.paths=/opt/strimzi",
+                "kafka.producer.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
+                "kafka.producer.config.providers.strimzidir.param.allowed.paths=/opt/strimzi",
+                "kafka.producer.config.providers.env.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider"
         ));
     }
 
@@ -318,7 +374,46 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.consumer.auto.offset.reset=earliest",
                 "kafka.consumer.key.deserializer=my-consumer-key-deserializer",
                 "kafka.consumer.value.deserializer=my-consumer-value-deserializer",
-                "kafka.consumer.client.rack=${strimzidir:/opt/strimzi/init:rack.id}"
+                "kafka.consumer.client.rack=${strimzidir:/opt/strimzi/init:rack.id}",
+                "kafka.consumer.config.providers=strimzienv,strimzifile,strimzidir",
+                "kafka.consumer.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+                "kafka.consumer.config.providers.strimzienv.param.allowlist.pattern=.*",
+                "kafka.consumer.config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
+                "kafka.consumer.config.providers.strimzifile.param.allowed.paths=/opt/strimzi",
+                "kafka.consumer.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
+                "kafka.consumer.config.providers.strimzidir.param.allowed.paths=/opt/strimzi"
+        ));
+
+        // Kafka Consumer with config providers
+        kafkaBridgeConsumer = new KafkaBridgeConsumerSpecBuilder()
+                .withConfig(
+                        Map.of(
+                                "auto.offset.reset", "earliest",
+                                "key.deserializer", "my-consumer-key-deserializer",
+                                "value.deserializer", "my-consumer-value-deserializer",
+                                "config.providers", "env",
+                                "config.providers.env.class", "org.apache.kafka.common.config.provider.EnvVarConfigProvider"
+                        ))
+                .build();
+        configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+                .withKafkaConsumer(kafkaBridgeConsumer)
+                .build();
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=PLAINTEXT",
+                "kafka.consumer.auto.offset.reset=earliest",
+                "kafka.consumer.key.deserializer=my-consumer-key-deserializer",
+                "kafka.consumer.value.deserializer=my-consumer-value-deserializer",
+                "kafka.consumer.client.rack=${strimzidir:/opt/strimzi/init:rack.id}",
+                "kafka.consumer.config.providers=env,strimzienv,strimzifile,strimzidir",
+                "kafka.consumer.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+                "kafka.consumer.config.providers.strimzienv.param.allowlist.pattern=.*",
+                "kafka.consumer.config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
+                "kafka.consumer.config.providers.strimzifile.param.allowed.paths=/opt/strimzi",
+                "kafka.consumer.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
+                "kafka.consumer.config.providers.strimzidir.param.allowed.paths=/opt/strimzi",
+                "kafka.consumer.config.providers.env.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider"
         ));
     }
 
@@ -345,7 +440,43 @@ public class KafkaBridgeConfigurationBuilderTest {
                 "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
                 "kafka.security.protocol=PLAINTEXT",
                 "kafka.admin.client.id=my-admin-client",
-                "kafka.admin.bootstrap.controllers=my-bootstrap-controllers"
+                "kafka.admin.bootstrap.controllers=my-bootstrap-controllers",
+                "kafka.admin.config.providers=strimzienv,strimzifile,strimzidir",
+                "kafka.admin.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+                "kafka.admin.config.providers.strimzienv.param.allowlist.pattern=.*",
+                "kafka.admin.config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
+                "kafka.admin.config.providers.strimzifile.param.allowed.paths=/opt/strimzi",
+                "kafka.admin.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
+                "kafka.admin.config.providers.strimzidir.param.allowed.paths=/opt/strimzi"
+        ));
+
+        // Kafka Admin with config providers
+        kafkaBridgeAdminClient = new KafkaBridgeAdminClientSpecBuilder()
+                .withConfig(
+                        Map.of(
+                                "client.id", "my-admin-client",
+                                "bootstrap.controllers", "my-bootstrap-controllers",
+                                "config.providers", "env",
+                                "config.providers.env.class", "org.apache.kafka.common.config.provider.EnvVarConfigProvider"
+                        ))
+                .build();
+        configuration = new KafkaBridgeConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BRIDGE_CLUSTER, BRIDGE_BOOTSTRAP_SERVERS)
+                .withKafkaAdminClient(kafkaBridgeAdminClient)
+                .build();
+        assertThat(configuration, isEquivalent(
+                "bridge.id=my-bridge",
+                "kafka.bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "kafka.security.protocol=PLAINTEXT",
+                "kafka.admin.client.id=my-admin-client",
+                "kafka.admin.bootstrap.controllers=my-bootstrap-controllers",
+                "kafka.admin.config.providers=env,strimzienv,strimzifile,strimzidir",
+                "kafka.admin.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+                "kafka.admin.config.providers.strimzienv.param.allowlist.pattern=.*",
+                "kafka.admin.config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
+                "kafka.admin.config.providers.strimzifile.param.allowed.paths=/opt/strimzi",
+                "kafka.admin.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
+                "kafka.admin.config.providers.strimzidir.param.allowed.paths=/opt/strimzi",
+                "kafka.admin.config.providers.env.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider"
         ));
     }
 

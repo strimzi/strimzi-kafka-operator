@@ -36,11 +36,6 @@ public class KafkaBridgeConfigurationBuilder {
     private static final String PASSWORD_VOLUME_MOUNT = "/opt/strimzi/bridge-password/";
     // the SASL password file template includes: <volume_mount>/<secret_name>/<password_file>
     private static final String PLACEHOLDER_SASL_PASSWORD_FILE_TEMPLATE_CONFIG_PROVIDER_DIR = "${strimzidir:%s%s:%s}";
-    private static final String PLACEHOLDER_OAUTH_CONFIG_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:KAFKA_BRIDGE_OAUTH_CONFIG}";
-    private static final String PLACEHOLDER_OAUTH_ACCESS_TOKEN_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:KAFKA_BRIDGE_OAUTH_ACCESS_TOKEN}";
-    private static final String PLACEHOLDER_OAUTH_REFRESH_TOKEN_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:KAFKA_BRIDGE_OAUTH_REFRESH_TOKEN}";
-    private static final String PLACEHOLDER_OAUTH_CLIENT_SECRET_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:KAFKA_BRIDGE_OAUTH_CLIENT_SECRET}";
-    private static final String PLACEHOLDER_OAUTH_PASSWORD_GRANT_PASSWORD_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:KAFKA_BRIDGE_OAUTH_PASSWORD_GRANT_PASSWORD}";
 
     private final Reconciliation reconciliation;
     private final StringWriter stringWriter = new StringWriter();
@@ -92,25 +87,6 @@ public class KafkaBridgeConfigurationBuilder {
     private void configureSecurityProtocol() {
         printSectionHeader("Kafka Security protocol");
         writer.println("kafka.security.protocol=" + securityProtocol);
-    }
-
-    /**
-     * Configures the Kafka config providers used for loading some parameters from env vars and files
-     * (i.e. user and password for authentication)
-     *
-     * @return  the builder instance
-     */
-    public KafkaBridgeConfigurationBuilder withConfigProviders() {
-        printSectionHeader("Config providers");
-        writer.println("kafka.config.providers=strimzienv,strimzifile,strimzidir");
-        writer.println("kafka.config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider");
-        writer.println("kafka.config.providers.strimzienv.param.allowlist.pattern=.*");
-        writer.println("kafka.config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider");
-        writer.println("kafka.config.providers.strimzifile.param.allowed.paths=/opt/strimzi");
-        writer.println("kafka.config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider");
-        writer.println("kafka.config.providers.strimzidir.param.allowed.paths=/opt/strimzi");
-        writer.println();
-        return this;
     }
 
     /**
@@ -185,22 +161,22 @@ public class KafkaBridgeConfigurationBuilder {
                     jaasConfig.append("org.apache.kafka.common.security.scram.ScramLoginModule required username=" + PLACEHOLDER_SASL_USERNAME_CONFIG_PROVIDER_ENV_VAR + " password=" + passwordFilePath + ";");
                 } else if (authentication instanceof KafkaClientAuthenticationOAuth oauth) {
                     saslMechanism = "OAUTHBEARER";
-                    jaasConfig.append("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " + PLACEHOLDER_OAUTH_CONFIG_CONFIG_PROVIDER_ENV_VAR);
+                    jaasConfig.append("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ${strimzienv:KAFKA_BRIDGE_OAUTH_CONFIG}");
 
                     if (oauth.getClientSecret() != null) {
-                        jaasConfig.append(" oauth.client.secret=" + PLACEHOLDER_OAUTH_CLIENT_SECRET_CONFIG_PROVIDER_ENV_VAR);
+                        jaasConfig.append(" oauth.client.secret=${strimzienv:KAFKA_BRIDGE_OAUTH_CLIENT_SECRET}");
                     }
 
                     if (oauth.getRefreshToken() != null) {
-                        jaasConfig.append(" oauth.refresh.token=" + PLACEHOLDER_OAUTH_REFRESH_TOKEN_CONFIG_PROVIDER_ENV_VAR);
+                        jaasConfig.append(" oauth.refresh.token=${strimzienv:KAFKA_BRIDGE_OAUTH_REFRESH_TOKEN}");
                     }
 
                     if (oauth.getAccessToken() != null) {
-                        jaasConfig.append(" oauth.access.token=" + PLACEHOLDER_OAUTH_ACCESS_TOKEN_CONFIG_PROVIDER_ENV_VAR);
+                        jaasConfig.append(" oauth.access.token=${strimzienv:KAFKA_BRIDGE_OAUTH_ACCESS_TOKEN}");
                     }
 
                     if (oauth.getPasswordSecret() != null) {
-                        jaasConfig.append(" oauth.password.grant.password=" + PLACEHOLDER_OAUTH_PASSWORD_GRANT_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
+                        jaasConfig.append(" oauth.password.grant.password=${strimzienv:KAFKA_BRIDGE_OAUTH_PASSWORD_GRANT_PASSWORD}");
                     }
 
                     if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
@@ -219,18 +195,49 @@ public class KafkaBridgeConfigurationBuilder {
     }
 
     /**
+     * Configures the Kafka configuration providers
+     *
+     * @param userConfig    the user configuration, for a specific bridge Kafka client (admin, producer or consumer)
+     *                      to extract the possible user-provided config provider configuration from it
+     * @param prefix    prefix for the bridge Kafka client to be configured. It could be "kafka.admin", "kafka.producer" or "kafka.consumer".
+     */
+    private void configProvider(AbstractConfiguration userConfig, String prefix) {
+        printSectionHeader("Config providers");
+        String strimziConfigProviders = "strimzienv,strimzifile,strimzidir";
+        // configure user provided config providers together with the Strimzi ones ...
+        if (userConfig != null
+                && !userConfig.getConfiguration().isEmpty()
+                && userConfig.getConfigOption("config.providers") != null) {
+            writer.println(prefix + ".config.providers=" + userConfig.getConfigOption("config.providers") + "," + strimziConfigProviders);
+            userConfig.removeConfigOption("config.providers");
+        // ... or configure only the Strimzi config providers
+        } else {
+            writer.println(prefix + ".config.providers=" + strimziConfigProviders);
+        }
+        writer.println(prefix + ".config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider");
+        writer.println(prefix + ".config.providers.strimzienv.param.allowlist.pattern=.*");
+        writer.println(prefix + ".config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider");
+        writer.println(prefix + ".config.providers.strimzifile.param.allowed.paths=/opt/strimzi");
+        writer.println(prefix + ".config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider");
+        writer.println(prefix + ".config.providers.strimzidir.param.allowed.paths=/opt/strimzi");
+    }
+
+    /**
      * Adds the bridge Kafka admin client specific configuration
      *
      * @param kafkaBridgeAdminClient   the Kafka admin client configuration
      * @return  the builder instance
      */
     public KafkaBridgeConfigurationBuilder withKafkaAdminClient(KafkaBridgeAdminClientSpec kafkaBridgeAdminClient) {
-        if (kafkaBridgeAdminClient != null) {
-            KafkaBridgeAdminClientConfiguration config = new KafkaBridgeAdminClientConfiguration(reconciliation, kafkaBridgeAdminClient.getConfig().entrySet());
-            printSectionHeader("Apache Kafka AdminClient");
+        printSectionHeader("Apache Kafka AdminClient");
+        KafkaBridgeAdminClientConfiguration config = kafkaBridgeAdminClient != null ?
+                new KafkaBridgeAdminClientConfiguration(reconciliation, kafkaBridgeAdminClient.getConfig().entrySet()) :
+                null;
+        configProvider(config, "kafka.admin");
+        if (config != null) {
             config.asOrderedProperties().asMap().forEach((key, value) -> writer.println("kafka.admin." + key + "=" + value));
-            writer.println();
         }
+        writer.println();
         return this;
     }
 
@@ -241,12 +248,15 @@ public class KafkaBridgeConfigurationBuilder {
      * @return  the builder instance
      */
     public KafkaBridgeConfigurationBuilder withKafkaProducer(KafkaBridgeProducerSpec kafkaBridgeProducer) {
-        if (kafkaBridgeProducer != null) {
-            KafkaBridgeProducerConfiguration config = new KafkaBridgeProducerConfiguration(reconciliation, kafkaBridgeProducer.getConfig().entrySet());
-            printSectionHeader("Apache Kafka Producer");
+        printSectionHeader("Apache Kafka Producer");
+        KafkaBridgeProducerConfiguration config = kafkaBridgeProducer != null ?
+                new KafkaBridgeProducerConfiguration(reconciliation, kafkaBridgeProducer.getConfig().entrySet()) :
+                null;
+        configProvider(config, "kafka.producer");
+        if (config != null) {
             config.asOrderedProperties().asMap().forEach((key, value) -> writer.println("kafka.producer." + key + "=" + value));
-            writer.println();
         }
+        writer.println();
         return this;
     }
 
@@ -257,13 +267,16 @@ public class KafkaBridgeConfigurationBuilder {
      * @return  the builder instance
      */
     public KafkaBridgeConfigurationBuilder withKafkaConsumer(KafkaBridgeConsumerSpec kafkaBridgeConsumer) {
-        if (kafkaBridgeConsumer != null) {
-            KafkaBridgeConsumerConfiguration config = new KafkaBridgeConsumerConfiguration(reconciliation, kafkaBridgeConsumer.getConfig().entrySet());
-            printSectionHeader("Apache Kafka Consumer");
+        printSectionHeader("Apache Kafka Consumer");
+        KafkaBridgeConsumerConfiguration config = kafkaBridgeConsumer != null ?
+                new KafkaBridgeConsumerConfiguration(reconciliation, kafkaBridgeConsumer.getConfig().entrySet()) :
+                null;
+        configProvider(config, "kafka.consumer");
+        if (config != null) {
             config.asOrderedProperties().asMap().forEach((key, value) -> writer.println("kafka.consumer." + key + "=" + value));
             writer.println("kafka.consumer.client.rack=${strimzidir:/opt/strimzi/init:rack.id}");
-            writer.println();
         }
+        writer.println();
         return this;
     }
 
