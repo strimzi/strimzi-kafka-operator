@@ -10,6 +10,7 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -61,13 +62,11 @@ public class HelmResource implements SpecificResourceType {
 
         // image repository config
         values.put("defaultImageRepository", Environment.getIfNotEmptyOrDefault(Environment.STRIMZI_ORG, Environment.STRIMZI_ORG_DEFAULT));
-        //values.put("kafkaBridge.image.repository", Environment.STRIMZI_ORG_DEFAULT);
-        values.put("kafkaBridge.image.repository", "ppatierno");
+        values.put("kafkaBridge.image.repository", Environment.STRIMZI_ORG_DEFAULT);
 
         // image tags config
         values.put("defaultImageTag", Environment.getIfNotEmptyOrDefault(Environment.STRIMZI_TAG, Environment.STRIMZI_TAG_DEFAULT));
-        //values.put("kafkaBridge.image.tag", BridgeUtils.getBridgeVersion());
-        values.put("kafkaBridge.image.tag", "bridge-config");
+        values.put("kafkaBridge.image.tag", BridgeUtils.getBridgeVersion());
 
         // Additional config
         values.put("image.imagePullPolicy", Environment.OPERATOR_IMAGE_PULL_POLICY);
