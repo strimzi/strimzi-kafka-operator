@@ -12,6 +12,7 @@ import io.strimzi.operator.topic.metrics.TopicOperatorMetricsProvider;
 import io.strimzi.operator.topic.model.Pair;
 import io.strimzi.operator.topic.model.ReconcilableTopic;
 import io.strimzi.operator.topic.model.TopicState;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.container.StrimziKafkaCluster;
 import io.strimzi.test.interfaces.TestSeparator;
 import org.apache.kafka.clients.admin.Admin;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -217,6 +219,18 @@ public class KafkaHandlerIT implements TestSeparator {
         createKafkaTopic(t1Name, Map.of());
         String t2Name = "should-describe-topics-2";
         createKafkaTopic(t2Name, Map.of());
+
+        // Wait until both topics actually exist
+        try (var admin = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers()))) {
+            TestUtils.waitFor("Wait for topic creation", Duration.ofMillis(500).toMillis(), Duration.ofSeconds(30).toMillis(), () -> {
+                try {
+                    var existingTopics = admin.listTopics().names().get();
+                    return existingTopics.containsAll(List.of(t1Name, t2Name));
+                } catch (Exception e) {
+                    return false;
+                }
+            });
+        }
 
         try (var kafkaAdminClientSpy = spy(Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers())))) {
             var config = TopicOperatorConfig.buildFromMap(Map.of(
