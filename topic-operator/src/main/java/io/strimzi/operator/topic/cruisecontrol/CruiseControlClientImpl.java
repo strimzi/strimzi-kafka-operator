@@ -49,19 +49,36 @@ import static org.apache.logging.log4j.core.util.Throwables.getRootCause;
  */
 public class CruiseControlClientImpl implements CruiseControlClient {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(CruiseControlClientImpl.class);
+
+    private final String serverHostname;
+    private final int serverPort;
+    private final boolean rackEnabled;
+    private final boolean sslEnabled;
+    private final byte[] sslCertificate;
+    private final boolean authEnabled;
+    private final String authUsername;
+    private final String authPassword;
     
-    private final Config config;
     private final ExecutorService httpClientExecutor;
     private HttpClient httpClient;
     private final ObjectMapper objectMapper;
-
-    /**
-     * Create a new instance.
-     * 
-     * @param config Cruise Control configuration.
-     */
-    public CruiseControlClientImpl(Config config) {
-        this.config = config;
+    
+    CruiseControlClientImpl(String serverHostname,
+                            int serverPort,
+                            boolean rackEnabled,
+                            boolean sslEnabled,
+                            byte[] sslCertificate,
+                            boolean authEnabled,
+                            String authUsername,
+                            String authPassword) {
+        this.serverHostname = serverHostname;
+        this.serverPort = serverPort;
+        this.rackEnabled = rackEnabled;
+        this.sslEnabled = sslEnabled;
+        this.sslCertificate = sslCertificate;
+        this.authEnabled = authEnabled;
+        this.authUsername = authUsername;
+        this.authPassword = authPassword;
         this.httpClientExecutor = Executors.newCachedThreadPool();
         this.httpClient = buildHttpClient();
         this.objectMapper = new ObjectMapper();
@@ -104,8 +121,8 @@ public class CruiseControlClientImpl implements CruiseControlClient {
         }
         
         // build request
-        URI requestUri = new UrlBuilder(config.serverHostname(), config.serverPort(), CruiseControlEndpoints.TOPIC_CONFIGURATION, config.sslEnabled())
-            .withParameter(CruiseControlParameters.SKIP_RACK_AWARENESS_CHECK, String.valueOf(!config.rackEnabled()))
+        URI requestUri = new UrlBuilder(serverHostname, serverPort, CruiseControlEndpoints.TOPIC_CONFIGURATION, sslEnabled)
+            .withParameter(CruiseControlParameters.SKIP_RACK_AWARENESS_CHECK, String.valueOf(!rackEnabled))
             .withParameter(CruiseControlParameters.DRY_RUN, "false")
             .withParameter(CruiseControlParameters.JSON, "true")
             .build();
@@ -115,8 +132,8 @@ public class CruiseControlClientImpl implements CruiseControlClient {
             .timeout(Duration.of(HTTP_REQUEST_TIMEOUT_SEC, ChronoUnit.SECONDS))
             .header("Content-Type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(jsonPayload));
-        if (config.authEnabled()) {
-            builder.header("Authorization", buildBasicAuthValue(config.authUsername(), config.authPassword()));
+        if (authEnabled) {
+            builder.header("Authorization", buildBasicAuthValue(authUsername, authPassword));
         }
         HttpRequest request = builder.build();
         LOGGER.traceOp("Request: {}", request);
@@ -144,7 +161,7 @@ public class CruiseControlClientImpl implements CruiseControlClient {
     @Override
     public UserTasksResponse userTasks(Set<String> userTaskIds) {
         // build request
-        URI requestUrl = new UrlBuilder(config.serverHostname(), config.serverPort(), CruiseControlEndpoints.USER_TASKS, config.sslEnabled())
+        URI requestUrl = new UrlBuilder(serverHostname, serverPort, CruiseControlEndpoints.USER_TASKS, sslEnabled)
             .withParameter(CruiseControlParameters.USER_TASK_IDS, new ArrayList<>(userTaskIds))
             .withParameter(CruiseControlParameters.FETCH_COMPLETE, "false")
             .withParameter(CruiseControlParameters.JSON, "true")
@@ -154,8 +171,8 @@ public class CruiseControlClientImpl implements CruiseControlClient {
             .uri(requestUrl)
             .timeout(Duration.of(HTTP_REQUEST_TIMEOUT_SEC, ChronoUnit.SECONDS))
             .GET();
-        if (config.authEnabled()) {
-            builder.header("Authorization", buildBasicAuthValue(config.authUsername(), config.authPassword()));
+        if (authEnabled) {
+            builder.header("Authorization", buildBasicAuthValue(authUsername, authPassword));
         }
         HttpRequest request = builder.build();
         LOGGER.traceOp("Request: {}", request);
@@ -216,11 +233,11 @@ public class CruiseControlClientImpl implements CruiseControlClient {
     private HttpClient buildHttpClient() {
         try {
             HttpClient.Builder builder = HttpClient.newBuilder().executor(httpClientExecutor);
-            if (config.sslEnabled()) {
+            if (sslEnabled) {
                 // load the certificate chain to be trusted
                 CertificateFactory cf = CertificateFactory.getInstance("X.509");
                 Certificate ca;
-                try (var caInput = new ByteArrayInputStream(config.sslCertificate())) {
+                try (var caInput = new ByteArrayInputStream(sslCertificate)) {
                     ca = cf.generateCertificate(caInput);
                 }
                 

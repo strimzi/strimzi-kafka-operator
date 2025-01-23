@@ -20,10 +20,7 @@ import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.config.SslConfigs;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -424,14 +421,29 @@ public class TopicOperatorConfig {
     }
 
     /**
-     * @return Cruise Control client configuration.
+     * @return Cruise Control client.
      */
-    public CruiseControlClient.Config cruiseControlClientConfig() {
-        var sslCertificate = cruiseControlSslEnabled() ? getFileContent(cruiseControlCrtFilePath()) : null;
-        var apiUsername = cruiseControlAuthEnabled() ? new String(getFileContent(cruiseControlApiUserPath()), StandardCharsets.UTF_8) : null;
-        var apiPassword = cruiseControlAuthEnabled() ? new String(getFileContent(cruiseControlApiPassPath()), StandardCharsets.UTF_8) : null;
+    public CruiseControlClient cruiseControlClient() {
+        var sslCertificate = cruiseControlSslEnabled() ? TopicOperatorUtil.getFileContent(cruiseControlCrtFilePath()) : null;
+        var apiUsername = cruiseControlAuthEnabled() ? new String(TopicOperatorUtil.getFileContent(cruiseControlApiUserPath()), StandardCharsets.UTF_8) : null;
+        var apiPassword = cruiseControlAuthEnabled() ? new String(TopicOperatorUtil.getFileContent(cruiseControlApiPassPath()), StandardCharsets.UTF_8) : null;
         
-        return new CruiseControlClient.Config(
+        if (cruiseControlHostname() == null || cruiseControlHostname().isBlank()) {
+            throw new IllegalArgumentException("Cruise Control hostname is not set");
+        }
+        if (cruiseControlSslEnabled() && (sslCertificate == null || sslCertificate.length == 0)) {
+            throw new IllegalArgumentException("Cruise Control certificate is not set");
+        }
+        if (cruiseControlAuthEnabled()) {
+            if (apiUsername == null || apiUsername.isBlank()) {
+                throw new IllegalArgumentException("Cruise Control username is not set");
+            }
+            if (apiPassword == null || apiPassword.isBlank()) {
+                throw new IllegalArgumentException("Cruise Control password is not set");
+            }
+        }
+        
+        return CruiseControlClient.create(
             cruiseControlHostname(),
             cruiseControlPort(),
             cruiseControlRackEnabled(),
@@ -441,14 +453,6 @@ public class TopicOperatorConfig {
             apiUsername,
             apiPassword
         );
-    }
-
-    private static byte[] getFileContent(String filePath) {
-        try {
-            return Files.readAllBytes(Path.of(filePath));
-        } catch (IOException ioe) {
-            throw new IllegalArgumentException(String.format("File not found: %s", filePath), ioe);
-        }
     }
 
     @Override

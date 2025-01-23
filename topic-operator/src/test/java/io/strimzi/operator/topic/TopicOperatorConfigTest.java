@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -423,15 +422,14 @@ class TopicOperatorConfigTest {
             TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), inputFile.getAbsolutePath()
         ));
         
-        var cruiseControlConfig = config.cruiseControlClientConfig();
         assertTrue(config.cruiseControlEnabled());
-        assertEquals("my-cruise-control", cruiseControlConfig.serverHostname());
-        assertEquals(9090, cruiseControlConfig.serverPort());
+        assertEquals("my-cruise-control", config.cruiseControlHostname());
+        assertEquals(9090, config.cruiseControlPort());
         assertTrue(config.cruiseControlSslEnabled());
-        assertArrayEquals(expectedBytes, cruiseControlConfig.sslCertificate());
+        assertArrayEquals(expectedBytes, TopicOperatorUtil.getFileContent(config.cruiseControlCrtFilePath()));
         assertTrue(config.cruiseControlAuthEnabled());
-        assertEquals(new String(expectedBytes, StandardCharsets.UTF_8), cruiseControlConfig.authUsername());
-        assertEquals(new String(expectedBytes, StandardCharsets.UTF_8), cruiseControlConfig.authPassword());
+        assertArrayEquals(expectedBytes, TopicOperatorUtil.getFileContent(config.cruiseControlApiUserPath()));
+        assertArrayEquals(expectedBytes, TopicOperatorUtil.getFileContent(config.cruiseControlApiPassPath()));
     }
 
     @Test
@@ -446,7 +444,7 @@ class TopicOperatorConfigTest {
             TopicOperatorConfig.CRUISE_CONTROL_CRT_FILE_PATH.key(), "/4sa654a/d65sa65da"
         ));
 
-        var thrown = assertThrows(IllegalArgumentException.class, config::cruiseControlClientConfig);
+        var thrown = assertThrows(IllegalArgumentException.class, config::cruiseControlClient);
         assertEquals("File not found: /4sa654a/d65sa65da", thrown.getMessage());
     }
 
@@ -475,7 +473,7 @@ class TopicOperatorConfigTest {
             TopicOperatorConfig.CRUISE_CONTROL_API_USER_PATH.key(), "/d4sa6a/das45da4s"
         ));
 
-        var thrown = assertThrows(IllegalArgumentException.class, config::cruiseControlClientConfig);
+        var thrown = assertThrows(IllegalArgumentException.class, config::cruiseControlClient);
         assertEquals("File not found: /d4sa6a/das45da4s", thrown.getMessage());
     }
     
@@ -494,7 +492,7 @@ class TopicOperatorConfigTest {
             TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), "/sd4sa6/fds6f7sfs"
         ));
 
-        var thrown = assertThrows(IllegalArgumentException.class, config::cruiseControlClientConfig);
+        var thrown = assertThrows(IllegalArgumentException.class, config::cruiseControlClient);
         assertEquals("File not found: /sd4sa6/fds6f7sfs", thrown.getMessage());
     }
 }

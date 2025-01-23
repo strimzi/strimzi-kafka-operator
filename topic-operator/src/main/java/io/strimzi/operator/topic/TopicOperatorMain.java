@@ -66,7 +66,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
             TopicOperatorMain.class.getPackage().getImplementationVersion()
         ).build();
         this.kafkaAdminClient = kafkaAdminClient;
-        this.cruiseControlClient = CruiseControlClient.create(config.cruiseControlClientConfig());
+        this.cruiseControlClient = config.cruiseControlClient();
         
         var metricsProvider = createMetricsProvider();
         var metricsHolder = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, Labels.fromMap(selector), metricsProvider);

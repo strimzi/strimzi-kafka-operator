@@ -15,6 +15,9 @@ import io.strimzi.operator.topic.model.PartitionedByError;
 import io.strimzi.operator.topic.model.ReconcilableTopic;
 import io.strimzi.operator.topic.model.TopicOperatorException;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -223,5 +226,19 @@ public class TopicOperatorUtil {
                 String.format("Invalid value for topic config '%s': %s", key, value));
         }
         return valueStr;
+    }
+
+    /**
+     * Get file content.
+     * 
+     * @param filePath File path.
+     * @return file content as bytes.
+     */
+    public static byte[] getFileContent(String filePath) {
+        try {
+            return Files.readAllBytes(Path.of(filePath));
+        } catch (IOException ioe) {
+            throw new IllegalArgumentException(String.format("File not found: %s", filePath), ioe);
+        }
     }
 }
