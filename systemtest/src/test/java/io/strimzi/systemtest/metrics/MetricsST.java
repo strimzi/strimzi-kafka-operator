@@ -162,7 +162,7 @@ public class MetricsST extends AbstractST {
     @ParallelTest
     @Tag(ACCEPTANCE)
     @TestDoc(
-        description = @Desc("This test case checks several random metrics exposed by Kafka."),
+        description = @Desc("This test case checks several metrics exposed by Kafka."),
         steps = {
             @Step(value = "Check if specific metric is available in collected metrics from Kafka Pods.", expected = "Metric is available with expected value.")
         },
