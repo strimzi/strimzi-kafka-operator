@@ -20,5 +20,5 @@ To ensure a successful downgrade process, it is essential to use a supported app
 //steps to downgrade the operators
 include::../../modules/upgrading/proc-downgrade-cluster-operator.adoc[leveloffset=+1]
 
-//steps to downgrade KRaft-based Kafka
+//steps to downgrade Kafka
 include::../../modules/upgrading/proc-downgrade-kafka-kraft.adoc[leveloffset=+1]

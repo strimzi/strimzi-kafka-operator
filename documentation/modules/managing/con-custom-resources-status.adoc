@@ -146,7 +146,7 @@ status:
 <1> The Kafka cluster ID.
 <2> Status `conditions` describe the current state of the Kafka cluster.
 <3> The `Ready` condition indicates that the Cluster Operator considers the Kafka cluster able to handle traffic.
-<4> Kafka metadata state that shows the mechanism used (KRaft or ZooKeeper) to manage Kafka metadata and coordinate operations. 
+<4> Kafka metadata state that shows KRaft is managing Kafka metadata and coordinating operations. 
 <5> The version of Kafka being used by the Kafka cluster.
 <6> The node pools belonging to the Kafka cluster.
 <7> The `listeners` describe Kafka bootstrap addresses by type.

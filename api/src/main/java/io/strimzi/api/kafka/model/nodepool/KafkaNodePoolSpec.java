@@ -61,10 +61,9 @@ public class KafkaNodePoolSpec extends Spec {
         this.storage = storage;
     }
 
-    @Description("The roles that the nodes in this pool will have when KRaft mode is enabled. " +
-            "Supported values are 'broker' and 'controller'. " +
-            "This field is required. " +
-            "When KRaft mode is disabled, the only allowed value if `broker`.")
+    @Description("The roles assigned to the node pool. " +
+            "Supported values are `broker` and `controller`. " +
+            "This property is required.")
     @JsonProperty(required = true)
     public List<ProcessRoles> getRoles() {
         return roles;

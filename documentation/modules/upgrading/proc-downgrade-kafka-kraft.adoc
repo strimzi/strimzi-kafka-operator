@@ -3,14 +3,14 @@
 // assembly-downgrade.adoc
 
 [id='proc-downgrade-kafka-kraft-{context}']
-= Downgrading KRaft-based Kafka clusters and client applications
+= Downgrading Kafka clusters and client applications
 
 [role="_abstract"]
-Downgrade a KRaft-based Kafka cluster to an earlier version.
-When downgrading a KRaft-based Kafka cluster to a lower version, like moving from {KafkaVersionHigher} to {KafkaVersionLower}, ensure that the metadata version used by the Kafka cluster is a version supported by the Kafka version you want to downgrade to. 
+Downgrade a Kafka cluster to an earlier version.
+When downgrading a Kafka cluster to a lower version, like moving from {KafkaVersionHigher} to {KafkaVersionLower}, ensure that the metadata version used by the Kafka cluster is a version supported by the Kafka version you want to downgrade to. 
 The metadata version for the Kafka version you are downgrading from must not be higher than the version you are downgrading to.
 
-NOTE: Consult the Apache Kafka documentation for information regarding the support and limitations associated with KRaft-based downgrades.
+NOTE: Consult the Apache Kafka documentation for information regarding the support and limitations associated with downgrades.
 
 .Prerequisites
 
