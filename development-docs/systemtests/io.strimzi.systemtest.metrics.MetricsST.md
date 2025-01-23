@@ -70,8 +70,8 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy KafkaBridge into namespaceFirst and ensure KafkaMirrorMaker2 is in Ready state | KafkaBridge is deployed and KafkaMirrorMaker2 is Ready |
-| 2. | Attach producer and consumer clients to KafkaBridge | Clients are up and running |
+| 1. | Deploy KafkaBridge into {@namespaceFirst} and ensure KafkaMirrorMaker2 is in Ready state | KafkaBridge is deployed and KafkaMirrorMaker2 is Ready |
+| 2. | Attach producer and consumer clients to KafkaBridge | Clients are up and running, continuously producing and pooling messages |
 | 3. | Collect metrics from KafkaBridge pod | Metrics are collected |
 | 4. | Check that specific metric is available in collected metrics from KafkaBridge pods | Metric is available with expected value |
 | 5. | Collect current metrics from Cluster Operator pod | Cluster Operator metrics are collected |
@@ -92,13 +92,13 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy KafkaConnect into {@namespaceFirst} with {@Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES} set to true. | KafkaConnect is up and running. |
+| 1. | Deploy KafkaConnect into {@namespaceFirst}. | KafkaConnect is up and running. |
 | 2. | Create KafkaConnector for KafkaConnect from step 1. | KafkaConnector is in Ready state. |
 | 3. | Create metrics collector and collect metrics from KafkaConnect Pods. | Metrics are collected. |
 | 4. | Check if specific metric is available in collected metrics from KafkaConnect Pods. | Metric is available with expected value. |
 | 5. | Collect current metrics from Cluster Operator Pod. | Cluster Operator metrics are collected. |
 | 6. | Check that CO metrics contain data about KafkaConnect and KafkaConnector in namespace {@namespaceFirst}. | CO metrics contain expected data. |
-| 7. | Check that CO metrics don't contain data about KafkaConnect and KafkaConnector in namespace {@namespaceFirst}. | CO metrics don't contain expected data. |
+| 7. | Check that CO metrics don't contain data about KafkaConnect and KafkaConnector in namespace {@namespaceSecond}. | CO metrics should not contain any data for given namespace. |
 | 8. | Check that CO metrics contain data about KafkaConnect state. | CO metrics contain expected data. |
 
 **Labels:**
@@ -116,7 +116,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Get KafkaExporter run.sh script and check it has configured proper values. | Script has proper values set. |
+| 1. | Get KafkaExporter run.sh script and check it has configured proper values. | Script has proper values set, currently matching all groups (.*) and topics (.*). |
 | 2. | Check that KafkaExporter metrics contains info about consumer_offset topic. | Metrics contains proper data. |
 | 3. | Change configuration of KafkaExporter in Kafka CR to match 'my-group.*' group regex and {@topicName} as topic name regex, than wait for KafkaExporter rolling update. | Rolling update finished. |
 | 4. | Get KafkaExporter run.sh script and check it has configured proper values. | Script has proper values set. |
@@ -138,7 +138,7 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Create Kafka producer and consumer and exchange some messages. | Clients successfully exchange the messages. |
-| 2. | Check if metric kafka_topic_partitions is available in collected metrics from KafkaExporter Pods. | Metric is available with expected value. |
+| 2. | Check if metric kafka_consumergroup_current_offset is available in collected metrics from KafkaExporter Pods. | Metric is available with expected value. |
 | 3. | Check if metric kafka_broker_info is available in collected metrics from KafkaExporter pods for each Kafka Broker pod. | Metric is available with expected value. |
 
 **Labels:**
@@ -149,7 +149,7 @@
 
 ## testKafkaMetrics
 
-**Description:** This test case checks several random metrics exposed by Kafka.
+**Description:** This test case checks several metrics exposed by Kafka.
 
 **Steps:**
 
