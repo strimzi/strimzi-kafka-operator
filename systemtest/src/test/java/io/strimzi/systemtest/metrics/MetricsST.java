@@ -238,7 +238,7 @@ public class MetricsST extends AbstractST {
         description = @Desc("This test case checks several metrics exposed by KafkaExporter."),
         steps = {
             @Step(value = "Create Kafka producer and consumer and exchange some messages.", expected = "Clients successfully exchange the messages."),
-            @Step(value = "Check if metric kafka_topic_partitions is available in collected metrics from KafkaExporter Pods.", expected = "Metric is available with expected value."),
+            @Step(value = "Check if metric kafka_consumergroup_current_offset is available in collected metrics from KafkaExporter Pods.", expected = "Metric is available with expected value."),
             @Step(value = "Check if metric kafka_broker_info is available in collected metrics from KafkaExporter pods for each Kafka Broker pod.", expected = "Metric is available with expected value.")
         },
         labels = {
