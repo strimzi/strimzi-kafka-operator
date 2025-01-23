@@ -439,7 +439,7 @@ public class MetricsST extends AbstractST {
     @TestDoc(
         description = @Desc("This test case checks several metrics exposed by KafkaBridge."),
         steps = {
-            @Step(value = "Deploy KafkaBridge into namespaceFirst and ensure KafkaMirrorMaker2 is in Ready state", expected = "KafkaBridge is deployed and KafkaMirrorMaker2 is Ready"),
+            @Step(value = "Deploy KafkaBridge into {@namespaceFirst} and ensure KafkaMirrorMaker2 is in Ready state", expected = "KafkaBridge is deployed and KafkaMirrorMaker2 is Ready"),
             @Step(value = "Attach producer and consumer clients to KafkaBridge", expected = "Clients are up and running"),
             @Step(value = "Collect metrics from KafkaBridge pod", expected = "Metrics are collected"),
             @Step(value = "Check that specific metric is available in collected metrics from KafkaBridge pods", expected = "Metric is available with expected value"),
