@@ -190,7 +190,7 @@ public class MetricsST extends AbstractST {
             @Step(value = "Check if specific metric is available in collected metrics from KafkaConnect Pods.", expected = "Metric is available with expected value."),
             @Step(value = "Collect current metrics from Cluster Operator Pod.", expected = "Cluster Operator metrics are collected."),
             @Step(value = "Check that CO metrics contain data about KafkaConnect and KafkaConnector in namespace {@namespaceFirst}.", expected = "CO metrics contain expected data."),
-            @Step(value = "Check that CO metrics don't contain data about KafkaConnect and KafkaConnector in namespace {@namespaceFirst}.", expected = "CO metrics don't contain expected data."),
+            @Step(value = "Check that CO metrics don't contain data about KafkaConnect and KafkaConnector in namespace {@namespaceSecond}.", expected = "CO metrics should not contain any data for given namespace."),
             @Step(value = "Check that CO metrics contain data about KafkaConnect state.", expected = "CO metrics contain expected data.")
         },
         labels = {
