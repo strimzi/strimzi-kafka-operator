@@ -184,7 +184,7 @@ public class MetricsST extends AbstractST {
     @TestDoc(
         description = @Desc("This test case checks several random metrics exposed by Kafka Connect."),
         steps = {
-            @Step(value = "Deploy KafkaConnect into {@namespaceFirst} with {@Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES} set to true.", expected = "KafkaConnect is up and running."),
+            @Step(value = "Deploy KafkaConnect into {@namespaceFirst}.", expected = "KafkaConnect is up and running."),
             @Step(value = "Create KafkaConnector for KafkaConnect from step 1.", expected = "KafkaConnector is in Ready state."),
             @Step(value = "Create metrics collector and collect metrics from KafkaConnect Pods.", expected = "Metrics are collected."),
             @Step(value = "Check if specific metric is available in collected metrics from KafkaConnect Pods.", expected = "Metric is available with expected value."),
