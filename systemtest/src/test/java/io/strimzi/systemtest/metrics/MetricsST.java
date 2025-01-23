@@ -278,7 +278,7 @@ public class MetricsST extends AbstractST {
     @TestDoc(
         description = @Desc("This test case checks several metrics exposed by KafkaExporter with different from default configuration. Rolling update is performed during the test case to change KafkaExporter configuration."),
         steps = {
-            @Step(value = "Get KafkaExporter run.sh script and check it has configured proper values.", expected = "Script has proper values set."),
+            @Step(value = "Get KafkaExporter run.sh script and check it has configured proper values.", expected = "Script has proper values set, currently matching all groups (.*) and topics (.*)."),
             @Step(value = "Check that KafkaExporter metrics contains info about consumer_offset topic.", expected = "Metrics contains proper data."),
             @Step(value = "Change configuration of KafkaExporter in Kafka CR to match 'my-group.*' group regex and {@topicName} as topic name regex, than wait for KafkaExporter rolling update.", expected = "Rolling update finished."),
             @Step(value = "Get KafkaExporter run.sh script and check it has configured proper values.", expected = "Script has proper values set."),
