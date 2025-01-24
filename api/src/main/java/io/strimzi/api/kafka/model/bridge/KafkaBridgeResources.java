@@ -31,11 +31,12 @@ public class KafkaBridgeResources {
     }
 
     /**
-     * Returns the name of the Kafka Bridge metrics and log {@code ConfigMap} for a {@code KafkaBridge} cluster of the given name.
+     * Returns the name of the Kafka Bridge {@code ConfigMap} for a {@code KafkaBridge} cluster of the given name.
+     * Such {@code ConfigMap} contains metrics, logging and overall bridge configuration parameters.
      * @param clusterName  The {@code metadata.name} of the {@code KafkaBridge} resource.
-     * @return The name of the corresponding Kafka Bridge metrics and log {@code ConfigMap}.
+     * @return The name of the corresponding Kafka Bridge {@code ConfigMap}.
      */
-    public static String metricsAndLogConfigMapName(String clusterName) {
+    public static String configMapName(String clusterName) {
         return clusterName + "-bridge-config";
     }
 
