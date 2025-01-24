@@ -3,10 +3,10 @@
 // assembly-cluster-recovery-volume.adoc
 
 [id="proc-cluster-recovery-volume-{context}"]
-= Recovering a deleted KRaft-based Kafka cluster
+= Recovering a deleted Kafka cluster
 
 [role="_abstract"]
-This procedure describes how to recover a deleted Kafka cluster operating in KRaft mode from persistent volumes (PVs) by recreating the original `PersistentVolumeClaim` (PVC) resources.
+This procedure describes how to recover a deleted Kafka cluster from persistent volumes (PVs) by recreating the original `PersistentVolumeClaim` (PVC) resources.
 
 If the Topic Operator and User Operator are deployed, you can recover `KafkaTopic` and `KafkaUser` resources by recreating them. 
 It is important that you recreate the `KafkaTopic` resources with the same configurations, or the Topic Operator will try to update them in Kafka.

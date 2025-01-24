@@ -173,7 +173,7 @@ spec:
                   enum:
                   - controller
                   - broker
-                description: "The roles that the nodes in this pool will have when KRaft mode is enabled. Supported values are 'broker' and 'controller'. This field is required. When KRaft mode is disabled, the only allowed value if `broker`."
+                description: The roles assigned to the node pool. Supported values are `broker` and `controller`. This property is required.
               resources:
                 type: object
                 properties:

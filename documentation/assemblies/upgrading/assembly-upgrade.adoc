@@ -7,7 +7,7 @@
 
 [role="_abstract"]
 Download the latest Strimzi xref:downloads-{context}[deployment files] and upgrade your Strimzi installation to version {ProductVersion} to benefit from new features, performance improvements, and enhanced security options.
-During the upgrade, Kafka is also be updated to the latest supported version, introducing additional features and bug fixes to your Strimzi deployment.
+During the upgrade, Kafka is also updated to the latest supported version, introducing additional features and bug fixes to your Strimzi deployment.
 
 Use the same method to upgrade the Cluster Operator as the initial method of deployment.
 For example, if you used the Strimzi installation files, modify those files to perform the upgrade.
@@ -39,7 +39,7 @@ include::../../modules/upgrading/con-upgrade-cluster.adoc[leveloffset=+1]
 //upgrading cluster operator
 include::assembly-upgrade-cluster-operator.adoc[leveloffset=+1]
 
-//upgrading kafka: KRaft-based
+//upgrading kafka
 include::../../modules/upgrading/proc-upgrade-kafka-kraft.adoc[leveloffset=+1]
 
 //checking the status of an upgrade

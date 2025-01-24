@@ -37,7 +37,7 @@ To change the cluster name before you deploy the cluster, edit the `Kafka.metada
 
 .Procedure
 
-. Deploy a KRaft-based Kafka cluster.
+. Deploy a Kafka cluster.
 +
 To deploy a Kafka cluster with a single node pool that uses dual-role nodes:
 +
