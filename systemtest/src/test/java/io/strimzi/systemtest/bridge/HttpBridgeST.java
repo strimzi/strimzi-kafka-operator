@@ -268,7 +268,7 @@ class HttpBridgeST extends AbstractST {
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
         VerificationUtils.verifyContainerEnvVariables(Environment.TEST_SUITE_NAMESPACE, KafkaBridgeResources.componentName(bridgeName), KafkaBridgeResources.componentName(bridgeName), envVarUpdated);
 
-        ConfigMap configMap = kubeClient().namespace(Environment.TEST_SUITE_NAMESPACE).getConfigMap(KafkaBridgeResources.metricsAndLogConfigMapName(bridgeName));
+        ConfigMap configMap = kubeClient().namespace(Environment.TEST_SUITE_NAMESPACE).getConfigMap(KafkaBridgeResources.configMapName(bridgeName));
         String bridgeConfiguration = configMap.getData().get("application.properties");
         Map<String, Object> config = StUtils.loadProperties(bridgeConfiguration);
         Map<String, Object> producerConfigMap = config.entrySet().stream().filter(e -> e.getKey().startsWith("kafka.producer.")).collect(Collectors.toMap(e -> e.getKey().replace("kafka.producer.", ""), Map.Entry::getValue));

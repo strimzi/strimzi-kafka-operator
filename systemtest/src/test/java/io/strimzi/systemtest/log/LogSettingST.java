@@ -402,7 +402,7 @@ class LogSettingST extends AbstractST {
 
         final String bridgeDepName = KafkaBridgeResources.componentName(testStorage.getClusterName());
         final Map<String, String> bridgePods = DeploymentUtils.depSnapshot(Environment.TEST_SUITE_NAMESPACE, bridgeDepName);
-        final String bridgeMap = KafkaBridgeResources.metricsAndLogConfigMapName(testStorage.getClusterName());
+        final String bridgeMap = KafkaBridgeResources.configMapName(testStorage.getClusterName());
         final LabelSelector labelSelector = KafkaBridgeResource.getLabelSelector(bridgeDepName, KafkaMirrorMaker2Resources.componentName(bridgeDepName));
 
         LOGGER.info("Checking if Bridge has log level set properly");
