@@ -9,6 +9,7 @@
 * Store Kafka node certificates in separate Secrets, one Secret per pod.
 * Allow configuring `ssl.principal.mapping.rules` and custom trusted CAs in Kafka brokers with `type: custom` authentication
 * Moved HTTP bridge configuration to the ConfigMap setup by the operator.
+* Dependency updates (Vert.x 4.5.12, Netty 4.1.117.Final)
 
 ### Major changes, deprecations and removals
 
