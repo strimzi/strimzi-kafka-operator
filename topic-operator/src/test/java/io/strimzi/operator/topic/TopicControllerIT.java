@@ -866,7 +866,7 @@ class TopicControllerIT implements TestSeparator {
         modifyTopicAndAwait(kt, changer, readyIsTrue());
 
         // then with dynamic wait (ensuring that race-condition never happen)
-        TestUtils.waitFor("Waiting for config update", Duration.ofMillis(500).toMillis(), Duration.ofSeconds(30).toMillis(), () -> {
+        TestUtils.waitFor("config update", Duration.ofMillis(500).toMillis(), Duration.ofSeconds(30).toMillis(), () -> {
             try {
                 return topicConfigMap(expectedTopicName).equals(expectedConfigs);
             } catch (InterruptedException | ExecutionException e) {

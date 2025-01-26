@@ -222,7 +222,7 @@ public class KafkaHandlerIT implements TestSeparator {
 
         // Wait until both topics actually exist
         try (var admin = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers()))) {
-            TestUtils.waitFor("Wait for topic creation", Duration.ofMillis(500).toMillis(), Duration.ofSeconds(30).toMillis(), () -> {
+            TestUtils.waitFor("topic creation", Duration.ofMillis(500).toMillis(), Duration.ofSeconds(30).toMillis(), () -> {
                 try {
                     var existingTopics = admin.listTopics().names().get();
                     return existingTopics.containsAll(List.of(t1Name, t2Name));
