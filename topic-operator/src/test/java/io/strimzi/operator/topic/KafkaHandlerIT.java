@@ -151,9 +151,9 @@ public class KafkaHandlerIT implements TestSeparator {
     @Test
     public void shouldAlterConfigs() throws ExecutionException, InterruptedException {
         String t1Name = "should-alter-configs-1";
-        createKafkaTopic(t1Name, Map.of(TopicConfig.RETENTION_MS_CONFIG, "604800000"));
+        createKafkaTopicWithWait(t1Name, Map.of(TopicConfig.RETENTION_MS_CONFIG, "604800000"));
         String t2Name = "should-alter-configs-2";
-        createKafkaTopic(t2Name, Map.of(TopicConfig.CLEANUP_POLICY_CONFIG, "delete"));
+        createKafkaTopicWithWait(t2Name, Map.of(TopicConfig.CLEANUP_POLICY_CONFIG, "delete"));
 
         try (var kafkaAdminClientSpy = spy(Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers())))) {
             var config = TopicOperatorConfig.buildFromMap(Map.of(
@@ -185,9 +185,9 @@ public class KafkaHandlerIT implements TestSeparator {
     @Test
     public void shouldCreatePartitions() throws ExecutionException, InterruptedException {
         String t1Name = "should-create-partitions-1";
-        createKafkaTopic(t1Name, Map.of());
+        createKafkaTopicWithWait(t1Name, Map.of());
         String t2Name = "should-create-partitions-2";
-        createKafkaTopic(t2Name, Map.of());
+        createKafkaTopicWithWait(t2Name, Map.of());
 
         try (var kafkaAdminClientSpy = spy(Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers())))) {
             var config = TopicOperatorConfig.buildFromMap(Map.of(
@@ -216,21 +216,9 @@ public class KafkaHandlerIT implements TestSeparator {
     @Test
     public void shouldDescribeTopics() throws ExecutionException, InterruptedException {
         String t1Name = "should-describe-topics-1";
-        createKafkaTopic(t1Name, Map.of());
+        createKafkaTopicWithWait(t1Name, Map.of());
         String t2Name = "should-describe-topics-2";
-        createKafkaTopic(t2Name, Map.of());
-
-        // Wait until both topics actually exist
-        try (var admin = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers()))) {
-            TestUtils.waitFor("topic creation", Duration.ofMillis(500).toMillis(), Duration.ofSeconds(30).toMillis(), () -> {
-                try {
-                    var existingTopics = admin.listTopics().names().get();
-                    return existingTopics.containsAll(List.of(t1Name, t2Name));
-                } catch (Exception e) {
-                    return false;
-                }
-            });
-        }
+        createKafkaTopicWithWait(t2Name, Map.of());
 
         try (var kafkaAdminClientSpy = spy(Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers())))) {
             var config = TopicOperatorConfig.buildFromMap(Map.of(
@@ -264,11 +252,11 @@ public class KafkaHandlerIT implements TestSeparator {
     @Test
     public void shouldDeleteTopics() throws ExecutionException, InterruptedException {
         String t1Name = "should-delete-topics-1";
-        createKafkaTopic(t1Name, Map.of());
+        createKafkaTopicWithWait(t1Name, Map.of());
         String t2Name = "should-delete-topics-2";
-        createKafkaTopic(t2Name, Map.of());
+        createKafkaTopicWithWait(t2Name, Map.of());
         String t3Name = "should-delete-topics-3";
-        createKafkaTopic(t3Name, Map.of());
+        createKafkaTopicWithWait(t3Name, Map.of());
 
         try (var kafkaAdminClientSpy = spy(Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers())))) {
             var config = TopicOperatorConfig.buildFromMap(Map.of(
@@ -297,13 +285,23 @@ public class KafkaHandlerIT implements TestSeparator {
         }
     }
 
-    private void createKafkaTopic(String name, Map<String, String> config) throws ExecutionException, InterruptedException {
+    private void createKafkaTopicWithWait(String name, Map<String, String> config) throws ExecutionException, InterruptedException {
         try (Admin admin = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers()))) {
 
             NewTopic topic = new NewTopic(name, 1, (short) 1);
             topic.configs(config);
 
             admin.createTopics(List.of(topic)).all().get();
+
+            // Wait until the topic actually exists
+            TestUtils.waitFor("topic creation", Duration.ofMillis(500).toMillis(), Duration.ofSeconds(30).toMillis(), () -> {
+                try {
+                    var existingTopics = admin.listTopics().names().get();
+                    return existingTopics.contains(name);
+                } catch (Exception e) {
+                    return false;
+                }
+            });
         }
     }
 
