@@ -156,7 +156,7 @@ class BatchingTopicControllerIT implements TestSeparator {
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdmin), metricsHolder,
-            new CruiseControlHandler(config, metricsHolder, config.cruiseControlClient()));
+            new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config)));
         
         var batch = List.of(new ReconcilableTopic(
             new Reconciliation("test", "KafkaTopic", NAMESPACE, TopicOperatorUtil.topicName(kafkaTopic)), kafkaTopic, TopicOperatorUtil.topicName(kafkaTopic)));
@@ -530,7 +530,7 @@ class BatchingTopicControllerIT implements TestSeparator {
         new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdmin), metricsHolder,
-            new CruiseControlHandler(config, metricsHolder, config.cruiseControlClient()));
+            new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config)));
 
         verifyNoInteractions(kafkaAdmin);
     }
@@ -571,7 +571,7 @@ class BatchingTopicControllerIT implements TestSeparator {
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdminClientSpy), metricsHolder,
-            new CruiseControlHandler(config, metricsHolder, config.cruiseControlClient()));
+            new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config)));
         controller.onUpdate(List.of(new ReconcilableTopic(
             new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
@@ -621,7 +621,7 @@ class BatchingTopicControllerIT implements TestSeparator {
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdminClientSpy), metricsHolder,
-            new CruiseControlHandler(config, metricsHolder, config.cruiseControlClient()));
+            new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config)));
         controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         Mockito.verify(kafkaAdminClientSpy, Mockito.times(1)).incrementalAlterConfigs(any());
@@ -696,7 +696,7 @@ class BatchingTopicControllerIT implements TestSeparator {
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdminClientSpy), metricsHolder,
-            new CruiseControlHandler(config, metricsHolder, config.cruiseControlClient()));
+            new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config)));
         controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         Mockito.verify(kafkaAdminClientSpy, Mockito.never()).incrementalAlterConfigs(any());
@@ -754,7 +754,7 @@ class BatchingTopicControllerIT implements TestSeparator {
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdminClientSpy), metricsHolder,
-            new CruiseControlHandler(config, metricsHolder, config.cruiseControlClient()));
+            new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config)));
         controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         Mockito.verify(kafkaAdminClientSpy, Mockito.times(1)).incrementalAlterConfigs(any());
@@ -833,7 +833,7 @@ class BatchingTopicControllerIT implements TestSeparator {
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdminClientSpy), metricsHolder,
-            new CruiseControlHandler(config, metricsHolder, config.cruiseControlClient()));
+            new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config)));
         controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         Mockito.verify(kafkaAdminClientSpy, Mockito.times(1)).incrementalAlterConfigs(any());
@@ -880,7 +880,7 @@ class BatchingTopicControllerIT implements TestSeparator {
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdminClientSpy), metricsHolder,
-            new CruiseControlHandler(config, metricsHolder, config.cruiseControlClient()));
+            new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config)));
         controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         Mockito.verify(kafkaAdminClientSpy, Mockito.never()).incrementalAlterConfigs(any());
@@ -937,7 +937,7 @@ class BatchingTopicControllerIT implements TestSeparator {
         var controller = new BatchingTopicController(config, Map.of("key", "VALUE"),
             new KubernetesHandler(config, metricsHolder, kubernetesClient),
             new KafkaHandler(config, metricsHolder, kafkaAdminClientSpy), metricsHolder,
-            new CruiseControlHandler(config, metricsHolder, config.cruiseControlClient()));
+            new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config)));
         controller.onUpdate(List.of(new ReconcilableTopic(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, NAMESPACE, "my-topic"), testTopic, "my-topic")));
 
         Mockito.verify(kafkaAdminClientSpy, Mockito.never()).incrementalAlterConfigs(any());

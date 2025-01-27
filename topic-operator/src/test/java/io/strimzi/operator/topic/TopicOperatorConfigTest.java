@@ -444,7 +444,8 @@ class TopicOperatorConfigTest {
             TopicOperatorConfig.CRUISE_CONTROL_CRT_FILE_PATH.key(), "/4sa654a/d65sa65da"
         ));
 
-        var thrown = assertThrows(IllegalArgumentException.class, config::cruiseControlClient);
+        var thrown = assertThrows(IllegalArgumentException.class,
+            () -> TopicOperatorUtil.createCruiseControlClient(config));
         assertEquals("File not found: /4sa654a/d65sa65da", thrown.getMessage());
     }
 
@@ -473,7 +474,8 @@ class TopicOperatorConfigTest {
             TopicOperatorConfig.CRUISE_CONTROL_API_USER_PATH.key(), "/d4sa6a/das45da4s"
         ));
 
-        var thrown = assertThrows(IllegalArgumentException.class, config::cruiseControlClient);
+        var thrown = assertThrows(IllegalArgumentException.class,
+            () -> TopicOperatorUtil.createCruiseControlClient(config));
         assertEquals("File not found: /d4sa6a/das45da4s", thrown.getMessage());
     }
     
@@ -492,7 +494,8 @@ class TopicOperatorConfigTest {
             TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), "/sd4sa6/fds6f7sfs"
         ));
 
-        var thrown = assertThrows(IllegalArgumentException.class, config::cruiseControlClient);
+        var thrown = assertThrows(IllegalArgumentException.class,
+            () -> TopicOperatorUtil.createCruiseControlClient(config));
         assertEquals("File not found: /sd4sa6/fds6f7sfs", thrown.getMessage());
     }
 }

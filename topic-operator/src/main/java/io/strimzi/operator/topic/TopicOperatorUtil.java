@@ -8,6 +8,7 @@ import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.InvalidResourceException;
+import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.model.Either;
 import io.strimzi.operator.topic.model.Pair;
@@ -16,6 +17,7 @@ import io.strimzi.operator.topic.model.ReconcilableTopic;
 import io.strimzi.operator.topic.model.TopicOperatorException;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -226,6 +228,47 @@ public class TopicOperatorUtil {
                 String.format("Invalid value for topic config '%s': %s", key, value));
         }
         return valueStr;
+    }
+
+    /**
+     * Create Cruise Control client.
+     *
+     * @param config Topic Operator configuration.
+     * @return Cruise Control client.
+     */
+    public static CruiseControlClient createCruiseControlClient(TopicOperatorConfig config) {
+        var sslCertificate = config.cruiseControlSslEnabled() ? 
+            TopicOperatorUtil.getFileContent(config.cruiseControlCrtFilePath()) : null;
+        var apiUsername = config.cruiseControlAuthEnabled() ? 
+            new String(TopicOperatorUtil.getFileContent(config.cruiseControlApiUserPath()), StandardCharsets.UTF_8) : null;
+        var apiPassword = config.cruiseControlAuthEnabled() ? 
+            new String(TopicOperatorUtil.getFileContent(config.cruiseControlApiPassPath()), StandardCharsets.UTF_8) : null;
+
+        if (config.cruiseControlHostname() == null || config.cruiseControlHostname().isBlank()) {
+            throw new IllegalArgumentException("Cruise Control hostname is not set");
+        }
+        if (config.cruiseControlSslEnabled() && (sslCertificate == null || sslCertificate.length == 0)) {
+            throw new IllegalArgumentException("Cruise Control certificate is not set");
+        }
+        if (config.cruiseControlAuthEnabled()) {
+            if (apiUsername == null || apiUsername.isBlank()) {
+                throw new IllegalArgumentException("Cruise Control username is not set");
+            }
+            if (apiPassword == null || apiPassword.isBlank()) {
+                throw new IllegalArgumentException("Cruise Control password is not set");
+            }
+        }
+
+        return CruiseControlClient.create(
+            config.cruiseControlHostname(),
+            config.cruiseControlPort(),
+            config.cruiseControlRackEnabled(),
+            config.cruiseControlSslEnabled(),
+            sslCertificate,
+            config.cruiseControlAuthEnabled(),
+            apiUsername,
+            apiPassword
+        );
     }
 
     /**

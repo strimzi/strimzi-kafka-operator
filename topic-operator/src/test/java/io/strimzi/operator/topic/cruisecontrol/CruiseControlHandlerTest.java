@@ -17,6 +17,7 @@ import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.topic.TopicOperatorConfig;
 import io.strimzi.operator.topic.TopicOperatorTestUtil;
+import io.strimzi.operator.topic.TopicOperatorUtil;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsProvider;
 import io.strimzi.operator.topic.model.ReconcilableTopic;
@@ -92,7 +93,7 @@ public class CruiseControlHandlerTest {
     @ParameterizedTest
     @MethodSource("operatorConfigs")
     public void replicasChangeShouldShouldCompleteWithValidConfig(TopicOperatorConfig config) {
-        var handler = new CruiseControlHandler(config, metricsHolder, config.cruiseControlClient());
+        var handler = new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config));
 
         server.expectTopicConfigSuccessResponse(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
@@ -114,7 +115,7 @@ public class CruiseControlHandlerTest {
             entry(TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), String.valueOf(serverPort))
         ));
         
-        var handler = new CruiseControlHandler(config, metricsHolder, config.cruiseControlClient());
+        var handler = new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config));
         
         var pending = buildPendingReconcilableTopics();
         var pendingAndOngoing = handler.requestPendingChanges(pending);
@@ -139,7 +140,7 @@ public class CruiseControlHandlerTest {
             entry(TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
         ));
 
-        var handler = new CruiseControlHandler(config, metricsHolder, config.cruiseControlClient());
+        var handler = new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config));
 
         server.expectTopicConfigErrorResponse(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
@@ -167,7 +168,7 @@ public class CruiseControlHandlerTest {
             entry(TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
         ));
 
-        var handler = new CruiseControlHandler(config, metricsHolder, config.cruiseControlClient());
+        var handler = new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config));
 
         server.expectTopicConfigRequestTimeout(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();
@@ -194,7 +195,7 @@ public class CruiseControlHandlerTest {
             entry(TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), apiPassFile.getAbsolutePath())
         ));
 
-        var handler = new CruiseControlHandler(config, metricsHolder, config.cruiseControlClient());
+        var handler = new CruiseControlHandler(config, metricsHolder, TopicOperatorUtil.createCruiseControlClient(config));
 
         server.expectTopicConfigRequestUnauthorized(apiUserFile, apiPassFile);
         var pending = buildPendingReconcilableTopics();

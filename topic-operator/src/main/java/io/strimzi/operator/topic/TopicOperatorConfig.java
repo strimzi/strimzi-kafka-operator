@@ -15,12 +15,10 @@ import io.strimzi.operator.common.config.ConfigParameterParser;
 import io.strimzi.operator.common.featuregates.FeatureGates;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties;
-import io.strimzi.operator.topic.cruisecontrol.CruiseControlClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.config.SslConfigs;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -129,7 +127,7 @@ public class TopicOperatorConfig {
         LOGGER.infoOp("TopicOperator configuration is {}", topicOperatorConfig);
         return topicOperatorConfig;
     }
-    
+
     private static Set<String> keyNames() {
         return Collections.unmodifiableSet(CONFIG_VALUES.keySet());
     }
@@ -418,41 +416,6 @@ public class TopicOperatorConfig {
 
         kafkaClientProps.put(SaslConfigs.SASL_MECHANISM, saslMechanism);
         kafkaClientProps.put(SaslConfigs.SASL_JAAS_CONFIG, jaasConfig);
-    }
-
-    /**
-     * @return Cruise Control client.
-     */
-    public CruiseControlClient cruiseControlClient() {
-        var sslCertificate = cruiseControlSslEnabled() ? TopicOperatorUtil.getFileContent(cruiseControlCrtFilePath()) : null;
-        var apiUsername = cruiseControlAuthEnabled() ? new String(TopicOperatorUtil.getFileContent(cruiseControlApiUserPath()), StandardCharsets.UTF_8) : null;
-        var apiPassword = cruiseControlAuthEnabled() ? new String(TopicOperatorUtil.getFileContent(cruiseControlApiPassPath()), StandardCharsets.UTF_8) : null;
-        
-        if (cruiseControlHostname() == null || cruiseControlHostname().isBlank()) {
-            throw new IllegalArgumentException("Cruise Control hostname is not set");
-        }
-        if (cruiseControlSslEnabled() && (sslCertificate == null || sslCertificate.length == 0)) {
-            throw new IllegalArgumentException("Cruise Control certificate is not set");
-        }
-        if (cruiseControlAuthEnabled()) {
-            if (apiUsername == null || apiUsername.isBlank()) {
-                throw new IllegalArgumentException("Cruise Control username is not set");
-            }
-            if (apiPassword == null || apiPassword.isBlank()) {
-                throw new IllegalArgumentException("Cruise Control password is not set");
-            }
-        }
-        
-        return CruiseControlClient.create(
-            cruiseControlHostname(),
-            cruiseControlPort(),
-            cruiseControlRackEnabled(),
-            cruiseControlSslEnabled(),
-            sslCertificate,
-            cruiseControlAuthEnabled(),
-            apiUsername,
-            apiPassword
-        );
     }
 
     @Override
