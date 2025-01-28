@@ -155,7 +155,7 @@ class ConnectST extends AbstractST {
                 "config.storage.replication.factor=-1\n" +
                 "offset.storage.replication.factor=-1\n" +
                 "status.storage.replication.factor=-1\n" +
-                "config.storage.topic=" + KafkaConnectResources.metricsAndLogConfigMapName(testStorage.getClusterName()) + "\n" +
+                "config.storage.topic=" + KafkaConnectResources.configMapName(testStorage.getClusterName()) + "\n" +
                 "status.storage.topic=" + KafkaConnectResources.configStorageTopicStatus(testStorage.getClusterName()) + "\n" +
                 "offset.storage.topic=" + KafkaConnectResources.configStorageTopicOffsets(testStorage.getClusterName()) + "\n");
 
@@ -173,7 +173,7 @@ class ConnectST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector(), connectReplicasCount, connectPodsSnapshot);
 
         LOGGER.info("Verifying configurations in config map");
-        ConfigMap configMap = kubeClient().namespace(testStorage.getNamespaceName()).getConfigMap(KafkaConnectResources.metricsAndLogConfigMapName(testStorage.getClusterName()));
+        ConfigMap configMap = kubeClient().namespace(testStorage.getNamespaceName()).getConfigMap(KafkaConnectResources.configMapName(testStorage.getClusterName()));
         String connectConfigurations = configMap.getData().get("kafka-connect.properties");
         Map<String, Object> config = StUtils.loadProperties(connectConfigurations);
         assertThat(config.entrySet().containsAll(exceptedConfig.entrySet()), is(true));
@@ -898,7 +898,7 @@ class ConnectST extends AbstractST {
         VerificationUtils.verifyContainerEnvVariables(testStorage.getNamespaceName(), KafkaConnectResources.componentName(testStorage.getClusterName()), KafkaConnectResources.componentName(testStorage.getClusterName()), envVarUpdated);
 
         LOGGER.info("Verifying configurations in config map after update");
-        ConfigMap configMap = kubeClient().namespace(testStorage.getNamespaceName()).getConfigMap(KafkaConnectResources.metricsAndLogConfigMapName(testStorage.getClusterName()));
+        ConfigMap configMap = kubeClient().namespace(testStorage.getNamespaceName()).getConfigMap(KafkaConnectResources.configMapName(testStorage.getClusterName()));
         String connectConfigurations = configMap.getData().get("kafka-connect.properties");
         Map<String, Object> config = StUtils.loadProperties(connectConfigurations);
         assertThat(config.entrySet().containsAll(connectConfig.entrySet()), is(true));

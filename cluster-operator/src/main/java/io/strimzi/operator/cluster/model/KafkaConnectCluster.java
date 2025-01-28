@@ -97,8 +97,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     protected static final String EXTERNAL_CONFIGURATION_VOLUME_MOUNT_BASE_PATH = "/opt/kafka/external-configuration/";
     protected static final String EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX = "ext-conf-";
     protected static final String OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/oauth-certs/";
-    protected static final String CONNECT_CONFIG_VOLUME_NAME = "kafka-connect-configurations";
-    protected static final String CONNECT_CONFIG_VOLUME_MOUNT = "/opt/kafka/custom-config/";
+    protected static final String KAFKA_CONNECT_CONFIG_VOLUME_NAME = "kafka-connect-configurations";
+    protected static final String KAFKA_CONNECT_CONFIG_VOLUME_MOUNT = "/opt/kafka/custom-config/";
 
     // Configuration defaults
     private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(5).withInitialDelaySeconds(60).build();
@@ -190,7 +190,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         super(reconciliation, resource, name, componentType, sharedEnvironmentProvider);
 
         this.serviceName = KafkaConnectResources.serviceName(cluster);
-        this.connectConfigMapName = KafkaConnectResources.metricsAndLogConfigMapName(cluster);
+        this.connectConfigMapName = KafkaConnectResources.configMapName(cluster);
     }
 
     /**
@@ -372,7 +372,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     protected List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>(2);
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
-        volumeList.add(VolumeUtils.createConfigMapVolume(CONNECT_CONFIG_VOLUME_NAME, connectConfigMapName));
+        volumeList.add(VolumeUtils.createConfigMapVolume(KAFKA_CONNECT_CONFIG_VOLUME_NAME, connectConfigMapName));
 
         if (rack != null) {
             volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "1Mi", "Memory"));
@@ -436,7 +436,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     protected List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>(2);
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
-        volumeMountList.add(VolumeUtils.createVolumeMount(CONNECT_CONFIG_VOLUME_NAME, CONNECT_CONFIG_VOLUME_MOUNT));
+        volumeMountList.add(VolumeUtils.createVolumeMount(KAFKA_CONNECT_CONFIG_VOLUME_NAME, KAFKA_CONNECT_CONFIG_VOLUME_MOUNT));
 
         if (rack != null) {
             volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
@@ -848,10 +848,9 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         data.put(
                 KAFKA_CONNECT_CONFIGURATION_FILENAME,
                 new KafkaConnectConfigurationBuilder(bootstrapServers)
-                        .withConfigProviders()
+                        .withConfigurations(configuration)
                         .withRestListeners(REST_API_PORT)
                         .withPluginPath()
-                        .withConfigurations(configuration.getConfiguration())
                         .withTls(tls)
                         .withAuthentication(authentication)
                         .withRackId()

@@ -124,9 +124,7 @@ public class KafkaMirrorMaker2ClusterTest {
             .addPair("config.storage.topic", "mirrormaker2-cluster-configs")
             .addPair("group.id", "mirrormaker2-cluster")
             .addPair("status.storage.topic", "mirrormaker2-cluster-status")
-            .addPair("config.providers.file.class", "org.apache.kafka.common.config.provider.FileConfigProvider")
             .addPair("offset.storage.topic", "mirrormaker2-cluster-offsets")
-            .addPair("config.providers", "file")
             .addPair("value.converter", "org.apache.kafka.connect.converters.ByteArrayConverter")
             .addPair("key.converter", "org.apache.kafka.connect.converters.ByteArrayConverter")
             .addPair("header.converter", "org.apache.kafka.connect.converters.ByteArrayConverter");
@@ -159,16 +157,16 @@ public class KafkaMirrorMaker2ClusterTest {
             .endSpec()
             .build();
 
+    private ConfigMap metricsCm;
     private final KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resourceWithMetrics, VERSIONS, SHARED_ENV_PROVIDER);
     {
         // we were setting metricsEnabled in fromCrd, which was just checking it for non-null. With metrics in CM, we have to check
         // its content, what is done in generateMetricsAndLogConfigMap
-        kmm2.generateConnectConfigMap(new MetricsAndLogging(metricsCM, null));
+        metricsCm = kmm2.generateConnectConfigMap(new MetricsAndLogging(metricsCM, null));
     }
 
     @ParallelTest
     public void testMetricsConfigMap() {
-        ConfigMap metricsCm = kmm2.generateConnectConfigMap(new MetricsAndLogging(metricsCM, null));
         checkMetricsConfigMap(metricsCm);
     }
 
@@ -177,6 +175,10 @@ public class KafkaMirrorMaker2ClusterTest {
         String connectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
         assertThat(connectConfigurations, containsString("bootstrap.servers=" + bootstrapServers));
         assertThat(connectConfigurations, containsString(expectedConfiguration.asPairs()));
+        // MirrorMaker relies on env and file config providers to be configured by default
+        assertThat(connectConfigurations, containsString("config.providers=strimzienv,strimzifile"));
+        assertThat(connectConfigurations, containsString("config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider"));
+        assertThat(connectConfigurations, containsString("config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider"));
     }
 
     private Map<String, String> expectedLabels(String name)    {

@@ -16,8 +16,12 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScramSha512Builder;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTlsBuilder;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static io.strimzi.operator.cluster.TestUtils.IsEquivalent.isEquivalent;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -36,24 +40,6 @@ class KafkaConnectConfigurationBuilderTest {
                 "producer.security.protocol=PLAINTEXT",
                 "consumer.security.protocol=PLAINTEXT",
                 "admin.security.protocol=PLAINTEXT"
-        ));
-    }
-
-    @ParallelTest
-    public void testWithConfigProviders() {
-        String configuration = new KafkaConnectConfigurationBuilder(BOOTSTRAP_SERVERS)
-                .withConfigProviders()
-                .build();
-
-        assertThat(configuration, isEquivalent(
-                "bootstrap.servers=my-cluster-kafka-bootstrap:9092",
-                "security.protocol=PLAINTEXT",
-                "producer.security.protocol=PLAINTEXT",
-                "consumer.security.protocol=PLAINTEXT",
-                "admin.security.protocol=PLAINTEXT",
-                "config.providers=strimzienv",
-                "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
-                "config.providers.strimzienv.param.allowlist.pattern=.*"
         ));
     }
 
@@ -402,9 +388,9 @@ class KafkaConnectConfigurationBuilderTest {
     }
 
     @ParallelTest
-    public void testWithConfigurations() {
+    public void testWithConfigProviders() {
         String configuration = new KafkaConnectConfigurationBuilder(BOOTSTRAP_SERVERS)
-                .withConfigurations("myconfig=abc")
+                .withConfigurations(null)
                 .build();
 
         assertThat(configuration, isEquivalent(
@@ -413,8 +399,74 @@ class KafkaConnectConfigurationBuilderTest {
                 "producer.security.protocol=PLAINTEXT",
                 "consumer.security.protocol=PLAINTEXT",
                 "admin.security.protocol=PLAINTEXT",
-                "myconfig=abc"
+                "config.providers=strimzienv,strimzifile",
+                "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+                "config.providers.strimzienv.param.allowlist.pattern=.*",
+                "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider"
         ));
+    }
+
+    @ParallelTest
+    public void testWithUserProvidedAndDefaultConfigurations() {
+        Map<String, Object> userConfiguration = new HashMap<>();
+        userConfiguration.put("myconfig", "abc");
+        userConfiguration.put("myconfig2", 123);
+        KafkaConnectConfiguration configurations = new KafkaConnectConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
+
+        String configuration = new KafkaConnectConfigurationBuilder(BOOTSTRAP_SERVERS)
+                .withConfigurations(configurations)
+                .build();
+
+        assertThat(configuration, isEquivalent(
+                "bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "security.protocol=PLAINTEXT",
+                "producer.security.protocol=PLAINTEXT",
+                "consumer.security.protocol=PLAINTEXT",
+                "admin.security.protocol=PLAINTEXT",
+                "config.providers=strimzienv,strimzifile",
+                "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+                "config.providers.strimzienv.param.allowlist.pattern=.*",
+                "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
+                "myconfig=abc",
+                "myconfig2=123",
+                "group.id=connect-cluster",
+                "offset.storage.topic=connect-cluster-offsets",
+                "config.storage.topic=connect-cluster-configs",
+                "status.storage.topic=connect-cluster-status",
+                "key.converter=org.apache.kafka.connect.json.JsonConverter",
+                "value.converter=org.apache.kafka.connect.json.JsonConverter")
+        );
+    }
+
+    @ParallelTest
+    public void testWithUserProvidedConfigMaps() {
+        Map<String, Object> userConfiguration = new HashMap<>();
+        userConfiguration.put("config.providers", "userenv");
+        userConfiguration.put("config.providers.userenv.class", "org.apache.kafka.common.config.provider.EnvVarConfigProvider");
+        KafkaConnectConfiguration configurations = new KafkaConnectConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
+
+        String configuration = new KafkaConnectConfigurationBuilder(BOOTSTRAP_SERVERS)
+                .withConfigurations(configurations)
+                .build();
+
+        assertThat(configuration, isEquivalent(
+                "bootstrap.servers=my-cluster-kafka-bootstrap:9092",
+                "security.protocol=PLAINTEXT",
+                "producer.security.protocol=PLAINTEXT",
+                "consumer.security.protocol=PLAINTEXT",
+                "admin.security.protocol=PLAINTEXT",
+                "config.providers=userenv,strimzienv,strimzifile",
+                "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+                "config.providers.strimzienv.param.allowlist.pattern=.*",
+                "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
+                "config.providers.userenv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+                "group.id=connect-cluster",
+                "offset.storage.topic=connect-cluster-offsets",
+                "config.storage.topic=connect-cluster-configs",
+                "status.storage.topic=connect-cluster-status",
+                "key.converter=org.apache.kafka.connect.json.JsonConverter",
+                "value.converter=org.apache.kafka.connect.json.JsonConverter")
+        );
     }
 
     @ParallelTest

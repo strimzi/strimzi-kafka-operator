@@ -27,14 +27,6 @@ public class KafkaConnectConfigurationBuilder {
     // Names of environment variables expanded through config providers inside Connect node
     private final static String PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:CERTS_STORE_PASSWORD}";
     private final static String PLACEHOLDER_SASL_USERNAME_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:KAFKA_CONNECT_SASL_USERNAME}";
-    private static final String PLACEHOLDER_OAUTH_CONFIG_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:KAFKA_CONNECT_OAUTH_CONFIG}";
-    private final static String PLACEHOLDER_OAUTH_CLIENT_SECRET_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:KAFKA_CONNECT_OAUTH_CLIENT_SECRET}";
-    private static final String PLACEHOLDER_OAUTH_REFRESH_TOKEN_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:KAFKA_CONNECT_OAUTH_REFRESH_TOKEN}";
-    private static final String PLACEHOLDER_OAUTH_ACCESS_TOKEN_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:KAFKA_CONNECT_OAUTH_ACCESS_TOKEN}";
-    private static final String PLACEHOLDER_OAUTH_PASSWORD_GRANT_PASSWORD_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:KAFKA_CONNECT_OAUTH_PASSWORD_GRANT_PASSWORD}";
-    private static final String PLACEHOLDER_OAUTH_CLIENT_ASSERTION_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:KAFKA_CONNECT_OAUTH_CLIENT_ASSERTION}";
-    private static final String PLACEHOLDER_ADVERTISED_HOSTNAME_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:ADVERTISED_HOSTNAME}";
-    private static final String PLACEHOLDER_RACK_ID_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:STRIMZI_RACK_ID}";
 
     private final StringWriter stringWriter = new StringWriter();
     private final PrintWriter writer = new PrintWriter(stringWriter);
@@ -73,22 +65,6 @@ public class KafkaConnectConfigurationBuilder {
         writer.println("consumer.security.protocol=" + securityProtocol);
         writer.println("admin.security.protocol=" + securityProtocol);
         writer.println();
-    }
-
-    /**
-     * Configures the Kafka config providers used for loading some parameters from env vars
-     * (i.e. user and password for authentication)
-     *
-     * @return  the builder instance
-     */
-    public KafkaConnectConfigurationBuilder withConfigProviders() {
-        printSectionHeader("Config providers");
-        writer.println("config.providers=strimzienv");
-        writer.println("config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider");
-        writer.println("config.providers.strimzienv.param.allowlist.pattern=.*");
-
-        writer.println();
-        return this;
     }
 
     /**
@@ -175,26 +151,26 @@ public class KafkaConnectConfigurationBuilder {
                     jaasConfig.append("org.apache.kafka.common.security.scram.ScramLoginModule required username=" + PLACEHOLDER_SASL_USERNAME_CONFIG_PROVIDER_ENV_VAR + " password=" + passwordFilePath + ";");
                 } else if (authentication instanceof KafkaClientAuthenticationOAuth oauth) {
                     saslMechanism = "OAUTHBEARER";
-                    jaasConfig.append("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " + PLACEHOLDER_OAUTH_CONFIG_CONFIG_PROVIDER_ENV_VAR);
+                    jaasConfig.append("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ${strimzienv:KAFKA_CONNECT_OAUTH_CONFIG}");
 
                     if (oauth.getClientSecret() != null) {
-                        jaasConfig.append(" oauth.client.secret=" + PLACEHOLDER_OAUTH_CLIENT_SECRET_CONFIG_PROVIDER_ENV_VAR);
+                        jaasConfig.append(" oauth.client.secret=${strimzienv:KAFKA_CONNECT_OAUTH_CLIENT_SECRET}");
                     }
 
                     if (oauth.getRefreshToken() != null) {
-                        jaasConfig.append(" oauth.refresh.token=" + PLACEHOLDER_OAUTH_REFRESH_TOKEN_CONFIG_PROVIDER_ENV_VAR);
+                        jaasConfig.append(" oauth.refresh.token=${strimzienv:KAFKA_CONNECT_OAUTH_REFRESH_TOKEN}");
                     }
 
                     if (oauth.getAccessToken() != null) {
-                        jaasConfig.append(" oauth.access.token=" + PLACEHOLDER_OAUTH_ACCESS_TOKEN_CONFIG_PROVIDER_ENV_VAR);
+                        jaasConfig.append(" oauth.access.token=${strimzienv:KAFKA_CONNECT_OAUTH_ACCESS_TOKEN}");
                     }
 
                     if (oauth.getPasswordSecret() != null) {
-                        jaasConfig.append(" oauth.password.grant.password=" + PLACEHOLDER_OAUTH_PASSWORD_GRANT_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
+                        jaasConfig.append(" oauth.password.grant.password=${strimzienv:KAFKA_CONNECT_OAUTH_PASSWORD_GRANT_PASSWORD}");
                     }
 
                     if (oauth.getClientAssertion() != null) {
-                        jaasConfig.append(" oauth.client.assertion=" + PLACEHOLDER_OAUTH_CLIENT_ASSERTION_CONFIG_PROVIDER_ENV_VAR);
+                        jaasConfig.append(" oauth.client.assertion=${strimzienv:KAFKA_CONNECT_OAUTH_CLIENT_ASSERTION}");
                     }
 
                     if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
@@ -238,9 +214,34 @@ public class KafkaConnectConfigurationBuilder {
      */
     public KafkaConnectConfigurationBuilder withRackId()   {
         printSectionHeader("Additional information");
-        writer.println("consumer.client.rack=" + PLACEHOLDER_RACK_ID_CONFIG_PROVIDER_ENV_VAR);
+        writer.println("consumer.client.rack=${strimzienv:STRIMZI_RACK_ID}");
         writer.println();
         return this;
+    }
+
+    /**
+     * Configures the Kafka Connect configuration providers
+     *
+     * @param userConfig    the user configuration to extract the possible user-provided config provider configuration from it
+     */
+    public void configProviders(AbstractConfiguration userConfig) {
+        printSectionHeader("Config providers");
+        String strimziConfigProviders = "strimzienv,strimzifile";
+
+        if (userConfig != null && !userConfig.getConfiguration().isEmpty() && userConfig.getConfigOption("config.providers") != null) {
+            writer.println("# Configuration providers configured by the user and by Strimzi");
+            writer.println("config.providers=" + userConfig.getConfigOption("config.providers") + "," + strimziConfigProviders);
+            userConfig.removeConfigOption("config.providers");
+        } else {
+            writer.println("# Configuration providers configured by Strimzi");
+            writer.println("config.providers=" + strimziConfigProviders);
+        }
+
+        writer.println("config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider");
+        writer.println("config.providers.strimzienv.param.allowlist.pattern=.*");
+        writer.println("config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider");
+
+        writer.println();
     }
 
     /**
@@ -250,10 +251,14 @@ public class KafkaConnectConfigurationBuilder {
      *
      * @return Returns the builder instance
      */
-    public KafkaConnectConfigurationBuilder withConfigurations(String configurations)   {
-        printSectionHeader("Provided configuration");
-        writer.println(configurations);
+    public KafkaConnectConfigurationBuilder withConfigurations(AbstractConfiguration configurations) {
+        configProviders(configurations);
 
+        if (configurations != null && !configurations.getConfiguration().isEmpty()) {
+            printSectionHeader("Provided configurations");
+            writer.println(configurations.getConfiguration());
+            writer.println();
+        }
         return this;
     }
 
@@ -265,7 +270,7 @@ public class KafkaConnectConfigurationBuilder {
      */
     public KafkaConnectConfigurationBuilder withRestListeners(int port)  {
         printSectionHeader("REST Listeners");
-        writer.println("rest.advertised.host.name=" + PLACEHOLDER_ADVERTISED_HOSTNAME_CONFIG_PROVIDER_ENV_VAR);
+        writer.println("rest.advertised.host.name=${strimzienv:ADVERTISED_HOSTNAME}");
         writer.println("rest.advertised.port=" + port);
         writer.println();
 
