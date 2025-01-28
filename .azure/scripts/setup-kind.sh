@@ -260,7 +260,7 @@ EOF
 
 
     # Create the KIND cluster
-    systemd-run --scope -p "Delegate=yes" kind create cluster \
+    systemd-run --user --scope -p "Delegate=yes" kind create cluster \
         --image "$KIND_NODE_IMAGE" \
         --name "$KIND_CLUSTER_NAME" \
         --config=/tmp/kind-config.yaml
