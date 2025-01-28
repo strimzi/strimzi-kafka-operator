@@ -262,7 +262,7 @@ EOF
 
     # Create the KIND cluster
     sudo systemd-run --scope -p "Delegate=yes" kind create cluster \
-        --image "$KIND_NODE_IMAGE}" \
+        --image "$KIND_NODE_IMAGE" \
         --name "$KIND_CLUSTER_NAME" \
         --config=/tmp/kind-config.yaml
 
