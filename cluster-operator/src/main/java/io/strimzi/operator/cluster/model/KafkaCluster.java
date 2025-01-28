@@ -848,7 +848,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                                 pool.ownerReference,
                                 pool.templatePerBrokerService,
                                 ports,
-                                pool.labels.strimziSelectorLabels().withStatefulSetPod(node.podName()),
+                                pool.labels.strimziSelectorLabels().withStrimziPodName(node.podName()),
                                 ListenersUtils.serviceType(listener),
                                 ListenersUtils.brokerLabels(listener, node.nodeId()),
                                 ListenersUtils.brokerAnnotations(listener, node.nodeId()),
