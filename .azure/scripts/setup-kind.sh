@@ -203,6 +203,72 @@ function configure_container_runtime_networking {
     fi
 }
 
+: '
+@brief: Creates a KIND cluster configuration and provisions the cluster.
+@param:
+        1) control_planes - Number of control-plane nodes.
+@global:
+        KIND_CLUSTER_NAME - Name of the KIND cluster.
+        KIND_NODE_IMAGE - KIND node image to use.
+        IP_FAMILY - Determines whether to configure IPv4 or IPv6 settings
+@note: Writes the cluster configuration to a temporary file before creating the cluster.
+'
+function create_kind_cluster {
+    local control_planes="$1"
+
+# Start the cluster configuration
+    cat <<EOF > /tmp/kind-config.yaml
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+EOF
+
+    # Add control-plane nodes
+    for i in $(seq 1 "$control_planes"); do
+        echo "    - role: control-plane" >> /tmp/kind-config.yaml
+    done
+
+    # Add worker nodes
+    cat <<EOF >> /tmp/kind-config.yaml
+    - role: worker
+    - role: worker
+    - role: worker
+EOF
+
+    # Add specific containerd configuration for IPv4/IPv6
+    if [[ "$IP_FAMILY" == "ipv6" ]]; then
+        cat <<EOF >> /tmp/kind-config.yaml
+containerdConfigPatches:
+- |-
+  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."myregistry.local:5001"]
+      endpoint = ["http://myregistry.local:5001"]
+EOF
+    else
+        cat <<EOF >> /tmp/kind-config.yaml
+containerdConfigPatches:
+- |-
+  [plugins."io.containerd.grpc.v1.cri".registry]
+      config_path = "/etc/containerd/certs.d"
+EOF
+    fi
+
+    # Add networking configuration
+    cat <<EOF >> /tmp/kind-config.yaml
+networking:
+  ipFamily: $IP_FAMILY
+EOF
+
+
+
+    # Create the KIND cluster
+    sudo systemd-run --scope -p "Delegate=yes" kind create cluster \
+        --image "$KIND_NODE_IMAGE}" \
+        --name "$KIND_CLUSTER_NAME" \
+        --config=/tmp/kind-config.yaml
+
+    echo "KIND cluster '${KIND_CLUSTER_NAME}' created successfully with IP family '${IP_FAMILY}'."
+}
+
 setup_kube_directory
 install_kubectl
 install_kubernetes_provisioner
@@ -210,6 +276,7 @@ adjust_inotify_limits
 
 reg_name='kind-registry'
 reg_port='5001'
+# by default using podman we have to use single control-plane because of https://github.com/kubernetes-sigs/kind/issues/2858
 control_planes=1
 
 if is_docker; then
@@ -230,25 +297,7 @@ if [[ "$IP_FAMILY" = "ipv4" || "$IP_FAMILY" = "dual" ]]; then
     # https://github.com/kubernetes-sigs/kind/issues/2875
     # https://github.com/containerd/containerd/blob/main/docs/cri/config.md#registry-configuration
     # See: https://github.com/containerd/containerd/blob/main/docs/hosts.md
-    cat <<EOF | sudo systemd-run --scope -p "Delegate=yes" /usr/local/bin/kind create cluster --image "${KIND_NODE_IMAGE}" --name "${KIND_CLUSTER_NAME}" --config=-
-        kind: Cluster
-        apiVersion: kind.x-k8s.io/v1alpha4
-        nodes:
-EOF
-    for i in $(seq 1 $control_planes); do
-        echo "    - role: control-plane" >> /tmp/kind-config.yaml
-    done
-    cat <<EOF >> /tmp/kind-config.yaml
-        - role: worker
-        - role: worker
-        - role: worker
-        containerdConfigPatches:
-        - |-
-         [plugins."io.containerd.grpc.v1.cri".registry]
-           config_path = "/etc/containerd/certs.d"
-        networking:
-           ipFamily: $IP_FAMILY
-EOF
+    create_kind_cluster ${control_planes}
     # run local container registry
     if [ "$($DOCKER_CMD inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)" != 'true' ]; then
         $DOCKER_CMD run \
@@ -288,27 +337,8 @@ elif [[ "$IP_FAMILY" = "ipv6" ]]; then
     # but without the interface dependency and some of the other challenges of link-local addresses.
     # (link-local starts as fe80::) but we will use ULA fd01
     updateContainerRuntimeConfiguration "" "${ula_fixed_ipv6}" "${reg_port}" "${registry_dns}"
+    create_kind_cluster ${control_planes}
 
-    cat <<EOF | sudo systemd-run --scope -p "Delegate=yes" /usr/local/bin/kind create cluster --image "${KIND_NODE_IMAGE}" --name "${KIND_CLUSTER_NAME}" --config=-
-        kind: Cluster
-        apiVersion: kind.x-k8s.io/v1alpha4
-        nodes:
-EOF
-    for i in $(seq 1 $control_planes); do
-        echo "    - role: control-plane" >> /tmp/kind-config.yaml
-    done
-    cat <<EOF >> /tmp/kind-config.yaml
-        - role: worker
-        - role: worker
-        - role: worker
-        name: $KIND_CLUSTER_NAME
-        containerdConfigPatches:
-        - |-
-          [plugins."io.containerd.grpc.v1.cri".registry.mirrors."myregistry.local:5001"]
-              endpoint = ["http://myregistry.local:5001"]
-        networking:
-            ipFamily: $IP_FAMILY
-EOF
     # run local container registry
     if [ "$(sudo $DOCKER_CMD inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)" != 'true' ]; then
         $DOCKER_CMD run \
