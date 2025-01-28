@@ -81,6 +81,22 @@ function setup_kube_directory {
 }
 
 : '
+@brief: Fixes the "ip6_tables" issue for Podman.
+@note: Ensures the required kernel modules are loaded.
+'
+function load_ip6_tables_module_to_kernel {
+    if is_podman; then
+        echo "Ensuring ip6_tables kernel module is loaded..."
+        if ! lsmod | grep -q ip6_tables; then
+            sudo modprobe ip6_tables || {
+                echo "Error: Failed to load ip6_tables module. Ensure your kernel supports it."
+                exit 1
+            }
+        fi
+    fi
+}
+
+: '
 @brief: Updates container runtime (Docker/Podman) configurations to allow insecure local registries.
 @param:
         1) registry_address - IPv4 registry address, e.g., "192.168.0.2:5000"
@@ -272,6 +288,7 @@ setup_kube_directory
 install_kubectl
 install_kubernetes_provisioner
 adjust_inotify_limits
+load_ip6_tables_module_to_kernel
 
 reg_name='kind-registry'
 reg_port='5001'
