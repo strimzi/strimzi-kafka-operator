@@ -10,6 +10,8 @@
 * Allow configuring `ssl.principal.mapping.rules` and custom trusted CAs in Kafka brokers with `type: custom` authentication
 * Moved HTTP bridge configuration to the ConfigMap setup by the operator.
 * Dependency updates (Vert.x 4.5.12, Netty 4.1.117.Final)
+* Removed the `statefulset.kubernetes.io/pod-name` label from pods and external listeners Kubernetes Services.
+  * If you have any custom setup leveraging such label, please use the `strimzi.io/pod-name` one instead.
 
 ### Major changes, deprecations and removals
 
