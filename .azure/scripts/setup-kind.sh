@@ -41,10 +41,10 @@ function install_kubectl {
 
 function label_node {
 	# It should work for all clusters
-	for nodeName in $(sudo kubectl get nodes -o custom-columns=:.metadata.name --no-headers);
+	for nodeName in $(kubectl get nodes -o custom-columns=:.metadata.name --no-headers);
 	do
 		echo ${nodeName};
-		sudo kubectl label node ${nodeName} rack-key=zone;
+		kubectl label node ${nodeName} rack-key=zone;
 	done
 }
 
@@ -68,7 +68,7 @@ function install_kubernetes_provisioner {
 }
 
 function create_cluster_role_binding_admin {
-    sudo kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
+    kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
 }
 
 : '
@@ -259,9 +259,8 @@ networking:
 EOF
 
 
-
     # Create the KIND cluster
-    sudo systemd-run --scope -p "Delegate=yes" kind create cluster \
+    systemd-run --scope -p "Delegate=yes" kind create cluster \
         --image "$KIND_NODE_IMAGE" \
         --name "$KIND_CLUSTER_NAME" \
         --config=/tmp/kind-config.yaml
@@ -317,10 +316,10 @@ if [[ "$IP_FAMILY" = "ipv4" || "$IP_FAMILY" = "dual" ]]; then
     # See https://kind.sigs.k8s.io/docs/user/local-registry/
     REGISTRY_DIR="/etc/containerd/certs.d/${hostname}:${reg_port}"
 
-    for node in $(sudo kind get nodes --name "${KIND_CLUSTER_NAME}"); do
+    for node in $(kind get nodes --name "${KIND_CLUSTER_NAME}"); do
         echo "Executing command in node:${node}"
-        sudo $DOCKER_CMD exec "${node}" mkdir -p "${REGISTRY_DIR}"
-        cat <<EOF | sudo $DOCKER_CMD exec -i "${node}" cp /dev/stdin "${REGISTRY_DIR}/hosts.toml"
+        $DOCKER_CMD exec "${node}" mkdir -p "${REGISTRY_DIR}"
+        cat <<EOF | $DOCKER_CMD exec -i "${node}" cp /dev/stdin "${REGISTRY_DIR}/hosts.toml"
     [host."http://${reg_name}:5000"]
 EOF
     done
@@ -340,7 +339,7 @@ elif [[ "$IP_FAMILY" = "ipv6" ]]; then
     create_kind_cluster ${control_planes}
 
     # run local container registry
-    if [ "$(sudo $DOCKER_CMD inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)" != 'true' ]; then
+    if [ "$($DOCKER_CMD inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)" != 'true' ]; then
         $DOCKER_CMD run \
           -d --restart=always -p "[${ula_fixed_ipv6}::1]:${reg_port}:5000" --name "${reg_name}" \
           registry:2
@@ -350,9 +349,9 @@ elif [[ "$IP_FAMILY" = "ipv6" ]]; then
 
     # note: kind get nodes (default name `kind` and with specifying new name we have to use --name <cluster-name>
     # See https://kind.sigs.k8s.io/docs/user/local-registry/
-    for node in $(sudo kind get nodes --name "${KIND_CLUSTER_NAME}"); do
+    for node in $(kind get nodes --name "${KIND_CLUSTER_NAME}"); do
         echo "Executing command in node:${node}"
-        cat <<EOF | sudo $DOCKER_CMD exec -i "${node}" cp /dev/stdin "/etc/hosts"
+        cat <<EOF | $DOCKER_CMD exec -i "${node}" cp /dev/stdin "/etc/hosts"
 ${ula_fixed_ipv6}::1    ${registry_dns}
 EOF
     done
