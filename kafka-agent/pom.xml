@@ -41,11 +41,19 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
+            <version>${jetty-kafka.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-util</artifactId>
+            <version>${jetty-kafka.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-http</artifactId>
+            <version>${jetty-kafka.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -104,6 +112,8 @@
                             <ignoredUnusedDeclaredDependencies>
                                 <!-- Used in Kafka Agent through reflection (class org.apache.kafka.server.metrics.KafkaYammerMetrics) -->
                                 <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka-server-common</ignoredUnusedDeclaredDependency>
+                                <!-- jetty-http needs to be included to override the version used by Kafka (versus the version used by Strimzi) -->
+                                <ignoredUnusedDeclaredDependency>org.eclipse.jetty:jetty-http</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                         </configuration>
                     </execution>
