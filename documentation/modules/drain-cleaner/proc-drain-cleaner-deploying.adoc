@@ -40,15 +40,13 @@ spec:
     # ...
 ----
 
-.Excluding Kafka or ZooKeeper
+.Using Drain Cleaner in legacy mode
 
-If you don't want to include Kafka or ZooKeeper pods in Drain Cleaner operations, or if you prefer to use the Drain Cleaner in legacy mode, change the default environment variables in the Drain Cleaner `Deployment` configuration file:
+To use the Drain Cleaner in legacy mode, change the default environment variables in the Drain Cleaner `Deployment` configuration file:
 
-* Set `STRIMZI_DENY_EVICTION` to `false` to use the legacy mode relying on the `PodDisruptionBudget` configuration
-* Set `STRIMZI_DRAIN_KAFKA` to `false` to exclude Kafka pods
-* Set `STRIMZI_DRAIN_ZOOKEEPER` to `false` to exclude ZooKeeper pods
+* Set `STRIMZI_DENY_EVICTION` to `false` to use the legacy mode relying on the `PodDisruptionBudget` configuration.
 
-.Example configuration to exclude ZooKeeper pods
+.Example configuration to use legacy mode
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: apps/v1
@@ -63,18 +61,16 @@ spec:
           # ...
           env:
             - name: STRIMZI_DENY_EVICTION
-              value: "true"
-            - name: STRIMZI_DRAIN_KAFKA
-              value: "true"
-            - name: STRIMZI_DRAIN_ZOOKEEPER
               value: "false"
-          # ...
+            - name: STRIMZI_DRAIN_KAFKA
+              value: "true"  
+            # ...
 ----
 
 .Procedure
 
 . If you are using the legacy mode activated by setting the `STRIMZI_DENY_EVICTION` environment variable to `false`, you must also configure the `PodDisruptionBudget` resource.
-  Set `maxUnavailable` to `0` (zero) in the Kafka and ZooKeeper sections of the `Kafka` resource using `template` settings.
+  Set `maxUnavailable` to `0` (zero) in the Kafka section of the `Kafka` resource using `template` settings.
 +
 .Specifying a pod disruption budget
 [source,yaml,subs=attributes+]
@@ -89,19 +85,11 @@ spec:
     template:
       podDisruptionBudget:
         maxUnavailable: 0
-
-  # ...
-  zookeeper:
-    template:
-      podDisruptionBudget:
-        maxUnavailable: 0
   # ...
 ----
 +
 This setting prevents the automatic eviction of pods in case of planned disruptions,
 leaving the Strimzi Drain Cleaner and Cluster Operator to roll the pods on different worker nodes.
-+
-Add the same configuration for ZooKeeper if you want to use Strimzi Drain Cleaner to drain ZooKeeper nodes.
 
 . Update the `Kafka` resource:
 +

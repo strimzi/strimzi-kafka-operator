@@ -42,7 +42,7 @@ For example, when you change service account labels or annotations using the `te
 [id='ref-operator-use-strimzi-pod-sets-feature-gate-{context}']
 === UseStrimziPodSets feature gate
 
-The `UseStrimziPodSets` feature gate introduced the `StrimziPodSet` custom resource for managing Kafka and ZooKeeper pods, replacing the use of Kubernetes `StatefulSet` resources.
+The `UseStrimziPodSets` feature gate introduced the `StrimziPodSet` custom resource for managing Kafka pods, replacing the use of Kubernetes `StatefulSet` resources.
 
 IMPORTANT: With the `UseStrimziPodSets` feature gate permanently enabled, direct downgrades from Strimzi 0.35 and newer to Strimzi 0.27 or earlier are not possible.
 You must first downgrade through one of the Strimzi versions in-between, disable the `UseStrimziPodSets` feature gate, and then downgrade to Strimzi 0.27 or earlier.

@@ -29,7 +29,7 @@ Alpha and beta stage features are removed if they do not prove to be useful.
   It is now permanently enabled and cannot be disabled.
 * The `UseKRaft` feature gate moved to GA stage in Strimzi 0.42.
   It is now permanently enabled and cannot be disabled.
-  To use KRaft (ZooKeeper-less Apache Kafka), you still need to use the `strimzi.io/kraft: enabled` annotation on the `Kafka` custom resources or migrate from an existing ZooKeeper-based cluster.
+  To use KRaft (ZooKeeper-less Apache Kafka), you still need to use the `strimzi.io/kraft: enabled` annotation on the `Kafka` custom resources.
 * The `ContinueReconciliationOnManualRollingUpdateFailure` feature was introduced in Strimzi 0.41 and moved to beta stage in Strimzi 0.44.0.
   It is now enabled by default, but can be disabled if needed.
 

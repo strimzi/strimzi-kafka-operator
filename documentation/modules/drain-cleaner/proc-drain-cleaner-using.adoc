@@ -6,7 +6,7 @@
 = Using the Strimzi Drain Cleaner
 
 [role="_abstract"]
-Use the Strimzi Drain Cleaner in combination with the Cluster Operator to move Kafka broker or ZooKeeper pods from nodes that are being drained.
+Use the Strimzi Drain Cleaner in combination with the Cluster Operator to move Kafka broker pods from nodes that are being drained.
 When you run the Strimzi Drain Cleaner, it annotates pods with a rolling update pod annotation.
 The Cluster Operator performs rolling updates based on the annotation.
 
@@ -16,18 +16,18 @@ The Cluster Operator performs rolling updates based on the annotation.
 
 .Considerations when using anti-affinity configuration 
 
-When using xref:assembly-scheduling-str[anti-affinity] with your Kafka or ZooKeeper pods, consider adding a spare worker node to your cluster.
+When using xref:assembly-scheduling-str[anti-affinity] with your Kafka pods, consider adding a spare worker node to your cluster.
 Including spare nodes ensures that your cluster has the capacity to reschedule pods during node draining or temporary unavailability of other nodes.
 When a worker node is drained, and anti-affinity rules restrict pod rescheduling on alternative nodes, spare nodes help prevent restarted pods from becoming unschedulable.  This mitigates the risk of the draining operation failing.
 
 .Procedure
 
-. Drain a specified Kubernetes node hosting the Kafka broker or ZooKeeper pods.
+. Drain a specified Kubernetes node hosting the Kafka broker.
 +
 [source,shell,subs="+quotes"]
 ----
 kubectl get nodes
-kubectl drain _<name-of-node>_ --delete-emptydir-data --ignore-daemonsets --timeout=6000s --force
+kubectl drain <name_of_node> --delete-emptydir-data --ignore-daemonsets --timeout=6000s --force
 ----
 
 . Check the eviction events in the Strimzi Drain Cleaner log to verify that the pods have been annotated for restart.
@@ -35,10 +35,6 @@ kubectl drain _<name-of-node>_ --delete-emptydir-data --ignore-daemonsets --time
 .Strimzi Drain Cleaner log show annotations of pods
 [source,shell,subs="+quotes"]
 ----
-INFO ... Received eviction webhook for Pod my-cluster-zookeeper-2 in namespace my-project
-INFO ... Pod my-cluster-zookeeper-2 in namespace my-project will be annotated for restart
-INFO ... Pod my-cluster-zookeeper-2 in namespace my-project found and annotated for restart
-
 INFO ... Received eviction webhook for Pod my-cluster-kafka-0 in namespace my-project
 INFO ... Pod my-cluster-kafka-0 in namespace my-project will be annotated for restart
 INFO ... Pod my-cluster-kafka-0 in namespace my-project found and annotated for restart
@@ -49,7 +45,6 @@ INFO ... Pod my-cluster-kafka-0 in namespace my-project found and annotated for 
 .Cluster Operator log shows rolling updates
 [source,shell,subs="+quotes"]
 ----
-INFO  PodOperator:68 - Reconciliation #13(timer) Kafka(my-project/my-cluster): Rolling Pod my-cluster-zookeeper-2
 INFO  PodOperator:68 - Reconciliation #13(timer) Kafka(my-project/my-cluster): Rolling Pod my-cluster-kafka-0
 INFO  AbstractOperator:500 - Reconciliation #13(timer) Kafka(my-project/my-cluster): reconciled
 ----

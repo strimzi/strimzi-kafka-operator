@@ -54,7 +54,6 @@ For more information on configuring logging for specific Kafka components or ope
 
 * link:{BookURLConfiguring}#property-kafka-logging-reference[Kafka logging^]
 * link:{BookURLConfiguring}#property-kafka-connect-logging-reference[Kafka Connect and MirrorMaker 2 logging^]
-* link:{BookURLConfiguring}#property-mm-loggers-reference[MirrorMaker logging^]
 * link:{BookURLConfiguring}#property-kafka-bridge-logging-reference[Kafka Bridge logging^]
 * link:{BookURLConfiguring}#property-cruise-control-logging-reference[Cruise Control logging^]
 
