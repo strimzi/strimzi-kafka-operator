@@ -258,7 +258,7 @@ public class WorkloadUtils {
         Pod pod = new PodBuilder()
                 .withNewMetadata()
                     .withName(name)
-                    .withLabels(labels.withStrimziPodName(name).withStatefulSetPod(name).withStrimziPodSetController(strimziPodSetName).withAdditionalLabels(Util.mergeLabelsOrAnnotations(defaultPodLabels, TemplateUtils.labels(template))).toMap())
+                    .withLabels(labels.withStrimziPodName(name).withStrimziPodSetController(strimziPodSetName).withAdditionalLabels(Util.mergeLabelsOrAnnotations(defaultPodLabels, TemplateUtils.labels(template))).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(Util.mergeLabelsOrAnnotations(podAnnotations, TemplateUtils.annotations(template)))
                 .endMetadata()

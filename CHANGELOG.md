@@ -24,6 +24,8 @@
 * The storage overrides for configuring per-broker storage class are not supported anymore.
   If you are using the storage overrides, you should instead use multiple KafkaNodePool resources with a different storage class each.
   For more details about migrating from storage overrides, please follow the [documentation](https://strimzi.io/docs/operators/0.45.0/full/deploying.html#con-config-storage-zookeeper-str).
+* Removed the `statefulset.kubernetes.io/pod-name` label from pods and external listeners Kubernetes Services.
+  * If you have any custom setup leveraging such label, please use the `strimzi.io/pod-name` one instead.
 
 ## 0.45.0
 
