@@ -277,7 +277,7 @@ public class TopicOperatorUtil {
      * @param filePath File path.
      * @return file content as bytes.
      */
-    public static byte[] getFileContent(String filePath) {
+    /* test */ static byte[] getFileContent(String filePath) {
         try {
             return Files.readAllBytes(Path.of(filePath));
         } catch (IOException ioe) {
