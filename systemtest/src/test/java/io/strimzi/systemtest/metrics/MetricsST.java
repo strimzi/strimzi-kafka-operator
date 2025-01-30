@@ -124,11 +124,11 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
         @Step(value = "Create namespaces {@namespaceFirst} and {@namespaceSecond}.", expected = "Namespaces {@namespaceFirst} and {@namespaceSecond} are created."),
         @Step(value = "Deploy Cluster Operator.", expected = "Cluster Operator is deployed."),
         @Step(value = "Deploy Kafka {@kafkaClusterFirstName} with metrics and CruiseControl configured.", expected = "Kafka @{kafkaClusterFirstName} is deployed."),
-        @Step(value = "Deploy Kafka {@kafkaClusterSecondtName} with metrics configured.", expected = "Kafka @{kafkaClusterFirstName} is deployed."),
+        @Step(value = "Deploy Kafka {@kafkaClusterSecondName} with metrics configured.", expected = "Kafka @{kafkaClusterSecondName} is deployed."),
         @Step(value = "Deploy scraper Pods in namespace {@namespaceFirst} and {@namespaceSecond} for collecting metrics from Strimzi pods.", expected = "Scraper Pods are deployed."),
         @Step(value = "Create KafkaUsers and KafkaTopics.", expected = "All KafkaUsers and KafkaTopics are Ready."),
         @Step(value = "Setup NetworkPolicies to grant access to Operator Pods and KafkaExporter.", expected = "NetworkPolicies created."),
-        @Step(value = "Create collectors for Cluster Operator, Kafka, and KafkaExporter.", expected = "Metrics collected in collectors structs.")
+        @Step(value = "Create collector for Cluster Operator, Kafka, and KafkaExporter.", expected = "Metrics collected in collectors structs.")
     },
     afterTestSteps = {
         @Step(value = "Common cleaning of all resources created by this test class.", expected = "All resources deleted.")
@@ -439,7 +439,7 @@ public class MetricsST extends AbstractST {
     @TestDoc(
         description = @Desc("This test case checks several metrics exposed by KafkaBridge."),
         steps = {
-            @Step(value = "Deploy KafkaBridge into {@namespaceFirst} and ensure KafkaMirrorMaker2 is in Ready state", expected = "KafkaBridge is deployed and KafkaMirrorMaker2 is Ready"),
+            @Step(value = "Deploy KafkaBridge into {@namespaceFirst}.", expected = "KafkaBridge is deployed and Ready"),
             @Step(value = "Attach producer and consumer clients to KafkaBridge", expected = "Clients are up and running, continuously producing and pooling messages"),
             @Step(value = "Collect metrics from KafkaBridge pod", expected = "Metrics are collected"),
             @Step(value = "Check that specific metric is available in collected metrics from KafkaBridge pods", expected = "Metric is available with expected value"),
@@ -536,14 +536,14 @@ public class MetricsST extends AbstractST {
 
     @ParallelTest
     @TestDoc(
-        description = @Desc("This test case checks that the Cluster Operator propagates changes from metrics configuration done in Kafka CR into corresponding config maps."),
+        description = @Desc("This test case checks that the Cluster Operator propagates changes from metrics configuration done in Kafka CR into corresponding ConfigMap's."),
         steps = {
-            @Step(value = "Create config map with external metrics configuration.", expected = "Config map created."),
+            @Step(value = "Create ConfigMap with external metrics configuration.", expected = "ConfigMap created."),
             @Step(value = "Set ConfigMap reference from step 1 into Kafka CR and wait for pod stabilization (CO shouldn't trigger rolling update).", expected = "Wait for Kafka pods stability (60 seconds without rolling update in the row)."),
-            @Step(value = "Check that metrics config maps for each pod contains data from external metrics config map.", expected = "All config maps contains proper values."),
-            @Step(value = "Change config in external metrics config map.", expected = "Config map changed."),
+            @Step(value = "Check that metrics ConfigMap's for each pod contains data from external metrics ConfigMap.", expected = "All ConfigMap's contain proper values."),
+            @Step(value = "Change config in external metrics ConfigMap.", expected = "ConfigMap changed."),
             @Step(value = "Wait for Kafka pods stabilization (CO shouldn't trigger rolling update).", expected = "Wait for Kafka pods stability (60 seconds without rolling update in the row)."),
-            @Step(value = "Check that metrics config maps for each pod contains data from external metrics config map.", expected = "All config maps contains proper values.")
+            @Step(value = "Check that metrics ConfigMap's for each pod contains data from external metrics ConfigMap.", expected = "All ConfigMap's contain proper values.")
         },
         labels = {
             @Label(value = TestDocsLabels.KAFKA),

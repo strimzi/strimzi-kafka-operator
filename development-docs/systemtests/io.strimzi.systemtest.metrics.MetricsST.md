@@ -9,11 +9,11 @@
 | 1. | Create namespaces {@namespaceFirst} and {@namespaceSecond}. | Namespaces {@namespaceFirst} and {@namespaceSecond} are created. |
 | 2. | Deploy Cluster Operator. | Cluster Operator is deployed. |
 | 3. | Deploy Kafka {@kafkaClusterFirstName} with metrics and CruiseControl configured. | Kafka @{kafkaClusterFirstName} is deployed. |
-| 4. | Deploy Kafka {@kafkaClusterSecondtName} with metrics configured. | Kafka @{kafkaClusterFirstName} is deployed. |
+| 4. | Deploy Kafka {@kafkaClusterSecondName} with metrics configured. | Kafka @{kafkaClusterSecondName} is deployed. |
 | 5. | Deploy scraper Pods in namespace {@namespaceFirst} and {@namespaceSecond} for collecting metrics from Strimzi pods. | Scraper Pods are deployed. |
 | 6. | Create KafkaUsers and KafkaTopics. | All KafkaUsers and KafkaTopics are Ready. |
 | 7. | Setup NetworkPolicies to grant access to Operator Pods and KafkaExporter. | NetworkPolicies created. |
-| 8. | Create collectors for Cluster Operator, Kafka, and KafkaExporter. | Metrics collected in collectors structs. |
+| 8. | Create collector for Cluster Operator, Kafka, and KafkaExporter. | Metrics collected in collectors structs. |
 
 **After tests execution steps:**
 
@@ -70,7 +70,7 @@
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Deploy KafkaBridge into {@namespaceFirst} and ensure KafkaMirrorMaker2 is in Ready state | KafkaBridge is deployed and KafkaMirrorMaker2 is Ready |
+| 1. | Deploy KafkaBridge into {@namespaceFirst}. | KafkaBridge is deployed and Ready |
 | 2. | Attach producer and consumer clients to KafkaBridge | Clients are up and running, continuously producing and pooling messages |
 | 3. | Collect metrics from KafkaBridge pod | Metrics are collected |
 | 4. | Check that specific metric is available in collected metrics from KafkaBridge pods | Metric is available with expected value |
@@ -165,18 +165,18 @@
 
 ## testKafkaMetricsSettings
 
-**Description:** This test case checks that the Cluster Operator propagates changes from metrics configuration done in Kafka CR into corresponding config maps.
+**Description:** This test case checks that the Cluster Operator propagates changes from metrics configuration done in Kafka CR into corresponding ConfigMap's.
 
 **Steps:**
 
 | Step | Action | Result |
 | - | - | - |
-| 1. | Create config map with external metrics configuration. | Config map created. |
+| 1. | Create ConfigMap with external metrics configuration. | ConfigMap created. |
 | 2. | Set ConfigMap reference from step 1 into Kafka CR and wait for pod stabilization (CO shouldn't trigger rolling update). | Wait for Kafka pods stability (60 seconds without rolling update in the row). |
-| 3. | Check that metrics config maps for each pod contains data from external metrics config map. | All config maps contains proper values. |
-| 4. | Change config in external metrics config map. | Config map changed. |
+| 3. | Check that metrics ConfigMap's for each pod contains data from external metrics ConfigMap. | All ConfigMap's contain proper values. |
+| 4. | Change config in external metrics ConfigMap. | ConfigMap changed. |
 | 5. | Wait for Kafka pods stabilization (CO shouldn't trigger rolling update). | Wait for Kafka pods stability (60 seconds without rolling update in the row). |
-| 6. | Check that metrics config maps for each pod contains data from external metrics config map. | All config maps contains proper values. |
+| 6. | Check that metrics ConfigMap's for each pod contains data from external metrics ConfigMap. | All ConfigMap's contain proper values. |
 
 **Labels:**
 
