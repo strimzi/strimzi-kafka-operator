@@ -6,11 +6,18 @@ package io.strimzi.operator.topic;
 
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.featuregates.FeatureGates;
+import io.strimzi.test.ReadWriteUtils;
 import org.apache.kafka.common.config.SslConfigs;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
+import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -131,6 +138,32 @@ class TopicOperatorConfigTest {
     @Test
     void shouldAcceptSaslScramSha512() {
         saslScramSha(512);
+    }
+
+    @Test
+    void shouldThrowWithDuplicateConfig() {
+        var thrown =  assertThrows(IllegalArgumentException.class, 
+            () -> TopicOperatorConfig.buildFromMap(Map.of(
+                TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "my-kafka:9092",
+                TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "my-kafka:9093",
+                TopicOperatorConfig.NAMESPACE.key(), NAMESPACE
+            )));
+        assertEquals("duplicate key: STRIMZI_KAFKA_BOOTSTRAP_SERVERS", thrown.getMessage());
+    }
+
+    @Test
+    void shouldThrowWithMissingRequired() {
+        var thrown1 =  assertThrows(InvalidConfigurationException.class,
+            () -> TopicOperatorConfig.buildFromMap(Map.of(
+                TopicOperatorConfig.NAMESPACE.key(), NAMESPACE
+            )));
+        assertEquals("Config value: STRIMZI_KAFKA_BOOTSTRAP_SERVERS is mandatory", thrown1.getMessage());
+
+        var thrown2 =  assertThrows(InvalidConfigurationException.class,
+            () -> TopicOperatorConfig.buildFromMap(Map.of(
+                TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "my-kafka:9092"
+            )));
+        assertEquals("Config value: STRIMZI_NAMESPACE is mandatory", thrown2.getMessage());
     }
 
     @Test
@@ -366,5 +399,103 @@ class TopicOperatorConfigTest {
 
         InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> TopicOperatorConfig.buildFromMap(envVars));
         assertEquals(e.getMessage(), "Unknown feature gate NonExistingGate found in the configuration");
+    }
+
+    @Test
+    public void shouldConfigureCruiseControl() throws IOException {
+        var inputFile = ReadWriteUtils.tempFile(UUID.randomUUID().toString(), ".txt");
+        try (PrintWriter out = new PrintWriter(inputFile.getAbsolutePath())) {
+            out.print("foo");
+        }
+        var expectedBytes = Files.readAllBytes(Path.of(inputFile.getAbsolutePath()));
+        
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+            TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
+            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.CRUISE_CONTROL_ENABLED.key(), "true",
+            TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "my-cruise-control",
+            TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), "9090",
+            TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true",
+            TopicOperatorConfig.CRUISE_CONTROL_CRT_FILE_PATH.key(), inputFile.getAbsolutePath(),
+            TopicOperatorConfig.CRUISE_CONTROL_AUTH_ENABLED.key(), "true",
+            TopicOperatorConfig.CRUISE_CONTROL_API_USER_PATH.key(), inputFile.getAbsolutePath(),
+            TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), inputFile.getAbsolutePath()
+        ));
+        
+        assertTrue(config.cruiseControlEnabled());
+        assertEquals("my-cruise-control", config.cruiseControlHostname());
+        assertEquals(9090, config.cruiseControlPort());
+        assertTrue(config.cruiseControlSslEnabled());
+        assertArrayEquals(expectedBytes, TopicOperatorUtil.getFileContent(config.cruiseControlCrtFilePath()));
+        assertTrue(config.cruiseControlAuthEnabled());
+        assertArrayEquals(expectedBytes, TopicOperatorUtil.getFileContent(config.cruiseControlApiUserPath()));
+        assertArrayEquals(expectedBytes, TopicOperatorUtil.getFileContent(config.cruiseControlApiPassPath()));
+    }
+
+    @Test
+    public void shouldThrowIfCruiseControlConfigHasNonExistentCertificate() {
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+            TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
+            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.CRUISE_CONTROL_ENABLED.key(), "true",
+            TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "my-cruise-control",
+            TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), "9090",
+            TopicOperatorConfig.CRUISE_CONTROL_SSL_ENABLED.key(), "true",
+            TopicOperatorConfig.CRUISE_CONTROL_CRT_FILE_PATH.key(), "/4sa654a/d65sa65da"
+        ));
+
+        var thrown = assertThrows(IllegalArgumentException.class,
+            () -> TopicOperatorUtil.createCruiseControlClient(config));
+        assertEquals("File not found: /4sa654a/d65sa65da", thrown.getMessage());
+    }
+
+    @Test
+    public void shouldThrowIfCruiseControlClientHasNegativePort() {
+        var thrown = assertThrows(InvalidConfigurationException.class,
+            () -> TopicOperatorConfig.buildFromMap(Map.of(
+                TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
+                TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+                TopicOperatorConfig.CRUISE_CONTROL_ENABLED.key(), "true",
+                TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "my-cruise-control",
+                TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), "-7000"
+            )));
+        assertEquals("Failed to parse. Negative value is not supported for this configuration", thrown.getMessage());
+    }
+
+    @Test
+    public void shouldThrowIfCruiseControlConfigHasNonExistentUsernamePath() {
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+            TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
+            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.CRUISE_CONTROL_ENABLED.key(), "true",
+            TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "my-cruise-control",
+            TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), "9090",
+            TopicOperatorConfig.CRUISE_CONTROL_AUTH_ENABLED.key(), "true",
+            TopicOperatorConfig.CRUISE_CONTROL_API_USER_PATH.key(), "/d4sa6a/das45da4s"
+        ));
+
+        var thrown = assertThrows(IllegalArgumentException.class,
+            () -> TopicOperatorUtil.createCruiseControlClient(config));
+        assertEquals("File not found: /d4sa6a/das45da4s", thrown.getMessage());
+    }
+    
+    @Test
+    public void shouldThrowIfCruiseControlConfigHasNonExistentPasswordFile() {
+        var inputFile = ReadWriteUtils.tempFile(UUID.randomUUID().toString(), ".txt");
+        
+        var config = TopicOperatorConfig.buildFromMap(Map.of(
+            TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234",
+            TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
+            TopicOperatorConfig.CRUISE_CONTROL_ENABLED.key(), "true",
+            TopicOperatorConfig.CRUISE_CONTROL_HOSTNAME.key(), "my-cruise-control",
+            TopicOperatorConfig.CRUISE_CONTROL_PORT.key(), "9090",
+            TopicOperatorConfig.CRUISE_CONTROL_AUTH_ENABLED.key(), "true",
+            TopicOperatorConfig.CRUISE_CONTROL_API_USER_PATH.key(), inputFile.getAbsolutePath(),
+            TopicOperatorConfig.CRUISE_CONTROL_API_PASS_PATH.key(), "/sd4sa6/fds6f7sfs"
+        ));
+
+        var thrown = assertThrows(IllegalArgumentException.class,
+            () -> TopicOperatorUtil.createCruiseControlClient(config));
+        assertEquals("File not found: /sd4sa6/fds6f7sfs", thrown.getMessage());
     }
 }

@@ -15,10 +15,8 @@ import io.strimzi.operator.topic.model.Pair;
 import io.strimzi.operator.topic.model.PartitionedByError;
 import io.strimzi.operator.topic.model.ReconcilableTopic;
 import io.strimzi.operator.topic.model.TopicOperatorException;
-import org.apache.kafka.clients.admin.Admin;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,45 +34,6 @@ public class TopicOperatorUtil {
     static final int BROKER_DEFAULT = -1;
 
     private TopicOperatorUtil() { }
-
-    /**
-     * Create a new Kafka admin client instance.
-     *
-     * @param config Topic Operator configuration.
-     * @return Kafka admin client.
-     */
-    public static Admin createKafkaAdminClient(TopicOperatorConfig config) {
-        return Admin.create(config.adminClientConfig());
-    }
-
-    /**
-     * Create a new Cruise Control client instance.
-     *
-     * @param config Topic Operator configuration.
-     * @return Cruise Control client.
-     */
-    public static CruiseControlClient createCruiseControlClient(TopicOperatorConfig config) {
-        return CruiseControlClient.create(
-            config.cruiseControlHostname(),
-            config.cruiseControlPort(),
-            config.cruiseControlRackEnabled(),
-            config.cruiseControlSslEnabled(),
-            config.cruiseControlSslEnabled() ? getFileContent(config.cruiseControlCrtFilePath()) : null,
-            config.cruiseControlAuthEnabled(),
-            config.cruiseControlAuthEnabled() 
-                ? new String(getFileContent(config.cruiseControlApiUserPath()), StandardCharsets.UTF_8) : null,
-            config.cruiseControlAuthEnabled() 
-                ? new String(getFileContent(config.cruiseControlApiPassPath()), StandardCharsets.UTF_8) : null
-        );
-    }
-
-    private static byte[] getFileContent(String filePath) {
-        try {
-            return Files.readAllBytes(Path.of(filePath));
-        } catch (IOException ioe) {
-            throw new UncheckedIOException(String.format("File not found: %s", filePath), ioe);
-        }
-    }
 
     /**
      * Get the topic name from a {@link KafkaTopic} resource.
@@ -269,5 +228,60 @@ public class TopicOperatorUtil {
                 String.format("Invalid value for topic config '%s': %s", key, value));
         }
         return valueStr;
+    }
+
+    /**
+     * Create Cruise Control client.
+     *
+     * @param config Topic Operator configuration.
+     * @return Cruise Control client.
+     */
+    public static CruiseControlClient createCruiseControlClient(TopicOperatorConfig config) {
+        var sslCertificate = config.cruiseControlSslEnabled() ? 
+            TopicOperatorUtil.getFileContent(config.cruiseControlCrtFilePath()) : null;
+        var apiUsername = config.cruiseControlAuthEnabled() ? 
+            new String(TopicOperatorUtil.getFileContent(config.cruiseControlApiUserPath()), StandardCharsets.UTF_8) : null;
+        var apiPassword = config.cruiseControlAuthEnabled() ? 
+            new String(TopicOperatorUtil.getFileContent(config.cruiseControlApiPassPath()), StandardCharsets.UTF_8) : null;
+
+        if (config.cruiseControlHostname() == null || config.cruiseControlHostname().isBlank()) {
+            throw new IllegalArgumentException("Cruise Control hostname is not set");
+        }
+        if (config.cruiseControlSslEnabled() && (sslCertificate == null || sslCertificate.length == 0)) {
+            throw new IllegalArgumentException("Cruise Control certificate is not set");
+        }
+        if (config.cruiseControlAuthEnabled()) {
+            if (apiUsername == null || apiUsername.isBlank()) {
+                throw new IllegalArgumentException("Cruise Control username is not set");
+            }
+            if (apiPassword == null || apiPassword.isBlank()) {
+                throw new IllegalArgumentException("Cruise Control password is not set");
+            }
+        }
+
+        return CruiseControlClient.create(
+            config.cruiseControlHostname(),
+            config.cruiseControlPort(),
+            config.cruiseControlRackEnabled(),
+            config.cruiseControlSslEnabled(),
+            sslCertificate,
+            config.cruiseControlAuthEnabled(),
+            apiUsername,
+            apiPassword
+        );
+    }
+
+    /**
+     * Get file content.
+     * 
+     * @param filePath File path.
+     * @return file content as bytes.
+     */
+    /* test */ static byte[] getFileContent(String filePath) {
+        try {
+            return Files.readAllBytes(Path.of(filePath));
+        } catch (IOException ioe) {
+            throw new IllegalArgumentException(String.format("File not found: %s", filePath), ioe);
+        }
     }
 }
