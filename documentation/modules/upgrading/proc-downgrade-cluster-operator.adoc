@@ -17,8 +17,12 @@ This procedure describes how to downgrade a Cluster Operator deployment to a pre
 
 .Before you begin
 
-Check the downgrade requirements of the xref:ref-operator-cluster-feature-gates-{context}[Strimzi feature gates].
-If a feature gate is permanently enabled, you may need to downgrade to a version that allows you to disable it before downgrading to your target version. 
+Check the xref:ref-operator-cluster-feature-gates-{context}[Strimzi feature gate releases].
+If a feature gate is enabled, you may need to disable it before downgrading. 
+If the feature gate is permanently enabled, you may need to first downgrade to a version where it can still be disabled.
+
+Kafka clusters managed by Strimzi always use node pools. 
+Downgrading to a cluster without node pools is not possible.
 
 .Procedure
 
