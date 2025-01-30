@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.topic.KafkaTopicStatus;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.topic.model.KubeRef;
 import io.strimzi.operator.topic.model.TopicOperatorException;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.container.StrimziKafkaCluster;
 import io.strimzi.test.interfaces.TestSeparator;
 import org.apache.kafka.clients.admin.Admin;
@@ -59,6 +60,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -863,8 +865,14 @@ class TopicControllerIT implements TestSeparator {
         // when
         modifyTopicAndAwait(kt, changer, readyIsTrue());
 
-        // then
-        assertEquals(expectedConfigs, topicConfigMap(expectedTopicName));
+        // then with dynamic wait (ensuring that race-condition never happen)
+        TestUtils.waitFor("config update", Duration.ofMillis(500).toMillis(), Duration.ofSeconds(30).toMillis(), () -> {
+            try {
+                return topicConfigMap(expectedTopicName).equals(expectedConfigs);
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     @Test
