@@ -462,7 +462,7 @@ public class KafkaConnectClusterTest {
         String connectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
         assertThat(connectConfigurations, containsString("sasl.mechanism=SCRAM-SHA-512"));
         assertThat(connectConfigurations, containsString("security.protocol=SASL_PLAINTEXT"));
-        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=${strimzienv:KAFKA_CONNECT_SASL_USERNAME} password=/opt/kafka/connect-password/user1-secret:password;"));
+        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=${strimzienv:KAFKA_CONNECT_SASL_USERNAME} password=${strimzidir:/opt/kafka/connect-password/user1-secret:password};"));
 
         // Check PodSet
         StrimziPodSet podSet = kc.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
@@ -504,7 +504,7 @@ public class KafkaConnectClusterTest {
         String connectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
         assertThat(connectConfigurations, containsString("sasl.mechanism=SCRAM-SHA-512"));
         assertThat(connectConfigurations, containsString("security.protocol=SASL_SSL"));
-        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=${strimzienv:KAFKA_CONNECT_SASL_USERNAME} password=/opt/kafka/connect-password/my-secret:user1.password;"));
+        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=${strimzienv:KAFKA_CONNECT_SASL_USERNAME} password=${strimzidir:/opt/kafka/connect-password/my-secret:user1.password};"));
         assertThat(connectConfigurations, containsString("ssl.truststore."));
 
         // Check PodSet
@@ -552,7 +552,7 @@ public class KafkaConnectClusterTest {
         String connectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
         assertThat(connectConfigurations, containsString("sasl.mechanism=SCRAM-SHA-256"));
         assertThat(connectConfigurations, containsString("security.protocol=SASL_PLAIN"));
-        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=${strimzienv:KAFKA_CONNECT_SASL_USERNAME} password=/opt/kafka/connect-password/user1-secret:password;"));
+        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=${strimzienv:KAFKA_CONNECT_SASL_USERNAME} password=${strimzidir:/opt/kafka/connect-password/user1-secret:password}"));
         assertThat(connectConfigurations, not(containsString("ssl.truststore.")));
 
         // Check PodSet
@@ -595,7 +595,7 @@ public class KafkaConnectClusterTest {
         String connectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
         assertThat(connectConfigurations, containsString("sasl.mechanism=SCRAM-SHA-256"));
         assertThat(connectConfigurations, containsString("security.protocol=SASL_SSL"));
-        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=${strimzienv:KAFKA_CONNECT_SASL_USERNAME} password=/opt/kafka/connect-password/my-secret:user1.password;"));
+        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=${strimzienv:KAFKA_CONNECT_SASL_USERNAME} password=${strimzidir:/opt/kafka/connect-password/my-secret:user1.password};"));
         assertThat(connectConfigurations, containsString("ssl.truststore."));
 
         // Check PodSet
@@ -643,7 +643,7 @@ public class KafkaConnectClusterTest {
         String connectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
         assertThat(connectConfigurations, containsString("security.protocol=SASL_PLAINTEXT"));
         assertThat(connectConfigurations, containsString("sasl.mechanism=PLAIN"));
-        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=${strimzienv:KAFKA_CONNECT_SASL_USERNAME} password=/opt/kafka/connect-password/user1-secret:password;"));
+        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=${strimzienv:KAFKA_CONNECT_SASL_USERNAME} password=${strimzidir:/opt/kafka/connect-password/user1-secret:password};"));
         assertThat(connectConfigurations, not(containsString("ssl.truststore.")));
 
         // Check PodSet
@@ -686,7 +686,7 @@ public class KafkaConnectClusterTest {
         String connectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
         assertThat(connectConfigurations, containsString("security.protocol=SASL_SSL"));
         assertThat(connectConfigurations, containsString("sasl.mechanism=PLAIN"));
-        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=${strimzienv:KAFKA_CONNECT_SASL_USERNAME} password=/opt/kafka/connect-password/my-secret:user1.password;"));
+        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=${strimzienv:KAFKA_CONNECT_SASL_USERNAME} password=${strimzidir:/opt/kafka/connect-password/my-secret:user1.password};"));
         assertThat(connectConfigurations, containsString("ssl.truststore."));
 
         // Check PodSet
@@ -2051,7 +2051,7 @@ public class KafkaConnectClusterTest {
         ConfigMap configMap = kc.generateConnectConfigMap(new MetricsAndLogging(metricsCM, null));
         String connectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
         assertThat(connectConfigurations, containsString("sasl.mechanism=OAUTHBEARER"));
-        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ${strimzienv:KAFKA_CONNECT_OAUTH_CONFIG} oauth.client.secret=${strimzienv:KAFKA_CONNECT_OAUTH_CLIENT_SECRET} oauth.ssl.truststore.location=\"/tmp/strimzi/oauth.truststore.p12\" oauth.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD} oauth.ssl.truststore.type=\"PKCS12\";"));
+        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ${strimzienv:KAFKA_CONNECT_OAUTH_CONFIG} oauth.client.secret=${strimzienv:KAFKA_CONNECT_OAUTH_CLIENT_SECRET} oauth.ssl.truststore.location=\"/tmp/kafka/oauth.truststore.p12\" oauth.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD} oauth.ssl.truststore.type=\"PKCS12\";"));
         assertThat(connectConfigurations, containsString("sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
 
         // Check PodSet

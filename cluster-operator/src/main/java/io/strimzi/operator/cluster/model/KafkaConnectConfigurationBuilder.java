@@ -17,6 +17,8 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+import static io.strimzi.operator.cluster.model.KafkaConnectCluster.PASSWORD_VOLUME_MOUNT;
+
 /**
  * This class is used to generate the Connect configuration template. The template is later passed using a config map to
  * the connect pods. The scripts in the container images will fill in the variables in the template and use the
@@ -27,6 +29,8 @@ public class KafkaConnectConfigurationBuilder {
     // Names of environment variables expanded through config providers inside Connect node
     private final static String PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:CERTS_STORE_PASSWORD}";
     private final static String PLACEHOLDER_SASL_USERNAME_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:KAFKA_CONNECT_SASL_USERNAME}";
+    // the SASL password file template includes: <volume_mount>/<secret_name>/<password_file>
+    private static final String PLACEHOLDER_SASL_PASSWORD_FILE_TEMPLATE_CONFIG_PROVIDER_DIR = "${strimzidir:%s%s:%s}";
 
     private final StringWriter stringWriter = new StringWriter();
     private final PrintWriter writer = new PrintWriter(stringWriter);
@@ -139,7 +143,7 @@ public class KafkaConnectConfigurationBuilder {
 
                 if (authentication instanceof KafkaClientAuthenticationPlain passwordAuth) {
                     saslMechanism = "PLAIN";
-                    String passwordFilePath = "/opt/kafka/connect-password/" + passwordAuth.getPasswordSecret().getSecretName() + ":" + passwordAuth.getPasswordSecret().getPassword();
+                    String passwordFilePath = String.format(PLACEHOLDER_SASL_PASSWORD_FILE_TEMPLATE_CONFIG_PROVIDER_DIR, PASSWORD_VOLUME_MOUNT, passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getPassword());
                     jaasConfig.append("org.apache.kafka.common.security.plain.PlainLoginModule required username=" + PLACEHOLDER_SASL_USERNAME_CONFIG_PROVIDER_ENV_VAR + " password=" + passwordFilePath + ";");
                 } else if (authentication instanceof KafkaClientAuthenticationScram scramAuth) {
                     if (scramAuth.getType().equals(KafkaClientAuthenticationScramSha256.TYPE_SCRAM_SHA_256)) {
@@ -147,7 +151,7 @@ public class KafkaConnectConfigurationBuilder {
                     } else if (scramAuth.getType().equals(KafkaClientAuthenticationScramSha512.TYPE_SCRAM_SHA_512)) {
                         saslMechanism = "SCRAM-SHA-512";
                     }
-                    String passwordFilePath = "/opt/kafka/connect-password/" + scramAuth.getPasswordSecret().getSecretName() + ":" + scramAuth.getPasswordSecret().getPassword();
+                    String passwordFilePath = String.format(PLACEHOLDER_SASL_PASSWORD_FILE_TEMPLATE_CONFIG_PROVIDER_DIR, PASSWORD_VOLUME_MOUNT, scramAuth.getPasswordSecret().getSecretName(), scramAuth.getPasswordSecret().getPassword());
                     jaasConfig.append("org.apache.kafka.common.security.scram.ScramLoginModule required username=" + PLACEHOLDER_SASL_USERNAME_CONFIG_PROVIDER_ENV_VAR + " password=" + passwordFilePath + ";");
                 } else if (authentication instanceof KafkaClientAuthenticationOAuth oauth) {
                     saslMechanism = "OAUTHBEARER";
@@ -174,7 +178,7 @@ public class KafkaConnectConfigurationBuilder {
                     }
 
                     if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
-                        jaasConfig.append(" oauth.ssl.truststore.location=\"/tmp/strimzi/oauth.truststore.p12\" oauth.ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR + " oauth.ssl.truststore.type=\"PKCS12\"");
+                        jaasConfig.append(" oauth.ssl.truststore.location=\"/tmp/kafka/oauth.truststore.p12\" oauth.ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR + " oauth.ssl.truststore.type=\"PKCS12\"");
                     }
 
                     jaasConfig.append(";");
@@ -226,7 +230,7 @@ public class KafkaConnectConfigurationBuilder {
      */
     public void configProviders(AbstractConfiguration userConfig) {
         printSectionHeader("Config providers");
-        String strimziConfigProviders = "strimzienv,strimzifile";
+        String strimziConfigProviders = "strimzienv,strimzifile,strimzidir";
 
         if (userConfig != null && !userConfig.getConfiguration().isEmpty() && userConfig.getConfigOption("config.providers") != null) {
             writer.println("# Configuration providers configured by the user and by Strimzi");
@@ -240,7 +244,8 @@ public class KafkaConnectConfigurationBuilder {
         writer.println("config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider");
         writer.println("config.providers.strimzienv.param.allowlist.pattern=.*");
         writer.println("config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider");
-
+        writer.println("config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider");
+        writer.println("config.providers.strimzidir.param.allowed.paths=/opt/kafka");
         writer.println();
     }
 

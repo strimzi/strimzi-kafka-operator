@@ -219,7 +219,8 @@ class RackAwarenessST extends AbstractST {
         String hostname = podNodeName.contains(".") ? podNodeName.substring(0, podNodeName.indexOf(".")) : podNodeName;
         String commandOut = cmdKubeClient(testStorage.getNamespaceName()).execInPod(podName,
                 "/bin/bash", "-c", "cat /tmp/strimzi-connect.properties | grep consumer.client.rack").out().trim();
-        assertThat(commandOut.contains("consumer.client.rack=" + hostname), is(true));
+        //TODO: how to check the value of STRIMZI_RACK_ID
+        assertThat(commandOut.contains("consumer.client.rack=${strimzienv:STRIMZI_RACK_ID}"), is(true));
 
         // produce data which are to be available in the topic
         final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
