@@ -110,7 +110,7 @@ Labels can be applied to the following components:
 The label selector to filter the custom resources handled by the Cluster Operator.
 The operator will operate only on those custom resources that have the specified labels set.
 Resources without these labels will not be seen by the operator.
-The label selector applies to `Kafka`, `KafkaConnect`, `KafkaBridge`, `KafkaMirrorMaker`, and `KafkaMirrorMaker2` resources.
+The label selector applies to `Kafka`, `KafkaConnect`, `KafkaBridge`, and `KafkaMirrorMaker2` resources.
 `KafkaRebalance` and `KafkaConnector` resources are operated only when their corresponding Kafka and Kafka Connect clusters have the matching labels.
 +
 [source,yaml,options="nowrap"]

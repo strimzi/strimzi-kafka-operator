@@ -19,7 +19,7 @@ These metrics include:
 * JVM metrics
 
 You can also collect metrics specific to `oauth` authentication and `opa` or `keycloak` authorization by enabling the `enableMetrics` property in the listener or authorization configuration of the `Kafka` resource.
-Similarly, you can enable metrics for `oauth` authentication in custom resources such as `KafkaBridge`, `KafkaConnect`, `KafkaMirrorMaker`, and `KafkaMirrorMaker2`.
+Similarly, you can enable metrics for `oauth` authentication in custom resources such as `KafkaBridge`, `KafkaConnect`, and `KafkaMirrorMaker2`.
 
 You can use Prometheus and Grafana to monitor Strimzi.
 Prometheus consumes metrics from the running pods in your cluster when configured with Prometheus rules. 
