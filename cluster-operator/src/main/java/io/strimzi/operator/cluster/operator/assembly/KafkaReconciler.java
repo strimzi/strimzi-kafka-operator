@@ -1109,7 +1109,7 @@ public class KafkaReconciler {
      * types are done because it requires the Kafka brokers to be scheduled and running to collect their node addresses.
      * Without that, we do not know on which node would they be running.
      *
-     * Note: To avoid issues with bg clusters with many nodes, we first get the used nodes from the Pods and then get
+     * Note: To avoid issues with big clusters with many nodes, we first get the used nodes from the Pods and then get
      * the node information individually for each node instead of listing all nodes and then picking up the information
      * we need. This means more Kubernetes API calls, but helps us to avoid running out of memory.
      *
@@ -1123,7 +1123,7 @@ public class KafkaReconciler {
             // First we collect all the broker pods we have so that we can find out on which worker nodes they run
             return podOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels().withStrimziBrokerRole(true))
                     .compose(pods -> {
-                        // We collect the nodes used by the brokers upfront to avid asking for the same node multiple times later
+                        // We collect the nodes used by the brokers upfront to avoid asking for the same node multiple times later
                         for (Pod broker : pods) {
                             if (broker.getSpec() != null && broker.getSpec().getNodeName() != null) {
                                 Integer podIndex = ReconcilerUtils.getPodIndexFromPodName(broker.getMetadata().getName());
