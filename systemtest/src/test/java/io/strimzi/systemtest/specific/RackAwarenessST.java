@@ -215,12 +215,9 @@ class RackAwarenessST extends AbstractST {
         assertThat(podNodeRequirement.getOperator(), is("Exists"));
 
         // check Kafka client rack awareness configuration
-        String podNodeName = pod.getSpec().getNodeName();
-        String hostname = podNodeName.contains(".") ? podNodeName.substring(0, podNodeName.indexOf(".")) : podNodeName;
         String commandOut = cmdKubeClient(testStorage.getNamespaceName()).execInPod(podName,
                 "/bin/bash", "-c", "cat /tmp/strimzi-connect.properties | grep consumer.client.rack").out().trim();
-        //TODO: how to check the value of STRIMZI_RACK_ID
-        assertThat(commandOut.contains("consumer.client.rack=${strimzienv:STRIMZI_RACK_ID}"), is(true));
+        assertThat(commandOut.contains("consumer.client.rack=${strimzidir:/opt/kafka/init:rack.id}"), is(true));
 
         // produce data which are to be available in the topic
         final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
@@ -292,10 +289,8 @@ class RackAwarenessST extends AbstractST {
         assertThat(podNodeRequirement.getOperator(), is("Exists"));
 
         // check Kafka client rack awareness configuration
-        String podNodeName = pod.getSpec().getNodeName();
-        String hostname = podNodeName.contains(".") ? podNodeName.substring(0, podNodeName.indexOf(".")) : podNodeName;
         String commandOut = cmdKubeClient(testStorage.getNamespaceName()).execInPod(podName, "/bin/bash", "-c", "cat /tmp/strimzi-connect.properties | grep consumer.client.rack").out().trim();
-        assertThat(commandOut.contains("consumer.client.rack=" + hostname), is(true));
+        assertThat(commandOut.contains("${strimzidir:/opt/kafka/init:rack.id}"), is(true));
 
         // Mirroring messages by: Producing to the Source Kafka Cluster and consuming them from mirrored KafkaTopic in target Kafka Cluster.
 

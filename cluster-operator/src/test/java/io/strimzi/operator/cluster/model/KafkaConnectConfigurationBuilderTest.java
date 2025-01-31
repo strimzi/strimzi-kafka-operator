@@ -382,7 +382,7 @@ class KafkaConnectConfigurationBuilderTest {
                 "producer.security.protocol=PLAINTEXT",
                 "consumer.security.protocol=PLAINTEXT",
                 "admin.security.protocol=PLAINTEXT",
-                "consumer.client.rack=${strimzienv:STRIMZI_RACK_ID}"
+                "consumer.client.rack=${strimzidir:/opt/kafka/init:rack.id}"
         ));
 
     }
