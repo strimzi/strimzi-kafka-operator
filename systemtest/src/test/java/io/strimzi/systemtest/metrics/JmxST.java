@@ -4,6 +4,11 @@
  */
 package io.strimzi.systemtest.metrics;
 
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.SuiteDoc;
+import io.skodjob.annotations.TestDoc;
 import io.strimzi.api.kafka.model.common.jmx.KafkaJmxAuthenticationPassword;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
@@ -14,6 +19,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.FIPSNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -40,6 +46,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 
 @Tag(REGRESSION)
+@SuiteDoc(
+    description = @Desc("This suite verifies JMX metrics behavior under various configurations and scenarios."),
+    beforeTestSteps = {
+        @Step(value = "Install the Cluster Operator and ensure environment readiness.", expected = "Cluster Operator is deployed and environment is ready.")
+    },
+    labels = {
+        @Label(value = TestDocsLabels.KAFKA),
+        @Label(value = TestDocsLabels.METRICS)
+    }
+)
 public class JmxST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(JmxST.class);
@@ -48,6 +64,18 @@ public class JmxST extends AbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     @FIPSNotSupported("JMX with auth is not working with FIPS")
+    @TestDoc(
+        description = @Desc("Test verifying Kafka and KafkaConnect with JMX authentication enabled and correct version reporting."),
+        steps = {
+            @Step(value = "Deploy a Kafka cluster (ephemeral storage) with JMX authentication.", expected = "Kafka cluster is deployed with JMX enabled and authentication set."),
+            @Step(value = "Deploy a KafkaConnect cluster with JMX authentication.", expected = "KafkaConnect is deployed with JMX enabled and authentication set."),
+            @Step(value = "Create a Scraper Pod, install jmxterm, and collect JMX metrics from both Kafka and KafkaConnect.", expected = "JMX metrics are retrieved; Kafka version is reported correctly.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA),
+            @Label(value = TestDocsLabels.METRICS)
+        }
+    )
     void testKafkaAndKafkaConnectWithJMX() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String connectJmxSecretName = testStorage.getClusterName() + "-kafka-connect-jmx";
