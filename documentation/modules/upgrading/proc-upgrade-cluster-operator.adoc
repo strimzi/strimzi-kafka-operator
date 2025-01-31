@@ -15,17 +15,14 @@ The availability of Kafka clusters managed by the Cluster Operator is not affect
 
 NOTE: Refer to the documentation supporting a specific version of Strimzi for information on how to upgrade to that version.
 
-.Before you begin
-
-Check the xref:ref-operator-cluster-feature-gates-{context}[Strimzi feature gate releases].
-If a feature gate is not enabled, you may need to enable it before upgrading. 
-If the feature gate is unavailable in your current version, you may need to upgrade to a version that allows you to enable it first.
-
 .Prerequisites
 
 * An existing Cluster Operator deployment is available.
 * You have xref:downloads-{context}[downloaded the release artifacts for Strimzi {ProductVersion}].
 * You need an account with permission to create and manage `CustomResourceDefinition` and RBAC (`ClusterRole`, and `RoleBinding`) resources.
+
+Currently, no feature gates require enabling or disabling before upgrading. 
+If a feature gate introduces such a requirement, the details will be provided here.
 
 .Procedure
 

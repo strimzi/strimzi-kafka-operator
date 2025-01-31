@@ -25,13 +25,13 @@ When the User Operator and Topic Operator are deployed standalone, without a Clu
 [role="_abstract"]
 Feature gates have three stages of maturity:
 
-Alpha:: Alpha stage features are typically disabled by default. +
+Alpha:: Alpha stage features are disabled by default. +
 They might be experimental or unstable, subject to change, or not sufficiently tested for production use.
 
-Beta:: Beta stage features are typically enabled by default. +
+Beta:: Beta stage features are enabled by default, but they can be disabled if needed. +
 They are well tested and their functionality is not likely to change.
 
-General Availability (GA):: GA features are typically always enabled. +
+General Availability (GA):: GA features are always enabled and cannot be disabled. +
 They are stable and should not change in the future.
 Feature gates might be removed when they reach GA, which means that the feature was incorporated into the Strimzi core features.
 
