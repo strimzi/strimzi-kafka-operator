@@ -893,6 +893,8 @@ spec:
                             properties:
                               name:
                                 type: string
+                              request:
+                                type: string
                         limits:
                           additionalProperties:
                             anyOf:
@@ -1039,6 +1041,8 @@ spec:
                                   type: boolean
                                 runAsUser:
                                   type: integer
+                                seLinuxChangePolicy:
+                                  type: string
                                 seLinuxOptions:
                                   type: object
                                   properties:
@@ -1061,6 +1065,8 @@ spec:
                                   type: array
                                   items:
                                     type: integer
+                                supplementalGroupsPolicy:
+                                  type: string
                                 sysctls:
                                   type: array
                                   items:
@@ -2458,6 +2464,8 @@ spec:
                             properties:
                               name:
                                 type: string
+                              request:
+                                type: string
                         limits:
                           additionalProperties:
                             anyOf:
@@ -2622,6 +2630,8 @@ spec:
                                   type: boolean
                                 runAsUser:
                                   type: integer
+                                seLinuxChangePolicy:
+                                  type: string
                                 seLinuxOptions:
                                   type: object
                                   properties:
@@ -2644,6 +2654,8 @@ spec:
                                   type: array
                                   items:
                                     type: integer
+                                supplementalGroupsPolicy:
+                                  type: string
                                 sysctls:
                                   type: array
                                   items:
@@ -3605,6 +3617,8 @@ spec:
                                 properties:
                                   name:
                                     type: string
+                                  request:
+                                    type: string
                             limits:
                               additionalProperties:
                                 anyOf:
@@ -3772,6 +3786,8 @@ spec:
                                 properties:
                                   name:
                                     type: string
+                                  request:
+                                    type: string
                             limits:
                               additionalProperties:
                                 anyOf:
@@ -3868,6 +3884,8 @@ spec:
                                 type: object
                                 properties:
                                   name:
+                                    type: string
+                                  request:
                                     type: string
                             limits:
                               additionalProperties:
@@ -4019,6 +4037,8 @@ spec:
                                   type: boolean
                                 runAsUser:
                                   type: integer
+                                seLinuxChangePolicy:
+                                  type: string
                                 seLinuxOptions:
                                   type: object
                                   properties:
@@ -4041,6 +4061,8 @@ spec:
                                   type: array
                                   items:
                                     type: integer
+                                supplementalGroupsPolicy:
+                                  type: string
                                 sysctls:
                                   type: array
                                   items:
@@ -5179,6 +5201,8 @@ spec:
                                 properties:
                                   name:
                                     type: string
+                                  request:
+                                    type: string
                             limits:
                               additionalProperties:
                                 anyOf:
@@ -5266,6 +5290,8 @@ spec:
                             type: object
                             properties:
                               name:
+                                type: string
+                              request:
                                 type: string
                         limits:
                           additionalProperties:
@@ -5467,6 +5493,8 @@ spec:
                                   type: boolean
                                 runAsUser:
                                   type: integer
+                                seLinuxChangePolicy:
+                                  type: string
                                 seLinuxOptions:
                                   type: object
                                   properties:
@@ -5489,6 +5517,8 @@ spec:
                                   type: array
                                   items:
                                     type: integer
+                                supplementalGroupsPolicy:
+                                  type: string
                                 sysctls:
                                   type: array
                                   items:
@@ -6613,6 +6643,8 @@ spec:
                             properties:
                               name:
                                 type: string
+                              request:
+                                type: string
                         limits:
                           additionalProperties:
                             anyOf:
@@ -6702,6 +6734,8 @@ spec:
                                   type: boolean
                                 runAsUser:
                                   type: integer
+                                seLinuxChangePolicy:
+                                  type: string
                                 seLinuxOptions:
                                   type: object
                                   properties:
@@ -6724,6 +6758,8 @@ spec:
                                   type: array
                                   items:
                                     type: integer
+                                supplementalGroupsPolicy:
+                                  type: string
                                 sysctls:
                                   type: array
                                   items:
@@ -7483,6 +7519,8 @@ spec:
                             properties:
                               name:
                                 type: string
+                              request:
+                                type: string
                         limits:
                           additionalProperties:
                             anyOf:
@@ -7629,6 +7667,8 @@ spec:
                                   type: boolean
                                 runAsUser:
                                   type: integer
+                                seLinuxChangePolicy:
+                                  type: string
                                 seLinuxOptions:
                                   type: object
                                   properties:
@@ -7651,6 +7691,8 @@ spec:
                                   type: array
                                   items:
                                     type: integer
+                                supplementalGroupsPolicy:
+                                  type: string
                                 sysctls:
                                   type: array
                                   items:
