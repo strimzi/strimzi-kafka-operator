@@ -95,6 +95,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -1107,46 +1109,59 @@ public class KafkaReconciler {
      * types are done because it requires the Kafka brokers to be scheduled and running to collect their node addresses.
      * Without that, we do not know on which node would they be running.
      *
+     * Note: To avoid issues with big clusters with many nodes, we first get the used nodes from the Pods and then get
+     * the node information individually for each node instead of listing all nodes and then picking up the information
+     * we need. This means more Kubernetes API calls, but helps us to avoid running out of memory.
+     *
      * @return  Future which completes when the Listener status is created for all node port listeners
      */
     protected Future<Void> nodePortExternalListenerStatus() {
-        List<Node> allNodes = new ArrayList<>();
-
         if (!ListenersUtils.nodePortListeners(kafka.getListeners()).isEmpty())   {
-            return nodeOperator.listAsync(Labels.EMPTY)
-                    .compose(result -> {
-                        allNodes.addAll(result);
-                        return podOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels());
-                    })
-                    .map(pods -> {
-                        Map<Integer, Node> brokerNodes = new HashMap<>();
+            Map<Integer, String> brokerNodes = new HashMap<>();
+            ConcurrentMap<String, Node> nodes = new ConcurrentHashMap<>();
 
+            // First we collect all the broker pods we have so that we can find out on which worker nodes they run
+            return podOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels().withStrimziBrokerRole(true))
+                    .compose(pods -> {
+                        // We collect the nodes used by the brokers upfront to avoid asking for the same node multiple times later
                         for (Pod broker : pods) {
-                            String podName = broker.getMetadata().getName();
-                            Integer podIndex = ReconcilerUtils.getPodIndexFromPodName(podName);
-
-                            if (broker.getStatus() != null && broker.getStatus().getHostIP() != null) {
-                                String hostIP = broker.getStatus().getHostIP();
-                                allNodes.stream()
-                                        .filter(node -> {
-                                            if (Labels.booleanLabel(broker, Labels.STRIMZI_BROKER_ROLE_LABEL, false)
-                                                    && node.getStatus() != null
-                                                    && node.getStatus().getAddresses() != null) {
-                                                return node.getStatus().getAddresses().stream().anyMatch(address -> hostIP.equals(address.getAddress()));
-                                            } else {
-                                                return false;
-                                            }
-                                        })
-                                        .findFirst()
-                                        .ifPresent(podNode -> brokerNodes.put(podIndex, podNode));
+                            if (broker.getSpec() != null && broker.getSpec().getNodeName() != null) {
+                                Integer podIndex = ReconcilerUtils.getPodIndexFromPodName(broker.getMetadata().getName());
+                                brokerNodes.put(podIndex, broker.getSpec().getNodeName());
+                            } else {
+                                // This should not happen, but to avoid some chain of errors downstream we check it and raise exception
+                                LOGGER.warnCr(reconciliation, "Kafka Pod {} has no node name specified", broker.getMetadata().getName());
+                                return Future.failedFuture(new RuntimeException("Kafka Pod " + broker.getMetadata().getName() + " has no node name specified"));
                             }
                         }
 
+                        List<Future<Void>> nodeFutures = new ArrayList<>();
+
+                        // We get the full node resource for each node with a broker
+                        for (String nodeName : brokerNodes.values().stream().distinct().toList()) {
+                            LOGGER.debugCr(reconciliation, "Getting information on worker node {} used by one or more brokers", nodeName);
+                            Future<Void> nodeFuture = nodeOperator.getAsync(nodeName).compose(node -> {
+                                if (node != null) {
+                                    nodes.put(nodeName, node);
+                                } else {
+                                    // Node was not found, but we do not want to fail because of this as it might be just some race condition
+                                    LOGGER.warnCr(reconciliation, "Worker node {} does not seem to exist", nodeName);
+                                }
+
+                                return Future.succeededFuture();
+                            });
+                            nodeFutures.add(nodeFuture);
+                        }
+
+                        return Future.join(nodeFutures);
+                    })
+                    .map(i -> {
+                        // We extract the address information from the nodes
                         for (GenericKafkaListener listener : ListenersUtils.nodePortListeners(kafka.getListeners())) {
                             // Set is used to ensure each node/port is listed only once. It is later converted to List.
                             Set<ListenerAddress> statusAddresses = new HashSet<>(brokerNodes.size());
 
-                            for (Map.Entry<Integer, Node> entry : brokerNodes.entrySet())   {
+                            for (Map.Entry<Integer, String> entry : brokerNodes.entrySet())   {
                                 String advertisedHost = ListenersUtils.brokerAdvertisedHost(listener, kafka.nodePoolForNodeId(entry.getKey()).nodeRef(entry.getKey()));
                                 ListenerAddress address;
 
@@ -1155,11 +1170,15 @@ public class KafkaReconciler {
                                             .withHost(advertisedHost)
                                             .withPort(listenerReconciliationResults.bootstrapNodePorts.get(ListenersUtils.identifier(listener)))
                                             .build();
-                                } else {
+                                } else if (nodes.get(entry.getValue()) != null) {
                                     address = new ListenerAddressBuilder()
-                                            .withHost(NodeUtils.findAddress(entry.getValue().getStatus().getAddresses(), ListenersUtils.preferredNodeAddressType(listener)))
+                                            .withHost(NodeUtils.findAddress(nodes.get(entry.getValue()).getStatus().getAddresses(), ListenersUtils.preferredNodeAddressType(listener)))
                                             .withPort(listenerReconciliationResults.bootstrapNodePorts.get(ListenersUtils.identifier(listener)))
                                             .build();
+                                } else {
+                                    // Node was not found, but we do not want to fail because of this as it might be just some race condition
+                                    LOGGER.warnCr(reconciliation, "Kafka node {} is running on an unknown node and its node port address cannot be found", entry.getKey());
+                                    continue;
                                 }
 
                                 statusAddresses.add(address);
