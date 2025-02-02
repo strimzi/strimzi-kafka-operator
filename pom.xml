@@ -158,9 +158,9 @@
         <!-- Test only dependencies -->
         <hamcrest.version>2.2</hamcrest.version>
         <mockito.version>4.11.0</mockito.version>
-        <junit.platform.version>1.9.3</junit.platform.version>
+        <junit.platform.version>1.8.2</junit.platform.version>
         <opentest4j.version>1.2.0</opentest4j.version>
-        <jupiter.version>5.9.3</jupiter.version>
+        <jupiter.version>5.8.2</jupiter.version>
         <strimzi-test-container.version>0.109.1</strimzi-test-container.version>
         <mockserver.version>5.13.2</mockserver.version>
         <mockwebserver.version>3.14.7</mockwebserver.version>
