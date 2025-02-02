@@ -523,7 +523,7 @@ public class KafkaStatusTest {
         @Override
         Future<Void> reconcile(ReconciliationState reconcileState)  {
             return reconcileState.initialStatus()
-                    .map((Void) null);
+                    .mapEmpty();
         }
     }
 }

@@ -61,7 +61,7 @@ public class KafkaNodeUnregistration {
                         adminClient.close();
                         return Future.succeededFuture();
                     })
-                    .map((Void) null);
+                    .mapEmpty();
         } catch (KafkaException e) {
             LOGGER.warnCr(reconciliation, "Failed to unregister nodes", e);
             return Future.failedFuture(e);

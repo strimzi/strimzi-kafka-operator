@@ -203,7 +203,7 @@ public class DefaultKafkaQuotasManager {
 
         return VertxUtil
             .kafkaFutureToVertxFuture(reconciliation, vertx, kafkaAdmin.alterClientQuotas(List.of(clientQuotaAlteration)).values().get(DEFAULT_USER_ENTITY))
-            .map((Void) null);
+            .mapEmpty();
     }
 
     /**

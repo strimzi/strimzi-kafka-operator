@@ -401,7 +401,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      * @return                  A Future with True if the deletion succeeded and False when it failed.
      */
     public Future<Void> deleteAsync(Reconciliation reconciliation, String namespace, String name, boolean cascading) {
-        return internalDelete(reconciliation, namespace, name, cascading).map((Void) null);
+        return internalDelete(reconciliation, namespace, name, cascading).mapEmpty();
     }
 
     /**

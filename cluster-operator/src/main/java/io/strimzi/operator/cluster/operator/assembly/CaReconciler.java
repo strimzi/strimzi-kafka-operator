@@ -329,7 +329,7 @@ public class CaReconciler {
                     );
 
                     return secretOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.clusterOperatorCertsSecretName(reconciliation.name()), coSecret)
-                            .map((Void) null);
+                            .mapEmpty();
                 });
     }
 
@@ -523,7 +523,7 @@ public class CaReconciler {
 
             if (clusterCa.certsRemoved()) {
                 return secretOperator.reconcile(reconciliation, reconciliation.namespace(), AbstractModel.clusterCaCertSecretName(reconciliation.name()), clusterCa.caCertSecret())
-                        .map((Void) null);
+                        .mapEmpty();
             } else {
                 return Future.succeededFuture();
             }
