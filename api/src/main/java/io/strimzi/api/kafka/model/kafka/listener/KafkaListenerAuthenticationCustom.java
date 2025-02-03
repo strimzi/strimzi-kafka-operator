@@ -6,10 +6,12 @@ package io.strimzi.api.kafka.model.kafka.listener;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.common.GenericSecretSource;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -67,6 +69,9 @@ public class KafkaListenerAuthenticationCustom extends KafkaListenerAuthenticati
 
     @Description("Secrets to be mounted to `/opt/kafka/custom-authn-secrets/custom-listener-<listener_name>-<port>/<secret_name>`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Deprecated
+    @DeprecatedProperty(description = "Please use the template section instead to configure additional volumes instead.")
+    @PresentInVersions("v1alpha1-v1beta2")
     public List<GenericSecretSource> getSecrets() {
         return secrets;
     }
