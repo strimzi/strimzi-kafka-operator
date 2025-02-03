@@ -94,7 +94,7 @@ public class ReconcilerUtils {
         }
 
         return Future.join(podFutures)
-                .map((Void) null);
+                .mapEmpty();
     }
 
     /**
@@ -253,11 +253,11 @@ public class ReconcilerUtils {
                     if (desiredJmxSecret != null)  {
                         // Desired secret is not null => should be updated
                         return secretOperator.reconcile(reconciliation, reconciliation.namespace(), cluster.jmx().secretName(), desiredJmxSecret)
-                                .map((Void) null);
+                                .mapEmpty();
                     } else if (currentJmxSecret != null)    {
                         // Desired secret is null but current is not => we should delete the secret
                         return secretOperator.reconcile(reconciliation, reconciliation.namespace(), cluster.jmx().secretName(), null)
-                                .map((Void) null);
+                                .mapEmpty();
                     } else {
                         // Both current and desired secret are null => nothing to do
                         return Future.succeededFuture();

@@ -172,7 +172,7 @@ public class ManualPodCleaner {
 
                     return strimziPodSetOperator.reconcile(reconciliation, reconciliation.namespace(), podSetName, reducedPodSet)
                             .compose(ignore -> deletePodAndPvc(podName, deletePvcs))
-                            .map((Void) null);
+                            .mapEmpty();
                 });
     }
 
@@ -209,6 +209,6 @@ public class ManualPodCleaner {
                     }
                     return Future.join(deleteResults);
                 })
-                .map((Void) null);
+                .mapEmpty();
     }
 }

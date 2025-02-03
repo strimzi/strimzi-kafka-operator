@@ -166,6 +166,6 @@ public class KRaftMetadataManager {
 
         return VertxUtil
                 .kafkaFutureToVertxFuture(reconciliation, vertx, kafkaAdmin.updateFeatures(Map.of(METADATA_VERSION_KEY, featureUpdate), options).values().get(METADATA_VERSION_KEY))
-                .map((Void) null);
+                .mapEmpty();
     }
 }

@@ -137,11 +137,11 @@ public class EntityOperatorReconciler {
                         Secret newSecret = entityOperator.topicOperator().generateCruiseControlApiSecret(oldSecret);
                         this.ccApiSecretHash = ReconcilerUtils.hashSecretContent(newSecret);
                         return secretOperator.reconcile(reconciliation, reconciliation.namespace(), ccApiSecretName, newSecret)
-                            .map((Void) null);
+                            .mapEmpty();
                     });
             } else {
                 return secretOperator.reconcile(reconciliation, reconciliation.namespace(), ccApiSecretName, null)
-                    .map((Void) null);
+                    .mapEmpty();
             }
         }
         return Future.succeededFuture();
@@ -159,7 +159,7 @@ public class EntityOperatorReconciler {
                         reconciliation.namespace(),
                         KafkaResources.entityOperatorDeploymentName(reconciliation.name()),
                         entityOperator != null ? entityOperator.generateServiceAccount() : null
-                ).map((Void) null);
+                ).mapEmpty();
     }
 
     /**
@@ -176,7 +176,7 @@ public class EntityOperatorReconciler {
                         reconciliation.namespace(),
                         KafkaResources.entityOperatorDeploymentName(reconciliation.name()),
                         entityOperator != null ? entityOperator.generateRole(reconciliation.namespace(), reconciliation.namespace()) : null
-                ).map((Void) null);
+                ).mapEmpty();
     }
 
     /**
@@ -196,7 +196,7 @@ public class EntityOperatorReconciler {
                                 watchedNamespace,
                                 KafkaResources.entityOperatorDeploymentName(reconciliation.name()),
                                 entityOperator.generateRole(reconciliation.namespace(), watchedNamespace)
-                        ).map((Void) null);
+                        ).mapEmpty();
             } else {
                 return Future.succeededFuture();
             }
@@ -222,7 +222,7 @@ public class EntityOperatorReconciler {
                                 watchedNamespace,
                                 KafkaResources.entityOperatorDeploymentName(reconciliation.name()),
                                 entityOperator.generateRole(reconciliation.namespace(), watchedNamespace)
-                        ).map((Void) null);
+                        ).mapEmpty();
             } else {
                 return Future.succeededFuture();
             }
@@ -254,11 +254,11 @@ public class EntityOperatorReconciler {
                     KafkaResources.entityTopicOperatorRoleBinding(reconciliation.name()), entityOperator.topicOperator().generateRoleBindingForRole(reconciliation.namespace(), reconciliation.namespace()));
 
             return Future.join(ownNamespaceFuture, watchedNamespaceFuture)
-                    .map((Void) null);
+                    .mapEmpty();
         } else {
             return roleBindingOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityTopicOperatorRoleBinding(reconciliation.name()), null)
-                    .map((Void) null);
+                    .mapEmpty();
         }
     }
 
@@ -285,11 +285,11 @@ public class EntityOperatorReconciler {
                     KafkaResources.entityUserOperatorRoleBinding(reconciliation.name()), entityOperator.userOperator().generateRoleBindingForRole(reconciliation.namespace(), reconciliation.namespace()));
 
             return Future.join(ownNamespaceFuture, watchedNamespaceFuture)
-                    .map((Void) null);
+                    .mapEmpty();
         } else {
             return roleBindingOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityUserOperatorRoleBinding(reconciliation.name()), null)
-                    .map((Void) null);
+                    .mapEmpty();
         }
     }
 
@@ -309,11 +309,11 @@ public class EntityOperatorReconciler {
                                     KafkaResources.entityTopicOperatorLoggingConfigMapName(reconciliation.name()),
                                     entityOperator.topicOperator().generateMetricsAndLogConfigMap(logging)
                             )
-                    ).map((Void) null);
+                    ).mapEmpty();
         } else {
             return configMapOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityTopicOperatorLoggingConfigMapName(reconciliation.name()), null)
-                    .map((Void) null);
+                    .mapEmpty();
         }
     }
 
@@ -333,11 +333,11 @@ public class EntityOperatorReconciler {
                                     KafkaResources.entityUserOperatorLoggingConfigMapName(reconciliation.name()),
                                     entityOperator.userOperator().generateMetricsAndLogConfigMap(logging)
                             )
-                    ).map((Void) null);
+                    ).mapEmpty();
         } else {
             return configMapOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityUserOperatorLoggingConfigMapName(reconciliation.name()), null)
-                    .map((Void) null);
+                    .mapEmpty();
         }
     }
 
@@ -366,7 +366,7 @@ public class EntityOperatorReconciler {
         } else {
             return secretOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityTopicOperatorSecretName(reconciliation.name()), null)
-                    .map((Void) null);
+                    .mapEmpty();
         }
     }
 
@@ -395,7 +395,7 @@ public class EntityOperatorReconciler {
         } else {
             return secretOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityUserOperatorSecretName(reconciliation.name()), null)
-                    .map((Void) null);
+                    .mapEmpty();
         }
     }
     /**
@@ -411,7 +411,7 @@ public class EntityOperatorReconciler {
                             reconciliation.namespace(),
                             KafkaResources.entityOperatorDeploymentName(reconciliation.name()),
                             entityOperator != null ? entityOperator.generateNetworkPolicy() : null
-                    ).map((Void) null);
+                    ).mapEmpty();
         } else {
             return Future.succeededFuture();
         }
@@ -438,11 +438,11 @@ public class EntityOperatorReconciler {
 
             return deploymentOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(reconciliation.name()), deployment)
-                    .map((Void) null);
+                    .mapEmpty();
         } else  {
             return deploymentOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(reconciliation.name()), null)
-                    .map((Void) null);
+                    .mapEmpty();
         }
     }
 

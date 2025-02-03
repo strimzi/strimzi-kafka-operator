@@ -145,7 +145,7 @@ public class KafkaListenersReconciler {
         services.addAll(kafka.generateExternalBootstrapServices());
         services.addAll(kafka.generatePerPodServices());
 
-        return serviceOperator.batchReconcile(reconciliation, reconciliation.namespace(), services, kafka.getSelectorLabels()).map((Void) null);
+        return serviceOperator.batchReconcile(reconciliation, reconciliation.namespace(), services, kafka.getSelectorLabels()).mapEmpty();
     }
 
     /**
@@ -158,7 +158,7 @@ public class KafkaListenersReconciler {
         routes.addAll(kafka.generateExternalRoutes());
 
         if (pfa.hasRoutes()) {
-            return routeOperator.batchReconcile(reconciliation, reconciliation.namespace(), routes, kafka.getSelectorLabels()).map((Void) null);
+            return routeOperator.batchReconcile(reconciliation, reconciliation.namespace(), routes, kafka.getSelectorLabels()).mapEmpty();
         } else {
             if (!routes.isEmpty()) {
                 LOGGER.warnCr(reconciliation, "The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster {} using routes is not possible.", reconciliation.name());
@@ -178,7 +178,7 @@ public class KafkaListenersReconciler {
         List<Ingress> ingresses = new ArrayList<>(kafka.generateExternalBootstrapIngresses());
         ingresses.addAll(kafka.generateExternalIngresses());
 
-        return ingressOperator.batchReconcile(reconciliation, reconciliation.namespace(), ingresses, kafka.getSelectorLabels()).map((Void) null);
+        return ingressOperator.batchReconcile(reconciliation, reconciliation.namespace(), ingresses, kafka.getSelectorLabels()).mapEmpty();
     }
 
     /**
@@ -453,7 +453,7 @@ public class KafkaListenersReconciler {
 
         return Future
                 .join(listenerFutures)
-                .map((Void) null);
+                .mapEmpty();
     }
 
     /**
@@ -534,7 +534,7 @@ public class KafkaListenersReconciler {
 
         return Future
                 .join(listenerFutures)
-                .map((Void) null);
+                .mapEmpty();
     }
 
     /**
@@ -619,7 +619,7 @@ public class KafkaListenersReconciler {
 
         return Future
                 .join(listenerFutures)
-                .map((Void) null);
+                .mapEmpty();
     }
 
     /**
@@ -691,7 +691,7 @@ public class KafkaListenersReconciler {
 
         return Future
                 .join(listenerFutures)
-                .map((Void) null);
+                .mapEmpty();
     }
 
     /**

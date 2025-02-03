@@ -347,7 +347,7 @@ public class KafkaReconciler {
     protected Future<Void> networkPolicy() {
         if (isNetworkPolicyGeneration) {
             return networkPolicyOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaNetworkPolicyName(reconciliation.name()), kafka.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels))
-                    .map((Void) null);
+                    .mapEmpty();
         } else {
             return Future.succeededFuture();
         }
@@ -527,7 +527,7 @@ public class KafkaReconciler {
     protected Future<Void> serviceAccount() {
         return serviceAccountOperator
                 .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaComponentName(reconciliation.name()), kafka.generateServiceAccount())
-                .map((Void) null);
+                .mapEmpty();
     }
 
     /**
@@ -549,7 +549,7 @@ public class KafkaReconciler {
                                 desired
                         ),
                 desired
-        ).map((Void) null);
+        ).mapEmpty();
     }
 
     /**
@@ -593,7 +593,7 @@ public class KafkaReconciler {
                             }
                         }
 
-                        return Future.join(ops).map((Void) null);
+                        return Future.join(ops).mapEmpty();
                     }
                 });
     }
@@ -719,7 +719,7 @@ public class KafkaReconciler {
 
                     return Future
                             .join(ops)
-                            .map((Void) null);
+                            .mapEmpty();
                 });
     }
 
@@ -1101,7 +1101,7 @@ public class KafkaReconciler {
         // Deleting resource which likely does not exist would cause more load on the Kubernetes API then trying to get
         // it first because of the watch if it was deleted etc.
         return configMapOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaMetricsAndLogConfigMapName(reconciliation.name()), null)
-                .map((Void) null);
+                .mapEmpty();
     }
 
     /**
@@ -1259,7 +1259,7 @@ public class KafkaReconciler {
 
             // Return future
             return Future.join(statusUpdateFutures)
-                    .map((Void) null);
+                    .mapEmpty();
         } else {
             return Future.succeededFuture();
         }
