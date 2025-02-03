@@ -267,7 +267,7 @@ EOF
 containerdConfigPatches:
 - |-
   [plugins."io.containerd.grpc.v1.cri".registry]
-      c/onfig_path = "/etc/containerd/certs.d"
+      config_path = "/etc/containerd/certs.d"
 EOF
     fi
 
