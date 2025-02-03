@@ -34,6 +34,7 @@ import io.strimzi.systemtest.utils.AdminClientUtils;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.specific.MinioUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.executor.Exec;
 import org.apache.kafka.common.requests.ListOffsetsRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -201,6 +202,11 @@ public class TieredStorageST extends AbstractST {
 
         ImageBuild.buildImage(suiteStorage.getNamespaceName(), IMAGE_NAME, TIERED_STORAGE_DOCKERFILE, BUILT_IMAGE_TAG, Environment.KAFKA_TIERED_STORAGE_BASE_IMAGE);
 
+        if (cluster.isKind()) {
+            String image = Environment.getImageOutputRegistry(
+                suiteStorage.getNamespaceName(), IMAGE_NAME, BUILT_IMAGE_TAG);
+            Exec.exec("kind", "load", "docker-image", image, "--name", "kind-cluster");
+        }
         SetupMinio.deployMinio(suiteStorage.getNamespaceName());
         SetupMinio.createBucket(suiteStorage.getNamespaceName(), BUCKET_NAME);
 
