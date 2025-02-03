@@ -36,7 +36,9 @@ function install_kubectl {
     curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/${TEST_KUBECTL_VERSION}/bin/linux/${ARCH}/kubectl && chmod +x kubectl
     sudo cp kubectl /usr/local/bin
 
-    sudo ln -s /usr/local/bin/kubectl /usr/bin/kubectl
+    if is_podman; then
+        sudo ln -s /usr/local/bin/kubectl /usr/bin/kubectl
+    fi
 }
 
 function label_node {
@@ -265,7 +267,7 @@ EOF
 containerdConfigPatches:
 - |-
   [plugins."io.containerd.grpc.v1.cri".registry]
-      config_path = "/etc/containerd/certs.d"
+      c/onfig_path = "/etc/containerd/certs.d"
 EOF
     fi
 
