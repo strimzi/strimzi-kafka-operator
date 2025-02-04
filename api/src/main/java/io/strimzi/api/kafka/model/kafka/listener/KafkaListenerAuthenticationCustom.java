@@ -70,7 +70,7 @@ public class KafkaListenerAuthenticationCustom extends KafkaListenerAuthenticati
     @Description("Secrets to be mounted to `/opt/kafka/custom-authn-secrets/custom-listener-<listener_name>-<port>/<secret_name>`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Deprecated
-    @DeprecatedProperty(description = "Please use the template section instead to configure additional volumes instead.")
+    @DeprecatedProperty(description = "Please use the template section to configure additional volumes instead.")
     @PresentInVersions("v1alpha1-v1beta2")
     public List<GenericSecretSource> getSecrets() {
         return secrets;
