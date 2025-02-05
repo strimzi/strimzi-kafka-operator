@@ -15,7 +15,20 @@ spec:
     singular: kafkaaccess
   scope: Namespaced
   versions:
-    - name: v1alpha1
+    - additionalPrinterColumns:
+        - jsonPath: .spec.kafka.listener
+          name: Listener
+          priority: 0
+          type: string
+        - jsonPath: .spec.kafka.name
+          name: Cluster
+          priority: 0
+          type: string
+        - jsonPath: .spec.user.name
+          name: User
+          priority: 0
+          type: string
+      name: v1alpha1
       schema:
         openAPIV3Schema:
           properties:
