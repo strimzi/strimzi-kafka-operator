@@ -26,10 +26,6 @@ class CrdGeneratorTest {
 
     private final CrdGenerator.Reporter crdGeneratorReporter = new CrdGenerator.Reporter() {
         @Override
-        public void warn(String s) {
-        }
-
-        @Override
         public void err(String err) {
             if (err.contains("@JsonInclude") || err.contains("@JsonPropertyOrder")) {
                 // Currently we're only interested in testing @JsonInclude and @JsonPropertyOrder errors

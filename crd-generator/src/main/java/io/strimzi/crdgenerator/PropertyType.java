@@ -31,9 +31,7 @@ class PropertyType {
     }
 
     public boolean isArray() {
-        //Class<?> propertyType = getType();
-        //return propertyType.isArray() || List.class.equals(propertyType);
-        boolean b = gType instanceof Class<?> && ((Class<?>) gType).equals(List.class)
+        boolean b = gType instanceof Class<?> && gType.equals(List.class)
                 || gType instanceof ParameterizedType && ((ParameterizedType) gType).getRawType().equals(List.class);
         return gType instanceof GenericArrayType
                 || gType instanceof Class<?> && ((Class<?>) gType).isArray()
