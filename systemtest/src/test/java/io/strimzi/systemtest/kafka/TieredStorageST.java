@@ -203,7 +203,7 @@ public class TieredStorageST extends AbstractST {
         ImageBuild.buildImage(suiteStorage.getNamespaceName(), IMAGE_NAME, TIERED_STORAGE_DOCKERFILE, BUILT_IMAGE_TAG, Environment.KAFKA_TIERED_STORAGE_BASE_IMAGE);
 
         if (cluster.isKind()) {
-            String image = Environment.getImageOutputRegistry(
+            final String image = "kind-registry:5001/" + Environment.getImageOutputRegistry(
                 suiteStorage.getNamespaceName(), IMAGE_NAME, BUILT_IMAGE_TAG);
             Exec.exec("kind", "load", "docker-image", image, "--name", "kind-cluster");
         }
