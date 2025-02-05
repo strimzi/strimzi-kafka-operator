@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.api.annotations.ApiVersion;
@@ -242,7 +243,9 @@ class CrdGenerator {
         }
     }
 
-
+    // Currently unused, but it might be hande in the future so it is not removed
+    @SuppressFBWarnings("URF_UNREAD_FIELD")
+    @SuppressWarnings("unused")
     private final VersionRange<KubeVersion> targetKubeVersions;
     private final ObjectMapper mapper;
     private final JsonNodeFactory nf;
