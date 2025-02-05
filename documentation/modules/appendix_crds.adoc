@@ -410,7 +410,7 @@ It must have the value `custom` for the type `KafkaListenerAuthenticationCustom`
 |Configuration to be used for a specific listener. All values are prefixed with `listener.name.<listener_name>`.
 |secrets
 |xref:type-GenericSecretSource-{context}[`GenericSecretSource`] array
-|Secrets to be mounted to `/opt/kafka/custom-authn-secrets/custom-listener-<listener_name>-<port>/<secret_name>`.
+|**The `secrets` property has been deprecated.** Please use the template section to configure additional volumes instead. Secrets to be mounted to `/opt/kafka/custom-authn-secrets/custom-listener-<listener_name>-<port>/<secret_name>`.
 |====
 
 [id='type-GenericKafkaListenerConfiguration-{context}']

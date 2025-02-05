@@ -26,6 +26,8 @@
   For more details about migrating from storage overrides, please follow the [documentation](https://strimzi.io/docs/operators/0.45.0/full/deploying.html#con-config-storage-zookeeper-str).
 * Removed the `statefulset.kubernetes.io/pod-name` label from pods and external listeners Kubernetes Services.
   * If you have any custom setup leveraging such label, please use the `strimzi.io/pod-name` one instead.
+* The `secrets` list for mounting additional Kubernetes Secrets in `type: custom` authentication was deprecated and will be removed in the future.
+  Please use the template section to configure additional volumes instead.
 
 ## 0.45.0
 

@@ -26,8 +26,16 @@ spec:
             sasl.enabled.mechanisms: oauthbearer
             oauthbearer.sasl.jaas.config: |
               org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ;
-          secrets:
-            - secretName: example
+    template:
+      pod:
+        volumes:
+          - name: example-secret
+            secret:
+              secretName: example
+      kafkaContainer:
+        volumeMounts:
+          - name: example-secret
+            mountPath: /mnt/secret-volume
 ----
 
 A protocol map is generated that uses the `sasl` and `tls` values to determine which protocol to map to the listener.
@@ -37,8 +45,8 @@ A protocol map is generated that uses the `sasl` and `tls` values to determine w
 * SASL = True, TLS = False -> SASL_PLAINTEXT
 * SASL = False, TLS = False -> PLAINTEXT
 
-Secrets are mounted to `/opt/kafka/custom-authn-secrets/custom-listener-<listener_name>-<port>/<secret_name>` in the Kafka broker nodes' containers.
-For example, the mounted secret (`example`) in the example configuration would be located at `/opt/kafka/custom-authn-secrets/custom-listener-oauth-bespoke-9093/example`.
+Secrets are mounted to the `/mnt` directory in the Kafka broker nodes' containers.
+For example, the mounted secret (`example`) in the example configuration would be located at `/mnt/secret-volume`.
 
 = Configuring customized TLS Client Authentication
 
@@ -62,11 +70,18 @@ spec:
           listenerConfig:
             ssl.client.auth: required
             ssl.principal.mapping.rules: RULE:^CN=(.*?),(.*)$/$1@my-cluster.com/
-            ssl.truststore.location: /opt/kafka/custom-authn-secrets/custom-listener-tls-9093/custom-truststore/ca.crt
+            ssl.truststore.location: /mnt/my-truststore/ca.crt
             ssl.truststore.type: PEM
-          secrets:
-            - key: ca.crt
+    template:
+      pod:
+        volumes:
+          - name: my-truststore
+            secret:
               secretName: custom-truststore
+      kafkaContainer:
+        volumeMounts:
+          - name: my-truststore
+            mountPath: /mnt/my-truststore
 ----
 
 = Setting a custom principal builder
