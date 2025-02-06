@@ -150,7 +150,7 @@
         <javax-servlet.version>3.1.0</javax-servlet.version>
         <strimzi-oauth.version>0.15.0</strimzi-oauth.version>
         <netty.version>4.1.117.Final</netty.version>
-        <micrometer.version>1.12.3</micrometer.version>
+        <micrometer.version>1.12.13</micrometer.version>
         <jayway-jsonpath.version>2.9.0</jayway-jsonpath.version>
         <registry.version>1.3.2.Final</registry.version>
         <commons-codec.version>1.13</commons-codec.version>
@@ -159,7 +159,6 @@
         <hamcrest.version>2.2</hamcrest.version>
         <mockito.version>4.11.0</mockito.version>
         <junit.platform.version>1.8.2</junit.platform.version>
-        <junit-platform-surefire-provider.version>1.3.2</junit-platform-surefire-provider.version>
         <opentest4j.version>1.2.0</opentest4j.version>
         <jupiter.version>5.8.2</jupiter.version>
         <strimzi-test-container.version>0.109.1</strimzi-test-container.version>

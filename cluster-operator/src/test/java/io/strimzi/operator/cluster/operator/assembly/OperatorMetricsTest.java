@@ -364,7 +364,7 @@ public class OperatorMetricsTest {
 
         Promise<Void> reconcileAllPromise = Promise.promise();
         ((ReconcileAllMockOperator) operator).setResources(resources);
-        operator.reconcileAll("test", "my-namespace", reconcileAllPromise);
+        operator.reconcileAll("test", "my-namespace", reconcileAllPromise::handle);
 
         Checkpoint async = context.checkpoint();
         reconcileAllPromise.future().onComplete(context.succeeding(v -> context.verify(() -> {
@@ -416,7 +416,7 @@ public class OperatorMetricsTest {
 
         Promise<Void> reconcileAllPromise = Promise.promise();
         ((ReconcileAllMockOperator) operator).setResources(resources);
-        operator.reconcileAll("test", "*", reconcileAllPromise);
+        operator.reconcileAll("test", "*", reconcileAllPromise::handle);
 
         Checkpoint async = context.checkpoint();
         reconcileAllPromise.future()
@@ -449,7 +449,7 @@ public class OperatorMetricsTest {
                     // Reconcile again with resource in my-namespace2 deleted
                     Promise<Void> secondReconcileAllPromise = Promise.promise();
                     ((ReconcileAllMockOperator) operator).setResources(updatedResources);
-                    operator.reconcileAll("test", "*", secondReconcileAllPromise);
+                    operator.reconcileAll("test", "*", secondReconcileAllPromise::handle);
 
                     return secondReconcileAllPromise.future();
                 })
