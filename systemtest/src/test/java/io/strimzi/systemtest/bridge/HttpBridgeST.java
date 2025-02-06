@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.bridge;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.skodjob.annotations.Desc;
@@ -25,7 +26,6 @@ import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -61,7 +61,6 @@ import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 
@@ -188,11 +187,9 @@ class HttpBridgeST extends AbstractST {
     void testCustomAndUpdatedValues() {
 
         String bridgeName = "custom-bridge";
-        String usedVariable = "KAFKA_BRIDGE_PRODUCER_CONFIG";
         LinkedHashMap<String, String> envVarGeneral = new LinkedHashMap<>();
         envVarGeneral.put("TEST_ENV_1", "test.env.one");
         envVarGeneral.put("TEST_ENV_2", "test.env.two");
-        envVarGeneral.put(usedVariable, "test.value");
 
         LinkedHashMap<String, String> envVarUpdated = new LinkedHashMap<>();
         envVarUpdated.put("TEST_ENV_2", "updated.test.env.two");
@@ -244,18 +241,10 @@ class HttpBridgeST extends AbstractST {
 
         Map<String, String> bridgeSnapshot = DeploymentUtils.depSnapshot(Environment.TEST_SUITE_NAMESPACE, KafkaBridgeResources.componentName(bridgeName));
 
-        // Remove variable which is already in use
-        envVarGeneral.remove(usedVariable);
         LOGGER.info("Verifying values before update");
         VerificationUtils.verifyReadinessAndLivenessProbes(Environment.TEST_SUITE_NAMESPACE, KafkaBridgeResources.componentName(bridgeName), KafkaBridgeResources.componentName(bridgeName), initialDelaySeconds, timeoutSeconds,
                 periodSeconds, successThreshold, failureThreshold);
         VerificationUtils.verifyContainerEnvVariables(Environment.TEST_SUITE_NAMESPACE, KafkaBridgeResources.componentName(bridgeName), KafkaBridgeResources.componentName(bridgeName), envVarGeneral);
-
-        LOGGER.info("Check if actual env variable {} has different value than {}", usedVariable, "test.value");
-        assertThat(
-                StUtils.checkEnvVarInPod(Environment.TEST_SUITE_NAMESPACE, kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE, suiteTestStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND).get(0).getMetadata().getName(), usedVariable),
-                is(not("test.value"))
-        );
 
         LOGGER.info("Updating values in Bridge container");
         KafkaBridgeResource.replaceBridgeResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, bridgeName, kb -> {
@@ -278,8 +267,14 @@ class HttpBridgeST extends AbstractST {
         VerificationUtils.verifyReadinessAndLivenessProbes(Environment.TEST_SUITE_NAMESPACE, KafkaBridgeResources.componentName(bridgeName), KafkaBridgeResources.componentName(bridgeName), updatedInitialDelaySeconds, updatedTimeoutSeconds,
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
         VerificationUtils.verifyContainerEnvVariables(Environment.TEST_SUITE_NAMESPACE, KafkaBridgeResources.componentName(bridgeName), KafkaBridgeResources.componentName(bridgeName), envVarUpdated);
-        VerificationUtils.verifyComponentConfiguration(Environment.TEST_SUITE_NAMESPACE, KafkaBridgeResources.componentName(bridgeName), KafkaBridgeResources.componentName(bridgeName), "KAFKA_BRIDGE_PRODUCER_CONFIG", producerConfig);
-        VerificationUtils.verifyComponentConfiguration(Environment.TEST_SUITE_NAMESPACE, KafkaBridgeResources.componentName(bridgeName), KafkaBridgeResources.componentName(bridgeName), "KAFKA_BRIDGE_CONSUMER_CONFIG", consumerConfig);
+
+        ConfigMap configMap = kubeClient().namespace(Environment.TEST_SUITE_NAMESPACE).getConfigMap(KafkaBridgeResources.configMapName(bridgeName));
+        String bridgeConfiguration = configMap.getData().get("application.properties");
+        Map<String, Object> config = StUtils.loadProperties(bridgeConfiguration);
+        Map<String, Object> producerConfigMap = config.entrySet().stream().filter(e -> e.getKey().startsWith("kafka.producer.")).collect(Collectors.toMap(e -> e.getKey().replace("kafka.producer.", ""), Map.Entry::getValue));
+        Map<String, Object> consumerConfigMap = config.entrySet().stream().filter(e -> e.getKey().startsWith("kafka.consumer.")).collect(Collectors.toMap(e -> e.getKey().replace("kafka.consumer.", ""), Map.Entry::getValue));
+        assertThat(producerConfigMap.entrySet().containsAll(producerConfig.entrySet()), is(true));
+        assertThat(consumerConfigMap.entrySet().containsAll(consumerConfig.entrySet()), is(true));
     }
 
     @ParallelTest
@@ -517,13 +512,11 @@ class HttpBridgeST extends AbstractST {
         LOGGER.info("Deploying Kafka and KafkaBridge before tests");
 
         resourceManager.createResourceWithWait(
-            NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getBrokerPoolName(), suiteTestStorage.getClusterName(), 1).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getControllerPoolName(), suiteTestStorage.getClusterName(), 1).build()
-            )
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getBrokerPoolName(), suiteTestStorage.getClusterName(), 1).build(),
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getControllerPoolName(), suiteTestStorage.getClusterName(), 1).build()
         );
         // Deploy kafka
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(suiteTestStorage.getNamespaceName(), suiteTestStorage.getClusterName(), 1, 1).build());
+        resourceManager.createResourceWithWait(KafkaTemplates.kafka(suiteTestStorage.getNamespaceName(), suiteTestStorage.getClusterName(), 1).build());
 
         // Deploy http bridge
         resourceManager.createResourceWithWait(KafkaBridgeTemplates.kafkaBridge(suiteTestStorage.getNamespaceName(), suiteTestStorage.getClusterName(),

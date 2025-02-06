@@ -69,7 +69,7 @@ spec:
                   replicas:
                     type: integer
                     minimum: 1
-                    description: "For KRaft-based Apache Kafka clusters, number of replicas is configured in the KafkaNodePool resources and this option is ignored."
+                    description: Replicas are now configured in `KafkaNodePool` resources and this option is ignored.
                   image:
                     type: string
                     description: "The container image used for Kafka pods. If the property is not set, the default Kafka image version is determined based on the `version` configuration. The image names are specifically mapped to corresponding versions in the Cluster Operator configuration. Changing the Kafka image version does not automatically update the image versions for other components, such as Kafka Exporter. "
@@ -582,7 +582,7 @@ spec:
                             broker:
                               type: integer
                               description: Id of the kafka broker (broker identifier).
-                        description: Overrides for individual brokers. The `overrides` field allows you to specify a different configuration for different brokers.
+                        description: "As of Strimzi 0.46.0, the storage overrides for individual brokers are not supported anymore and this option is ignored."
                       selector:
                         additionalProperties:
                           type: string
@@ -633,7 +633,7 @@ spec:
                                   broker:
                                     type: integer
                                     description: Id of the kafka broker (broker identifier).
-                              description: Overrides for individual brokers. The `overrides` field allows you to specify a different configuration for different brokers.
+                              description: "As of Strimzi 0.46.0, the storage overrides for individual brokers are not supported anymore and this option is ignored."
                             selector:
                               additionalProperties:
                                 type: string
@@ -657,7 +657,7 @@ spec:
                         description: List of volumes as Storage objects representing the JBOD disks array.
                     required:
                     - type
-                    description: "For KRaft-based Apache Kafka clusters, storage is configured in the KafkaNodePool resources and this option is ignored."
+                    description: Storage is now configured in the `KafkaNodePool` resources and this option is ignored.
                   authorization:
                     type: object
                     properties:
@@ -892,6 +892,8 @@ spec:
                           properties:
                             name:
                               type: string
+                            request:
+                              type: string
                       limits:
                         additionalProperties:
                           anyOf:
@@ -1038,6 +1040,8 @@ spec:
                                 type: boolean
                               runAsUser:
                                 type: integer
+                              seLinuxChangePolicy:
+                                type: string
                               seLinuxOptions:
                                 type: object
                                 properties:
@@ -1060,6 +1064,8 @@ spec:
                                 type: array
                                 items:
                                   type: integer
+                              supplementalGroupsPolicy:
+                                type: string
                               sysctls:
                                 type: array
                                 items:
@@ -2326,7 +2332,7 @@ spec:
                             broker:
                               type: integer
                               description: Id of the kafka broker (broker identifier).
-                        description: Overrides for individual brokers. The `overrides` field allows you to specify a different configuration for different brokers.
+                        description: "As of Strimzi 0.46.0, the storage overrides for individual brokers are not supported anymore and this option is ignored."
                       selector:
                         additionalProperties:
                           type: string
@@ -2456,6 +2462,8 @@ spec:
                           type: object
                           properties:
                             name:
+                              type: string
+                            request:
                               type: string
                       limits:
                         additionalProperties:
@@ -2621,6 +2629,8 @@ spec:
                                 type: boolean
                               runAsUser:
                                 type: integer
+                              seLinuxChangePolicy:
+                                type: string
                               seLinuxOptions:
                                 type: object
                                 properties:
@@ -2643,6 +2653,8 @@ spec:
                                 type: array
                                 items:
                                   type: integer
+                              supplementalGroupsPolicy:
+                                type: string
                               sysctls:
                                 type: array
                                 items:
@@ -3604,6 +3616,8 @@ spec:
                               properties:
                                 name:
                                   type: string
+                                request:
+                                  type: string
                           limits:
                             additionalProperties:
                               anyOf:
@@ -3771,6 +3785,8 @@ spec:
                               properties:
                                 name:
                                   type: string
+                                request:
+                                  type: string
                           limits:
                             additionalProperties:
                               anyOf:
@@ -3867,6 +3883,8 @@ spec:
                               type: object
                               properties:
                                 name:
+                                  type: string
+                                request:
                                   type: string
                           limits:
                             additionalProperties:
@@ -4018,6 +4036,8 @@ spec:
                                 type: boolean
                               runAsUser:
                                 type: integer
+                              seLinuxChangePolicy:
+                                type: string
                               seLinuxOptions:
                                 type: object
                                 properties:
@@ -4040,6 +4060,8 @@ spec:
                                 type: array
                                 items:
                                   type: integer
+                              supplementalGroupsPolicy:
+                                type: string
                               sysctls:
                                 type: array
                                 items:
@@ -5178,6 +5200,8 @@ spec:
                               properties:
                                 name:
                                   type: string
+                                request:
+                                  type: string
                           limits:
                             additionalProperties:
                               anyOf:
@@ -5265,6 +5289,8 @@ spec:
                           type: object
                           properties:
                             name:
+                              type: string
+                            request:
                               type: string
                       limits:
                         additionalProperties:
@@ -5466,6 +5492,8 @@ spec:
                                 type: boolean
                               runAsUser:
                                 type: integer
+                              seLinuxChangePolicy:
+                                type: string
                               seLinuxOptions:
                                 type: object
                                 properties:
@@ -5488,6 +5516,8 @@ spec:
                                 type: array
                                 items:
                                   type: integer
+                              supplementalGroupsPolicy:
+                                type: string
                               sysctls:
                                 type: array
                                 items:
@@ -6612,6 +6642,8 @@ spec:
                           properties:
                             name:
                               type: string
+                            request:
+                              type: string
                       limits:
                         additionalProperties:
                           anyOf:
@@ -6701,6 +6733,8 @@ spec:
                                 type: boolean
                               runAsUser:
                                 type: integer
+                              seLinuxChangePolicy:
+                                type: string
                               seLinuxOptions:
                                 type: object
                                 properties:
@@ -6723,6 +6757,8 @@ spec:
                                 type: array
                                 items:
                                   type: integer
+                              supplementalGroupsPolicy:
+                                type: string
                               sysctls:
                                 type: array
                                 items:
@@ -7482,6 +7518,8 @@ spec:
                           properties:
                             name:
                               type: string
+                            request:
+                              type: string
                       limits:
                         additionalProperties:
                           anyOf:
@@ -7628,6 +7666,8 @@ spec:
                                 type: boolean
                               runAsUser:
                                 type: integer
+                              seLinuxChangePolicy:
+                                type: string
                               seLinuxOptions:
                                 type: object
                                 properties:
@@ -7650,6 +7690,8 @@ spec:
                                 type: array
                                 items:
                                   type: integer
+                              supplementalGroupsPolicy:
+                                type: string
                               sysctls:
                                 type: array
                                 items:
@@ -8498,7 +8540,7 @@ spec:
                 - KRaftPostMigration
                 - PreKRaft
                 - KRaft
-                description: "Defines where cluster metadata are stored. Possible values are: ZooKeeper if the metadata are stored in ZooKeeper; KRaftMigration if the controllers are connected to ZooKeeper, brokers are being rolled with Zookeeper migration enabled and connection information to controllers, and the metadata migration process is running; KRaftDualWriting if the metadata migration process finished and the cluster is in dual-write mode; KRaftPostMigration if the brokers are fully KRaft-based but controllers being rolled to disconnect from ZooKeeper; PreKRaft if brokers and controller are fully KRaft-based, metadata are stored in KRaft, but ZooKeeper must be deleted; KRaft if the metadata are stored in KRaft."
+                description: "Defines where cluster metadata are stored. Since Kafka KRaft has been fully adopted, the only applicable value is `KRaft`."
               autoRebalance:
                 type: object
                 properties:

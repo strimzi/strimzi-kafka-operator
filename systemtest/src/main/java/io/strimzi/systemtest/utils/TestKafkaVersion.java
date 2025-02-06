@@ -59,9 +59,6 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
     @JsonProperty("metadata")
     String metadataVersion;
 
-    @JsonProperty("zookeeper")
-    String zookeeperVersion;
-
     @JsonProperty("default")
     boolean isDefault;
 
@@ -74,7 +71,6 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
                 "version='" + version + '\'' +
                 ", protocolVersion='" + protocolVersion + '\'' +
                 ", messageVersion='" + messageVersion + '\'' +
-                ", zookeeperVersion='" + zookeeperVersion + '\'' +
                 ", isDefault=" + isDefault +
                 ", isSupported=" + isSupported +
                 '}';
@@ -94,10 +90,6 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
 
     public String metadataVersion() {
         return metadataVersion;
-    }
-
-    public String zookeeperVersion() {
-        return zookeeperVersion;
     }
 
     public boolean isDefault() {

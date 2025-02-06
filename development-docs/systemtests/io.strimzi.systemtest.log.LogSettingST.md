@@ -84,8 +84,8 @@
 | Step | Action | Result |
 | - | - | - |
 | 1. | Deploy a Kafka cluster with specified inline logging configurations and GC logging enabled. | Kafka cluster is deployed successfully with correct log and GC settings. |
-| 2. | Check Kafka and Zookeeper (if ZK mode) logging levels in the generated ConfigMaps. | Logging levels match the expected configuration. |
-| 3. | Verify that GC logging is enabled in Kafka, Zookeeper, and Entity Operator components. | GC logging is confirmed to be enabled. |
+| 2. | Check Kafka logging levels in the generated ConfigMaps. | Logging levels match the expected configuration. |
+| 3. | Verify that GC logging is enabled in Kafka and Entity Operator components. | GC logging is confirmed to be enabled. |
 | 4. | Change JVM options to disable GC logging. | Kafka resources are updated to disable GC logging. |
 | 5. | Wait for rolling updates (if any) and verify that GC logging is disabled. | No unexpected rolling updates occur, and GC logging is now disabled. |
 | 6. | Ensure that the changes do not break logging hierarchy or default loggers. | Logging functions normally and retains specified levels. |

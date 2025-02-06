@@ -37,7 +37,7 @@ To change the cluster name before you deploy the cluster, edit the `Kafka.metada
 
 .Procedure
 
-. Deploy a KRaft-based Kafka cluster.
+. Deploy a Kafka cluster.
 +
 To deploy a Kafka cluster with a single node pool that uses dual-role nodes:
 +
@@ -65,7 +65,6 @@ my-cluster-pool-a-4         1/1    Running  0
 * `pool-a` is the name of the node pool.
 +
 A sequential index number starting with `0` identifies each Kafka pod created.
-If you are using ZooKeeper, you'll also see the ZooKeeper pods.
 +
 `READY` shows the number of replicas that are ready/expected.
 The deployment is successful when the `STATUS` displays as `Running`.

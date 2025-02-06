@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.crdgenerator.annotations.AddedIn;
+import io.strimzi.crdgenerator.annotations.CelValidation;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Example;
@@ -143,6 +144,10 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
     @Description("Example of complex type.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonPropertyOrder({"foo", "bar"})
+    @CelValidation(rules = {
+        @CelValidation.CelValidationRule(rule = "size(self.foo) >= 5", message = "foo needs to be at least 5 characters long", fieldPath = ".foo", reason = "FieldValueInvalid"),
+        @CelValidation.CelValidationRule(rule = "size(self.bar) >= 5", message = "bar needs to be at least 5 characters long", fieldPath = ".bar", reason = "FieldValueInvalid")
+    })
     public static class ObjectProperty {
         private String foo;
         private String bar;

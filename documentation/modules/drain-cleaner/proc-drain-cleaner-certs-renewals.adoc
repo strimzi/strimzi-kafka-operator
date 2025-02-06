@@ -64,8 +64,6 @@ spec:
           env:
             - name: STRIMZI_DRAIN_KAFKA
               value: "true"
-            - name: STRIMZI_DRAIN_ZOOKEEPER
-              value: "true"
             - name: STRIMZI_CERTIFICATE_WATCH_ENABLED
               value: "true"
             - name: STRIMZI_CERTIFICATE_WATCH_NAMESPACE

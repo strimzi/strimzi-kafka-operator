@@ -12,7 +12,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.performance.utils.TopicOperatorPerformanceUtils;
-import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -83,14 +82,12 @@ public class TopicOperatorScalabilityPerformance extends AbstractST {
         suiteTestStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
 
         resourceManager.createResourceWithWait(
-                NodePoolsConverter.convertNodePoolsIfNeeded(
-                        KafkaNodePoolTemplates.brokerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getBrokerPoolName(), suiteTestStorage.getClusterName(), 3).build(),
-                        KafkaNodePoolTemplates.controllerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getControllerPoolName(), suiteTestStorage.getClusterName(), 3).build()
-                )
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getBrokerPoolName(), suiteTestStorage.getClusterName(), 3).build(),
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getControllerPoolName(), suiteTestStorage.getClusterName(), 3).build()
         );
 
         resourceManager.createResourceWithWait(
-            KafkaTemplates.kafkaPersistentKRaft(suiteTestStorage.getNamespaceName(),  suiteTestStorage.getClusterName(), 3)
+            KafkaTemplates.kafka(suiteTestStorage.getNamespaceName(),  suiteTestStorage.getClusterName(), 3)
                 .editMetadata()
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")

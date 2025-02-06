@@ -112,7 +112,7 @@ public class KafkaExporterReconciler {
                         reconciliation.namespace(),
                         KafkaExporterResources.componentName(reconciliation.name()),
                         kafkaExporter != null ? kafkaExporter.generateServiceAccount() : null
-                ).map((Void) null);
+                ).mapEmpty();
     }
 
     /**
@@ -140,7 +140,7 @@ public class KafkaExporterReconciler {
         } else {
             return secretOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.secretName(reconciliation.name()), null)
-                    .map((Void) null);
+                    .mapEmpty();
         }
     }
 
@@ -157,7 +157,7 @@ public class KafkaExporterReconciler {
                             reconciliation.namespace(),
                             KafkaExporterResources.componentName(reconciliation.name()),
                             kafkaExporter != null ? kafkaExporter.generateNetworkPolicy() : null
-                    ).map((Void) null);
+                    ).mapEmpty();
         } else {
             return Future.succeededFuture();
         }
@@ -183,11 +183,11 @@ public class KafkaExporterReconciler {
 
             return deploymentOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.componentName(reconciliation.name()), deployment)
-                    .map((Void) null);
+                    .mapEmpty();
         } else  {
             return deploymentOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.componentName(reconciliation.name()), null)
-                    .map((Void) null);
+                    .mapEmpty();
         }
     }
 

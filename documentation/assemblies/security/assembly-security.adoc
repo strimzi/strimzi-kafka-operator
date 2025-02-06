@@ -24,7 +24,7 @@ For more information, see xref:deploy-client-access-str[].
  
 The following diagram shows the connections for secure communication.   
 
-.KRaft-based Kafka communication secured by TLS encryption
+.Kafka communication secured by TLS encryption
 image::secure_communication_kraft.png[Secure Communication]
 
 The ports shown in the diagram are used as follows:

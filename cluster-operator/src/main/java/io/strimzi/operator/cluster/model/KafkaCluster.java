@@ -848,7 +848,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                                 pool.ownerReference,
                                 pool.templatePerBrokerService,
                                 ports,
-                                pool.labels.strimziSelectorLabels().withStatefulSetPod(node.podName()),
+                                pool.labels.strimziSelectorLabels().withStrimziPodName(node.podName()),
                                 ListenersUtils.serviceType(listener),
                                 ListenersUtils.brokerLabels(listener, node.nodeId()),
                                 ListenersUtils.brokerAnnotations(listener, node.nodeId()),
@@ -1370,6 +1370,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return List of non-data volumes used by the Kafka pods
      */
+    @SuppressWarnings("deprecation") // Secrets in custom authentication are deprecated
     private List<Volume> getNonDataVolumes(boolean isOpenShift, NodeRef node, PodTemplate templatePod) {
         List<Volume> volumeList = new ArrayList<>();
 
@@ -1462,6 +1463,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return  List of volume mounts
      */
+    @SuppressWarnings("deprecation") // Secrets in custom authentication are deprecated
     private List<VolumeMount> getVolumeMounts(Storage storage, ContainerTemplate containerTemplate, boolean isBroker) {
         List<VolumeMount> volumeMountList = new ArrayList<>(VolumeUtils.createVolumeMounts(storage, false));
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());

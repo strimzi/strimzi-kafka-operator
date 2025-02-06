@@ -137,7 +137,7 @@ public class VerificationUtils {
     }
 
     /**
-     * Verifies container configuration for specific component (kafka/zookeeper/bridge/mm) by environment key.
+     * Verifies container configuration for specific component (kafka/bridge/mm) by environment key.
      * @param namespaceName Namespace name where container is located
      * @param podNamePrefix Name of pod where container is located
      * @param containerName The container where verifying is expected
@@ -367,11 +367,6 @@ public class VerificationUtils {
 
         String imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, entityOperatorPodName, "user-operator");
         assertThat(imgFromPod, containsString(imgFromDeplConf.get(TestConstants.UO_IMAGE)));
-
-        if (!Environment.isKRaftModeEnabled()) {
-            imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, entityOperatorPodName, "topic-operator");
-            assertThat(imgFromPod, containsString(imgFromDeplConf.get(TestConstants.TO_IMAGE)));
-        }
 
         LOGGER.info("Docker images names of Kafka verified");
     }

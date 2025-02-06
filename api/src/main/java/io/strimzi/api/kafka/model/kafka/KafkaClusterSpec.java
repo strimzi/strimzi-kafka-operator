@@ -147,9 +147,9 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
     }
 
     @Deprecated
-    @DeprecatedProperty(description = "For KRaft-based Apache Kafka clusters, storage is configured in the KafkaNodePool resources and this option is ignored.")
+    @DeprecatedProperty(description = "Use `KafkaNodePool` resources.")
     @PresentInVersions("v1alpha1-v1beta2")
-    @Description("For KRaft-based Apache Kafka clusters, storage is configured in the KafkaNodePool resources and this option is ignored.")
+    @Description("Storage is now configured in the `KafkaNodePool` resources and this option is ignored.")
     public Storage getStorage() {
         return storage;
     }
@@ -171,9 +171,9 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
     }
 
     @Deprecated
-    @DeprecatedProperty(description = "For KRaft-based Apache Kafka clusters, number of replicas is configured in the KafkaNodePool resources and this option is ignored.")
+    @DeprecatedProperty(description = "Use `KafkaNodePool` resources.")
     @PresentInVersions("v1alpha1-v1beta2")
-    @Description("For KRaft-based Apache Kafka clusters, number of replicas is configured in the KafkaNodePool resources and this option is ignored.")
+    @Description("Replicas are now configured in `KafkaNodePool` resources and this option is ignored.")
     @Minimum(1)
     public Integer getReplicas() {
         return replicas;

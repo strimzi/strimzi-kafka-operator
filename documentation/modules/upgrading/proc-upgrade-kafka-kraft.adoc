@@ -3,12 +3,12 @@
 // assembly-upgrade.adoc
 
 [id='proc-upgrade-kafka-kraft-{context}']
-= Upgrading KRaft-based Kafka clusters
+= Upgrading Kafka clusters
 
 [role="_abstract"]
-Upgrade a KRaft-based Kafka cluster to a newer supported Kafka version and KRaft metadata version.
+Upgrade a Kafka cluster to a newer supported Kafka version and KRaft metadata version.
 
-NOTE: Refer to the Apache Kafka documentation for the latest on support for KRaft-based upgrades.
+NOTE: Refer to the Apache Kafka documentation for the latest on support for Kafka upgrades.
 
 .Prerequisites
 

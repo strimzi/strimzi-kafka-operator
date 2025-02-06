@@ -10,7 +10,6 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.draincleaner.SetupDrainCleaner;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
@@ -49,12 +48,10 @@ public class DrainCleanerST extends AbstractST {
         final int replicas = 3;
 
         resourceManager.createResourceWithWait(
-            NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), replicas).build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), replicas).build()
-            )
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), replicas).build(),
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), replicas).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getClusterName(), replicas).build());
+        resourceManager.createResourceWithWait(KafkaTemplates.kafka(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getClusterName(), replicas).build());
 
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getTopicName(), testStorage.getClusterName()).build());
 

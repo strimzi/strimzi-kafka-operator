@@ -28,7 +28,6 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
-import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
@@ -191,13 +190,12 @@ class LogSettingST extends AbstractST {
     };
 
     @IsolatedTest("Using shared Kafka")
-    @SuppressWarnings("deprecation") // ZooKeeper is deprecated, but some APi methods are still called here
     @TestDoc(
         description = @Desc("Test verifies Kafka logging configuration (both inline and GC logging) and dynamic changes in Kafka components."),
         steps = {
             @Step(value = "Deploy a Kafka cluster with specified inline logging configurations and GC logging enabled.", expected = "Kafka cluster is deployed successfully with correct log and GC settings."),
-            @Step(value = "Check Kafka and Zookeeper (if ZK mode) logging levels in the generated ConfigMaps.", expected = "Logging levels match the expected configuration."),
-            @Step(value = "Verify that GC logging is enabled in Kafka, Zookeeper, and Entity Operator components.", expected = "GC logging is confirmed to be enabled."),
+            @Step(value = "Check Kafka logging levels in the generated ConfigMaps.", expected = "Logging levels match the expected configuration."),
+            @Step(value = "Verify that GC logging is enabled in Kafka and Entity Operator components.", expected = "GC logging is confirmed to be enabled."),
             @Step(value = "Change JVM options to disable GC logging.", expected = "Kafka resources are updated to disable GC logging."),
             @Step(value = "Wait for rolling updates (if any) and verify that GC logging is disabled.", expected = "No unexpected rolling updates occur, and GC logging is now disabled."),
             @Step(value = "Ensure that the changes do not break logging hierarchy or default loggers.", expected = "Logging functions normally and retains specified levels.")
@@ -404,7 +402,7 @@ class LogSettingST extends AbstractST {
 
         final String bridgeDepName = KafkaBridgeResources.componentName(testStorage.getClusterName());
         final Map<String, String> bridgePods = DeploymentUtils.depSnapshot(Environment.TEST_SUITE_NAMESPACE, bridgeDepName);
-        final String bridgeMap = KafkaBridgeResources.metricsAndLogConfigMapName(testStorage.getClusterName());
+        final String bridgeMap = KafkaBridgeResources.configMapName(testStorage.getClusterName());
         final LabelSelector labelSelector = KafkaBridgeResource.getLabelSelector(bridgeDepName, KafkaMirrorMaker2Resources.componentName(bridgeDepName));
 
         LOGGER.info("Checking if Bridge has log level set properly");
@@ -562,37 +560,35 @@ class LogSettingST extends AbstractST {
             .runInstallation();
 
         resourceManager.createResourceWithWait(
-            NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getBrokerPoolName(LOG_SETTING_CLUSTER_NAME), LOG_SETTING_CLUSTER_NAME, 3)
-                    .editSpec()
-                        .withNewJvmOptions()
-                            .withGcLoggingEnabled(true)
-                        .endJvmOptions()
-                    .endSpec()
-                    .build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getControllerPoolName(LOG_SETTING_CLUSTER_NAME), LOG_SETTING_CLUSTER_NAME, 1)
-                    .editSpec()
-                        .withNewJvmOptions()
-                            .withGcLoggingEnabled(true)
-                        .endJvmOptions()
-                    .endSpec()
-                    .build(),
-                KafkaNodePoolTemplates.brokerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getBrokerPoolName(GC_LOGGING_SET_NAME), GC_LOGGING_SET_NAME, 1)
-                    .editSpec()
-                        .withNewJvmOptions()
-                        .endJvmOptions()
-                    .endSpec()
-                    .build(),
-                KafkaNodePoolTemplates.controllerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getControllerPoolName(GC_LOGGING_SET_NAME), GC_LOGGING_SET_NAME, 1)
-                    .editSpec()
-                        .withNewJvmOptions()
-                        .endJvmOptions()
-                    .endSpec()
-                    .build()
-            )
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getBrokerPoolName(LOG_SETTING_CLUSTER_NAME), LOG_SETTING_CLUSTER_NAME, 3)
+                .editSpec()
+                    .withNewJvmOptions()
+                        .withGcLoggingEnabled(true)
+                    .endJvmOptions()
+                .endSpec()
+                .build(),
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getControllerPoolName(LOG_SETTING_CLUSTER_NAME), LOG_SETTING_CLUSTER_NAME, 1)
+                .editSpec()
+                    .withNewJvmOptions()
+                        .withGcLoggingEnabled(true)
+                    .endJvmOptions()
+                .endSpec()
+                .build(),
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getBrokerPoolName(GC_LOGGING_SET_NAME), GC_LOGGING_SET_NAME, 1)
+                .editSpec()
+                    .withNewJvmOptions()
+                    .endJvmOptions()
+                .endSpec()
+                .build(),
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getControllerPoolName(GC_LOGGING_SET_NAME), GC_LOGGING_SET_NAME, 1)
+                .editSpec()
+                    .withNewJvmOptions()
+                    .endJvmOptions()
+                .endSpec()
+                .build()
         );
 
-        Kafka logSettingKafka = KafkaTemplates.kafkaPersistent(Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME, 3, 1)
+        Kafka logSettingKafka = KafkaTemplates.kafka(Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
                     .withNewInlineLogging()
@@ -628,7 +624,7 @@ class LogSettingST extends AbstractST {
             .build();
 
 //         deploying second Kafka here because of MM and MM2 tests
-        Kafka gcLoggingKafka = KafkaTemplates.kafkaPersistent(Environment.TEST_SUITE_NAMESPACE, GC_LOGGING_SET_NAME, 1, 1)
+        Kafka gcLoggingKafka = KafkaTemplates.kafka(Environment.TEST_SUITE_NAMESPACE, GC_LOGGING_SET_NAME, 1)
             .editSpec()
                 .editKafka()
                     .withNewJvmOptions()

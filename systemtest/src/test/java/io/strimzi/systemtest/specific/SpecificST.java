@@ -15,7 +15,6 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.logs.CollectorElement;
 import io.strimzi.systemtest.resources.NamespaceManager;
-import io.strimzi.systemtest.resources.NodePoolsConverter;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -112,23 +111,19 @@ public class SpecificST extends AbstractST {
             .runBundleInstallation();
 
         resourceManager.createResourceWithoutWait(
-            NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPool(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-                KafkaNodePoolTemplates.controllerPool(Environment.TEST_SUITE_NAMESPACE, testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
-            )
+            KafkaNodePoolTemplates.brokerPool(Environment.TEST_SUITE_NAMESPACE, testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+            KafkaNodePoolTemplates.controllerPool(Environment.TEST_SUITE_NAMESPACE, testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
-        resourceManager.createResourceWithoutWait(KafkaTemplates.kafkaEphemeral(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), 3).build());
+        resourceManager.createResourceWithoutWait(KafkaTemplates.kafka(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), 3).build());
 
         // implicit verification that a user is able to deploy Kafka cluster in namespace <example-1>, where we are allowed
         // to create CustomResources because of `*-namespaced Role`
         resourceManager.createResourceWithoutWait(
-            NodePoolsConverter.convertNodePoolsIfNeeded(
-                KafkaNodePoolTemplates.brokerPool(namespaceWhereCreationOfCustomResourcesIsApproved, testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
-                KafkaNodePoolTemplates.controllerPool(namespaceWhereCreationOfCustomResourcesIsApproved, testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
-            )
+            KafkaNodePoolTemplates.brokerPool(namespaceWhereCreationOfCustomResourcesIsApproved, testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+            KafkaNodePoolTemplates.controllerPool(namespaceWhereCreationOfCustomResourcesIsApproved, testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
         // this should work
-        resourceManager.createResourceWithWait(KafkaTemplates.kafkaEphemeral(namespaceWhereCreationOfCustomResourcesIsApproved, testStorage.getClusterName(), 3).build());
+        resourceManager.createResourceWithWait(KafkaTemplates.kafka(namespaceWhereCreationOfCustomResourcesIsApproved, testStorage.getClusterName(), 3).build());
 
         // verify that in `infra-namespace` we are not able to deploy Kafka cluster
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(),

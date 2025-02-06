@@ -100,11 +100,6 @@ public class Labels extends ResourceLabels {
     public static final String KUBERNETES_MANAGED_BY_LABEL = KUBERNETES_DOMAIN + "managed-by";
 
     /**
-     * Used to identify individual pods
-     */
-    public static final String KUBERNETES_STATEFULSET_POD_LABEL = "statefulset.kubernetes.io/pod-name";
-
-    /**
      * Used to exclude parent CR's labels from being assigned to provisioned subresources
      */
     public static final Pattern STRIMZI_LABELS_EXCLUSION_PATTERN = Pattern.compile(System.getenv()
@@ -349,16 +344,6 @@ public class Labels extends ResourceLabels {
      */
     public Labels withStrimziDiscovery() {
         return with(STRIMZI_DISCOVERY_LABEL, "true");
-    }
-
-    /**
-     * The same labels as this instance, but with the given {@code name} for the {@code statefulset.kubernetes.io/pod-name} key.
-     *
-     * @param name The pod name to add
-     * @return A new instance with the given pod name added.
-     */
-    public Labels withStatefulSetPod(String name) {
-        return with(KUBERNETES_STATEFULSET_POD_LABEL, name);
     }
 
     /**

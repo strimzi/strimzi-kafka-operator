@@ -308,7 +308,7 @@ public class KafkaMirrorMaker2ClusterTest {
         // We need to loop through the pods to make sure they have the right values
         List<Pod> pods = PodSetUtils.podSetToPods(ps);
         for (Pod pod : pods)  {
-            assertThat(pod.getMetadata().getLabels().entrySet().containsAll(kmm2.labels.withStrimziPodName(pod.getMetadata().getName()).withStatefulSetPod(pod.getMetadata().getName()).withStrimziPodSetController(kmm2.getComponentName()).toMap().entrySet()), is(true));
+            assertThat(pod.getMetadata().getLabels().entrySet().containsAll(kmm2.labels.withStrimziPodName(pod.getMetadata().getName()).withStrimziPodSetController(kmm2.getComponentName()).toMap().entrySet()), is(true));
             assertThat(pod.getMetadata().getAnnotations().size(), is(2));
             assertThat(pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_REVISION_ANNOTATION), is(notNullValue()));
             assertThat(pod.getMetadata().getAnnotations().get("anno3"), is("anno-value3"));

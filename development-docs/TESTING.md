@@ -99,14 +99,12 @@ Moreover, you should always use `Templates` classes for pre-defined resources.
 For instance, when one want deploy Kafka cluster with tree nodes it can be simply done by following code:
 ```java
 final int numberOfKafkaBrokers = 3;
-final int numberOfZooKeeperNodes = 1;
 
 resourceManager.createResourceWithWait(extensionContext, 
     // using KafkaTemplate class for pre-defined values
-    KafkaTemplates.kafkaEphemeral(
+    KafkaTemplates.kafka(
         clusterName,
-        numberOfKafkaBrokers, 
-        numberOfZooKeeperNodes).build()
+        numberOfKafkaBrokers).build()
     );
 ```
 
@@ -318,7 +316,6 @@ All environment variables are defined in [Environment](systemtest/src/main/java/
 | STRIMZI_FEATURE_GATES                  | Strimzi feature gates                                                                                                                                 | empty                                                       |
 | STRIMZI_LOG_LEVEL                      | Log level for the cluster operator                                                                                                                    | DEBUG                                                       |
 | STRIMZI_COMPONENTS_LOG_LEVEL           | Log level for the components                                                                                                                          | INFO                                                        |
-| STRIMZI_USE_KRAFT_IN_TESTS             | Enable kraft mode                                                                                                                                     | false                                                       |
 | KUBERNETES_DOMAIN                      | Cluster domain                                                                                                                                        | .nip.io                                                     |
 | TEST_CLUSTER_CONTEXT                   | context which will be used to reach the cluster*                                                                                                      | currently active Kubernetes context                         |
 | TEST_CLUSTER_USER                      | Default user which will be used for command-line admin operations                                                                                     | developer                                                   |

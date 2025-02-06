@@ -11,6 +11,8 @@ spec:
     matchLabels:
       app: strimzi-access-operator
       strimzi.io/kind: access-operator
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
@@ -25,7 +27,7 @@ spec:
             sizeLimit: 1Mi
       containers:
         - name: access-operator
-          image: quay.io/strimzi/access-operator:0.1.0
+          image: quay.io/strimzi/access-operator:0.1.1
           ports:
             - containerPort: 8080
               name: http
@@ -36,11 +38,11 @@ spec:
               mountPath: /tmp
           resources:
             limits:
-              memory: 256Mi
               cpu: 500m
-            requests:
               memory: 256Mi
+            requests:
               cpu: 100m
+              memory: 256Mi
           livenessProbe:
             httpGet:
               path: /healthy
@@ -53,5 +55,3 @@ spec:
               port: http
             initialDelaySeconds: 10
             periodSeconds: 30
-  strategy:
-    type: Recreate

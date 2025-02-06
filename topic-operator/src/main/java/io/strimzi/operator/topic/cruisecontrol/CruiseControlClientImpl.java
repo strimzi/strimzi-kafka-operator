@@ -45,11 +45,11 @@ import static java.util.stream.Collectors.groupingBy;
 import static org.apache.logging.log4j.core.util.Throwables.getRootCause;
 
 /**
- * Cruise Control REST API client based on Java HTTP client.
+ * Default implementation of the Cruise Control client based on Java HTTP client.
  */
 public class CruiseControlClientImpl implements CruiseControlClient {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(CruiseControlClientImpl.class);
-    
+
     private final String serverHostname;
     private final int serverPort;
     private final boolean rackEnabled;

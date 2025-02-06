@@ -104,13 +104,7 @@ public class KafkaStatus extends Status {
         this.kafkaMetadataVersion = kafkaMetadataVersion;
     }
 
-    @Description("Defines where cluster metadata are stored. Possible values are: " +
-            "ZooKeeper if the metadata are stored in ZooKeeper; " +
-            "KRaftMigration if the controllers are connected to ZooKeeper, brokers are being rolled with Zookeeper migration enabled and connection information to controllers, and the metadata migration process is running; " +
-            "KRaftDualWriting if the metadata migration process finished and the cluster is in dual-write mode; " +
-            "KRaftPostMigration if the brokers are fully KRaft-based but controllers being rolled to disconnect from ZooKeeper; " +
-            "PreKRaft if brokers and controller are fully KRaft-based, metadata are stored in KRaft, but ZooKeeper must be deleted; " +
-            "KRaft if the metadata are stored in KRaft.")
+    @Description("Defines where cluster metadata are stored. Since Kafka KRaft has been fully adopted, the only applicable value is `KRaft`.")
     public KafkaMetadataState getKafkaMetadataState() {
         return kafkaMetadataState;
     }

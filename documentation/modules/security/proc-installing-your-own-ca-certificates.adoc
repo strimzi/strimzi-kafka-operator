@@ -39,16 +39,9 @@ The chain should be in the following order:
 
 .Before you begin
 The Cluster Operator generates keys and certificates in PEM (Privacy Enhanced Mail) and PKCS #12 (Public-Key Cryptography Standards) formats.
-You can add your own certificates in either format.  
-
-Some applications cannot use PEM certificates and support only PKCS #12 certificates.
-If you don't have a cluster certificate in PKCS #12 format, use the OpenSSL TLS management tool to generate one from your `ca.crt` file.
-
-.Example certificate generation command
-[source,shell,subs="+quotes"]
-openssl pkcs12 -export -in ca.crt -nokeys -out ca.p12 -password pass:<P12_password> -caname ca.crt
-
-Replace <P12_password> with your own password.
+Only the keys and certificates in the PEM format are used internally by Strimzi.
+The PKCS #12 store is there only for user applications that do not support using the PEM format directly.
+When using custom CA certificates, adding the PKCS #12 store and its password to the secret is optional only.
 
 .Procedure
 

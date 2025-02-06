@@ -4,8 +4,12 @@
 
 * Support for ZooKeeper-based Apache Kafka clusters and for KRaft migration has been removed
 * Support for MirrorMaker 1 has been removed
+* Support for storage class overrides has been removed
 * Added support to configure `dnsPolicy` and `dnsConfig` using the `template` sections.
 * Store Kafka node certificates in separate Secrets, one Secret per pod.
+* Allow configuring `ssl.principal.mapping.rules` and custom trusted CAs in Kafka brokers with `type: custom` authentication
+* Moved HTTP bridge configuration to the ConfigMap setup by the operator.
+* Dependency updates (Vert.x 4.5.12, Netty 4.1.117.Final)
 
 ### Major changes, deprecations and removals
 
@@ -17,6 +21,13 @@
   Please use the Apache Kafka [EnvVarConfigProvider](https://github.com/strimzi/kafka-env-var-config-provider?tab=readme-ov-file#deprecation-notice) and [Identity Replication Policy](https://github.com/strimzi/mirror-maker-2-extensions?tab=readme-ov-file#identity-replication-policy) instead.
 * When using Kafka Connect or Kafka MirrorMaker 2 operands and upgrading from Strimzi 0.38 or older, make sure the `StableConnectIdentities` feature gate is enabled and `StrimziPodSets` are used before upgrading.
 * When using the Kafka operand and upgrading from Strimzi 0.34 or older, make sure the `UseStrimziPodSets` feature gate is enabled and `StrimziPodSet` resources are used before upgrading.
+* The storage overrides for configuring per-broker storage class are not supported anymore.
+  If you are using the storage overrides, you should instead use multiple KafkaNodePool resources with a different storage class each.
+  For more details about migrating from storage overrides, please follow the [documentation](https://strimzi.io/docs/operators/0.45.0/full/deploying.html#con-config-storage-zookeeper-str).
+* Removed the `statefulset.kubernetes.io/pod-name` label from pods and external listeners Kubernetes Services.
+  * If you have any custom setup leveraging such label, please use the `strimzi.io/pod-name` one instead.
+* The `secrets` list for mounting additional Kubernetes Secrets in `type: custom` authentication was deprecated and will be removed in the future.
+  Please use the template section to configure additional volumes instead.
 
 ## 0.45.0
 

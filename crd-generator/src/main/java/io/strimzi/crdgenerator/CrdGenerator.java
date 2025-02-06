@@ -21,6 +21,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.api.annotations.ApiVersion;
 import io.strimzi.api.annotations.KubeVersion;
 import io.strimzi.api.annotations.VersionRange;
+import io.strimzi.crdgenerator.annotations.CelValidation;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Example;
@@ -847,6 +848,8 @@ class CrdGenerator {
             addDescription(crApiVersion, schema, property);
         }
 
+        celValidationRules(property, schema);
+
         return schema;
     }
 
@@ -954,6 +957,43 @@ class CrdGenerator {
         if (crdApiVersion.compareTo(V1) >= 0) {
             ObjectNode additionalProperties = result.putObject("additionalProperties");
             additionalProperties.put("type", "string");
+        }
+    }
+
+    /**
+     * Adds CEL validation rules to the CRD for additional validation
+     *
+     * @param element   The element where the CEL validation annotation will be checked
+     * @param result    The JSON Object where the CEL validation rules should be added
+     */
+    private void celValidationRules(Property element, ObjectNode result)    {
+        // Annotation from the field has the priority. But if it does not exist, we try the type
+        CelValidation celValidation = element.getAnnotation(CelValidation.class);
+        if (celValidation == null) {
+            celValidation = element.getType().getType().getAnnotation(CelValidation.class);
+        }
+
+        if (celValidation != null
+                && celValidation.rules() != null
+                && celValidation.rules().length > 0) {
+            ArrayNode rules = result.putArray("x-kubernetes-validations");
+
+            for (CelValidation.CelValidationRule rule : celValidation.rules()) {
+                ObjectNode celRule = rules.addObject().put("rule", rule.rule());
+
+                if (!rule.message().isEmpty())  {
+                    celRule.put("message", rule.message());
+                }
+                if (!rule.messageExpression().isEmpty())  {
+                    celRule.put("messageExpression", rule.messageExpression());
+                }
+                if (!rule.fieldPath().isEmpty())  {
+                    celRule.put("fieldPath", rule.fieldPath());
+                }
+                if (!rule.reason().isEmpty())  {
+                    celRule.put("reason", rule.reason());
+                }
+            }
         }
     }
 

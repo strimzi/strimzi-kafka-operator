@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.systemtest.enums.ClusterOperatorInstallType;
-import io.strimzi.systemtest.enums.NodePoolsRoleMode;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -140,21 +139,6 @@ public class Environment {
     public static final String STRIMZI_FEATURE_GATES_ENV = "STRIMZI_FEATURE_GATES";
 
     /**
-     * Controls whether tests should run with KRaft or not
-     */
-    public static final String STRIMZI_USE_KRAFT_IN_TESTS_ENV = "STRIMZI_USE_KRAFT_IN_TESTS";
-
-    /**
-     * Controls whether tests should run with KafkaNodePools or not
-     */
-    public static final String STRIMZI_USE_NODE_POOLS_IN_TESTS_ENV = "STRIMZI_USE_NODE_POOLS_IN_TESTS";
-
-    /**
-     * Switch for changing NodePool roles in STs - separate roles or mixed roles
-     */
-    public static final String STRIMZI_NODE_POOLS_ROLE_MODE_ENV = "STRIMZI_NODE_POOLS_ROLE_MODE";
-
-    /**
      * CO PodSet-only reconciliation env variable <br>
      * Only SPS will be reconciled, when this env variable will be true
      */
@@ -186,6 +170,8 @@ public class Environment {
     public static final String KAFKA_TIERED_STORAGE_BASE_IMAGE_ENV = "KAFKA_TIERED_STORAGE_BASE_IMAGE";
     public static final String KANIKO_IMAGE_ENV = "KANIKO_IMAGE";
 
+    public static final String POSTGRES_IMAGE_ENV = "POSTGRES_IMAGE";
+
     /**
      * Defaults
      */
@@ -210,8 +196,8 @@ public class Environment {
     private static final String RESOURCE_ALLOCATION_STRATEGY_DEFAULT = "SHARE_MEMORY_FOR_ALL_COMPONENTS";
 
     private static final String ST_KAFKA_VERSION_DEFAULT = TestKafkaVersion.getDefaultSupportedKafkaVersion();
-    private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "3.8.0";
-    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.9.1";
+    private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "3.9.0";
+    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.10.0";
     public static final String ST_FILE_PLUGIN_URL_DEFAULT = "https://repo1.maven.org/maven2/org/apache/kafka/connect-file/" + ST_KAFKA_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_VERSION_DEFAULT + ".jar";
 
     public static final String IP_FAMILY_DEFAULT = "ipv4";
@@ -220,6 +206,8 @@ public class Environment {
 
     public static final String KAFKA_TIERED_STORAGE_BASE_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + STRIMZI_ORG_DEFAULT + "/kafka:latest-kafka-" + ST_KAFKA_VERSION_DEFAULT;
     public static final String KANIKO_IMAGE_DEFAULT = "gcr.io/kaniko-project/executor:v1.23.2";
+
+    public static final String POSTGRES_IMAGE_DEFAULT = "postgres:latest";
 
     /**
      * Set values
@@ -236,9 +224,6 @@ public class Environment {
     public static final boolean SKIP_TEARDOWN = getOrDefault(SKIP_TEARDOWN_ENV, Boolean::parseBoolean, false);
     public static final String STRIMZI_RBAC_SCOPE = getOrDefault(STRIMZI_RBAC_SCOPE_ENV, STRIMZI_RBAC_SCOPE_DEFAULT);
     public static final String STRIMZI_FEATURE_GATES = getOrDefault(STRIMZI_FEATURE_GATES_ENV, STRIMZI_FEATURE_GATES_DEFAULT);
-    public static final boolean STRIMZI_USE_KRAFT_IN_TESTS = getOrDefault(STRIMZI_USE_KRAFT_IN_TESTS_ENV, Boolean::parseBoolean, true);
-    public static final boolean STRIMZI_USE_NODE_POOLS_IN_TESTS = getOrDefault(STRIMZI_USE_NODE_POOLS_IN_TESTS_ENV, Boolean::parseBoolean, true);
-    public static final NodePoolsRoleMode STRIMZI_NODE_POOLS_ROLE_MODE = getOrDefault(STRIMZI_NODE_POOLS_ROLE_MODE_ENV, value -> NodePoolsRoleMode.valueOf(value.toUpperCase(Locale.ENGLISH)), NodePoolsRoleMode.SEPARATE);
 
     // variables for kafka client app images
     private static final String TEST_CLIENTS_VERSION = getOrDefault(TEST_CLIENTS_VERSION_ENV, TEST_CLIENTS_VERSION_DEFAULT);
@@ -281,6 +266,8 @@ public class Environment {
     public static final String KAFKA_TIERED_STORAGE_BASE_IMAGE = getOrDefault(KAFKA_TIERED_STORAGE_BASE_IMAGE_ENV, KAFKA_TIERED_STORAGE_BASE_IMAGE_DEFAULT);
     public static final String KANIKO_IMAGE = getOrDefault(KANIKO_IMAGE_ENV, KANIKO_IMAGE_DEFAULT);
 
+    public static final String POSTGRES_IMAGE = getOrDefault(POSTGRES_IMAGE_ENV, POSTGRES_IMAGE_DEFAULT);
+
     private Environment() { }
 
     static {
@@ -306,25 +293,6 @@ public class Environment {
 
     public static boolean isNamespaceRbacScope() {
         return STRIMZI_RBAC_SCOPE_NAMESPACE.equals(STRIMZI_RBAC_SCOPE);
-    }
-
-    /**
-     * Determine wheter KRaft mode of Kafka cluster is enabled in Cluster Operator or not.
-     * @return true if KRaft mode is enabled, otherwise false
-     */
-    public static boolean isKRaftModeEnabled() {
-        return STRIMZI_USE_KRAFT_IN_TESTS;
-    }
-
-    public static boolean isKafkaNodePoolsEnabled() {
-        return STRIMZI_USE_NODE_POOLS_IN_TESTS;
-    }
-
-    /**
-     * Determine whether separate roles mode for KafkaNodePools is used or not
-     */
-    public static boolean isSeparateRolesMode() {
-        return STRIMZI_NODE_POOLS_ROLE_MODE.equals(NodePoolsRoleMode.SEPARATE);
     }
 
     /**

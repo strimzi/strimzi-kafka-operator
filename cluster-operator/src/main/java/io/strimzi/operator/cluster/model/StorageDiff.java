@@ -8,18 +8,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.api.kafka.model.kafka.JbodStorage;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageOverride;
 import io.strimzi.api.kafka.model.kafka.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.AbstractJsonDiff;
 
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -32,7 +28,7 @@ public class StorageDiff extends AbstractJsonDiff {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(StorageDiff.class.getName());
 
     private static final Pattern IGNORABLE_PATHS = Pattern.compile(
-            "^(/deleteClaim|/kraftMetadata|/)$");
+            "^(/deleteClaim|/kraftMetadata|/overrides.*|/)$");
 
     private final boolean isEmpty;
     private final boolean changesType;
@@ -129,15 +125,6 @@ public class StorageDiff extends AbstractJsonDiff {
                     if (currentSize > desiredSize) {
                         shrinkSize = true;
                     } else {
-                        continue;
-                    }
-                }
-
-                // Some changes to overrides are allowed:
-                // * When scaling up or down, you can set the overrides for new nodes
-                // * You can set overrides for nodes which do nto exist (yet)
-                if (pathValue.startsWith("/overrides")) {
-                    if (isOverrideChangeAllowed(current, desired, currentNodeIds, desiredNodeIds))    {
                         continue;
                     }
                 }
@@ -262,57 +249,5 @@ public class StorageDiff extends AbstractJsonDiff {
      */
     public boolean issuesDetected() {
         return !isEmpty || duplicateVolumeIds || tooManyKRaftMetadataVolumes;
-    }
-
-    /**
-     * Validates the changes to the storage overrides and decides whether they are allowed or not. Allowed changes are
-     * those to nodes which will be added, removed or which do nto exist yet.
-     *
-     * @param current           Current Storage configuration
-     * @param desired           New storage configuration
-     * @param currentNodeIds    Node IDs currently used by this node pool
-     * @param desiredNodeIds    Node IDs used in the future by this node pool
-     *
-     * @return                  True if only allowed override changes were done, false otherwise
-     */
-    @SuppressWarnings("deprecation") // Storage overrides are deprecated
-    private boolean isOverrideChangeAllowed(Storage current, Storage desired, Set<Integer> currentNodeIds, Set<Integer> desiredNodeIds)   {
-        List<PersistentClaimStorageOverride> currentOverrides = ((PersistentClaimStorage) current).getOverrides();
-        if (currentOverrides == null)   {
-            currentOverrides = Collections.emptyList();
-        }
-
-        List<PersistentClaimStorageOverride> desiredOverrides = ((PersistentClaimStorage) desired).getOverrides();
-        if (desiredOverrides == null)   {
-            desiredOverrides = Collections.emptyList();
-        }
-
-        // We care only about the nodes which existed before this reconciliation and will still exist after it
-        Set<Integer> existedAndWillExist = new TreeSet<>(currentNodeIds);
-        existedAndWillExist.retainAll(desiredNodeIds);
-
-        for (int nodeId : existedAndWillExist)   {
-            PersistentClaimStorageOverride currentOverride = currentOverrides.stream()
-                    .filter(override -> override.getBroker() == nodeId)
-                    .findFirst()
-                    .orElse(null);
-
-            PersistentClaimStorageOverride desiredOverride = desiredOverrides.stream()
-                    .filter(override -> override.getBroker() == nodeId)
-                    .findFirst()
-                    .orElse(null);
-
-            if (currentOverride != null && desiredOverride != null) {
-                // Both overrides exist but are not equal
-                if (!currentOverride.equals(desiredOverride)) {
-                    return false;
-                }
-            } else if (currentOverride != null || desiredOverride != null) {
-                // One of them is null while the other is not null => they differ
-                return false;
-            }
-        }
-
-        return true;
     }
 }

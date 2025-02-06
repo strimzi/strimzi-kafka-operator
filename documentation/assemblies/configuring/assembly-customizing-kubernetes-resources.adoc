@@ -26,7 +26,6 @@ Here is a list of the custom resources where you can apply the changes:
 * `Kafka.spec.cruiseControl`
 * `KafkaNodePool.spec`
 * `KafkaConnect.spec`
-* `KafkaMirrorMaker.spec`
 * `KafkaMirrorMaker2.spec`
 * `KafkaBridge.spec`
 * `KafkaUser.spec`

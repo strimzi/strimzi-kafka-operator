@@ -27,11 +27,6 @@
 :KafkaVersionHigher: 3.9.0
 :ExampleImageTagUpgrades: quay.io/strimzi/kafka:{ProductVersion}-kafka-{KafkaVersionHigher}
 
-//inter-broker protocol and log message version
-:DefaultInterBrokerVersion: 3.9
-:InterBrokerVersionLower: 3.8
-:InterBrokerVersionHigher: 3.9
-
 // Bridge version
 :BridgeVersion: 0.31.1
 

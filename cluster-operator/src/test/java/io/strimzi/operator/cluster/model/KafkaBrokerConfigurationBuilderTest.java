@@ -36,22 +36,13 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
-import org.hamcrest.TypeSafeMatcher;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
-import static io.strimzi.operator.cluster.model.KafkaBrokerConfigurationBuilderTest.IsEquivalent.isEquivalent;
+import static io.strimzi.operator.cluster.TestUtils.IsEquivalent.isEquivalent;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -2477,7 +2468,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(false)
                 .withNewKafkaListenerAuthenticationCustomAuth()
                 .withSasl(false)
-                .withListenerConfig(Map.of("ssl.truststore.path", "foo"))
+                .withListenerConfig(Map.of("ssl.keystore.path", "foo"))
                 .endKafkaListenerAuthenticationCustomAuth()
                 .build();
 
@@ -2485,7 +2476,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withListeners("my-cluster", KAFKA_3_8_0, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
-        assertThat(configuration, not(containsString("ssl.truststore.path")));
+        assertThat(configuration, not(containsString("ssl.keystore.path")));
     }
 
     @ParallelTest
@@ -2540,6 +2531,56 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.custom-listener-9092.oauthbearer.sasl.login.callback.handler.class=login.class",
                 "listener.name.custom-listener-9092.oauthbearer.connections.max.reauth.ms=999999999",
                 "listener.name.custom-listener-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ;"));
+    }
+
+    @ParallelTest
+    public void testCustomTlsAuth() {
+        GenericKafkaListener listener = new GenericKafkaListenerBuilder()
+                .withName("CUSTOM-LISTENER")
+                .withPort(9092)
+                .withType(KafkaListenerType.INTERNAL)
+                .withTls(true)
+                .withNewKafkaListenerAuthenticationCustomAuth()
+                    .withSasl(false)
+                    .withListenerConfig(Map.of("ssl.client.auth", "required",
+                            "ssl.principal.mapping.rules", "RULE:^CN=(.*?),(.*)$/CN=$1/",
+                            "ssl.truststore.location", "/opt/kafka/custom-authn-secrets/custom-listener-external-9094/custom-truststore/ca.crt",
+                            "ssl.truststore.type", "PEM"))
+                .endKafkaListenerAuthenticationCustomAuth()
+                .build();
+
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF)
+                .withListeners("my-cluster", KAFKA_3_8_0, "my-namespace", singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
+                .build();
+
+        assertThat(configuration, isEquivalent("node.id=2",
+                "listener.name.controlplane-9090.ssl.client.auth=required",
+                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
+                "listener.name.controlplane-9090.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
+                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
+                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
+                "listener.name.controlplane-9090.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
+                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
+                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
+                "listener.name.replication-9091.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
+                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
+                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
+                "listener.name.replication-9091.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
+                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.replication-9091.ssl.client.auth=required",
+                "listener.name.custom-listener-9092.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
+                "listener.name.custom-listener-9092.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
+                "listener.name.custom-listener-9092.ssl.keystore.type=PKCS12",
+                "listener.name.custom-listener-9092.ssl.truststore.location=/opt/kafka/custom-authn-secrets/custom-listener-external-9094/custom-truststore/ca.crt",
+                "listener.name.custom-listener-9092.ssl.truststore.type=PEM",
+                "listener.name.custom-listener-9092.ssl.client.auth=required",
+                "listener.name.custom-listener-9092.ssl.principal.mapping.rules=RULE:^CN=(.*?),(.*)$/CN=$1/",
+                "listeners=REPLICATION-9091://0.0.0.0:9091,CUSTOM-LISTENER-9092://0.0.0.0:9092",
+                "advertised.listeners=REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,CUSTOM-LISTENER-9092://dummy-advertised-address:1919",
+                "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,CUSTOM-LISTENER-9092:SSL",
+                "inter.broker.listener.name=REPLICATION-9091",
+                "sasl.enabled.mechanisms=",
+                "ssl.endpoint.identification.algorithm=HTTPS"));
     }
 
     @ParallelTest
@@ -2672,76 +2713,5 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, isEquivalent("node.id=2",
                 "metadata.log.dir=/my/kraft/metadata/kafka-log2"
         ));
-    }
-
-    static class IsEquivalent extends TypeSafeMatcher<String> {
-        private final List<String> expectedLines;
-
-        public IsEquivalent(String expectedConfig) {
-            super();
-            this.expectedLines = ModelUtils.getLinesWithoutCommentsAndEmptyLines(expectedConfig);
-        }
-
-        public IsEquivalent(List<String> expectedLines) {
-            super();
-            this.expectedLines = expectedLines;
-        }
-
-        @Override
-        protected boolean matchesSafely(String config) {
-            List<String> actualLines = ModelUtils.getLinesWithoutCommentsAndEmptyLines(config);
-
-            return expectedLines.containsAll(actualLines) && actualLines.containsAll(expectedLines);
-        }
-
-        private String getLinesAsString(Collection<String> configLines)   {
-            StringWriter stringWriter = new StringWriter();
-            PrintWriter writer = new PrintWriter(stringWriter);
-
-            for (String line : configLines) {
-                writer.println(line);
-            }
-
-            return stringWriter.toString();
-        }
-
-        @Override
-        public void describeTo(Description description) {
-            description.appendText(getLinesAsString(new TreeSet<>(expectedLines)));
-        }
-
-        @Override
-        protected void describeMismatchSafely(String item, Description mismatchDescription) {
-            printDiff(item, mismatchDescription);
-        }
-
-        private void printDiff(String item, Description mismatchDescription)    {
-            List<String> actualLines = ModelUtils.getLinesWithoutCommentsAndEmptyLines(item);
-            List<String> actualLinesDiff = new ArrayList<>(actualLines);
-            actualLinesDiff.removeAll(expectedLines);
-            List<String> expectedLinesDiff = new ArrayList<>(expectedLines);
-            expectedLinesDiff.removeAll(actualLines);
-
-            mismatchDescription
-                    .appendText(" was: \n")
-                    .appendText(getLinesAsString(new TreeSet<>(ModelUtils.getLinesWithoutCommentsAndEmptyLines(item))))
-                    .appendText("\n\n")
-                    .appendText(" wrong lines in expected:\n")
-                    .appendText(getLinesAsString(expectedLinesDiff))
-                    .appendText("\n\n")
-                    .appendText(" Wrong lines in actual:\n")
-                    .appendText(getLinesAsString(actualLinesDiff))
-                    .appendText("\n\nOriginal value: \n")
-                    .appendText(item)
-                    .appendText("\n\n");
-        }
-
-        public static Matcher<String> isEquivalent(String expectedConfig) {
-            return new IsEquivalent(expectedConfig);
-        }
-
-        public static Matcher<String> isEquivalent(String... expectedLines) {
-            return new IsEquivalent(asList(expectedLines));
-        }
     }
 }

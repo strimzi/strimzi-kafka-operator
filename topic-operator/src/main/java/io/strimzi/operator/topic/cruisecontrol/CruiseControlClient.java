@@ -14,7 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Cruise Control REST API client.
+ * Cruise Control client.
  * <br/><br/>
  * The server runs one task execution at a time, additional 
  * requests are queued up to {@code max.active.user.tasks}.

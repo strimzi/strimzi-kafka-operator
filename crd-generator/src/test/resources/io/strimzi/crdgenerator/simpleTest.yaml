@@ -75,6 +75,15 @@ spec:
                 type: string
               bar:
                 type: string
+            x-kubernetes-validations:
+            - rule: size(self.foo) >= 5
+              message: foo needs to be at least 5 characters long
+              fieldPath: .foo
+              reason: FieldValueInvalid
+            - rule: size(self.bar) >= 5
+              message: bar needs to be at least 5 characters long
+              fieldPath: .bar
+              reason: FieldValueInvalid
           mapStringObject:
             x-kubernetes-preserve-unknown-fields: true
             type: object
@@ -677,6 +686,15 @@ spec:
                 type: string
               bar:
                 type: string
+            x-kubernetes-validations:
+            - rule: size(self.foo) >= 5
+              message: foo needs to be at least 5 characters long
+              fieldPath: .foo
+              reason: FieldValueInvalid
+            - rule: size(self.bar) >= 5
+              message: bar needs to be at least 5 characters long
+              fieldPath: .bar
+              reason: FieldValueInvalid
           mapStringObject:
             x-kubernetes-preserve-unknown-fields: true
             type: object
