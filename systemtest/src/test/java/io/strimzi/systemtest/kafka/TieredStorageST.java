@@ -203,9 +203,13 @@ public class TieredStorageST extends AbstractST {
         ImageBuild.buildImage(suiteStorage.getNamespaceName(), IMAGE_NAME, TIERED_STORAGE_DOCKERFILE, BUILT_IMAGE_TAG, Environment.KAFKA_TIERED_STORAGE_BASE_IMAGE);
 
         if (cluster.isKind()) {
-            final String image = "kind-registry:5001/" + Environment.getImageOutputRegistry(
+            final String image = Environment.getImageOutputRegistry(
                 suiteStorage.getNamespaceName(), IMAGE_NAME, BUILT_IMAGE_TAG);
-            Exec.exec("kind", "load", "docker-image", image, "--name", "kind-cluster");
+            // Kaniko pushes the image to the local registry, but Podman stores it in an internal storage
+            // that is not directly accessible to Kind. Podman must first pull the image from the registry
+            // so that it is available in the Podman daemon's local storage before "kind load" can work.
+            Exec.exec("sudo", "podman", "pull", image);
+            Exec.exec("sudo", "kind", "load", "docker-image", image, "--name", "kind-cluster");
         }
         SetupMinio.deployMinio(suiteStorage.getNamespaceName());
         SetupMinio.createBucket(suiteStorage.getNamespaceName(), BUCKET_NAME);
