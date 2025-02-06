@@ -37,7 +37,6 @@ import static io.strimzi.crdgenerator.Property.discriminator;
 import static io.strimzi.crdgenerator.Property.isPolymorphic;
 import static io.strimzi.crdgenerator.Property.properties;
 import static io.strimzi.crdgenerator.Property.subtypeMap;
-import static io.strimzi.crdgenerator.Property.subtypeNames;
 import static io.strimzi.crdgenerator.Property.subtypes;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
@@ -245,26 +244,6 @@ class DocGenerator {
         }
     }
 
-    /**
-     * Sets the external link to Kubernetes docs or the link for fields distinguished by `type`
-     *
-     * @param property  The property for which the description should be added
-     * @param kubeLink  The value of the KubeLink annotation or null if not set
-     * @param externalUrl   The URL to the Kubernetes documentation
-     *
-     * @throws IOException  Throws IOException when appending to the output fails
-     */
-    private void addExternalUrl(Property property, KubeLink kubeLink, String externalUrl) throws IOException {
-        if (externalUrl != null) {
-            out.append(" For more information, see the ").append(externalUrl)
-                    .append("[").append("external documentation for ").append(kubeLink.group()).append("/").append(kubeLink.version()).append(" ").append(kubeLink.kind()).append("].").append(NL).append(NL);
-        } else if (isPolymorphic(property.getType().getType())) {
-            out.append(" The type depends on the value of the `").append(property.getName()).append(".").append(discriminator(property.getType().getType()))
-                    .append("` property within the given object, which must be one of ")
-                    .append(subtypeNames(property.getType().getType()).toString()).append(".");
-        }
-    }
-
     private String getDeprecation(Property property, DeprecatedProperty deprecated) {
         String msg = String.format("**The `%s` property has been deprecated",
                 property.getName());
@@ -307,11 +286,9 @@ class DocGenerator {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void appendPropertyType(Crd crd, Appendable out, PropertyType propertyType, String externalUrl) throws IOException {
         Class<?> propertyClass = propertyType.isArray() ? propertyType.arrayBase() : propertyType.getType();
-        
-        
+
         out.append(NL);
         out.append("|");
         
@@ -333,7 +310,7 @@ class DocGenerator {
                 Set<String> strings = new HashSet<>();
                 Method valuesMethod = propertyType.arrayBase().getMethod("values");
 
-                for (JsonNode n : Schema.enumCases((Enum[]) valuesMethod.invoke(null))) {
+                for (JsonNode n : Schema.enumCases((Enum<?>[]) valuesMethod.invoke(null))) {
                     if (n.isTextual()) {
                         strings.add(n.asText());
                     } else {
@@ -357,7 +334,6 @@ class DocGenerator {
 
         out.append(NL);
         out.append("|");
-
     }
 
     private void appendTypeDeprecation(Crd crd, Class<?> cls) throws IOException {
