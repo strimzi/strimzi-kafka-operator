@@ -26,7 +26,7 @@ image::kafka-authorization-config-options.png[options for kafka authorization co
 Super users can access all resources in your Kafka cluster regardless of any access restrictions,
 and are supported by all authorization mechanisms.
 
-To designate super users for a Kafka cluster, add a list of user principals to the `superUsers` property.
+To designate super users for a Kafka cluster, add a list of user principals to the `superUsers` property of the `Kafka` resource.
 If a user uses mTLS authentication, the username is the common name from the TLS certificate subject prefixed with `CN=`.
 If you are not using the User Operator and using your own certificates for mTLS, the username is the full certificate subject.
 

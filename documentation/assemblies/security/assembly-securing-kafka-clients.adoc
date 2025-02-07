@@ -19,4 +19,5 @@ For more information on configuring a `KafkaUser` resource to access Kafka broke
 include::../../modules/security/con-securing-client-labels.adoc[leveloffset=+1]
 include::../../modules/security/con-securing-client-authentication.adoc[leveloffset=+1]
 include::../../modules/security/con-securing-client-authorization.adoc[leveloffset=+1]
+include::../../modules/security/con-securing-client-acls.adoc[leveloffset=+1]
 include::../../modules/security/con-configuring-client-quotas.adoc[leveloffset=+1]
