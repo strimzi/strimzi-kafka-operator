@@ -52,8 +52,8 @@ public class AclRule implements UnknownPropertyPreserving {
     }
 
     @Description("The type of the rule. " +
-            "Currently the only supported type is `allow`. " +
             "ACL rules with type `allow` are used to allow user to execute the specified operations. " +
+            "ACL rules with type `deny` are used to deny user to execute the specified operations. " +
             "Default value is `allow`.")
     @JsonProperty(defaultValue = "allow")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
