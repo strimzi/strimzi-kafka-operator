@@ -3442,7 +3442,7 @@ include::../api/io.strimzi.api.kafka.model.user.acl.AclRule.adoc[leveloffset=+1]
 |Property |Property type |Description
 |type
 |string (one of [allow, deny])
-|The type of the rule. Currently the only supported type is `allow`. ACL rules with type `allow` are used to allow user to execute the specified operations. Default value is `allow`.
+|The type of the rule. ACL rules with type `allow` are used to allow user to execute the specified operations. ACL rules with type `deny` are used to deny user to execute the specified operations. Default value is `allow`.
 |resource
 |xref:type-AclRuleTopicResource-{context}[`AclRuleTopicResource`], xref:type-AclRuleGroupResource-{context}[`AclRuleGroupResource`], xref:type-AclRuleClusterResource-{context}[`AclRuleClusterResource`], xref:type-AclRuleTransactionalIdResource-{context}[`AclRuleTransactionalIdResource`]
 |Indicates the resource for which given ACL rule applies.
