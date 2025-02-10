@@ -42,9 +42,8 @@ spec:
 <2> Specifies the operations, such as `Describe`, `Read`, that the user is allowed to perform on the resource.
 
 The User Operator manages ACLs for standard Kafka users but cannot define rules for special usernames such as `User:ANONYMOUS` or `User:*`. 
-These users are ignored because their names are not valid Kubernetes resource names. 
-If ACL rules with special usernames are present in a `KafkaUser` resource, the User Operator logs a message for information but does not apply them.
+These users are ignored because their names are not valid Kubernetes resource names.  
 You can manually configure ACL rules for these usernames using tools like `kafka-acls.sh`.
-These manual configurations are not deleted by the User Operator. 
+When these manual configurations are present in Kafka, the User Operator logs a message for information but does not delete them.
 
 For more information about the `AclRule` object and the properties used to configure ACLs, see the link:{BookURLConfiguring}#type-AclRule-reference[`AclRule` schema reference^].
