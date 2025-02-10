@@ -38,7 +38,7 @@ spec:
         operations:
           - Read
 ----
-<1> Defines the Kafka resource type to which the ACL rules apply, such as topic` or `group`, the name of the resource, and how the name is matched by `patternType`.
+<1> Defines the Kafka resource type to which the ACL rules apply, such as `topic` or `group`, the name of the resource, and how the name is matched by `patternType`.
 <2> Specifies the operations, such as `Describe`, `Read`, that the user is allowed to perform on the resource.
 
 The User Operator manages ACLs for standard Kafka users but cannot define rules for special usernames such as `User:ANONYMOUS` or `User:*`. 
