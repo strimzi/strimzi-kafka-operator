@@ -593,7 +593,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
         expected.put("topics.exclude", "exclude-topic-.*");
         expected.put("groups", "my-group-.*");
         expected.put("groups.exclude", "exclude-group-.*");
-        expected.put("consumer.client.rack", "${file:/tmp/strimzi-connect.properties:consumer.client.rack}");
+        expected.put("consumer.client.rack", "${strimzifile:/tmp/strimzi-connect.properties:consumer.client.rack}");
         expected.put("consumer.interceptor.classes", "io.opentelemetry.instrumentation.kafkaclients.v2_6.TracingConsumerInterceptor");
         expected.put("producer.interceptor.classes", "io.opentelemetry.instrumentation.kafkaclients.v2_6.TracingProducerInterceptor");
 
@@ -658,7 +658,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
                 is(new TreeMap<>(Map.of("prefix.alias", "sourceClusterAlias",
                                 "prefix.security.protocol", "SSL",
                                 "prefix.ssl.keystore.location", "/tmp/kafka/clusters/sourceClusterAlias.keystore.p12",
-                                "prefix.ssl.keystore.password", "${file:/tmp/strimzi-mirrormaker2-connector.properties:ssl.keystore.password}",
+                                "prefix.ssl.keystore.password", "${strimzifile:/tmp/strimzi-mirrormaker2-connector.properties:ssl.keystore.password}",
                                 "prefix.ssl.keystore.type", "PKCS12",
                                 "prefix.bootstrap.servers", "sourceClusterAlias.sourceNamespace.svc:9092"))));
     }
@@ -684,7 +684,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
         assertThat(configEntry.getLoginModuleName(), is("org.apache.kafka.common.security.plain.PlainLoginModule"));
         assertThat(configEntry.getOptions(),
                 is(Map.of("username", "shaza",
-                        "password", "${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.sasl.password}")));
+                        "password", "${strimzifile:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.sasl.password}")));
 
         assertThat(new TreeMap<>(config),
                 is(new TreeMap<>(Map.of("prefix.alias", "sourceClusterAlias",
@@ -714,7 +714,7 @@ public class KafkaMirrorMaker2ConnectorsTest {
         assertThat(configEntry.getLoginModuleName(), is("org.apache.kafka.common.security.scram.ScramLoginModule"));
         assertThat(configEntry.getOptions(),
                 is(Map.of("username", "shaza",
-                        "password", "${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.sasl.password}")));
+                        "password", "${strimzifile:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.sasl.password}")));
 
         assertThat(new TreeMap<>(config),
                 is(new TreeMap<>(Map.of("prefix.alias", "sourceClusterAlias",
@@ -760,14 +760,14 @@ public class KafkaMirrorMaker2ConnectorsTest {
         AppConfigurationEntry configEntry = AuthenticationUtilsTest.parseJaasConfig(jaasConfig);
         assertThat(configEntry.getLoginModuleName(), is("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule"));
         assertThat(configEntry.getOptions(),
-                is(Map.of("oauth.client.secret", "${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.client.secret}",
-                        "oauth.access.token", "${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.access.token}",
-                        "oauth.refresh.token", "${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.refresh.token}",
-                        "oauth.password.grant.password", "${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.password.grant.password}",
-                        "oauth.client.assertion", "${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.client.assertion}",
+                is(Map.of("oauth.client.secret", "${strimzifile:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.client.secret}",
+                        "oauth.access.token", "${strimzifile:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.access.token}",
+                        "oauth.refresh.token", "${strimzifile:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.refresh.token}",
+                        "oauth.password.grant.password", "${strimzifile:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.password.grant.password}",
+                        "oauth.client.assertion", "${strimzifile:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.client.assertion}",
                         "oauth.ssl.truststore.location", "/tmp/kafka/clusters/sourceClusterAlias-oauth.truststore.p12",
                         "oauth.ssl.truststore.type", "PKCS12",
-                        "oauth.ssl.truststore.password", "${file:/tmp/strimzi-mirrormaker2-connector.properties:oauth.ssl.truststore.password}")));
+                        "oauth.ssl.truststore.password", "${strimzifile:/tmp/strimzi-mirrormaker2-connector.properties:oauth.ssl.truststore.password}")));
 
         assertThat(config,
                 is(Map.of("prefix.alias", "sourceClusterAlias",
@@ -828,13 +828,13 @@ public class KafkaMirrorMaker2ConnectorsTest {
         assertThat("org.apache.kafka.common.security.scram.ScramLoginModule", is(configEntry.getLoginModuleName()));
         assertThat(configEntry.getOptions(),
                 is(Map.of("username", "shaza",
-                        "password", "${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.sasl.password}")));
+                        "password", "${strimzifile:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.sasl.password}")));
 
         assertThat(new TreeMap<>(config),
                 is(new TreeMap<>(Map.of("prefix.alias", "sourceClusterAlias",
                         "prefix.security.protocol", "SASL_SSL",
                        "prefix.ssl.truststore.location", "/tmp/kafka/clusters/sourceClusterAlias.truststore.p12",
-                       "prefix.ssl.truststore.password", "${file:/tmp/strimzi-mirrormaker2-connector.properties:ssl.truststore.password}",
+                       "prefix.ssl.truststore.password", "${strimzifile:/tmp/strimzi-mirrormaker2-connector.properties:ssl.truststore.password}",
                         "prefix.ssl.truststore.type", "PKCS12",
                         "prefix.sasl.mechanism", "SCRAM-SHA-512",
                         "prefix.bootstrap.servers", "sourceClusterAlias.sourceNamespace.svc:9092"))));
