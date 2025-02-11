@@ -92,7 +92,7 @@ After releasing a RC, we need to run the following System Tests pipelines:
 * regression (multiple times, one for each supported Kafka version)
 * feature-gates-regression (multiple times, one for each supported Kafka version)
 
-# Rebuild container image for base image CVEs
+## Rebuild container image for base image CVEs
 
 Overtime, the base container image could be affected by CVEs related to the installed JVM, operating system libraries and so on.
 Security issues are usually reported by security scanner tools used by the community users as well as project contributors.
