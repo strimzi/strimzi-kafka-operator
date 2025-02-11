@@ -91,3 +91,33 @@ After releasing a RC, we need to run the following System Tests pipelines:
 * upgrade
 * regression (multiple times, one for each supported Kafka version)
 * feature-gates-regression (multiple times, one for each supported Kafka version)
+
+## Rebuild container image for base image CVEs
+
+Overtime, the base container image could be affected by CVEs related to the installed JVM, operating system libraries and so on.
+Security issues are usually reported by security scanner tools used by the community users as well as project contributors.
+The Quay.io registry also runs such scans periodically to look for security issues reported on the website.
+Checking the Quay.io website is a way to get the status of security vulnerabilities affecting the operator container image.
+In this case, we might need to rebuild the operator container image.
+This can be done by using the `operators-cve-rebuild` pipeline.
+This pipeline will take a previously built binaries and use them to build a new container image, which is then pushed to the container registry with the suffixed tag (e.g. `0.45.0-2`).
+The suffix can be specified when starting the re-build pipeline.
+You should always check what was the previous suffix and increment it.
+
+When starting the pipeline, it will ask for several parameters which you need to fill:
+
+* Release version (for example `0.45.0`)
+* Release suffix (for example `2` - it is used to create the suffixed images such as `strimzi/operator:0.45.0-2` to identify different builds done for different CVEs)
+* Source pipeline ID (Currently, only the build pipeline with ID `16` can be used)
+* Source build ID (the ID of the build from which the artifacts should be used - use the long build ID from the URL and not the shorter build number). 
+  You can also get the build ID by referring to the latest run of the corresponding release pipeline.
+
+After pushing the suffixed tag image, the older images will be still available in the container registry under their own suffixes.
+Only the latest rebuild will be available under the un-suffixed tag (for example, the `0.45.0` tagged image is still the previous one and not up to date with the CVEs respin).
+
+Afterwards, it will wait for a manual approval with a timeout of 3 days (configured in the pipeline YAML).
+This gives additional time to manually test the new container image.
+After the manual approval, the image will be also pushed under the tag without suffix (e.g. `0.45.0`).
+
+This process should be used only for CVEs in the base images.
+Any CVEs in our code or in the Java dependencies require new patch (or minor) release.
