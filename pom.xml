@@ -167,7 +167,7 @@
         <valid4j.version>1.1</valid4j.version>
         <javax.json.version>1.1.4</javax.json.version>
         <bouncycastle.version>1.78.1</bouncycastle.version>
-        <kindcontainer.version>1.4.7</kindcontainer.version>
+        <kindcontainer.version>1.4.8</kindcontainer.version>
         <junit4.version>4.13.2</junit4.version>
         <skodjob.test-frame.version>0.8.0</skodjob.test-frame.version>
         <skodjob-doc.version>0.3.0</skodjob-doc.version>
