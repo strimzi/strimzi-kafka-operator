@@ -17,7 +17,6 @@
 
     <properties>
         <strimzi-oauth.version>0.15.0</strimzi-oauth.version>
-        <jayway-json-path.version>2.9.0</jayway-json-path.version>
         <cruise-control.version>2.5.141</cruise-control.version>
         <opa-authorizer.version>1.5.1</opa-authorizer.version>
         <kafka-quotas-plugin.version>0.3.1</kafka-quotas-plugin.version>
@@ -165,23 +164,6 @@
                 <exclusion>
                     <groupId>com.github.stephenc.jcip</groupId>
                     <artifactId>jcip-annotations</artifactId>
-                </exclusion>
-                <exclusion>
-                    <!-- Excluded because of CVE-2023-51074 and replaced with newer version-->
-                    <groupId>com.jayway.jsonpath</groupId>
-                    <artifactId>json-path</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <!-- Override of OAuth dependency because of CVE-2023-51074 -->
-            <groupId>com.jayway.jsonpath</groupId>
-            <artifactId>json-path</artifactId>
-            <version>${jayway-json-path.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
