@@ -47,11 +47,6 @@ import java.util.function.Predicate;
         ),
         additionalPrinterColumns = {
             @Crd.Spec.AdditionalPrinterColumn(
-                name = "Desired Kafka replicas",
-                description = "The desired number of Kafka replicas in the cluster",
-                jsonPath = ".spec.kafka.replicas",
-                type = "integer"),
-            @Crd.Spec.AdditionalPrinterColumn(
                 name = "Ready",
                 description = "The state of the custom resource",
                 jsonPath = ".status.conditions[?(@.type==\"Ready\")].status",
