@@ -7,19 +7,18 @@
 
 [role="_abstract"]
 When you deploy Strimzi on Kubernetes, you can specify broker configuration through the `config` property of the `Kafka` custom resource.
-However, certain broker configuration options are managed directly by Strimzi.
+However, certain broker configuration options are managed directly by Strimzi and cannot be set within this `config` property.
 
-As such, you cannot configure the following options:
+As such, you cannot configure the following options through the `config` property:
 
-* `broker.id` to specify the ID of the Kafka broker
+* `node.id` to specify the ID of the Kafka node
 * `log.dirs` directories for log data
-* `zookeeper.connect` configuration to connect Kafka with ZooKeeper
 * `listeners` to expose the Kafka cluster to clients
 * `authorization` mechanisms to allow or decline actions executed by users
 * `authentication` mechanisms to prove the identity of users requiring access to Kafka
 
-Broker IDs start from 0 (zero) and correspond to the number of broker replicas.
-Log directories are mounted to `/var/lib/kafka/data/kafka-log__IDX__` based on the `spec.kafka.storage` configuration in the `Kafka` custom resource.
-_IDX_ is the Kafka broker pod index.
+Node IDs start from 0 (zero) and run sequentially across the Kafka cluster.
+Log directories are mounted to `/var/lib/kafka/data/kafka-log<pod_id>` based on the `spec.storage` configuration specified in the `KafkaNodePool` custom resource.
+For JBOD storage, they are mounted at `/var/lib/kafka/data-<volume_id>/kafka-log<pod_id>`.
 
 For a list of exclusions, see the link:{BookURLConfiguring}#type-KafkaClusterSpec-reference[`KafkaClusterSpec` schema reference].
