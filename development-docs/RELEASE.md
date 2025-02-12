@@ -54,7 +54,7 @@ The release process should normally look like this:
       * Download the release artifacts from the CI pipeline and unpack them
       * Use the `helm` command to add the new version to the `index.yaml` file:
         ```
-        helm repo index <PATH_TO_THE_DIRECTORY_WITH_THE_ARTIFCATS> --merge <PATH_TO_THE_INDEX_YAML> --url <URL_OF_THE_GITHUB_RELEASE_PAGE>
+        helm repo index <PATH_TO_THE_DIRECTORY_WITH_THE_ARTIFACTS> --merge <PATH_TO_THE_INDEX_YAML> --url <URL_OF_THE_GITHUB_RELEASE_PAGE>
         ```
         For example, for Strimzi 0.45.0 release, if you unpacked the release artifacts to `./strimzi-0.45.0-rc1/` and have the Strimzi website checkout in `strimzi.github.io/`, you would run:
         ```
