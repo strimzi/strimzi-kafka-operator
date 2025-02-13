@@ -87,7 +87,7 @@ If you need to update the Kafka bridge to newer version, you should do it with f
 
 After releasing a RC, we need to run the following System Tests pipelines:
 
-* help-acceptance
+* helm-acceptance
 * upgrade
 * regression (multiple times, one for each supported Kafka version)
 * feature-gates-regression (multiple times, one for each supported Kafka version)
