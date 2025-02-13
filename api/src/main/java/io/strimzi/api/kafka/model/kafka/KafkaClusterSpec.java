@@ -57,13 +57,14 @@ import java.util.Map;
 @ToString
 public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurableLogging, HasJmxOptions, HasReadinessProbe, HasLivenessProbe, UnknownPropertyPreserving {
     public static final String FORBIDDEN_PREFIXES = "listeners, advertised., broker., listener., host.name, port, "
-            + "inter.broker.listener.name, sasl., ssl., security., password., log.dir, authorizer., super.user, "
+            + "inter.broker.listener.name, sasl., ssl., security., password., log.dir, "
+            + "zookeeper.connect, zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket, authorizer., super.user, "
             + "cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers, "
-            + "node.id, process.roles, controller., metadata.log.dir, " // KRaft options
+            + "node.id, process.roles, controller., metadata.log.dir, zookeeper.metadata.migration.enable, " // KRaft options
             + "client.quota.callback.static.kafka.admin., client.quota.callback.static.produce, client.quota.callback.static.fetch, "
             + "client.quota.callback.static.storage.per.volume.limit.min.available., client.quota.callback.static.excluded.principal.name.list";
 
-    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "sasl.server.max.receive.size, "
+    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "zookeeper.connection.timeout.ms, sasl.server.max.receive.size, "
             + "ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, ssl.secure.random.implementation, "
             + "cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms, "
             + "cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms, "
