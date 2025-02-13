@@ -27,10 +27,6 @@ spec:
       subresources:
         status: {}
       additionalPrinterColumns:
-        - name: Desired Kafka replicas
-          description: The desired number of Kafka replicas in the cluster
-          jsonPath: .spec.kafka.replicas
-          type: integer
         - name: Ready
           description: The state of the custom resource
           jsonPath: ".status.conditions[?(@.type==\"Ready\")].status"
