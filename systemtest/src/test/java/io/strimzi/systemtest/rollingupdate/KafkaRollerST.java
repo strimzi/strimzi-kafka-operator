@@ -484,7 +484,7 @@ public class KafkaRollerST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    void testKRaftClusterNotStuckDuringControllerQuorumTimeout() {
+    void testKafkaRollingUpdatesWithDedicatedControllers() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final int brokerNodes = 3;
         final int controllerNodes = 3;
@@ -503,7 +503,7 @@ public class KafkaRollerST extends AbstractST {
         Map<String, String> controllerPoolPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getControllerSelector());
         Map<String, String> brokerPoolPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerPoolSelector());
 
-        LOGGER.info("Modifying Kafka CR to enable auto.create.topics.enable=false, expecting rolling update without CO getting stuck.");
+        LOGGER.info("Modifying Kafka CR to enable auto.create.topics.enable=false, expecting rolling update of all nodes including controllers.");
 
         KafkaUtils.updateSpecificConfiguration(testStorage.getNamespaceName(), testStorage.getClusterName(), "auto.create.topics.enable", "false");
 
