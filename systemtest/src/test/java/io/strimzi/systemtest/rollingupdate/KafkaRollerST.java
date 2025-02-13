@@ -497,7 +497,7 @@ public class KafkaRollerST extends AbstractST {
                 testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerNodes).build(),
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(),
                 testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerNodes).build(),
-            KafkaTemplates.kafkaPersistent(testStorage.getNamespaceName(), testStorage.getClusterName(), brokerNodes).build()
+            KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), brokerNodes).build()
         );
 
         Map<String, String> controllerPoolPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getControllerSelector());
