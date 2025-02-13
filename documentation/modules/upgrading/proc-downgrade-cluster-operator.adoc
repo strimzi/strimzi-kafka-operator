@@ -5,9 +5,7 @@
 [id='proc-downgrade-cluster-operator-{context}']
 = Downgrading the Cluster Operator to a previous version
 
-If you are encountering issues with Strimzi,
-you can revert your installation.
-
+[role="_abstract"]
 This procedure describes how to downgrade a Cluster Operator deployment to a previous version.
 
 NOTE: Kafka clusters managed by Strimzi always use node pools. 
