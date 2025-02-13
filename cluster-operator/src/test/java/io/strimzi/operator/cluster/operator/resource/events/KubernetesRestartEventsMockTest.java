@@ -588,17 +588,7 @@ public class KubernetesRestartEventsMockTest {
             }
 
             @Override
-            public Admin createControllerAdminClient(String controllerBootstrapHostnames, PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity) {
-                return adminClientSupplier.get();
-            }
-
-            @Override
             public Admin createAdminClient(String bootstrapHostnames, PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity, Properties config) {
-                return adminClientSupplier.get();
-            }
-
-            @Override
-            public Admin createControllerAdminClient(String controllerBootstrapHostnames, PemTrustSet kafkaCaTrustSet, PemAuthIdentity authIdentity, Properties config) {
                 return adminClientSupplier.get();
             }
         };
