@@ -22,8 +22,8 @@ The short name for `Kafka` is `k`, so you can also run `kubectl get k` to list a
 ----
 kubectl get k
 
-NAME         DESIRED KAFKA REPLICAS   DESIRED ZK REPLICAS
-my-cluster   3                        3
+NAME         READY   METADATA STATE   WARNINGS
+my-cluster   True    KRaft
 ----
 
 .Long and short names for each Strimzi resource
@@ -41,6 +41,7 @@ m|Strimzi resource      |Long name          |Short name
 | Kafka MirrorMaker 2   | kafkamirrormaker2 | kmm2
 | Kafka Bridge          | kafkabridge       | kb
 | Kafka Rebalance       | kafkarebalance    | kr
+| Strimzi Pod Set       | strimzipodset     | sps
 
 |===
 
@@ -57,8 +58,16 @@ For example, running `kubectl get strimzi` lists all Strimzi custom resources in
 ----
 kubectl get strimzi
 
-NAME                                   DESIRED KAFKA REPLICAS DESIRED ZK REPLICAS
-kafka.kafka.strimzi.io/my-cluster      3                      3
+NAME                                                   PODS   READY PODS   CURRENT PODS   AGE
+strimzipodset.core.strimzi.io/my-cluster-brokers       3      3            3              6h11m
+strimzipodset.core.strimzi.io/my-cluster-controllers   3      3            3              6h11m
+
+NAME                                         DESIRED REPLICAS   ROLES            NODEIDS
+kafkanodepool.kafka.strimzi.io/brokers       3                  ["broker"]       [3,4,5]
+kafkanodepool.kafka.strimzi.io/controllers   3                  ["controller"]   [0,1,2]
+
+NAME                                READY   METADATA STATE   WARNINGS
+kafka.kafka.strimzi.io/my-cluster   True    KRaft
 
 NAME                                   PARTITIONS REPLICATION FACTOR
 kafkatopic.kafka.strimzi.io/kafka-apps 3          3
@@ -75,6 +84,10 @@ The `-o name` option fetches the output in the _type/name_ format
 ----
 kubectl get strimzi -o name
 
+strimzipodset.core.strimzi.io/my-cluster-brokers
+strimzipodset.core.strimzi.io/my-cluster-controllers
+kafkanodepool.kafka.strimzi.io/brokers
+kafkanodepool.kafka.strimzi.io/controllers
 kafka.kafka.strimzi.io/my-cluster
 kafkatopic.kafka.strimzi.io/kafka-apps
 kafkauser.kafka.strimzi.io/my-user
@@ -88,6 +101,10 @@ For example, you can pass it into a `kubectl delete` command to delete all resou
 ----
 kubectl delete $(kubectl get strimzi -o name)
 
+strimzipodset.core.strimzi.io "my-cluster-brokers" deleted
+strimzipodset.core.strimzi.io "my-cluster-controllers" deleted
+kafkanodepool.kafka.strimzi.io "brokers" deleted
+kafkanodepool.kafka.strimzi.io "controllers" deleted
 kafka.kafka.strimzi.io "my-cluster" deleted
 kafkatopic.kafka.strimzi.io "kafka-apps" deleted
 kafkauser.kafka.strimzi.io "my-user" deleted
