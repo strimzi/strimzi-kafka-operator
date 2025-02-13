@@ -7,18 +7,26 @@
 
 [role="_abstract"]
 If you are encountering issues with the version of Strimzi you upgraded to,
-you can revert your installation to the previous version.
+you can revert to a previous version.
 
-If you used the YAML installation files to install Strimzi, you can use the YAML installation files from the previous release to perform the downgrade procedures.
-You can downgrade Strimzi by updating the Cluster Operator and the version of Kafka you are using.
-Kafka version downgrades are performed by the Cluster Operator.
+If you installed Strimzi using the YAML installation files, you can use the files from the previous release to perform the downgrade.
+
+Downgrading Strimzi involves two key steps:
+
+. Downgrading the Kafka cluster to a version supported by the target Cluster Operator (if required).
+. Downgrading the Cluster Operator to the previous release.
+
+Always downgrade Kafka before the Cluster Operator to maintain compatibility.
+Ensure that the Kafka version you downgrade to is supported by the target Cluster Operator.
+The metadata version of the Kafka cluster must not be higher than the maximum version supported by the downgraded Kafka version.
 
 WARNING: The following downgrade instructions are only suitable if you installed Strimzi using the installation files. 
-If you installed Strimzi using another method, like {OperatorHub}, downgrade may not be supported by that method unless specified in their documentation. 
-To ensure a successful downgrade process, it is essential to use a supported approach.
+If you installed Strimzi using another method, such as {OperatorHub}, downgrade may not be supported by that method unless specified in its documentation.
+
+//steps to downgrade Kafka
+include::../../modules/upgrading/proc-downgrade-kafka-kraft.adoc[leveloffset=+1]
 
 //steps to downgrade the operators
 include::../../modules/upgrading/proc-downgrade-cluster-operator.adoc[leveloffset=+1]
 
-//steps to downgrade Kafka
-include::../../modules/upgrading/proc-downgrade-kafka-kraft.adoc[leveloffset=+1]
+
