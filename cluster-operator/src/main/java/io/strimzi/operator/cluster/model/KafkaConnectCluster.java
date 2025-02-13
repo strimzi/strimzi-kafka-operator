@@ -65,6 +65,7 @@ import io.strimzi.operator.cluster.model.jmx.SupportsJmx;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.logging.LoggingUtils;
 import io.strimzi.operator.cluster.model.logging.SupportsLogging;
+import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.metrics.SupportsMetrics;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
@@ -266,10 +267,10 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         result.jvmOptions = spec.getJvmOptions();
 
         if (spec.getMetricsConfig() instanceof JmxPrometheusExporterMetrics) {
-            result.metrics = new MetricsModel(spec);
+            result.metrics = new JmxPrometheusExporterModel(spec);
         } else if (spec.getMetricsConfig() instanceof StrimziMetricsReporter) {
-            LOGGER.errorCr(reconciliation, "The Strimzi Metrics Reporter is not supported for this component");
-            throw new InvalidResourceException("The Strimzi Metrics Reporter is not supported for this component");
+            LOGGER.errorCr(reconciliation, "The Strimzi Metrics Reporter is not supported with this component");
+            throw new InvalidResourceException("The Strimzi Metrics Reporter is not supported with this component");
         }
         
         result.logging = new LoggingModel(spec, result.getClass().getSimpleName(), false, true);
