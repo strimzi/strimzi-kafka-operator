@@ -41,7 +41,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Representation of a Strimzi-managed Kafka "cluster".
+ * Represents a Kafka "cluster" managed by Strimzi.  
+ * As of Strimzi 0.46.x, only KRaft-based Kafka deployments are supported.  
+ * ZooKeeper-related configuration options are no longer valid.  
  */
 @DescriptionFile
 @Buildable(

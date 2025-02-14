@@ -119,7 +119,6 @@ Be aware that if the configured image is not compatible with Strimzi images, it 
 
 Kafka has its own configurable loggers, which include the following:
 
-* `log4j.logger.org.apache.zookeeper`
 * `log4j.logger.kafka`
 * `log4j.logger.org.apache.kafka`
 * `log4j.logger.kafka.request.logger`
