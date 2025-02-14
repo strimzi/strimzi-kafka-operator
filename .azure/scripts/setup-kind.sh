@@ -209,7 +209,7 @@ function configure_container_runtime_networking {
     local registry_name="$1"
     local network_name="$2"
 
-    if [ "$($SUDO $DOCKER_CMD inspect -f='{{.NetworkSettings.Networks.kind}}' "${registry_name}" 2>/dev/null)" = '<nil>' ]; then
+    if ! $SUDO $DOCKER_CMD network inspect ${network_name} | grep -q "${registry_name}"; then
         if is_podman; then
             if ! $SUDO $DOCKER_CMD network exists "${network_name}"; then
                 $SUDO $DOCKER_CMD network create "${network_name}"
@@ -379,6 +379,8 @@ ${ula_fixed_ipv6}::1    ${registry_dns}
 EOF
     done
 fi
+
+network_name="kind"
 
 configure_container_runtime_networking "${reg_name}" "${network_name}"
 create_cluster_role_binding_admin
