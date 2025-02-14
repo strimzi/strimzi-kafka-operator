@@ -7,6 +7,7 @@ package io.strimzi.systemtest.utils.specific;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 
 public class ContainerRuntimeUtils {
     private static final String DOCKER = "docker";
@@ -26,8 +27,9 @@ public class ContainerRuntimeUtils {
     private static boolean isCommandAvailable(String command) {
         try {
             Process process = new ProcessBuilder("which", command).start();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                return reader.readLine() != null;
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                final String output = reader.readLine();
+                return output != null && !output.isEmpty();
             }
         } catch (IOException e) {
             return false;
