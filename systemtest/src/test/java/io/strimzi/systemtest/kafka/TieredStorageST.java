@@ -32,6 +32,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.specific.AdminClientTemplates;
 import io.strimzi.systemtest.utils.AdminClientUtils;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.specific.ContainerRuntimeUtils;
 import io.strimzi.systemtest.utils.specific.MinioUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
@@ -208,7 +209,10 @@ public class TieredStorageST extends AbstractST {
             // Kaniko pushes the image to the local registry, but Podman stores it in an internal storage
             // that is not directly accessible to Kind. Podman must first pull the image from the registry
             // so that it is available in the Podman daemon's local storage before "kind load" can work.
-            Exec.exec("sudo", "podman", "pull", image);
+            if (ContainerRuntimeUtils.getRuntime().equals("podman")) {
+                Exec.exec("sudo", ContainerRuntimeUtils.getRuntime(), "pull", image);
+            }
+            // if container-runtime is docker we do not need to pull
             Exec.exec("sudo", "kind", "load", "docker-image", image, "--name", "kind-cluster");
         }
         SetupMinio.deployMinio(suiteStorage.getNamespaceName());
