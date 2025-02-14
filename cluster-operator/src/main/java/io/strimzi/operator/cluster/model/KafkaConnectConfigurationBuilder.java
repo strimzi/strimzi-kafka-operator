@@ -43,7 +43,7 @@ public class KafkaConnectConfigurationBuilder {
      */
     public KafkaConnectConfigurationBuilder(String bootstrapServers) {
         printHeader();
-        configureBootstrapServers(bootstrapServers);
+        printBootstrapServers(bootstrapServers);
     }
 
     /**
@@ -51,14 +51,14 @@ public class KafkaConnectConfigurationBuilder {
      *
      * @param bootstrapServers  Kafka cluster bootstrap servers to connect to
      */
-    private void configureBootstrapServers(String bootstrapServers) {
+    private void printBootstrapServers(String bootstrapServers) {
         printSectionHeader("Bootstrap servers");
         writer.println("bootstrap.servers=" + bootstrapServers);
         writer.println();
     }
 
     /**
-     * Configure the Kafka security protocol to be used
+     * Configures the Kafka security protocol to be used
      * This internal method is used when the configuration is build, because the security protocol depends on
      * TLS and SASL authentication configurations and if they are set
      */
@@ -99,7 +99,6 @@ public class KafkaConnectConfigurationBuilder {
 
                 writer.println();
             }
-
         }
         return this;
     }
@@ -228,7 +227,7 @@ public class KafkaConnectConfigurationBuilder {
      *
      * @param userConfig    the user configuration to extract the possible user-provided config provider configuration from it
      */
-    public void configProviders(AbstractConfiguration userConfig) {
+    private void printConfigProviders(AbstractConfiguration userConfig) {
         printSectionHeader("Config providers");
         String strimziConfigProviders = "strimzienv,strimzifile,strimzidir";
 
@@ -257,7 +256,7 @@ public class KafkaConnectConfigurationBuilder {
      * @return Returns the builder instance
      */
     public KafkaConnectConfigurationBuilder withConfigurations(AbstractConfiguration configurations) {
-        configProviders(configurations);
+        printConfigProviders(configurations);
 
         if (configurations != null && !configurations.getConfiguration().isEmpty()) {
             printSectionHeader("Provided configurations");

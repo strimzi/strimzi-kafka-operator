@@ -166,13 +166,10 @@ public class KafkaConnectClusterTest {
     private final KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resourceWithMetrics, VERSIONS, SHARED_ENV_PROVIDER);
 
     @ParallelTest
-    public void testMetricsConfigMap() {
+    public void testConnectConfigMap() {
         ConfigMap configMap = kc.generateConnectConfigMap(new MetricsAndLogging(metricsCM, null));
-        checkMetricsConfigMap(configMap);
-    }
-
-    private void checkMetricsConfigMap(ConfigMap configMap) {
         assertThat(configMap.getData().get(MetricsModel.CONFIG_MAP_KEY), is(metricsCmJson));
+
         String connectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
         assertThat(connectConfigurations, containsString("bootstrap.servers=" + bootstrapServers));
         assertThat(connectConfigurations, containsString(expectedConfiguration.asPairs()));
