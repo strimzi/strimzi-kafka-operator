@@ -255,7 +255,7 @@ public class KafkaConnectConfigurationBuilder {
      *
      * @return Returns the builder instance
      */
-    public KafkaConnectConfigurationBuilder withConfigurations(AbstractConfiguration configurations) {
+    public KafkaConnectConfigurationBuilder withUserConfigurations(AbstractConfiguration configurations) {
         printConfigProviders(configurations);
 
         if (configurations != null && !configurations.getConfiguration().isEmpty()) {
@@ -296,7 +296,7 @@ public class KafkaConnectConfigurationBuilder {
 
 
     /**
-     * Internal method which prints the section header into the configuration file. This makes it more human-readable
+     * Prints the section header into the configuration file. This makes it more human-readable
      * when looking for issues in running pods etc.
      *
      * @param sectionName   Name of the section for which is this header printed
@@ -308,7 +308,7 @@ public class KafkaConnectConfigurationBuilder {
     }
 
     /**
-     * Prints the file header which is on the beginning of the configuration file.
+     * Prints the file header which is at the beginning of the configuration file.
      */
     private void printHeader()   {
         writer.println("##############################");

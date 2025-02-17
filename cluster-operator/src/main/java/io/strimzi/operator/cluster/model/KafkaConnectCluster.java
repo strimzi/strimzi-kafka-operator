@@ -855,7 +855,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         data.put(
                 KAFKA_CONNECT_CONFIGURATION_FILENAME,
                 new KafkaConnectConfigurationBuilder(bootstrapServers)
-                        .withConfigurations(configuration)
+                        .withUserConfigurations(configuration)
                         .withRestListeners(REST_API_PORT)
                         .withPluginPath()
                         .withTls(tls)
