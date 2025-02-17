@@ -47,6 +47,7 @@ import java.util.Collections;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.TestTags.TIERED_STORAGE;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @MicroShiftNotSupported("We are using Kaniko and OpenShift builds to build Kafka image with TS. To make it working on Microshift we will invest much time with not much additional value.")
 @Tag(REGRESSION)
@@ -196,25 +197,15 @@ public class TieredStorageST extends AbstractST {
 
     @BeforeAll
     void setup() throws IOException {
+        // we skip test case for kind + podman
+        assumeFalse(cluster.isKind() && ContainerRuntimeUtils.getRuntime().equals(TestConstants.PODMAN));
+
         suiteStorage = new TestStorage(ResourceManager.getTestContext());
         
         NamespaceManager.getInstance().createNamespaceAndPrepare(suiteStorage.getNamespaceName());
         cluster.setNamespace(suiteStorage.getNamespaceName());
 
         ImageBuild.buildImage(suiteStorage.getNamespaceName(), IMAGE_NAME, TIERED_STORAGE_DOCKERFILE, BUILT_IMAGE_TAG, Environment.KAFKA_TIERED_STORAGE_BASE_IMAGE);
-
-        if (cluster.isKind()) {
-            final String image = Environment.getImageOutputRegistry(
-                suiteStorage.getNamespaceName(), IMAGE_NAME, BUILT_IMAGE_TAG);
-            // Kaniko pushes the image to the local registry, but Podman stores it in an internal storage
-            // that is not directly accessible to Kind. Podman must first pull the image from the registry
-            // so that it is available in the Podman daemon's local storage before "kind load" can work.
-            if (ContainerRuntimeUtils.getRuntime().equals("podman")) {
-                Exec.exec("sudo", ContainerRuntimeUtils.getRuntime(), "pull", image);
-            }
-            // if container-runtime is docker we do not need to pull
-            Exec.exec("sudo", "kind", "load", "docker-image", image, "--name", "kind-cluster");
-        }
         SetupMinio.deployMinio(suiteStorage.getNamespaceName());
         SetupMinio.createBucket(suiteStorage.getNamespaceName(), BUCKET_NAME);
 

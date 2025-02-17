@@ -4,21 +4,21 @@
  */
 package io.strimzi.systemtest.utils.specific;
 
+import io.strimzi.systemtest.TestConstants;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
 public class ContainerRuntimeUtils {
-    private static final String DOCKER = "docker";
-    private static final String PODMAN = "podman";
     private static final String RUNTIME = detectRuntime();
 
     private static String detectRuntime() {
-        if (isCommandAvailable(PODMAN)) {
-            return PODMAN;
-        } else if (isCommandAvailable(DOCKER)) {
-            return DOCKER;
+        if (isCommandAvailable(TestConstants.PODMAN)) {
+            return TestConstants.PODMAN;
+        } else if (isCommandAvailable(TestConstants.DOCKER)) {
+            return TestConstants.DOCKER;
         } else {
             throw new IllegalStateException("Neither Podman nor Docker is available on the system.");
         }
