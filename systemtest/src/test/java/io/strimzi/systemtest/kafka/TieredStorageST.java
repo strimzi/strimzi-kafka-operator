@@ -35,7 +35,6 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.specific.ContainerRuntimeUtils;
 import io.strimzi.systemtest.utils.specific.MinioUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.executor.Exec;
 import org.apache.kafka.common.requests.ListOffsetsRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
