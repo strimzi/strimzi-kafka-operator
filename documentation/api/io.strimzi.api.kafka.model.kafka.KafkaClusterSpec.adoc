@@ -64,10 +64,8 @@ Properties with the following prefixes cannot be set:
 * `servers,node.id`
 * `ssl.`
 * `super.user`
-* `zookeeper.clientCnxnSocket`
-* `zookeeper.connect`
-* `zookeeper.set.acl`
-* `zookeeper.ssl`
+
+NOTE: Strimzi supports only KRaft-based Kafka deployments. As a result, ZooKeeper-related configuration options are not supported.
 
 If the `config` property contains an option that cannot be changed, it is disregarded, and a warning message is logged to the Cluster Operator log file.
 All other supported options are forwarded to Kafka, including the following exceptions to the options configured by Strimzi:
@@ -121,7 +119,6 @@ Be aware that if the configured image is not compatible with Strimzi images, it 
 
 Kafka has its own configurable loggers, which include the following:
 
-* `log4j.logger.org.apache.zookeeper`
 * `log4j.logger.kafka`
 * `log4j.logger.org.apache.kafka`
 * `log4j.logger.kafka.request.logger`
