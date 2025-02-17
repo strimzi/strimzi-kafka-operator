@@ -16,6 +16,8 @@ Downgrading Strimzi involves two key steps:
 . Downgrading the Kafka cluster to a version supported by the target Cluster Operator (if required).
 . Downgrading the Cluster Operator to the previous release.
 
+If downgrading through multiple versions, you may need to repeat these steps.
+
 Always downgrade Kafka before the Cluster Operator to maintain compatibility.
 Ensure that the Kafka version you downgrade to is supported by the target Cluster Operator.
 The metadata version of the Kafka cluster must not be higher than the maximum version supported by the downgraded Kafka version.
