@@ -49,7 +49,7 @@ metrics
 --
 <1> Example Grafana dashboards for the different Strimzi components.
 <2> Installation file for the Grafana image.
-<3> Kube-state-metrics configuration for custom resource monitoring.
+<3> Kube-state-metrics deployment and configuration files for custom resource monitoring.
 <4> Additional configuration to scrape metrics for CPU, memory and disk volume usage, which comes directly from the Kubernetes cAdvisor agent and kubelet on the nodes.
 <5> Hook definitions for sending notifications through Alertmanager.
 <6> Resources for deploying and configuring Alertmanager.
