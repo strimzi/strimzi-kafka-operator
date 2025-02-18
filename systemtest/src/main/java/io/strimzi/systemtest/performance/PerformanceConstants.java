@@ -163,6 +163,7 @@ public interface PerformanceConstants {
     String TOPIC_OPERATOR_BOBS_STREAMING_USE_CASE = "bobStreamingUseCase";
     String TOPIC_OPERATOR_ALICE_BULK_USE_CASE = "aliceBulkUseCase";
     String USER_OPERATOR_ALICE_BULK_USE_CASE = "aliceBulkUseCase";
+    String GENERAL_SCALABILITY_USE_CASE = "scalabilityUseCase";
     String GENERAL_CAPACITY_USE_CASE = "capacityUseCase";
     String TOPIC_OPERATOR_FIXED_SIZE_OF_EVENTS_USE_CASE = "fixedSizeOfEventsUseCase";
 
