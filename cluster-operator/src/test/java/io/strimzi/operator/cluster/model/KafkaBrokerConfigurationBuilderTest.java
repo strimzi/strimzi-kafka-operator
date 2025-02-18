@@ -13,7 +13,6 @@ import io.strimzi.api.kafka.model.kafka.KafkaAuthorization;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationKeycloakBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationOpaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationSimpleBuilder;
-import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.kafka.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.kafka.Storage;
@@ -248,15 +247,10 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         assertThat(configuration, isEquivalent("broker.id=2",
                 "node.id=2",
-                String.format("zookeeper.connect=%s:%d", KafkaResources.zookeeperServiceName("my-cluster"), ZookeeperCluster.CLIENT_TLS_PORT),
-                "zookeeper.clientCnxnSocket=org.apache.zookeeper.ClientCnxnSocketNetty",
-                "zookeeper.ssl.client.enable=true",
-                "zookeeper.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "zookeeper.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
-                "zookeeper.ssl.keystore.type=PKCS12",
-                "zookeeper.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "zookeeper.ssl.truststore.password=${CERTS_STORE_PASSWORD}",
-                "zookeeper.ssl.truststore.type=PKCS12"));
+                "zookeeper.connect=kafka-zookeeper-local.service.consul.preprod.crto.in:2181/my-cluster",
+                "zookeeper.connection.timeout.ms=1000000",
+                "zookeeper.session.timeout.ms=60000"
+        ));
     }
 
     @ParallelTest

@@ -39,6 +39,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -180,17 +181,12 @@ public class KafkaBrokerConfigurationBuilder {
      */
     public KafkaBrokerConfigurationBuilder withZookeeper(String clusterName)  {
         printSectionHeader("Zookeeper");
-        writer.println(String.format("zookeeper.connect=%s:%d", KafkaResources.zookeeperServiceName(clusterName), ZookeeperCluster.CLIENT_TLS_PORT));
-        writer.println("zookeeper.clientCnxnSocket=org.apache.zookeeper.ClientCnxnSocketNetty");
-        writer.println("zookeeper.ssl.client.enable=true");
-        writer.println("zookeeper.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
-        writer.println("zookeeper.ssl.keystore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
-        writer.println("zookeeper.ssl.keystore.type=PKCS12");
-        writer.println("zookeeper.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
-        writer.println("zookeeper.ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
-        writer.println("zookeeper.ssl.truststore.type=PKCS12");
+        String env = Objects.equals(System.getenv("CRITEO_ENV"), "prod") ? "prod" : "preprod"; // We assume the operator container contains Criteo env vars.
+        String zookeeperDns = String.format("kafka-zookeeper-local.service.consul.%s.crto.in:2181", env);
+        writer.println("zookeeper.connect=" + zookeeperDns + "/" + clusterName);
+        writer.println("zookeeper.connection.timeout.ms=1000000");
+        writer.println("zookeeper.session.timeout.ms=60000");
         writer.println();
-
         return this;
     }
 
