@@ -11,6 +11,7 @@ import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -19,6 +20,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Stack;
 import java.util.regex.Matcher;
 
@@ -64,18 +66,28 @@ public class HelmResource implements SpecificResourceType {
         // image tags config
         values.put("defaultImageTag", Environment.getIfNotEmptyOrDefault(Environment.STRIMZI_TAG, Environment.STRIMZI_TAG_DEFAULT));
 
+        String bridgeRegistry = Environment.STRIMZI_REGISTRY_DEFAULT;
+        String bridgeRepository = Environment.STRIMZI_ORG_DEFAULT;
+        String bridgeName = "kafka-bridge";
+        String bridgeTag = BridgeUtils.getBridgeVersion();
+
         // parse Bridge image if needed
         if (!Environment.useLatestReleasedBridge()) {
             Matcher matcher = StUtils.IMAGE_PATTERN_FULL_PATH.matcher(Environment.BRIDGE_IMAGE);
 
             // in case that the image has correct value, we can configure the values
             if (matcher.matches()) {
-                values.put("kafkaBridge.image.registry", matcher.group("registry") != null ? matcher.group("registry") : "");
-                values.put("kafkaBridge.image.repository", matcher.group("repository") != null ? matcher.group("repository") : "");
-                values.put("kafkaBridge.image.name", matcher.group("name") != null ? matcher.group("name") : "");
-                values.put("kafkaBridge.image.tag", matcher.group("tag") != null ? matcher.group("tag") : "");
+                bridgeRegistry = Optional.ofNullable(matcher.group("registry")).orElse(bridgeRegistry);
+                bridgeRepository = Optional.ofNullable(matcher.group("repository")).orElse(bridgeRepository);
+                bridgeName = Optional.ofNullable(matcher.group("name")).orElse(bridgeName);
+                bridgeTag = Optional.ofNullable(matcher.group("tag")).orElse(bridgeTag);
             }
         }
+
+        values.put("kafkaBridge.image.registry", bridgeRegistry);
+        values.put("kafkaBridge.image.repository", bridgeRepository);
+        values.put("kafkaBridge.image.name", bridgeName);
+        values.put("kafkaBridge.image.tag", bridgeTag);
 
         // Additional config
         values.put("image.imagePullPolicy", Environment.OPERATOR_IMAGE_PULL_POLICY);
