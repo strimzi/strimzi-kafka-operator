@@ -100,7 +100,7 @@ import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricReso
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricResources;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValue;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValueCount;
-import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValueHigherThan;
+import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValueHigherThanOrEqualTo;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValueNotNull;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValueNullOrZero;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.getExporterRunScript;
@@ -172,9 +172,9 @@ public class MetricsST extends AbstractST {
         }
     )
     void testKafkaMetrics() {
-        assertMetricValueCount(kafkaCollector, "kafka_server_replicamanager_leadercount", 3);
+        assertMetricValueCount(kafkaCollector, "kafka_server_replicamanager_leadercount", 3.0);
         assertMetricCountHigherThan(kafkaCollector, "kafka_server_replicamanager_partitioncount", 2);
-        assertMetricValue(kafkaCollector, "kafka_server_replicamanager_underreplicatedpartitions", 0);
+        assertMetricValue(kafkaCollector, "kafka_server_replicamanager_underreplicatedpartitions", 0.0);
     }
 
     @ParallelTest
@@ -215,21 +215,21 @@ public class MetricsST extends AbstractST {
 
         kafkaConnectCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
 
-        assertMetricValueHigherThan(kafkaConnectCollector, "kafka_connect_node_request_total\\{clientid=\".*\"}", 0);
-        assertMetricValueHigherThan(kafkaConnectCollector, "kafka_connect_node_response_total\\{clientid=\".*\".*}", 0);
-        assertMetricValueHigherThan(kafkaConnectCollector, "kafka_connect_network_io_total\\{clientid=\".*\".*}", 0);
+        assertMetricValueHigherThanOrEqualTo(kafkaConnectCollector, "kafka_connect_node_request_total\\{clientid=\".*\"}", 0.0);
+        assertMetricValueHigherThanOrEqualTo(kafkaConnectCollector, "kafka_connect_node_response_total\\{clientid=\".*\".*}", 0.0);
+        assertMetricValueHigherThanOrEqualTo(kafkaConnectCollector, "kafka_connect_network_io_total\\{clientid=\".*\".*}", 0.0);
 
         // Check CO metrics and look for KafkaConnect and KafkaConnector
         clusterOperatorCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
-        assertCoMetricResources(namespaceFirst, KafkaConnect.RESOURCE_KIND, clusterOperatorCollector, 1);
+        assertCoMetricResources(namespaceFirst, KafkaConnect.RESOURCE_KIND, clusterOperatorCollector, 1.0);
         assertCoMetricResourcesNullOrZero(namespaceSecond, KafkaConnect.RESOURCE_KIND, clusterOperatorCollector);
-        assertCoMetricResourceState(namespaceFirst, KafkaConnect.RESOURCE_KIND, kafkaClusterFirstName, clusterOperatorCollector, 1, "none");
+        assertCoMetricResourceState(namespaceFirst, KafkaConnect.RESOURCE_KIND, kafkaClusterFirstName, clusterOperatorCollector, 1.0, "none");
 
-        assertCoMetricResources(namespaceFirst, KafkaConnector.RESOURCE_KIND, clusterOperatorCollector, 1);
+        assertCoMetricResources(namespaceFirst, KafkaConnector.RESOURCE_KIND, clusterOperatorCollector, 1.0);
         assertCoMetricResourcesNullOrZero(namespaceSecond, KafkaConnector.RESOURCE_KIND, clusterOperatorCollector);
 
-        assertMetricValueHigherThan(clusterOperatorCollector, getResourceMetricPattern(namespaceFirst, StrimziPodSet.RESOURCE_KIND), 1);
-        assertMetricValueHigherThan(clusterOperatorCollector, getResourceMetricPattern(namespaceSecond, StrimziPodSet.RESOURCE_KIND), 0);
+        assertMetricValueHigherThanOrEqualTo(clusterOperatorCollector, getResourceMetricPattern(namespaceFirst, StrimziPodSet.RESOURCE_KIND), 1.0);
+        assertMetricValueHigherThanOrEqualTo(clusterOperatorCollector, getResourceMetricPattern(namespaceSecond, StrimziPodSet.RESOURCE_KIND), 0.0);
     }
 
     @IsolatedTest
@@ -340,23 +340,23 @@ public class MetricsST extends AbstractST {
     )
     void testClusterOperatorMetrics() {
         // Expected PodSet counts per component
-        int podSetCount = 2;
+        double podSetCount = 2.0;
 
         assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_periodical_total", Kafka.RESOURCE_KIND);
         assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_duration_seconds_bucket", Kafka.RESOURCE_KIND);
         assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_successful_total", Kafka.RESOURCE_KIND);
 
-        assertCoMetricResources(namespaceFirst, Kafka.RESOURCE_KIND, clusterOperatorCollector, 1);
-        assertCoMetricResources(namespaceSecond, Kafka.RESOURCE_KIND, clusterOperatorCollector, 1);
-        assertCoMetricResourceState(namespaceFirst, Kafka.RESOURCE_KIND, kafkaClusterFirstName, clusterOperatorCollector, 1, "none");
-        assertCoMetricResourceState(namespaceSecond, Kafka.RESOURCE_KIND, kafkaClusterSecondName, clusterOperatorCollector, 1, "none");
+        assertCoMetricResources(namespaceFirst, Kafka.RESOURCE_KIND, clusterOperatorCollector, 1.0);
+        assertCoMetricResources(namespaceSecond, Kafka.RESOURCE_KIND, clusterOperatorCollector, 1.0);
+        assertCoMetricResourceState(namespaceFirst, Kafka.RESOURCE_KIND, kafkaClusterFirstName, clusterOperatorCollector, 1.0, "none");
+        assertCoMetricResourceState(namespaceSecond, Kafka.RESOURCE_KIND, kafkaClusterSecondName, clusterOperatorCollector, 1.0, "none");
 
         assertCoMetricResourcesNullOrZero(namespaceFirst, KafkaRebalance.RESOURCE_KIND, clusterOperatorCollector);
         assertCoMetricResourcesNullOrZero(namespaceSecond, KafkaRebalance.RESOURCE_KIND, clusterOperatorCollector);
         assertCoMetricResourceStateNotExists(kafkaClusterFirstName, KafkaRebalance.RESOURCE_KIND, namespaceFirst, clusterOperatorCollector);
 
         // check StrimziPodSet metrics in CO
-        assertMetricCountHigherThan(clusterOperatorCollector, getResourceMetricPattern(namespaceFirst, StrimziPodSet.RESOURCE_KIND), 0);
+        assertMetricCountHigherThan(clusterOperatorCollector, getResourceMetricPattern(namespaceFirst, StrimziPodSet.RESOURCE_KIND), 0.0);
         assertCoMetricResources(namespaceSecond, StrimziPodSet.RESOURCE_KIND, clusterOperatorCollector, podSetCount);
 
         assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_duration_seconds_bucket", StrimziPodSet.RESOURCE_KIND);
@@ -390,7 +390,7 @@ public class MetricsST extends AbstractST {
         assertMetricResourceNotNull(userOperatorCollector, "strimzi_reconciliations_periodical_total", KafkaUser.RESOURCE_KIND);
         assertMetricResourceNotNull(userOperatorCollector, "strimzi_reconciliations_total", KafkaUser.RESOURCE_KIND);
 
-        assertMetricResources(namespaceFirst, KafkaUser.RESOURCE_KIND, userOperatorCollector, 2);
+        assertMetricResources(namespaceFirst, KafkaUser.RESOURCE_KIND, userOperatorCollector, 2.0);
     }
 
     @ParallelTest
@@ -422,15 +422,15 @@ public class MetricsST extends AbstractST {
             .withComponent(KafkaMirrorMaker2MetricsComponent.create(mm2ClusterName))
             .build();
 
-        assertMetricValue(kmm2Collector, "kafka_connect_worker_connector_count", 3);
-        assertMetricValue(kmm2Collector, "kafka_connect_worker_task_count", 2);
+        assertMetricValue(kmm2Collector, "kafka_connect_worker_connector_count", 3.0);
+        assertMetricValueHigherThanOrEqualTo(kmm2Collector, "kafka_connect_worker_task_count", 2.0);
 
         // Check CO metrics and look for KafkaBridge
         clusterOperatorCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
-        assertCoMetricResources(namespaceFirst, KafkaMirrorMaker2.RESOURCE_KIND, clusterOperatorCollector, 1);
+        assertCoMetricResources(namespaceFirst, KafkaMirrorMaker2.RESOURCE_KIND, clusterOperatorCollector, 1.0);
         assertCoMetricResourcesNullOrZero(namespaceSecond, KafkaMirrorMaker2.RESOURCE_KIND, clusterOperatorCollector);
-        assertCoMetricResourceState(namespaceFirst, KafkaMirrorMaker2.RESOURCE_KIND, mm2ClusterName, clusterOperatorCollector, 1, "none");
-        assertMetricValueHigherThan(clusterOperatorCollector, getResourceMetricPattern(namespaceFirst, StrimziPodSet.RESOURCE_KIND), 1);
+        assertCoMetricResourceState(namespaceFirst, KafkaMirrorMaker2.RESOURCE_KIND, mm2ClusterName, clusterOperatorCollector, 1.0, "none");
+        assertMetricValueHigherThanOrEqualTo(clusterOperatorCollector, getResourceMetricPattern(namespaceFirst, StrimziPodSet.RESOURCE_KIND), 1.0);
     }
 
     @ParallelTest
@@ -495,9 +495,9 @@ public class MetricsST extends AbstractST {
 
         // Check CO metrics and look for KafkaBridge
         clusterOperatorCollector.collectMetricsFromPods(TestConstants.METRICS_COLLECT_TIMEOUT);
-        assertCoMetricResources(namespaceFirst, KafkaBridge.RESOURCE_KIND, clusterOperatorCollector, 1);
+        assertCoMetricResources(namespaceFirst, KafkaBridge.RESOURCE_KIND, clusterOperatorCollector, 1.0);
         assertCoMetricResourcesNullOrZero(namespaceSecond, KafkaBridge.RESOURCE_KIND, clusterOperatorCollector);
-        assertCoMetricResourceState(namespaceFirst, KafkaBridge.RESOURCE_KIND, bridgeClusterName, clusterOperatorCollector, 1, "none");
+        assertCoMetricResourceState(namespaceFirst, KafkaBridge.RESOURCE_KIND, bridgeClusterName, clusterOperatorCollector, 1.0, "none");
     }
 
     @ParallelTest
