@@ -121,3 +121,36 @@ After the manual approval, the image will be also pushed under the tag without s
 
 This process should be used only for CVEs in the base images.
 Any CVEs in our code or in the Java dependencies require new patch (or minor) release.
+
+## Operators Catalog
+
+In order to make the Strimzi operator available in the [OperatorHub.io](https://operatorhub.io/) catalog, you need to build a bundle containing the Strimzi operator metadata together with its Custom Resource Definitions.
+The metadata are described through a `ClusterServiceVersion` (CSV) resource declared by using a corresponding YAML file.
+
+The bundle for the OperatorHub.io is available in the https://github.com/k8s-operatorhub/community-operators/tree/main/operators/strimzi-kafka-operator GitHub repo.
+
+In order provide the bundle for a new release, you can start looking at a previous one, create a folder for the new release, but making the following changes:
+
+* change the `metadata/annotations.yaml` in order to add a channel related to the new release (i.e. `strimzi-0.45.x`) alongside the stable one.
+* copy the CRDs and the Cluster Roles YAML to the `manifests` folder by taking them from the `packaging/install/cluster-operator` folder (within the Strimzi repo).
+* take the `strimzi-cluster-operator.v<VERSION>.clusterserviceversion.yaml` CSV file (by using the new release as `<VERSION>`) in order to update the following:
+  * `metadata.annotations.alm-examples-metadata` section by using the examples from the `packaging/examples` folder (within the Strimzi repo).
+  * `containerImage` field with the new operator image (using the SHA).
+  * `name` field by setting the new version in the operator name.
+  * `customresourcedefinitions.owned` section with the CRDs descriptions.
+  * `description` section with all the Strimzi operator information already used for the release on GitHub.
+  * `install.spec.permissions` section by using the Cluster Role files from the `packaging/install/cluster-operator` (within the Strimzi repo).
+  * `deployments` section by using the Strimzi Cluster Operator Deployment YAML from the `packaging/install/cluster-operator` (within the Strimzi repo) but using the SHAs for the images.
+  * `relatedImages` section with the same images as the step before.
+  * `replaces` field by setting the old version that this new one is going to replace.
+  * `version` field with the new release.
+
+After making all these changes, you can double-check the validity of the CSV by copy/paste its content into the [OperatorHub.io preview](https://operatorhub.io/preview) tool.
+Finally, open a PR against the `k8s-operatorhub/community-operators` repository.
+The PR will run some sanity checks which could need some fixes in case of errors.
+After being reviewed by maintainers and merged, the Strimzi operator will be available in the OperatorHub.io website.
+
+*Note*
+The operator should be made available in the OpenShift Operator Catalog as well.
+The bundle for the OpenShift Operator Catalog is available in the https://github.com/redhat-openshift-ecosystem/community-operators-prod/tree/main/operators/strimzi-kafka-operator GitHub repo.
+Just follow the same steps as above for building the bundle.
