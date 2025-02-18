@@ -446,7 +446,7 @@ public class KRaftVersionChangeCreatorTest {
     
     @Test
     public void testDowngradeFromUnknownVersion(VertxTestContext context) {
-        String unknownVersion = getHigherVersionThanLatest();
+        String unknownVersion = KafkaVersionTestUtils.getHigherVersionThanLatest();
         KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION).version(), VERSIONS.version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION).metadataVersion(), VERSIONS.version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION).metadataVersion()),
                 mockRos(mockUniformPods(unknownVersion))
@@ -460,13 +460,6 @@ public class KRaftVersionChangeCreatorTest {
 
             async.flag();
         })));
-    }
-    
-    private String getHigherVersionThanLatest() {
-        String[] parsedVersion = KafkaVersionTestUtils.LATEST_KAFKA_VERSION.split("\\.");
-        int incrementedMinorVersion = Integer.parseInt(parsedVersion[1]) + 1;
-        parsedVersion[1] = Integer.toString(incrementedMinorVersion);
-        return String.join(".", parsedVersion);  
     }
 
     @Test

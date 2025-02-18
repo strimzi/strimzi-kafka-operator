@@ -148,6 +148,7 @@ public class KRaftVersionChangeCreator {
                 versionFrom = versions.version(highestKafkaVersion);
             } catch (KafkaUpgradeException exception) {
                 // From version is unknown but thats ok for downgrade
+                LOGGER.infoCr(reconciliation, "Downgrading from unknown Kafka version {}", highestKafkaVersion);
                 versionFrom = new KafkaVersion(highestKafkaVersion, null, null, null, false, false, null);
             }
             versionTo = versionFromCr;
