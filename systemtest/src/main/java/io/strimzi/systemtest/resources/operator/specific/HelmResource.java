@@ -9,8 +9,8 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+import java.util.regex.Matcher;
 
 public class HelmResource implements SpecificResourceType {
 
@@ -33,6 +34,7 @@ public class HelmResource implements SpecificResourceType {
         this.namespaceInstallTo = namespace;
         this.namespaceToWatch = namespace;
     }
+
     public HelmResource(String namespaceInstallTo, String namespaceToWatch) {
         this.namespaceInstallTo = namespaceInstallTo;
         this.namespaceToWatch = namespaceToWatch;
@@ -54,19 +56,26 @@ public class HelmResource implements SpecificResourceType {
     }
 
     private void clusterOperator(long operationTimeout, long reconciliationInterval, List<EnvVar> extraEnvVars, int replicas) {
-
         Map<String, Object> values = new HashMap<>();
         // image registry config
         values.put("defaultImageRegistry", Environment.getIfNotEmptyOrDefault(Environment.STRIMZI_REGISTRY, Environment.STRIMZI_REGISTRY_DEFAULT));
-        values.put("kafkaBridge.image.registry", Environment.STRIMZI_REGISTRY_DEFAULT);
-
         // image repository config
         values.put("defaultImageRepository", Environment.getIfNotEmptyOrDefault(Environment.STRIMZI_ORG, Environment.STRIMZI_ORG_DEFAULT));
-        values.put("kafkaBridge.image.repository", Environment.STRIMZI_ORG_DEFAULT);
-
         // image tags config
         values.put("defaultImageTag", Environment.getIfNotEmptyOrDefault(Environment.STRIMZI_TAG, Environment.STRIMZI_TAG_DEFAULT));
-        values.put("kafkaBridge.image.tag", BridgeUtils.getBridgeVersion());
+
+        // parse Bridge image if needed
+        if (!Environment.useLatestReleasedBridge()) {
+            Matcher matcher = StUtils.IMAGE_PATTERN_FULL_PATH.matcher(Environment.BRIDGE_IMAGE);
+
+            // in case that the image has correct value, we can configure the values
+            if (matcher.matches()) {
+                values.put("kafkaBridge.image.registry", matcher.group("registry") != null ? matcher.group("registry") : "");
+                values.put("kafkaBridge.image.repository", matcher.group("repository") != null ? matcher.group("repository") : "");
+                values.put("kafkaBridge.image.name", matcher.group("name") != null ? matcher.group("name") : "");
+                values.put("kafkaBridge.image.tag", matcher.group("tag") != null ? matcher.group("tag") : "");
+            }
+        }
 
         // Additional config
         values.put("image.imagePullPolicy", Environment.OPERATOR_IMAGE_PULL_POLICY);

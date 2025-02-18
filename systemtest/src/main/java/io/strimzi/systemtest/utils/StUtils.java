@@ -64,7 +64,13 @@ public class StUtils {
 
     private static final Pattern KAFKA_COMPONENT_PATTERN = Pattern.compile("([^-|^_]*?)(?<kafka>[-|_]kafka[-|_])(?<version>.*)$");
 
-    private static final Pattern IMAGE_PATTERN_FULL_PATH = Pattern.compile("^(?<registry>[^/]*)/(?<org>[^/]*)/(?<image>[^:]*):(?<tag>.*)$");
+    public static final Pattern IMAGE_PATTERN_FULL_PATH = Pattern.compile(
+        "^(?:(?<registry>[^/:]+(?:\\.[^/:]+)*(:\\d+)?)/)?" +     // Group for registry (and port)
+            "(?<repository>.+?)" +                               // Full repository path
+            "(?:/(?<name>[^/:]+))?" +                            // Name of the image
+            "(?::(?<tag>[^:]+))?$"                               // Tag of the image
+    );
+
     private static final Pattern IMAGE_PATTERN = Pattern.compile("^(?<org>[^/]*)/(?<image>[^:]*):(?<tag>.*)$");
 
     private static final Pattern VERSION_IMAGE_PATTERN = Pattern.compile("(?<version>[0-9.]+)=(?<image>[^\\s]*)");
