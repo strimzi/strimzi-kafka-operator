@@ -94,4 +94,11 @@ public class KafkaVersionTestUtils {
     public static KafkaVersion getLatestVersion() {
         return getKafkaVersionLookup().version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
     }
+    
+    public static String getHigherVersionThanLatest() {
+        String[] parsedVersion = LATEST_KAFKA_VERSION.split("\\.");
+        int incrementedMinorVersion = Integer.parseInt(parsedVersion[1]) + 1;
+        parsedVersion[1] = Integer.toString(incrementedMinorVersion);
+        return String.join(".", parsedVersion);  
+    }
 }
