@@ -16,6 +16,7 @@ For more information about the build process, see [Dev guide document](DEV_GUIDE
 - [Running single test class](#running-single-test-class)
 - [Skip Teardown](#skip-teardown)
 - [Testing-farm](../systemtest/tmt/README.md)
+- [Performance testing](#performance-testing)
 
 <!-- /TOC -->
 
@@ -250,34 +251,35 @@ You need to use the `groups` system property to execute a group of system tests.
 If `-Dgroups` system property isn't defined, all tests without an explicitly declared test group will be executed.
 The following table shows currently used tags:
 
-| Name               |                                      Description                                      |
-| :----------------: |:-------------------------------------------------------------------------------------:|
-| acceptance         | Acceptance tests, which guarantee that the basic functionality of Strimzi is working. |
-| regression         |                 Regression tests, which contains all non-flaky tests.                 |
-| upgrade            |                  Upgrade tests for specific versions of the Strimzi.                  |
-| smoke              |                                Execute all smoke tests                                |
-| flaky              |         Execute all flaky tests (tests, which are failing from time to time)          |
-| scalability        |                               Execute scalability tests                               |
-| componentscaling   |                            Execute component scaling tests                            |
-| specific           |           Specific tests, which cannot be easily added to other categories            |
-| nodeport           |               Execute tests which use external lister of type nodeport                |
-| loadbalancer       |             Execute tests which use external lister of type loadbalancer              |
-| networkpolicies    |                  Execute tests that use Kafka with Network Policies                   |
-| prometheus         |                        Execute tests for Kafka with Prometheus                        |
-| tracing            |                               Execute tests for Tracing                               |
-| helm               |                Execute tests that use Helm for deploy cluster operator                |
-| oauth              |                             Execute tests that use OAuth                              |
-| recovery           |                                Execute recovery tests                                 |
-| connectoroperator  |                   Execute tests that deploy KafkaConnector resource                   |
-| connect            |                    Execute tests that deploy KafkaConnect resource                    |
-| mirrormaker2       |                 Execute tests that deploy KafkaMirrorMaker2 resource                  |
-| conneccomponents   |  Execute tests that deploy KafkaConnect, KafkaMirrorMaker2, KafkaConnector resources  |
-| bridge             |                          Execute tests that use Kafka Bridge                          |
-| externalclients    |          Execute tests that use external (from code) Kafka clients in tests           |
-| olm                |                Execute tests that test examples from Strimzi manifests                |
-| metrics            |                         Execute tests where metrics are used                          |
-| cruisecontrol      |                   Execute tests that deploy CruiseControl resource                    |
-| rollingupdate      |                    Execute tests where is rolling update triggered                    |
+|       Name        |                                      Description                                      |
+|:-----------------:|:-------------------------------------------------------------------------------------:|
+|    acceptance     | Acceptance tests, which guarantee that the basic functionality of Strimzi is working. |
+|    regression     |                 Regression tests, which contains all non-flaky tests.                 |
+|      upgrade      |                  Upgrade tests for specific versions of the Strimzi.                  |
+|       smoke       |                                Execute all smoke tests                                |
+|       flaky       |         Execute all flaky tests (tests, which are failing from time to time)          |
+|    scalability    |                               Execute scalability tests                               |
+| componentscaling  |                            Execute component scaling tests                            |
+|     specific      |           Specific tests, which cannot be easily added to other categories            |
+|     nodeport      |               Execute tests which use external lister of type nodeport                |
+|   loadbalancer    |             Execute tests which use external lister of type loadbalancer              |
+|  networkpolicies  |                  Execute tests that use Kafka with Network Policies                   |
+|    prometheus     |                        Execute tests for Kafka with Prometheus                        |
+|      tracing      |                               Execute tests for Tracing                               |
+|       helm        |                Execute tests that use Helm for deploy cluster operator                |
+|       oauth       |                             Execute tests that use OAuth                              |
+|     recovery      |                                Execute recovery tests                                 |
+| connectoroperator |                   Execute tests that deploy KafkaConnector resource                   |
+|      connect      |                    Execute tests that deploy KafkaConnect resource                    |
+|   mirrormaker2    |                 Execute tests that deploy KafkaMirrorMaker2 resource                  |
+| conneccomponents  |  Execute tests that deploy KafkaConnect, KafkaMirrorMaker2, KafkaConnector resources  |
+|      bridge       |                          Execute tests that use Kafka Bridge                          |
+|  externalclients  |          Execute tests that use external (from code) Kafka clients in tests           |
+|        olm        |                Execute tests that test examples from Strimzi manifests                |
+|      metrics      |                         Execute tests where metrics are used                          |
+|   cruisecontrol   |                   Execute tests that deploy CruiseControl resource                    |
+|   rollingupdate   |                    Execute tests where is rolling update triggered                    |
+|    performance    |                               Execute performance tests                               |
 
 If your Kubernetes cluster doesn't support Network Policies or NodePort services, you can easily skip those tests with `-DexcludeGroups=networkpolicies,nodeport`.
 
@@ -445,3 +447,91 @@ spec:
 ```
 
 Now you can efficiently run OLM tests.
+
+## Performance Testing
+
+### Overview 
+
+The performance tests in the Strimzi system test suite are categorized into two primary sets (i.e., capacity and scalability).
+All performance reports are stored in the `systemtest/target/performance` folder, which contains detailed 
+setup configurations and collected metrics, including JVM, memory, and CPU utilization (if enabled).
+Moreover, each test generates a summary report table. 
+Below is an example for the `scalabilityUseCase`.
+```
+Use Case: scalabilityUseCase
++------------+--------------------+-------------------------+----------------------+----------------------+---------------------------+------------------+-----------------------------------+
+| Experiment | IN: MAX QUEUE SIZE | IN: MAX BATCH SIZE (ms) | IN: NUMBER OF TOPICS | IN: NUMBER OF EVENTS | IN: MAX BATCH LINGER (ms) | IN: PROCESS TYPE | OUT: Reconciliation interval (ms) |
+| 1          | 2147483647         | 100                     | 25                   | 75                   | 100                       | TOPIC-CONCURRENT | 9156                              |
+| 2          | 2147483647         | 100                     | 2                    | 8                    | 100                       | TOPIC-CONCURRENT | 6147                              |
+| 3          | 2147483647         | 100                     | 250                  | 750                  | 100                       | TOPIC-CONCURRENT | 24730                             |
+| 4          | 2147483647         | 100                     | 125                  | 375                  | 100                       | TOPIC-CONCURRENT | 26827                             |
++------------+--------------------+-------------------------+----------------------+----------------------+---------------------------+------------------+-----------------------------------+
+```
+- **IN:** parameters represent the input configuration settings used in the test, such as queue size, batch size, and the number of topics or events.
+- **OUT:** parameters represent the resulting performance metrics, such as the reconciliation interval time in milliseconds.
+
+### Performance Test Categories
+
+#### 1. Capacity Tests
+
+Capacity tests focus on measuring the system's ability to sustain increasing workloads. 
+These tests provide insights into resource utilization and operational limits.
+
+**Topic Operator Capacity Test**
+- Measures the impact of different maxBatchSize and maxBatchLingerMs values on system throughput and responsiveness. 
+- Evaluates Kafka topic creation, modification, and deletion performance under different batching strategies.
+- Reports include details on:
+  - Maximum batch size
+  - Maximum batch linger time (ms)
+  - Number of successfully created Kafka topics
+  - Metrics history from topic operator components
+
+**User Operator Capacity Test**
+
+Evaluates user operator performance with different configurations, including:
+- Controller thread pool size
+- Cache refresh interval (ms)
+- Batch queue size
+- Maximum batch block size and time (ms)
+- User operations thread pool size
+- Reports include:
+  - Worker queue size
+  - Successful Kafka users created
+  - Detailed system metrics and history
+
+What is worth mentioning is that those capacity tests runs in average **10 hours** depending on your HW specs.
+
+#### 2. Scalability Tests
+
+Scalability tests assess how well Strimzi scales as the workload increases and help identify potential bottlenecks in the system.
+
+**Topic Operator Scalability Test**
+
+- Tests how the topic operator processes events concurrently when handling different numbers of Kafka topics.
+- Uses batch processing to simulate real-world Kafka topic operations at scale.
+- Measures reconciliation time and resource utilization for different batch sizes.
+- Reports include:
+  - Maximum queue size
+  - Number of topics processed
+  - Number of events handled per reconciliation cycle
+
+This test case runs at most **5 minutes**. 
+
+### Triggering Performance Tests
+
+Performance tests can be triggered using either Testing Farm or Jenkins. 
+One can also run them locally as our standard system tests using some IDE or directly by maven.
+
+#### Testing Farm
+Currently, there are two possible triggers:
+```
+/packit test --labels performance
+/packit test --labels capacity
+```
+
+#### Jenkins
+
+To run performance tests in Jenkins, execute them as standard system tests e.g., for `TopicOperatorScalabilityPerformance`:
+```
+@strimzi-ci run tests --profile=performance --testcase=TopicOperatorScalabilityPerformance`
+```
