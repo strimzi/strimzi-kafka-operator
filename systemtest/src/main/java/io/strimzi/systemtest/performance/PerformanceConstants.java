@@ -87,6 +87,7 @@ public interface PerformanceConstants {
     String TOPIC_OPERATOR_OUT_SUCCESSFUL_KAFKA_TOPICS_CREATED = "OUT: Successful KafkaTopics Created";
     String TOPIC_OPERATOR_OUT_SUCCESSFUL_KAFKA_TOPICS_CREATED_AND_MODIFIED_AND_DELETED = "OUT: Successful KafkaTopics Created and Modified and Deleted (ms)";
     String TOPIC_OPERATOR_OUT_UPDATE_TIME = "OUT: Update Time (ms)";
+    String TOPIC_OPERATOR_OUT_RECONCILIATION_INTERVAL = "OUT: Reconciliation interval (ms)";
 
     // --------------------------------------------------------------------------------
     // ------------------------------ USER OPERATOR -----------------------------------
