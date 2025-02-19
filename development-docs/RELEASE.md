@@ -330,10 +330,12 @@ There is no need to create an `OperatorGroup` and `Subscription` manually.
 
 You can now deploy a Kafka cluster by using the installed operator and running some smoke tests.
 
-Finally, uninstall the operator by deleting the `Subscription`:
+Finally, uninstall the operator by deleting the `Subscription` and the corresponding `ClusterServiceVersion`:
 
 ```shell
+CSV=$(kubectl get subscription strimzi-subscription -n kafka -o json | jq -r '.status.installedCSV')
 kubectl delete subscription strimzi-subscription -n kafka
+kubectl delete csv $CSV -n kafka
 ```
 
 ### Publishing to OperatorHub.io and OpenShift Operator Catalog
