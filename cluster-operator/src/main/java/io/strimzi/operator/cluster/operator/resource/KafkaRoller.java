@@ -933,34 +933,26 @@ public class KafkaRoller {
     /* test */ KafkaAvailability availability(Admin ac) {
         return new KafkaAvailability(reconciliation, ac);
     }
-    
+
     /**
-     * Return true if the given {@code nodeId} is the active controller and there are other controllers we might yet have to consider.
+     * Checks if the given {@code nodeId} is the active controller and there are other controllers we might yet have to consider.
      * This ensures that the active controller is restarted/reconfigured last.
+     *
+     * @return true if the given {@code nodeId} is the active controller and there are other controllers we might yet have to consider.
      */
-    private boolean deferController(NodeRef nodeRef, RestartContext restartContext) throws Exception {
-        int controller = controller(nodeRef, operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
-        if (controller == nodeRef.nodeId()) {
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE") // seems to be completely spurious
+    boolean deferController(NodeRef nodeRef, RestartContext restartContext) throws Exception {
+        int id = await(restartContext.quorumCheck.quorumLeaderId(), operationTimeoutMs, TimeUnit.MILLISECONDS,
+                t -> new UnforceableProblem("An error while trying to determine the active controller", t));
+        LOGGER.debugCr(reconciliation, "Active controller is {}", id);
+
+        if (id == nodeRef.nodeId()) {
             int stillRunning = podToContext.reduceValuesToInt(100, v -> v.promise.future().isComplete() ? 0 : 1,
                     0, Integer::sum);
             return stillRunning > 1;
         } else {
             return false;
         }
-    }
-
-    /**
-     * Completes the returned future <strong>on the context thread</strong> with the id of the active controller.
-     * This will be -1 if there is not currently a controller.
-     *
-     * @return A future which completes the node id of the controller of the cluster, or -1 if there is not currently a controller.
-     */
-    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE") // seems to be completely spurious
-    int controller(NodeRef nodeRef, long timeout, TimeUnit unit, RestartContext restartContext) throws Exception {
-        int id = await(restartContext.quorumCheck.quorumLeaderId(), timeout, unit,
-                t -> new UnforceableProblem("An error while trying to determine the quorum leader id", t));
-        LOGGER.debugCr(reconciliation, "Active controller is {}", id);
-        return id;
     }
 
     @Override

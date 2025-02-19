@@ -50,7 +50,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -266,7 +265,7 @@ public class KafkaRollerTest {
                 bootstrapBrokers -> bootstrapBrokers != null && bootstrapBrokers.stream().map(node -> node.nodeId()).toList().equals(singletonList(1)) ? new RuntimeException("Test Exception") : null,
                 null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true),
-                false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, 30);
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, 30);
         // The algorithm should carry on rolling the pods (errors are logged),
         // because we never find the controller we get ascending order
         doSuccessfulRollingRestart(testContext, kafkaRoller,
@@ -282,7 +281,7 @@ public class KafkaRollerTest {
                 bootstrapBrokers -> bootstrapBrokers != null && bootstrapBrokers.stream().map(node -> node.nodeId()).toList().equals(singletonList(1)) ? new RuntimeException("Test Exception") : null,
                 null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true),
-                false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
         // The algorithm should carry on rolling the pods (errors are logged),
         // because we force restart the node if we can't create an admin client
         doSuccessfulRollingRestart(testContext, kafkaRoller,
@@ -297,7 +296,7 @@ public class KafkaRollerTest {
                 bootstrapBrokers -> bootstrapBrokers != null && bootstrapBrokers.stream().map(node -> node.nodeId()).toList().equals(singletonList(1)) ? new RuntimeException("Test Exception") : null,
                 null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true),
-                false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
         // The algorithm should carry on rolling the pods (errors are logged),
         // because we force restart the node if we can't create an admin client
         doSuccessfulRollingRestart(testContext, kafkaRoller,
@@ -312,7 +311,7 @@ public class KafkaRollerTest {
                 bootstrapBrokers -> bootstrapBrokers != null && bootstrapBrokers.stream().map(node -> node.nodeId()).toList().equals(singletonList(1)) ? new RuntimeException("Test Exception") : null,
                 null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true),
-                false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, 4);
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, 4);
         // The algorithm should carry on rolling the pods (errors are logged),
         // because we force restart the node if we can't create an admin client
         doSuccessfulRollingRestart(testContext, kafkaRoller,
@@ -329,7 +328,7 @@ public class KafkaRollerTest {
                 noException(), null,
                 podId -> podId == nonActiveController ? new RuntimeException("Test Exception") : null, noException(), noException(),
                 brokerId -> succeededFuture(true),
-                false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, activeController);
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, activeController);
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
                 asList(0, 3, 4, 1, 2));
@@ -344,7 +343,7 @@ public class KafkaRollerTest {
                 noException(), null,
                 podId -> podId == activeController ? new RuntimeException("Test Exception") : null, noException(), noException(),
                 brokerId -> succeededFuture(true),
-                false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, activeController);
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, activeController);
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
                 asList(0, 1, 3, 4, 2));
@@ -357,7 +356,7 @@ public class KafkaRollerTest {
                 noException(),
                 new RuntimeException("Test Exception"), noException(), noException(), noException(),
                 brokerId -> succeededFuture(true),
-                false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
         // The algorithm should carry on rolling the pods (errors are logged)
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
@@ -371,7 +370,7 @@ public class KafkaRollerTest {
                 noException(),
                 new RuntimeException("Test Exception"), noException(), noException(), noException(),
                 brokerId -> succeededFuture(true),
-                false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, 3);
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, 3);
         // The algorithm should carry on rolling the pods (errors are logged),
         // because we did the active controller last order
         doSuccessfulRollingRestart(testContext, kafkaRoller,
@@ -388,7 +387,7 @@ public class KafkaRollerTest {
                 brokerId ->
                         brokerId == 1 ? succeededFuture(count.getAndDecrement() == 0)
                                 : succeededFuture(true),
-                false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
                 asList(0, 2, 3, 4, 1));
@@ -403,7 +402,7 @@ public class KafkaRollerTest {
                 noException(), null, noException(), noException(), noException(),
                 combinedId ->
                         combinedId == 1 ? succeededFuture(count.getAndDecrement() < 0) : succeededFuture(true),
-                false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, 2);
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, 2);
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
                 asList(0, 3, 4, 1, 2));
@@ -417,7 +416,7 @@ public class KafkaRollerTest {
                 noException(), null, noException(), noException(), noException(),
                 controllerId ->
                         (controllerId == 1) ? succeededFuture(count.getAndDecrement() == 0) : succeededFuture(true),
-                false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, 2);
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, 2);
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
                 asList(0, 3, 4, 1, 2));
@@ -431,7 +430,7 @@ public class KafkaRollerTest {
                 brokerId ->
                         brokerId == 1 ? succeededFuture(false)
                                 : succeededFuture(true),
-                false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
         doFailingRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
                 KafkaRoller.UnforceableProblem.class, "Pod c-kafka-1 cannot be updated right now.",
@@ -440,7 +439,7 @@ public class KafkaRollerTest {
         kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS, 0, 0), podOps,
                 noException(), null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(brokerId != 1),
-                false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
         clearRestarted();
         doFailingRollingRestart(testContext, kafkaRoller,
                 singletonList(1),
@@ -457,7 +456,7 @@ public class KafkaRollerTest {
                 brokerId ->
                         brokerId == 1 ? succeededFuture(false)
                                 : succeededFuture(true),
-                false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
         doFailingRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
                 KafkaRoller.UnforceableProblem.class, "Pod c-kafka-1 cannot be updated right now.",
@@ -467,7 +466,7 @@ public class KafkaRollerTest {
         kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS, 0, 0), podOps,
                 noException(), null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(brokerId != 1),
-                false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
         clearRestarted();
         doFailingRollingRestart(testContext, kafkaRoller,
                 singletonList(1),
@@ -485,22 +484,21 @@ public class KafkaRollerTest {
                 brokerId ->
                         brokerId == 2 ? succeededFuture(false)
                                 : succeededFuture(true),
-                false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, 2);
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, 2);
         doFailingRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
                 KafkaRoller.UnforceableProblem.class, "Pod c-kafka-2 cannot be updated right now.",
-                // We expect all non-controller pods to be rolled
+                // We expect all non-active controller pods to be rolled
                 asList(0, 1, 3, 4));
         clearRestarted();
         kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS, 0, 0),
                 podOps,
                 noException(), null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(brokerId != 2),
-                false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, 2);
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, 2);
         doFailingRollingRestart(testContext, kafkaRoller,
                 singletonList(2),
                 KafkaRoller.UnforceableProblem.class, "Pod c-kafka-2 cannot be updated right now.",
-                // We expect all non-controller pods to be rolled
                 emptyList());
     }
 
@@ -510,7 +508,7 @@ public class KafkaRollerTest {
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS, 0, 0), podOps,
                 noException(), null,
                 noException(), noException(), podId -> podId == 1 ? new KafkaRoller.ForceableProblem("could not get config exception") : null,
-                brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
+                brokerId -> succeededFuture(true), new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
         // The algorithm should carry on rolling the pods
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
@@ -523,7 +521,7 @@ public class KafkaRollerTest {
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(0, REPLICAS, 0), podOps,
                 noException(), null,
                 noException(), noException(), podId -> podId == 1 ? new KafkaRoller.ForceableProblem("could not get config exception") : null,
-                brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
+                brokerId -> succeededFuture(true), new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
         // The algorithm should carry on rolling the pods
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
@@ -537,7 +535,7 @@ public class KafkaRollerTest {
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(0, 0, REPLICAS), podOps,
                 noException(), null,
                 noException(), noException(), podId -> podId == controller ? new KafkaRoller.ForceableProblem("could not get config exception") : null,
-                brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, controller);
+                brokerId -> succeededFuture(true), new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, controller);
         // The algorithm should carry on rolling the pods
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
@@ -550,7 +548,7 @@ public class KafkaRollerTest {
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS, 0, 0), podOps,
                 noException(), null,
                 noException(), podId -> new KafkaRoller.ForceableProblem("could not get alter exception"), noException(),
-                brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
+                brokerId -> succeededFuture(true), new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
         // The algorithm should carry on rolling the pods
         doSuccessfulConfigUpdate(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4));
@@ -562,7 +560,7 @@ public class KafkaRollerTest {
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(REPLICAS, 0, 0), podOps,
                 noException(), null,
                 noException(), noException(), noException(),
-                brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
+                brokerId -> succeededFuture(true), new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
         // The algorithm should not carry on rolling the pods
         doSuccessfulConfigUpdate(testContext, kafkaRoller,
                 emptyList());
@@ -572,7 +570,7 @@ public class KafkaRollerTest {
     public void testSuccessfulRollingControllers(VertxTestContext testContext) {
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(0, 3, 3),
                 mockPodOps(podId -> succeededFuture()), noException(), null, noException(), noException(), noException(),
-                brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
+                brokerId -> succeededFuture(true), new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4, 5),
                 asList(0, 1, 2, 3, 4, 5));
@@ -582,7 +580,7 @@ public class KafkaRollerTest {
     public void testControllerNoQuorum(VertxTestContext testContext) throws InterruptedException {
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(0, 0, 3),
                 mockPodOps(podId -> succeededFuture()), noException(), null, noException(), noException(), noException(),
-                brokerId -> succeededFuture(false), false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
+                brokerId -> succeededFuture(false), new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
         doFailingRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2),
                 KafkaRoller.UnforceableProblem.class, "Pod c-kafka-0 cannot be updated right now.",
@@ -596,7 +594,7 @@ public class KafkaRollerTest {
                 podOps,
                 noException(), null, noException(), noException(), noException(),
                 brokerId -> brokerId == 2 || brokerId == 3 ? succeededFuture(false) : succeededFuture(true),
-                false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, 2);
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, 2);
         doFailingRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
                 KafkaRoller.ForceableProblem.class, "Pod c-kafka-2 is the active controller and there are other pods to verify first",
@@ -619,7 +617,7 @@ public class KafkaRollerTest {
                 podOps,
                 noException(), null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true),
-                false, null, null, false, brokerstate, 3);
+                null, null, false, brokerstate, 3);
 
         doFailingRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4, 5),
@@ -642,7 +640,7 @@ public class KafkaRollerTest {
                 podOps,
                 noException(), null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true),
-                false, null, null, false, brokerstate, -1);
+                null, null, false, brokerstate, -1);
 
         doFailingRollingRestart(testContext, kafkaRoller,
                 List.of(0, 1, 2),
@@ -665,7 +663,7 @@ public class KafkaRollerTest {
                 podOps,
                 noException(), null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true),
-                false, null, null, false, brokerstate, 3);
+                null, null, false, brokerstate, 3);
 
         // It rolls brokers if only successfully rolled controllers
         doFailingRollingRestart(testContext, kafkaRoller,
@@ -686,7 +684,7 @@ public class KafkaRollerTest {
                 podOps,
                 noException(), null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true),
-                false, null, null, false, brokerstate, -1);
+                null, null, false, brokerstate, -1);
 
         doFailingRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
@@ -706,7 +704,7 @@ public class KafkaRollerTest {
                 podOps,
                 noException(), null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true),
-                false, null, null, false, brokerstate, 1);
+                null, null, false, brokerstate, 1);
 
         doFailingRollingRestart(testContext, kafkaRoller,
                 asList(0),
@@ -724,7 +722,7 @@ public class KafkaRollerTest {
                 podOps,
                 noException(), null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true),
-                false, null, null, false, null, 1);
+                null, null, false, null, 1);
 
         doFailingRollingRestart(testContext, kafkaRoller,
                 List.of(),
@@ -736,7 +734,7 @@ public class KafkaRollerTest {
     public void testRollWithAllRoles(VertxTestContext testContext) {
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(3, 3, 3),
                 mockPodOps(podId -> succeededFuture()), noException(), null, noException(), noException(), noException(),
-                brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, 6);
+                brokerId -> succeededFuture(true), new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, 6);
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4, 5, 6, 7, 8),
                 asList(3, 4, 5, 7, 8, 6, 0, 1, 2));
@@ -764,7 +762,7 @@ public class KafkaRollerTest {
         });
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(addPodNames(3, 3, 3),
                 podOps, noException(), null, noException(), noException(), noException(),
-                brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
+                brokerId -> succeededFuture(true), new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, -1);
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4, 5, 6, 7, 8), // brokers, combined, controllers
                 asList(7, 4, 3, 5, 6, 8, 1, 0, 2)); //Rolls in order: unready controllers, ready controllers, unready brokers, ready brokers
@@ -774,7 +772,7 @@ public class KafkaRollerTest {
         return new TestingKafkaRoller(nodes, podOps,
                 noException(), null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true),
-                false, new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, activeController);
+                new DefaultAdminClientProvider(), new DefaultKafkaAgentClientProvider(), false, null, activeController);
     }
 
     private void doSuccessfulConfigUpdate(VertxTestContext testContext, TestingKafkaRoller kafkaRoller,
@@ -901,7 +899,6 @@ public class KafkaRollerTest {
         private final Function<Integer, Throwable> controllerException;
         private final Function<Integer, ForceableProblem> alterConfigsException;
         private final Function<Integer, ForceableProblem> getConfigsException;
-        private final boolean delegateControllerCall;
         private final boolean delegateAdminClientCall;
         private final int activeController;
         private final BrokerState brokerState;
@@ -915,7 +912,6 @@ public class KafkaRollerTest {
                                    Function<Integer, ForceableProblem> alterConfigsException,
                                    Function<Integer, ForceableProblem> getConfigsException,
                                    Function<Integer, Future<Boolean>> canRollFn,
-                                   boolean delegateControllerCall,
                                    AdminClientProvider adminClientProvider,
                                    KafkaAgentClientProvider kafkaAgentClientProvider,
                                    boolean delegateAdminClientCall, BrokerState brokerState, int activeController) {
@@ -935,7 +931,6 @@ public class KafkaRollerTest {
                     KafkaVersionTestUtils.getLatestVersion(),
                     true,
                     mock(KubernetesRestartEventPublisher.class));
-            this.delegateControllerCall = delegateControllerCall;
             this.delegateAdminClientCall = delegateAdminClientCall;
             this.activeController = activeController;
             this.controllerCall = 0;
@@ -1019,20 +1014,21 @@ public class KafkaRollerTest {
                 Future<Boolean> canRollController(int nodeId) {
                     return canRollFn.apply(nodeId);
                 }
+
+                @Override
+                Future<Integer> quorumLeaderId() {
+                    return succeededFuture(activeController);
+                }
             };
         }
 
         @Override
-        int controller(NodeRef nodeRef, long timeout, TimeUnit unit, RestartContext restartContext) throws Exception {
-            if (delegateControllerCall) {
-                return super.controller(nodeRef, timeout, unit, restartContext);
-            }
+        boolean deferController(NodeRef nodeRef, RestartContext restartContext) throws Exception {
             Throwable throwable = controllerException.apply(nodeRef.nodeId());
             if (throwable != null) {
                 throw new ForceableProblem("An error while trying to determine the cluster controller from pod " + nodeRef.podName(), throwable);
             } else {
-                controllerCall++;
-                return activeController;
+                return super.deferController(nodeRef, restartContext);
             }
         }
 
