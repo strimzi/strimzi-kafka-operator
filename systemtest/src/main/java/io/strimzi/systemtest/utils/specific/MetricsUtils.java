@@ -90,20 +90,20 @@ public class MetricsUtils {
         assertThat(values.isEmpty(), is(true));
     }
 
-    public static void assertCoMetricResourceState(String namespaceName, String kind, String name, BaseMetricsCollector collector, int value, String reason) {
+    public static void assertCoMetricResourceState(String namespaceName, String kind, String name, BaseMetricsCollector collector, double value, String reason) {
         assertMetricResourceState(namespaceName, kind, name, collector, value, reason);
     }
 
-    public static void assertMetricResourceState(String namespaceName, String kind, String name, BaseMetricsCollector collector, int value, String reason) {
+    public static void assertMetricResourceState(String namespaceName, String kind, String name, BaseMetricsCollector collector, double value, String reason) {
         String metric = "strimzi_resource_state\\{kind=\"" + kind + "\",name=\"" + name + "\",reason=\"" + reason + ".*\",resource_namespace=\"" + namespaceName + "\",}";
         assertMetricValue(collector, metric, value);
     }
 
-    public static void assertCoMetricResources(String namespaceName, String kind, BaseMetricsCollector collector, int value) {
+    public static void assertCoMetricResources(String namespaceName, String kind, BaseMetricsCollector collector, double value) {
         assertMetricResources(namespaceName, kind, collector, value);
     }
 
-    public static void assertMetricResources(String namespaceName, String kind, BaseMetricsCollector collector, int value) {
+    public static void assertMetricResources(String namespaceName, String kind, BaseMetricsCollector collector, double value) {
         assertMetricValue(collector, getResourceMetricPattern(namespaceName, kind), value);
     }
 
@@ -155,28 +155,28 @@ public class MetricsUtils {
         }
     }
 
-    public static void assertMetricValue(BaseMetricsCollector collector, String metric, int expectedValue) {
+    public static void assertMetricValue(BaseMetricsCollector collector, String metric, double expectedValue) {
         List<Double> values = createPatternAndCollect(collector, metric);
         double actualValue = values.stream().mapToDouble(i -> i).sum();
-        assertThat(String.format("metric '%s' actual value %s is different than expected %s", metric, actualValue, expectedValue), actualValue, is((double) expectedValue));
+        assertThat(String.format("metric '%s' actual value %s is different than expected %s", metric, actualValue, expectedValue), actualValue, is(expectedValue));
     }
 
-    public static void assertMetricValueCount(BaseMetricsCollector collector, String metric, long expectedValue) {
+    public static void assertMetricValueCount(BaseMetricsCollector collector, String metric, double expectedValue) {
         List<Double> values = createPatternAndCollect(collector, metric);
         double actualValue = values.stream().mapToDouble(i -> i).count();
-        assertThat(String.format("metric '%s' actual value %s is different than expected %s", actualValue, expectedValue, metric), actualValue, is((double) expectedValue));
+        assertThat(String.format("metric '%s' actual value %s is different than expected %s", actualValue, expectedValue, metric), actualValue, is(expectedValue));
     }
 
-    public static void assertMetricCountHigherThan(BaseMetricsCollector collector, String metric, long expectedValue) {
+    public static void assertMetricCountHigherThan(BaseMetricsCollector collector, String metric, double expectedValue) {
         List<Double> values = createPatternAndCollect(collector, metric);
         double actualValue = values.stream().mapToDouble(i -> i).count();
-        assertThat(String.format("metric '%s' actual value %s not is higher than expected %s", metric, actualValue, expectedValue), actualValue > expectedValue);
+        assertThat(String.format("metric '%s' actual value %s is not higher than expected %s", metric, actualValue, expectedValue), actualValue > expectedValue);
     }
 
-    public static void assertMetricValueHigherThan(BaseMetricsCollector collector, String metric, int expectedValue) {
+    public static void assertMetricValueHigherThanOrEqualTo(BaseMetricsCollector collector, String metric, double expectedValue) {
         List<Double> values = createPatternAndCollect(collector, metric);
         double actualValue = values.stream().mapToDouble(i -> i).sum();
-        assertThat(String.format("metric '%s' actual value %s is different than expected %s", metric, actualValue, expectedValue), actualValue > expectedValue);
+        assertThat(String.format("metric '%s' actual value %s is not higher than or equal to %s", metric, actualValue, expectedValue), actualValue >= expectedValue);
     }
 
     public static void assertContainsMetric(List<Metric> metrics, String metricName) {
