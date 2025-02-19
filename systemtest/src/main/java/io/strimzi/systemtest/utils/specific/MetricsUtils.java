@@ -176,7 +176,7 @@ public class MetricsUtils {
     public static void assertMetricValueHigherThanOrEqualTo(BaseMetricsCollector collector, String metric, double expectedValue) {
         List<Double> values = createPatternAndCollect(collector, metric);
         double actualValue = values.stream().mapToDouble(i -> i).sum();
-        assertThat(String.format("metric '%s' actual value %s is not higher than or equal to %s", metric, actualValue, expectedValue), actualValue > expectedValue);
+        assertThat(String.format("metric '%s' actual value %s is not higher than or equal to %s", metric, actualValue, expectedValue), actualValue >= expectedValue);
     }
 
     public static void assertContainsMetric(List<Metric> metrics, String metricName) {
