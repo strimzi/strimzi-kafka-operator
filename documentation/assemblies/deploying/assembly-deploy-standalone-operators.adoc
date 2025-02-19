@@ -9,10 +9,11 @@
 You can perform a standalone deployment of the Topic Operator and User Operator.
 Consider a standalone deployment of these operators if you are using a Kafka cluster that is not managed by the Cluster Operator.
 
-You deploy the operators to Kubernetes.
-Kafka can be running outside of Kubernetes.
-For example, you might be using a Kafka as a managed service.
-You adjust the deployment configuration for the standalone operator to match the address of your Kafka cluster.
+You deploy the operators to Kubernetes, Kafka can be running outside of Kubernetes.
+For example, you might be using a managed Kafka service.
+
+To connect the standalone operators to your Kafka cluster, you must set environment variables that specify the cluster address and authentication details. 
+These variables are automatically configured when deploying the operators with the Cluster Operator.
 
 //Procedure for standalone deployment of Topic Operator
 include::../../modules/deploying/proc-deploy-topic-operator-standalone.adoc[leveloffset=+1]
