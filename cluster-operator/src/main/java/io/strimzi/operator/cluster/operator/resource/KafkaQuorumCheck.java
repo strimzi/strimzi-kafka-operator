@@ -56,12 +56,12 @@ class KafkaQuorumCheck {
     }
 
     /**
-     * Returns id of the quorum leader.
+     * Returns id of the active controller/quorum leader.
      **/
     Future<Integer> quorumLeaderId() {
-        LOGGER.debugCr(reconciliation, "Determining the controller quorum leader id");
+        LOGGER.debugCr(reconciliation, "Determining the active controller");
         return describeMetadataQuorum().map(QuorumInfo::leaderId).recover(error -> {
-            LOGGER.warnCr(reconciliation, "Error determining the controller quorum leader id", error);
+            LOGGER.warnCr(reconciliation, "Error determining the active controller", error);
             return Future.failedFuture(error);
         });
     }
