@@ -1,7 +1,6 @@
 // Module included in the following assemblies:
 //
 // overview/assembly-overview-components.adoc
-// assembly-using-the-cluster-operator.adoc
 
 [id='overview-components-cluster-operator-{context}']
 = Cluster Operator
@@ -31,11 +30,6 @@ The Cluster Operator can also deploy the following Strimzi operators through con
 * User Operator to provide operator-style user management through `KafkaUser` custom resources
 
 The Topic Operator and User Operator function within the Entity Operator on deployment.
-
-You can use the Cluster Operator with a deployment of Strimzi Drain Cleaner to help with pod evictions.
-By deploying the Strimzi Drain Cleaner, you can use the Cluster Operator to move Kafka pods instead of Kubernetes.
-Strimzi Drain Cleaner annotates pods being evicted with a rolling update annotation.
-The annotation informs the Cluster Operator to perform the rolling update.
 
 .Example architecture for the Cluster Operator
 

@@ -1,13 +1,14 @@
 // Module included in the following assemblies:
 //
 // overview/assembly-overview-components.adoc
-// assembly-using-the-user-operator.adoc
 
 [id='overview-concepts-user-operator-{context}']
 = User Operator
 
 [role="_abstract"]
 The User Operator provides a way of managing users in a Kafka cluster through `KafkaUser` resources.
+The Cluster Operator can deploy the User Operator as part of the *Entity Operator* configuration at the same time as a Kafka cluster.
+The operator can also be deployed standalone to help manage users for Kafka clusters not operated by Strimzi.
 
 The User Operator manages Kafka users for a Kafka cluster by watching for `KafkaUser` resources that describe Kafka users,
 and ensuring that they are configured properly in the Kafka cluster.

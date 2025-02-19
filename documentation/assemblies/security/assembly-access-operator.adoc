@@ -7,9 +7,12 @@
 
 [role="_abstract"]
 The Strimzi Access Operator is an optional feature that simplifies the sharing of Kafka connection information and credentials between namespaces
-
 The Access Operator is deployed separately and manages the distribution of connection details, which are stored as a `Secret` resource. 
 The secret contains cluster connection details and optional user credentials, and can be referenced by applications across different namespaces.
+
+The `KafkaAccess` resource configures Kafka cluster connection information and credentials. 
+When you create, modify, or delete connection information using a `KafkaAccess` resource, the Access Operator updates a service binding secret. 
+This secret stores the details in multiple formats, allowing applications across different namespaces to connect to the clusters.
 
 //Procedure for deployment of Access Operator
 include::../../modules/deploying/proc-deploy-access-operator.adoc[leveloffset=+1]

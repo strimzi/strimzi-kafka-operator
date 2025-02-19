@@ -1,0 +1,16 @@
+// Module included in the following assemblies:
+//
+// overview/assembly-overview-components.adoc
+
+[id='overview-concepts-drain-cleaner-{context}']
+= Drain Cleaner
+
+[role="_abstract"]
+If you are using the Cluster Operator to manage your Kafka cluster, you can deploy and use the Drain Cleaner to streamline the process of moving Kafka pods from Kubernetes nodes scheduled for maintenance.
+
+By deploying the Strimzi Drain Cleaner, you can use the Cluster Operator to move Kafka pods instead of Kubernetes. 
+Strimzi Drain Cleaner annotates pods being evicted with a rolling update annotation. 
+The annotation informs the Cluster Operator to perform the rolling update.
+
+Drain Cleaner ensures that no partition replicas become under-replicated during node draining, maintaining data availability and fault tolerance. 
+This controlled approach minimizes potential disruptions to your Kafka cluster when draining pods.   
