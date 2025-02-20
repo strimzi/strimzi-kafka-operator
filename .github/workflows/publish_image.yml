@@ -3,8 +3,11 @@ name: Build and Push Strimzi Docker Image
 on:
   push:
     branches:
-      - connect_to_external_zookeeper
+      - main
   pull_request:
+    branches:
+      - '**'
+
 
 jobs:
   build:
