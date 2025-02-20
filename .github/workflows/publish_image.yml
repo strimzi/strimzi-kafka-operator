@@ -1,0 +1,53 @@
+name: Build and Push Strimzi Docker Image
+
+on:
+  push:
+    branches:
+      - connect_to_external_zookeeper
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: maven
+
+      # Setup Maven cache
+      - name: Cache local Maven repository
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Build with Maven
+        run: mvn -B -V -e -Dfindbugs.skip -Dcheckstyle.skip -Dpmd.skip=true -Denforcer.skip -Dmaven.javadoc.skip -DskipTests -Dmaven.test.skip.exec -Dlicense.skip=true -Drat.skip=true clean install
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker Image using Make
+        run: make docker-build
+
+      - name: Tag and Push Docker Image
+        run: |
+          IMAGE_NAME="mkkooli988/strimzi"
+          IMAGE_TAG=$(git rev-parse --short HEAD)
+          
+          docker tag $IMAGE_NAME:latest $IMAGE_NAME:$IMAGE_TAG
+          docker tag $IMAGE_NAME:latest $IMAGE_NAME:latest
+          
+          docker push $IMAGE_NAME:$IMAGE_TAG
+          docker push $IMAGE_NAME:latest
