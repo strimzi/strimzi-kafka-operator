@@ -12,15 +12,17 @@ clean:
 # COPYed in the Dockerfile, so can delete tmp on exit
 .INTERMEDIATE: tmp
 
-.topic-operator.tmp: $(topic_operator_dist)
-	test -d tmp || mkdir tmp
-	unzip -qo $(topic_operator_dist) -d tmp
-	touch .topic-operator.tmp
+# TODO un-comment if needed in the future
+# .topic-operator.tmp: $(topic_operator_dist)
+# 	test -d tmp || mkdir tmp
+# 	unzip -qo $(topic_operator_dist) -d tmp
+# 	touch .topic-operator.tmp
 
-.user-operator.tmp: $(user_operator_dist)
-	test -d tmp || mkdir tmp
-	unzip -qo $(user_operator_dist) -d tmp
-	touch .user-operator.tmp
+# TODO un-comment if needed in the future
+# .user-operator.tmp: $(user_operator_dist)
+# 	test -d tmp || mkdir tmp
+# 	unzip -qo $(user_operator_dist) -d tmp
+# 	touch .user-operator.tmp
 
 .kafka-init.tmp: $(kafka_init_dist)
 	test -d tmp || mkdir tmp
@@ -32,7 +34,8 @@ clean:
 	unzip -qo $(cluster_operator_dist) -d tmp
 	touch .cluster-operator.tmp
 
-docker_build: .topic-operator.tmp .user-operator.tmp .kafka-init.tmp .cluster-operator.tmp docker_build_default
+# TODO add .topic-operator.tmp .user-operator.tmp if needed in the future
+docker_build: .kafka-init.tmp .cluster-operator.tmp docker_build_default
 	# Pull dependencies first
 
 include ../../Makefile.docker
