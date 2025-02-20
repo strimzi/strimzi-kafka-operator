@@ -16,6 +16,7 @@ For more information about the build process, see [Dev guide document](DEV_GUIDE
 - [Running single test class](#running-single-test-class)
 - [Skip Teardown](#skip-teardown)
 - [Testing-farm](../systemtest/tmt/README.md)
+- [Running tests with custom images](#running-tests-with-custom-images)
 - [Performance testing](#performance-testing)
 
 <!-- /TOC -->
@@ -448,6 +449,45 @@ spec:
 
 Now you can efficiently run OLM tests.
 
+## Running tests with custom images
+
+Running STs with custom images for operator, Kafka, and other components is possible using few ways.
+
+### Bundle installation (using YAML files)
+
+In case that you want to run tests with Bundle installation type (which is the default), you can do two things:
+
+1. Update the `packaging/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` file for everything related to the Cluster Operator.
+   In case that you have also custom image for DrainCleaner, you should update `packaging/install/drain-cleaner/kubernetes/060-Deployment.yaml`
+   (currently we are picking everything from the `kubernetes` part, even if you are running on OCP for example). In both you can update each of the images you
+   have built. This is useful in case that you built just operator image, you can change only the references of operator image (and you can again pick where you need it to be changed).
+2. Set `DOCKER_REGISTRY`, `DOCKER_ORG` and `DOCKER_TAG` which will change all the images inside `packaging/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml`
+   to reflect your configuration. This is useful for example in pipelines or if you are building everything. Keep in mind that Bridge image will be kept for the latest released Bridge
+   available in our official Quay.io Strimzi repository. These envs are not changing the DrainCleaner file! That's because, again, you are not building DrainCleaner image in this repository.
+
+**IMPORTANT**: In case that you want to use your own custom Bridge image, you need to configure the `BRIDGE_IMAGE` environment variable!
+Changes to `packaging/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` will not be reflected.
+That's because currently, the default value of `BRIDGE_IMAGE` is `latest-released`, preventing the rewrite of the image by the `DOCKER_*` environment variables
+and using the officially released Bridge image in case that this environment variable is not specified.
+
+### Helm installation
+
+Similarly to Bundle installation type, you can do two things:
+
+1. Update the `packaging/helm-charts/helm3/strimzi-kafka-operator/values.yaml` where you can configure each image separately.
+   In STs we are configuring `defaultImageRegistry`, `defaultImageRepository`, and `defaultImageTag` to point on official images from Strimzi.
+   So the values are `quay.io`, `strimzi`, `latest`. **Do not update these fields, as they will be overwritten to these defaults.**
+2. Set `DOCKER_REGISTRY`, `DOCKER_ORG` and `DOCKER_TAG` which will change `defaultImageRegistry`, `defaultImageRepository`, and `defaultImageTag`.
+   Again, this applies to **all of the images** but the Bridge image, which defaults to the official image supported by Strimzi.
+
+**IMPORTANT**: Same as for Bundle installation, in case that you want to use custom Bridge image, please use `BRIDGE_IMAGE` environment variable.
+Changes to the `values.yaml` will not be reflected and will be overwritten by the official Bridge image supported by Strimzi.
+
+### OLM installation
+
+For custom images inside OLM and running the tests with OLM installation please refer to [Testing Cluster Operator deployment via OLM section](#testing-cluster-operator-deployment-via-olm)
+and to environment variables with `OLM_` prefix.
+
 ## Performance Testing
 
 ### Overview 
@@ -535,41 +575,3 @@ To run performance tests in Jenkins, execute them as standard system tests e.g.,
 ```
 @strimzi-ci run tests --profile=performance --testcase=TopicOperatorScalabilityPerformance`
 ```
-## Running tests with custom images
-
-Running STs with custom images for operator, Kafka, and other components is possible using few ways.
-
-### Bundle installation (using YAML files)
-
-In case that you want to run tests with Bundle installation type (which is the default), you can do two things:
-
-1. Update the `packaging/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` file for everything related to the Cluster Operator.
-   In case that you have also custom image for DrainCleaner, you should update `packaging/install/drain-cleaner/kubernetes/060-Deployment.yaml` 
-   (currently we are picking everything from the `kubernetes` part, even if you are running on OCP for example). In both you can update each of the images you
-   have built. This is useful in case that you built just operator image, you can change only the references of operator image (and you can again pick where you need it to be changed).
-2. Set `DOCKER_REGISTRY`, `DOCKER_ORG` and `DOCKER_TAG` which will change all the images inside `packaging/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml`
-   to reflect your configuration. This is useful for example in pipelines or if you are building everything. Keep in mind that Bridge image will be kept for the latest released Bridge
-   available in our official Quay.io Strimzi repository. These envs are not changing the DrainCleaner file! That's because, again, you are not building DrainCleaner image in this repository.
-
-**IMPORTANT**: In case that you want to use your own custom Bridge image, you need to configure the `BRIDGE_IMAGE` environment variable!
-Changes to `packaging/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` will not be reflected.
-That's because currently, the default value of `BRIDGE_IMAGE` is `latest-released`, preventing the rewrite of the image by the `DOCKER_*` environment variables
-and using the officially released Bridge image in case that this environment variable is not specified.
-
-### Helm installation
-
-Similarly to Bundle installation type, you can do two things:
-
-1. Update the `packaging/helm-charts/helm3/strimzi-kafka-operator/values.yaml` where you can configure each image separately. 
-   In STs we are configuring `defaultImageRegistry`, `defaultImageRepository`, and `defaultImageTag` to point on official images from Strimzi.
-   So the values are `quay.io`, `strimzi`, `latest`. **Do not update these fields, as they will be overwritten to these defaults.**
-2. Set `DOCKER_REGISTRY`, `DOCKER_ORG` and `DOCKER_TAG` which will change `defaultImageRegistry`, `defaultImageRepository`, and `defaultImageTag`.
-   Again, this applies to **all of the images** but the Bridge image, which defaults to the official image supported by Strimzi.
-
-**IMPORTANT**: Same as for Bundle installation, in case that you want to use custom Bridge image, please use `BRIDGE_IMAGE` environment variable.
-Changes to the `values.yaml` will not be reflected and will be overwritten by the official Bridge image supported by Strimzi.
-
-### OLM installation
-
-For custom images inside OLM and running the tests with OLM installation please refer to [Testing Cluster Operator deployment via OLM section](#testing-cluster-operator-deployment-via-olm)
-and to environment variables with `OLM_` prefix.
