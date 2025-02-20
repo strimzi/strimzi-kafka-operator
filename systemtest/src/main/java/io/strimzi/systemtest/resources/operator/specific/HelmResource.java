@@ -78,8 +78,8 @@ public class HelmResource implements SpecificResourceType {
             // in case that the image has correct value, we can configure the values
             if (matcher.matches()) {
                 bridgeRegistry = Optional.ofNullable(matcher.group("registry")).orElse(bridgeRegistry);
-                bridgeRepository = Optional.ofNullable(matcher.group("repository")).orElse(bridgeRepository);
-                bridgeName = Optional.ofNullable(matcher.group("name")).orElse(bridgeName);
+                bridgeRepository = Optional.ofNullable(matcher.group("org")).orElse(bridgeRepository);
+                bridgeName = Optional.ofNullable(matcher.group("image")).orElse(bridgeName);
                 bridgeTag = Optional.ofNullable(matcher.group("tag")).orElse(bridgeTag);
             }
         }

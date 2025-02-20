@@ -66,8 +66,8 @@ public class StUtils {
 
     public static final Pattern IMAGE_PATTERN_FULL_PATH = Pattern.compile(
         "^(?:(?<registry>[a-zA-Z0-9.-]+(?::\\d+)?)/)?" +              // Group for registry (and port)
-        "(?<repository>[a-z0-9][a-z0-9._-]*(?:/[a-z0-9._-]+)*)/" +    // Full repository path
-        "(?<name>[a-zA-Z0-9._-]+)" +                                  // Name of the image
+        "(?<org>[a-z0-9][a-z0-9._-]*(?:/[a-z0-9._-]+)*)/" +           // Full repository path (org)
+        "(?<image>[a-zA-Z0-9._-]+)" +                                 // Name of the image
         "(?::(?<tag>[a-zA-Z0-9._-]+))?$"                              // Tag of the image
     );
 
