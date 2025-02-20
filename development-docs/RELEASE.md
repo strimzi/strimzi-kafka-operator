@@ -140,8 +140,8 @@ Create a folder for the new release by copying the previous one and make the fol
   * `name` field by setting the new version in the operator name.
   * `customresourcedefinitions.owned` section with the CRDs descriptions, from the `install/cluster-operator` folder (within the Strimzi repo).
   * `description` section with all the Strimzi operator information already used for the release on GitHub.
-  * `install.spec.permissions` section by using the Cluster Role files from the `packaging/install/cluster-operator` (within the Strimzi repo).
-  * `deployments` section by using the Strimzi Cluster Operator Deployment YAML from the `packaging/install/cluster-operator` (within the Strimzi repo) but using the SHAs for the images.
+  * `install.spec.permissions` section by using the Cluster Role files from the `install/cluster-operator` (within the Strimzi repo).
+  * `deployments` section by using the Strimzi Cluster Operator Deployment YAML from the `install/cluster-operator` (within the Strimzi repo) but using the SHAs for the images.
   * `relatedImages` section with the same images as the step before.
   * `replaces` field by setting the old version that this new one is going to replace.
   * `version` field with the new release.
