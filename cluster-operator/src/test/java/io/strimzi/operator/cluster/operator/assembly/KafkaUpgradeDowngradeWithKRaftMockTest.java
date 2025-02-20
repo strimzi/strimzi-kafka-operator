@@ -599,7 +599,7 @@ public class KafkaUpgradeDowngradeWithKRaftMockTest {
                 })))
                 .compose(i -> {
                     // Update annotations to higher that latest known version
-                    updateVersionsInStrimziPodSet(KafkaVersionTestUtils.getHigherVersionThanLatest());
+                    updateVersionsInStrimziPodSet(KafkaVersionTestUtils.UNKNOWN_KAFKA_VERSION);
                     
                     // Downgrade Kafka
                     Kafka updatedKafka = kafkaWithVersions(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION,

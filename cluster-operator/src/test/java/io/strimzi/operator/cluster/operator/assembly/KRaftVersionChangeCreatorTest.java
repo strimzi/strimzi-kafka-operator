@@ -446,7 +446,7 @@ public class KRaftVersionChangeCreatorTest {
     
     @Test
     public void testDowngradeFromUnknownVersion(VertxTestContext context) {
-        String unknownVersion = KafkaVersionTestUtils.getHigherVersionThanLatest();
+        String unknownVersion = KafkaVersionTestUtils.UNKNOWN_KAFKA_VERSION;
         KRaftVersionChangeCreator vcc = mockVersionChangeCreator(
                 mockKafka(VERSIONS.version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION).version(), VERSIONS.version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION).metadataVersion(), VERSIONS.version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION).metadataVersion()),
                 mockRos(mockUniformPods(unknownVersion))

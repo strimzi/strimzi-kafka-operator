@@ -43,6 +43,8 @@ public class KafkaVersionTestUtils {
     public static final String DEFAULT_KAFKA_VERSION = LATEST_KAFKA_VERSION;
     public static final String DEFAULT_KAFKA_IMAGE = LATEST_KAFKA_IMAGE;
     public static final String DEFAULT_KAFKA_CONNECT_IMAGE = LATEST_KAFKA_CONNECT_IMAGE;
+    
+    public static final String UNKNOWN_KAFKA_VERSION = "99.0.0";
 
     public static final KafkaVersionChange DEFAULT_KRAFT_VERSION_CHANGE = new KafkaVersionChange(getKafkaVersionLookup().defaultVersion(), getKafkaVersionLookup().defaultVersion(), null, null, getKafkaVersionLookup().defaultVersion().metadataVersion());
 
@@ -93,12 +95,5 @@ public class KafkaVersionTestUtils {
 
     public static KafkaVersion getLatestVersion() {
         return getKafkaVersionLookup().version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
-    }
-    
-    public static String getHigherVersionThanLatest() {
-        String[] parsedVersion = LATEST_KAFKA_VERSION.split("\\.");
-        int incrementedMinorVersion = Integer.parseInt(parsedVersion[1]) + 1;
-        parsedVersion[1] = Integer.toString(incrementedMinorVersion);
-        return String.join(".", parsedVersion);  
     }
 }
