@@ -167,7 +167,9 @@
         <valid4j.version>1.1</valid4j.version>
         <javax.json.version>1.1.4</javax.json.version>
         <bouncycastle.version>1.78.1</bouncycastle.version>
-        <kindcontainer.version>1.4.8</kindcontainer.version>
+        <kindcontainer.version>1.4.9</kindcontainer.version>
+        <testcontainer.version>1.20.1</testcontainer.version>
+        <docker-java.version>3.4.0</docker-java.version>
         <junit4.version>4.13.2</junit4.version>
         <skodjob.test-frame.version>0.8.0</skodjob.test-frame.version>
         <skodjob-doc.version>0.3.0</skodjob-doc.version>
@@ -833,6 +835,23 @@
                 <artifactId>test-docs-generator-maven-plugin</artifactId>
                 <version>${skodjob-doc.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <!-- TestContainer dependency is needed at compile time by MockKube -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${testcontainer.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>toxiproxy</artifactId>
+                <version>${testcontainer.version}</version>
+            </dependency>
+            <!-- Needed to align Java Docker API version between different TestContainer implementations -->
+            <dependency>
+                <groupId> com.github.docker-java</groupId>
+                <artifactId>docker-java-api</artifactId>
+                <version>${docker-java.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
