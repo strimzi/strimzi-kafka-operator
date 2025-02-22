@@ -82,8 +82,6 @@ public class KafkaVersionsST extends AbstractST {
                 .editOrNewKafka()
                     .withVersion(testKafkaVersion.version())
                     .addToConfig("auto.create.topics.enable", "true")
-                    .addToConfig("inter.broker.protocol.version", testKafkaVersion.protocolVersion())
-                    .addToConfig("log.message.format.version", testKafkaVersion.messageVersion())
                     .withNewKafkaAuthorizationSimple()
                     .endKafkaAuthorizationSimple()
                     .withListeners(

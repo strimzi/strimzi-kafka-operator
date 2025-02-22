@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -394,16 +393,6 @@ public class KafkaUtils {
             () -> LOGGER.info(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(kafkaClusterName).get()));
     }
 
-    public static String getKafkaTlsListenerCaCertName(String namespaceName, String clusterName, String listenerName) {
-        List<GenericKafkaListener> listeners = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getKafka().getListeners();
-
-        GenericKafkaListener tlsListener = listenerName == null || listenerName.isEmpty() ?
-            listeners.stream().filter(listener -> TestConstants.TLS_LISTENER_DEFAULT_NAME.equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new) :
-            listeners.stream().filter(listener -> listenerName.equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new);
-        return tlsListener.getConfiguration() == null ?
-            KafkaResources.clusterCaCertificateSecretName(clusterName) : tlsListener.getConfiguration().getBrokerCertChainAndKey().getSecretName();
-    }
-
     public static String getKafkaExternalListenerCaCertName(String namespaceName, String clusterName, String listenerName) {
         List<GenericKafkaListener> listeners = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getKafka().getListeners();
 
@@ -419,36 +408,6 @@ public class KafkaUtils {
             } else {
                 return KafkaResources.clusterCaCertificateSecretName(clusterName);
             }
-        }
-    }
-
-    public static String changeOrRemoveKafkaVersion(File file, String version) {
-        return changeOrRemoveKafkaConfiguration(file, version, null, null);
-    }
-
-    public static String changeOrRemoveKafkaConfiguration(File file, String version, String logMessageFormat, String interBrokerProtocol) {
-        YAMLMapper mapper = new YAMLMapper();
-        try {
-            JsonNode node = mapper.readTree(file);
-            ObjectNode kafkaNode = (ObjectNode) node.at("/spec/kafka");
-            if (version == null) {
-                kafkaNode.remove("version");
-                ((ObjectNode) kafkaNode.get("config")).remove("log.message.format.version");
-                ((ObjectNode) kafkaNode.get("config")).remove("inter.broker.protocol.version");
-            } else if (!version.equals("")) {
-                kafkaNode.put("version", version);
-                ((ObjectNode) kafkaNode.get("config")).put("log.message.format.version", TestKafkaVersion.getSpecificVersion(version).messageVersion());
-                ((ObjectNode) kafkaNode.get("config")).put("inter.broker.protocol.version", TestKafkaVersion.getSpecificVersion(version).protocolVersion());
-            }
-            if (logMessageFormat != null) {
-                ((ObjectNode) kafkaNode.get("config")).put("log.message.format.version", logMessageFormat);
-            }
-            if (interBrokerProtocol != null) {
-                ((ObjectNode) kafkaNode.get("config")).put("inter.broker.protocol.version", interBrokerProtocol);
-            }
-            return mapper.writeValueAsString(node);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -481,7 +440,7 @@ public class KafkaUtils {
                 kafkaNode.put("version", version);
 
                 if (metadataVersionFieldSupported) {
-                    kafkaNode.put("metadataVersion", TestKafkaVersion.getSpecificVersion(version).messageVersion());
+                    kafkaNode.put("metadataVersion", TestKafkaVersion.getSpecificVersion(version).metadataVersion());
                 }
             }
 

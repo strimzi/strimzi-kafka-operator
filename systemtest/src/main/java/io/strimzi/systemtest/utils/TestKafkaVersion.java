@@ -50,12 +50,6 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
     @JsonProperty("version")
     String version;
 
-    @JsonProperty("protocol")
-    String protocolVersion;
-
-    @JsonProperty("format")
-    String messageVersion;
-
     @JsonProperty("metadata")
     String metadataVersion;
 
@@ -69,8 +63,7 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
     public String toString() {
         return "KafkaVersion{" +
                 "version='" + version + '\'' +
-                ", protocolVersion='" + protocolVersion + '\'' +
-                ", messageVersion='" + messageVersion + '\'' +
+                ", metadataVersion='" + metadataVersion + '\'' +
                 ", isDefault=" + isDefault +
                 ", isSupported=" + isSupported +
                 '}';
@@ -78,14 +71,6 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
 
     public String version() {
         return version;
-    }
-
-    public String protocolVersion() {
-        return protocolVersion;
-    }
-
-    public String messageVersion() {
-        return messageVersion;
     }
 
     public String metadataVersion() {
@@ -185,10 +170,6 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
      */
     public static Map<String, TestKafkaVersion> getKafkaVersionsInMap() {
         return kafkaVersions.stream().collect(Collectors.toMap(TestKafkaVersion::version, i -> i));
-    }
-
-    public static boolean containsVersion(String kafkaVersion) {
-        return kafkaVersions.stream().map(item -> item.version()).collect(Collectors.toList()).contains(kafkaVersion);
     }
 
     public static String getDefaultSupportedKafkaVersion() {

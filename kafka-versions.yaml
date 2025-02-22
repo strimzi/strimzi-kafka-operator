@@ -19,349 +19,229 @@
 #   <supported> when `true` this version is currently supported by the operator. Unsupported versions are kept for historical reasons.
 
 - version: 2.1.0
-  format: 2.1
-  protocol: 2.1
-  zookeeper: 3.4.13
   supported: false
   default: false
 - version: 2.1.1
-  format: 2.1
-  protocol: 2.1
-  zookeeper: 3.4.13
   supported: false
   default: false
 - version: 2.2.0
-  format: 2.2
-  protocol: 2.2
-  zookeeper: 3.4.13
   supported: false
   default: false
 - version: 2.2.1
-  format: 2.2
-  protocol: 2.2
-  zookeeper: 3.4.13
   supported: false
   default: false
 - version: 2.3.0
-  format: 2.3
-  protocol: 2.3
-  zookeeper: 3.4.14
   supported: false
   default: false
 - version: 2.3.1
-  format: 2.3
-  protocol: 2.3
-  zookeeper: 3.4.14
   supported: false
   default: false
 - version: 2.4.0
-  format: 2.4
-  protocol: 2.4
-  zookeeper: 3.5.6
   supported: false
   default: false
 - version: 2.4.1
-  format: 2.4
-  protocol: 2.4
-  zookeeper: 3.5.7
   supported: false
   default: false
 - version: 2.5.0
-  format: 2.5
-  protocol: 2.5
   url: https://archive.apache.org/dist/kafka/2.5.0/kafka_2.12-2.5.0.tgz
   checksum: 447A7057BCD9FACA98B6F4807BD6019EF73EEE90EFDC1E7B10005F669E2537A8A190CB8B9C9F4C20DB1D95B13D0F0487E9CC560D0759532058439CE7F722C7CD
-  zookeeper: 3.5.7
   third-party-libs: 2.5.x
   supported: false
   default: false
 - version: 2.5.1
-  format: 2.5
-  protocol: 2.5
   url: https://archive.apache.org/dist/kafka/2.5.1/kafka_2.12-2.5.1.tgz
   checksum: 91F96F28C016BDAA3FE025F87ACE188417A1E594C8E32B7D23A104AA390BC25F5DB5897E23CCCF00EA7EDE3AC20B3028C10363EBE99DCBD7DB2CF6237EE7553A
-  zookeeper: 3.5.8
   third-party-libs: 2.5.x
   supported: false
   default: false
 - version: 2.6.0
-  format: 2.6
-  protocol: 2.6
   url: https://archive.apache.org/dist/kafka/2.6.0/kafka_2.12-2.6.0.tgz
   checksum: 022AB51605DFFB8A0E4522DF297F02F4C5E488696520BB38DA8E8E70457C0B2696A47D7AD39A86389B747981215B385B2659AC25B3D43A6093AF13239723560D
-  zookeeper: 3.5.8
   third-party-libs: 2.6.x
   supported: false
   default: false
 - version: 2.6.1
-  format: 2.6
-  protocol: 2.6
   url: https://archive.apache.org/dist/kafka/2.6.1/kafka_2.12-2.6.1.tgz
   checksum: 105BF29E4BED9F1B7A7A3CAADF016DF8AA774F6F509E3606529F8231EA4CAB89C38236C58BE9C2E9BD3C52C2917892EA5D3A5EC0BD94BD8A5F7257522A5AF4DB
-  zookeeper: 3.5.8
   third-party-libs: 2.6.x
   supported: false
   default: false
 - version: 2.6.2
-  format: 2.6
-  protocol: 2.6
   url: https://archive.apache.org/dist/kafka/2.6.2/kafka_2.12-2.6.2.tgz
   checksum: 70F992DFAB02D1E727E352124D53F89B096868E738DFC50563890EA394ADFE056B132BDC8BAD70BDD6CE48B0C7561CDB33CC50D56586F09BAD96FF699A054F85
-  zookeeper: 3.5.9
   third-party-libs: 2.6.x
   supported: false
   default: false
 - version: 2.7.0
-  format: 2.7
-  protocol: 2.7
   url: https://archive.apache.org/dist/kafka/2.7.0/kafka_2.13-2.7.0.tgz
   checksum: F3DD1FD88766D9150D3D395B285BFA75F5B89A835822381490C8428E6E568889054DDB5FADA1EB63613A6441989151BC7C7D6CDE16A871C6674B909C4EDD4E28
-  zookeeper: 3.5.8
   third-party-libs: 2.7.x
   supported: false
   default: false
 - version: 2.7.1
-  format: 2.7
-  protocol: 2.7
   url: https://archive.apache.org/dist/kafka/2.7.1/kafka_2.13-2.7.1.tgz
   checksum: A1FC222284E3E1B538AB7FBC9205C735A2E8B31D84EE9F8D5CCC84F6FD48B885591899EEA538C909A26676C9C1F44520CC56E6748C4632E23B8A5AF0B788B48A
-  zookeeper: 3.5.9
   third-party-libs: 2.7.x
   supported: false
   default: false
 - version: 2.8.0
-  format: 2.8
-  protocol: 2.8
   url: https://archive.apache.org/dist/kafka/2.8.0/kafka_2.13-2.8.0.tgz
   checksum: 3C49DCA1147A0A249DD88E089F40AF31A67B8207ED2D9E2294FA9A6D41F5ED0B006943CD60D8E30D7E69D760D398F299CAFCD68B6ED7BEDF9F93D1B7A9E8C487
-  zookeeper: 3.5.9
   third-party-libs: 2.8.x
   supported: false
   default: false
 - version: 2.8.1
-  format: 2.8
-  protocol: 2.8
   url: https://archive.apache.org/dist/kafka/2.8.1/kafka_2.13-2.8.1.tgz
   checksum: 91FCD1061247AD0DDB63FA2B5C0251EE0E58E60CC9E1A3EBE2E84E9A31872448A36622DD15868DE2C6D3F7E26020A8C61477BC764E2FB6776A25E4344EB8892D
-  zookeeper: 3.5.9
   third-party-libs: 2.8.x
   supported: false
   default: false
 - version: 3.0.0
-  format: 3.0
-  protocol: 3.0
   url: https://archive.apache.org/dist/kafka/3.0.0/kafka_2.13-3.0.0.tgz
   checksum: 86CDEB04AF123399858D03431E9777948C1C40EC0D843966CF9BD90B8235B47EBBB5CB96D1F0660710B9286DA86BBB5EE65E21E757606F5A1E67F970AE5CF57C
-  zookeeper: 3.6.3
   third-party-libs: 3.0.x
   supported: false
   default: false
 - version: 3.0.1
-  format: 3.0
-  protocol: 3.0
   url: https://archive.apache.org/dist/kafka/3.0.1/kafka_2.13-3.0.1.tgz
   checksum: D949FA4BE7B601A9B482AE1C7861135A5DA007362C4C1C9C218BDCA94C45E918527E56738361AEDC6B6DFB7ABF02B1AA8110C7BC622CC2379B8A2EE557E5756F
-  zookeeper: 3.6.3
   third-party-libs: 3.0.x
   supported: false
   default: false
 - version: 3.1.0
-  format: 3.1
-  protocol: 3.1
   url: https://archive.apache.org/dist/kafka/3.1.0/kafka_2.13-3.1.0.tgz
   checksum: 5954C1CF38187134A6E0A21520CBEF5CD5320A3E9290E630C3895990E892219917D911FABBC64DA5DB17BCAA940B8277C23344B50F2FF4256EACA78116E9FDC9
-  zookeeper: 3.6.3
   third-party-libs: 3.1.x
   supported: false
   default: false
 - version: 3.1.1
-  format: 3.1
-  protocol: 3.1
   url: https://archive.apache.org/dist/kafka/3.1.1/kafka_2.13-3.1.1.tgz
   checksum: 5EC72EE76AD14997763F2654ECEF0390FD9628413C287619B734F44193252950D412DEBA684AAE5147AC844A88D9EF10EEFC0FFEB14435F2E00347EF946AA5D6
-  zookeeper: 3.6.3
   third-party-libs: 3.1.x
   supported: false
   default: false
 - version: 3.1.2
-  format: 3.1
-  protocol: 3.1
   url: https://archive.apache.org/dist/kafka/3.1.2/kafka_2.13-3.1.2.tgz
   checksum: EC5955BD9BE0FFE15ADF84EF428F48D341B5393A1E4CBB9D7F80EC4062FF57A28A38D575E19BC0B40AF4143164BB5126721844F42DCE8E70516FC30348C57F95
-  zookeeper: 3.6.3
   third-party-libs: 3.1.x
   supported: false
   default: false
 - version: 3.2.0
-  format: 3.2
-  protocol: 3.2
   url: https://archive.apache.org/dist/kafka/3.2.0/kafka_2.13-3.2.0.tgz
   checksum: 736A129823B058DC10788D0893BDE47B6F39B9E4972F9EAC2D5C9E85E51E477344C6F1E1EBD126CE34D5FD430EB07E55FDD60D60CB541F1D48655C0EBC0A4778
-  zookeeper: 3.6.3
   third-party-libs: 3.2.x
   supported: false
   default: false
 - version: 3.2.1
-  format: 3.2
-  protocol: 3.2
   url: https://archive.apache.org/dist/kafka/3.2.1/kafka_2.13-3.2.1.tgz
   checksum: 9B7EE73C9C088E2B1D15685CD1330546054BCF1F025F4825FADCCD5076763230229480D87900CA4A8317CD01A36BEC1082FCADFAB7D220A415787E1BA2E3C9CF
-  zookeeper: 3.6.3
   third-party-libs: 3.2.x
   supported: false
   default: false
 - version: 3.2.3
-  format: 3.2
-  protocol: 3.2
   url: https://archive.apache.org/dist/kafka/3.2.3/kafka_2.13-3.2.3.tgz
   checksum: 4A57D69F8D3B5158DDCA9C64AC366C2975CA55F4C2EF02CD3B122E127016AD1A5AA1DE92E7E2F392FDC3B57AABE75D4631373D77A3A5958C28D911F4034A136F
-  zookeeper: 3.6.3
   third-party-libs: 3.2.3 # Kafka 3.2.3 uses a separate 3rd party libs directory because it uses Jackson 2.13 rather than 2.12 used by previous Kafka 3.2.x versions
   supported: false
   default: false
 - version: 3.3.1
-  format: 3.3
-  protocol: 3.3
   url: https://archive.apache.org/dist/kafka/3.3.1/kafka_2.13-3.3.1.tgz
   checksum: D14D9CC97D1702649B33378F38060C4A6220850A3D7182D1AF20E905CB98728E51F2AEEC63121F5773A389D6B66891B7508E5D23584DD1A4E424825E3D54E3E0
-  zookeeper: 3.6.3
   third-party-libs: 3.3.x
   supported: false
   default: false
 - version: 3.3.2
-  format: 3.3
-  protocol: 3.3
   url: https://archive.apache.org/dist/kafka/3.3.2/kafka_2.13-3.3.2.tgz
   checksum: F56657105A67F6195C1D4795B5FB4A00FC5E2F5CCE061D7F7A504063778187B325C6FBE51D7C59F57CD7EF323A37D4C2C780C27A5609A2008852CBFA944287B3
-  zookeeper: 3.6.3
   third-party-libs: 3.3.x
   supported: false
   default: false
 - version: 3.4.0
-  format: 3.4
-  protocol: 3.4
   url: https://archive.apache.org/dist/kafka/3.4.0/kafka_2.13-3.4.0.tgz
   checksum: 2C405149C065627CE2125088DFCCE0A4DC23AEBAA72C1157736D5829CB5CBEF273C0915EC55D2D8BA38E5E0524F0720F43E07D7D677439CD2AC7BEA618CAA65B
-  zookeeper: 3.6.3
   third-party-libs: 3.4.x
   supported: false
   default: false
 - version: 3.4.1
-  format: 3.4
-  protocol: 3.4
   url: https://archive.apache.org/dist/kafka/3.4.1/kafka_2.13-3.4.1.tgz
   checksum: 875308E9B0A3597EA4A1088788F4040F257C3B825730572B038EDE0FEE3BC5336559F7EF0AB4D78B9512AC71385F84698180A2026CA81F1221EF65811BED6BCE
-  zookeeper: 3.6.4
   third-party-libs: 3.4.x
   supported: false
   default: false
 - version: 3.5.0
-  format: 3.5
-  protocol: 3.5
   metadata: 3.5
   url: https://archive.apache.org/dist/kafka/3.5.0/kafka_2.13-3.5.0.tgz
   checksum: 7B79BD0844DB683C06C3491955BB183D48A47FA4639D2E241B9F4FF4060C4B70814DAC7D96BEA87DFFCA0C8AE038278C4FABF68D4EA1194228D67D9C3B1D247C
-  zookeeper: 3.6.4
   third-party-libs: 3.5.x
   supported: false
   default: false
 - version: 3.5.1
-  format: 3.5
-  protocol: 3.5
   metadata: 3.5
   url: https://archive.apache.org/dist/kafka/3.5.1/kafka_2.13-3.5.1.tgz
   checksum: B6CEB010A5FE1791843CBC53D34D35993E97E03F9518344B4B5BDF7146D0A4E866CD2D4760CAB319D8B3323A5BF53037A78FED88C9384381AEA2CD0366877763
-  zookeeper: 3.6.4
   third-party-libs: 3.5.x
   supported: false
   default: false
 - version: 3.5.2
-  format: 3.5
-  protocol: 3.5
   metadata: 3.5
   url: https://archive.apache.org/dist/kafka/3.5.2/kafka_2.13-3.5.2.tgz
   checksum: 229CCC5E3E6B3B9845F59F6E829D70711C5A5A2293F32B6BCABC37350666F874BC7D8F08130F712A1B32915205C10F2847F04908C20D5F7FDB4B62D058C9DEFE
-  zookeeper: 3.6.4
   third-party-libs: 3.5.x
   supported: false
   default: false
 - version: 3.6.0
-  format: 3.6
-  protocol: 3.6
   metadata: 3.6
   url: https://archive.apache.org/dist/kafka/3.6.0/kafka_2.13-3.6.0.tgz
   checksum: 98D20F475BCCC11EB3CF05362112C788EEA7BFC88ABDDBA66CFCFB48880D3BB97918A90D44EB7C1720527BEBCA93DD231002B5159876F6EE8B7FCD91CC1B0644
-  zookeeper: 3.8.2
   third-party-libs: 3.6.x
   supported: false
   default: false
 - version: 3.6.1
-  format: 3.6
-  protocol: 3.6
   metadata: 3.6
   url: https://archive.apache.org/dist/kafka/3.6.1/kafka_2.13-3.6.1.tgz
   checksum: 1F063CD67463DD3BB5A5E06E7A1C2278DB84BFC836A634FAC7C9A005DE66A42AC00B32F5E9BBDD22086605F73659EFD4CE5BD1185196B02A743BE0898DAAC55D
-  zookeeper: 3.8.3
   third-party-libs: 3.6.x
   supported: false
   default: false
 - version: 3.6.2
-  format: 3.6
-  protocol: 3.6
   metadata: 3.6
   url: https://archive.apache.org/dist/kafka/3.6.2/kafka_2.13-3.6.2.tgz
   checksum: E5D5935DF6E687898E71E583E8EA376275C6FBAC2E7872E78F7C55AB2528485582362E3778678600C5368384437C1DA6B3D612A748917F4B294C06EA160173EE
-  zookeeper: 3.8.4
   third-party-libs: 3.6.x
   supported: false
   default: false
 - version: 3.7.0
-  format: 3.7
-  protocol: 3.7
   metadata: 3.7
   url: https://archive.apache.org/dist/kafka/3.7.0/kafka_2.13-3.7.0.tgz
   checksum: B8679283A2D8DAB86E7C636B2C688FE9D9E64AC437241F65EF7A1733F4D26A2BD415EEFA04F09F1911373BCD2A5DBC3838C76347F68656425C09202CD290CE91
-  zookeeper: 3.8.3
   third-party-libs: 3.7.0
   supported: false
   default: false
 - version: 3.7.1
-  format: 3.7
-  protocol: 3.7
   metadata: 3.7
   url: https://archive.apache.org/dist/kafka/3.7.1/kafka_2.13-3.7.1.tgz
   checksum: 78E985235D245BA9E2951A82E723A62B8ABA8B74A2C8376F7271906AF715A36DE9142C446096F13FD4BFF3A4C10F1D080EB924E91E2256EC2DB779906FD6737D
-  zookeeper: 3.8.4
   third-party-libs: 3.7.1
   supported: false
   default: false
 - version: 3.8.0
-  format: 3.8
-  protocol: 3.8
   metadata: 3.8
   url: https://archive.apache.org/dist/kafka/3.8.0/kafka_2.13-3.8.0.tgz
   checksum: 0A33B7BE7B6FA53249BA80F9D02CDA71ED81927C160AA6EE9BE1E3D3C1C4B50466FFC905293143FD88CEAC7F5E7D8F5BEC28EF972ADDD3C459CC8B1291E738AA
-  zookeeper: 3.8.4
   third-party-libs: 3.8.x
   supported: true
   default: false
 - version: 3.8.1
-  format: 3.8
-  protocol: 3.8
   metadata: 3.8
   url: https://archive.apache.org/dist/kafka/3.8.1/kafka_2.13-3.8.1.tgz
   checksum: B43FADA353B7DCA51C0F90ACF594EC1CE06B2344C046D4059D4DEAB0615E0E3E76E92ECCDBDFA1ADAD1FBDE76C5F25E71ACD0DB013FB4B1778827448B5285EDF
-  zookeeper: 3.8.4
   third-party-libs: 3.8.x
   supported: true
   default: false
 - version: 3.9.0
-  format: 3.9
-  protocol: 3.9
   metadata: 3.9
   url: https://archive.apache.org/dist/kafka/3.9.0/kafka_2.13-3.9.0.tgz
   checksum: 5324C1F44D4C84EA469712C2CC3D2D15545C3716EDBB5353722DF9C661FCC78B031FCF07D1C4F0309C5FDB32686665DFB0CFFE55210CD3A1FE2A370538CB4E6D
-  zookeeper: 3.8.4
   third-party-libs: 3.9.x
   supported: true
   default: true
