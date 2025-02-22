@@ -28,12 +28,12 @@
 
 - fromVersion: 0.45.0
   fromExamples: strimzi-0.45.0
-  oldestKafka: 3.8.0
+  oldestKafka: 3.9.0
   fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.45.0/strimzi-0.45.0.zip
   fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.45.0/kafka-versions.yaml
   additionalTopics: 2
   imagesAfterOperations:
-    kafka: strimzi/kafka:latest-kafka-3.9.0
+    kafka: strimzi/kafka:latest-kafka-4.0.0
     topicOperator: strimzi/operator:latest
     userOperator: strimzi/operator:latest
   client:

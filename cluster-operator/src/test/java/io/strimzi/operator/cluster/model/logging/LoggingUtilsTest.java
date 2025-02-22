@@ -16,6 +16,7 @@ import io.strimzi.operator.common.model.OrderedProperties;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
+import java.util.TreeMap;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -34,12 +35,18 @@ public class LoggingUtilsTest {
         OrderedProperties logging = LoggingUtils.defaultLogConfig(Reconciliation.DUMMY_RECONCILIATION, "KafkaConnectCluster");
 
         assertThat(logging.asPairs(), is("""
-                log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
-                log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
-                log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %X{connector.context}%m (%c) [%t]%n
-                connect.root.logger.level=INFO
-                log4j.rootLogger=${connect.root.logger.level}, CONSOLE
-                log4j.logger.org.reflections=ERROR
+                name=KafkaConnectConfig
+                appender.console.type=Console
+                appender.console.name=STDOUT
+                appender.console.layout.type=PatternLayout
+                appender.console.layout.pattern=%d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
+                rootLogger.level=INFO
+                rootLogger.appenderRefs=console
+                rootLogger.appenderRef.console.ref=STDOUT
+                rootLogger.additivity=false
+                logger.reflections.name=org.reflections
+                logger.reflections.level=ERROR
+                logger.reflections.additivity=false
                 """));
     }
 
@@ -105,12 +112,18 @@ public class LoggingUtilsTest {
 
         assertThat(log4jProperties, is("""
                 # Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.
-                log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
-                log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
-                log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %X{connector.context}%m (%c) [%t]%n
-                connect.root.logger.level=INFO
-                log4j.rootLogger=${connect.root.logger.level}, CONSOLE
-                log4j.logger.org.reflections=ERROR
+                name=KafkaConnectConfig
+                appender.console.type=Console
+                appender.console.name=STDOUT
+                appender.console.layout.type=PatternLayout
+                appender.console.layout.pattern=%d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
+                rootLogger.level=INFO
+                rootLogger.appenderRefs=console
+                rootLogger.appenderRef.console.ref=STDOUT
+                rootLogger.additivity=false
+                logger.reflections.name=org.reflections
+                logger.reflections.level=ERROR
+                logger.reflections.additivity=false
                 
                 monitorInterval=30
                 """));
@@ -148,7 +161,7 @@ public class LoggingUtilsTest {
                 Reconciliation.DUMMY_RECONCILIATION,
                 new LoggingModel(
                         new KafkaConnectSpecBuilder()
-                                .withLogging(new InlineLoggingBuilder().withLoggers(Map.of("log4j.logger.org.reflections", "DEBUG", "logger.myclass.level", "TRACE")).build())
+                                .withLogging(new InlineLoggingBuilder().withLoggers(new TreeMap<>(Map.of("logger.mypackage.name", "io.mydomain.mypackage", "logger.mypackage.level", "WARN"))).build())
                                 .build(),
                         "KafkaConnectCluster",
                         true,
@@ -158,13 +171,20 @@ public class LoggingUtilsTest {
 
         assertThat(log4jProperties, is("""
                 # Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.
-                log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
-                log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
-                log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %X{connector.context}%m (%c) [%t]%n
-                connect.root.logger.level=INFO
-                log4j.rootLogger=${connect.root.logger.level}, CONSOLE
-                log4j.logger.org.reflections=DEBUG
-                logger.myclass.level=TRACE
+                name=KafkaConnectConfig
+                appender.console.type=Console
+                appender.console.name=STDOUT
+                appender.console.layout.type=PatternLayout
+                appender.console.layout.pattern=%d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
+                rootLogger.level=INFO
+                rootLogger.appenderRefs=console
+                rootLogger.appenderRef.console.ref=STDOUT
+                rootLogger.additivity=false
+                logger.reflections.name=org.reflections
+                logger.reflections.level=ERROR
+                logger.reflections.additivity=false
+                logger.mypackage.level=WARN
+                logger.mypackage.name=io.mydomain.mypackage
                 
                 monitorInterval=30
                 """));
@@ -222,22 +242,34 @@ public class LoggingUtilsTest {
                         true),
                 new ConfigMapBuilder()
                         .withData(Map.of("my-key", """
-                                log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
-                                log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
-                                log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n
-                                kafka.root.logger=INFO
-                                log4j.rootLogger=${kafka.root.logger}, CONSOLE
+                                name = KafkaConnectConfig
+
+                                appender.console.type = Console
+                                appender.console.name = STDOUT
+                                appender.console.layout.type = PatternLayout
+                                appender.console.layout.pattern = %d{HH:mm:ss} - %m%n
+                                
+                                rootLogger.level = INFO
+                                rootLogger.appenderRefs = console
+                                rootLogger.appenderRef.console.ref = STDOUT
+                                rootLogger.additivity = false
                                 """))
                         .build()
         );
 
         assertThat(log4jProperties, is("""
-                log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
-                log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
-                log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n
-                kafka.root.logger=INFO
-                log4j.rootLogger=${kafka.root.logger}, CONSOLE
-                                
+                name = KafkaConnectConfig
+
+                appender.console.type = Console
+                appender.console.name = STDOUT
+                appender.console.layout.type = PatternLayout
+                appender.console.layout.pattern = %d{HH:mm:ss} - %m%n
+                
+                rootLogger.level = INFO
+                rootLogger.appenderRefs = console
+                rootLogger.appenderRef.console.ref = STDOUT
+                rootLogger.additivity = false
+                
                 monitorInterval=30
                 """));
     }

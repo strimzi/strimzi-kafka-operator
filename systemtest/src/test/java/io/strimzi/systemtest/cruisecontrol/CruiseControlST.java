@@ -30,6 +30,7 @@ import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
@@ -50,6 +51,7 @@ import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.AdminClientUtils;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
+import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.VerificationUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -60,6 +62,7 @@ import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
@@ -866,6 +869,9 @@ public class CruiseControlST extends AbstractST {
 
     @BeforeAll
     void setUp() {
+        // Currently not supported on Kafka 4.0.0
+        Assumptions.assumeTrue(TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0);
+
         this.clusterOperator = this.clusterOperator
                 .defaultInstallation()
                 .createInstallation()
