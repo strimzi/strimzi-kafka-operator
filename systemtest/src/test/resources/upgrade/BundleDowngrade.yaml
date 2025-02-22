@@ -35,10 +35,10 @@
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    kafka: strimzi/kafka:0.45.0-kafka-3.8.0
+    kafka: strimzi/kafka:0.45.0-kafka-3.9.0
     topicOperator: strimzi/operator:0.45.0
     userOperator: strimzi/operator:0.45.0
-  deployKafkaVersion: 3.8.0
+  deployKafkaVersion: 3.9.0
   client:
     continuousClientsMessages: 400
   environmentInfo:

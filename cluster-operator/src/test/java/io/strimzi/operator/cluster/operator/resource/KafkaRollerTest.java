@@ -926,7 +926,7 @@ public class KafkaRollerTest {
                     new TlsPemIdentity(null, null),
                     adminClientProvider,
                     kafkaAgentClientProvider,
-                    brokerId -> "",
+                    brokerId -> "compression.type=gzip",
                     "",
                     KafkaVersionTestUtils.getLatestVersion(),
                     true,

@@ -27,7 +27,7 @@ public class LoggingModelTest {
         );
 
         assertThat(model.configMapKey(), is("log4j.properties"));
-        assertThat(model.getDefaultLogConfigBaseName(), is("KafkaConnectCluster"));
+        assertThat(model.getDefaultLogConfigBaseName(), is("KafkaConnectCluster.log4j1"));
         assertThat(model.isLog4j2(), is(false));
         assertThat(model.isShouldPatchLoggerAppender(), is(true));
         assertThat(model.loggingConfiguration(Reconciliation.DUMMY_RECONCILIATION, null), is("""
@@ -57,13 +57,19 @@ public class LoggingModelTest {
         assertThat(model.isShouldPatchLoggerAppender(), is(false));
         assertThat(model.loggingConfiguration(Reconciliation.DUMMY_RECONCILIATION, null), is("""
                 # Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.
-                log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
-                log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
-                log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %X{connector.context}%m (%c) [%t]%n
-                connect.root.logger.level=INFO
-                log4j.rootLogger=${connect.root.logger.level}, CONSOLE
-                log4j.logger.org.reflections=ERROR
-                                
+                name=KafkaConnectConfig
+                appender.console.type=Console
+                appender.console.name=STDOUT
+                appender.console.layout.type=PatternLayout
+                appender.console.layout.pattern=%d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
+                rootLogger.level=INFO
+                rootLogger.appenderRefs=console
+                rootLogger.appenderRef.console.ref=STDOUT
+                rootLogger.additivity=false
+                logger.reflections.name=org.reflections
+                logger.reflections.level=ERROR
+                logger.reflections.additivity=false
+                
                 monitorInterval=30
                 """));
     }

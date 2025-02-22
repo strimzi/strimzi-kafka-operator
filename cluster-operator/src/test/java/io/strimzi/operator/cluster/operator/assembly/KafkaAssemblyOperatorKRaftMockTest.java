@@ -45,6 +45,11 @@ import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.DescribeFeaturesResult;
+import org.apache.kafka.clients.admin.FeatureMetadata;
+import org.apache.kafka.clients.admin.FinalizedVersionRange;
+import org.apache.kafka.common.KafkaFuture;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -68,6 +73,8 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
@@ -835,12 +842,25 @@ public class KafkaAssemblyOperatorKRaftMockTest {
      * @param context   Test context
      */
     @Test
-    public void testReconcileWithControllerRelevantLoggingChange(VertxTestContext context) {
+    public void testReconcileWithControllerRelevantLoggingChangeWithLog4j1(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
+
+        // Mock the current metadata version to pretend we use Kafka 3.9.0 (the default mock in the supplier mocks latest Kafka)
+        Admin mockAdminClient = supplier.adminClientProvider.createAdminClient(null, null, null);
+        FinalizedVersionRange fvr = mock(FinalizedVersionRange.class);
+        when(fvr.maxVersionLevel()).thenReturn((short) 21);
+        FeatureMetadata fm = mock(FeatureMetadata.class);
+        when(fm.finalizedFeatures()).thenReturn(Map.of(KRaftMetadataManager.METADATA_VERSION_KEY, fvr));
+        DescribeFeaturesResult dfr = mock(DescribeFeaturesResult.class);
+        when(dfr.featureMetadata()).thenReturn(KafkaFuture.completedFuture(fm));
+        when(mockAdminClient.describeFeatures()).thenReturn(dfr);
+
+        Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME)
+                .edit(k -> new KafkaBuilder(k).editSpec().editKafka().withVersion("3.9.0").endKafka().endSpec().build());
 
         Map<String, String> loggingConfigurationAnnotations = new HashMap<>();
 
-        operator.reconcile(new Reconciliation("initial-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME))
+        operator.reconcile(new Reconciliation("initial-triggerX", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // Collect the configuration annotations
                     StrimziPodSet spsControllers = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(CLUSTER_NAME + "-controllers").get();

@@ -55,7 +55,7 @@ public class HealthCheckAndMetricsServerTest {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             assertThat(response.statusCode(), is(200));
             assertThat(response.headers().map().get("Content-Type").size(), is(1));
-            assertThat(response.headers().map().get("Content-Type").get(0), is("text/plain; version=0.0.4;charset=utf-8"));
+            assertThat(response.headers().map().get("Content-Type").get(0), is("text/plain; version=0.0.4; charset=UTF-8"));
             assertThat(response.body(), containsString("my_metric_total 1.0"));
         } finally {
             server.stop();

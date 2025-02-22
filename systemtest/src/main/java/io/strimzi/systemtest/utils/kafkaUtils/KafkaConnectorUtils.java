@@ -262,11 +262,13 @@ public class KafkaConnectorUtils {
         String serviceName,
         String connectorName
     ) throws JsonProcessingException {
-        final ObjectMapper mapper = new ObjectMapper();
+        String offsets = cmdKubeClient().namespace(namespaceName).execInPod(scraperPodName,
+                "curl", "-X", "GET",
+                "http://" + serviceName + ":8083/connectors/" + connectorName + "/offsets").out().trim();
+        LOGGER.info("Connector offsets: {}", offsets);
 
-        return mapper.readTree(cmdKubeClient().namespace(namespaceName).execInPod(scraperPodName,
-            "curl", "-X", "GET",
-            "http://" + serviceName + ":8083/connectors/" + connectorName + "/offsets").out().trim());
+        final ObjectMapper mapper = new ObjectMapper();
+        return mapper.readTree(offsets);
     }
 
     /**

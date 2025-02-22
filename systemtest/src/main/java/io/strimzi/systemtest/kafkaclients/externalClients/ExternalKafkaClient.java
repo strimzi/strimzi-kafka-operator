@@ -68,6 +68,7 @@ public class ExternalKafkaClient extends AbstractKafkaClient<ExternalKafkaClient
             .withClientIdConfig("producer-" + RANDOM.nextInt(Integer.MAX_VALUE));
     }
 
+    @SuppressWarnings("deprecation") // OffsetResetStrategy is deprecated
     private ConsumerProperties.ConsumerPropertiesBuilder getConsumerProperties() {
         return new ConsumerProperties.ConsumerPropertiesBuilder()
             .withNamespaceName(namespaceName)
