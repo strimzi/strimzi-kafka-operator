@@ -383,20 +383,13 @@ public class ClusterOperatorConfig {
             ImagePullPolicy imagePullPolicy = null;
 
             if (imagePullPolicyEnvVar != null) {
-                switch (imagePullPolicyEnvVar.trim().toLowerCase(Locale.ENGLISH)) {
-                    case "always":
-                        imagePullPolicy = ImagePullPolicy.ALWAYS;
-                        break;
-                    case "ifnotpresent":
-                        imagePullPolicy = ImagePullPolicy.IFNOTPRESENT;
-                        break;
-                    case "never":
-                        imagePullPolicy = ImagePullPolicy.NEVER;
-                        break;
-                    default:
-                        throw new InvalidConfigurationException(imagePullPolicyEnvVar
-                                + " is not a valid. It can only have one of the following values: Always, IfNotPresent, Never.");
-                }
+                imagePullPolicy = switch (imagePullPolicyEnvVar.trim().toLowerCase(Locale.ENGLISH)) {
+                    case "always" -> ImagePullPolicy.ALWAYS;
+                    case "ifnotpresent" -> ImagePullPolicy.IFNOTPRESENT;
+                    case "never" -> ImagePullPolicy.NEVER;
+                    default -> throw new InvalidConfigurationException(imagePullPolicyEnvVar
+                            + " is not a valid. It can only have one of the following values: Always, IfNotPresent, Never.");
+                };
             }
             return imagePullPolicy;
         };

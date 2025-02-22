@@ -413,28 +413,16 @@ public class KafkaRebalanceAssemblyOperator
                                                                          String host, CruiseControlApi apiClient,
                                                                          KafkaRebalance kafkaRebalance, KafkaRebalanceState currentState,
                                                                          AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder) {
-        switch (currentState) {
-            case New:
-                return onNew(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
-            case PendingProposal:
-                return onPendingProposal(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
-            case ProposalReady:
-                return onProposalReady(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
-            case Rebalancing:
-                return onRebalancing(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
-            case Stopped:
-                return onStop(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
-            case Ready:
-                // Rebalance Complete
-                return onReady(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
-            case ReconciliationPaused:
-                return onReconciliationPaused(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
-            case NotReady:
-                // Error case
-                return onNotReady(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
-            default:
-                return Future.failedFuture(new RuntimeException("Unexpected state " + currentState));
-        }
+        return switch (currentState) {
+            case New -> onNew(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
+            case PendingProposal -> onPendingProposal(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
+            case ProposalReady -> onProposalReady(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
+            case Rebalancing -> onRebalancing(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
+            case Stopped -> onStop(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
+            case Ready -> onReady(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
+            case ReconciliationPaused -> onReconciliationPaused(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
+            case NotReady -> onNotReady(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
+        };
     }
 
     private KafkaRebalanceStatus buildRebalanceStatusFromPreviousStatus(KafkaRebalanceStatus currentStatus, Set<Condition> validation) {
@@ -1202,21 +1190,16 @@ public class KafkaRebalanceAssemblyOperator
             rebalanceOptionsBuilder.withFullRun();
         }
 
-        Future<CruiseControlRebalanceResponse> future;
-        switch (mode) {
-            case ADD_BROKERS:
-                future = VertxUtil.completableFutureToVertxFuture(apiClient.addBroker(reconciliation, host, cruiseControlPort, ((AddBrokerOptions.AddBrokerOptionsBuilder) rebalanceOptionsBuilder).build(), null));
-                break;
-            case REMOVE_BROKERS:
-                future = VertxUtil.completableFutureToVertxFuture(apiClient.removeBroker(reconciliation, host, cruiseControlPort, ((RemoveBrokerOptions.RemoveBrokerOptionsBuilder) rebalanceOptionsBuilder).build(), null));
-                break;
-            case REMOVE_DISKS:
-                future = VertxUtil.completableFutureToVertxFuture(apiClient.removeDisks(reconciliation, host, cruiseControlPort, ((RemoveDisksOptions.RemoveDisksOptionsBuilder) rebalanceOptionsBuilder).build(), null));
-                break;
-            default:
-                future = VertxUtil.completableFutureToVertxFuture(apiClient.rebalance(reconciliation, host, cruiseControlPort, ((RebalanceOptions.RebalanceOptionsBuilder) rebalanceOptionsBuilder).build(), null));
-                break;
-        }
+        Future<CruiseControlRebalanceResponse> future = switch (mode) {
+            case ADD_BROKERS ->
+                    VertxUtil.completableFutureToVertxFuture(apiClient.addBroker(reconciliation, host, cruiseControlPort, ((AddBrokerOptions.AddBrokerOptionsBuilder) rebalanceOptionsBuilder).build(), null));
+            case REMOVE_BROKERS ->
+                    VertxUtil.completableFutureToVertxFuture(apiClient.removeBroker(reconciliation, host, cruiseControlPort, ((RemoveBrokerOptions.RemoveBrokerOptionsBuilder) rebalanceOptionsBuilder).build(), null));
+            case REMOVE_DISKS ->
+                    VertxUtil.completableFutureToVertxFuture(apiClient.removeDisks(reconciliation, host, cruiseControlPort, ((RemoveDisksOptions.RemoveDisksOptionsBuilder) rebalanceOptionsBuilder).build(), null));
+            case FULL ->
+                    VertxUtil.completableFutureToVertxFuture(apiClient.rebalance(reconciliation, host, cruiseControlPort, ((RebalanceOptions.RebalanceOptionsBuilder) rebalanceOptionsBuilder).build(), null));
+        };
         return future.map(response -> handleRebalanceResponse(reconciliation, kafkaRebalance, dryrun, response));
     }
 
