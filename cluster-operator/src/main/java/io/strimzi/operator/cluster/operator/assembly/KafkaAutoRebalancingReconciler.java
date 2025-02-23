@@ -103,16 +103,11 @@ public class KafkaAutoRebalancingReconciler {
     }
 
     private Future<Void> maybeRebalance(ScalingNodes scalingNodes) {
-        switch (kafkaAutoRebalanceStatus.getState()) {
-            case Idle:
-                return onIdle(scalingNodes);
-            case RebalanceOnScaleDown:
-                return onRebalanceOnScaleDown(scalingNodes);
-            case RebalanceOnScaleUp:
-                return onRebalanceOnScaleUp(scalingNodes);
-            default:
-                return Future.failedFuture(new RuntimeException("Unexpected state " + kafkaAutoRebalanceStatus.getState()));
-        }
+        return switch (kafkaAutoRebalanceStatus.getState()) {
+            case Idle -> onIdle(scalingNodes);
+            case RebalanceOnScaleDown -> onRebalanceOnScaleDown(scalingNodes);
+            case RebalanceOnScaleUp -> onRebalanceOnScaleUp(scalingNodes);
+        };
     }
 
     private Future<Void> onIdle(ScalingNodes scalingNodes) {

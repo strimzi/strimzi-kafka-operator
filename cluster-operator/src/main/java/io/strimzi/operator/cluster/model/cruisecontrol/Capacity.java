@@ -172,17 +172,10 @@ public class Capacity {
         LIMIT;
 
         private Quantity getQuantity(ResourceRequirements resources) {
-            Map<String, Quantity> resourceRequirement;
-            switch (this) {
-                case REQUEST:
-                    resourceRequirement = resources.getRequests();
-                    break;
-                case LIMIT:
-                    resourceRequirement = resources.getLimits();
-                    break;
-                default:
-                    resourceRequirement = null;
-            }
+            Map<String, Quantity> resourceRequirement = switch (this) {
+                case REQUEST -> resources.getRequests();
+                case LIMIT -> resources.getLimits();
+            };
             if (resourceRequirement != null) {
                 return resourceRequirement.get(RESOURCE_TYPE);
             }
