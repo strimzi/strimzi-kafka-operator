@@ -114,8 +114,11 @@ configure_podman_cgroup() {
       # Write the configuration file
       echo -e "[Service]\nDelegate=memory pids cpu cpuset" | sudo tee "$config_file"
 
-      sudo systemctl daemon-reexec
-      sudo systemctl restart podman
+      systemctl --user daemon-reexec
+      systemctl --user restart podman
+
+      # reinitialize user permissions without requiring a logout.
+      sudo systemctl restart systemd-logind
 
       echo "Podman cgroup configuration updated successfully."
     fi
