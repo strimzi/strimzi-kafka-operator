@@ -33,14 +33,11 @@ public class StrimziMetricsReporterModel implements MetricsModel {
      */
     public StrimziMetricsReporterModel(HasConfigurableMetrics spec) {
         if (spec.getMetricsConfig() != null) {
-            if (spec.getMetricsConfig() instanceof StrimziMetricsReporter config) {
-                validate(config);
-                this.isEnabled = true;
-                this.allowList = config.getValues() != null && config.getValues().getAllowList() != null
-                        ? config.getValues().getAllowList() : null;
-            } else {
-                throw new InvalidResourceException("Unsupported metrics type " + spec.getMetricsConfig().getType());
-            }
+            StrimziMetricsReporter config = (StrimziMetricsReporter) spec.getMetricsConfig();
+            validate(config);
+            this.isEnabled = true;
+            this.allowList = config.getValues() != null && config.getValues().getAllowList() != null
+                    ? config.getValues().getAllowList() : null;
         } else {
             this.isEnabled = false;
             this.allowList = null;
