@@ -1,0 +1,13 @@
+// Module included in the following assemblies:
+//
+// overview/assembly-overview-components.adoc
+
+[id='overview-concepts-access-operator-{context}']
+= Access Operator
+
+[role="_abstract"]
+If you are using the Cluster Operator to manage your Kafka cluster, you can deploy and use the Access Operator to manage the distribution of connection details 
+Kafka instances and Kafka users are specified in a `KafkaAccess` resource.
+Optionally, the names of the listeners used to connect to Kafka clusters can also be specified.
+When the the resource is created, a service binding `Secret` is created to store the connection details and optional user credentials.
+The secret can then be referenced by applications across different namespaces. 
