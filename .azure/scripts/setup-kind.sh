@@ -43,10 +43,10 @@ function install_kubectl {
 
 function label_node {
 	# It should work for all clusters
-	for nodeName in $($SUDO kubectl get nodes -o custom-columns=:.metadata.name --no-headers);
+	for nodeName in $(kubectl get nodes -o custom-columns=:.metadata.name --no-headers);
 	do
 		echo ${nodeName};
-		$SUDO kubectl label node ${nodeName} rack-key=zone;
+		kubectl label node ${nodeName} rack-key=zone;
 	done
 }
 
@@ -70,7 +70,7 @@ function install_kubernetes_provisioner {
 }
 
 function create_cluster_role_binding_admin {
-    $SUDO kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
+    kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
 }
 
 : '
@@ -95,6 +95,29 @@ function load_ip6_tables_module_to_kernel {
                 exit 1
             }
         fi
+    fi
+}
+
+: '
+@brief: Configures systemd to delegate cgroup controllers for Podman.
+@details: This function ensures that Podman has access to memory, pids, cpu, and cpuset cgroup controllers.
+          It creates or updates the systemd override configuration for user services, reloads systemd, and restarts Podman.
+@note: Requires sudo privileges.
+'
+configure_podman_cgroup() {
+    if is_podman; then
+      local systemd_dir="/etc/systemd/system/user@.service.d"
+      local config_file="$systemd_dir/delegate.conf"
+
+      sudo mkdir -p "$systemd_dir"
+
+      # Write the configuration file
+      echo -e "[Service]\nDelegate=memory pids cpu cpuset" | sudo tee "$config_file"
+
+      sudo systemctl daemon-reexec
+      sudo systemctl restart podman
+
+      echo "Podman cgroup configuration updated successfully."
     fi
 }
 
@@ -150,8 +173,8 @@ EOF
     fi
 
     if is_docker; then
-        echo "$docker_config" | $SUDO tee /etc/docker/daemon.json
-        $SUDO systemctl restart docker
+        echo "$docker_config" | tee /etc/docker/daemon.json
+        systemctl restart docker
     else
         # Ensure the podman_config is inserted correctly after unqualified-search-registries
         sudo awk -v config="$podman_config" '
@@ -209,14 +232,14 @@ function configure_container_runtime_networking {
     local registry_name="$1"
     local network_name="$2"
 
-    if ! $SUDO $DOCKER_CMD network inspect ${network_name} | grep -q "${registry_name}"; then
+    if ! $DOCKER_CMD network inspect ${network_name} | grep -q "${registry_name}"; then
         if is_podman; then
-            if ! $SUDO $DOCKER_CMD network exists "${network_name}"; then
-                $SUDO $DOCKER_CMD network create "${network_name}"
+            if ! $DOCKER_CMD network exists "${network_name}"; then
+                $DOCKER_CMD network create "${network_name}"
             fi
-            $SUDO $DOCKER_CMD network connect "${network_name}" "${registry_name}"
+            $DOCKER_CMD network connect "${network_name}" "${registry_name}"
         else
-            $SUDO $DOCKER_CMD network connect "${network_name}" "${registry_name}"
+            $DOCKER_CMD network connect "${network_name}" "${registry_name}"
         fi
     fi
 }
@@ -279,7 +302,7 @@ EOF
 
 
     # Create the KIND cluster
-    $SUDO kind create cluster \
+    kind create cluster \
         --image "$KIND_NODE_IMAGE" \
         --name "$KIND_CLUSTER_NAME" \
         --config=/tmp/kind-config.yaml
@@ -287,14 +310,12 @@ EOF
     echo "KIND cluster '${KIND_CLUSTER_NAME}' created successfully with IP family '${IP_FAMILY}'."
 }
 
-# if podman we use rootful (otherwise rootless)
-SUDO=$(is_podman && echo "sudo" || echo "")
-
 setup_kube_directory
 install_kubectl
 install_kubernetes_provisioner
 adjust_inotify_limits
 load_ip6_tables_module_to_kernel
+configure_podman_cgroup
 
 reg_name='kind-registry'
 reg_port='5001'
@@ -321,8 +342,8 @@ if [[ "$IP_FAMILY" = "ipv4" || "$IP_FAMILY" = "dual" ]]; then
     # See: https://github.com/containerd/containerd/blob/main/docs/hosts.md
     create_kind_cluster ${control_planes}
     # run local container registry
-    if [ "$($SUDO $DOCKER_CMD inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)" != 'true' ]; then
-        $SUDO $DOCKER_CMD run \
+    if [ "$($DOCKER_CMD inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)" != 'true' ]; then
+        $DOCKER_CMD run \
           -d --restart=always -p "${hostname}:${reg_port}:5000" --name "${reg_name}" \
           registry:2
     fi
@@ -339,10 +360,10 @@ if [[ "$IP_FAMILY" = "ipv4" || "$IP_FAMILY" = "dual" ]]; then
     # See https://kind.sigs.k8s.io/docs/user/local-registry/
     REGISTRY_DIR="/etc/containerd/certs.d/${hostname}:${reg_port}"
 
-    for node in $($SUDO kind get nodes --name "${KIND_CLUSTER_NAME}"); do
+    for node in $(kind get nodes --name "${KIND_CLUSTER_NAME}"); do
         echo "Executing command in node:${node}"
-        $SUDO $DOCKER_CMD exec "${node}" mkdir -p "${REGISTRY_DIR}"
-        cat <<EOF | $SUDO $DOCKER_CMD exec -i "${node}" cp /dev/stdin "${REGISTRY_DIR}/hosts.toml"
+        $DOCKER_CMD exec "${node}" mkdir -p "${REGISTRY_DIR}"
+        cat <<EOF | $DOCKER_CMD exec -i "${node}" cp /dev/stdin "${REGISTRY_DIR}/hosts.toml"
     [host."http://${reg_name}:5000"]
 EOF
     done
@@ -362,8 +383,8 @@ elif [[ "$IP_FAMILY" = "ipv6" ]]; then
     create_kind_cluster ${control_planes}
 
     # run local container registry
-    if [ "$($SUDO $DOCKER_CMD inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)" != 'true' ]; then
-        $SUDO $DOCKER_CMD run \
+    if [ "$($DOCKER_CMD inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)" != 'true' ]; then
+        $DOCKER_CMD run \
           -d --restart=always -p "[${ula_fixed_ipv6}::1]:${reg_port}:5000" --name "${reg_name}" \
           registry:2
     fi
@@ -372,9 +393,9 @@ elif [[ "$IP_FAMILY" = "ipv6" ]]; then
 
     # note: kind get nodes (default name `kind` and with specifying new name we have to use --name <cluster-name>
     # See https://kind.sigs.k8s.io/docs/user/local-registry/
-    for node in $($SUDO kind get nodes --name "${KIND_CLUSTER_NAME}"); do
+    for node in $(kind get nodes --name "${KIND_CLUSTER_NAME}"); do
         echo "Executing command in node:${node}"
-        cat <<EOF | $SUDO $DOCKER_CMD exec -i "${node}" cp /dev/stdin "/etc/hosts"
+        cat <<EOF | $DOCKER_CMD exec -i "${node}" cp /dev/stdin "/etc/hosts"
 ${ula_fixed_ipv6}::1    ${registry_dns}
 EOF
     done
