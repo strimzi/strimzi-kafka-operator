@@ -60,7 +60,7 @@ public class KRaftStrimziUpgradeST extends AbstractKRaftUpgradeST {
 
         LOGGER.debug("Running upgrade test from version {} to {} (FG: {} -> {})",
             fromVersion, toVersion, fgBefore, fgAfter);
-        doKafkaConnectAndKafkaConnectorUpgradeProcedure(CO_NAMESPACE, testStorage, upgradeData, upgradeKafkaVersion);
+        doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(CO_NAMESPACE, testStorage, upgradeData, upgradeKafkaVersion);
     }
 
     @IsolatedTest

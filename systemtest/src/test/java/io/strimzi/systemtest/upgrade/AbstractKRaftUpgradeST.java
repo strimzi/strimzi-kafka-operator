@@ -118,7 +118,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
     }
 
     /**
-     * Performs the Kafka Connect and Kafka Connector upgrade procedure.
+     * Performs the Kafka Connect and Kafka Connector upgrade/downgrade procedure.
      * It upgrades the Cluster Operator, Kafka Connect, and Kafka Connector while verifying each step.
      *
      * @param clusterOperatorNamespaceName Namespace of the Cluster Operator
@@ -127,7 +127,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
      * @param upgradeKafkaVersion          Kafka version details
      * @throws IOException if any I/O error occurs during the procedure
      */
-    protected void doKafkaConnectAndKafkaConnectorUpgradeProcedure(
+    protected void doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(
         final String clusterOperatorNamespaceName,
         final TestStorage testStorage,
         final BundleVersionModificationData upgradeDowngradeData,
@@ -151,64 +151,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
 
         // 6. Wait for components to roll
         maybeWaitForRollingUpdate(testStorage, upgradeKafkaVersion);
-
-        // 7. Make snapshots with KafkaConnect
         logComponentsPodImagesWithConnect(testStorage.getNamespaceName());
-
-        // 8. Upgrade Kafka
-        changeKafkaVersion(testStorage.getNamespaceName(), upgradeDowngradeData);
-        changeKafkaVersionInKafkaConnect(testStorage.getNamespaceName(), upgradeDowngradeData);
-
-        logComponentsPodImagesWithConnect(testStorage.getNamespaceName());
-        checkAllComponentsImages(testStorage.getNamespaceName(), upgradeDowngradeData);
-
-        verifyPostUpgradeOrDowngradeProcedure(testStorage, upgradeDowngradeData);
-    }
-
-    /**
-     * Performs the Kafka Connect and Kafka Connector downgrade procedure.
-     * It upgrades the Cluster Operator first, then adjusts Kafka versions, and finally verifies the environment.
-     *
-     * @param clusterOperatorNamespaceName Namespace of the Cluster Operator
-     * @param testStorage                  Test-related configuration and storage
-     * @param upgradeDowngradeData         Bundle version modification data
-     * @param upgradeKafkaVersion          Kafka version details
-     * @throws IOException if any I/O error occurs during the procedure
-     */
-    protected void doKafkaConnectAndKafkaConnectorDowngradeProcedure(
-        final String clusterOperatorNamespaceName,
-        final TestStorage testStorage,
-        final BundleVersionModificationData upgradeDowngradeData,
-        final UpgradeKafkaVersion upgradeKafkaVersion
-    ) throws IOException {
-        // 1. Setup Cluster Operator with KafkaConnect and KafkaConnector
-        setupEnvAndUpgradeClusterOperator(clusterOperatorNamespaceName, testStorage, upgradeDowngradeData, upgradeKafkaVersion);
-        deployKafkaConnectAndKafkaConnectorWithWaitForReadiness(testStorage, upgradeDowngradeData, upgradeKafkaVersion);
-
-        // 2. Send messages
-        produceMessagesAndVerify(testStorage);
-
-        // 3. Make snapshots
-        makeComponentsSnapshots(testStorage.getNamespaceName());
-        logComponentsPodImagesWithConnect(testStorage.getNamespaceName());
-
-        // 4. Verify KafkaConnector FileSink
-        verifyKafkaConnectorFileSink(testStorage);
-        logComponentsPodImagesWithConnect(testStorage.getNamespaceName());
-
-        // 5. Downgrade Kafka
-        changeKafkaVersion(testStorage.getNamespaceName(), upgradeDowngradeData);
-        changeKafkaVersionInKafkaConnect(testStorage.getNamespaceName(), upgradeDowngradeData);
-
-        // 6. Make snapshots with KafkaConnect
-        logComponentsPodImagesWithConnect(testStorage.getNamespaceName());
-
-        // 7. Downgrade CO and wait for readiness of ClusterOperator
-        changeClusterOperator(clusterOperatorNamespaceName, testStorage.getNamespaceName(), upgradeDowngradeData);
-
-        // 8. Wait for components to roll and check component images
-        maybeWaitForRollingUpdate(testStorage, upgradeKafkaVersion);
-        checkAllComponentsImages(testStorage.getNamespaceName(), upgradeDowngradeData);
 
         verifyPostUpgradeOrDowngradeProcedure(testStorage, upgradeDowngradeData);
     }

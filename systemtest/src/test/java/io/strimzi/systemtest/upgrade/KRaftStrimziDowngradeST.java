@@ -47,7 +47,7 @@ public class KRaftStrimziDowngradeST extends AbstractKRaftUpgradeST {
 
         LOGGER.debug("Running downgrade test from version {} to {} (FG: {} -> {})", from, to, fgBefore, fgAfter);
 
-        doKafkaConnectAndKafkaConnectorDowngradeProcedure(CO_NAMESPACE, testStorage, downgradeData, downgradeKafkaVersion);
+        doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(CO_NAMESPACE, testStorage, downgradeData, downgradeKafkaVersion);
     }
 
     @BeforeEach
