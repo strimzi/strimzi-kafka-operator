@@ -942,6 +942,9 @@ spec:
                     required:
                     - type
                     description: Metrics configuration.
+                    x-kubernetes-validations:
+                    - rule: self.type != 'jmxPrometheusExporter' || has(self.valueFrom)
+                      message: valueFrom property is required
                   logging:
                     type: object
                     properties:
@@ -2522,6 +2525,9 @@ spec:
                     required:
                     - type
                     description: Metrics configuration.
+                    x-kubernetes-validations:
+                    - rule: self.type != 'jmxPrometheusExporter' || has(self.valueFrom)
+                      message: valueFrom property is required
                   logging:
                     type: object
                     properties:
@@ -6546,6 +6552,11 @@ spec:
                     required:
                     - type
                     description: Metrics configuration.
+                    x-kubernetes-validations:
+                    - rule: self.type != 'jmxPrometheusExporter' || has(self.valueFrom)
+                      message: valueFrom property is required
+                    - rule: self.type != 'strimziMetricsReporter'
+                      message: value type not supported
                   apiUsers:
                     type: object
                     properties:
