@@ -53,13 +53,13 @@ public class KRaftVersionChangeCreatorTest {
     @Test
     public void testMetadataVersionAtNoChange() {
         assertThat(KRaftVersionChangeCreator.metadataVersionWithoutKafkaVersionChange(Reconciliation.DUMMY_RECONCILIATION, "3.4-IV1", VERSIONS.defaultVersion().metadataVersion(), VERSIONS.defaultVersion()),
-                is(VERSIONS.defaultVersion().messageVersion()));
+                is(VERSIONS.defaultVersion().metadataVersion()));
 
         assertThat(KRaftVersionChangeCreator.metadataVersionWithoutKafkaVersionChange(Reconciliation.DUMMY_RECONCILIATION, "3.4-IV1", null, VERSIONS.defaultVersion()),
-                is(VERSIONS.defaultVersion().messageVersion()));
+                is(VERSIONS.defaultVersion().metadataVersion()));
 
         assertThat(KRaftVersionChangeCreator.metadataVersionWithoutKafkaVersionChange(Reconciliation.DUMMY_RECONCILIATION, null, null, VERSIONS.defaultVersion()),
-                is(VERSIONS.defaultVersion().messageVersion()));
+                is(VERSIONS.defaultVersion().metadataVersion()));
 
         assertThat(KRaftVersionChangeCreator.metadataVersionWithoutKafkaVersionChange(Reconciliation.DUMMY_RECONCILIATION, "3.4-IV1", "3.5", VERSIONS.defaultVersion()),
                 is("3.5"));
@@ -71,7 +71,7 @@ public class KRaftVersionChangeCreatorTest {
                 is("3.4-IV1"));
 
         assertThat(KRaftVersionChangeCreator.metadataVersionWithoutKafkaVersionChange(Reconciliation.DUMMY_RECONCILIATION, null, "5.11", VERSIONS.defaultVersion()),
-                is(VERSIONS.defaultVersion().messageVersion()));
+                is(VERSIONS.defaultVersion().metadataVersion()));
     }
 
     @Test
