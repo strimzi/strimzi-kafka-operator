@@ -14,6 +14,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -243,6 +244,7 @@ public class KafkaConnectApiIT {
             .join();
     }
 
+    @Disabled // This passes only with Kafka 3.9 or older that uses Log4j1
     @Test
     public void testChangeLoggers() {
         String desired = "log4j.rootLogger=TRACE, CONSOLE\n" +
@@ -276,6 +278,7 @@ public class KafkaConnectApiIT {
                         })).join();
     }
 
+    @Disabled // This passes only with Kafka 3.9 or older that uses Log4j1
     @Test
     public void testHierarchy() {
         String rootLevel = "TRACE";

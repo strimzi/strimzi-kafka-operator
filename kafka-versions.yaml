@@ -229,19 +229,26 @@
   url: https://archive.apache.org/dist/kafka/3.8.0/kafka_2.13-3.8.0.tgz
   checksum: 0A33B7BE7B6FA53249BA80F9D02CDA71ED81927C160AA6EE9BE1E3D3C1C4B50466FFC905293143FD88CEAC7F5E7D8F5BEC28EF972ADDD3C459CC8B1291E738AA
   third-party-libs: 3.8.x
-  supported: true
+  supported: false
   default: false
 - version: 3.8.1
   metadata: 3.8
   url: https://archive.apache.org/dist/kafka/3.8.1/kafka_2.13-3.8.1.tgz
   checksum: B43FADA353B7DCA51C0F90ACF594EC1CE06B2344C046D4059D4DEAB0615E0E3E76E92ECCDBDFA1ADAD1FBDE76C5F25E71ACD0DB013FB4B1778827448B5285EDF
   third-party-libs: 3.8.x
-  supported: true
+  supported: false
   default: false
 - version: 3.9.0
   metadata: 3.9
   url: https://archive.apache.org/dist/kafka/3.9.0/kafka_2.13-3.9.0.tgz
   checksum: 5324C1F44D4C84EA469712C2CC3D2D15545C3716EDBB5353722DF9C661FCC78B031FCF07D1C4F0309C5FDB32686665DFB0CFFE55210CD3A1FE2A370538CB4E6D
   third-party-libs: 3.9.x
+  supported: true
+  default: false
+- version: 4.0.0
+  metadata: 4.0
+  url: https://dist.apache.org/repos/dist/dev/kafka/4.0.0-rc0/kafka_2.13-4.0.0.tgz
+  checksum: C58DBD87B153877DEDC5439D18A037D47818DA204D71D783FEF77CA23D8B9A0138B499E91F59E332110C563048E40D2221E37D95127076B89053956FF61180A2
+  third-party-libs: 4.0.x
   supported: true
   default: true

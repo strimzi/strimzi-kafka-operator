@@ -262,7 +262,12 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
 
         result.jvmOptions = spec.getJvmOptions();
         result.metrics = new MetricsModel(spec);
-        result.logging = new LoggingModel(spec, result.getClass().getSimpleName(), false, true);
+
+        // Kafka 4.0 and newer uses Log4j2
+        KafkaVersion version = versions.supportedVersion(spec.getVersion());
+        boolean usesLog4j2 = KafkaVersion.compareDottedVersions(version.version(), "4.0.0") >= 0;
+        result.logging = new LoggingModel(spec, result.getClass().getSimpleName(), usesLog4j2, !usesLog4j2);
+
         result.jmx = new JmxModel(
                 reconciliation.namespace(),
                 KafkaConnectResources.jmxSecretName(result.cluster),
@@ -825,7 +830,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      *          is based on Kafka Connect)
      */
     public OrderedProperties defaultLogConfig()   {
-        return LoggingUtils.defaultLogConfig(reconciliation, this.getClass().getSimpleName());
+        return LoggingUtils.defaultLogConfig(reconciliation, logging.getDefaultLogConfigBaseName());
     }
 
     /**
