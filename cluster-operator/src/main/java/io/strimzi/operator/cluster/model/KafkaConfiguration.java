@@ -25,24 +25,9 @@ import static java.util.Collections.emptyList;
  */
 public class KafkaConfiguration extends AbstractConfiguration {
     /**
-     * Configuration key of the inter-broker protocol version option
-     */
-    public static final String INTERBROKER_PROTOCOL_VERSION = "inter.broker.protocol.version";
-
-    /**
-     * Configuration key of the message format version option
-     */
-    public static final String LOG_MESSAGE_FORMAT_VERSION = "log.message.format.version";
-
-    /**
      * Configuration key of the default replication factor option
      */
     public static final String DEFAULT_REPLICATION_FACTOR = "default.replication.factor";
-
-    /**
-     * Configuration key of the min-insync replicas version option
-     */
-    public static final String MIN_INSYNC_REPLICAS = "min.insync.replicas";
 
     private static final List<String> FORBIDDEN_PREFIXES;
     private static final List<String> FORBIDDEN_PREFIX_EXCEPTIONS;

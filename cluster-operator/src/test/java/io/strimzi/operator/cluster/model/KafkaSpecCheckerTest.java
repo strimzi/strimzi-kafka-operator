@@ -21,6 +21,7 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import org.apache.kafka.common.config.TopicConfig;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -52,7 +53,7 @@ public class KafkaSpecCheckerTest {
                             .build())
                     .withConfig(Map.of(
                             KafkaConfiguration.DEFAULT_REPLICATION_FACTOR, 3,
-                            KafkaConfiguration.MIN_INSYNC_REPLICAS, 2
+                            TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, 2
                     ))
                 .endKafka()
             .endSpec()
@@ -121,7 +122,7 @@ public class KafkaSpecCheckerTest {
                         .withConfig(Map.of(
                                 // We want to avoid unrelated warnings
                                 KafkaConfiguration.DEFAULT_REPLICATION_FACTOR, 1,
-                                KafkaConfiguration.MIN_INSYNC_REPLICAS, 1
+                                TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, 1
                         ))
                     .endKafka()
                 .endSpec()
@@ -169,7 +170,7 @@ public class KafkaSpecCheckerTest {
                         .withConfig(Map.of(
                                 // We want to avoid unrelated warnings
                                 KafkaConfiguration.DEFAULT_REPLICATION_FACTOR, 1,
-                                KafkaConfiguration.MIN_INSYNC_REPLICAS, 1
+                                TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, 1
                         ))
                     .endKafka()
                 .endSpec()
@@ -205,7 +206,7 @@ public class KafkaSpecCheckerTest {
                         .withConfig(Map.of(
                                 // We want to avoid unrelated warnings
                                 KafkaConfiguration.DEFAULT_REPLICATION_FACTOR, 1,
-                                KafkaConfiguration.MIN_INSYNC_REPLICAS, 1
+                                TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, 1
                         ))
                     .endKafka()
                 .endSpec()
@@ -261,7 +262,7 @@ public class KafkaSpecCheckerTest {
                         .withConfig(Map.of(
                                 // We want to avoid unrelated warnings
                                 KafkaConfiguration.DEFAULT_REPLICATION_FACTOR, 1,
-                                KafkaConfiguration.MIN_INSYNC_REPLICAS, 1
+                                TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, 1
                         ))
                     .endKafka()
                 .endSpec()
@@ -301,7 +302,7 @@ public class KafkaSpecCheckerTest {
                         .withConfig(Map.of(
                                 // We want to avoid unrelated warnings
                                 KafkaConfiguration.DEFAULT_REPLICATION_FACTOR, 1,
-                                KafkaConfiguration.MIN_INSYNC_REPLICAS, 1
+                                TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, 1
                         ))
                     .endKafka()
                 .endSpec()
@@ -332,7 +333,7 @@ public class KafkaSpecCheckerTest {
                         .withConfig(Map.of(
                                 // We want to avoid unrelated warnings
                                 KafkaConfiguration.DEFAULT_REPLICATION_FACTOR, 1,
-                                KafkaConfiguration.MIN_INSYNC_REPLICAS, 1
+                                TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, 1
                         ))
                     .endKafka()
                 .endSpec()
@@ -510,7 +511,7 @@ public class KafkaSpecCheckerTest {
                         .withConfig(Map.of(
                                 // We want to avoid unrelated warnings
                                 KafkaConfiguration.DEFAULT_REPLICATION_FACTOR, 1,
-                                KafkaConfiguration.MIN_INSYNC_REPLICAS, 1
+                                TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, 1
                         ))
                     .endKafka()
                 .endSpec()
@@ -556,7 +557,7 @@ public class KafkaSpecCheckerTest {
                         .withConfig(Map.of(
                                 // We want to avoid unrelated warnings
                                 KafkaConfiguration.DEFAULT_REPLICATION_FACTOR, 1,
-                                KafkaConfiguration.MIN_INSYNC_REPLICAS, 1
+                                TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, 1
                         ))
                     .endKafka()
                 .endSpec()
@@ -591,7 +592,7 @@ public class KafkaSpecCheckerTest {
                     .editKafka()
                         .withConfig(Map.of(
                                 KafkaConfiguration.DEFAULT_REPLICATION_FACTOR, 1,
-                                KafkaConfiguration.MIN_INSYNC_REPLICAS, 1
+                                TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, 1
                         ))
                     .endKafka()
                 .endSpec()

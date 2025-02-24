@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.KafkaSpec;
 import io.strimzi.operator.common.model.StatusUtils;
+import org.apache.kafka.common.config.TopicConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +21,16 @@ import java.util.regex.Pattern;
  * lead to problems.
  */
 public class KafkaSpecChecker {
+    /**
+     * Configuration key of the inter-broker protocol version option
+     */
+    private static final String INTERBROKER_PROTOCOL_VERSION = "inter.broker.protocol.version";
+
+    /**
+     * Configuration key of the message format version option
+     */
+    private static final String LOG_MESSAGE_FORMAT_VERSION = "log.message.format.version";
+
     private final KafkaCluster kafkaCluster;
     private final String kafkaBrokerVersion;
 
@@ -72,7 +83,7 @@ public class KafkaSpecChecker {
      */
     private void checkKafkaReplicationConfig(List<Condition> warnings) {
         String defaultReplicationFactor = kafkaCluster.getConfiguration().getConfigOption(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR);
-        String minInsyncReplicas = kafkaCluster.getConfiguration().getConfigOption(KafkaConfiguration.MIN_INSYNC_REPLICAS);
+        String minInsyncReplicas = kafkaCluster.getConfiguration().getConfigOption(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG);
 
         if (defaultReplicationFactor == null && kafkaCluster.brokerNodes().size() > 1)   {
             warnings.add(StatusUtils.buildWarningCondition("KafkaDefaultReplicationFactor",
@@ -162,7 +173,7 @@ public class KafkaSpecChecker {
      * @param warnings List to add a warning to, if appropriate.
      */
     private void checkInterBrokerProtocolVersionInKRaft(List<Condition> warnings) {
-        String interBrokerProtocolVersion = kafkaCluster.getConfiguration().getConfigOption(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION);
+        String interBrokerProtocolVersion = kafkaCluster.getConfiguration().getConfigOption(INTERBROKER_PROTOCOL_VERSION);
 
         if (interBrokerProtocolVersion != null) {
             warnings.add(StatusUtils.buildWarningCondition("KafkaInterBrokerProtocolVersionInKRaft",
@@ -177,7 +188,7 @@ public class KafkaSpecChecker {
      * @param warnings List to add a warning to, if appropriate.
      */
     private void checkLogMessageFormatVersionInKRaft(List<Condition> warnings) {
-        String interBrokerProtocolVersion = kafkaCluster.getConfiguration().getConfigOption(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION);
+        String interBrokerProtocolVersion = kafkaCluster.getConfiguration().getConfigOption(LOG_MESSAGE_FORMAT_VERSION);
 
         if (interBrokerProtocolVersion != null) {
             warnings.add(StatusUtils.buildWarningCondition("KafkaLogMessageFormatVersionInKRaft",

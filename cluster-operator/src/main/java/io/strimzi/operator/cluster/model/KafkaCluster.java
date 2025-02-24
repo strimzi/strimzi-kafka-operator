@@ -161,16 +161,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     public static final String ANNO_STRIMZI_IO_KAFKA_VERSION = Annotations.STRIMZI_DOMAIN + "kafka-version";
 
     /**
-     * Records the used log.message.format.version
-     */
-    public static final String ANNO_STRIMZI_IO_LOG_MESSAGE_FORMAT_VERSION = Annotations.STRIMZI_DOMAIN + "log-message-format-version";
-
-    /**
-     * Records the used inter.broker.protocol.version
-     */
-    public static final String ANNO_STRIMZI_IO_INTER_BROKER_PROTOCOL_VERSION = Annotations.STRIMZI_DOMAIN + "inter-broker-protocol-version";
-
-    /**
      * Records the state of the Kafka upgrade process. Unset outside of upgrades.
      */
     public static final String ANNO_STRIMZI_BROKER_CONFIGURATION_HASH = Annotations.STRIMZI_DOMAIN + "broker-configuration-hash";
@@ -351,18 +341,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         }
 
         result.configuration = configuration;
-
-        // We set the user-configured inter.broker.protocol.version if needed (when not set by the user)
-        // In KRaft mode, it should be always null
-        if (versionChange.interBrokerProtocolVersion() != null) {
-            result.configuration.setConfigOption(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, versionChange.interBrokerProtocolVersion());
-        }
-
-        // We set the user-configured log.message.format.version if needed (when not set by the user)
-        // In KRaft mode, it should be always null.
-        if (versionChange.logMessageFormatVersion() != null) {
-            result.configuration.setConfigOption(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, versionChange.logMessageFormatVersion());
-        }
 
         result.ccMetricsReporter = CruiseControlMetricsReporter.fromCrd(kafka, configuration, numberOfBrokers);
 
@@ -1896,20 +1874,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      */
     public KafkaVersion getKafkaVersion() {
         return this.kafkaVersion;
-    }
-
-    /**
-     * @return  Kafka's log message format configuration
-     */
-    public String getLogMessageFormatVersion() {
-        return configuration.getConfigOption(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION);
-    }
-
-    /**
-     * @return  Kafka's inter-broker protocol configuration
-     */
-    public String getInterBrokerProtocolVersion() {
-        return configuration.getConfigOption(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION);
     }
 
     /**

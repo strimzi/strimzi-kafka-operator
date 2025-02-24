@@ -855,17 +855,6 @@ public class KafkaReconciler {
         podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_HASH, brokerLoggingHash.get(node.nodeId()));
         podAnnotations.put(KafkaCluster.ANNO_STRIMZI_BROKER_CONFIGURATION_HASH, brokerConfigurationHash.get(node.nodeId()));
         podAnnotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafka.getKafkaVersion().version());
-
-        String logMessageFormatVersion = kafka.getLogMessageFormatVersion();
-        if (logMessageFormatVersion != null && !logMessageFormatVersion.isBlank()) {
-            podAnnotations.put(KafkaCluster.ANNO_STRIMZI_IO_LOG_MESSAGE_FORMAT_VERSION, logMessageFormatVersion);
-        }
-
-        String interBrokerProtocolVersion = kafka.getInterBrokerProtocolVersion();
-        if (interBrokerProtocolVersion != null && !interBrokerProtocolVersion.isBlank()) {
-            podAnnotations.put(KafkaCluster.ANNO_STRIMZI_IO_INTER_BROKER_PROTOCOL_VERSION, interBrokerProtocolVersion);
-        }
-
         podAnnotations.put(ANNO_STRIMZI_SERVER_CERT_HASH, kafkaServerCertificateHash.get(node.nodeId())); // Annotation of broker certificate hash
 
         // Annotations with custom cert thumbprints to help with rolling updates when they change
