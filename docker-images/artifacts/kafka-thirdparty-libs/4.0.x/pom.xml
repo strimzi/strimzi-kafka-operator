@@ -304,26 +304,29 @@
             <groupId>org.openpolicyagent.kafka</groupId>
             <artifactId>opa-authorizer</artifactId>
             <version>${opa-authorizer.version}</version>
+        </dependency>
+        <dependency>
+            <!-- Jackson Scala is not included in Kafka anymore from Kafka 4.0.0.
+                 So we need to include it explicitly, but we exclude its dependencies that are in Kafka already. -->
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-scala_2.13</artifactId>
+            <version>2.16.2</version>
             <exclusions>
                 <exclusion>
-                    <groupId>com.fasterxml.jackson.module</groupId>
-                    <artifactId>jackson-module-scala_2.13</artifactId>
+                    <groupId>org.scala-lang</groupId>
+                    <artifactId>scala-library</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>org.apache.kafka</groupId>
-                    <artifactId>kafka_2.13</artifactId>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>com.google.code.findbugs</groupId>
-                    <artifactId>jsr305</artifactId>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-annotations</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>com.google.errorprone</groupId>
-                    <artifactId>error_prone_annotations</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.checkerframework</groupId>
-                    <artifactId>checker-qual</artifactId>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
