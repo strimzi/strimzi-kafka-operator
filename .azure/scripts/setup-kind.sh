@@ -126,9 +126,9 @@ configure_podman_cgroup() {
       local controllers=""
 
       while [[ $attempt -lt $max_attempts ]]; do
-          controllers=$(podman info -f json | jq -r '.host.cgroupControllers')
+          controllers=$(podman info -f json | jq -c '.host.cgroupControllers')
 
-          if echo "$controllers" | grep -q "cpu" && echo "$controllers" | grep -q "cpuset"; then
+          if [[ "$controllers" =~ "cpu" ]] && [[ "$controllers" =~ "cpuset" ]]; then
               echo "✅ Podman cgroup controllers successfully loaded!"
               echo "Available controllers: $controllers"
               return 0
@@ -138,9 +138,10 @@ configure_podman_cgroup() {
           sleep 2
           ((attempt++))
       done
-
-      echo "Podman cgroup configuration updated successfully."
     fi
+
+    echo "❌ Error: 'cpu' and 'cpuset' controllers did not load in time."
+    return 1
 }
 
 : '
