@@ -22,7 +22,6 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.strimzi.api.kafka.model.common.JvmOptions;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
-import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter;
 import io.strimzi.api.kafka.model.common.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.common.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
@@ -48,7 +47,6 @@ import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderCon
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
@@ -218,10 +216,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
 
             if (ccSpec.getMetricsConfig() instanceof JmxPrometheusExporterMetrics) {
                 result.metrics = new JmxPrometheusExporterModel(ccSpec);
-            } else if (ccSpec.getMetricsConfig() instanceof StrimziMetricsReporter) {
-                // Cruise Control own metrics are only exported through JMX
-                LOGGER.errorCr(reconciliation, "The Strimzi Metrics Reporter is not supported with Cruise Control");
-                throw new InvalidResourceException("The Strimzi Metrics Reporter is not supported with Cruise Control");
             }
 
             result.logging = new LoggingModel(ccSpec, result.getClass().getSimpleName(), true, false);
@@ -244,7 +238,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     }
 
     private boolean hasMetricsConfig() {
-        return metrics != null && metrics.isEnabled();
+        return metrics != null;
     }
 
     private void updateConfigurationWithDefaults(CruiseControlSpec ccSpec, KafkaConfiguration kafkaConfiguration) {
