@@ -120,6 +120,25 @@ configure_podman_cgroup() {
       # reinitialize user permissions without requiring a logout.
       sudo systemctl restart systemd-logind
 
+      echo "Waiting for cgroup controllers to be available..."
+      local max_attempts=10
+      local attempt=0
+      local controllers=""
+
+      while [[ $attempt -lt $max_attempts ]]; do
+          controllers=$(podman info -f json | jq -r '.host.cgroupControllers')
+
+          if echo "$controllers" | grep -q "cpu" && echo "$controllers" | grep -q "cpuset"; then
+              echo "✅ Podman cgroup controllers successfully loaded!"
+              echo "Available controllers: $controllers"
+              return 0
+          fi
+
+          echo "⏳ Attempt $((attempt+1))/$max_attempts: Waiting for cgroup controllers..."
+          sleep 2
+          ((attempt++))
+      done
+
       echo "Podman cgroup configuration updated successfully."
     fi
 }
