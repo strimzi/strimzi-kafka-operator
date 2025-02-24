@@ -40,14 +40,11 @@ public class JmxPrometheusExporterModel implements MetricsModel {
      */
     public JmxPrometheusExporterModel(HasConfigurableMetrics spec) {
         if (spec.getMetricsConfig() != null) {
-            if (spec.getMetricsConfig() instanceof JmxPrometheusExporterMetrics config) {
-                validateJmxExporterMetricsConfig(config);
-                this.isEnabled = true;
-                this.configMapName = config.getValueFrom().getConfigMapKeyRef().getName();
-                this.configMapKey = config.getValueFrom().getConfigMapKeyRef().getKey();
-            } else {
-                throw new InvalidResourceException("Unsupported metrics type " + spec.getMetricsConfig().getType());
-            }
+            JmxPrometheusExporterMetrics config = (JmxPrometheusExporterMetrics) spec.getMetricsConfig();
+            validateJmxExporterMetricsConfig(config);
+            this.isEnabled = true;
+            this.configMapName = config.getValueFrom().getConfigMapKeyRef().getName();
+            this.configMapKey = config.getValueFrom().getConfigMapKeyRef().getKey();
         } else {
             this.isEnabled = false;
             this.configMapName = null;
@@ -123,8 +120,7 @@ public class JmxPrometheusExporterModel implements MetricsModel {
     /* test */ static void validateJmxExporterMetricsConfig(JmxPrometheusExporterMetrics config) {
         List<String> errors = new ArrayList<>();
 
-        if (config.getValueFrom() != null
-                && config.getValueFrom().getConfigMapKeyRef() != null) {
+        if (config.getValueFrom().getConfigMapKeyRef() != null) {
             // The Config Map reference exists
             if (config.getValueFrom().getConfigMapKeyRef().getName() == null
                     || config.getValueFrom().getConfigMapKeyRef().getName().isEmpty()) {
