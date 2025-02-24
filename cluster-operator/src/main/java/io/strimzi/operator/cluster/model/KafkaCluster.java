@@ -327,6 +327,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             result.metrics = new JmxPrometheusExporterModel(kafkaClusterSpec);
         } else if (kafkaClusterSpec.getMetricsConfig() instanceof StrimziMetricsReporter) {
             result.metrics = new StrimziMetricsReporterModel(kafkaClusterSpec);
+        } else if (kafkaClusterSpec.getMetricsConfig() != null) {
+            throw new InvalidResourceException("Unsupported metrics type");
         }
 
         result.logging = new LoggingModel(kafkaClusterSpec, result.getClass().getSimpleName(), false, true);

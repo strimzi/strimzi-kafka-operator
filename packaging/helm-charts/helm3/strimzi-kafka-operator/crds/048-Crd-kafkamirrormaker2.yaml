@@ -699,6 +699,9 @@ spec:
                   required:
                     - type
                   description: Metrics configuration.
+                  x-kubernetes-validations:
+                    - rule: self.type != 'jmxPrometheusExporter' || has(self.valueFrom)
+                      message: valueFrom property is required
                 tracing:
                   type: object
                   properties:

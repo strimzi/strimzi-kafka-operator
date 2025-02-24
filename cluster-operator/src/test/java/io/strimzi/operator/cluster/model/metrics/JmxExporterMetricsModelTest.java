@@ -82,8 +82,8 @@ public class JmxExporterMetricsModelTest {
 
         ex = assertThrows(InvalidResourceException.class, () -> JmxPrometheusExporterModel.validateJmxExporterMetricsConfig(new JmxPrometheusExporterMetricsBuilder().withNewValueFrom().endValueFrom().build()));
         assertThat(ex.getMessage(), is("Metrics configuration is invalid: [Config Map reference is missing]"));
-
-        ex = assertThrows(InvalidResourceException.class, () -> JmxPrometheusExporterModel.validateJmxExporterMetricsConfig(new JmxPrometheusExporterMetricsBuilder().build()));
+        ex = assertThrows(InvalidResourceException.class, () -> JmxPrometheusExporterModel.validateJmxExporterMetricsConfig(new JmxPrometheusExporterMetricsBuilder().withNewValueFrom().endValueFrom().build()));
         assertThat(ex.getMessage(), is("Metrics configuration is invalid: [Config Map reference is missing]"));
+
     }
 }
