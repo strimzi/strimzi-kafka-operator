@@ -43,6 +43,8 @@ public class KafkaVersionTestUtils {
     public static final String DEFAULT_KAFKA_VERSION = LATEST_KAFKA_VERSION;
     public static final String DEFAULT_KAFKA_IMAGE = LATEST_KAFKA_IMAGE;
     public static final String DEFAULT_KAFKA_CONNECT_IMAGE = LATEST_KAFKA_CONNECT_IMAGE;
+    
+    public static final String UNKNOWN_KAFKA_VERSION = "99.0.0";
 
     public static final KafkaVersionChange DEFAULT_KRAFT_VERSION_CHANGE = new KafkaVersionChange(getKafkaVersionLookup().defaultVersion(), getKafkaVersionLookup().defaultVersion(), null, null, getKafkaVersionLookup().defaultVersion().metadataVersion());
 
