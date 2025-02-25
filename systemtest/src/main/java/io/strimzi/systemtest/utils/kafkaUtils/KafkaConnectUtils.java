@@ -156,7 +156,7 @@ public class KafkaConnectUtils {
                 + ":8083/admin/loggers/root").out().contains(logLevel)
         );
 
-        TestUtils.waitFor(String.format("wait till change in Log level %s takes place in actual Pods", logLevel), TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.SAFETY_RECONCILIATION_INTERVAL,
+        TestUtils.waitFor(String.format("wait till change in Log level %s takes place in actual Pods", logLevel), TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> connectPods.keySet().stream()
                 .map(cPod -> StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), cPod, "", "60s"))
                 .allMatch(connectLogMatch)
