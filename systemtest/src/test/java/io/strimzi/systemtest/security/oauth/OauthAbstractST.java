@@ -160,9 +160,10 @@ public class OauthAbstractST extends AbstractST {
      */
     protected final void verifyOauthConfiguration(final String componentLogs) {
         for (Map.Entry<String, Object> configField : COMPONENT_FIELDS_TO_VERIFY.entrySet()) {
-            assertThat(componentLogs, CoreMatchers.containsString(configField.getKey() + ": " + configField.getValue()));
+            String expectedKeyValue = configField.getKey() + ": " + configField.getValue();
+            assertThat(String.format("Component's log doesn't contain expected key/value: %s", expectedKeyValue), componentLogs.contains(expectedKeyValue), CoreMatchers.is(true));
         }
-        assertThat(componentLogs, CoreMatchers.containsString("Successfully logged in"));
+        assertThat("Component's log doesn't contain 'Successfully logged in' sentence", componentLogs.contains("Successfully logged in"), CoreMatchers.is(true));
     }
 
     /**
@@ -172,9 +173,10 @@ public class OauthAbstractST extends AbstractST {
      */
     protected final void verifyOauthListenerConfiguration(final String kafkaLogs) {
         for (Map.Entry<String, Object> configField : LISTENER_FIELDS_TO_VERIFY.entrySet()) {
-            assertThat(kafkaLogs, CoreMatchers.containsString(configField.getKey() + ": " + configField.getValue()));
+            String expectedKeyValue = configField.getKey() + ": " + configField.getValue();
+            assertThat(String.format("Kafka's log doesn't contain expected key/value: %s", expectedKeyValue), kafkaLogs.contains(expectedKeyValue), CoreMatchers.is(true));
         }
-        assertThat(kafkaLogs, CoreMatchers.containsString("Successfully logged in"));
+        assertThat("Kafka's log doesn't contain 'Successfully logged in' sentence", kafkaLogs.contains("Successfully logged in"), CoreMatchers.is(true));
     }
 }
 

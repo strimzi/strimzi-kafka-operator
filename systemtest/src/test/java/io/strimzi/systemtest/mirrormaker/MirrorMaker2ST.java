@@ -79,7 +79,6 @@ import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -563,8 +562,8 @@ class MirrorMaker2ST extends AbstractST {
         String header1 = "key: header_key_one, value: header_value_one";
         String header2 = "key: header_key_two, value: header_value_two";
         String log = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(testStorage.getConsumerName()).get(0).getMetadata().getName(), "", testStorage.getMessageCount() + "s");
-        assertThat(log, containsString(header1));
-        assertThat(log, containsString(header2));
+        assertThat(String.format("Consumer's log doesn't contain header: %s", header1), log.contains(header1), is(true));
+        assertThat(String.format("Consumer's log doesn't contain header: %s", header2), log.contains(header2), is(true));
     }
 
     /*

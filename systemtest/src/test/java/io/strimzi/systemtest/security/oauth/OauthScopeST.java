@@ -31,7 +31,6 @@ import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
-import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
@@ -42,6 +41,7 @@ import static io.strimzi.systemtest.TestTags.CONNECT;
 import static io.strimzi.systemtest.TestTags.OAUTH;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(OAUTH)
@@ -126,11 +126,16 @@ public class OauthScopeST extends OauthAbstractST {
         String kafkaConnectPodName = kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, StrimziPodSetResource.getBrokerComponentName(oauthClusterName)).get(0).getMetadata().getName();
 
         String kafkaLog = kubeClient().logsInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, kafkaConnectPodName);
-        assertThat(kafkaLog, CoreMatchers.containsString("Access token expires at"));
-        assertThat(kafkaLog, CoreMatchers.containsString("Evaluating path: $[*][?]"));
-        assertThat(kafkaLog, CoreMatchers.containsString("Evaluating path: @['scope']"));
-        assertThat(kafkaLog, CoreMatchers.containsString("User validated"));
-        assertThat(kafkaLog, CoreMatchers.containsString("Set validated token on callback"));
+        assertThat("Kafka's log doesn't contain information about expiration of the access token",
+            kafkaLog.contains("Access token expires at"), is(true));
+        assertThat("Kafka's log doesn't contain information about evaluating path",
+            kafkaLog.contains("Evaluating path: $[*][?]"), is(true));
+        assertThat("Kafka's log doesn't contain information about evaluating path for scope",
+            kafkaLog.contains("Evaluating path: @['scope']"), is(true));
+        assertThat("Kafka's log doesn't contain information about user validation",
+            kafkaLog.contains("User validated"), is(true));
+        assertThat("Kafka's log doesn't contain information about setting validated token on callback",
+            kafkaLog.contains("Set validated token on callback"), is(true));
     }
 
     @ParallelTest

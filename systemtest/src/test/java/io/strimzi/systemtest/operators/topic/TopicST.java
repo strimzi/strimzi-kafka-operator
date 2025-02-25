@@ -465,7 +465,7 @@ public class TopicST extends AbstractST {
         // Checking TO logs
         String tOPodName = cmdKubeClient(testStorage.getNamespaceName()).listResourcesByLabel("pod", Labels.STRIMZI_NAME_LABEL + "=" + testStorage.getClusterName() + "-entity-operator").get(0);
         String tOlogs = kubeClient(testStorage.getNamespaceName()).logsInSpecificNamespace(testStorage.getNamespaceName(), tOPodName, "topic-operator");
-        assertThat(tOlogs, not(containsString(String.format("Created topic '%s'", testStorage.getTargetTopicName()))));
+        assertThat("TO's log contains information about created topic", tOlogs.contains(String.format("Created topic '%s'", testStorage.getTargetTopicName())), is(false));
 
         //Deleting topic
         cmdKubeClient(testStorage.getNamespaceName()).deleteByName("kafkatopic", testStorage.getTargetTopicName());

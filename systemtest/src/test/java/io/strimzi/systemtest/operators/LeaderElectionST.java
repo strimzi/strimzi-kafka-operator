@@ -28,7 +28,6 @@ import java.util.Collections;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -89,7 +88,7 @@ public class LeaderElectionST extends AbstractST {
         String logFromNewLeader = StUtils.getLogFromPodByTime(clusterOperator.getDeploymentNamespace(), currentLeaderPodName, clusterOperator.getClusterOperatorName(), "300s");
 
         LOGGER.info("Checking if the new leader is elected");
-        assertThat("Log doesn't contains mention about election of the new leader", logFromNewLeader, containsString(LEADER_MESSAGE));
+        assertThat("Log doesn't contains mention about election of the new leader", logFromNewLeader.contains(LEADER_MESSAGE), is(true));
         assertThat("Old and current leaders are same", oldLeaderPodName, not(equalTo(currentLeaderPodName)));
     }
 
@@ -111,8 +110,7 @@ public class LeaderElectionST extends AbstractST {
 
         // Assert that the Lease does not exist
         assertThat("Lease for CO exists", notExistingLease, is(nullValue()));
-
-        assertThat("Log contains message about leader election", logFromCoPod, not(containsString(LEADER_MESSAGE)));
+        assertThat("Log contains message about leader election", logFromCoPod.contains(LEADER_MESSAGE), is(false));
     }
 
     void checkDeploymentFiles() throws Exception {
@@ -126,10 +124,10 @@ public class LeaderElectionST extends AbstractST {
 
         String clusterOperatorDep = Files.readString(Paths.get(pathToDepFile));
 
-        assertThat(clusterOperatorDep, containsString("STRIMZI_LEADER_ELECTION_ENABLED"));
-        assertThat(clusterOperatorDep, containsString("STRIMZI_LEADER_ELECTION_LEASE_NAME"));
-        assertThat(clusterOperatorDep, containsString("STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE"));
-        assertThat(clusterOperatorDep, containsString("STRIMZI_LEADER_ELECTION_IDENTITY"));
+        assertThat("Cluster Operator's Deployment doesn't contain 'STRIMZI_LEADER_ELECTION_ENABLED' env variable", clusterOperatorDep.contains("STRIMZI_LEADER_ELECTION_ENABLED"), is(true));
+        assertThat("Cluster Operator's Deployment doesn't contain 'STRIMZI_LEADER_ELECTION_LEASE_NAME' env variable", clusterOperatorDep.contains("STRIMZI_LEADER_ELECTION_LEASE_NAME"), is(true));
+        assertThat("Cluster Operator's Deployment doesn't contain 'STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE' env variable", clusterOperatorDep.contains("STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE"), is(true));
+        assertThat("Cluster Operator's Deployment doesn't contain 'STRIMZI_LEADER_ELECTION_IDENTITY' env variable", clusterOperatorDep.contains("STRIMZI_LEADER_ELECTION_IDENTITY"), is(true));
     }
 
     @BeforeAll

@@ -75,7 +75,6 @@ import static io.strimzi.systemtest.TestTags.MIRROR_MAKER2;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -445,7 +444,7 @@ class LogSettingST extends AbstractST {
 
         LOGGER.info("Checking logs in CruiseControl - make sure no DEBUG is found there");
         String logOut = StUtils.getLogFromPodByTime(Environment.TEST_SUITE_NAMESPACE, cruiseControlPodName, TestConstants.CRUISE_CONTROL_CONTAINER_NAME, "20s");
-        assertThat(logOut.toUpperCase(Locale.ENGLISH), not(containsString(debugText)));
+        assertThat(String.format("CC log contains '%s' and it shouldn't", debugText), logOut.toUpperCase(Locale.ENGLISH).contains(debugText), is(false));
 
         InlineLogging logging = new InlineLogging();
         logging.setLoggers(Collections.singletonMap("rootLogger.level", debugText.strip()));
