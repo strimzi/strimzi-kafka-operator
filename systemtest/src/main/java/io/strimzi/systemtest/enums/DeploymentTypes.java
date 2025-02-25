@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.enums;
 
 public enum DeploymentTypes {
-
     BundleClusterOperator,
     HelmClusterOperator,
     OlmClusterOperator,
@@ -14,4 +13,5 @@ public enum DeploymentTypes {
     Scraper,
     AdminClient,
     Minio,
+    AccessOperator
 }
