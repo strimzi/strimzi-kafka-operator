@@ -19,7 +19,9 @@ REST API:: Cruise Control provides a REST API for client interactions, which Str
 * Changing topic replication factor
 * Reassigning partitions between JBOD disks
 
-NOTE: Other Cruise Control features are not currently supported, including self healing, notifications, and write-your-own goals.
+NOTE: Cruise Control self-healing is not supported out-of-the-box. 
+Notifications and custom goals may be introduced through customization. 
+For example, an anomaly notifier or custom goals can be added by including the appropriate JAR files in a custom image based on the Strimzi Kafka image.
 
 == Optimization goals
 
@@ -131,8 +133,6 @@ Goals labeled as hard are mandatory constraints that must be satisfied for optim
 Resource distribution goals are subject to link:{BookURLConfiguring}#property-cruise-control-broker-capacity-reference[capacity limits^] on broker resources.
 
 For more information on each optimization goal, see link:https://github.com/linkedin/cruise-control/wiki/Pluggable-Components#goals[Goals^] in the Cruise Control Wiki.
-
-NOTE: "Write your own" goals and Kafka assigner goals are not supported.
 
 .Example `Kafka` configuration for default and hard goals
 [source,yaml,subs="attributes+"]
