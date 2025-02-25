@@ -229,7 +229,6 @@ function configure_container_runtime_networking {
         KIND_CLUSTER_NAME - Name of the KIND cluster.
         KIND_NODE_IMAGE   - KIND node image to use.
         IP_FAMILY         - Determines whether to configure IPv4 or IPv6 settings
-        SUDO              - Start rootful or rootless kind
 @note: Writes the cluster configuration to a temporary file before creating the cluster.
 '
 function create_kind_cluster {
