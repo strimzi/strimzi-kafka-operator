@@ -116,8 +116,8 @@ public class DynamicConfST extends AbstractST {
 
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName())) {
             String kafkaConfiguration = kubeClient().getConfigMap(Environment.TEST_SUITE_NAMESPACE, cmName).getData().get("server.config");
-            assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=1"));
-            assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=1"));
+            assertThat("Kafka configuration CM doesn't contain 'offsets.topic.replication.factor=1'", kafkaConfiguration.contains("offsets.topic.replication.factor=1"), is(true));
+            assertThat("Kafka configuration CM doesn't contain 'transaction.state.log.replication.factor=1'", kafkaConfiguration.contains("transaction.state.log.replication.factor=1"), is(true));
         }
 
         String kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), podNum);
@@ -135,9 +135,9 @@ public class DynamicConfST extends AbstractST {
 
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName())) {
             String kafkaConfiguration = kubeClient().getConfigMap(Environment.TEST_SUITE_NAMESPACE, cmName).getData().get("server.config");
-            assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=1"));
-            assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=1"));
-            assertThat(kafkaConfiguration, containsString("unclean.leader.election.enable=true"));
+            assertThat("Kafka configuration CM doesn't contain 'offsets.topic.replication.factor=1'", kafkaConfiguration.contains("offsets.topic.replication.factor=1"), is(true));
+            assertThat("Kafka configuration CM doesn't contain 'transaction.state.log.replication.factor=1'", kafkaConfiguration.contains("transaction.state.log.replication.factor=1"), is(true));
+            assertThat("Kafka configuration CM doesn't contain 'unclean.leader.election.enable=true'", kafkaConfiguration.contains("unclean.leader.election.enable=true"), is(true));
         }
     }
 
