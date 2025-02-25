@@ -120,7 +120,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
     protected Capacity capacity;
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
-    private JmxPrometheusExporterModel metrics;
+    private MetricsModel metrics;
     private LoggingModel logging;
     /* test */ CruiseControlConfiguration configuration;
 
@@ -509,7 +509,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     /**
      * @return  Metrics Model instance for configuring Prometheus metrics
      */
-    public JmxPrometheusExporterModel metrics()   {
+    public MetricsModel metrics()   {
         return metrics;
     }
 

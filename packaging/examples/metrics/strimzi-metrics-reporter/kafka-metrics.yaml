@@ -66,9 +66,6 @@ spec:
       min.insync.replicas: 2
     metricsConfig:
       type: strimziMetricsReporter
-      values:
-        allowList:
-          - ".*"
   entityOperator:
     topicOperator: {}
     userOperator: {}
