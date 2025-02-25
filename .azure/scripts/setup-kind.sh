@@ -99,50 +99,6 @@ function load_ip6_tables_module_to_kernel {
 }
 
 : '
-@brief: Configures systemd to delegate cgroup controllers for Podman.
-@details: This function ensures that Podman has access to memory, pids, cpu, and cpuset cgroup controllers.
-          It creates or updates the systemd override configuration for user services, reloads systemd, and restarts Podman.
-@note: Requires sudo privileges.
-'
-configure_podman_cgroup() {
-    if is_podman; then
-      local systemd_dir="/etc/systemd/system/user@.service.d"
-      local config_file="$systemd_dir/delegate.conf"
-
-      sudo mkdir -p "$systemd_dir"
-
-      # Write the configuration file
-      echo -e "[Service]\nDelegate=memory pids cpu cpuset" | sudo tee "$config_file"
-
-      systemctl --user daemon-reexec
-      systemctl --user restart podman
-
-      # reinitialize user permissions without requiring a logout.
-      sudo systemctl restart systemd-logind
-
-      echo "Waiting for cgroup controllers to be available..."
-      local max_attempts=10
-      local attempt=1
-
-      until podman info -f json | jq -r '.host.cgroupControllers[]' | grep -q "cpu" \
-        && podman info -f json | jq -r '.host.cgroupControllers[]' | grep -q "cpuset"
-      do
-          if [[ $attempt -ge $max_attempts ]]; then
-              echo "❌ Error: 'cpu' and 'cpuset' controllers did not load in time."
-              return 1
-          fi
-          echo "⏳ Attempt $attempt/$max_attempts: Waiting for cgroup controllers..."
-          ((attempt++))
-          sleep 2
-      done
-
-      echo "✅ Podman cgroup controllers successfully loaded!"
-      return 0
-    fi
-    return 0
-}
-
-: '
 @brief: Updates container runtime (Docker/Podman) configurations to allow insecure local registries.
 @param:
         1) registry_address - IPv4 registry address, e.g., "192.168.0.2:5000"
@@ -336,7 +292,6 @@ install_kubectl
 install_kubernetes_provisioner
 adjust_inotify_limits
 load_ip6_tables_module_to_kernel
-configure_podman_cgroup
 
 reg_name='kind-registry'
 reg_port='5001'
