@@ -59,6 +59,7 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.cruisecontrol.BrokerCapacity;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
 import io.strimzi.operator.cluster.model.cruisecontrol.CpuCapacity;
+import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -1086,8 +1087,8 @@ public class CruiseControlTest {
         CruiseControl cc = createCruiseControl(kafka, NODES, STORAGE, Map.of());
 
         assertThat(cc.metrics().isEnabled(), is(true));
-        assertThat(cc.metrics().getConfigMapName(), is("my-metrics-configuration"));
-        assertThat(cc.metrics().getConfigMapKey(), is("config.yaml"));
+        assertThat(((JmxPrometheusExporterModel) cc.metrics()).getConfigMapName(), is("my-metrics-configuration"));
+        assertThat(((JmxPrometheusExporterModel) cc.metrics()).getConfigMapKey(), is("config.yaml"));
     }
 
     @ParallelTest
