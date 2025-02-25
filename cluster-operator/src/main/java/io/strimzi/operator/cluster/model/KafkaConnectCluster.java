@@ -264,6 +264,9 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         } else if (spec.getMetricsConfig() instanceof StrimziMetricsReporter) {
             LOGGER.errorCr(reconciliation, "The Strimzi Metrics Reporter is not supported with this component");
             throw new InvalidResourceException("The Strimzi Metrics Reporter is not supported with this component");
+        } else if (spec.getMetricsConfig() != null) {
+            LOGGER.errorCr(reconciliation, "Unsupported metrics type: {}", spec.getMetricsConfig());
+            throw new InvalidResourceException("Unsupported metrics type: " + spec.getMetricsConfig());
         }
 
         // Kafka 4.0 and newer uses Log4j2

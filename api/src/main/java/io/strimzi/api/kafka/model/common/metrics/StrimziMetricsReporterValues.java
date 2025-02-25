@@ -26,7 +26,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"allowList"})
-@EqualsAndHashCode()
+@EqualsAndHashCode
 @ToString
 public class StrimziMetricsReporterValues implements UnknownPropertyPreserving {
     private static final String DEFAULT_REGEX = ".*";
