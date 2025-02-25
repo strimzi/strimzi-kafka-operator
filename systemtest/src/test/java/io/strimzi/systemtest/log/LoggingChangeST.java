@@ -1790,6 +1790,7 @@ class LoggingChangeST extends AbstractST {
             @Label(value = TestDocsLabels.LOGGING)
         }
     )
+    @SuppressWarnings("checkstyle:MethodLength")
     void testMM2LoggingLevelsHierarchy() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
 
