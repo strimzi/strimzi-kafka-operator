@@ -14,7 +14,7 @@ data:
           metricNamePrefix: strimzi_kafka_topic
           metrics:
             - name: resource_info
-              help: "The current state of a Strimzi kafka topic resource."
+              help: "The current state of a Strimzi Kafka topic resource."
               each:
                 type: Info
                 info:
@@ -36,7 +36,7 @@ data:
           metricNamePrefix: strimzi_kafka_user
           metrics:
             - name: resource_info
-              help: "The current state of a Strimzi kafka user resource."
+              help: "The current state of a Strimzi Kafka user resource."
               each:
                 type: Info
                 info:
@@ -56,7 +56,7 @@ data:
           metricNamePrefix: strimzi_kafka
           metrics:
             - name: resource_info
-              help: "The current state of a Strimzi kafka resource."
+              help: "The current state of a Strimzi Kafka resource."
               each:
                 type: Info
                 info:
@@ -79,7 +79,7 @@ data:
           metricNamePrefix: strimzi_kafka_node_pool
           metrics:
             - name: resource_info
-              help: "The current state of a Strimzi kafka node pool resource."
+              help: "The current state of a Strimzi Kafka node pool resource."
               each:
                 type: Info
                 info:
