@@ -252,10 +252,6 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
                     .withConnectTimeoutSeconds(CONNECT_TIMEOUT_S)
                     .withReadTimeoutSeconds(READ_TIMEOUT_S)
                 .endKafkaClientAuthenticationOAuth()
-                .withNewInlineLogging()
-                    // needed for a verification of oauth configuration
-                    .addToLoggers("connect.root.logger.level", "DEBUG")
-                .endInlineLogging()
             .endSpec()
             .build();
         // This is required to be able to remove the TLS setting, the builder cannot remove it

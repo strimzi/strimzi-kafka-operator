@@ -277,9 +277,6 @@ class ConnectBuilderST extends AbstractST {
                     .withPlugins(PLUGIN_WITH_TAR_AND_JAR, PLUGIN_WITH_ZIP)
                     .withOutput(KafkaConnectTemplates.dockerOutput(imageName))
                 .endBuild()
-                .withNewInlineLogging()
-                    .addToLoggers("connect.root.logger.level", "INFO")
-                .endInlineLogging()
             .endSpec()
             .build());
 
@@ -406,9 +403,6 @@ class ConnectBuilderST extends AbstractST {
                     .withPlugins(PLUGIN_WITH_TAR_AND_JAR)
                     .withOutput(KafkaConnectTemplates.dockerOutput(imageName))
                 .endBuild()
-                .withNewInlineLogging()
-                    .addToLoggers("connect.root.logger.level", "INFO")
-                .endInlineLogging()
             .endSpec()
             .build();
 
