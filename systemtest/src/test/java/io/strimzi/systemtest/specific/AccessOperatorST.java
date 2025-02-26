@@ -4,12 +4,19 @@
  */
 package io.strimzi.systemtest.specific;
 
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
+import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.kafka.access.model.KafkaAccessBuilder;
+import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.access.SetupAccessOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -17,12 +24,17 @@ import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
+import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
+import java.util.List;
+
 import static io.strimzi.systemtest.TestTags.REGRESSION;
+import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 @Tag(REGRESSION)
 public class AccessOperatorST extends AbstractST {
@@ -81,11 +93,68 @@ public class AccessOperatorST extends AbstractST {
                     .withNamespace(testStorage.getNamespaceName())
                     .withListener(TestConstants.TLS_LISTENER_DEFAULT_NAME)
                 .endKafka()
+                .withNewUser()
+                    .withName(testStorage.getUsername())
+                    .withNamespace(testStorage.getNamespaceName())
+                    .withApiGroup(KafkaUser.RESOURCE_GROUP)
+                    .withKind(KafkaUser.RESOURCE_KIND)
+                .endUser()
             .endSpec()
             .build()
         );
 
-        LOGGER.info("asd");
+        SecretUtils.waitForSecretReady(testStorage.getNamespaceName(), kafkaAccessName, () -> { });
+
+        Secret accessSecret = kubeClient().getSecret(testStorage.getNamespaceName(), kafkaAccessName);
+        String bootstrapServer = Util.decodeFromBase64(accessSecret.getData().get("bootstrapServers"));
+
+        List<EnvVar> tlsEnvVarsForKafkaAccess = List.of(
+            new EnvVarBuilder()
+                .withName("CA_CRT")
+                .withNewValueFrom()
+                    .withNewSecretKeyRef()
+                        .withName(kafkaAccessName)
+                        .withKey("ssl.truststore.crt")
+                    .endSecretKeyRef()
+                .endValueFrom()
+                .build(),
+            new EnvVarBuilder()
+                .withName("USER_CRT")
+                .withNewValueFrom()
+                    .withNewSecretKeyRef()
+                        .withName(kafkaAccessName)
+                        .withKey("ssl.keystore.crt")
+                    .endSecretKeyRef()
+                .endValueFrom()
+                .build(),
+            new EnvVarBuilder()
+                .withName("USER_KEY")
+                .withNewValueFrom()
+                    .withNewSecretKeyRef()
+                        .withName(kafkaAccessName)
+                        .withKey("ssl.keystore.key")
+                    .endSecretKeyRef()
+                .endValueFrom()
+                .build()
+        );
+
+        final KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withBootstrapAddress(bootstrapServer)
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withMessageCount(TestConstants.MESSAGE_COUNT)
+            .withTopicName(testStorage.getTopicName())
+            .build();
+
+        LOGGER.info("Deploying Kafka clients with configured TLS using the KafkaAccess' secret");
+        resourceManager.createResourceWithWait(
+            kafkaClients.producerTlsStrimziWithTlsEnvVars(tlsEnvVarsForKafkaAccess),
+            kafkaClients.consumerTlsStrimziWithTlsEnvVars(tlsEnvVarsForKafkaAccess)
+        );
+
+        LOGGER.info("Verifying successful message transmission");
+        ClientUtils.waitForInstantClientSuccess(testStorage);
     }
 
     @BeforeAll
