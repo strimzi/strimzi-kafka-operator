@@ -145,7 +145,7 @@ public class KafkaBrokerConfigurationBuilder {
     public KafkaBrokerConfigurationBuilder withStrimziMetricsReporter(StrimziMetricsReporterModel model)   {
         if (model != null && model.isEnabled()) {
             printSectionHeader("Strimzi Metrics Reporter configuration");
-            //TODO move into withUserConfiguration
+            // TODO handle in withUserConfiguration
             writer.println("kafka.metrics.reporters=io.strimzi.kafka.metrics.YammerPrometheusMetricsReporter");
             writer.println("prometheus.metrics.reporter.listener.enable=true");
             writer.println("prometheus.metrics.reporter.listener=http://0.0.0.0:" + StrimziMetricsReporterModel.METRICS_PORT);

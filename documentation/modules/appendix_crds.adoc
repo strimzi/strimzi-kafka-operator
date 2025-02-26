@@ -1033,7 +1033,7 @@ It must have the value `jmxPrometheusExporter` for the type `JmxPrometheusExport
 |Must be `jmxPrometheusExporter`.
 |valueFrom
 |xref:type-ExternalConfigurationReference-{context}[`ExternalConfigurationReference`]
-|ConfigMap entry where the Prometheus JMX Exporter configuration is stored.
+|ConfigMap entry where the JMX Prometheus Exporter configuration is stored.
 |====
 
 [id='type-ExternalConfigurationReference-{context}']
