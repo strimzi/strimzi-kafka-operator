@@ -50,13 +50,6 @@ spec:
           annotations:
             message: "Strimzi Kafka {{ $labels.name }} contains a deprecated configuration"
         # KafkaNodePool is not having a ready status as this is implemented via Kafka resource
-        # - alert: KafkaNodePoolNotReady
-        #   expr: strimzi_kafka_node_pool_resource_info{ready!="True"}
-        #   for: 15m
-        #   labels:
-        #     severity: warning
-        #   annotations:
-        #     message: {{ printf "'Strimzi KafkaNodePool {{`{{ $labels.name }}`}} using {{`{{ $labels.kafka_version }}`}} is not ready'"}}
         - alert: KafkaNodePoolDeprecated
           expr: strimzi_kafka_node_pool_resource_info{deprecated="Warning"}
           for: 15m
