@@ -23,6 +23,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.security.InvalidParameterException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -173,6 +174,14 @@ public class KafkaClients extends BaseClients {
     }
 
     public Job producerTlsStrimzi(final String clusterName) {
+        List<EnvVar> tlsEnvVars = new ArrayList<>();
+        tlsEnvVars.add(this.getClusterCaCertEnv(clusterName));
+        tlsEnvVars.addAll(this.getTlsEnvVars());
+
+        return producerTlsStrimziWithTlsEnvVars(tlsEnvVars);
+    }
+
+    public Job producerTlsStrimziWithTlsEnvVars(List<EnvVar> tlsEnvVars) {
         this.configureTls();
 
         return defaultProducerStrimzi()
@@ -180,8 +189,7 @@ public class KafkaClients extends BaseClients {
                 .editTemplate()
                     .editSpec()
                         .editFirstContainer()
-                            .addToEnv(this.getClusterCaCertEnv(clusterName))
-                            .addAllToEnv(this.getTlsEnvVars())
+                            .addAllToEnv(tlsEnvVars)
                         .endContainer()
                     .endSpec()
                 .endTemplate()
@@ -332,6 +340,14 @@ public class KafkaClients extends BaseClients {
     }
 
     public Job consumerTlsStrimzi(final String clusterName) {
+        List<EnvVar> tlsEnvVars = new ArrayList<>();
+        tlsEnvVars.add(this.getClusterCaCertEnv(clusterName));
+        tlsEnvVars.addAll(this.getTlsEnvVars());
+
+        return consumerTlsStrimziWithTlsEnvVars(tlsEnvVars);
+    }
+
+    public Job consumerTlsStrimziWithTlsEnvVars(final List<EnvVar> tlsEnvVars) {
         this.configureTls();
 
         return defaultConsumerStrimzi()
@@ -339,8 +355,7 @@ public class KafkaClients extends BaseClients {
                 .editTemplate()
                     .editSpec()
                         .editFirstContainer()
-                            .addToEnv(this.getClusterCaCertEnv(clusterName))
-                            .addAllToEnv(this.getTlsEnvVars())
+                            .addAllToEnv(tlsEnvVars)
                         .endContainer()
                     .endSpec()
                 .endTemplate()
