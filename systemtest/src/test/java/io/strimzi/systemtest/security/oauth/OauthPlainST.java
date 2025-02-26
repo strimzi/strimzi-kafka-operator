@@ -339,10 +339,6 @@ public class OauthPlainST extends OauthAbstractST {
                     .withConnectTimeoutSeconds(CONNECT_TIMEOUT_S)
                     .withReadTimeoutSeconds(READ_TIMEOUT_S)
                 .endKafkaClientAuthenticationOAuth()
-                .withNewInlineLogging()
-                    // needed for a verification of oauth configuration
-                    .addToLoggers("connect.root.logger.level", "DEBUG")
-                .endInlineLogging()
                 .withMetricsConfig(OAUTH_METRICS)
             .endSpec()
             .build();

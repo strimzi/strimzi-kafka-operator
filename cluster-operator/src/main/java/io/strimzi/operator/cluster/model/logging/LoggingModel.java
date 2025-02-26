@@ -82,7 +82,11 @@ public class LoggingModel {
      * @return  Base of the file name with the default logging configuration
      */
     public String getDefaultLogConfigBaseName() {
-        return defaultLogConfigBaseName;
+        if (isLog4j2) {
+            return defaultLogConfigBaseName;
+        } else {
+            return defaultLogConfigBaseName + ".log4j1";
+        }
     }
 
     /**

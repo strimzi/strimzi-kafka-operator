@@ -2,6 +2,8 @@
 
 ## 0.46.0
 
+* Add support for Kafka 4.0.0.
+  Remove support for Kafka 3.8.0 and 3.8.1.
 * Support for ZooKeeper-based Apache Kafka clusters and for KRaft migration has been removed
 * Support for MirrorMaker 1 has been removed
 * Support for storage class overrides has been removed
@@ -30,6 +32,8 @@
   * If you have any custom setup leveraging such label, please use the `strimzi.io/pod-name` one instead.
 * The `secrets` list for mounting additional Kubernetes Secrets in `type: custom` authentication was deprecated and will be removed in the future.
   Please use the template section to configure additional volumes instead.
+* Kafka 4.0 and newer is using Log4j2 for logging instead of Reload4j/Log4j1.
+  If you have any custom logging configuration, you might need to update it during the upgrade to Kafka 4.0.
 
 ## 0.45.0
 

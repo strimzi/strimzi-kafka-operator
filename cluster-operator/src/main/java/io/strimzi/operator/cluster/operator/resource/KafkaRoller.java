@@ -672,7 +672,8 @@ public class KafkaRoller {
                 }
 
                 // needsRestart value might have changed from the check in the parent if. So we need to check it again.
-                if (!needsRestart && brokerLoggingDiff.getDiffSize() > 0) {
+                if (!needsRestart && brokerLoggingDiff.getDiffSize() > 0
+                        && KafkaVersion.compareDottedVersions(kafkaVersion.version(), "4.0.0") < 0) { // The reconfiguration is needed only when we still use Log4j1
                     LOGGER.debugCr(reconciliation, "Pod {} logging needs to be reconfigured.", nodeRef);
                     needsReconfig = true;
                 }
@@ -714,17 +715,28 @@ public class KafkaRoller {
 
     /* test */ void dynamicUpdateBrokerConfig(NodeRef nodeRef, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff)
             throws ForceableProblem, InterruptedException {
+        boolean isLog4j2 = KafkaVersion.compareDottedVersions(kafkaVersion.version(), "4.0.0") >= 0;
         Map<ConfigResource, Collection<AlterConfigOp>> updatedConfig = new HashMap<>(2);
         var podId = nodeRef.nodeId();
         updatedConfig.put(Util.getBrokersConfig(podId), configurationDiff.getConfigDiff());
-        updatedConfig.put(Util.getBrokersLogging(podId), logDiff.getLoggingDiff());
+
+        if (!isLog4j2) {
+            updatedConfig.put(Util.getBrokersLogging(podId), logDiff.getLoggingDiff());
+        }
 
         LOGGER.debugCr(reconciliation, "Updating broker configuration {}", nodeRef);
         LOGGER.traceCr(reconciliation, "Updating broker configuration {} with {}", nodeRef, updatedConfig);
 
         AlterConfigsResult alterConfigResult = ac.incrementalAlterConfigs(updatedConfig);
         KafkaFuture<Void> brokerConfigFuture = alterConfigResult.values().get(Util.getBrokersConfig(podId));
-        KafkaFuture<Void> brokerLoggingConfigFuture = alterConfigResult.values().get(Util.getBrokersLogging(podId));
+
+        KafkaFuture<Void> brokerLoggingConfigFuture;
+        if (!isLog4j2) {
+            brokerLoggingConfigFuture = alterConfigResult.values().get(Util.getBrokersLogging(podId));
+        } else {
+            brokerLoggingConfigFuture = KafkaFuture.completedFuture(null);
+        }
+
         await(VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, brokerConfigFuture), 30, TimeUnit.SECONDS,
             error -> {
                 LOGGER.errorCr(reconciliation, "Error updating broker configuration for pod {}", nodeRef, error);

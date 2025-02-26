@@ -19,6 +19,7 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.utils.FileUtils;
+import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -86,6 +87,15 @@ public class KafkaConnectTemplates {
         String kafkaClusterName,
         int kafkaConnectReplicas
     ) {
+        final String rootLogger;
+        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
+            // Kafka 3.9
+            rootLogger = "connect.root.logger.level";
+        } else {
+            // Kafka 4.0
+            rootLogger = "rootLogger.level";
+        }
+
         return new KafkaConnectBuilder()
             .withNewMetadata()
                 .withName(kafkaConnectClusterName)
@@ -111,7 +121,7 @@ public class KafkaConnectTemplates {
                 .addToConfig("offset.storage.replication.factor", "-1")
                 .addToConfig("status.storage.replication.factor", "-1")
                 .withNewInlineLogging()
-                    .addToLoggers("connect.root.logger.level", "DEBUG")
+                    .addToLoggers(rootLogger, "DEBUG")
                 .endInlineLogging()
             .endSpec();
     }
