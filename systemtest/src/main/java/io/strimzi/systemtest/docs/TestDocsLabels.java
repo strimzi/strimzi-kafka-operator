@@ -18,4 +18,5 @@ public interface TestDocsLabels {
     String LOGGING = "logging";
     String MIRROR_MAKER_2 = "mirror-maker-2";
     String METRICS = "metrics";
+    String KAFKA_ACCESS = "kafka-access";
 }
