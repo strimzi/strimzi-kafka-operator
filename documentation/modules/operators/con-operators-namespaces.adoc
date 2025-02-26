@@ -10,10 +10,16 @@
 Operators watch and manage Strimzi resources in Kubernetes namespaces.
 The Cluster Operator can watch a single namespace, multiple namespaces, or all namespaces in a Kubernetes cluster.
 The Topic Operator and User Operator can watch a single namespace.
+ifdef::Section[]
+The Access Operator can watch a single namespace or all namespaces in a Kubernetes cluster.
+endif::Section[]
 
 * The Cluster Operator watches for `Kafka` resources
 * The Topic Operator watches for `KafkaTopic` resources
 * The User Operator watches for `KafkaUser` resources 
+ifdef::Section[]
+* The Access Operator watches for `KafkaAccess` resources.
+endif::Section[]
 
 The Topic Operator and the User Operator can only watch a single Kafka cluster in a namespace.
 And they can only be connected to a single Kafka cluster.  
