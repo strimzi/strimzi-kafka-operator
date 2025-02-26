@@ -9,8 +9,6 @@ import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
-import io.strimzi.api.kafka.model.user.KafkaUser;
-import io.strimzi.kafka.access.model.KafkaAccessBuilder;
 import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
@@ -26,18 +24,24 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
+import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 @Tag(REGRESSION)
 public class AccessOperatorST extends AbstractST {
+    private static final String ACCESS_EXAMPLE_PATH = TestUtils.USER_PATH + "/../systemtest/src/test/resources/kafka-access/kafka-access.yaml";
     private static final Logger LOGGER = LogManager.getLogger(DrainCleanerST.class);
 
     @IsolatedTest
@@ -82,26 +86,16 @@ public class AccessOperatorST extends AbstractST {
         );
 
         LOGGER.info("Creating KafkaAccess for collecting information about KafkaUser: {} for Kafka: {}", testStorage.getUsername(), testStorage.getClusterName());
-        resourceManager.createResourceWithWait(new KafkaAccessBuilder()
-            .editOrNewMetadata()
-                .withName(kafkaAccessName)
-                .withNamespace(testStorage.getNamespaceName())
-            .endMetadata()
-            .editOrNewSpec()
-                .withNewKafka()
-                    .withName(testStorage.getClusterName())
-                    .withNamespace(testStorage.getNamespaceName())
-                    .withListener(TestConstants.TLS_LISTENER_DEFAULT_NAME)
-                .endKafka()
-                .withNewUser()
-                    .withName(testStorage.getUsername())
-                    .withNamespace(testStorage.getNamespaceName())
-                    .withApiGroup(KafkaUser.RESOURCE_GROUP)
-                    .withKind(KafkaUser.RESOURCE_KIND)
-                .endUser()
-            .endSpec()
-            .build()
-        );
+        // TODO: once the `api` module of the Kafka Access Operator is released publicly, we should use the KafkaAccessBuilder instead of having a file like this
+        try {
+            final String kafkaAccessYaml =  Files.readString(Paths.get(ACCESS_EXAMPLE_PATH))
+                .replace("CLUSTER_NAME", testStorage.getClusterName())
+                .replace("NAMESPACE_NAME", testStorage.getNamespaceName());
+
+            cmdKubeClient(testStorage.getNamespaceName()).applyContent(kafkaAccessYaml);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to update the Postgres deployment YAML", e);
+        }
 
         SecretUtils.waitForSecretReady(testStorage.getNamespaceName(), kafkaAccessName, () -> { });
 
