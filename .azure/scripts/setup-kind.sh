@@ -83,19 +83,23 @@ function setup_kube_directory {
 }
 
 : '
-@brief: Fixes the "ip6_tables" issue for Podman.
-@note: Ensures the required kernel modules are loaded.
+@brief: Fixes the "ip6_tables/ip_tables" issue for Podman.
+@note: Ensures the required kernel modules are loaded. Fixes:
+Command Output: Error: netavark: code: 3, msg: modprobe: ERROR: could not insert 'ip_tables': Operation not permitted
+iptables v1.8.10 (legacy): Table does not exist (do you need to insmod?)
 '
-function load_ip6_tables_module_to_kernel {
-    if is_podman; then
-        echo "Ensuring ip6_tables kernel module is loaded..."
-        if ! lsmod | grep -q ip6_tables; then
-            sudo modprobe ip6_tables || {
-                echo "Error: Failed to load ip6_tables module. Ensure your kernel supports it."
-                exit 1
-            }
-        fi
-    fi
+function load_iptables_modules_for_podman {
+  if is_podman; then
+    echo "Ensuring ip_tables and ip6_tables modules are loaded..."
+    for module in ip_tables ip6_tables; do
+      if ! lsmod | grep -q "$module"; then
+        sudo modprobe "$module" || {
+          echo "Error: Failed to load $module. Ensure your kernel supports it."
+          exit 1
+        }
+      fi
+    done
+  fi
 }
 
 : '
@@ -290,7 +294,7 @@ setup_kube_directory
 install_kubectl
 install_kubernetes_provisioner
 adjust_inotify_limits
-load_ip6_tables_module_to_kernel
+load_iptables_modules_for_podman
 
 reg_name='kind-registry'
 reg_port='5001'
