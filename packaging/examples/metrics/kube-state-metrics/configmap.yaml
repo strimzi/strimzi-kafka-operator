@@ -110,8 +110,7 @@ data:
                     name: [ metadata, name ]
               labelsFromPath:
                 exported_namespace: [ metadata, namespace ]
-                # TODO do we want to have that? If not please make a suggestion to remove it
-                # deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
+                deprecated: [ status, conditions, "[reason=DeprecatedFields]", type ]
                 currentPods: [ status, currentPods ]
                 pods: [ status, pods ]
                 readyPods: [ status, readyPods ]
