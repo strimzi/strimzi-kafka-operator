@@ -7,12 +7,17 @@ package io.strimzi.systemtest.specific;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.skodjob.annotations.Desc;
+import io.skodjob.annotations.Label;
+import io.skodjob.annotations.Step;
+import io.skodjob.annotations.TestDoc;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -39,12 +44,31 @@ import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
+/**
+ * Class for testing the usage of Kafka Access Operator together with operators and Kafka/KafkaUser CRs in real environment.
+ */
 @Tag(REGRESSION)
 public class AccessOperatorST extends AbstractST {
     private static final String ACCESS_EXAMPLE_PATH = TestUtils.USER_PATH + "/../systemtest/src/test/resources/kafka-access/kafka-access.yaml";
     private static final Logger LOGGER = LogManager.getLogger(DrainCleanerST.class);
 
     @IsolatedTest
+    @TestDoc(
+        description = @Desc(
+            "The `testAccessOperator` test verifies the functionality of Kafka Access Operator together with Kafka and KafkaUser CRs in a real environment." +
+            "It also verifies that with the credentials and information about the Kafka cluster, the Kafka clients are able to connect and do the message transmission"
+        ),
+        steps = {
+            @Step(value = "Deploy Kafka Access Operator using the installation files from packaging folder.", expected = "Kafka Access Operator is successfully deployed."),
+            @Step(value = "Deploy and create NodePools, Kafka with configured plain and TLS listeners, TLS KafkaUser, and KafkaTopic where we will produce the messages.", expected = "All of the resources are successfully deployed/created."),
+            @Step(value = "Create KafkaAccess resource pointing to our Kafka cluster (and TLS listener) and TLS KafkaUser; Wait for KafkaAccess' Secret creation.", expected = "Both KafkaAccess resource and KafkaAccess' Secret is created."),
+            @Step(value = "Collect KafkaAccess' Secret and its data.", expected = "Data successfully collected."),
+            @Step(value = "Use the data from KafkaAccess Secret in producer and consumer clients, do message transmission.", expected = "With the data provided by KAO, both clients can connect to Kafka and do the message transmission.")
+        },
+        labels = {
+            @Label(value = TestDocsLabels.KAFKA_ACCESS),
+        }
+    )
     void testAccessOperator() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String kafkaAccessName = testStorage.getClusterName() + "-access";
