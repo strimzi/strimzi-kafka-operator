@@ -236,7 +236,10 @@
         <dependency>
             <groupId>io.strimzi.kafka.access</groupId>
             <artifactId>api</artifactId>
-            <!-- Currently, there are no released versions in Maven repository, using SNAPSHOT for the having the `api` module available -->
+            <!--
+            Currently, there are no released versions in Maven repository of this module,
+            using SNAPSHOT for having the `api` module available and usable in the STs.
+            -->
             <version>0.2.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
