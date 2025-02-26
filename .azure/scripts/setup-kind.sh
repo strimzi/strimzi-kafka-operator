@@ -83,19 +83,23 @@ function setup_kube_directory {
 }
 
 : '
-@brief: Fixes the "ip6_tables" issue for Podman.
-@note: Ensures the required kernel modules are loaded.
+@brief: Fixes the "ip6_tables/ip_tables" issue for Podman.
+@note: Ensures the required kernel modules are loaded. Fixes:
+Command Output: Error: netavark: code: 3, msg: modprobe: ERROR: could not insert 'ip_tables': Operation not permitted
+iptables v1.8.10 (legacy): Table does not exist (do you need to insmod?)
 '
-function load_ip6_tables_module_to_kernel {
-    if is_podman; then
-        echo "Ensuring ip6_tables kernel module is loaded..."
-        if ! lsmod | grep -q ip6_tables; then
-            sudo modprobe ip6_tables || {
-                echo "Error: Failed to load ip6_tables module. Ensure your kernel supports it."
-                exit 1
-            }
-        fi
-    fi
+function load_iptables_modules_for_podman {
+  if is_podman; then
+    echo "Ensuring ip_tables and ip6_tables modules are loaded..."
+    for module in ip_tables ip6_tables; do
+      if ! lsmod | grep -q "$module"; then
+        sudo modprobe "$module" || {
+          echo "Error: Failed to load $module. Ensure your kernel supports it."
+          exit 1
+        }
+      fi
+    done
+  fi
 }
 
 : '
@@ -197,31 +201,6 @@ function adjust_inotify_limits {
 }
 
 : '
-@brief: Configures Docker or Podman networking for the KIND cluster.
-@param:
-        1) registry_name - Name of the local registry container.
-        2) network_name - Name of the KIND network.
-@global:
-        DOCKER_CMD - container runtime CLI.
-@note:  None.
-'
-function configure_container_runtime_networking {
-    local registry_name="$1"
-    local network_name="$2"
-
-    if ! $DOCKER_CMD network inspect ${network_name} | grep -q "${registry_name}"; then
-        if is_podman; then
-            if ! $DOCKER_CMD network exists "${network_name}"; then
-                $DOCKER_CMD network create "${network_name}"
-            fi
-            $DOCKER_CMD network connect "${network_name}" "${registry_name}"
-        else
-            $DOCKER_CMD network connect "${network_name}" "${registry_name}"
-        fi
-    fi
-}
-
-: '
 @brief: Creates a KIND cluster configuration and provisions the cluster.
 @param:
         1) control_planes - Number of control-plane nodes.
@@ -290,15 +269,20 @@ setup_kube_directory
 install_kubectl
 install_kubernetes_provisioner
 adjust_inotify_limits
-load_ip6_tables_module_to_kernel
+load_iptables_modules_for_podman
 
 reg_name='kind-registry'
 reg_port='5001'
+network_name="kind"
 # by default using podman we have to use single control-plane because of https://github.com/kubernetes-sigs/kind/issues/2858
 control_planes=1
 
 if is_docker; then
     control_planes=3
+fi
+
+if ! $DOCKER_CMD network exists "${network_name}"; then
+    $DOCKER_CMD network create "${network_name}"
 fi
 
 if [[ "$IP_FAMILY" = "ipv4" || "$IP_FAMILY" = "dual" ]]; then
@@ -319,7 +303,7 @@ if [[ "$IP_FAMILY" = "ipv4" || "$IP_FAMILY" = "dual" ]]; then
     # run local container registry
     if [ "$($DOCKER_CMD inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)" != 'true' ]; then
         $DOCKER_CMD run \
-          -d --restart=always -p "${hostname}:${reg_port}:5000" --name "${reg_name}" \
+          -d --restart=always -p "${hostname}:${reg_port}:5000" --name "${reg_name}" --network "${network_name}" \
           registry:2
     fi
 
@@ -360,7 +344,7 @@ elif [[ "$IP_FAMILY" = "ipv6" ]]; then
     # run local container registry
     if [ "$($DOCKER_CMD inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)" != 'true' ]; then
         $DOCKER_CMD run \
-          -d --restart=always -p "[${ula_fixed_ipv6}::1]:${reg_port}:5000" --name "${reg_name}" \
+          -d --restart=always -p "[${ula_fixed_ipv6}::1]:${reg_port}:5000" --name "${reg_name}" --network "${network_name}" \
           registry:2
     fi
     # we need to also make a DNS record for docker tag because it seems that such version does not support []:: format
@@ -376,8 +360,5 @@ EOF
     done
 fi
 
-network_name="kind"
-
-configure_container_runtime_networking "${reg_name}" "${network_name}"
 create_cluster_role_binding_admin
 label_node
