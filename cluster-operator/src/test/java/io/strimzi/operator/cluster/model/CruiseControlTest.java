@@ -59,6 +59,7 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.cruisecontrol.BrokerCapacity;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
 import io.strimzi.operator.cluster.model.cruisecontrol.CpuCapacity;
+import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -1086,17 +1087,14 @@ public class CruiseControlTest {
         CruiseControl cc = createCruiseControl(kafka, NODES, STORAGE, Map.of());
 
         assertThat(cc.metrics().isEnabled(), is(true));
-        assertThat(cc.metrics().getConfigMapName(), is("my-metrics-configuration"));
-        assertThat(cc.metrics().getConfigMapKey(), is("config.yaml"));
+        assertThat(((JmxPrometheusExporterModel) cc.metrics()).getConfigMapName(), is("my-metrics-configuration"));
+        assertThat(((JmxPrometheusExporterModel) cc.metrics()).getConfigMapKey(), is("config.yaml"));
     }
 
     @ParallelTest
     public void testMetricsParsingNoMetrics() {
         CruiseControl cc = createCruiseControl(KAFKA, NODES, STORAGE, Map.of());
-
-        assertThat(cc.metrics().isEnabled(), is(false));
-        assertThat(cc.metrics().getConfigMapName(), is(nullValue()));
-        assertThat(cc.metrics().getConfigMapKey(), is(nullValue()));
+        assertThat(cc.metrics(), is(nullValue()));
     }
 
     @ParallelTest
@@ -1204,7 +1202,7 @@ public class CruiseControlTest {
 
     private List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<>();
-        expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_CRUISE_CONTROL_METRICS_ENABLED).withValue(Boolean.toString(CruiseControl.DEFAULT_CRUISE_CONTROL_METRICS_ENABLED)).build());
+        expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_CRUISE_CONTROL_JMX_EXPORTER_ENABLED).withValue(Boolean.toString(CruiseControl.DEFAULT_CRUISE_CONTROL_METRICS_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS).withValue(KafkaResources.bootstrapServiceName(CLUSTER_NAME) + ":" + KafkaCluster.REPLICATION_PORT).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED).withValue(Boolean.toString(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_SSL_ENABLED).withValue(Boolean.toString(CruiseControlConfigurationParameters.DEFAULT_WEBSERVER_SSL_ENABLED)).build());
