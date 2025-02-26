@@ -29,9 +29,13 @@ import java.util.List;
 public class SetupAccessOperator {
 
     public static final String PATH_TO_KAO_CONFIG = TestUtils.USER_PATH + "/../packaging/install/access-operator/";
-    public static final String PATH_TO_KAO_DEPLOYMENT_FILE = TestUtils.USER_PATH + "/../packaging/install/access-operator/050-Deployment.yaml";
     private static final Logger LOGGER = LogManager.getLogger(SetupDrainCleaner.class);
 
+    /**
+     * Method for installing Kafka Access Operator into the specified Namespace.
+     *
+     * @param namespaceName     Name of the Namespace where the KAO should be installed
+     */
     public static void install(String namespaceName) {
         LOGGER.info("Applying files from path: {}", PATH_TO_KAO_CONFIG);
 
@@ -85,17 +89,5 @@ public class SetupAccessOperator {
                 }
             }
         });
-//        LOGGER.info("Deploying Access Operator Deployment into Namespace: {}", namespaceName);
-//        ResourceManager.getInstance().createResourceWithWait(accessOperatorDeployment());
-    }
-
-    private Deployment accessOperatorDeployment() {
-        Deployment accessOperator = DeploymentResource.getDeploymentFromYaml(PATH_TO_KAO_DEPLOYMENT_FILE);
-
-        return new DeploymentBuilder(accessOperator)
-            .editOrNewMetadata()
-                .addToLabels(TestConstants.DEPLOYMENT_TYPE, DeploymentTypes.AccessOperator.name())
-            .endMetadata()
-            .build();
     }
 }
