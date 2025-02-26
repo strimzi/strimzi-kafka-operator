@@ -23,7 +23,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class JmxExporterMetricsModelTest {
+public class JmxPrometheusExporterModelTest {
     @Test
     public void testDisabled()   {
         JmxPrometheusExporterModel metrics = new JmxPrometheusExporterModel(new KafkaConnectSpecBuilder().build());
@@ -71,7 +71,7 @@ public class JmxExporterMetricsModelTest {
     }
 
     @Test
-    public void testPrometheusJmxMetricsValidation() {
+    public void testJmxPrometheusMetricsValidation() {
         assertDoesNotThrow(() -> JmxPrometheusExporterModel.validateJmxExporterMetricsConfig(new JmxPrometheusExporterMetricsBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector("my-key", "my-name", false)).endValueFrom().build()));
 
         InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> JmxPrometheusExporterModel.validateJmxExporterMetricsConfig(new JmxPrometheusExporterMetricsBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector()).endValueFrom().build()));
