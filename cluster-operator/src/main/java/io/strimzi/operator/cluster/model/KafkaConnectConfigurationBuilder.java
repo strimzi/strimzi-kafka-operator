@@ -15,12 +15,14 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScramSha256;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTls;
+import io.strimzi.operator.common.Reconciliation;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.cluster.model.KafkaConnectCluster.OAUTH_SECRETS_BASE_VOLUME_MOUNT;
+import static io.strimzi.operator.cluster.model.KafkaConnectCluster.OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT;
 import static io.strimzi.operator.cluster.model.KafkaConnectCluster.PASSWORD_VOLUME_MOUNT;
 
 /**
@@ -30,11 +32,12 @@ import static io.strimzi.operator.cluster.model.KafkaConnectCluster.PASSWORD_VOL
  * generate the configuration file, it is using the PrintWriter.
  */
 public class KafkaConnectConfigurationBuilder {
-    // Names of environment variables expanded through config providers inside Connect node
-    private final static String PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:CERTS_STORE_PASSWORD}";
     // the volume mounted secret file template includes: <volume_mount>/<secret_name>/<secret_key>
     private static final String PLACEHOLDER_VOLUME_MOUNTED_SECRET_TEMPLATE_CONFIG_PROVIDER_DIR = "${strimzidir:%s%s:%s}";
+    // the secrets file template: <namespace>/<secret_name>:<secret_key>
+    private static final String PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER = "${strimzisecrets:%s/%s:%s}";
 
+    private final Reconciliation reconciliation;
     private final StringWriter stringWriter = new StringWriter();
     private final PrintWriter writer = new PrintWriter(stringWriter);
     private String securityProtocol = "PLAINTEXT";
@@ -42,9 +45,11 @@ public class KafkaConnectConfigurationBuilder {
     /**
      * Connect configuration template constructor
      *
-     * @param bootstrapServers  Kafka cluster bootstrap servers to connect to
+     * @param reconciliation the reconciliation
+     * @param bootstrapServers Kafka cluster bootstrap servers to connect to
      */
-    public KafkaConnectConfigurationBuilder(String bootstrapServers) {
+    public KafkaConnectConfigurationBuilder(Reconciliation reconciliation, String bootstrapServers) {
+        this.reconciliation = reconciliation;
         printHeader();
         printBootstrapServers(bootstrapServers);
     }
@@ -87,18 +92,18 @@ public class KafkaConnectConfigurationBuilder {
 
             if (tls.getTrustedCertificates() != null && !tls.getTrustedCertificates().isEmpty()) {
                 printSectionHeader("TLS / SSL");
-                writer.println("ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
-                writer.println("ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
-                writer.println("ssl.truststore.type=PKCS12");
+                String configProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), tls.getTrustedCertificates().get(0).getSecretName(), "*.crt");
+                writer.println("ssl.truststore.certificates=" + configProviderValue);
+                writer.println("ssl.truststore.type=PEM");
 
-                writer.println("producer.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
-                writer.println("producer.ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
+                writer.println("producer.ssl.truststore.certificates=" + configProviderValue);
+                writer.println("producer.ssl.truststore.type=PEM");
 
-                writer.println("consumer.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
-                writer.println("consumer.ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
+                writer.println("consumer.ssl.truststore.certificates=" + configProviderValue);
+                writer.println("consumer.ssl.truststore.type=PEM");
 
-                writer.println("admin.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
-                writer.println("admin.ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
+                writer.println("admin.ssl.truststore.certificates=" + configProviderValue);
+                writer.println("admin.ssl.truststore.type=PEM");
 
                 writer.println();
             }
@@ -118,21 +123,24 @@ public class KafkaConnectConfigurationBuilder {
             printSectionHeader("Authentication configuration");
             // configuring mTLS (client TLS authentication) if TLS client authentication is set
             if (authentication instanceof KafkaClientAuthenticationTls tlsAuth && tlsAuth.getCertificateAndKey() != null) {
-                writer.println("ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
-                writer.println("ssl.keystore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
-                writer.println("ssl.keystore.type=PKCS12");
+                String certConfigProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getCertificate());
+                String keyConfigProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getKey());
 
-                writer.println("producer.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
-                writer.println("producer.ssl.keystore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
-                writer.println("producer.ssl.keystore.type=PKCS12");
+                writer.println("ssl.keystore.certificate.chain=" + certConfigProviderValue);
+                writer.println("ssl.keystore.key=" + keyConfigProviderValue);
+                writer.println("ssl.keystore.type=PEM");
 
-                writer.println("consumer.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
-                writer.println("consumer.ssl.keystore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
-                writer.println("consumer.ssl.keystore.type=PKCS12");
+                writer.println("producer.ssl.keystore.certificate.chain=" + certConfigProviderValue);
+                writer.println("producer.ssl.keystore.key=" + keyConfigProviderValue);
+                writer.println("producer.ssl.keystore.type=PEM");
 
-                writer.println("admin.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
-                writer.println("admin.ssl.keystore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR);
-                writer.println("admin.ssl.keystore.type=PKCS12");
+                writer.println("consumer.ssl.keystore.certificate.chain=" + certConfigProviderValue);
+                writer.println("consumer.ssl.keystore.key=" + keyConfigProviderValue);
+                writer.println("consumer.ssl.keystore.type=PEM");
+
+                writer.println("admin.ssl.keystore.certificate.chain=" + certConfigProviderValue);
+                writer.println("admin.ssl.keystore.key=" + keyConfigProviderValue);
+                writer.println("admin.ssl.keystore.type=PEM");
                 // otherwise SASL or OAuth is going to be used for authentication
             } else {
                 securityProtocol = securityProtocol.equals("SSL") ? "SASL_SSL" : "SASL_PLAINTEXT";
@@ -186,7 +194,8 @@ public class KafkaConnectConfigurationBuilder {
                     }
 
                     if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
-                        jaasConfig.append(" oauth.ssl.truststore.location=\"/tmp/kafka/oauth.truststore.p12\" oauth.ssl.truststore.password=\"" + PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR + "\" oauth.ssl.truststore.type=\"PKCS12\"");
+                        String trustStorePath = OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT + oauth.getTlsTrustedCertificates().get(0).getSecretName() + "/" + oauth.getTlsTrustedCertificates().get(0).getCertificate();
+                        jaasConfig.append(" oauth.ssl.truststore.location=\"" + trustStorePath + "\" oauth.ssl.truststore.type=\"PEM\"");
                     }
 
                     jaasConfig.append(";");
@@ -246,7 +255,7 @@ public class KafkaConnectConfigurationBuilder {
      */
     private void printConfigProviders(AbstractConfiguration userConfig) {
         printSectionHeader("Config providers");
-        String strimziConfigProviders = "strimzienv,strimzifile,strimzidir";
+        String strimziConfigProviders = "strimzienv,strimzifile,strimzidir,strimzisecrets";
 
         if (userConfig != null && !userConfig.getConfiguration().isEmpty() && userConfig.getConfigOption("config.providers") != null) {
             writer.println("# Configuration providers configured by the user and by Strimzi");
@@ -262,6 +271,7 @@ public class KafkaConnectConfigurationBuilder {
         writer.println("config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider");
         writer.println("config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider");
         writer.println("config.providers.strimzidir.param.allowed.paths=/opt/kafka");
+        writer.println("config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider");
         writer.println();
     }
 

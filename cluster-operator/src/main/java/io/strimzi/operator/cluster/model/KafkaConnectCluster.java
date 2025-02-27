@@ -28,6 +28,10 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
+import io.fabric8.kubernetes.api.model.rbac.Role;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Subject;
@@ -147,6 +151,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     // Templates
     protected PodDisruptionBudgetTemplate templatePodDisruptionBudget;
     protected ResourceTemplate templateInitClusterRoleBinding;
+    protected ResourceTemplate templateRole;
+    protected ResourceTemplate templateRoleBinding;
     protected DeploymentTemplate templateDeployment;
     protected ResourceTemplate templatePodSet;
     protected PodTemplate templatePod;
@@ -299,6 +305,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
 
             result.templatePodDisruptionBudget = template.getPodDisruptionBudget();
             result.templateInitClusterRoleBinding = template.getClusterRoleBinding();
+            result.templateRole = template.getRole();
+            result.templateRoleBinding = template.getRoleBinding();
             result.templateDeployment = template.getDeployment();
             result.templatePodSet = template.getPodSet();
             result.templatePod = template.getPod();
@@ -630,13 +638,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         JvmOptionUtils.jvmPerformanceOptions(varList, jvmOptions);
         JvmOptionUtils.jvmSystemProperties(varList, jvmOptions);
 
-        if (tls != null) {
-            populateTLSEnvVars(varList);
-        }
-
-        // Client authentication env var is needed to generate oauth truststore certificates in PKCS12 format in container script
-        AuthenticationUtils.configureClientAuthenticationEnvVars(authentication, varList, name -> ENV_VAR_PREFIX + name);
-
         if (tracing != null) {
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_TRACING, tracing.getType()));
         }
@@ -651,12 +652,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateContainer);
 
         return varList;
-    }
-
-    private void populateTLSEnvVars(final List<EnvVar> varList) {
-        if (tls.getTrustedCertificates() != null && !tls.getTrustedCertificates().isEmpty()) {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS, CertUtils.trustedCertsEnvVar(tls.getTrustedCertificates())));
-        }
     }
 
     @SuppressWarnings("deprecation") // External Configuration environment variables are deprecated
@@ -826,6 +821,47 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     }
 
     /**
+     * Creates a Role for reading secrets in the same namespace as the resource.
+     * This is used for loading certificates from secrets directly.
+     **
+     * @return role for the Kafka Connect
+     */
+    public Role generateRole() {
+        List<PolicyRule> rules = List.of(new PolicyRuleBuilder()
+                .withApiGroups("")
+                .withResources("secrets")
+                .withVerbs("get")
+                .build());
+
+        Role role = RbacUtils.createRole(componentName, namespace, rules, labels, ownerReference, templateRole);
+        return role;
+    }
+
+
+    /**
+     * Generates the Kafka Connect Role Binding
+     *
+     * @return  Role Binding for the Kafka Connect
+     */
+    public RoleBinding generateRoleBindingForRole() {
+        Subject subject = new SubjectBuilder()
+                .withKind("ServiceAccount")
+                .withName(componentName)
+                .withNamespace(namespace)
+                .build();
+
+        RoleRef roleRef = new RoleRefBuilder()
+                .withName(componentName)
+                .withApiGroup("rbac.authorization.k8s.io")
+                .withKind("Role")
+                .build();
+
+        RoleBinding rb = RbacUtils
+                .createRoleBinding(KafkaConnectResources.connectRoleBindingName(componentName), namespace, roleRef, List.of(subject), labels, ownerReference, templateRoleBinding);
+
+        return rb;
+    }
+    /**
      * @return  Default logging configuration needed to update loggers in Kafka Connect (and Kafka Mirror Maker 2 which
      *          is based on Kafka Connect)
      */
@@ -859,7 +895,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         // add the ConfigMap data entry for Connect configurations
         data.put(
                 KAFKA_CONNECT_CONFIGURATION_FILENAME,
-                new KafkaConnectConfigurationBuilder(bootstrapServers)
+                new KafkaConnectConfigurationBuilder(reconciliation, bootstrapServers)
                         .withUserConfigurations(configuration)
                         .withRestListeners(REST_API_PORT)
                         .withPluginPath()

@@ -388,8 +388,6 @@ public class KafkaMirrorMaker2ClusterTest {
             Container cont = pod.getSpec().getContainers().get(0);
             assertThat(cont.getVolumeMounts().get(2).getMountPath(), is(KafkaMirrorMaker2Cluster.TLS_CERTS_BASE_VOLUME_MOUNT + "my-secret"));
             assertThat(cont.getVolumeMounts().get(3).getMountPath(), is(KafkaMirrorMaker2Cluster.TLS_CERTS_BASE_VOLUME_MOUNT + "my-another-secret"));
-            assertThat(io.strimzi.operator.cluster.TestUtils.containerEnvVars(cont).get(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS),
-                    is("my-secret/cert.crt;my-secret/new-cert.crt;my-another-secret/another-cert.crt"));
             assertThat(io.strimzi.operator.cluster.TestUtils.containerEnvVars(cont).get(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_MIRRORMAKER_2_TRUSTED_CERTS_CLUSTERS),
                     is("target=my-secret/cert.crt;my-secret/new-cert.crt;my-another-secret/another-cert.crt"));
         });
@@ -451,8 +449,6 @@ public class KafkaMirrorMaker2ClusterTest {
 
             Container cont = pod.getSpec().getContainers().get(0);
             assertThat(cont.getVolumeMounts().get(3).getMountPath(), is(KafkaMirrorMaker2Cluster.TLS_CERTS_BASE_VOLUME_MOUNT + "user-secret"));
-            assertThat(io.strimzi.operator.cluster.TestUtils.containerEnvVars(cont).get(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_TLS_AUTH_CERT), is("user-secret/user.crt"));
-            assertThat(io.strimzi.operator.cluster.TestUtils.containerEnvVars(cont).get(KafkaMirrorMaker2Cluster.ENV_VAR_KAFKA_CONNECT_TLS_AUTH_KEY), is("user-secret/user.key"));
         });
     }
 
@@ -2076,9 +2072,8 @@ public class KafkaMirrorMaker2ClusterTest {
                 "oauth.token.endpoint.uri=\"http://my-oauth-server\" " +
                 "oauth.ssl.endpoint.identification.algorithm=\"\" " +
                 "oauth.client.secret=\"${strimzidir:/opt/kafka/oauth/my-secret-secret:my-secret-key}\" " +
-                "oauth.ssl.truststore.location=\"/tmp/kafka/oauth.truststore.p12\" " +
-                "oauth.ssl.truststore.password=\"${strimzienv:CERTS_STORE_PASSWORD}\" " +
-                "oauth.ssl.truststore.type=\"PKCS12\";"));
+                "oauth.ssl.truststore.location=\"/opt/kafka/oauth-certs/first-certificate/ca.crt\" " +
+                "oauth.ssl.truststore.type=\"PEM\";"));
         
         // Check PodSet
         StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
@@ -2098,7 +2093,6 @@ public class KafkaMirrorMaker2ClusterTest {
             assertThat(pod.getSpec().getVolumes().stream().filter(vol -> "target-oauth-certs-second-certificate".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().isEmpty(), is(true));
 
             // Environment variable
-            assertThat(cont.getEnv().stream().filter(e -> "KAFKA_CONNECT_OAUTH_TRUSTED_CERTS".equals(e.getName())).findFirst().orElseThrow().getValue(), is("first-certificate/ca.crt;second-certificate/tls.crt;first-certificate/ca2.crt"));
             assertThat(cont.getEnv().stream().filter(e -> "KAFKA_MIRRORMAKER_2_OAUTH_TRUSTED_CERTS_CLUSTERS".equals(e.getName())).findFirst().orElseThrow().getValue(), is("target=first-certificate/ca.crt;second-certificate/tls.crt;first-certificate/ca2.crt"));
         });
     }

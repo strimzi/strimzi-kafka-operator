@@ -1806,6 +1806,42 @@ spec:
                             description: Annotations added to the Kubernetes resource.
                         description: Metadata applied to the resource.
                     description: Template for the Kafka Connect ClusterRoleBinding.
+                  role:
+                    type: object
+                    properties:
+                      metadata:
+                        type: object
+                        properties:
+                          labels:
+                            additionalProperties:
+                              type: string
+                            type: object
+                            description: Labels added to the Kubernetes resource.
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            type: object
+                            description: Annotations added to the Kubernetes resource.
+                        description: Metadata applied to the resource.
+                    description: Template for the Kafka Connect Role.
+                  roleBinding:
+                    type: object
+                    properties:
+                      metadata:
+                        type: object
+                        properties:
+                          labels:
+                            additionalProperties:
+                              type: string
+                            type: object
+                            description: Labels added to the Kubernetes resource.
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            type: object
+                            description: Annotations added to the Kubernetes resource.
+                        description: Metadata applied to the resource.
+                    description: Template for the Kafka Connect RoleBinding.
                   buildPod:
                     type: object
                     properties:
