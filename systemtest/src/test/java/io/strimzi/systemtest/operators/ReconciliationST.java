@@ -136,7 +136,8 @@ public class ReconciliationST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(CRUISE_CONTROL)
     void testPauseReconciliationInKafkaRebalanceAndTopic() {
-        // Currently not supported on Kafka 4.0.0
+        // Cruise Control currently does not work with Kafka 4.0 and this tests is therefore disabled when Kafka 4.0 or newer is used.
+        // This should be re-enabled once Cruise Control support is fixed: https://github.com/strimzi/strimzi-kafka-operator/issues/11199
         Assumptions.assumeTrue(TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0);
 
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());

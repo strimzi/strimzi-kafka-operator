@@ -95,6 +95,12 @@
 
     <repositories>
         <repository>
+            <!--
+            We use the Kafka staging repository while we use the RC releases of Kafka 4.0.0. This should be removed once
+            we move to the final release of Kafka 4.0.0.
+
+            Tracked by issue https://github.com/strimzi/strimzi-kafka-operator/issues/11200
+            -->
             <id>apache-staging</id>
             <url>https://repository.apache.org/content/groups/staging/</url>
         </repository>

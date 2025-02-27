@@ -46,7 +46,9 @@ public class ConsumerProperties extends AbstractKafkaClientProperties<ConsumerPr
             return this;
         }
 
-        @SuppressWarnings("deprecation") // OffsetResetStrategy is deprecated
+        // OffsetResetStrategy is deprecated and should be replaced by using AutoOffsetResetStrategy
+        // Tracked by issue https://github.com/strimzi/strimzi-kafka-operator/issues/11201
+        @SuppressWarnings("deprecation")
         public ConsumerPropertiesBuilder withAutoOffsetResetConfig(OffsetResetStrategy offsetResetConfig) {
 
             this.properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, offsetResetConfig.name().toLowerCase(Locale.ENGLISH));

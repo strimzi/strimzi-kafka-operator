@@ -839,6 +839,9 @@ public class KafkaAssemblyOperatorKRaftMockTest {
      *     - Third with change to a logging appender => annotations for controller nodes should change, and so should
      *       the annotation for brokers as appenders are not dynamically configurable
      *
+     * With Kafka 4.0+ / Log4j2 we rely on Log4j2 for log reloading. So this tests makes no sense anymore and there is
+     * no rolling update to controllers in Kafka 4.0 clusters because of logging. This test can be removed once we drop the support for Kafka 3.x.
+     *
      * @param context   Test context
      */
     @Test
@@ -860,7 +863,7 @@ public class KafkaAssemblyOperatorKRaftMockTest {
 
         Map<String, String> loggingConfigurationAnnotations = new HashMap<>();
 
-        operator.reconcile(new Reconciliation("initial-triggerX", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME))
+        operator.reconcile(new Reconciliation("initial-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // Collect the configuration annotations
                     StrimziPodSet spsControllers = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(CLUSTER_NAME + "-controllers").get();
