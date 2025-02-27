@@ -212,9 +212,9 @@ public class SetupClusterOperator {
         if (Environment.isOlmInstall()) {
             runOlmInstallation();
         } else if (Environment.isHelmInstall()) {
-            helmInstallation();
+            runHelmInstallation();
         } else {
-            bundleInstallation();
+            runBundleInstallation();
         }
         return this;
     }
