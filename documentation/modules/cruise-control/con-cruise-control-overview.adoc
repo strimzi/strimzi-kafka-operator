@@ -19,7 +19,7 @@ REST API:: Cruise Control provides a REST API for client interactions, which Str
 * Changing topic replication factor
 * Reassigning partitions between JBOD disks
 
-NOTE: Cruise Control self-healing is not supported out-of-the-box. 
+NOTE: Cruise Control self-healing is not supported. 
 Notifications and custom goals may be introduced through customization. 
 For example, an anomaly notifier or custom goals can be added by including the appropriate JAR files in a custom image based on the Strimzi Kafka image.
 
