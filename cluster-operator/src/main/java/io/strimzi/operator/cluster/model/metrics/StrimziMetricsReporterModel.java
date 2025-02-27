@@ -21,8 +21,6 @@ public class StrimziMetricsReporterModel implements MetricsModel {
     /**
      * Fully qualified class name of the Strimzi Kafka Prometheus Metrics Reporter.
      */
-    public static final String KAFKA_PROMETHEUS_METRICS_REPORTER = "io.strimzi.kafka.metrics.KafkaPrometheusMetricsReporter";
-
     private final boolean isEnabled;
     private final List<String> allowList;
 
