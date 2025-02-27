@@ -118,7 +118,7 @@ public class AccessOperatorST extends AbstractST {
 
             cmdKubeClient(testStorage.getNamespaceName()).applyContent(kafkaAccessYaml);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to update the Postgres deployment YAML", e);
+            throw new RuntimeException("Failed to update the KafkaAccess YAML", e);
         }
 
         SecretUtils.waitForSecretReady(testStorage.getNamespaceName(), kafkaAccessName, () -> { });
