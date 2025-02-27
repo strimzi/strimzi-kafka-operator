@@ -18,9 +18,6 @@ Cluster Operator:: Manages Kafka clusters and related components.
 Entity Operator:: Comprises the Topic Operator and User Operator.
 Topic Operator:: Creates, configures, and deletes Kafka topics.
 User Operator:: Manages Kafka users and their authentication credentials.
-ifdef::Section[]
-Access Operator:: Simplifies sharing Kafka connection information and credentials across namespaces.
-endif::Section[]
 
 Additionally, Strimzi provides Drain Cleaner, a separate tool that can be used alongside the Cluster Operator to assist with safe pod eviction during maintenance or upgrades. 
 
@@ -36,11 +33,6 @@ include::../../modules/overview/con-overview-components-topic-operator.adoc[leve
 
 //description of User Operator
 include::../../modules/overview/con-overview-components-user-operator.adoc[leveloffset=+1]
-
-ifdef::Section[]
-//description of Access Operator
-include::../../modules/overview/con-overview-components-access-operator.adoc[leveloffset=+1]
-endif::Section[]
 
 //description of Drain cleaner
 include::../../modules/overview/con-overview-components-drain-cleaner.adoc[leveloffset=+1]
