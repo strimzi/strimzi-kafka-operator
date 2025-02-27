@@ -26,6 +26,8 @@
 * The storage overrides for configuring per-broker storage class are not supported anymore.
   If you are using the storage overrides, you should instead use multiple KafkaNodePool resources with a different storage class each.
   For more details about migrating from storage overrides, please follow the [documentation](https://strimzi.io/docs/operators/0.45.0/full/deploying.html#con-config-storage-zookeeper-str).
+* The Open Policy Agent authorization (`type: opa`) has been deprecated and will be removed in the future.
+  To use the Open Policy Agent authorizer, you can use the `type: custom` authorization.
 * Removed the `statefulset.kubernetes.io/pod-name` label from pods and external listeners Kubernetes Services.
   * If you have any custom setup leveraging such label, please use the `strimzi.io/pod-name` one instead.
 * The `secrets` list for mounting additional Kubernetes Secrets in `type: custom` authentication was deprecated and will be removed in the future.

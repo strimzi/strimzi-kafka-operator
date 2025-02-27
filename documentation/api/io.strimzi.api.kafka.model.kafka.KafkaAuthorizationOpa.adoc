@@ -5,7 +5,10 @@ and configure OPA properties as required.
 Strimzi uses the Open Policy Agent plugin for Kafka authorization as the authorizer.
 For more information about the format of the input data and policy examples, see {OPAAuthorizer}.
 
-.Example Open Policy Agent authorizer configuration
+The `type: opa` authorization is now deprecated and will be removed in the future.
+If you want to use the Open Policy Agent authorizer, you should use the `type: custom` authorization.
+
+.Example Open Policy Agent authorizer configuration using the `type: custom` API
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaApiVersion}
@@ -17,15 +20,19 @@ spec:
   kafka:
     # ...
     authorization:
-      type: opa
-      url: http://opa:8181/v1/data/kafka/allow
-      allowOnError: false
-      initialCacheCapacity: 1000
-      maximumCacheSize: 10000
-      expireAfterMs: 60000
+      type: custom
+      authorizerClass: org.openpolicyagent.kafka.OpaAuthorizer
       superUsers:
         - CN=user-1
         - user-2
         - CN=user-3
+    config:
+      # OPA authorization options
+      opa.authorizer.url: http://opa:8181/v1/data/kafka/allow
+      opa.authorizer.cache.expire.after.seconds: 60
+      opa.authorizer.allow.on.error: false
+      opa.authorizer.cache.initial.capacity: 1000
+      opa.authorizer.cache.maximum.size: 10000
     # ...
 ----
+
