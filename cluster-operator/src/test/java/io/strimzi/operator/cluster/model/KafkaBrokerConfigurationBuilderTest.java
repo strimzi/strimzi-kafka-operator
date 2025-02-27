@@ -35,6 +35,7 @@ import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorageCustom;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
+import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
@@ -165,10 +166,10 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
-                 "kafka.metrics.reporters=io.strimzi.kafka.metrics.YammerPrometheusMetricsReporter",
-                 "prometheus.metrics.reporter.listener.enable=true",
-                 "prometheus.metrics.reporter.listener=http://0.0.0.0:9404",
-                 "prometheus.metrics.reporter.allowlist=kafka_log.*,kafka_network.*"));
+                 "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS,
+                 StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true",
+                 StrimziMetricsReporterConfig.LISTENER + "=http://0.0.0.0:" + StrimziMetricsReporterModel.METRICS_PORT,
+                 StrimziMetricsReporterConfig.ALLOW_LIST + "=kafka_log.*,kafka_network.*"));
     }
 
     @ParallelTest
@@ -528,7 +529,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
-                "metric.reporters=" + StrimziMetricsReporterModel.KAFKA_PROMETHEUS_METRICS_REPORTER));
+                "metric.reporters=" + StrimziMetricsReporterConfig.KAFKA_CLASS));
     }
 
     @ParallelTest
@@ -546,7 +547,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
                 "metric.reporters=" + CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER
-                        + "," + StrimziMetricsReporterModel.KAFKA_PROMETHEUS_METRICS_REPORTER));
+                        + "," + StrimziMetricsReporterConfig.KAFKA_CLASS));
     }
 
     @ParallelTest
@@ -698,7 +699,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
-                "metric.reporters=my.domain.CustomMetricReporter," + StrimziMetricsReporterModel.KAFKA_PROMETHEUS_METRICS_REPORTER));
+                "metric.reporters=my.domain.CustomMetricReporter," + StrimziMetricsReporterConfig.KAFKA_CLASS));
     }
 
     @ParallelTest
@@ -720,7 +721,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
                 "metric.reporters=my.domain.CustomMetricReporter,"
                         + CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER + ","
-                        + StrimziMetricsReporterModel.KAFKA_PROMETHEUS_METRICS_REPORTER));
+                        + StrimziMetricsReporterConfig.KAFKA_CLASS));
     }
 
     @ParallelTest
