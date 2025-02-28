@@ -14,6 +14,7 @@
 * Dependency updates (Vert.x 4.5.12, Netty 4.1.117.Final)
 * Moved Kafka Connect configuration to the ConfigMap created by the operator.
 * Update Kafka Exporter to [1.9.0](https://github.com/danielqsj/kafka_exporter/releases/tag/v1.9.0)
+* Kafka Connect SSL configurations now uses Kafka Kubernetes Config Provider to load certificates directly from secrets.
 
 ### Major changes, deprecations and removals
 

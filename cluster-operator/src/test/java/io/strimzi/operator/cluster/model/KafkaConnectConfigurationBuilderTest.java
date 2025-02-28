@@ -33,7 +33,7 @@ class KafkaConnectConfigurationBuilderTest {
 
     @ParallelTest
     public void testBuild()  {
-        String configuration = new KafkaConnectConfigurationBuilder(BOOTSTRAP_SERVERS).build();
+        String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS).build();
         assertThat(configuration, isEquivalent(
                 "bootstrap.servers=my-cluster-kafka-bootstrap:9092",
                 "security.protocol=PLAINTEXT",
@@ -52,7 +52,7 @@ class KafkaConnectConfigurationBuilderTest {
                 .endTrustedCertificate()
                 .build();
 
-        String configuration = new KafkaConnectConfigurationBuilder(BOOTSTRAP_SERVERS)
+        String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withTls(clientTls)
                 .build();
 
@@ -62,15 +62,14 @@ class KafkaConnectConfigurationBuilderTest {
                 "producer.security.protocol=SSL",
                 "consumer.security.protocol=SSL",
                 "admin.security.protocol=SSL",
-                "ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "ssl.truststore.type=PKCS12",
-                "producer.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "producer.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "consumer.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "consumer.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "admin.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "admin.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}"
+                "ssl.truststore.certificates=${strimzisecrets:namespace/tls-trusted-certificate:*.crt}",
+                "ssl.truststore.type=PEM",
+                "producer.ssl.truststore.certificates=${strimzisecrets:namespace/tls-trusted-certificate:*.crt}",
+                "producer.ssl.truststore.type=PEM",
+                "consumer.ssl.truststore.certificates=${strimzisecrets:namespace/tls-trusted-certificate:*.crt}",
+                "consumer.ssl.truststore.type=PEM",
+                "admin.ssl.truststore.certificates=${strimzisecrets:namespace/tls-trusted-certificate:*.crt}",
+                "admin.ssl.truststore.type=PEM"
         ));
     }
 
@@ -90,7 +89,7 @@ class KafkaConnectConfigurationBuilderTest {
                 .endCertificateAndKey()
                 .build();
 
-        String configuration = new KafkaConnectConfigurationBuilder(BOOTSTRAP_SERVERS)
+        String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withTls(clientTls)
                 .withAuthentication(tlsAuth)
                 .build();
@@ -101,27 +100,26 @@ class KafkaConnectConfigurationBuilderTest {
                 "producer.security.protocol=SSL",
                 "consumer.security.protocol=SSL",
                 "admin.security.protocol=SSL",
-                "ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "ssl.truststore.type=PKCS12",
-                "producer.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "producer.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "consumer.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "consumer.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "admin.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "admin.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "ssl.keystore.type=PKCS12",
-                "producer.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "producer.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "producer.ssl.keystore.type=PKCS12",
-                "consumer.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "consumer.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "consumer.ssl.keystore.type=PKCS12",
-                "admin.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "admin.ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "admin.ssl.keystore.type=PKCS12"
+                "ssl.truststore.certificates=${strimzisecrets:namespace/tls-trusted-certificate:*.crt}",
+                "ssl.truststore.type=PEM",
+                "producer.ssl.truststore.certificates=${strimzisecrets:namespace/tls-trusted-certificate:*.crt}",
+                "producer.ssl.truststore.type=PEM",
+                "consumer.ssl.truststore.certificates=${strimzisecrets:namespace/tls-trusted-certificate:*.crt}",
+                "consumer.ssl.truststore.type=PEM",
+                "admin.ssl.truststore.certificates=${strimzisecrets:namespace/tls-trusted-certificate:*.crt}",
+                "admin.ssl.truststore.type=PEM",
+                "ssl.keystore.certificate.chain=${strimzisecrets:namespace/tls-keystore:pem-content}",
+                "ssl.keystore.key=${strimzisecrets:namespace/tls-keystore:null}",
+                "ssl.keystore.type=PEM",
+                "producer.ssl.keystore.certificate.chain=${strimzisecrets:namespace/tls-keystore:pem-content}",
+                "producer.ssl.keystore.key=${strimzisecrets:namespace/tls-keystore:null}",
+                "producer.ssl.keystore.type=PEM",
+                "consumer.ssl.keystore.certificate.chain=${strimzisecrets:namespace/tls-keystore:pem-content}",
+                "consumer.ssl.keystore.key=${strimzisecrets:namespace/tls-keystore:null}",
+                "consumer.ssl.keystore.type=PEM",
+                "admin.ssl.keystore.certificate.chain=${strimzisecrets:namespace/tls-keystore:pem-content}",
+                "admin.ssl.keystore.key=${strimzisecrets:namespace/tls-keystore:null}",
+                "admin.ssl.keystore.type=PEM"
         ));
     }
 
@@ -134,7 +132,7 @@ class KafkaConnectConfigurationBuilderTest {
                 .endPasswordSecret()
                 .build();
 
-        String configuration = new KafkaConnectConfigurationBuilder(BOOTSTRAP_SERVERS)
+        String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withAuthentication(authPlain)
                 .build();
 
@@ -171,7 +169,7 @@ class KafkaConnectConfigurationBuilderTest {
                 .endPasswordSecret()
                 .build();
 
-        String configuration = new KafkaConnectConfigurationBuilder(BOOTSTRAP_SERVERS)
+        String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withTls(clientTls)
                 .withAuthentication(authPlain)
                 .build();
@@ -182,15 +180,14 @@ class KafkaConnectConfigurationBuilderTest {
                 "producer.security.protocol=SASL_SSL",
                 "consumer.security.protocol=SASL_SSL",
                 "admin.security.protocol=SASL_SSL",
-                "ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "ssl.truststore.type=PKCS12",
-                "producer.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "producer.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "consumer.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "consumer.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "admin.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "admin.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
+                "ssl.truststore.certificates=${strimzisecrets:namespace/tls-trusted-certificate:*.crt}",
+                "ssl.truststore.type=PEM",
+                "producer.ssl.truststore.certificates=${strimzisecrets:namespace/tls-trusted-certificate:*.crt}",
+                "producer.ssl.truststore.type=PEM",
+                "consumer.ssl.truststore.certificates=${strimzisecrets:namespace/tls-trusted-certificate:*.crt}",
+                "consumer.ssl.truststore.type=PEM",
+                "admin.ssl.truststore.certificates=${strimzisecrets:namespace/tls-trusted-certificate:*.crt}",
+                "admin.ssl.truststore.type=PEM",
                 "sasl.mechanism=PLAIN",
                 "sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=${strimzienv:KAFKA_CONNECT_SASL_USERNAME} password=${strimzidir:/opt/kafka/connect-password/my-auth-secret:my-password-key};",
                 "producer.sasl.mechanism=PLAIN",
@@ -211,7 +208,7 @@ class KafkaConnectConfigurationBuilderTest {
                 .endPasswordSecret()
                 .build();
 
-        String configuration = new KafkaConnectConfigurationBuilder(BOOTSTRAP_SERVERS)
+        String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withAuthentication(authScramSha256)
                 .build();
 
@@ -248,7 +245,7 @@ class KafkaConnectConfigurationBuilderTest {
                 .endPasswordSecret()
                 .build();
 
-        String configuration = new KafkaConnectConfigurationBuilder(BOOTSTRAP_SERVERS)
+        String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withTls(clientTls)
                 .withAuthentication(authScramSha256)
                 .build();
@@ -259,15 +256,14 @@ class KafkaConnectConfigurationBuilderTest {
                 "producer.security.protocol=SASL_SSL",
                 "consumer.security.protocol=SASL_SSL",
                 "admin.security.protocol=SASL_SSL",
-                "ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "ssl.truststore.type=PKCS12",
-                "producer.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "producer.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "consumer.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "consumer.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
-                "admin.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "admin.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}",
+                "ssl.truststore.certificates=${strimzisecrets:namespace/tls-trusted-certificate:*.crt}",
+                "ssl.truststore.type=PEM",
+                "producer.ssl.truststore.certificates=${strimzisecrets:namespace/tls-trusted-certificate:*.crt}",
+                "producer.ssl.truststore.type=PEM",
+                "consumer.ssl.truststore.certificates=${strimzisecrets:namespace/tls-trusted-certificate:*.crt}",
+                "consumer.ssl.truststore.type=PEM",
+                "admin.ssl.truststore.certificates=${strimzisecrets:namespace/tls-trusted-certificate:*.crt}",
+                "admin.ssl.truststore.type=PEM",
                 "sasl.mechanism=SCRAM-SHA-256",
                 "sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=${strimzienv:KAFKA_CONNECT_SASL_USERNAME} password=${strimzidir:/opt/kafka/connect-password/my-auth-secret:my-password-key};",
                 "producer.sasl.mechanism=SCRAM-SHA-256",
@@ -288,7 +284,7 @@ class KafkaConnectConfigurationBuilderTest {
                 .endPasswordSecret()
                 .build();
 
-        String configuration = new KafkaConnectConfigurationBuilder(BOOTSTRAP_SERVERS)
+        String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withAuthentication(authScramSha512)
                 .build();
 
@@ -337,7 +333,7 @@ class KafkaConnectConfigurationBuilderTest {
                 .endTlsTrustedCertificate()
                 .build();
 
-        String configuration = new KafkaConnectConfigurationBuilder(BOOTSTRAP_SERVERS)
+        String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withAuthentication(authOAuth)
                 .build();
 
@@ -347,7 +343,7 @@ class KafkaConnectConfigurationBuilderTest {
                 " oauth.refresh.token=${strimzienv:KAFKA_CONNECT_OAUTH_REFRESH_TOKEN}" +
                 " oauth.access.token=${strimzienv:KAFKA_CONNECT_OAUTH_ACCESS_TOKEN}" +
                 " oauth.password.grant.password=${strimzienv:KAFKA_CONNECT_OAUTH_PASSWORD_GRANT_PASSWORD}" +
-                " oauth.ssl.truststore.location=\"/tmp/kafka/oauth.truststore.p12\" oauth.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD} oauth.ssl.truststore.type=\"PKCS12\";";
+                " oauth.ssl.truststore.location=\"/opt/kafka/oauth-certs/my-tls-trusted-certificate/pem-content\" oauth.ssl.truststore.type=\"PEM\";";
 
         assertThat(configuration, isEquivalent(
                 "bootstrap.servers=my-cluster-kafka-bootstrap:9092",
@@ -372,7 +368,7 @@ class KafkaConnectConfigurationBuilderTest {
 
     @ParallelTest
     public void testWithRackId() {
-        String configuration = new KafkaConnectConfigurationBuilder(BOOTSTRAP_SERVERS)
+        String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withRackId()
                 .build();
 
@@ -389,7 +385,7 @@ class KafkaConnectConfigurationBuilderTest {
 
     @ParallelTest
     public void testWithConfigProviders() {
-        String configuration = new KafkaConnectConfigurationBuilder(BOOTSTRAP_SERVERS)
+        String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withUserConfigurations(null)
                 .build();
 
@@ -399,12 +395,13 @@ class KafkaConnectConfigurationBuilderTest {
                 "producer.security.protocol=PLAINTEXT",
                 "consumer.security.protocol=PLAINTEXT",
                 "admin.security.protocol=PLAINTEXT",
-                "config.providers=strimzienv,strimzifile,strimzidir",
+                "config.providers=strimzienv,strimzifile,strimzidir,strimzisecrets",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
-                "config.providers.strimzidir.param.allowed.paths=/opt/kafka"
+                "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
+                "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider"
         ));
     }
 
@@ -415,7 +412,7 @@ class KafkaConnectConfigurationBuilderTest {
         userConfiguration.put("myconfig2", 123);
         KafkaConnectConfiguration configurations = new KafkaConnectConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
 
-        String configuration = new KafkaConnectConfigurationBuilder(BOOTSTRAP_SERVERS)
+        String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withUserConfigurations(configurations)
                 .build();
 
@@ -425,11 +422,12 @@ class KafkaConnectConfigurationBuilderTest {
                 "producer.security.protocol=PLAINTEXT",
                 "consumer.security.protocol=PLAINTEXT",
                 "admin.security.protocol=PLAINTEXT",
-                "config.providers=strimzienv,strimzifile,strimzidir",
+                "config.providers=strimzienv,strimzifile,strimzidir,strimzisecrets",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
+                "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
                 "myconfig=abc",
                 "myconfig2=123",
@@ -449,7 +447,7 @@ class KafkaConnectConfigurationBuilderTest {
         userConfiguration.put("config.providers.userenv.class", "org.apache.kafka.common.config.provider.EnvVarConfigProvider");
         KafkaConnectConfiguration configurations = new KafkaConnectConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
 
-        String configuration = new KafkaConnectConfigurationBuilder(BOOTSTRAP_SERVERS)
+        String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withUserConfigurations(configurations)
                 .build();
 
@@ -459,13 +457,14 @@ class KafkaConnectConfigurationBuilderTest {
                 "producer.security.protocol=PLAINTEXT",
                 "consumer.security.protocol=PLAINTEXT",
                 "admin.security.protocol=PLAINTEXT",
-                "config.providers=userenv,strimzienv,strimzifile,strimzidir",
+                "config.providers=userenv,strimzienv,strimzifile,strimzidir,strimzisecrets",
                 "config.providers.strimzienv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
                 "config.providers.strimzienv.param.allowlist.pattern=.*",
                 "config.providers.strimzifile.class=org.apache.kafka.common.config.provider.FileConfigProvider",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
                 "config.providers.userenv.class=org.apache.kafka.common.config.provider.EnvVarConfigProvider",
+                "config.providers.strimzisecrets.class=io.strimzi.kafka.KubernetesSecretConfigProvider",
                 "group.id=connect-cluster",
                 "offset.storage.topic=connect-cluster-offsets",
                 "config.storage.topic=connect-cluster-configs",
@@ -477,7 +476,7 @@ class KafkaConnectConfigurationBuilderTest {
 
     @ParallelTest
     public void testWithRestListeners() {
-        String configuration = new KafkaConnectConfigurationBuilder(BOOTSTRAP_SERVERS)
+        String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withRestListeners(8083)
                 .build();
 
@@ -494,7 +493,7 @@ class KafkaConnectConfigurationBuilderTest {
 
     @ParallelTest
     public void withPluginPath() {
-        String configuration = new KafkaConnectConfigurationBuilder(BOOTSTRAP_SERVERS)
+        String configuration = new KafkaConnectConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, BOOTSTRAP_SERVERS)
                 .withPluginPath().build();
 
         assertThat(configuration, isEquivalent(

@@ -118,6 +118,17 @@ public class KafkaConnectResources {
     }
 
     /**
+     * Get the name of the Kafka Connect role binding given the name of the {@code cluster}.
+     *
+     * @param componentName  Name of the Kafka Connect component
+     *
+     * @return The name of the init container's cluster role binding.
+     */
+    public static String connectRoleBindingName(String componentName) {
+        return componentName(componentName) + "-role";
+    }
+
+    /**
      * Returns the name of the Kafka Connect {@code ConfigMap} for a {@code KafkaConnect} build which contains the Dockerfile.
      * @param clusterName  The {@code metadata.name} of the {@code KafkaConnect} resource.
      * @return The name of the corresponding Kafka Connect {@code ConfigMap}.
