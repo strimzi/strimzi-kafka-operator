@@ -623,6 +623,7 @@ public class KafkaBrokerConfigurationBuilder {
      * @param superUsers        Super-users list who have all the rights on the cluster
      * @param authorization     The authorization configuration from the Kafka CR
      */
+    @SuppressWarnings("deprecation") // OPA Authorization is deprecated
     private void configureAuthorization(String clusterName, List<String> superUsers, KafkaAuthorization authorization) {
         if (authorization instanceof KafkaAuthorizationSimple simpleAuthz) {
             configureSimpleAuthorization(simpleAuthz, superUsers);
@@ -656,6 +657,7 @@ public class KafkaBrokerConfigurationBuilder {
      * @param authorization     OPA authorization configuration
      * @param superUsers        Super-users list who have all the rights on the cluster
      */
+    @SuppressWarnings("deprecation") // OPA Authorization is deprecated
     private void configureOpaAuthorization(KafkaAuthorizationOpa authorization, List<String> superUsers) {
         writer.println("authorizer.class.name=" + KafkaAuthorizationOpa.AUTHORIZER_CLASS_NAME);
 
