@@ -166,7 +166,6 @@ public interface TestConstants {
     String NETWORK_POLICY = "NetworkPolicy";
     String JOB = "Job";
     String VALIDATION_WEBHOOK_CONFIG = "ValidatingWebhookConfiguration";
-    String REPLICA_SET = "ReplicaSet";
     String SUBSCRIPTION = "Subscription";
     String OPERATOR_GROUP = "OperatorGroup";
     String BUILD_CONFIG = "BuildConfig";

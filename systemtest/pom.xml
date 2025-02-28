@@ -233,6 +233,10 @@
             <artifactId>test-docs-generator-maven-plugin</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>io.strimzi.access-operator</groupId>
+            <artifactId>api</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
