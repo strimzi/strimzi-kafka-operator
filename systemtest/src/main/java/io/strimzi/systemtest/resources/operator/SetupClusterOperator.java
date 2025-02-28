@@ -209,9 +209,23 @@ public class SetupClusterOperator {
      */
     @SuppressFBWarnings("ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
     public SetupClusterOperator runInstallation() {
-        LOGGER.info("Cluster Operator installation configuration:\n{}", this::prettyPrint);
-        LOGGER.debug("Cluster Operator installation configuration:\n{}", this::toString);
+        if (Environment.isOlmInstall()) {
+            runOlmInstallation();
+        } else if (Environment.isHelmInstall()) {
+            runHelmInstallation();
+        } else {
+            runBundleInstallation();
+        }
+        return this;
+    }
 
+    /**
+     * Method used for configuring the {@link #testClassName} and {@link #testMethodName}.
+     * These two are then used for {@link CollectorElement} during the Namespace creation.
+     * It is important to have these specified for correct collection of logs from various Namespaces
+     * by {@link io.strimzi.systemtest.logs.TestLogCollector}.
+     */
+    private void configureTestClassAndMethodNames() {
         this.testClassName = this.extensionContext.getRequiredTestClass() != null ? this.extensionContext.getRequiredTestClass().getName() : "";
 
         try {
@@ -223,31 +237,25 @@ public class SetupClusterOperator {
             // getRequiredTestMethod() is not present, in @BeforeAll scope so we're avoiding PreconditionViolationException exception
             this.testMethodName = "";
         }
-
-        if (Environment.isOlmInstall()) {
-            runOlmInstallation();
-        } else if (Environment.isHelmInstall()) {
-            helmInstallation();
-        } else {
-            bundleInstallation();
-        }
-        return this;
     }
 
     public SetupClusterOperator runBundleInstallation() {
         LOGGER.info("Cluster Operator installation configuration:\n{}", this::toString);
+        configureTestClassAndMethodNames();
         bundleInstallation();
         return this;
     }
 
     public SetupClusterOperator runOlmInstallation() {
         LOGGER.info("Cluster Operator installation configuration:\n{}", this::toString);
+        configureTestClassAndMethodNames();
         olmInstallation();
         return this;
     }
 
     public SetupClusterOperator runHelmInstallation() {
         LOGGER.info("Cluster Operator installation configuration:\n{}", this::toString);
+        configureTestClassAndMethodNames();
         helmInstallation();
         return this;
     }
