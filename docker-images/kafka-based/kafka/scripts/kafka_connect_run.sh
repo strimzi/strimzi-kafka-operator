@@ -32,15 +32,15 @@ fi
 # directory avoids trying to create it (and logging a permission denied error)
 export LOG_DIR="$KAFKA_HOME"
 
-# enabling Prometheus JMX exporter as Java agent
-if [ "$KAFKA_CONNECT_METRICS_ENABLED" = "true" ]; then
+# Enable JMX Prometheus Exporter as Java agent
+if [ "$KAFKA_CONNECT_JMX_EXPORTER_ENABLED" = "true" ]; then
     KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$JMX_EXPORTER_HOME"/jmx_prometheus_javaagent*.jar)=9404:$KAFKA_HOME/custom-config/metrics-config.json"
     export KAFKA_OPTS
 fi
 
 . ./set_kafka_jmx_options.sh "${STRIMZI_JMX_ENABLED}" "${STRIMZI_JMX_USERNAME}" "${STRIMZI_JMX_PASSWORD}"
 
-# enabling Tracing agent (initializes tracing) as Java agent
+# Enable Tracing agent (initializes tracing) as Java agent
 if [ "$STRIMZI_TRACING" = "jaeger" ] || [ "$STRIMZI_TRACING" = "opentelemetry" ]; then
     KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls "$KAFKA_HOME"/libs/tracing-agent*.jar)=$STRIMZI_TRACING"
     export KAFKA_OPTS
