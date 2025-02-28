@@ -110,7 +110,7 @@
             Tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/11207.
             -->
             <id>oss-sonatype</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots/io/strimzi/access-operator/</url>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
             <releases>
                 <enabled>false</enabled>
             </releases>
