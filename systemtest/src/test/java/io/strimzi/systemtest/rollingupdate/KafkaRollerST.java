@@ -42,7 +42,6 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaNodePoolUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -149,7 +148,10 @@ public class KafkaRollerST extends AbstractST {
 
         // try to perform rolling update while scale down is being prevented.
         Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
-        StrimziPodSetUtils.annotateStrimziPodSet(testStorage.getNamespaceName(), testStorage.getBrokerComponentName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
+        // We annotate the Pod resources instead of the StrimziPodSet resource for starting a rolling restart
+        for (String podName : kafkaPods.keySet()) {
+            PodUtils.annotatePod(testStorage.getNamespaceName(), podName, Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true");
+        }
         kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), scaledUpBrokerReplicaCount, kafkaPods);
 
         LOGGER.info("Remove Topic, thereby remove all partitions located on broker to be scaled down");
