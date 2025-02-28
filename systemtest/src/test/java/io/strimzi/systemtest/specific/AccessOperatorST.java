@@ -51,7 +51,7 @@ public class AccessOperatorST extends AbstractST {
     @IsolatedTest
     @TestDoc(
         description = @Desc(
-            "The `testAccessOperator` test verifies the functionality of Kafka Access Operator together with Kafka and KafkaUser CRs in a real environment." +
+            "The `testAccessOperator` test verifies the functionality of Kafka Access Operator together with Kafka and KafkaUser CRs in a real environment. " +
             "It also verifies that with the credentials and information about the Kafka cluster, the Kafka clients are able to connect and do the message transmission"
         ),
         steps = {
