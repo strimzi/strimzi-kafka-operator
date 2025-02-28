@@ -30,6 +30,7 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.TestTags;
 import io.strimzi.systemtest.enums.ConditionStatus;
 import io.strimzi.systemtest.enums.DeploymentTypes;
+import io.strimzi.systemtest.resources.access.KafkaAccessResource;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
@@ -160,7 +161,8 @@ public class ResourceManager {
         new OperatorGroupResource(),
         new KafkaNodePoolResource(),
         new BuildConfigResource(),
-        new ImageStreamResource()
+        new ImageStreamResource(),
+        new KafkaAccessResource()
     };
     @SafeVarargs
     public final <T extends HasMetadata> void createResourceWithoutWait(T... resources) {
