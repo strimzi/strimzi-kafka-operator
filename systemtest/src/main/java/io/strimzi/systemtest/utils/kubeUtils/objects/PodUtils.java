@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.readiness.Readiness;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.test.TestUtils;
@@ -336,5 +337,11 @@ public class PodUtils {
             .listPodsByPrefixInName(testStorage.getEoDeploymentName()));
 
         return kafkaClusterPods;
+    }
+
+    public static void annotatePod(String namespaceName, String podName, String annotationKey, String annotationValue) {
+        LOGGER.info("Annotating Pod: {}/{} with annotation {}={}", namespaceName, podName, annotationKey, annotationValue);
+        ResourceManager.cmdKubeClient().namespace(namespaceName)
+                .execInCurrentNamespace("annotate", "pod", podName, annotationKey + "=" + annotationValue);
     }
 }
