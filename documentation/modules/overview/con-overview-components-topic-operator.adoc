@@ -1,13 +1,14 @@
 // Module included in the following assemblies:
 //
 // overview/assembly-overview-components.adoc
-// assembly-using-the-topic-operator.adoc
 
 [id='overview-concepts-topic-operator-{context}']
 = Topic Operator
 
 [role="_abstract"]
 The Topic Operator provides a way of managing topics in a Kafka cluster through `KafkaTopic` resources.
+The Cluster Operator can deploy the Topic Operator as part of the *Entity Operator* configuration at the same time as a Kafka cluster.
+The operator can also be deployed standalone to help manage topics for Kafka clusters not operated by Strimzi.
 
 .Example architecture for the Topic Operator
 
