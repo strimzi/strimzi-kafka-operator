@@ -45,6 +45,11 @@ import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.DescribeFeaturesResult;
+import org.apache.kafka.clients.admin.FeatureMetadata;
+import org.apache.kafka.clients.admin.FinalizedVersionRange;
+import org.apache.kafka.common.KafkaFuture;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -68,6 +73,8 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
@@ -832,11 +839,27 @@ public class KafkaAssemblyOperatorKRaftMockTest {
      *     - Third with change to a logging appender => annotations for controller nodes should change, and so should
      *       the annotation for brokers as appenders are not dynamically configurable
      *
+     * With Kafka 4.0+ / Log4j2 we rely on Log4j2 for log reloading. So this tests makes no sense anymore and there is
+     * no rolling update to controllers in Kafka 4.0 clusters because of logging. This test can be removed once we drop the support for Kafka 3.x.
+     *
      * @param context   Test context
      */
     @Test
-    public void testReconcileWithControllerRelevantLoggingChange(VertxTestContext context) {
+    public void testReconcileWithControllerRelevantLoggingChangeWithLog4j1(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
+
+        // Mock the current metadata version to pretend we use Kafka 3.9.0 (the default mock in the supplier mocks latest Kafka)
+        Admin mockAdminClient = supplier.adminClientProvider.createAdminClient(null, null, null);
+        FinalizedVersionRange fvr = mock(FinalizedVersionRange.class);
+        when(fvr.maxVersionLevel()).thenReturn((short) 21);
+        FeatureMetadata fm = mock(FeatureMetadata.class);
+        when(fm.finalizedFeatures()).thenReturn(Map.of(KRaftMetadataManager.METADATA_VERSION_KEY, fvr));
+        DescribeFeaturesResult dfr = mock(DescribeFeaturesResult.class);
+        when(dfr.featureMetadata()).thenReturn(KafkaFuture.completedFuture(fm));
+        when(mockAdminClient.describeFeatures()).thenReturn(dfr);
+
+        Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME)
+                .edit(k -> new KafkaBuilder(k).editSpec().editKafka().withVersion("3.9.0").endKafka().endSpec().build());
 
         Map<String, String> loggingConfigurationAnnotations = new HashMap<>();
 

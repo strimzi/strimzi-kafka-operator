@@ -17,6 +17,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.FileUtils;
+import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 
 public class KafkaMirrorMaker2Templates {
@@ -99,6 +100,14 @@ public class KafkaMirrorMaker2Templates {
         String sourceNs,
         String targetNs
     ) {
+        final String rootLogger;
+        if (TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0) {
+            // Kafka 3.9
+            rootLogger = "connect.root.logger.level";
+        } else {
+            // Kafka 4.0
+            rootLogger = "rootLogger.level";
+        }
 
         KafkaMirrorMaker2ClusterSpec targetClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder()
             .withAlias(targetKafkaClusterName)
@@ -159,7 +168,7 @@ public class KafkaMirrorMaker2Templates {
                     .withGroupsPattern(".*")
                 .endMirror()
                 .withNewInlineLogging()
-                    .addToLoggers("connect.root.logger.level", "DEBUG")
+                    .addToLoggers(rootLogger, "DEBUG")
                 .endInlineLogging()
             .endSpec();
 

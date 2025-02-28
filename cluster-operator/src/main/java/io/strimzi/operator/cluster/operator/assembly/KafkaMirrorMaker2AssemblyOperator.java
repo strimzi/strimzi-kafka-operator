@@ -127,7 +127,12 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 .compose(i -> generateMetricsAndLoggingConfigMap(reconciliation, mirrorMaker2Cluster))
                 .compose(logAndMetricsConfigMap -> {
                     String logging = logAndMetricsConfigMap.getData().get(mirrorMaker2Cluster.logging().configMapKey());
-                    podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_HASH, Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(logging)));
+
+                    if (!mirrorMaker2Cluster.logging().isLog4j2()) {
+                        // Logging annotation is set only for Log4j1
+                        podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_HASH, Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(logging)));
+                    }
+
                     desiredLogging.set(logging);
                     return configMapOperations.reconcile(reconciliation, namespace, logAndMetricsConfigMap.getMetadata().getName(), logAndMetricsConfigMap);
                 })
@@ -139,7 +144,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                     return Future.succeededFuture();
                 })
                 .compose(i -> reconcilePodSet(reconciliation, mirrorMaker2Cluster, podAnnotations, null, null))
-                .compose(i -> hasZeroReplicas ? Future.succeededFuture() : reconcileConnectLoggers(reconciliation, KafkaMirrorMaker2Resources.qualifiedServiceName(reconciliation.name(), namespace), desiredLogging.get(), mirrorMaker2Cluster.defaultLogConfig()))
+                .compose(i -> hasZeroReplicas || mirrorMaker2Cluster.logging().isLog4j2() ? Future.succeededFuture() : reconcileConnectLoggers(reconciliation, KafkaMirrorMaker2Resources.qualifiedServiceName(reconciliation.name(), namespace), desiredLogging.get(), mirrorMaker2Cluster.defaultLogConfig()))
                 .compose(i -> hasZeroReplicas ? Future.succeededFuture() : reconcileConnectors(reconciliation, kafkaMirrorMaker2, mirrorMaker2Cluster, kafkaMirrorMaker2Status))
                 .map((Void) null)
                 .onComplete(reconciliationResult -> {

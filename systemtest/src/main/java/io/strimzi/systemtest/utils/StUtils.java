@@ -269,13 +269,10 @@ public class StUtils {
      * @param containerName name of container from which to take the log
      */
     public static void checkLogForJSONFormat(String namespaceName, Map<String, String> pods, String containerName) {
-        //this is only for decrease the number of records - kafka have record/line, operators record/11lines
-        String tail = "--tail=" + (containerName.contains("operator") ? "100" : "10");
-
         TestUtils.waitFor("JSON log to be present in " + pods, TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT, () -> {
             boolean isJSON = false;
             for (String podName : pods.keySet()) {
-                String log = cmdKubeClient().namespace(namespaceName).execInCurrentNamespace(Level.TRACE, "logs", podName, "-c", containerName, tail).out();
+                String log = cmdKubeClient().namespace(namespaceName).execInCurrentNamespace(Level.TRACE, "logs", podName, "-c", containerName, "--tail=100").out();
 
                 JsonArray jsonArray = getJsonArrayFromLog(log);
 

@@ -93,6 +93,19 @@
         </developer>
     </developers>
 
+    <repositories>
+        <repository>
+            <!--
+            We use the Kafka staging repository while we use the RC releases of Kafka 4.0.0. This should be removed once
+            we move to the final release of Kafka 4.0.0.
+
+            Tracked by issue https://github.com/strimzi/strimzi-kafka-operator/issues/11200
+            -->
+            <id>apache-staging</id>
+            <url>https://repository.apache.org/content/groups/staging/</url>
+        </repository>
+    </repositories>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>17</maven.compiler.release>
@@ -138,7 +151,7 @@
         <fasterxml.jackson-jaxrs.version>2.16.2</fasterxml.jackson-jaxrs.version>
         <vertx.version>4.5.13</vertx.version>
         <vertx-junit5.version>4.5.13</vertx-junit5.version>
-        <kafka.version>3.9.0</kafka.version>
+        <kafka.version>4.0.0</kafka.version>
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
         <snappy.version>1.1.10.5</snappy.version>
         <slf4j.version>1.7.36</slf4j.version>
@@ -146,7 +159,13 @@
         <quartz.version>2.3.2</quartz.version>
         <opentelemetry.version>1.34.1</opentelemetry.version>
         <opentelemetry-alpha.version>${opentelemetry.version}-alpha</opentelemetry-alpha.version>
-        <jetty.version>9.4.56.v20240826</jetty.version>
+        <jetty.version>12.0.16</jetty.version>
+        <!--
+        This property is used to track the Jetty version used by Kafka. Kafka uses old Jetty version that is not
+        supported anymore. This also needs to be used by the kafka-agent module. Strimzi operators uses newer supported
+        Jetty version.
+        -->
+        <jetty-old-kafka.version>9.4.56.v20240826</jetty-old-kafka.version>
         <javax-servlet.version>3.1.0</javax-servlet.version>
         <strimzi-oauth.version>0.15.0</strimzi-oauth.version>
         <netty.version>4.1.118.Final</netty.version>
@@ -190,6 +209,7 @@
 
     <modules>
         <module>kafka-agent</module>
+        <module>kafka-agent-3</module>
         <module>tracing-agent</module>
         <module>test</module>
         <module>crd-annotations</module>
@@ -812,6 +832,11 @@
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-util</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-http</artifactId>
                 <version>${jetty.version}</version>
             </dependency>
             <dependency>

@@ -14,6 +14,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -243,6 +244,13 @@ public class KafkaConnectApiIT {
             .join();
     }
 
+    // This test is at the moment designed for Kafka Connect 3.x and Log4j1. With Kafka 4.0 / Log4j2 we use the Log4j2
+    // auto-reloading feature instead of the Connect APIs to change logging configuration.
+    //
+    // We keep this test as we still use this functionality with Kafka 3.x / Log4j1. But we cannot run it because these
+    // IT tests use Kafka 4.0 now. It should be deleted together with the related KafkaConnectApi methods once we drop
+    // support for Kafka 3.x.
+    @Disabled
     @Test
     public void testChangeLoggers() {
         String desired = "log4j.rootLogger=TRACE, CONSOLE\n" +
@@ -276,6 +284,13 @@ public class KafkaConnectApiIT {
                         })).join();
     }
 
+    // This test is at the moment designed for Kafka Connect 3.x and Log4j1. With Kafka 4.0 / Log4j2 we use the Log4j2
+    // auto-reloading feature instead of the Connect APIs to change logging configuration.
+    //
+    // We keep this test as we still use this functionality with Kafka 3.x / Log4j1. But we cannot run it because these
+    // IT tests use Kafka 4.0 now. It should be deleted together with the related KafkaConnectApi methods once we drop
+    // support for Kafka 3.x.
+    @Disabled
     @Test
     public void testHierarchy() {
         String rootLevel = "TRACE";

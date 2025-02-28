@@ -10,29 +10,31 @@ import com.yammer.metrics.core.Metric;
 import com.yammer.metrics.core.MetricName;
 import com.yammer.metrics.core.MetricsRegistry;
 import com.yammer.metrics.core.MetricsRegistryListener;
+import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
-import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
+import org.eclipse.jetty.util.Callback;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -223,12 +225,10 @@ public class KafkaAgent {
      * @return Handler
      */
     /* test */ Handler getBrokerStateHandler() {
-        return new AbstractHandler() {
+        return new Handler.Abstract() {
             @Override
-            public void handle(String s, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
-                response.setContentType("application/json");
-                response.setCharacterEncoding("UTF-8");
-                baseRequest.setHandled(true);
+            public boolean handle(Request request, Response response, Callback callback) throws Exception {
+                response.getHeaders().put(HttpHeader.CONTENT_TYPE, "application/json; charset=UTF-8");
 
                 Map<String, Object> brokerStateResponse = new HashMap<>();
                 if (brokerState != null) {
@@ -244,16 +244,18 @@ public class KafkaAgent {
 
                     response.setStatus(HttpServletResponse.SC_OK);
                     String json = new ObjectMapper().writeValueAsString(brokerStateResponse);
-                    response.getWriter().print(json);
+                    response.write(true, StandardCharsets.UTF_8.encode(json), callback);
                 } else {
                     response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                    response.getWriter().print("Broker state metric not found");
+                    response.write(true, StandardCharsets.UTF_8.encode("Broker state metric not found"), callback);
                 }
+
+                return true;
             }
         };
     }
 
-    private SslContextFactory getSSLContextFactory() {
+    private SslContextFactory.Server getSSLContextFactory() {
         SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
 
         sslContextFactory.setKeyStorePath(sslKeyStorePath);
@@ -272,28 +274,30 @@ public class KafkaAgent {
      * @return Handler
      */
     /* test */ Handler getReadinessHandler() {
-        return new AbstractHandler() {
+        return new Handler.Abstract() {
             @Override
-            public void handle(String s, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
-                response.setContentType("application/json");
-                response.setCharacterEncoding("UTF-8");
-                baseRequest.setHandled(true);
+            public boolean handle(Request request, Response response, Callback callback) {
+                response.getHeaders().put(HttpHeader.CONTENT_TYPE, "application/json; charset=UTF-8");
+
                 if (brokerState != null) {
                     byte observedState = (byte) brokerState.value();
                     boolean stateIsRunning = BROKER_RUNNING_STATE <= observedState && BROKER_UNKNOWN_STATE != observedState;
                     if (stateIsRunning) {
                         LOGGER.trace("Broker is in running according to {}. The current state is {}", brokerStateName, observedState);
                         response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+                        response.write(true, null, callback);
                     } else {
                         LOGGER.trace("Broker is not running according to {}. The current state is {}", brokerStateName, observedState);
                         response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-                        response.getWriter().print("Readiness failed: brokerState is " + observedState);
+                        response.write(true, StandardCharsets.UTF_8.encode("Readiness failed: brokerState is " + observedState), callback);
                     }
                 } else {
                     LOGGER.warn("Broker state metric not found");
                     response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                    response.getWriter().print("Broker state metric not found");
+                    response.write(true, StandardCharsets.UTF_8.encode("Broker state metric not found"), callback);
                 }
+
+                return true;
             }
         };
     }

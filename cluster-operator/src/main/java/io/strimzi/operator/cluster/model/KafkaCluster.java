@@ -321,7 +321,10 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         result.initImage = initImage;
 
         result.metrics = new MetricsModel(kafkaClusterSpec);
-        result.logging = new LoggingModel(kafkaClusterSpec, result.getClass().getSimpleName(), false, true);
+
+        // Kafka 4.0 and newer uses Log4j2
+        boolean usesLog4j2 = KafkaVersion.compareDottedVersions(result.kafkaVersion.version(), "4.0.0") >= 0;
+        result.logging = new LoggingModel(kafkaClusterSpec, result.getClass().getSimpleName(), usesLog4j2, !usesLog4j2);
 
         result.jmx = new JmxModel(
                 reconciliation.namespace(),
@@ -532,12 +535,9 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         try {
             MetadataVersion version = MetadataVersion.fromVersionString(metadataVersion);
 
-            // KRaft is supposed to be supported from metadata version 3.0-IV1. But only from metadata version 3.3-IV0,
-            // the initial metadata version can be set using the kafka-storage.sh utility. And since most metadata
-            // versions do not support downgrade, that means 3.3-IV0 is the oldest metadata version that can be used
-            // with Strimzi.
-            if (version.isLessThan(MetadataVersion.IBP_3_3_IV0)) {
-                throw new InvalidResourceException("The oldest supported metadata version is 3.3-IV0");
+            // From Kafka 4.0.0, the oldest supported version seems to be 3.3-IV3
+            if (version.isLessThan(MetadataVersion.IBP_3_3_IV3)) {
+                throw new InvalidResourceException("The oldest supported metadata version is 3.3-IV3");
             }
         } catch (IllegalArgumentException e)    {
             throw new InvalidResourceException("Metadata version " + metadataVersion + " is invalid", e);

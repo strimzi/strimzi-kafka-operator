@@ -74,6 +74,7 @@ import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
@@ -2286,5 +2287,33 @@ public class KafkaConnectClusterTest {
         ResourceRequirements initContainersResources = kcc.createInitContainer(ImagePullPolicy.IFNOTPRESENT).getResources();
         assertThat(initContainersResources.getRequests(), is(requirements));
         assertThat(initContainersResources.getLimits(), is(limits));
+    }
+
+    @ParallelTest
+    public void testLoggingWithLog4j1() {
+        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
+                .editSpec()
+                    .withVersion("3.9.0")
+                .endSpec()
+                .build();
+
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
+
+        assertThat(kc.logging().isLog4j2(), is(false));
+
+        // Check config map
+        ConfigMap cm = kc.generateConnectConfigMap(new MetricsAndLogging(metricsCM, null));
+        assertThat(cm.getData().get(LoggingModel.LOG4J1_CONFIG_MAP_KEY), is(notNullValue()));
+        assertThat(cm.getData().get(LoggingModel.LOG4J2_CONFIG_MAP_KEY), is(nullValue()));
+    }
+
+    @ParallelTest
+    public void testLoggingWithLog4j4() {
+        assertThat(kc.logging().isLog4j2(), is(true));
+
+        // Check config map
+        ConfigMap cm = kc.generateConnectConfigMap(new MetricsAndLogging(metricsCM, null));
+        assertThat(cm.getData().get(LoggingModel.LOG4J1_CONFIG_MAP_KEY), is(nullValue()));
+        assertThat(cm.getData().get(LoggingModel.LOG4J2_CONFIG_MAP_KEY), is(notNullValue()));
     }
 }

@@ -850,7 +850,7 @@ class MirrorMaker2ST extends AbstractST {
             testStorage.getNamespaceName(),
             scraperPodName,
             KafkaMirrorMaker2Resources.serviceName(testStorage.getClusterName()),
-            sourceConnectorName,
+            sourceConnectorName.replace("->", "%2D%3E"),
             "/offsets/0/offset/offset",
             99
         );

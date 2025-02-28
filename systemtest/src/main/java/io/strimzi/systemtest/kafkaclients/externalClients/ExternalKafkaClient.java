@@ -68,6 +68,9 @@ public class ExternalKafkaClient extends AbstractKafkaClient<ExternalKafkaClient
             .withClientIdConfig("producer-" + RANDOM.nextInt(Integer.MAX_VALUE));
     }
 
+    // OffsetResetStrategy is deprecated and should be replaced by using AutoOffsetResetStrategy
+    // Tracked by issue https://github.com/strimzi/strimzi-kafka-operator/issues/11201
+    @SuppressWarnings("deprecation")
     private ConsumerProperties.ConsumerPropertiesBuilder getConsumerProperties() {
         return new ConsumerProperties.ConsumerPropertiesBuilder()
             .withNamespaceName(namespaceName)

@@ -6,9 +6,8 @@
 
 |Kafka
 a|
-* {DockerOrg}/kafka:{DockerTag}-kafka-3.8.0
-* {DockerOrg}/kafka:{DockerTag}-kafka-3.8.1
 * {DockerOrg}/kafka:{DockerTag}-kafka-3.9.0
+* {DockerOrg}/kafka:{DockerTag}-kafka-4.0.0
 
 a|
 Strimzi image for running Kafka, including:

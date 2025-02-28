@@ -265,8 +265,8 @@ public class KafkaConnectorUtils {
         final ObjectMapper mapper = new ObjectMapper();
 
         return mapper.readTree(cmdKubeClient().namespace(namespaceName).execInPod(scraperPodName,
-            "curl", "-X", "GET",
-            "http://" + serviceName + ":8083/connectors/" + connectorName + "/offsets").out().trim());
+                "curl", "-X", "GET",
+                "http://" + serviceName + ":8083/connectors/" + connectorName + "/offsets").out().trim());
     }
 
     /**

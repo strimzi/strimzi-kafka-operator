@@ -265,9 +265,9 @@ public class ResourceUtils {
 
         DescribeTopicsResult dtr;
         try {
-            Constructor<DescribeTopicsResult> declaredConstructor = DescribeTopicsResult.class.getDeclaredConstructor(Map.class);
+            Constructor<DescribeTopicsResult> declaredConstructor = DescribeTopicsResult.class.getDeclaredConstructor(Map.class, Map.class);
             declaredConstructor.setAccessible(true);
-            dtr = declaredConstructor.newInstance(emptyMap());
+            dtr = declaredConstructor.newInstance(null, emptyMap());
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
