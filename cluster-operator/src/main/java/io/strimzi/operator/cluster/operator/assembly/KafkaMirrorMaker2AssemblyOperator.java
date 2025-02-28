@@ -35,10 +35,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
-import java.io.Serial;
-import java.io.Serializable;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -274,13 +271,12 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 .onComplete(result -> {
                     if (result.succeeded()) {
                         mirrorMaker2Status.addConditions(result.result().conditions);
-                        mirrorMaker2Status.getConnectors().add(result.result().statusResult);
-                        mirrorMaker2Status.getConnectors().sort(new ConnectorsComparatorByName());
-                        var autoRestart = result.result().autoRestart;
+                        mirrorMaker2Status.addConnector(result.result().statusResult);
+
+                        AutoRestartStatus autoRestart = result.result().autoRestart;
                         if (autoRestart != null) {
                             autoRestart.setConnectorName(connectorName);
-                            mirrorMaker2Status.getAutoRestartStatuses().add(autoRestart);
-                            mirrorMaker2Status.getAutoRestartStatuses().sort(Comparator.comparing(AutoRestartStatus::getConnectorName));
+                            mirrorMaker2Status.addAutoRestartStatus(autoRestart);
                         }
                     } else {
                         maybeUpdateMirrorMaker2Status(reconciliation, mirrorMaker2, result.cause());
@@ -493,23 +489,5 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     @Override
     protected String getConnectorOffsetsConfigMapEntryKey(String connectorName) {
         return connectorName.replace("->", "--") + ".json";
-    }
-
-    // Static utility methods and classes
-
-    /**
-     * This comparator compares two maps where connectors' configurations are stored.
-     * The comparison is done by using only one property - 'name'
-     */
-    static class ConnectorsComparatorByName implements Comparator<Map<String, Object>>, Serializable {
-        @Serial
-        private static final long serialVersionUID = 1L;
-
-        @Override
-        public int compare(Map<String, Object> m1, Map<String, Object> m2) {
-            String name1 = m1.get("name") == null ? "" : m1.get("name").toString();
-            String name2 = m2.get("name") == null ? "" : m2.get("name").toString();
-            return name1.compareTo(name2);
-        }
     }
 }
