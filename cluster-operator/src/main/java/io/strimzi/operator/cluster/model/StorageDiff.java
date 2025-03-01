@@ -228,7 +228,7 @@ public class StorageDiff extends AbstractJsonDiff {
     /**
      * Returns true if there's a difference in {@code /volumeAttributesClass}
      *
-     * @return true when the size of the volumes changed
+     * @return true when the volumeAttributesClass changes
      */
     protected boolean volumeAttributesClassChanged() {
         return volumeAttributesClassChanged;
