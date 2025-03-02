@@ -159,32 +159,22 @@ public class SimpleAclRuleResource {
                 resourceName = kafkaResourcePattern.name();
                 resourceType = SimpleAclRuleResourceType.TOPIC;
 
-                switch (kafkaResourcePattern.patternType()) {
-                    case LITERAL:
-                        resourcePattern = AclResourcePatternType.LITERAL;
-                        break;
-                    case PREFIXED:
-                        resourcePattern = AclResourcePatternType.PREFIX;
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Invalid Resource type: " + kafkaResourcePattern.resourceType());
-                }
+                resourcePattern = switch (kafkaResourcePattern.patternType()) {
+                    case LITERAL -> AclResourcePatternType.LITERAL;
+                    case PREFIXED -> AclResourcePatternType.PREFIX;
+                    default -> throw new IllegalArgumentException("Invalid Resource type: " + kafkaResourcePattern.resourceType());
+                };
 
                 break;
             case GROUP:
                 resourceType = SimpleAclRuleResourceType.GROUP;
                 resourceName = kafkaResourcePattern.name();
 
-                switch (kafkaResourcePattern.patternType()) {
-                    case LITERAL:
-                        resourcePattern = AclResourcePatternType.LITERAL;
-                        break;
-                    case PREFIXED:
-                        resourcePattern = AclResourcePatternType.PREFIX;
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Invalid Resource type: " + kafkaResourcePattern.resourceType());
-                }
+                resourcePattern = switch (kafkaResourcePattern.patternType()) {
+                    case LITERAL -> AclResourcePatternType.LITERAL;
+                    case PREFIXED -> AclResourcePatternType.PREFIX;
+                    default -> throw new IllegalArgumentException("Invalid Resource type: " + kafkaResourcePattern.resourceType());
+                };
 
                 break;
             case CLUSTER:
@@ -195,16 +185,11 @@ public class SimpleAclRuleResource {
             case TRANSACTIONAL_ID:
                 resourceType = SimpleAclRuleResourceType.TRANSACTIONAL_ID;
                 resourceName = kafkaResourcePattern.name();
-                switch (kafkaResourcePattern.patternType()) {
-                    case LITERAL:
-                        resourcePattern = AclResourcePatternType.LITERAL;
-                        break;
-                    case PREFIXED:
-                        resourcePattern = AclResourcePatternType.PREFIX;
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Invalid Resource type: " + kafkaResourcePattern.resourceType());
-                }
+                resourcePattern = switch (kafkaResourcePattern.patternType()) {
+                    case LITERAL -> AclResourcePatternType.LITERAL;
+                    case PREFIXED -> AclResourcePatternType.PREFIX;
+                    default -> throw new IllegalArgumentException("Invalid Resource type: " + kafkaResourcePattern.resourceType());
+                };
 
                 break;
             default:

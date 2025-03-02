@@ -169,28 +169,16 @@ public class ConfigModel {
      * @return  List of errors found during the validation. Empty if no errors were found.
      */
     public List<String> validate(String configName, String value) {
-        switch (getType()) {
-            case BOOLEAN:
-                return validateBoolean(configName, value);
-            case STRING:
-                return validateString(configName, value);
-            case INT:
-                return validateInt(configName, value);
-            case LONG:
-                return validateLong(configName, value);
-            case DOUBLE:
-                return validateDouble(configName, value);
-            case SHORT:
-                return validateShort(configName, value);
-            case CLASS:
-                return emptyList();
-            case PASSWORD:
-                return emptyList();
-            case LIST:
-                return validateList(configName, value);
-            default:
-                throw new IllegalStateException("Unsupported type " + getType());
-        }
+        return switch (getType()) {
+            case BOOLEAN -> validateBoolean(configName, value);
+            case STRING -> validateString(configName, value);
+            case INT -> validateInt(configName, value);
+            case LONG -> validateLong(configName, value);
+            case DOUBLE -> validateDouble(configName, value);
+            case SHORT -> validateShort(configName, value);
+            case CLASS, PASSWORD -> emptyList();
+            case LIST -> validateList(configName, value);
+        };
     }
 
     private List<String> validateString(String configName, String value) {

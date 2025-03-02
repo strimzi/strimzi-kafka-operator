@@ -687,14 +687,10 @@ public abstract class Ca {
             reason = "Within renewal period for CA certificate (expires on " + currentCert.getNotAfter() + ")";
 
             if (maintenanceWindowSatisfied) {
-                switch (policy) {
-                    case REPLACE_KEY:
-                        renewalType = RenewalType.REPLACE_KEY;
-                        break;
-                    case RENEW_CERTIFICATE:
-                        renewalType = RenewalType.RENEW_CERT;
-                        break;
-                }
+                renewalType = switch (policy) {
+                    case REPLACE_KEY -> RenewalType.REPLACE_KEY;
+                    case RENEW_CERTIFICATE -> RenewalType.RENEW_CERT;
+                };
             } else {
                 renewalType = RenewalType.POSTPONED;
             }
