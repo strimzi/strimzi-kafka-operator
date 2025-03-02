@@ -157,82 +157,50 @@ public class SimpleAclRule {
     }
 
     private AclPermissionType toKafkaAclPermissionType(AclRuleType aclRuleType) {
-        switch (aclRuleType) {
-            case DENY:
-                return AclPermissionType.DENY;
-            case ALLOW:
-                return AclPermissionType.ALLOW;
-            default:
-                throw new IllegalArgumentException("Invalid Acl type: " + aclRuleType);
-        }
+        return switch (aclRuleType) {
+            case DENY -> AclPermissionType.DENY;
+            case ALLOW -> AclPermissionType.ALLOW;
+        };
     }
 
     private org.apache.kafka.common.acl.AclOperation toKafkaAclOperation(AclOperation operation) {
-        switch (operation) {
-            case READ:
-                return org.apache.kafka.common.acl.AclOperation.READ;
-            case WRITE:
-                return org.apache.kafka.common.acl.AclOperation.WRITE;
-            case CREATE:
-                return org.apache.kafka.common.acl.AclOperation.CREATE;
-            case DELETE:
-                return org.apache.kafka.common.acl.AclOperation.DELETE;
-            case ALTER:
-                return org.apache.kafka.common.acl.AclOperation.ALTER;
-            case DESCRIBE:
-                return org.apache.kafka.common.acl.AclOperation.DESCRIBE;
-            case CLUSTERACTION:
-                return org.apache.kafka.common.acl.AclOperation.CLUSTER_ACTION;
-            case ALTERCONFIGS:
-                return org.apache.kafka.common.acl.AclOperation.ALTER_CONFIGS;
-            case DESCRIBECONFIGS:
-                return org.apache.kafka.common.acl.AclOperation.DESCRIBE_CONFIGS;
-            case IDEMPOTENTWRITE:
-                return org.apache.kafka.common.acl.AclOperation.IDEMPOTENT_WRITE;
-            case ALL:
-                return org.apache.kafka.common.acl.AclOperation.ALL;
-            default:
-                throw new IllegalArgumentException("Invalid Acl operation: " + operation);
-        }
+        return switch (operation) {
+            case READ -> org.apache.kafka.common.acl.AclOperation.READ;
+            case WRITE -> org.apache.kafka.common.acl.AclOperation.WRITE;
+            case CREATE -> org.apache.kafka.common.acl.AclOperation.CREATE;
+            case DELETE -> org.apache.kafka.common.acl.AclOperation.DELETE;
+            case ALTER -> org.apache.kafka.common.acl.AclOperation.ALTER;
+            case DESCRIBE -> org.apache.kafka.common.acl.AclOperation.DESCRIBE;
+            case CLUSTERACTION -> org.apache.kafka.common.acl.AclOperation.CLUSTER_ACTION;
+            case ALTERCONFIGS -> org.apache.kafka.common.acl.AclOperation.ALTER_CONFIGS;
+            case DESCRIBECONFIGS -> org.apache.kafka.common.acl.AclOperation.DESCRIBE_CONFIGS;
+            case IDEMPOTENTWRITE -> org.apache.kafka.common.acl.AclOperation.IDEMPOTENT_WRITE;
+            case ALL -> org.apache.kafka.common.acl.AclOperation.ALL;
+        };
     }
 
     private static AclRuleType fromKafkaAclPermissionType(AclPermissionType aclPermissionType) {
-        switch (aclPermissionType) {
-            case DENY:
-                return AclRuleType.DENY;
-            case ALLOW:
-                return AclRuleType.ALLOW;
-            default:
-                throw new IllegalArgumentException("Invalid AclRule type: " + aclPermissionType);
-        }
+        return switch (aclPermissionType) {
+            case DENY -> AclRuleType.DENY;
+            case ALLOW -> AclRuleType.ALLOW;
+            default -> throw new IllegalArgumentException("Invalid AclRule type: " + aclPermissionType);
+        };
     }
 
     private static AclOperation fromKafkaAclOperation(org.apache.kafka.common.acl.AclOperation aclOperation) {
-        switch (aclOperation) {
-            case READ:
-                return AclOperation.READ;
-            case WRITE:
-                return AclOperation.WRITE;
-            case CREATE:
-                return AclOperation.CREATE;
-            case DELETE:
-                return AclOperation.DELETE;
-            case ALTER:
-                return AclOperation.ALTER;
-            case DESCRIBE:
-                return AclOperation.DESCRIBE;
-            case CLUSTER_ACTION:
-                return AclOperation.CLUSTERACTION;
-            case ALTER_CONFIGS:
-                return AclOperation.ALTERCONFIGS;
-            case DESCRIBE_CONFIGS:
-                return AclOperation.DESCRIBECONFIGS;
-            case IDEMPOTENT_WRITE:
-                return AclOperation.IDEMPOTENTWRITE;
-            case ALL:
-                return AclOperation.ALL;
-            default:
-                throw new IllegalArgumentException("Invalid AclRule operation: " + aclOperation);
-        }
+        return switch (aclOperation) {
+            case READ -> AclOperation.READ;
+            case WRITE -> AclOperation.WRITE;
+            case CREATE -> AclOperation.CREATE;
+            case DELETE -> AclOperation.DELETE;
+            case ALTER -> AclOperation.ALTER;
+            case DESCRIBE -> AclOperation.DESCRIBE;
+            case CLUSTER_ACTION -> AclOperation.CLUSTERACTION;
+            case ALTER_CONFIGS -> AclOperation.ALTERCONFIGS;
+            case DESCRIBE_CONFIGS -> AclOperation.DESCRIBECONFIGS;
+            case IDEMPOTENT_WRITE -> AclOperation.IDEMPOTENTWRITE;
+            case ALL -> AclOperation.ALL;
+            default -> throw new IllegalArgumentException("Invalid AclRule operation: " + aclOperation);
+        };
     }
 }
