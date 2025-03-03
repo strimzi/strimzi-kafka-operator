@@ -20,6 +20,7 @@
 * Implicit IPv4 preference when enabling JMX has been removed, and will now use JVM defaults.
   This will make the cluster boot up correctly in IPv6 only environments, where IPv4 preference will break it due to lack of IPv4 addresses.
 * Kafka Connect SSL configurations now uses Kafka Kubernetes Config Provider to load certificates directly from secrets.
+* Kafka Connect truststore and keystore configurations now uses Kafka Kubernetes Config Provider to load PEM certificates directly from secrets.
 
 ### Major changes, deprecations and removals
 
@@ -42,6 +43,8 @@
   Please use the template section to configure additional volumes instead.
 * Kafka 4.0 and newer is using Log4j2 for logging instead of Reload4j/Log4j1.
   If you have any custom logging configuration, you might need to update it during the upgrade to Kafka 4.0.
+* KafkaConnect now uses PEM files instead of P12/JKS for keystore and truststore. 
+  * If you override "ssl.truststore.location" and "ssl.keystore.location" in your Connector configurations, then you would need update them to override "ssl.truststore.certificates" and "ssl.keystore.certificate.chain" with PEM files instead.
 
 ## 0.45.0
 
