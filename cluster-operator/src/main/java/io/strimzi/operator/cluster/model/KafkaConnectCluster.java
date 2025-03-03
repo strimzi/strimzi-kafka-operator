@@ -591,8 +591,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                 getEnvVars(),
                 getContainerPortList(),
                 getVolumeMounts(),
-                ProbeUtils.httpProbe(livenessProbeOptions, "/", REST_API_PORT_NAME),
-                ProbeUtils.httpProbe(readinessProbeOptions, "/", REST_API_PORT_NAME),
+                ProbeUtils.httpProbe(livenessProbeOptions, "/health", REST_API_PORT_NAME),
+                ProbeUtils.httpProbe(readinessProbeOptions, "/health", REST_API_PORT_NAME),
                 imagePullPolicy
         );
     }
