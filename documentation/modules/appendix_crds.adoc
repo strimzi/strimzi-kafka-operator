@@ -747,6 +747,9 @@ It must have the value `simple` for the type `KafkaAuthorizationSimple`.
 [id='type-KafkaAuthorizationOpa-{context}']
 = `KafkaAuthorizationOpa` schema reference
 
+*The type `KafkaAuthorizationOpa` has been deprecated.*
+Please use xref:type-KafkaAuthorizationCustom-{context}[`KafkaAuthorizationCustom`] instead.
+
 Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 
 xref:type-KafkaAuthorizationOpa-schema-{context}[Full list of `KafkaAuthorizationOpa` schema properties]

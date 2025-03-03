@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.kafka;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.annotations.DeprecatedType;
 import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -30,6 +31,8 @@ import java.util.List;
     "tlsTrustedCertificates", "superUsers", "enableMetrics"})
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
+@Deprecated
+@DeprecatedType(replacedWithType = KafkaAuthorizationCustom.class)
 public class KafkaAuthorizationOpa extends KafkaAuthorization {
     public static final String TYPE_OPA = "opa";
 
