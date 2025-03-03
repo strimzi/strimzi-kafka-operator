@@ -367,31 +367,24 @@ public class OrderedProperties {
         }
 
         private boolean isComment() {
-            switch (peekChar) {
-                case '!':
-                case '#':
-                    return true;
-            }
-            return false;
+            return switch (peekChar) {
+                case '!', '#' -> true;
+                default -> false;
+            };
         }
 
         private boolean isKeySeparator() {
-            switch (peekChar) {
-                case '=':
-                case ':':
-                    return true;
-            }
-            return false;
+            return switch (peekChar) {
+                case '=', ':' -> true;
+                default -> false;
+            };
         }
 
         private boolean isEol() {
-            switch (peekChar) {
-                case '\r':
-                case '\n':
-                case EOF:
-                    return true;
-            }
-            return false;
+            return switch (peekChar) {
+                case '\r', '\n', EOF -> true;
+                default -> false;
+            };
         }
     }
 
