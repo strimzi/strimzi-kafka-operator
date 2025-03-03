@@ -110,7 +110,6 @@ public class AbstractKRaftUpgradeST extends AbstractST {
     protected final LabelSelector coSelector = new LabelSelectorBuilder().withMatchLabels(Map.of(Labels.STRIMZI_KIND_LABEL, "cluster-operator")).build();
     protected final LabelSelector connectLabelSelector = KafkaConnectResource.getLabelSelector(CLUSTER_NAME, KafkaConnectResources.componentName(CLUSTER_NAME));
 
-
     protected void makeComponentsSnapshots(String componentsNamespaceName) {
         eoPods = DeploymentUtils.depSnapshot(componentsNamespaceName, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
         controllerPods = PodUtils.podSnapshot(componentsNamespaceName, controllerSelector);
@@ -118,50 +117,57 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         connectPods = PodUtils.podSnapshot(componentsNamespaceName, connectLabelSelector);
     }
 
+    /**
+     * Performs the Kafka Connect and Kafka Connector upgrade/downgrade procedure.
+     * It upgrades the Cluster Operator, Kafka Connect, and Kafka Connector while verifying each step.
+     *
+     * @param clusterOperatorNamespaceName Namespace of the Cluster Operator
+     * @param testStorage                  Test-related configuration and storage
+     * @param upgradeDowngradeData         Bundle version modification data
+     * @param upgradeKafkaVersion          Kafka version details
+     * @throws IOException if any I/O error occurs during the procedure
+     */
     protected void doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(
         final String clusterOperatorNamespaceName,
         final TestStorage testStorage,
         final BundleVersionModificationData upgradeDowngradeData,
-        final UpgradeKafkaVersion upgradeKafkaVersion
-    ) throws IOException {
+        final UpgradeKafkaVersion upgradeKafkaVersion) throws IOException {
+        // 1. Setup Cluster Operator with KafkaConnect and KafkaConnector
         setupEnvAndUpgradeClusterOperator(clusterOperatorNamespaceName, testStorage, upgradeDowngradeData, upgradeKafkaVersion);
         deployKafkaConnectAndKafkaConnectorWithWaitForReadiness(testStorage, upgradeDowngradeData, upgradeKafkaVersion);
 
-        final KafkaClients clients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withUsername(USER_NAME)
-            .build();
+        // 2. Send messages
+        produceMessagesAndVerify(testStorage);
 
-        resourceManager.createResourceWithWait(clients.producerTlsStrimzi(CLUSTER_NAME));
-        // Verify that Producer finish successfully
-        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
-
+        // 3. Make snapshots
         makeComponentsSnapshots(testStorage.getNamespaceName());
         logComponentsPodImagesWithConnect(testStorage.getNamespaceName());
 
-        // Verify FileSink KafkaConnector before upgrade
-        String connectorPodName = kubeClient().listPods(testStorage.getNamespaceName(), Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND)).get(0).getMetadata().getName();
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
+        // 4. Verify KafkaConnector FileSink
+        verifyKafkaConnectorFileSink(testStorage);
 
-        // Upgrade CO to HEAD and wait for readiness of ClusterOperator
+        // 5. Upgrade CO to HEAD and wait for readiness of ClusterOperator
         changeClusterOperator(clusterOperatorNamespaceName, testStorage.getNamespaceName(), upgradeDowngradeData);
 
-        if (TestKafkaVersion.supportedVersionsContainsVersion(upgradeKafkaVersion.getVersion())) {
-            // Verify that Kafka and Connect Pods Rolled
-            waitForKafkaClusterRollingUpdate(testStorage.getNamespaceName());
-            connectPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), connectLabelSelector, 1, connectPods);
-            KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), CLUSTER_NAME);
-        }
-
+        // 6. Wait for components to roll
+        maybeWaitForRollingUpdate(testStorage.getNamespaceName(), upgradeKafkaVersion);
         logComponentsPodImagesWithConnect(testStorage.getNamespaceName());
 
-        // Upgrade/Downgrade kafka
-        changeKafkaVersion(testStorage.getNamespaceName(), upgradeDowngradeData);
-        changeKafkaVersionInKafkaConnect(testStorage.getNamespaceName(), upgradeDowngradeData);
+        verifyPostUpgradeOrDowngradeProcedure(testStorage, upgradeDowngradeData);
+    }
 
-        logComponentsPodImagesWithConnect(testStorage.getNamespaceName());
-        checkAllComponentsImages(testStorage.getNamespaceName(), upgradeDowngradeData);
-
+    /**
+     * Verifies the environment after an upgrade or downgrade procedure
+     * by sending new messages, checking connector output, stability, and final state.
+     *
+     * @param testStorage          Test-related configuration and storage
+     * @param upgradeDowngradeData Bundle version modification data
+     */
+    private void verifyPostUpgradeOrDowngradeProcedure(final TestStorage testStorage,
+                                                       final BundleVersionModificationData upgradeDowngradeData) {
+        final KafkaClients clients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
+            .withUsername(USER_NAME)
+            .build();
         // send again new messages
         resourceManager.createResourceWithWait(clients.producerTlsStrimzi(CLUSTER_NAME));
 
@@ -169,14 +175,67 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         ClientUtils.waitForInstantProducerClientSuccess(testStorage.getNamespaceName(), testStorage);
 
         // Verify FileSink KafkaConnector
-        connectorPodName = kubeClient().listPods(testStorage.getNamespaceName(), Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND)).get(0).getMetadata().getName();
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
+        verifyKafkaConnectorFileSink(testStorage);
 
         // Verify that pods are stable
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), CLUSTER_NAME);
 
         // Verify upgrade
         verifyProcedure(testStorage.getNamespaceName(), upgradeDowngradeData, testStorage.getContinuousProducerName(), testStorage.getContinuousConsumerName());
+    }
+
+    /**
+     * Verifies that the Kafka Connector FileSink is receiving messages as expected.
+     *
+     * @param testStorage Test-related configuration and storage
+     */
+    private void verifyKafkaConnectorFileSink(final TestStorage testStorage) {
+        String connectorPodName = kubeClient().listPods(
+            testStorage.getNamespaceName(),
+            Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND)
+        ).get(0).getMetadata().getName();
+
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(
+            testStorage.getNamespaceName(),
+            connectorPodName,
+            DEFAULT_SINK_FILE_PATH,
+            testStorage.getMessageCount()
+        );
+    }
+
+    /**
+     * Waits for the Kafka cluster and Kafka Connect to roll if the target version is supported.
+     *
+     * @param namespaceName         name of the namespace
+     * @param upgradeKafkaVersion   Kafka version details
+     */
+    private void maybeWaitForRollingUpdate(final String namespaceName,
+                                           final UpgradeKafkaVersion upgradeKafkaVersion) {
+        if (TestKafkaVersion.supportedVersionsContainsVersion(upgradeKafkaVersion.getVersion())) {
+            waitForKafkaClusterRollingUpdate(namespaceName);
+            connectPods = RollingUpdateUtils.waitTillComponentHasRolled(
+                namespaceName,
+                connectLabelSelector,
+                1,
+                connectPods
+            );
+            KafkaConnectorUtils.waitForConnectorReady(namespaceName, CLUSTER_NAME);
+        }
+    }
+
+    /**
+     * Produces messages and verifies they were successfully sent, using a TLS client.
+     *
+     * @param testStorage Test-related configuration and storage
+     */
+    private void produceMessagesAndVerify(TestStorage testStorage) {
+        final KafkaClients clients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withUsername(USER_NAME)
+            .build();
+
+        resourceManager.createResourceWithWait(clients.producerTlsStrimzi(CLUSTER_NAME));
+        ClientUtils.waitForInstantProducerClientSuccess(testStorage);
     }
 
     protected void setupEnvAndUpgradeClusterOperator(String clusterOperatorNamespaceName, TestStorage testStorage, BundleVersionModificationData upgradeData, UpgradeKafkaVersion upgradeKafkaVersion) throws IOException {
