@@ -10,6 +10,8 @@ include::shared/attributes.adoc[]
 
 //key features
 include::modules/overview/ref-key-features.adoc[leveloffset=+1]
+//Product components (operators)
+include::assemblies/overview/assembly-overview-components.adoc[leveloffset=+1]
 //Kafka components
 include::assemblies/overview/assembly-kafka-components.adoc[leveloffset=+1]
 //Kafka concepts
@@ -19,8 +21,6 @@ include::assemblies/overview/assembly-kafka-connect-components.adoc[leveloffset=
 //description of kafka bridge
 include::modules/overview/con-overview-components-kafka-bridge.adoc[leveloffset=+1]
 include::modules/overview/con-overview-components-kafka-bridge-clients.adoc[leveloffset=+2]
-//Product components
-include::assemblies/overview/assembly-overview-components.adoc[leveloffset=+1]
 //Main configuration points
 include::modules/overview/con-configuration-points.adoc[leveloffset=+1]
 //security options

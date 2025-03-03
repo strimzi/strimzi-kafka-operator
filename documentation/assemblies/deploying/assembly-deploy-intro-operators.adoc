@@ -7,27 +7,27 @@
 = Strimzi operators
 
 [role="_abstract"]
-Strimzi operators are purpose-built with specialist operational knowledge to effectively manage Kafka on Kubernetes.
-Each operator performs a distinct function.
+Strimzi uses operators to deploy and manage Kafka components.
+The operators monitor Strimzi custom resources (like `Kafka`, `KafkaTopic`, and `KafkaUser`) and ensure that the Kafka components are configured and running as specified.
 
-Cluster Operator:: The Cluster Operator handles the deployment and management of Apache Kafka clusters on Kubernetes. 
-It automates the setup of Kafka brokers, and other Kafka components and resources.
-Topic Operator:: The Topic Operator manages the creation, configuration, and deletion of topics within Kafka clusters. 
-User Operator:: The User Operator manages Kafka users that require access to Kafka brokers. 
+Strimzi provides the following operators, each responsible for different aspects of a Kafka deployment:
 
-When you deploy Strimzi, you first deploy the Cluster Operator.
-The Cluster Operator is then ready to handle the deployment of Kafka.
-You can also deploy the Topic Operator and User Operator using the Cluster Operator (recommended) or as standalone operators.
-You would use a standalone operator with a Kafka cluster that is not managed by the Cluster Operator.
+Cluster Operator (required):: The Cluster Operator must be deployed first. 
+It handles the deployment and management of Apache Kafka clusters on Kubernetes, automating the setup of Kafka nodes and related resources.
+If enabled, it can also deploy the Entity Operator, which may include the Topic Operator, User Operator, or both.
++
+Additionally, Strimzi provides *Drain Cleaner*, which is deployed separately.
+Drain Cleaner supports the Cluster Operator in managing pod evictions for Kafka clusters.
 
-The Topic Operator and User Operator are part of the Entity Operator.
-The Cluster Operator can deploy one or both operators based on the Entity Operator configuration.
+Entity Operator (recommended):: Manage topics and users through dedicated operators:
+* *Topic Operator* manages Kafka topics.
+* *User Operator* manages Kafka users.
+ifdef::Section[]
+Access Operator (optional):: Manages and shares Kafka cluster connection details.
+It is deployed independently of the Cluster Operator.
+endif::Section[]
 
-[IMPORTANT]
-====
-To deploy the standalone operators, you need to set environment variables to connect to a Kafka cluster.
-These environment variables do not need to be set if you are deploying the operators using the Cluster Operator as they will be set by the Cluster Operator.
-====
+NOTE: The Topic Operator and User Operator can also be deployed standalone to manage topics and users for a Kafka cluster that is not managed by Strimzi.
 
 //operator namespace 
 include::../../modules/operators/con-operators-namespaces.adoc[leveloffset=+1]

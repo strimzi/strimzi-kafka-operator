@@ -68,8 +68,3 @@ include::../../modules/security/proc-configuring-external-clients-to-trust-clust
 //user-supplied certs
 include::assembly-using-your-own-certificates.adoc[leveloffset=+1]
 
-//access-operator
-ifdef::Section[]
-include::assembly-access-operator.adoc[leveloffset=+1]
-endif::Section[]
-

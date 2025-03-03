@@ -32,6 +32,10 @@ include::assemblies/configuring/assembly-config.adoc[leveloffset=+1]
 include::assemblies/operators/assembly-using-the-topic-operator.adoc[leveloffset=+1]
 //creating users
 include::assemblies/operators/assembly-using-the-user-operator.adoc[leveloffset=+1]
+//using the access-operator
+ifdef::Section[]
+include::assemblies/security/assembly-access-operator.adoc[leveloffset=+1]
+endif::Section[]
 //Verifying the deployment and providing access to an external client
 include::assemblies/deploying/assembly-deploy-client-access.adoc[leveloffset=+1]
 //Securing the deployment
