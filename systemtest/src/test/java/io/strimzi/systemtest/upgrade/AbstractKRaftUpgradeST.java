@@ -150,7 +150,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         changeClusterOperator(clusterOperatorNamespaceName, testStorage.getNamespaceName(), upgradeDowngradeData);
 
         // 6. Wait for components to roll
-        maybeWaitForRollingUpdate(testStorage, upgradeKafkaVersion);
+        maybeWaitForRollingUpdate(testStorage.getNamespaceName(), upgradeKafkaVersion);
         logComponentsPodImagesWithConnect(testStorage.getNamespaceName());
 
         verifyPostUpgradeOrDowngradeProcedure(testStorage, upgradeDowngradeData);
@@ -166,7 +166,6 @@ public class AbstractKRaftUpgradeST extends AbstractST {
     private void verifyPostUpgradeOrDowngradeProcedure(final TestStorage testStorage,
                                                        final BundleVersionModificationData upgradeDowngradeData) {
         final KafkaClients clients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
-            .withNamespaceName(testStorage.getNamespaceName())
             .withUsername(USER_NAME)
             .build();
         // send again new messages
@@ -176,8 +175,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         ClientUtils.waitForInstantProducerClientSuccess(testStorage.getNamespaceName(), testStorage);
 
         // Verify FileSink KafkaConnector
-        String connectorPodName = kubeClient().listPods(testStorage.getNamespaceName(), Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND)).get(0).getMetadata().getName();
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
+        verifyKafkaConnectorFileSink(testStorage);
 
         // Verify that pods are stable
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), CLUSTER_NAME);
@@ -208,20 +206,20 @@ public class AbstractKRaftUpgradeST extends AbstractST {
     /**
      * Waits for the Kafka cluster and Kafka Connect to roll if the target version is supported.
      *
-     * @param testStorage        Test-related configuration and storage
-     * @param upgradeKafkaVersion Kafka version details
+     * @param namespaceName         name of the namespace
+     * @param upgradeKafkaVersion   Kafka version details
      */
-    private void maybeWaitForRollingUpdate(final TestStorage testStorage,
+    private void maybeWaitForRollingUpdate(final String namespaceName,
                                            final UpgradeKafkaVersion upgradeKafkaVersion) {
         if (TestKafkaVersion.supportedVersionsContainsVersion(upgradeKafkaVersion.getVersion())) {
-            waitForKafkaClusterRollingUpdate(testStorage.getNamespaceName());
+            waitForKafkaClusterRollingUpdate(namespaceName);
             connectPods = RollingUpdateUtils.waitTillComponentHasRolled(
-                testStorage.getNamespaceName(),
+                namespaceName,
                 connectLabelSelector,
                 1,
                 connectPods
             );
-            KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), CLUSTER_NAME);
+            KafkaConnectorUtils.waitForConnectorReady(namespaceName, CLUSTER_NAME);
         }
     }
 
