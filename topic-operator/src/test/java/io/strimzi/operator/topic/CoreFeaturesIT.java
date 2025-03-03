@@ -19,6 +19,7 @@ import io.strimzi.operator.topic.model.TopicOperatorException;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.container.StrimziKafkaCluster;
 import io.strimzi.test.interfaces.TestSeparator;
+import io.strimzi.test.mockkube3.MockKube3;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.AlterConfigOp;
@@ -98,15 +99,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 
-/**
- * This integration test covers the {@link BatchingTopicController}.
- * This test requires a connection to a Kubernetes cluster.
- */
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
-class TopicControllerIT implements TestSeparator {
-    private static final Logger LOGGER = LogManager.getLogger(TopicControllerIT.class);
+class CoreFeaturesIT implements TestSeparator {
+    private static final Logger LOGGER = LogManager.getLogger(CoreFeaturesIT.class);
 
-    private static final String NAMESPACE = TopicOperatorTestUtil.namespaceName(TopicControllerIT.class);
+    private static final String NAMESPACE = TestUtil.namespaceName(CoreFeaturesIT.class);
     private static final Map<String, String> SELECTOR = Map.of("foo", "FOO", "bar", "BAR");
     private static final Map<String, Object> TEST_TOPIC_CONFIG = Map.of(
         TopicConfig.CLEANUP_POLICY_CONFIG, List.of("compact"),
@@ -117,24 +114,31 @@ class TopicControllerIT implements TestSeparator {
         TopicConfig.UNCLEAN_LEADER_ELECTION_ENABLE_CONFIG, true
     );
 
-    static KubernetesClient kubernetesClient;
+    private static MockKube3 mockKube;
+    private static KubernetesClient kubernetesClient;
+    
     TopicOperatorMain operator;
     Stack<String> namespaces = new Stack<>();
     private TopicOperatorConfig operatorConfig;
     private StrimziKafkaCluster kafkaCluster;
-    private Admin kafkaAdminClient;
-    private Admin kafkaAdminClientOp;
+    private Admin kafkaAdminClientOp; // operator's client
+    private Admin kafkaAdminClient; // test client
 
     @BeforeAll
     public static void beforeAll() {
-        kubernetesClient = new KubernetesClientBuilder().build();
-        TopicOperatorTestUtil.setupKubeCluster(kubernetesClient, NAMESPACE);
+        mockKube = new MockKube3.MockKube3Builder()
+            .withKafkaTopicCrd()
+            .withDeletionController()
+            .withNamespaces(NAMESPACE)
+            .build();
+        mockKube.start();
+        kubernetesClient = mockKube.client();
+        TestUtil.setupKubeCluster(kubernetesClient, NAMESPACE);
     }
 
     @AfterAll
     public static void afterAll() {
-        TopicOperatorTestUtil.deleteNamespace(kubernetesClient, NAMESPACE);
-        kubernetesClient.close();
+        mockKube.stop();
     }
 
     @AfterEach
@@ -160,11 +164,11 @@ class TopicControllerIT implements TestSeparator {
         }
 
         while (!namespaces.isEmpty()) {
-            TopicOperatorTestUtil.cleanupNamespace(kubernetesClient, namespaces.pop());
+            TestUtil.cleanupNamespace(kubernetesClient, namespaces.pop());
         }
     }
 
-    private void startKafkaCluster(int brokersNum, int internalTopicReplicationFactor, Map<String, String> additionalKafkaConfiguration)    {
+    private void startKafkaCluster(int brokersNum, int internalTopicReplicationFactor, Map<String, String> additionalKafkaConfiguration) {
         kafkaCluster = new StrimziKafkaCluster.StrimziKafkaClusterBuilder()
                 .withKraft()
                 .withNumberOfBrokers(brokersNum)
@@ -177,7 +181,7 @@ class TopicControllerIT implements TestSeparator {
 
     private String createNamespace(String name) {
         namespaces.push(name);
-        TopicOperatorTestUtil.createNamespace(kubernetesClient, name);
+        TestUtil.createNamespace(kubernetesClient, name);
         return name;
     }
 
@@ -287,10 +291,6 @@ class TopicControllerIT implements TestSeparator {
         return isReconcilatedAndHasConditionMatching(type + "=True or False", conditionPredicate);
     }
 
-    private static Predicate<KafkaTopic> unmanagedStatusTrue() {
-        return typeIsTrueOrFalse("Unmanaged");
-    }
-
     private static Predicate<KafkaTopic> unmanagedIsTrue() {
         Predicate<Condition> conditionPredicate = condition ->
             "Unmanaged".equals(condition.getType())
@@ -300,10 +300,10 @@ class TopicControllerIT implements TestSeparator {
 
     private KafkaTopic waitUntil(KafkaTopic kt, Predicate<KafkaTopic> condition) {
         Resource<KafkaTopic> resource = Crds.topicOperation(kubernetesClient).resource(kt);
-        return TopicOperatorTestUtil.waitUntilCondition(resource, condition);
+        return TestUtil.waitUntilCondition(resource, condition);
     }
-
-    private void maybeStartOperator(TopicOperatorConfig config) throws ExecutionException, InterruptedException {
+    
+    private void maybeStartOperator(TopicOperatorConfig config) {
         if (kafkaAdminClient == null) {
             Map<String, Object> testConfig = config.adminClientConfig();
             testConfig.replace(AdminClientConfig.CLIENT_ID_CONFIG, config.clientId() + "-test");
@@ -315,8 +315,9 @@ class TopicControllerIT implements TestSeparator {
             kafkaAdminClientOp = Admin.create(adminConfig);
         }
         if (operator == null) {
-            this.operatorConfig = config;
-            operator = TopicOperatorMain.operator(config, kafkaAdminClientOp);
+            operatorConfig = config;
+            var kubernetesClientOp = new KubernetesClientBuilder().withConfig(kubernetesClient.getConfiguration()).build();
+            operator = new TopicOperatorMain(config, kubernetesClientOp, kafkaAdminClientOp);
             assertFalse(operator.queue.isAlive());
             assertFalse(operator.queue.isReady());
             operator.start();
@@ -498,11 +499,11 @@ class TopicControllerIT implements TestSeparator {
         assertEquals(expectedConfigs, topicConfigMap(expectedTopicName));
     }
 
-    private KafkaTopic createTopic(StrimziKafkaCluster kc, KafkaTopic kt) throws ExecutionException, InterruptedException {
+    private KafkaTopic createTopic(StrimziKafkaCluster kc, KafkaTopic kt) {
         return createTopic(kc, kt, TopicOperatorUtil.isManaged(kt) ? readyIsTrueOrFalse() : unmanagedIsTrue());
     }
 
-    private KafkaTopic createTopic(StrimziKafkaCluster kc, KafkaTopic kt, Predicate<KafkaTopic> condition) throws ExecutionException, InterruptedException {
+    private KafkaTopic createTopic(StrimziKafkaCluster kc, KafkaTopic kt, Predicate<KafkaTopic> condition) {
         String ns = createNamespace(kt.getMetadata().getNamespace());
         maybeStartOperator(topicOperatorConfig(ns, kc));
 
@@ -513,7 +514,7 @@ class TopicControllerIT implements TestSeparator {
         return waitUntil(created, condition);
     }
 
-    private List<KafkaTopic> createTopicsConcurrently(StrimziKafkaCluster kc, KafkaTopic... kts) throws InterruptedException, ExecutionException {
+    private List<KafkaTopic> createTopicsConcurrently(StrimziKafkaCluster kc, KafkaTopic... kts) throws InterruptedException {
         if (kts == null || kts.length == 0) {
             throw new IllegalArgumentException("You need pass at least one topic to be created");
         }
@@ -714,7 +715,7 @@ class TopicControllerIT implements TestSeparator {
     }
 
     @Test
-    public void shouldNotCreateTopicInKafkaWhenUnselectedTopicCreatedInKube() throws ExecutionException, InterruptedException, TimeoutException {
+    public void shouldNotCreateTopicInKafkaWhenUnselectedTopicCreatedInKube() throws InterruptedException, TimeoutException {
         // The difference between unmanaged and unselected is the former means the operator doesn't touch it
         // (presumably it's intended for another operator instance), but the latter does get a status update
 
@@ -729,7 +730,7 @@ class TopicControllerIT implements TestSeparator {
             // when
 
             // then
-            try (var logCaptor = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
+            try (var ignored = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
                     org.apache.logging.log4j.Level.DEBUG,
                     "Ignoring KafkaTopic .*? not selected by selector",
                     5L,
@@ -754,7 +755,7 @@ class TopicControllerIT implements TestSeparator {
         // given
         var expectedTopicName = TopicOperatorUtil.topicName(kt);
         KafkaTopic unmanaged;
-        try (var logCaptor = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
+        try (var ignored = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
                 org.apache.logging.log4j.Level.DEBUG,
                 "Ignoring KafkaTopic .*? not selected by selector",
                 5L,
@@ -766,7 +767,7 @@ class TopicControllerIT implements TestSeparator {
 
             // when
             LOGGER.debug("##Modifying");
-            unmanaged = TopicOperatorTestUtil.changeTopic(kubernetesClient, kt, theKt -> {
+            unmanaged = TestUtil.changeTopic(kubernetesClient, kt, theKt -> {
                 theKt.getMetadata().setLabels(unmatchedLabels);
                 theKt.getSpec().setPartitions(3);
                 return theKt;
@@ -805,7 +806,7 @@ class TopicControllerIT implements TestSeparator {
             maybeStartOperator(topicOperatorConfig(ns, kafkaCluster));
 
             KafkaTopic created;
-            try (var logCaptor = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
+            try (var ignored = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
                     org.apache.logging.log4j.Level.DEBUG,
                     "Ignoring KafkaTopic .*? not selected by selector",
                     5L,
@@ -847,10 +848,9 @@ class TopicControllerIT implements TestSeparator {
         }
     }
 
-    private void shouldUpdateTopicInKafkaWhenConfigChangedInKube(StrimziKafkaCluster kc,
-                                                                 KafkaTopic kt,
-                                                                 UnaryOperator<KafkaTopic> changer,
-                                                                 UnaryOperator<Map<String, String>> expectedChangedConfigs) throws ExecutionException, InterruptedException, TimeoutException {
+    private void shouldUpdateTopicInKafkaWhenConfigChangedInKube(
+        StrimziKafkaCluster kc, KafkaTopic kt, UnaryOperator<KafkaTopic> changer, UnaryOperator<Map<String, String>> expectedChangedConfigs
+    ) throws ExecutionException, InterruptedException, TimeoutException {
         // given
         var expectedTopicName = TopicOperatorUtil.topicName(kt);
         var expectedCreateConfigs = TEST_TOPIC_CONFIG.entrySet().stream()
@@ -882,7 +882,7 @@ class TopicControllerIT implements TestSeparator {
 
         for (KafkaTopic kt : topics) {
             shouldUpdateTopicInKafkaWhenConfigChangedInKube(kafkaCluster, kt,
-                    TopicControllerIT::setSnappyCompression,
+                    CoreFeaturesIT::setSnappyCompression,
                     expectedCreateConfigs -> {
                         Map<String, String> expectedUpdatedConfigs = new LinkedHashMap<>(expectedCreateConfigs);
                         expectedUpdatedConfigs.put(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy");
@@ -1018,9 +1018,8 @@ class TopicControllerIT implements TestSeparator {
             new ConfigResource(ConfigResource.Type.BROKER, ""), List.of(
                 new AlterConfigOp(new ConfigEntry("log.segment.delete.delay.ms", "" + (1000L * 60 * 60)), AlterConfigOp.OpType.SET)))).all().get();
 
-        TopicOperatorConfig config = topicOperatorConfig(NAMESPACE, kafkaCluster, true, 500);
+        var config = topicOperatorConfig(NAMESPACE, kafkaCluster, true, 500);
         kafkaAdminClientOp = Mockito.spy(Admin.create(config.adminClientConfig()));
-
         maybeStartOperator(config);
 
         KafkaTopic kt = kafkaTopic(NAMESPACE, "bar", SELECTOR, null, null, null, 1, 1,
@@ -1030,7 +1029,7 @@ class TopicControllerIT implements TestSeparator {
         postSyncBarrier();
 
         // when: resync
-        try (var logCaptor = LogCaptor.logMessageMatches(BatchingLoop.LoopRunnable.LOGGER,
+        try (var ignored = LogCaptor.logMessageMatches(BatchingLoop.LoopRunnable.LOGGER,
             Level.INFO,
             "\\[Batch #[0-9]+\\] Batch reconciliation completed",
             5L,
@@ -1045,7 +1044,7 @@ class TopicControllerIT implements TestSeparator {
 
     private static void postSyncBarrier() throws TimeoutException, InterruptedException {
         var uuid = UUID.randomUUID();
-        try (var logCaptor = LogCaptor.logEventMatches(LOGGER,
+        try (var ignored = LogCaptor.logEventMatches(LOGGER,
             Level.DEBUG,
             LogCaptor.messageContainsMatch("Post sync barrier " + uuid),
             5L,
@@ -1067,7 +1066,7 @@ class TopicControllerIT implements TestSeparator {
 
             // when: partitions is increased
             modifyTopicAndAwait(kt,
-                    TopicControllerIT::incrementPartitions,
+                    CoreFeaturesIT::incrementPartitions,
                     readyIsTrue());
 
             // then
@@ -1190,7 +1189,7 @@ class TopicControllerIT implements TestSeparator {
 
             // when: The finalizer is removed
             LOGGER.debug("Removing finalizer");
-            var postUpdate = TopicOperatorTestUtil.changeTopic(kubernetesClient, created, theKt1 -> {
+            var postUpdate = TestUtil.changeTopic(kubernetesClient, created, theKt1 -> {
                 theKt1.getMetadata().getFinalizers().remove(KubernetesHandler.FINALIZER_STRIMZI_IO_TO);
                 return theKt1;
             });
@@ -1218,7 +1217,7 @@ class TopicControllerIT implements TestSeparator {
             LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
                     kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
             Resource<KafkaTopic> resource = Crds.topicOperation(kubernetesClient).resource(kt);
-            TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
+            TestUtil.waitUntilCondition(resource, Objects::isNull);
 
             // then
             waitNotExistsInKafka(TopicOperatorUtil.topicName(kt));
@@ -1239,7 +1238,7 @@ class TopicControllerIT implements TestSeparator {
             LOGGER.info("Test delete KafkaTopic {} with resourceVersion {}",
                     kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
             Resource<KafkaTopic> resource = Crds.topicOperation(kubernetesClient).resource(kt);
-            var unready = TopicOperatorTestUtil.waitUntilCondition(resource, readyIsFalse());
+            var unready = TestUtil.waitUntilCondition(resource, readyIsFalse());
 
             // then
             Condition condition = assertExactlyOneCondition(unready);
@@ -1250,7 +1249,8 @@ class TopicControllerIT implements TestSeparator {
     }
 
     @Test
-    public void shouldDeleteTopicFromKafkaWhenManagedTopicDeletedFromKubeAndFinalizersDisabled() throws ExecutionException, InterruptedException, TimeoutException {
+    public void shouldDeleteTopicFromKafkaWhenManagedTopicDeletedFromKubeAndFinalizersDisabled() 
+            throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
         List<KafkaTopic> topics = managedKafkaTopics();
 
@@ -1264,7 +1264,7 @@ class TopicControllerIT implements TestSeparator {
             LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
                     kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
             Resource<KafkaTopic> resource = Crds.topicOperation(kubernetesClient).resource(kt);
-            TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
+            TestUtil.waitUntilCondition(resource, Objects::isNull);
 
             // then
             waitNotExistsInKafka(TopicOperatorUtil.topicName(kt));
@@ -1284,7 +1284,7 @@ class TopicControllerIT implements TestSeparator {
             TopicOperatorConfig.NAMESPACE.key(), ns,
             TopicOperatorConfig.RESOURCE_LABELS.key(), Labels.fromMap(SELECTOR).toSelectorString(),
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), kafkaCluster.getBootstrapServers(),
-            TopicOperatorConfig.CLIENT_ID.key(), TopicControllerIT.class.getSimpleName(),
+            TopicOperatorConfig.CLIENT_ID.key(), CoreFeaturesIT.class.getSimpleName(),
             TopicOperatorConfig.FULL_RECONCILIATION_INTERVAL_MS.key(), String.valueOf(fullReconciliationIntervalMs),
             TopicOperatorConfig.USE_FINALIZERS.key(), String.valueOf(useFinalizer),
             TopicOperatorConfig.MAX_QUEUE_SIZE.key(), "100",
@@ -1294,7 +1294,8 @@ class TopicControllerIT implements TestSeparator {
     }
 
     @Test
-    public void shouldNotDeleteTopicFromKafkaWhenManagedTopicDeletedFromKubeAndFinalizersDisabledButDeletionDisabledInKafka() throws ExecutionException, InterruptedException, TimeoutException {
+    public void shouldNotDeleteTopicFromKafkaWhenManagedTopicDeletedFromKubeAndFinalizersDisabledButDeletionDisabledInKafka() 
+            throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false", "delete.topic.enable", "false"));
         List<KafkaTopic> topics = managedKafkaTopics();
 
@@ -1306,12 +1307,12 @@ class TopicControllerIT implements TestSeparator {
             postSyncBarrier();
 
             // when
-            try (var logCaptor = LogCaptor.logMessageMatches(BatchingLoop.LoopRunnable.LOGGER,
+            try (var ignored = LogCaptor.logMessageMatches(BatchingLoop.LoopRunnable.LOGGER,
                     Level.INFO,
                     "\\[Batch #[0-9]+\\] Batch reconciliation completed",
                     5L,
                     TimeUnit.SECONDS)) {
-                try (var logCaptor2 = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
+                try (var ignored1 = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
                         Level.WARN,
                         "Unable to delete topic '" + TopicOperatorUtil.topicName(kt) + "' from Kafka because topic deletion is disabled on the Kafka controller.",
                         5L,
@@ -1321,7 +1322,7 @@ class TopicControllerIT implements TestSeparator {
                     LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
                             kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
                     Resource<KafkaTopic> resource = Crds.topicOperation(kubernetesClient).resource(kt);
-                    TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
+                    TestUtil.waitUntilCondition(resource, Objects::isNull);
                 }
             }
 
@@ -1342,16 +1343,15 @@ class TopicControllerIT implements TestSeparator {
             int specReplicas = kt.getSpec().getReplicas();
 
             createTopicAndAssertSuccess(kafkaCluster, kt);
-            TopicOperatorTestUtil.changeTopic(kubernetesClient, kt, theKt -> {
-                return new KafkaTopicBuilder(theKt).editOrNewMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "false").endMetadata().build();
-            });
+            TestUtil.changeTopic(kubernetesClient, kt, theKt -> 
+                new KafkaTopicBuilder(theKt).editOrNewMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "false").endMetadata().build());
 
             // when
             Crds.topicOperation(kubernetesClient).resource(kt).delete();
             LOGGER.info("Test created KafkaTopic {} with resourceVersion {}",
                     kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
             Resource<KafkaTopic> resource = Crds.topicOperation(kubernetesClient).resource(kt);
-            TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
+            TestUtil.waitUntilCondition(resource, Objects::isNull);
 
             // then
             var topicDescription = awaitTopicDescription(expectedTopicName);
@@ -1374,13 +1374,13 @@ class TopicControllerIT implements TestSeparator {
             int specReplicas = kt.getSpec().getReplicas();
 
             createTopicAndAssertSuccess(kafkaCluster, kt);
-            TopicOperatorTestUtil.changeTopic(kubernetesClient, kt, theKt ->
+            TestUtil.changeTopic(kubernetesClient, kt, theKt ->
                     new KafkaTopicBuilder(theKt).editOrNewMetadata().addToAnnotations(TopicOperatorUtil.MANAGED, "false").endMetadata().build());
 
             Crds.topicOperation(kubernetesClient).resource(kt).delete();
             LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}", kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
             Resource<KafkaTopic> resource = Crds.topicOperation(kubernetesClient).resource(kt);
-            TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
+            TestUtil.waitUntilCondition(resource, Objects::isNull);
 
             // then
             var topicDescription = awaitTopicDescription(expectedTopicName);
@@ -1406,7 +1406,8 @@ class TopicControllerIT implements TestSeparator {
 
     @ParameterizedTest
     @MethodSource("collidingManagedTopics_sameNamespace")
-    public void shouldDetectMultipleResourcesManagingSameTopicInKafka(List<KafkaTopic> topics) throws ExecutionException, InterruptedException, TimeoutException {
+    public void shouldDetectMultipleResourcesManagingSameTopicInKafka(List<KafkaTopic> topics) 
+            throws ExecutionException, InterruptedException, TimeoutException {
         KafkaTopic kt1 = topics.get(0);
         KafkaTopic kt2 = topics.get(1);
 
@@ -1432,7 +1433,7 @@ class TopicControllerIT implements TestSeparator {
     }
 
     @Test
-    public void shouldFailCreationIfMoreReplicasThanBrokers() throws ExecutionException, InterruptedException {
+    public void shouldFailCreationIfMoreReplicasThanBrokers() {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
 
         // given
@@ -1447,11 +1448,13 @@ class TopicControllerIT implements TestSeparator {
         assertTrue(readyIsFalse().test(created));
         Condition condition = assertExactlyOneCondition(created);
         assertEquals(TopicOperatorException.Reason.KAFKA_ERROR.value, condition.getReason());
-        assertEquals("org.apache.kafka.common.errors.InvalidReplicationFactorException: Unable to replicate the partition 32767 time(s): The target replication factor of 32767 cannot be reached because only 1 broker(s) are registered.", condition.getMessage());
+        assertEquals("org.apache.kafka.common.errors.InvalidReplicationFactorException: Unable to replicate the partition " +
+            "32767 time(s): The target replication factor of 32767 cannot be reached because only 1 broker(s) are registered.", 
+            condition.getMessage());
     }
 
     @Test
-    public void shouldFailCreationIfUnknownConfig() throws ExecutionException, InterruptedException {
+    public void shouldFailCreationIfUnknownConfig() {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
 
         // given
@@ -1477,7 +1480,7 @@ class TopicControllerIT implements TestSeparator {
     }
 
     @Test
-    public void shouldFailCreationIfIllegalTopicName() throws ExecutionException, InterruptedException {
+    public void shouldFailCreationIfIllegalTopicName() {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
         List<KafkaTopic> topics = List.of(
                 kafkaTopic(NAMESPACE, "invalid-topic-a", true, "..", 2, 1),
@@ -1548,7 +1551,7 @@ class TopicControllerIT implements TestSeparator {
     }
 
     private KafkaTopic modifyTopicAndAwait(KafkaTopic kt, UnaryOperator<KafkaTopic> changer, Predicate<KafkaTopic> predicate) {
-        var edited = TopicOperatorTestUtil.changeTopic(kubernetesClient, kt, changer);
+        var edited = TestUtil.changeTopic(kubernetesClient, kt, changer);
         var postUpdateGeneration = edited.getMetadata().getGeneration();
         Predicate<KafkaTopic> topicWasSyncedAndMatchesPredicate = new Predicate<>() {
             @Override
@@ -1592,7 +1595,9 @@ class TopicControllerIT implements TestSeparator {
     public void shouldAccountForReassigningPartitionsNoRfChange() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(3, 1, Map.of("auto.create.topics.enable", "false"));
 
-        try (Producer<String, String> producer = new KafkaProducer<>(Map.of(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers(), ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer", ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer"));) {
+        try (Producer<String, String> producer = new KafkaProducer<>(Map.of(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers(), 
+                ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer", 
+                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer"))) {
             var topicName = "my-topic";
             var kt = kafkaTopic(NAMESPACE, topicName, true, topicName, 1, 1);
             accountForReassigningPartitions(kafkaCluster, producer, kt,
@@ -1611,7 +1616,9 @@ class TopicControllerIT implements TestSeparator {
     public void shouldAccountForReassigningPartitionsIncreasingRf() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(3, 1, Map.of("auto.create.topics.enable", "false"));
 
-        try (Producer<String, String> producer = new KafkaProducer<>(Map.of(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers(), ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer", ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer"))) {
+        try (Producer<String, String> producer = new KafkaProducer<>(Map.of(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers(), 
+                ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer", 
+                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer"))) {
             var topicName = "my-topic";
             var kt = kafkaTopic(NAMESPACE, topicName, true, topicName, 1, 1);
             accountForReassigningPartitions(kafkaCluster, producer, kt,
@@ -1631,7 +1638,9 @@ class TopicControllerIT implements TestSeparator {
     public void shouldAccountForReassigningPartitionsDecreasingRf() throws ExecutionException, InterruptedException, TimeoutException {
         startKafkaCluster(3, 1, Map.of("auto.create.topics.enable", "false"));
 
-        try (Producer<String, String> producer = new KafkaProducer<>(Map.of(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers(), ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer", ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer")))    {
+        try (Producer<String, String> producer = new KafkaProducer<>(Map.of(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers(), 
+                ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer", 
+                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer"))) {
             var topicName = "my-topic";
             var kt = kafkaTopic(NAMESPACE, topicName, true, topicName, 1, 2);
             accountForReassigningPartitions(kafkaCluster, producer, kt,
@@ -1705,7 +1714,7 @@ class TopicControllerIT implements TestSeparator {
         // then
         // trigger reconciliation by change a config
         var modified = modifyTopicAndAwait(created,
-            TopicControllerIT::setSnappyCompression,
+            CoreFeaturesIT::setSnappyCompression,
             duringReassignmentPredicate);
 
         assertFalse(kafkaAdminClient.listPartitionReassignments(Set.of(tp)).reassignments().get().isEmpty(),
@@ -1724,7 +1733,7 @@ class TopicControllerIT implements TestSeparator {
 
         // trigger reconciliation by changing a config again
         modifyTopicAndAwait(modified,
-            TopicControllerIT::setGzipCompression,
+            CoreFeaturesIT::setGzipCompression,
             postReassignmentPredicate);
     }
 
@@ -1748,14 +1757,14 @@ class TopicControllerIT implements TestSeparator {
     }
 
     @Test
-    public void shouldFailCreationIfNoTopicAuthz() throws ExecutionException, InterruptedException {
+    public void shouldFailCreationIfNoTopicAuthz() {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
         KafkaTopic kt = kafkaTopic(NAMESPACE, "fail-crreation-if-no-topic-authz", true, "fail-creation-if-no-topic-authz", 2, 1);
         topicCreationFailsDueToAdminException(kt, kafkaCluster, new TopicAuthorizationException("not allowed"), "KafkaError");
     }
 
     @Test
-    public void shouldFailCreationIfNpe() throws ExecutionException, InterruptedException {
+    public void shouldFailCreationIfNpe() {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
         KafkaTopic kt = kafkaTopic(NAMESPACE, "fail-creation-if-npe", true, "fail-creation-if-npe", 2, 1);
 
@@ -1765,8 +1774,7 @@ class TopicControllerIT implements TestSeparator {
     private void topicCreationFailsDueToAdminException(KafkaTopic kt,
                                                        StrimziKafkaCluster kafkaCluster,
                                                        Throwable exception,
-                                                       String expectedReason)
-        throws ExecutionException, InterruptedException {
+                                                       String expectedReason) {
         // given
         var config = topicOperatorConfig(NAMESPACE, kafkaCluster);
         kafkaAdminClientOp = Mockito.spy(Admin.create(config.adminClientConfig()));
@@ -1795,20 +1803,21 @@ class TopicControllerIT implements TestSeparator {
         kafkaAdminClientOp = Mockito.spy(Admin.create(config.adminClientConfig()));
         var ctr = mock(AlterConfigsResult.class);
         Mockito.doReturn(failedFuture(new TopicAuthorizationException("not allowed"))).when(ctr).all();
-        Mockito.doReturn(Map.of(new ConfigResource(ConfigResource.Type.TOPIC, TopicOperatorUtil.topicName(kt)), failedFuture(new TopicAuthorizationException("not allowed")))).when(ctr).values();
+        Mockito.doReturn(Map.of(new ConfigResource(ConfigResource.Type.TOPIC, TopicOperatorUtil.topicName(kt)), 
+            failedFuture(new TopicAuthorizationException("not allowed")))).when(ctr).values();
         Mockito.doReturn(ctr).when(kafkaAdminClientOp).incrementalAlterConfigs(any());
 
         maybeStartOperator(config);
         createTopicAndAssertSuccess(kafkaCluster, kt);
 
-        var modified = modifyTopicAndAwait(kt, TopicControllerIT::setSnappyCompression, readyIsFalse());
+        var modified = modifyTopicAndAwait(kt, CoreFeaturesIT::setSnappyCompression, readyIsFalse());
         var condition = assertExactlyOneCondition(modified);
         assertEquals("KafkaError", condition.getReason());
         assertEquals("org.apache.kafka.common.errors.TopicAuthorizationException: not allowed", condition.getMessage());
     }
     
     @Test
-    public void shouldFailTheReconciliationWithNullConfig() throws ExecutionException, InterruptedException {
+    public void shouldFailTheReconciliationWithNullConfig() {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
 
         invalidConfigFailsReconciliation(
@@ -1819,7 +1828,7 @@ class TopicControllerIT implements TestSeparator {
     }
 
     @Test
-    public void shouldFailTheReconciliationWithUnexpectedConfig() throws ExecutionException, InterruptedException {
+    public void shouldFailTheReconciliationWithUnexpectedConfig() {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
 
         invalidConfigFailsReconciliation(
@@ -1834,7 +1843,7 @@ class TopicControllerIT implements TestSeparator {
             Map<String, Integer> policy,
             String expectedReasons,
             String expectedMessage
-    ) throws ExecutionException, InterruptedException {
+    ) {
         Map<String, Object> configs = new HashMap<>();
         configs.put("cleanup.policy", policy);
         var kafkaTopic = new KafkaTopicBuilder()
@@ -1883,7 +1892,7 @@ class TopicControllerIT implements TestSeparator {
         createTopicAndAssertSuccess(kafkaCluster, kt);
 
         var modified = modifyTopicAndAwait(kt,
-                TopicControllerIT::incrementPartitions,
+                CoreFeaturesIT::incrementPartitions,
                 readyIsFalse());
         var condition = assertExactlyOneCondition(modified);
         assertEquals("KafkaError", condition.getReason());
@@ -1916,7 +1925,7 @@ class TopicControllerIT implements TestSeparator {
         LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
                 kt.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kt));
         Resource<KafkaTopic> resource = Crds.topicOperation(kubernetesClient).resource(kt);
-        var deleted = TopicOperatorTestUtil.waitUntilCondition(resource, readyIsFalse());
+        var deleted = TestUtil.waitUntilCondition(resource, readyIsFalse());
 
         // then
         var condition = assertExactlyOneCondition(deleted);
@@ -1964,7 +1973,7 @@ class TopicControllerIT implements TestSeparator {
         Crds.topicOperation(kubernetesClient).resource(unmanagedFoo).delete();
         LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}", unmanagedFoo.getMetadata().getName(), TopicOperatorUtil.resourceVersion(unmanagedFoo));
         Resource<KafkaTopic> resource = Crds.topicOperation(kubernetesClient).resource(unmanagedFoo);
-        TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
+        TestUtil.waitUntilCondition(resource, Objects::isNull);
 
         // then: expect conflicting topic's unreadiness to be due to mismatching #partitions
         waitUntil(secondTopic, readyIsFalseAndReasonIs(
@@ -1973,7 +1982,7 @@ class TopicControllerIT implements TestSeparator {
     }
 
     @RepeatedTest(10)
-    public void shouldDetectConflictingKafkaTopicCreations() throws ExecutionException, InterruptedException {
+    public void shouldDetectConflictingKafkaTopicCreations() throws InterruptedException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
 
         var foo = kafkaTopic(NAMESPACE, "foo", null, null, 1, 1);
@@ -1982,8 +1991,8 @@ class TopicControllerIT implements TestSeparator {
 
         LOGGER.info("Create conflicting topics: foo and bar");
         var reconciledTopics = createTopicsConcurrently(kafkaCluster, foo, bar);
-        var reconciledFoo = TopicOperatorTestUtil.findKafkaTopicByName(reconciledTopics, "foo");
-        var reconciledBar = TopicOperatorTestUtil.findKafkaTopicByName(reconciledTopics, "bar");
+        var reconciledFoo = TestUtil.findKafkaTopicByName(reconciledTopics, "foo");
+        var reconciledBar = TestUtil.findKafkaTopicByName(reconciledTopics, "bar");
 
         // only one resource with the same topicName should be reconciled
         var fooFailed = readyIsFalse().test(reconciledFoo);
@@ -2013,7 +2022,7 @@ class TopicControllerIT implements TestSeparator {
         LOGGER.info("Delete {}", ready.getMetadata().getName());
         Crds.topicOperation(kubernetesClient).resource(unmanagedBar).delete();
         Resource<KafkaTopic> resource = Crds.topicOperation(kubernetesClient).resource(unmanagedBar);
-        TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
+        TestUtil.waitUntilCondition(resource, Objects::isNull);
 
         waitUntil(failed, readyIsTrue());
     }
@@ -2028,7 +2037,7 @@ class TopicControllerIT implements TestSeparator {
     public void shouldLogWarningIfAutoCreateTopicsIsEnabled() throws Exception {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "true"));
 
-        try (var logCaptor = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
+        try (var ignored = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
             Level.WARN,
             "It is recommended that " + KafkaHandler.AUTO_CREATE_TOPICS_ENABLE + " is set to 'false' " +
                 "to avoid races between the operator and Kafka applications auto-creating topics",
@@ -2039,7 +2048,7 @@ class TopicControllerIT implements TestSeparator {
     }
 
     @Test
-    public void shouldTerminateIfQueueFull() throws ExecutionException, InterruptedException, TimeoutException {
+    public void shouldTerminateIfQueueFull() throws InterruptedException, TimeoutException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false", "num.partitions", "4", "default.replication.factor", "1"));
 
         // given
@@ -2048,7 +2057,7 @@ class TopicControllerIT implements TestSeparator {
             TopicOperatorConfig.NAMESPACE.key(), ns,
             TopicOperatorConfig.RESOURCE_LABELS.key(), Labels.fromMap(SELECTOR).toSelectorString(),
             TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), kafkaCluster.getBootstrapServers(),
-            TopicOperatorConfig.CLIENT_ID.key(), TopicControllerIT.class.getSimpleName(),
+            TopicOperatorConfig.CLIENT_ID.key(), CoreFeaturesIT.class.getSimpleName(),
             TopicOperatorConfig.FULL_RECONCILIATION_INTERVAL_MS.key(), "10000",
             TopicOperatorConfig.USE_FINALIZERS.key(), "true",
             TopicOperatorConfig.MAX_QUEUE_SIZE.key(), "1",
@@ -2073,7 +2082,7 @@ class TopicControllerIT implements TestSeparator {
         // We stop the loop thread, so nothing it taking from the queue, so that the queue length will be exceeded
         operator.queue.stop();
 
-        try (var logCaptor = LogCaptor.logMessageMatches(BatchingLoop.LOGGER,
+        try (var ignored = LogCaptor.logMessageMatches(BatchingLoop.LOGGER,
             Level.ERROR,
             "Queue length 1 exceeded, stopping operator. Please increase STRIMZI_MAX_QUEUE_SIZE environment variable",
             5L,
@@ -2095,7 +2104,7 @@ class TopicControllerIT implements TestSeparator {
     }
 
     @Test
-    public void shouldNotReconcilePausedKafkaTopicOnAdd() throws ExecutionException, InterruptedException {
+    public void shouldNotReconcilePausedKafkaTopicOnAdd() throws InterruptedException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
 
         var topicName = "my-topic";
@@ -2121,7 +2130,7 @@ class TopicControllerIT implements TestSeparator {
         
         var kafkaTopic = pauseTopic(NAMESPACE, topicName);
         
-        TopicOperatorTestUtil.changeTopic(kubernetesClient, kafkaTopic, theKt -> {
+        TestUtil.changeTopic(kubernetesClient, kafkaTopic, theKt -> {
             theKt.getSpec().setConfig(Map.of(TopicConfig.FLUSH_MS_CONFIG, "1000"));
             return theKt;
         });
@@ -2131,7 +2140,7 @@ class TopicControllerIT implements TestSeparator {
     }
 
     @Test
-    public void shouldReconcilePausedKafkaTopicOnDelete() throws ExecutionException, InterruptedException {
+    public void shouldReconcilePausedKafkaTopicOnDelete() throws InterruptedException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
 
         var topicName = "my-topic";
@@ -2144,13 +2153,13 @@ class TopicControllerIT implements TestSeparator {
         LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
             kafkaTopic.getMetadata().getName(), TopicOperatorUtil.resourceVersion(kafkaTopic));
         Resource<KafkaTopic> resource = Crds.topicOperation(kubernetesClient).resource(kafkaTopic);
-        TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
+        TestUtil.waitUntilCondition(resource, Objects::isNull);
 
         assertNotExistsInKafka(topicName);
     }
 
     @Test
-    public void topicIdShouldBeEmptyOnPausedKafkaTopic() throws ExecutionException, InterruptedException {
+    public void topicIdShouldBeEmptyOnPausedKafkaTopic() {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
 
         var topicName = "my-topic";
@@ -2172,7 +2181,7 @@ class TopicControllerIT implements TestSeparator {
     }
 
     @Test
-    public void topicNameAndIdShouldBeEmptyOnUnmanagedKafkaTopic() throws ExecutionException, InterruptedException {
+    public void topicNameAndIdShouldBeEmptyOnUnmanagedKafkaTopic() {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
 
         var topicName = "my-topic";
@@ -2232,7 +2241,7 @@ class TopicControllerIT implements TestSeparator {
     }
 
     @Test
-    public void shouldNotReconcileKafkaTopicWithMissingSpec() throws ExecutionException, InterruptedException {
+    public void shouldNotReconcileKafkaTopicWithMissingSpec() throws InterruptedException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false", "num.partitions", "3", "default.replication.factor", "1"));
 
         var topicName = "my-topic";
@@ -2246,7 +2255,7 @@ class TopicControllerIT implements TestSeparator {
     }
 
     @Test
-    public void shouldReconcileOnTopicExistsException() throws ExecutionException, InterruptedException {
+    public void shouldReconcileOnTopicExistsException() {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
 
         var topicName = "my-topic";
@@ -2264,7 +2273,7 @@ class TopicControllerIT implements TestSeparator {
     }
 
     @Test
-    public void shouldUpdateAnUnmanagedTopic() throws ExecutionException, InterruptedException {
+    public void shouldUpdateAnUnmanagedTopic() throws InterruptedException {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
 
         var topicName = "my-topic";
@@ -2275,7 +2284,7 @@ class TopicControllerIT implements TestSeparator {
                         Map.of(TopicConfig.RETENTION_MS_CONFIG, "1000")));
         topic = Crds.topicOperation(kubernetesClient).resource(topic).get();
 
-        TopicOperatorTestUtil.waitUntilCondition(Crds.topicOperation(kubernetesClient).resource(topic), kt ->
+        TestUtil.waitUntilCondition(Crds.topicOperation(kubernetesClient).resource(topic), kt ->
                 Optional.of(kt)
                     .map(KafkaTopic::getStatus)
                     .map(KafkaTopicStatus::getConditions)
@@ -2291,7 +2300,7 @@ class TopicControllerIT implements TestSeparator {
         topic.getMetadata().getAnnotations().put(TopicOperatorUtil.MANAGED, "false");
         topic = Crds.topicOperation(kubernetesClient).resource(topic).update();
 
-        TopicOperatorTestUtil.waitUntilCondition(Crds.topicOperation(kubernetesClient).resource(topic), kt ->
+        TestUtil.waitUntilCondition(Crds.topicOperation(kubernetesClient).resource(topic), kt ->
             Optional.of(kt)
                     .map(KafkaTopic::getStatus)
                     .map(KafkaTopicStatus::getConditions)
@@ -2308,7 +2317,7 @@ class TopicControllerIT implements TestSeparator {
         topic = Crds.topicOperation(kubernetesClient).resource(topic).update();
         var resourceVersionOnUpdate = topic.getMetadata().getResourceVersion();
 
-        TopicOperatorTestUtil.waitUntilCondition(Crds.topicOperation(kubernetesClient).resource(topic), kt ->
+        TestUtil.waitUntilCondition(Crds.topicOperation(kubernetesClient).resource(topic), kt ->
                 !resourceVersionOnUpdate.equals(kt.getMetadata().getResourceVersion())
         );
         topic = Crds.topicOperation(kubernetesClient).resource(topic).get();
@@ -2316,13 +2325,13 @@ class TopicControllerIT implements TestSeparator {
 
         // Wait a bit to check the resource is not getting updated continuously
         Thread.sleep(500L);
-        TopicOperatorTestUtil.waitUntilCondition(Crds.topicOperation(kubernetesClient).resource(topic), kt ->
+        TestUtil.waitUntilCondition(Crds.topicOperation(kubernetesClient).resource(topic), kt ->
                 resourceVersionAfterUpdate.equals(kt.getMetadata().getResourceVersion())
         );
     }
 
     @Test
-    public void shouldUpdateTopicIdIfDeletedWhileUnmanaged() throws ExecutionException, InterruptedException {
+    public void shouldUpdateTopicIdIfDeletedWhileUnmanaged() {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
 
         TopicOperatorConfig config = topicOperatorConfig(NAMESPACE, kafkaCluster, true, 500);
@@ -2342,7 +2351,7 @@ class TopicControllerIT implements TestSeparator {
     }
 
     @Test
-    public void shouldUpdateTopicIdIfDeletedWhilePaused() throws ExecutionException, InterruptedException {
+    public void shouldUpdateTopicIdIfDeletedWhilePaused() {
         startKafkaCluster(1, 1, Map.of("auto.create.topics.enable", "false"));
 
         TopicOperatorConfig config = topicOperatorConfig(NAMESPACE, kafkaCluster, true, 500);

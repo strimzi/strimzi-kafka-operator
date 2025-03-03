@@ -19,7 +19,7 @@ class LogCaptorTest {
 
     @Test
     void shouldCaptureInfo() throws InterruptedException, TimeoutException {
-        try (var captor = LogCaptor.logEventMatches(LOGGER, Level.INFO,
+        try (var ignored = LogCaptor.logEventMatches(LOGGER, Level.INFO,
                 le -> "Hello, world".equals(le.getMessage().getFormattedMessage()),
                 50, TimeUnit.MILLISECONDS)) {
             LOGGER.info("Hello, world");
@@ -27,9 +27,9 @@ class LogCaptorTest {
     }
 
     @Test
-    void shouldTimeoutIfLevelDoesNotMatch() throws InterruptedException, TimeoutException {
+    void shouldTimeoutIfLevelDoesNotMatch() {
         assertThrows(TimeoutException.class, () -> {
-            try (var captor = LogCaptor.logEventMatches(LOGGER, Level.INFO,
+            try (var ignored = LogCaptor.logEventMatches(LOGGER, Level.INFO,
                     le -> "Hello, world".equals(le.getMessage().getFormattedMessage()),
                     50, TimeUnit.MILLISECONDS)) {
                 LOGGER.debug("Hello, world");
@@ -38,9 +38,9 @@ class LogCaptorTest {
     }
 
     @Test
-    void shouldTimeoutIfPrediciateNotSatisfied() throws InterruptedException, TimeoutException {
+    void shouldTimeoutIfPrediciateNotSatisfied() {
         assertThrows(TimeoutException.class, () -> {
-            try (var captor = LogCaptor.logEventMatches(LOGGER, Level.INFO,
+            try (var ignored = LogCaptor.logEventMatches(LOGGER, Level.INFO,
                     le -> "Hello, world".equals(le.getMessage().getFormattedMessage()),
                     50, TimeUnit.MILLISECONDS)) {
                 LOGGER.info("Hello, world 3");

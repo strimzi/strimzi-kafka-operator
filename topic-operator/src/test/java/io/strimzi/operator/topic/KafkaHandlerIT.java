@@ -51,7 +51,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 public class KafkaHandlerIT implements TestSeparator {
-    private static final String NAMESPACE = TopicOperatorTestUtil.namespaceName(KafkaHandlerIT.class);
+    private static final String NAMESPACE = TestUtil.namespaceName(KafkaHandlerIT.class);
 
     private StrimziKafkaCluster kafkaCluster;
 
@@ -105,8 +105,8 @@ public class KafkaHandlerIT implements TestSeparator {
                     new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry())),
                     kafkaAdminClientSpy);
             var reconcilableTopics = List.of(
-                    TopicOperatorTestUtil.reconcilableTopic(buildTopic("t1", 1, 1), NAMESPACE),
-                    TopicOperatorTestUtil.reconcilableTopic(buildTopic("t2", 1, 1), NAMESPACE)
+                    TestUtil.reconcilableTopic(buildTopic("t1", 1, 1), NAMESPACE),
+                    TestUtil.reconcilableTopic(buildTopic("t2", 1, 1), NAMESPACE)
             );
             var result = kafkaHandler.createTopics(reconcilableTopics);
 
@@ -139,7 +139,7 @@ public class KafkaHandlerIT implements TestSeparator {
 
             // desired RF = 1
             List<Pair<ReconcilableTopic, TopicState>> pairs = List.of(
-                    new Pair(TopicOperatorTestUtil.reconcilableTopic(buildTopic(topicName, 1, 1), NAMESPACE),
+                    new Pair(TestUtil.reconcilableTopic(buildTopic(topicName, 1, 1), NAMESPACE),
                             new TopicState(new TopicDescription(topicName, false, List.of(topicPartition0)), null))
             );
             kafkaHandler.filterByReassignmentTargetReplicas(pairs);
@@ -166,9 +166,9 @@ public class KafkaHandlerIT implements TestSeparator {
                     kafkaAdminClientSpy);
 
             List<Pair<ReconcilableTopic, Collection<AlterConfigOp>>> pairs = List.of(
-                    new Pair(TopicOperatorTestUtil.reconcilableTopic(buildTopic(t1Name, 1, 1), NAMESPACE),
+                    new Pair(TestUtil.reconcilableTopic(buildTopic(t1Name, 1, 1), NAMESPACE),
                             List.of(new AlterConfigOp(new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG, "86400000"), AlterConfigOp.OpType.SET))),
-                    new Pair(TopicOperatorTestUtil.reconcilableTopic(buildTopic(t2Name, 1, 1), NAMESPACE),
+                    new Pair(TestUtil.reconcilableTopic(buildTopic(t2Name, 1, 1), NAMESPACE),
                             List.of(new AlterConfigOp(new ConfigEntry(TopicConfig.CLEANUP_POLICY_CONFIG, "compact"), AlterConfigOp.OpType.SET)))
             );
             var result = kafkaHandler.alterConfigs(pairs);
@@ -199,8 +199,8 @@ public class KafkaHandlerIT implements TestSeparator {
                     new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry())),
                     kafkaAdminClientSpy);
             List<Pair<ReconcilableTopic, NewPartitions>> pairs = List.of(
-                    new Pair(TopicOperatorTestUtil.reconcilableTopic(buildTopic(t1Name, 1, 1), NAMESPACE), NewPartitions.increaseTo(2)),
-                    new Pair(TopicOperatorTestUtil.reconcilableTopic(buildTopic(t2Name, 1, 1), NAMESPACE), NewPartitions.increaseTo(2))
+                    new Pair(TestUtil.reconcilableTopic(buildTopic(t1Name, 1, 1), NAMESPACE), NewPartitions.increaseTo(2)),
+                    new Pair(TestUtil.reconcilableTopic(buildTopic(t2Name, 1, 1), NAMESPACE), NewPartitions.increaseTo(2))
             );
             var result = kafkaHandler.createPartitions(pairs);
 
@@ -230,8 +230,8 @@ public class KafkaHandlerIT implements TestSeparator {
                     new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry())),
                     kafkaAdminClientSpy);
             var reconcilableTopics = List.of(
-                    TopicOperatorTestUtil.reconcilableTopic(buildTopic(t1Name, 1, 1), NAMESPACE),
-                    TopicOperatorTestUtil.reconcilableTopic(buildTopic(t2Name, 1, 1), NAMESPACE)
+                    TestUtil.reconcilableTopic(buildTopic(t1Name, 1, 1), NAMESPACE),
+                    TestUtil.reconcilableTopic(buildTopic(t2Name, 1, 1), NAMESPACE)
             );
             var result = kafkaHandler.describeTopics(reconcilableTopics);
 
@@ -268,9 +268,9 @@ public class KafkaHandlerIT implements TestSeparator {
                     new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, null, new TopicOperatorMetricsProvider(new SimpleMeterRegistry())),
                     kafkaAdminClientSpy);
             var reconcilableTopics = List.of(
-                    TopicOperatorTestUtil.reconcilableTopic(buildTopic(t1Name, 1, 1), NAMESPACE),
-                    TopicOperatorTestUtil.reconcilableTopic(buildTopic(t2Name, 1, 1), NAMESPACE),
-                    TopicOperatorTestUtil.reconcilableTopic(buildTopic(t3Name, 1, 1), NAMESPACE)
+                    TestUtil.reconcilableTopic(buildTopic(t1Name, 1, 1), NAMESPACE),
+                    TestUtil.reconcilableTopic(buildTopic(t2Name, 1, 1), NAMESPACE),
+                    TestUtil.reconcilableTopic(buildTopic(t3Name, 1, 1), NAMESPACE)
             );
             var topicNamesToDelete = reconcilableTopics.stream().map(ReconcilableTopic::topicName).collect(Collectors.toSet());
             topicNamesToDelete.removeIf(name -> Objects.equals(name, t3Name));

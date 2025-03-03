@@ -15,8 +15,8 @@ import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.operator.topic.TestUtil;
 import io.strimzi.operator.topic.TopicOperatorConfig;
-import io.strimzi.operator.topic.TopicOperatorTestUtil;
 import io.strimzi.operator.topic.TopicOperatorUtil;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsHolder;
 import io.strimzi.operator.topic.metrics.TopicOperatorMetricsProvider;
@@ -46,7 +46,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.number.OrderingComparison.greaterThan;
 
 public class CruiseControlHandlerTest {
-    private static final String NAMESPACE = TopicOperatorTestUtil.namespaceName(CruiseControlHandlerTest.class);
+    private static final String NAMESPACE = TestUtil.namespaceName(CruiseControlHandlerTest.class);
 
     private static TopicOperatorMetricsHolder metricsHolder;
     private static int serverPort;
@@ -293,6 +293,7 @@ public class CruiseControlHandlerTest {
             kafkaTopic, topicName));
     }
 
+    // this is used as method source in parameterized tests
     private static List<TopicOperatorConfig> operatorConfigs() {
         return Arrays.asList(
             // encryption and authentication disabled
