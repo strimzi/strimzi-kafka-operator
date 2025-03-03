@@ -42,6 +42,7 @@ import io.strimzi.api.kafka.model.common.Probe;
 import io.strimzi.api.kafka.model.common.ProbeBuilder;
 import io.strimzi.api.kafka.model.common.Rack;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
+import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter;
 import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
@@ -821,16 +822,26 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     }
 
     /**
-     * Creates a Role for reading secrets in the same namespace as the resource.
+     * Creates a Role for reading TLS certificate secrets in the same namespace as the resource.
      * This is used for loading certificates from secrets directly.
      **
      * @return role for the Kafka Connect
      */
     public Role generateRole() {
+        List<String> certSecretNames = new ArrayList<>();
+        if (tls != null && tls.getTrustedCertificates() != null && !tls.getTrustedCertificates().isEmpty()) {
+            tls.getTrustedCertificates().stream().forEach(certSecretSource -> certSecretNames.add(certSecretSource.getSecretName()));
+        }
+
+        if (authentication != null && authentication instanceof KafkaClientAuthenticationTls tlsAuth && tlsAuth.getCertificateAndKey() != null) {
+            certSecretNames.add(tlsAuth.getCertificateAndKey().getSecretName());
+        }
+
         List<PolicyRule> rules = List.of(new PolicyRuleBuilder()
                 .withApiGroups("")
                 .withResources("secrets")
                 .withVerbs("get")
+                .withResourceNames(certSecretNames)
                 .build());
 
         Role role = RbacUtils.createRole(componentName, namespace, rules, labels, ownerReference, templateRole);
