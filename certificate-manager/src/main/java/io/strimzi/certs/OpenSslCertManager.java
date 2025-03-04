@@ -23,7 +23,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -34,6 +33,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.time.Clock;
 import java.time.Instant;
@@ -381,7 +381,8 @@ public class OpenSslCertManager implements CertManager {
     }
 
     @Override
-    public void addKeyAndCertToKeyStore(File keyFile, File certFile, String alias, File keyStoreFile, String keyStorePassword) throws GeneralSecurityException, IOException {
+    public void addKeyAndCertToKeyStore(File keyFile, File certFile, String alias, File keyStoreFile, String keyStorePassword)
+            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException, InvalidKeySpecException {
         // Preconditions
         Objects.requireNonNull(keyFile);
         Objects.requireNonNull(certFile);
