@@ -347,9 +347,8 @@ public class KafkaConnectClusterTest {
         // Check config map
         ConfigMap configMap = kc.generateConnectConfigMap(new MetricsAndLogging(metricsCM, null));
         String connectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
-        assertThat(connectConfigurations, containsString("ssl.truststore.location=/tmp/kafka/cluster.truststore.p12"));
-        assertThat(connectConfigurations, containsString("ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD}"));
-        assertThat(connectConfigurations, containsString("ssl.truststore.type=PKCS12"));
+        assertThat(connectConfigurations, containsString("ssl.truststore.certificates=${strimzisecrets:namespace/my-secret:*.crt}"));
+        assertThat(connectConfigurations, containsString("ssl.truststore.type=PEM"));
         assertThat(connectConfigurations, containsString("security.protocol=SSL"));
         assertThat(connectConfigurations, not(containsString("ssl.keystore.")));
 
@@ -362,8 +361,6 @@ public class KafkaConnectClusterTest {
             List<Container> containers = pod.getSpec().getContainers();
             assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is(KafkaConnectCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "my-secret"));
             assertThat(containers.get(0).getVolumeMounts().get(3).getMountPath(), is(KafkaConnectCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "my-another-secret"));
-            assertThat(io.strimzi.operator.cluster.TestUtils.containerEnvVars(containers.get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS),
-                    is("my-secret/cert.crt;my-secret/new-cert.crt;my-another-secret/another-cert.crt"));
         });
     }
 
@@ -390,9 +387,8 @@ public class KafkaConnectClusterTest {
         // Check config map
         ConfigMap configMap = kc.generateConnectConfigMap(new MetricsAndLogging(metricsCM, null));
         String connectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
-        assertThat(connectConfigurations, containsString("ssl.keystore.location=/tmp/kafka/cluster.keystore.p12"));
-        assertThat(connectConfigurations, containsString("ssl.keystore.password=${strimzienv:CERTS_STORE_PASSWORD}"));
-        assertThat(connectConfigurations, containsString("ssl.keystore.type=PKCS12"));
+        assertThat(connectConfigurations, containsString("ssl.keystore.certificate.chain=${strimzisecrets:namespace/user-secret:user.crt}"));
+        assertThat(connectConfigurations, containsString("ssl.keystore.type=PEM"));
         assertThat(connectConfigurations, containsString("security.protocol=SSL"));
         assertThat(connectConfigurations, containsString("ssl.truststore."));
 
@@ -1623,54 +1619,6 @@ public class KafkaConnectClusterTest {
     }
 
     @ParallelTest
-    public void testKafkaContainerEnvVarsConflict() {
-        ContainerEnvVar envVar1 = new ContainerEnvVar();
-        String testEnvOneKey = KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TLS_AUTH_KEY;
-        String testEnvOneValue = "test user cert";
-        envVar1.setName(testEnvOneKey);
-        envVar1.setValue(testEnvOneValue);
-
-        ContainerEnvVar envVar2 = new ContainerEnvVar();
-        String testEnvTwoKey = KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TRUSTED_CERTS;
-        String testEnvTwoValue = "test trusted cert";
-        envVar2.setName(testEnvTwoKey);
-        envVar2.setValue(testEnvTwoValue);
-
-        List<ContainerEnvVar> testEnvs = new ArrayList<>();
-        testEnvs.add(envVar1);
-        testEnvs.add(envVar2);
-        ContainerTemplate kafkaConnectContainer = new ContainerTemplate();
-        kafkaConnectContainer.setEnv(testEnvs);
-
-        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
-                .editSpec()
-                    .withNewTls()
-                        .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
-                    .endTls()
-                    .withAuthentication(
-                            new KafkaClientAuthenticationTlsBuilder()
-                                    .withNewCertificateAndKey()
-                                    .withSecretName("user-secret")
-                                    .withCertificate("user.crt")
-                                    .withKey("user.key")
-                                    .endCertificateAndKey()
-                                    .build())
-                    .withNewTemplate()
-                        .withConnectContainer(kafkaConnectContainer)
-                    .endTemplate()
-                .endSpec()
-                .build();
-
-        List<EnvVar> kafkaEnvVars = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER).getEnvVars();
-        assertThat("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
-                kafkaEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue), is(false));
-        assertThat("Failed to prevent over writing existing container environment variable: " + testEnvTwoKey,
-                kafkaEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
-                        .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue), is(false));
-    }
-
-    @ParallelTest
     public void testKafkaConnectContainerSecurityContext() {
 
         SecurityContext securityContext = new SecurityContextBuilder()
@@ -2049,7 +1997,7 @@ public class KafkaConnectClusterTest {
         ConfigMap configMap = kc.generateConnectConfigMap(new MetricsAndLogging(metricsCM, null));
         String connectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
         assertThat(connectConfigurations, containsString("sasl.mechanism=OAUTHBEARER"));
-        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ${strimzienv:KAFKA_CONNECT_OAUTH_CONFIG} oauth.client.secret=${strimzienv:KAFKA_CONNECT_OAUTH_CLIENT_SECRET} oauth.ssl.truststore.location=\"/tmp/kafka/oauth.truststore.p12\" oauth.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD} oauth.ssl.truststore.type=\"PKCS12\";"));
+        assertThat(connectConfigurations, containsString("sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ${strimzienv:KAFKA_CONNECT_OAUTH_CONFIG} oauth.client.secret=${strimzienv:KAFKA_CONNECT_OAUTH_CLIENT_SECRET} oauth.ssl.truststore.location=\"/opt/kafka/oauth-certs/first-certificate/ca.crt\" oauth.ssl.truststore.type=\"PEM\";"));
         assertThat(connectConfigurations, containsString("sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
 
         // Check PodSet
