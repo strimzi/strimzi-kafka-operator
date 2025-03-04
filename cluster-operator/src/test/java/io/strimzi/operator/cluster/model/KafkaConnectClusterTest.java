@@ -75,6 +75,7 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
+import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.InvalidResourceException;
@@ -169,7 +170,7 @@ public class KafkaConnectClusterTest {
     @ParallelTest
     public void testConnectConfigMap() {
         ConfigMap configMap = kc.generateConnectConfigMap(new MetricsAndLogging(metricsCM, null));
-        assertThat(configMap.getData().get(MetricsModel.CONFIG_MAP_KEY), is(metricsCmJson));
+        assertThat(configMap.getData().get(JmxPrometheusExporterModel.CONFIG_MAP_KEY), is(metricsCmJson));
 
         String connectConfigurations = configMap.getData().get(KafkaConnectCluster.KAFKA_CONNECT_CONFIGURATION_FILENAME);
         assertThat(connectConfigurations, containsString("bootstrap.servers=" + bootstrapServers));
@@ -2206,8 +2207,8 @@ public class KafkaConnectClusterTest {
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaConnect, VERSIONS, SHARED_ENV_PROVIDER);
 
         assertThat(kc.metrics().isEnabled(), is(true));
-        assertThat(kc.metrics().getConfigMapName(), is("my-metrics-configuration"));
-        assertThat(kc.metrics().getConfigMapKey(), is("config.yaml"));
+        assertThat(((JmxPrometheusExporterModel) kc.metrics()).getConfigMapName(), is("my-metrics-configuration"));
+        assertThat(((JmxPrometheusExporterModel) kc.metrics()).getConfigMapKey(), is("config.yaml"));
     }
 
     @ParallelTest
@@ -2230,7 +2231,7 @@ public class KafkaConnectClusterTest {
         InvalidResourceException ex = assertThrows(InvalidResourceException.class,
             () -> KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resourceWithMetrics, VERSIONS, SHARED_ENV_PROVIDER));
 
-        assertThat(ex.getMessage(), is("The Strimzi Metrics Reporter is not supported for this component"));
+        assertThat(ex.getMessage(), is("The Strimzi Metrics Reporter is not supported with this component"));
     }
 
     @ParallelTest
