@@ -30,7 +30,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class KubernetesHandlerTest {
-    private static final String NAMESPACE = TopicOperatorTestUtil.namespaceName(KubernetesHandlerTest.class);
+    private static final String NAMESPACE = TestUtil.namespaceName(KubernetesHandlerTest.class);
 
     private static MockKube3 mockKube;
     private static KubernetesClient kubernetesClient;
@@ -65,7 +65,7 @@ class KubernetesHandlerTest {
 
     @AfterEach
     public void afterEach() {
-        TopicOperatorTestUtil.cleanupNamespace(kubernetesClient, NAMESPACE);
+        TestUtil.cleanupNamespace(kubernetesClient, NAMESPACE);
     }
 
     @Test
@@ -73,7 +73,7 @@ class KubernetesHandlerTest {
         var kafkaTopic = createTopic("my-topic", false);
         assertTrue(kafkaTopic.getMetadata().getFinalizers().isEmpty());
 
-        var update = kubernetesHandler.addFinalizer(TopicOperatorTestUtil.reconcilableTopic(kafkaTopic, NAMESPACE));
+        var update = kubernetesHandler.addFinalizer(TestUtil.reconcilableTopic(kafkaTopic, NAMESPACE));
         assertThat(update.getMetadata().getFinalizers().get(0), is(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
     }
 
@@ -82,8 +82,8 @@ class KubernetesHandlerTest {
         var kafkaTopic = createTopic("my-topic", false);
         assertTrue(kafkaTopic.getMetadata().getFinalizers().isEmpty());
 
-        var update1 = kubernetesHandler.addFinalizer(TopicOperatorTestUtil.reconcilableTopic(kafkaTopic, NAMESPACE));
-        var update2 = kubernetesHandler.addFinalizer(TopicOperatorTestUtil.reconcilableTopic(update1, NAMESPACE));
+        var update1 = kubernetesHandler.addFinalizer(TestUtil.reconcilableTopic(kafkaTopic, NAMESPACE));
+        var update2 = kubernetesHandler.addFinalizer(TestUtil.reconcilableTopic(update1, NAMESPACE));
         assertThat(update2.getMetadata().getFinalizers().size(), is(1));
     }
 
@@ -92,7 +92,7 @@ class KubernetesHandlerTest {
         var kafkaTopic = createTopic("my-topic", true);
         assertThat(kafkaTopic.getMetadata().getFinalizers().get(0), is(KubernetesHandler.FINALIZER_STRIMZI_IO_TO));
 
-        var update = kubernetesHandler.removeFinalizer(TopicOperatorTestUtil.reconcilableTopic(kafkaTopic, NAMESPACE));
+        var update = kubernetesHandler.removeFinalizer(TestUtil.reconcilableTopic(kafkaTopic, NAMESPACE));
         assertTrue(update.getMetadata().getFinalizers().isEmpty());
     }
 
@@ -100,12 +100,12 @@ class KubernetesHandlerTest {
     public void shouldNotUpdateStatusWithNoChanges() {
         var kafkaTopic = createTopicWithReadyState("my-topic", Map.of(TopicConfig.RETENTION_MS_CONFIG, "604800000"));
 
-        var update1 = kubernetesHandler.updateStatus(TopicOperatorTestUtil.reconcilableTopic(kafkaTopic, NAMESPACE));
+        var update1 = kubernetesHandler.updateStatus(TestUtil.reconcilableTopic(kafkaTopic, NAMESPACE));
         assertThat(update1.getStatus().getObservedGeneration(), is(1L));
 
-        var change = TopicOperatorTestUtil.changeTopic(kubernetesClient, update1, kt -> kt);
+        var change = TestUtil.changeTopic(kubernetesClient, update1, kt -> kt);
 
-        var update = kubernetesHandler.updateStatus(TopicOperatorTestUtil.reconcilableTopic(change, NAMESPACE));
+        var update = kubernetesHandler.updateStatus(TestUtil.reconcilableTopic(change, NAMESPACE));
         assertThat(update.getStatus().getObservedGeneration(), is(1L));
     }
 
@@ -113,15 +113,15 @@ class KubernetesHandlerTest {
     public void shouldUpdateStatusWithConfigChange() {
         var kafkaTopic = createTopicWithReadyState("my-topic", Map.of(TopicConfig.RETENTION_MS_CONFIG, "604800000"));
 
-        var update1 = kubernetesHandler.updateStatus(TopicOperatorTestUtil.reconcilableTopic(kafkaTopic, NAMESPACE));
+        var update1 = kubernetesHandler.updateStatus(TestUtil.reconcilableTopic(kafkaTopic, NAMESPACE));
         assertThat(update1.getStatus().getObservedGeneration(), is(1L));
 
-        var change = TopicOperatorTestUtil.changeTopic(kubernetesClient, update1, kt -> {
+        var change = TestUtil.changeTopic(kubernetesClient, update1, kt -> {
             kt.getSpec().setConfig(Map.of(TopicConfig.RETENTION_MS_CONFIG, "86400000"));
             return kt;
         });
 
-        var update2 = kubernetesHandler.updateStatus(TopicOperatorTestUtil.reconcilableTopic(change, NAMESPACE));
+        var update2 = kubernetesHandler.updateStatus(TestUtil.reconcilableTopic(change, NAMESPACE));
         assertThat(update2.getStatus().getObservedGeneration(), is(2L));
     }
 
@@ -129,15 +129,15 @@ class KubernetesHandlerTest {
     public void shouldUpdateStatusWithPartitionChange() {
         var kafkaTopic = createTopicWithReadyState("my-topic", Map.of(TopicConfig.RETENTION_MS_CONFIG, "604800000"));
 
-        var update1 = kubernetesHandler.updateStatus(TopicOperatorTestUtil.reconcilableTopic(kafkaTopic, NAMESPACE));
+        var update1 = kubernetesHandler.updateStatus(TestUtil.reconcilableTopic(kafkaTopic, NAMESPACE));
         assertThat(update1.getStatus().getObservedGeneration(), is(1L));
 
-        var change = TopicOperatorTestUtil.changeTopic(kubernetesClient, update1, kt -> {
+        var change = TestUtil.changeTopic(kubernetesClient, update1, kt -> {
             kt.getSpec().setPartitions(3);
             return kt;
         });
 
-        var update2 = kubernetesHandler.updateStatus(TopicOperatorTestUtil.reconcilableTopic(change, NAMESPACE));
+        var update2 = kubernetesHandler.updateStatus(TestUtil.reconcilableTopic(change, NAMESPACE));
         assertThat(update2.getStatus().getObservedGeneration(), is(2L));
     }
 
@@ -145,15 +145,15 @@ class KubernetesHandlerTest {
     public void shouldUpdateStatusWithReplicasChange() {
         var kafkaTopic = createTopicWithReadyState("my-topic", Map.of(TopicConfig.RETENTION_MS_CONFIG, "604800000"));
 
-        var update1 = kubernetesHandler.updateStatus(TopicOperatorTestUtil.reconcilableTopic(kafkaTopic, NAMESPACE));
+        var update1 = kubernetesHandler.updateStatus(TestUtil.reconcilableTopic(kafkaTopic, NAMESPACE));
         assertThat(update1.getStatus().getObservedGeneration(), is(1L));
 
-        var change = TopicOperatorTestUtil.changeTopic(kubernetesClient, update1, kt -> {
+        var change = TestUtil.changeTopic(kubernetesClient, update1, kt -> {
             kt.getSpec().setReplicas(2);
             return kt;
         });
 
-        var update2 = kubernetesHandler.updateStatus(TopicOperatorTestUtil.reconcilableTopic(change, NAMESPACE));
+        var update2 = kubernetesHandler.updateStatus(TestUtil.reconcilableTopic(change, NAMESPACE));
         assertThat(update2.getStatus().getObservedGeneration(), is(2L));
     }
 
