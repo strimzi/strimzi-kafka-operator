@@ -937,7 +937,7 @@ spec:
                             type: array
                             items:
                               type: string
-                            description: "A comma separated list of regex patterns to specify the metrics to collect. Default: `.*`."
+                            description: A comma separated list of regex patterns to specify the metrics to collect.
                         description: Configuration values for the Strimzi Metrics Reporter.
                     required:
                     - type
@@ -2520,7 +2520,7 @@ spec:
                             type: array
                             items:
                               type: string
-                            description: "A comma separated list of regex patterns to specify the metrics to collect. Default: `.*`."
+                            description: A comma separated list of regex patterns to specify the metrics to collect.
                         description: Configuration values for the Strimzi Metrics Reporter.
                     required:
                     - type
@@ -6547,7 +6547,7 @@ spec:
                             type: array
                             items:
                               type: string
-                            description: "A comma separated list of regex patterns to specify the metrics to collect. Default: `.*`."
+                            description: A comma separated list of regex patterns to specify the metrics to collect.
                         description: Configuration values for the Strimzi Metrics Reporter.
                     required:
                     - type

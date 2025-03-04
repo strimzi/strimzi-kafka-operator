@@ -30,12 +30,22 @@ public class StrimziMetricsReporterModel implements MetricsModel {
      * @param spec Custom resource section configuring metrics.
      */
     public StrimziMetricsReporterModel(HasConfigurableMetrics spec) {
+        this(spec, List.of(".*"));
+    }
+
+        /**
+         * Constructs the Metrics Model for managing configurable metrics to Strimzi.
+         *
+         * @param spec Custom resource section configuring metrics.
+         * @param defaultAllowList Default allow list to be used when no value is provided.
+         */
+    public StrimziMetricsReporterModel(HasConfigurableMetrics spec, List<String> defaultAllowList) {
         if (spec.getMetricsConfig() != null) {
             StrimziMetricsReporter config = (StrimziMetricsReporter) spec.getMetricsConfig();
             validate(config);
             this.isEnabled = true;
             this.allowList = config.getValues() != null && config.getValues().getAllowList() != null
-                    ? config.getValues().getAllowList() : null;
+                    ? config.getValues().getAllowList() : defaultAllowList;
         } else {
             this.isEnabled = false;
             this.allowList = null;

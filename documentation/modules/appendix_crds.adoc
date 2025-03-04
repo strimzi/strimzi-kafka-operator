@@ -1080,7 +1080,7 @@ Used in: xref:type-StrimziMetricsReporter-{context}[`StrimziMetricsReporter`]
 |Property |Property type |Description
 |allowList
 |string array
-|A comma separated list of regex patterns to specify the metrics to collect. Default: `.*`.
+|A comma separated list of regex patterns to specify the metrics to collect.
 |====
 
 [id='type-InlineLogging-{context}']
