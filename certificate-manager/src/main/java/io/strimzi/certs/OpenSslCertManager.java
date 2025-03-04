@@ -77,6 +77,8 @@ public class OpenSslCertManager implements CertManager {
     private static final Logger LOGGER = LogManager.getLogger(OpenSslCertManager.class);
     private final Clock clock;
 
+    private static final SecureRandom RANDOM = new SecureRandom();
+
     /**
      * Constructs the OpenSslCertManager with the system time
      */
@@ -420,7 +422,7 @@ public class OpenSslCertManager implements CertManager {
                     keyStore.load(isKeyStore, keyStorePassword.toCharArray());
 
                     byte[] salt = new byte[20];
-                    new SecureRandom().nextBytes(salt);
+                    RANDOM.nextBytes(salt);
                     // going to store the private key as encrypted by using AES-128-CBC with a key derived from the keystore password itself
                     keyStore.setEntry(alias, new KeyStore.PrivateKeyEntry(key, new Certificate[]{certificate}),
                             new KeyStore.PasswordProtection(keyStorePassword.toCharArray(), "PBEWithHmacSHA256AndAES_128", new PBEParameterSpec(salt, 2048)));
