@@ -6,6 +6,7 @@ package io.strimzi.certs;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
@@ -95,9 +96,10 @@ public interface CertManager {
      * @param alias key and certificate alias in the keystore
      * @param keyStoreFile path to the file related to the keystore
      * @param keyStorePassword password for protecting the keystore
+     * @throws GeneralSecurityException if something goes wrong when creating the keystore
      * @throws IOException If an input or output file could not be read/written.
      */
-    void addKeyAndCertToKeyStore(File keyFile, File certFile, String alias, File keyStoreFile, String keyStorePassword) throws IOException;
+    void addKeyAndCertToKeyStore(File keyFile, File certFile, String alias, File keyStoreFile, String keyStorePassword) throws GeneralSecurityException, IOException;
 
     /**
      * Remove entries with provided aliases from the truststore

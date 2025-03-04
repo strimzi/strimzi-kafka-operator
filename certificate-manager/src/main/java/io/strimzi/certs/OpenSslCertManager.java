@@ -7,6 +7,7 @@ package io.strimzi.certs;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.crypto.spec.PBEParameterSpec;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -21,12 +22,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.SecureRandom;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -34,6 +41,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
+import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -372,18 +380,60 @@ public class OpenSslCertManager implements CertManager {
     }
 
     @Override
-    public void addKeyAndCertToKeyStore(File keyFile, File certFile, String alias, File keyStoreFile, String keyStorePassword) throws IOException {
-        new OpensslArgs("openssl", "pkcs12")
-                .opt("-export")
-                .optArg("-in", certFile)
-                .optArg("-inkey", keyFile)
-                .optArg("-name", alias)
-                .optArg("-out", keyStoreFile)
-                .optArg("-passout", "pass:" + keyStorePassword)
-                .optArg("-certpbe", "aes-128-cbc")
-                .optArg("-keypbe", "aes-128-cbc")
-                .optArg("-macalg", "sha256")
-                .exec();
+    public void addKeyAndCertToKeyStore(File keyFile, File certFile, String alias, File keyStoreFile, String keyStorePassword) throws GeneralSecurityException, IOException {
+        // Preconditions
+        Objects.requireNonNull(keyFile);
+        Objects.requireNonNull(certFile);
+        Objects.requireNonNull(alias);
+        Objects.requireNonNull(keyStoreFile);
+        Objects.requireNonNull(keyStorePassword);
+
+        FileInputStream isKeyStore = null;
+        try {
+
+            // check if the keystore file is empty or not, for loading its content eventually
+            // the KeyStore class is able to create an empty store if the input stream is null
+            if (keyStoreFile.length() > 0) {
+                isKeyStore = new FileInputStream(keyStoreFile);
+            }
+
+            // load the private key
+            try (FileInputStream isKey = new FileInputStream(keyFile)) {
+                byte[] keyBytes = isKey.readAllBytes();
+                String strippedPrivateKey = new String(keyBytes, StandardCharsets.US_ASCII)
+                        .replace("-----BEGIN PRIVATE KEY-----", "")
+                        .replaceAll(System.lineSeparator(), "")
+                        .replace("-----END PRIVATE KEY-----", "");
+                byte[] decodedKey = Base64.getDecoder().decode(strippedPrivateKey);
+                PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(decodedKey);
+                final KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+                final PrivateKey key = keyFactory.generatePrivate(keySpec);
+
+                // load the certificate
+                try (FileInputStream isCertificate = new FileInputStream(certFile)) {
+                    CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+                    X509Certificate certificate = (X509Certificate) certFactory.generateCertificate(isCertificate);
+
+                    KeyStore keyStore = KeyStore.getInstance("PKCS12");
+                    keyStore.load(isKeyStore, keyStorePassword.toCharArray());
+
+                    byte[] salt = new byte[20];
+                    new SecureRandom().nextBytes(salt);
+                    // going to store the private key as encrypted by using AES-128-CBC with a key derived from the keystore password itself
+                    keyStore.setEntry(alias, new KeyStore.PrivateKeyEntry(key, new Certificate[]{certificate}),
+                            new KeyStore.PasswordProtection(keyStorePassword.toCharArray(), "PBEWithHmacSHA256AndAES_128", new PBEParameterSpec(salt, 2048)));
+
+                    try (FileOutputStream osKeyStore = new FileOutputStream(keyStoreFile)) {
+                        keyStore.store(osKeyStore, keyStorePassword.toCharArray());
+                    }
+                }
+            }
+
+        } finally {
+            if (isKeyStore != null) {
+                isKeyStore.close();
+            }
+        }
     }
 
     @Override
