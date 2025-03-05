@@ -28,6 +28,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -388,47 +389,55 @@ public abstract class Ca {
      * @throws IOException  Throws an IOException if something fails when working with the files
      */
     public CertAndKey addKeyAndCertToKeyStore(String alias, byte[] key, byte[] cert) throws IOException {
-        File keyFile = Files.createTempFile("tls", "key").toFile();
-        File certFile = Files.createTempFile("tls", "cert").toFile();
-        File keyStoreFile = Files.createTempFile("tls", "p12").toFile();
+        try {
+            File keyFile = Files.createTempFile("tls", "key").toFile();
+            File certFile = Files.createTempFile("tls", "cert").toFile();
+            File keyStoreFile = Files.createTempFile("tls", "p12").toFile();
 
-        Files.write(keyFile.toPath(), key);
-        Files.write(certFile.toPath(), cert);
+            Files.write(keyFile.toPath(), key);
+            Files.write(certFile.toPath(), cert);
 
-        String keyStorePassword = passwordGenerator.generate();
-        certManager.addKeyAndCertToKeyStore(keyFile, certFile, alias, keyStoreFile, keyStorePassword);
+            try {
+                String keyStorePassword = passwordGenerator.generate();
+                certManager.addKeyAndCertToKeyStore(keyFile, certFile, alias, keyStoreFile, keyStorePassword);
 
-        CertAndKey result = new CertAndKey(
-                Files.readAllBytes(keyFile.toPath()),
-                Files.readAllBytes(certFile.toPath()),
-                null,
-                Files.readAllBytes(keyStoreFile.toPath()),
-                keyStorePassword);
-
-        delete(reconciliation, keyFile);
-        delete(reconciliation, certFile);
-        delete(reconciliation, keyStoreFile);
-
-        return result;
+                return new CertAndKey(
+                        Files.readAllBytes(keyFile.toPath()),
+                        Files.readAllBytes(certFile.toPath()),
+                        null,
+                        Files.readAllBytes(keyStoreFile.toPath()),
+                        keyStorePassword);
+            } finally {
+                delete(reconciliation, keyFile);
+                delete(reconciliation, certFile);
+                delete(reconciliation, keyStoreFile);
+            }
+        } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     protected CertAndKey generateSignedCert(Subject subject,
                                            File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
         LOGGER.infoCr(reconciliation, "Generating certificate {}, signed by CA {}", subject, this);
 
-        certManager.generateCsr(keyFile, csrFile, subject);
-        certManager.generateCert(csrFile, currentCaKey(), currentCaCertBytes(),
-                certFile, subject, validityDays);
+        try {
+            certManager.generateCsr(keyFile, csrFile, subject);
+            certManager.generateCert(csrFile, currentCaKey(), currentCaCertBytes(),
+                    certFile, subject, validityDays);
 
-        String keyStorePassword = passwordGenerator.generate();
-        certManager.addKeyAndCertToKeyStore(keyFile, certFile, subject.commonName(), keyStoreFile, keyStorePassword);
+            String keyStorePassword = passwordGenerator.generate();
+            certManager.addKeyAndCertToKeyStore(keyFile, certFile, subject.commonName(), keyStoreFile, keyStorePassword);
 
-        return new CertAndKey(
-                Files.readAllBytes(keyFile.toPath()),
-                Files.readAllBytes(certFile.toPath()),
-                null,
-                Files.readAllBytes(keyStoreFile.toPath()),
-                keyStorePassword);
+            return new CertAndKey(
+                    Files.readAllBytes(keyFile.toPath()),
+                    Files.readAllBytes(certFile.toPath()),
+                    null,
+                    Files.readAllBytes(keyStoreFile.toPath()),
+                    keyStorePassword);
+        } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
