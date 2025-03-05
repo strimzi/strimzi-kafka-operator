@@ -214,7 +214,7 @@ Through the REST API, a summary of the proposal is reflected in the status of th
 This involves reassigning partitions and redistributing workload across brokers according to the approved proposal.
 
 .Cruise Control optimization process
-image:kafka-concepts-cruise-control.png[Cruise Control process]
+image::kafka-concepts-cruise-control.png[Cruise Control process]
 
 Optimization proposals comprise a list of partition reassignment mappings.
 When you approve a proposal, the Cruise Control server applies these partition reassignments to the Kafka cluster.
