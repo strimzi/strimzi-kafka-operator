@@ -6,15 +6,8 @@ set +x
 ADVERTISED_HOSTNAME=$(hostname -f | cut -d "." -f1-4)
 export ADVERTISED_HOSTNAME
 
-# Generate temporary keystore password
-CERTS_STORE_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c32)
-export CERTS_STORE_PASSWORD
-
 # Create dir where keystores and truststores will be stored
 mkdir -p /tmp/kafka
-
-# Import certificates into keystore and truststore
-./kafka_connect_tls_prepare_certificates.sh
 
 # Generate and print the config file
 echo "Starting Kafka Connect with configuration:"

@@ -14,6 +14,7 @@
 * Dependency updates (Vert.x 4.5.12, Netty 4.1.117.Final)
 * Moved Kafka Connect configuration to the ConfigMap created by the operator.
 * Update Kafka Exporter to [1.9.0](https://github.com/danielqsj/kafka_exporter/releases/tag/v1.9.0)
+* Kafka Connect truststore and keystore configurations now uses Kafka Kubernetes Config Provider to load PEM certificates directly from secrets.
 
 ### Major changes, deprecations and removals
 
@@ -36,6 +37,8 @@
   Please use the template section to configure additional volumes instead.
 * Kafka 4.0 and newer is using Log4j2 for logging instead of Reload4j/Log4j1.
   If you have any custom logging configuration, you might need to update it during the upgrade to Kafka 4.0.
+* KafkaConnect now uses PEM files instead of P12/JKS for keystore and truststore. 
+  * If you override "ssl.truststore.location" and "ssl.keystore.location" in your Connector configurations, then you would need update them to override "ssl.truststore.certificates" and "ssl.keystore.certificate.chain" with PEM files instead.
 
 ## 0.45.0
 
