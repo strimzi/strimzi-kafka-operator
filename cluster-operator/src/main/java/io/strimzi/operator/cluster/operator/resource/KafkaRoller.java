@@ -903,7 +903,7 @@ public class KafkaRoller {
     protected Future<Void> restart(Pod pod, RestartContext restartContext) {
         return podOperations.restart(reconciliation, pod, operationTimeoutMs)
                              .onComplete(i -> vertx.executeBlocking(() -> {
-                                 eventsPublisher.publishRestartEvents(pod, restartContext.restartReasons);
+                                 eventsPublisher.publishRestartEvents(reconciliation, pod, restartContext.restartReasons);
                                  return null;
                              }));
     }
