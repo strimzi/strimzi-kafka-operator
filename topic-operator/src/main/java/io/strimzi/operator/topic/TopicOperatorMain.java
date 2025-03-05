@@ -32,7 +32,6 @@ import io.strimzi.operator.topic.metrics.TopicOperatorMetricsProvider;
 import org.apache.kafka.clients.admin.Admin;
 
 import java.util.Objects;
-import java.util.concurrent.ExecutionException;
 
 /**
  * The Topic Operator.
@@ -40,6 +39,7 @@ import java.util.concurrent.ExecutionException;
 public class TopicOperatorMain implements Liveness, Readiness {
     private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(TopicOperatorMain.class);
     private final static long INFORMER_RESYNC_CHECK_PERIOD_MS = 30_000;
+    private final static int HEALTH_CHECK_PORT = 8080;
 
     private final TopicOperatorConfig config;
     private final KubernetesClient kubernetesClient;
@@ -56,15 +56,21 @@ public class TopicOperatorMain implements Liveness, Readiness {
     private final ResourceEventHandler<KafkaTopic> resourceEventHandler;
     private final HealthCheckAndMetricsServer healthAndMetricsServer;
 
-    TopicOperatorMain(TopicOperatorConfig config, Admin kafkaAdminClient) {
+    TopicOperatorMain(TopicOperatorConfig config) {
+        this(config,
+            new OperatorKubernetesClientBuilder(
+                "strimzi-topic-operator",
+                TopicOperatorMain.class.getPackage().getImplementationVersion()
+            ).build(), 
+            Admin.create(config.adminClientConfig()));
+    }
+
+    /* test */ TopicOperatorMain(TopicOperatorConfig config, KubernetesClient kubernetesClient, Admin kafkaAdminClient) {
         Objects.requireNonNull(config.namespace());
         Objects.requireNonNull(config.resourceLabels());
         this.config = config;
         var selector = config.resourceLabels().toMap();
-        this.kubernetesClient = new OperatorKubernetesClientBuilder(
-            "strimzi-topic-operator",
-            TopicOperatorMain.class.getPackage().getImplementationVersion()
-        ).build();
+        this.kubernetesClient = kubernetesClient;
         this.kafkaAdminClient = kafkaAdminClient;
         this.cruiseControlClient = TopicOperatorUtil.createCruiseControlClient(config);
         
@@ -78,7 +84,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
         this.itemStore = new BasicItemStore<>(Cache::metaNamespaceKeyFunc);
         this.queue = new BatchingLoop(config, controller, 1, itemStore, this::stop, metricsHolder);
         this.resourceEventHandler = new TopicEventHandler(config, queue, metricsHolder);
-        this.healthAndMetricsServer = new HealthCheckAndMetricsServer(8080, this, this, metricsProvider);
+        this.healthAndMetricsServer = new HealthCheckAndMetricsServer(HEALTH_CHECK_PORT, this, this, metricsProvider);
     }
 
     synchronized void start() {
@@ -157,12 +163,8 @@ public class TopicOperatorMain implements Liveness, Readiness {
      */
     public static void main(String[] args) throws Exception {
         var config = TopicOperatorConfig.buildFromMap(System.getenv());
-        var operator = operator(config, Admin.create(config.adminClientConfig()));
+        var operator = new TopicOperatorMain(config);
         operator.start();
-    }
-
-    static TopicOperatorMain operator(TopicOperatorConfig config, Admin kafkaAdmin) throws ExecutionException, InterruptedException {
-        return new TopicOperatorMain(config, kafkaAdmin);
     }
 
     @Override

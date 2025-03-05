@@ -23,8 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class TopicOperatorConfigTest {
-    private static final String NAMESPACE = TopicOperatorTestUtil.namespaceName(TopicOperatorConfigTest.class);
+class ConfigTest {
+    private static final String NAMESPACE = TestUtil.namespaceName(ConfigTest.class);
 
     @Test
     void shouldConnectWithPlaintextAndNotAuthn() {
@@ -38,7 +38,7 @@ class TopicOperatorConfigTest {
 
         var adminConfig = config.adminClientConfig();
         // client.id is random, so check it's there then remove for an easier assertion on the rest of the map
-        assertTrue(!adminConfig.get("client.id").toString().isEmpty());
+        assertFalse(adminConfig.get("client.id").toString().isEmpty());
         adminConfig.remove("client.id");
         assertEquals(Map.of(
                 "security.protocol", "PLAINTEXT",
@@ -52,7 +52,7 @@ class TopicOperatorConfigTest {
                 TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "my-kafka:9092",
                 TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
                 TopicOperatorConfig.TLS_ENABLED.key(), "true",
-                TopicOperatorConfig.TRUSTSTORE_LOCATION.key(), "my/trusstore.p12",
+                TopicOperatorConfig.TRUSTSTORE_LOCATION.key(), "my/truststore.p12",
                 TopicOperatorConfig.TRUSTSTORE_PASSWORD.key(), "123456"));
 
         // then
@@ -60,12 +60,12 @@ class TopicOperatorConfigTest {
 
         var adminConfig = config.adminClientConfig();
         // client.id is random, so check it's there then remove for an easier assertion on the rest of the map
-        assertTrue(!adminConfig.get("client.id").toString().isEmpty());
+        assertFalse(adminConfig.get("client.id").toString().isEmpty());
         adminConfig.remove("client.id");
         assertEquals(Map.of(
                 "security.protocol", "SSL",
                 "bootstrap.servers", "my-kafka:9092",
-                "ssl.truststore.location", "my/trusstore.p12",
+                "ssl.truststore.location", "my/truststore.p12",
                 "ssl.truststore.password", "123456",
                 "ssl.endpoint.identification.algorithm", "HTTPS"), adminConfig);
     }
@@ -88,7 +88,7 @@ class TopicOperatorConfigTest {
 
         var adminConfig = config.adminClientConfig();
         // client.id is random, so check it's there then remove for an easier assertion on the rest of the map
-        assertTrue(!adminConfig.get("client.id").toString().isEmpty());
+        assertFalse(adminConfig.get("client.id").toString().isEmpty());
         adminConfig.remove("client.id");
         assertEquals(Map.of(
                 "security.protocol", "SASL_PLAINTEXT",
@@ -105,7 +105,7 @@ class TopicOperatorConfigTest {
                 TopicOperatorConfig.NAMESPACE.key(), NAMESPACE,
                 TopicOperatorConfig.SECURITY_PROTOCOL.key(), "SASL_SSL",
                 TopicOperatorConfig.TLS_ENABLED.key(), "true",
-                TopicOperatorConfig.TRUSTSTORE_LOCATION.key(), "my/trusstore.p12",
+                TopicOperatorConfig.TRUSTSTORE_LOCATION.key(), "my/truststore.p12",
                 TopicOperatorConfig.TRUSTSTORE_PASSWORD.key(), "123456",
                 TopicOperatorConfig.SASL_ENABLED.key(), "true",
                 TopicOperatorConfig.SASL_MECHANISM.key(), "plain",
@@ -118,14 +118,14 @@ class TopicOperatorConfigTest {
 
         var adminConfig = config.adminClientConfig();
         // client.id is random, so check it's there then remove for an easier assertion on the rest of the map
-        assertTrue(!adminConfig.get("client.id").toString().isEmpty());
+        assertFalse(adminConfig.get("client.id").toString().isEmpty());
         adminConfig.remove("client.id");
         assertEquals(Map.of(
                 "security.protocol", "SASL_SSL",
                 "bootstrap.servers", "my-kafka:9092",
                 "sasl.mechanism", "PLAIN",
                 "sasl.jaas.config", "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"foo\" password=\"foo\";",
-                "ssl.truststore.location", "my/trusstore.p12",
+                "ssl.truststore.location", "my/truststore.p12",
                 "ssl.truststore.password", "123456",
                 "ssl.endpoint.identification.algorithm", "HTTPS"), adminConfig);
     }
@@ -188,7 +188,7 @@ class TopicOperatorConfigTest {
 
         var adminConfig = config.adminClientConfig();
         // client.id is random, so check it's there then remove for an easier assertion on the rest of the map
-        assertTrue(!adminConfig.get("client.id").toString().isEmpty());
+        assertFalse(adminConfig.get("client.id").toString().isEmpty());
         adminConfig.remove("client.id");
         assertEquals(Map.of(
                 "security.protocol", "PLAINTEXT",
@@ -207,7 +207,7 @@ class TopicOperatorConfigTest {
                 TopicOperatorConfig.SECURITY_PROTOCOL.key(), "PLAINTEXT"));
 
         // then
-        var e = assertThrows(InvalidConfigurationException.class, () -> config.adminClientConfig());
+        var e = assertThrows(InvalidConfigurationException.class, config::adminClientConfig);
         assertEquals("TLS is enabled but the security protocol does not match SSL or SASL_SSL", e.getMessage());
     }
 
@@ -223,7 +223,7 @@ class TopicOperatorConfigTest {
         ));
 
         // then
-        var e = assertThrows(InvalidConfigurationException.class, () -> config.adminClientConfig());
+        var e = assertThrows(InvalidConfigurationException.class, config::adminClientConfig);
         assertEquals("SASL credentials are not set", e.getMessage());
     }
 
@@ -239,7 +239,7 @@ class TopicOperatorConfigTest {
         // then
         assertEquals(NAMESPACE, config.namespace());
 
-        var e = assertThrows(InvalidConfigurationException.class, () -> config.adminClientConfig());
+        var e = assertThrows(InvalidConfigurationException.class, config::adminClientConfig);
         assertEquals("TLS_TRUSTSTORE_PASSWORD was supplied but TLS_TRUSTSTORE_LOCATION was not supplied", e.getMessage());
     }
 
@@ -388,7 +388,7 @@ class TopicOperatorConfigTest {
     @Test
     public void testDefaultFeatureGates()    {
         TopicOperatorConfig config = TopicOperatorConfig.buildFromMap(Map.of(TopicOperatorConfig.BOOTSTRAP_SERVERS.key(), "localhost:1234", TopicOperatorConfig.NAMESPACE.key(), NAMESPACE));
-        assertEquals(config.featureGates(), new FeatureGates(""));
+        assertEquals(new FeatureGates(""), config.featureGates());
     }
 
     @Test
@@ -398,7 +398,7 @@ class TopicOperatorConfigTest {
         Map<String, String> envVars = Map.of(TopicOperatorConfig.FEATURE_GATES.key(), "-NonExistingGate");
 
         InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> TopicOperatorConfig.buildFromMap(envVars));
-        assertEquals(e.getMessage(), "Unknown feature gate NonExistingGate found in the configuration");
+        assertEquals("Unknown feature gate NonExistingGate found in the configuration", e.getMessage());
     }
 
     @Test
