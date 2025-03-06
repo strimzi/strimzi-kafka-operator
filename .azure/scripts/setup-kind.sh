@@ -288,52 +288,25 @@ function run_cloud_provider_kind() {
     local socket_path=""
     local kind_network="$1"
 
-    # Detect if using Podman rootless or rootful
+    # Check if using Podman and warn the user
     if [[ "$DOCKER_CMD" == "podman" ]]; then
-        echo "[INFO] Kind currently does not support cloud-provider-kind more in https://github.com/kubernetes-sigs/cloud-provider-kind/issues/221."
-#     #########
-#     until this is resolved https://github.com/kubernetes-sigs/cloud-provider-kind/issues/221
-#     #########
-#        if [[ "$(podman info --format '{{.Host.Security.Rootless}}')" != "true" ]]; then
-#            echo "[ERROR] Rootful Podman is not supported. Please configure rootless Podman or use Docker."
-#            return 1
-#        fi
-#
-#        socket_path="/run/user/$(id -u)/podman/podman.sock"
-#
-#        # Ensure Podman API socket is running
-#        if ! systemctl --user is-active --quiet podman.socket; then
-#            echo "[INFO] Podman socket is inactive. Starting podman.socket..."
-#            systemctl --user start podman.socket
-#
-#            # Wait for podman.socket to become active
-#            sleep 2
-#            if ! systemctl --user is-active --quiet podman.socket; then
-#                echo "[ERROR] Failed to start podman.socket. Ensure Podman is installed and configured correctly."
-#                return 1
-#            fi
-#            echo "[INFO] podman.socket started successfully."
-#
-#            # any user (including root inside the container) to access the socket (this is mainly for cloud-provider-kind
-#            chmod 666 /run/user/$(id -u)/podman/podman.sock
-#        fi
+        echo "[WARNING] cloud-provider-kind does not currently support Podman. See: https://github.com/kubernetes-sigs/cloud-provider-kind/issues/221"
     else
-       socket_path="/var/run/docker.sock"
+        socket_path="/var/run/docker.sock"
+
+        # Ensure the container is not already running
+        if $DOCKER_CMD ps --format "{{.Names}}" | grep -q "$cloud_provider_kind"; then
+            echo "[INFO] $cloud_provider_kind is already running."
+            return 0
+        fi
+
+        echo "[INFO] Starting $cloud_provider_kind with $DOCKER_CMD..."
+
+        $DOCKER_CMD run -d --name "$cloud_provider_kind" \
+             --network "$kind_network" \
+             -v "$socket_path:/var/run/docker.sock" \
+             registry.k8s.io/cloud-provider-kind/cloud-controller-manager:"${KIND_CLOUD_PROVIDER_VERSION}"
     fi
-
-    # Ensure the container is not already running
-    if $DOCKER_CMD ps --format "{{.Names}}" | grep -q "$cloud_provider_kind"; then
-        echo "[INFO] $cloud_provider_kind is already running."
-        return 0
-    fi
-
-    echo "[INFO] Starting $cloud_provider_kind with $DOCKER_CMD..."
-
-    $DOCKER_CMD run -d --name "$cloud_provider_kind" \
-        --network "$kind_network" \
-        -v "$socket_path:/var/run/docker.sock" \
-        registry.k8s.io/cloud-provider-kind/cloud-controller-manager:"${KIND_CLOUD_PROVIDER_VERSION}" \
-        --enable-lb-port-mapping=true
 }
 
 : '
