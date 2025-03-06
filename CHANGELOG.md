@@ -15,6 +15,7 @@
 * Moved Kafka Connect configuration to the ConfigMap created by the operator.
 * Update Kafka Exporter to [1.9.0](https://github.com/danielqsj/kafka_exporter/releases/tag/v1.9.0)
 * Adopted new Kafka Connect health check endpoint (see [proposal 89](https://github.com/strimzi/proposals/blob/main/089-adopt-connect-health-endpoint.md)).
+* Update standalone User Operator to handle Cluster CA cert Secret being missing when TLS is not needed.
 
 ### Major changes, deprecations and removals
 
