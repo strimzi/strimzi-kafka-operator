@@ -15,6 +15,7 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.AbstractJsonDiff;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -118,10 +119,11 @@ public class StorageDiff extends AbstractJsonDiff {
                     continue;
                 }
 
-                if (current instanceof PersistentClaimStorage persistentCurrent && desired instanceof PersistentClaimStorage persistentDesired) {
+                if (current instanceof PersistentClaimStorage persistentCurrent && desired instanceof PersistentClaimStorage persistentDesired
+                    && desired.getType().equals(current.getType())) {
                     // It might be possible to increase the volume size, but never to shrink volumes
                     // When size changes, we need to detect whether it is shrinking or increasing
-                    if (pathValue.endsWith("/size") && desired.getType().equals(current.getType())) {
+                    if (pathValue.endsWith("/size")) {
 
                         long currentSize = StorageUtils.convertToMillibytes(persistentCurrent.getSize());
                         long desiredSize = StorageUtils.convertToMillibytes(persistentDesired.getSize());
@@ -133,9 +135,8 @@ public class StorageDiff extends AbstractJsonDiff {
                         }
                     }
 
-                    if (pathValue.endsWith("/volumeAttributesClass") && desired.getType().equals(current.getType()) &&
-                        (isNull(persistentCurrent.getVolumeAttributesClass()) || isNull(persistentDesired.getVolumeAttributesClass()) ||
-                            !persistentCurrent.getVolumeAttributesClass().equals(persistentDesired.getVolumeAttributesClass()))) {
+                    if (pathValue.endsWith("/volumeAttributesClass") &&
+                        !Objects.equals(persistentCurrent.getVolumeAttributesClass(), persistentDesired.getVolumeAttributesClass())) {
                         volumeAttributesClassChanged = true;
                         continue;
                     }
