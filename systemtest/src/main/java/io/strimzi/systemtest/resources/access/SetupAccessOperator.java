@@ -15,7 +15,6 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.DeploymentTypes;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.draincleaner.SetupDrainCleaner;
 import io.strimzi.test.ReadWriteUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -28,7 +27,7 @@ import java.util.List;
 public class SetupAccessOperator {
 
     public static final String PATH_TO_KAO_CONFIG = TestUtils.USER_PATH + "/../packaging/install/access-operator/";
-    private static final Logger LOGGER = LogManager.getLogger(SetupDrainCleaner.class);
+    private static final Logger LOGGER = LogManager.getLogger(SetupAccessOperator.class);
 
     /**
      * Method for installing Kafka Access Operator into the specified Namespace.

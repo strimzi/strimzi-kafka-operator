@@ -46,7 +46,7 @@ import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
  */
 @Tag(REGRESSION)
 public class AccessOperatorST extends AbstractST {
-    private static final Logger LOGGER = LogManager.getLogger(DrainCleanerST.class);
+    private static final Logger LOGGER = LogManager.getLogger(AccessOperatorST.class);
 
     @IsolatedTest
     @TestDoc(
