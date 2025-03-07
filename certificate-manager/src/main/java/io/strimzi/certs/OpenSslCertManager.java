@@ -392,50 +392,35 @@ public class OpenSslCertManager implements CertManager {
         Objects.requireNonNull(keyStoreFile);
         Objects.requireNonNull(keyStorePassword);
 
-        FileInputStream isKeyStore = null;
-        try {
+        // load the private key
+        try (FileInputStream isKey = new FileInputStream(keyFile)) {
+            byte[] keyBytes = isKey.readAllBytes();
+            String strippedPrivateKey = new String(keyBytes, StandardCharsets.US_ASCII)
+                    .replace("-----BEGIN PRIVATE KEY-----", "")
+                    .replaceAll(System.lineSeparator(), "")
+                    .replace("-----END PRIVATE KEY-----", "");
+            byte[] decodedKey = Base64.getDecoder().decode(strippedPrivateKey);
+            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(decodedKey);
+            final KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            final PrivateKey key = keyFactory.generatePrivate(keySpec);
 
-            // check if the keystore file is empty or not, for loading its content eventually
-            // the KeyStore class is able to create an empty store if the input stream is null
-            if (keyStoreFile.length() > 0) {
-                isKeyStore = new FileInputStream(keyStoreFile);
-            }
+            // load the certificate
+            try (FileInputStream isCertificate = new FileInputStream(certFile)) {
+                CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+                X509Certificate certificate = (X509Certificate) certFactory.generateCertificate(isCertificate);
 
-            // load the private key
-            try (FileInputStream isKey = new FileInputStream(keyFile)) {
-                byte[] keyBytes = isKey.readAllBytes();
-                String strippedPrivateKey = new String(keyBytes, StandardCharsets.US_ASCII)
-                        .replace("-----BEGIN PRIVATE KEY-----", "")
-                        .replaceAll(System.lineSeparator(), "")
-                        .replace("-----END PRIVATE KEY-----", "");
-                byte[] decodedKey = Base64.getDecoder().decode(strippedPrivateKey);
-                PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(decodedKey);
-                final KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-                final PrivateKey key = keyFactory.generatePrivate(keySpec);
+                KeyStore keyStore = KeyStore.getInstance("PKCS12");
+                keyStore.load(null, keyStorePassword.toCharArray());
 
-                // load the certificate
-                try (FileInputStream isCertificate = new FileInputStream(certFile)) {
-                    CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-                    X509Certificate certificate = (X509Certificate) certFactory.generateCertificate(isCertificate);
+                byte[] salt = new byte[20];
+                RANDOM.nextBytes(salt);
+                // going to store the private key as encrypted by using AES-128-CBC with a key derived from the keystore password itself
+                keyStore.setEntry(alias, new KeyStore.PrivateKeyEntry(key, new Certificate[]{certificate}),
+                        new KeyStore.PasswordProtection(keyStorePassword.toCharArray(), "PBEWithHmacSHA256AndAES_128", new PBEParameterSpec(salt, 2048)));
 
-                    KeyStore keyStore = KeyStore.getInstance("PKCS12");
-                    keyStore.load(isKeyStore, keyStorePassword.toCharArray());
-
-                    byte[] salt = new byte[20];
-                    RANDOM.nextBytes(salt);
-                    // going to store the private key as encrypted by using AES-128-CBC with a key derived from the keystore password itself
-                    keyStore.setEntry(alias, new KeyStore.PrivateKeyEntry(key, new Certificate[]{certificate}),
-                            new KeyStore.PasswordProtection(keyStorePassword.toCharArray(), "PBEWithHmacSHA256AndAES_128", new PBEParameterSpec(salt, 2048)));
-
-                    try (FileOutputStream osKeyStore = new FileOutputStream(keyStoreFile)) {
-                        keyStore.store(osKeyStore, keyStorePassword.toCharArray());
-                    }
+                try (FileOutputStream osKeyStore = new FileOutputStream(keyStoreFile)) {
+                    keyStore.store(osKeyStore, keyStorePassword.toCharArray());
                 }
-            }
-
-        } finally {
-            if (isKeyStore != null) {
-                isKeyStore.close();
             }
         }
     }
