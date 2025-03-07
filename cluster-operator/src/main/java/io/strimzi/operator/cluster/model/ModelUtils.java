@@ -375,4 +375,36 @@ public class ModelUtils {
         }
         return errors;
     }
+
+    /**
+     * Create or update configuration value.
+     *
+     * @param config Configuration.
+     * @param key Property key.
+     * @param value Property value to add or replace.
+     */
+    public static void createOrUpdateConfigValue(AbstractConfiguration config, String key, String value) {
+        if (config != null && key != null && !key.isBlank() && value != null && !value.isBlank()) {
+            String existingConfig = config.getConfigOption(key);
+            if (existingConfig == null || !existingConfig.equals(value)) {
+                config.setConfigOption(key, value);
+            }
+        }
+    }
+
+    /**
+     * Create or add configuration list value.
+     *
+     * @param config Configuration.
+     * @param key Property key.
+     * @param value Property value to set or add.
+     */
+    public static void createOrAddConfigListValue(AbstractConfiguration config, String key, String value) {
+        if (config != null && key != null && !key.isBlank() && value != null && !value.isBlank()) {
+            String existingConfig = config.getConfigOption(key);
+            if (existingConfig == null || !existingConfig.contains(value)) {
+                config.setConfigOption(key, existingConfig == null ? value : existingConfig + "," + value);
+            }
+        }
+    }
 }

@@ -165,7 +165,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("node.id=2",
-                 "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS,
                  StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true",
                  StrimziMetricsReporterConfig.LISTENER + "=http://0.0.0.0:" + StrimziMetricsReporterModel.METRICS_PORT,
                  StrimziMetricsReporterConfig.ALLOW_LIST + "=kafka_log.*,kafka_network.*"));
@@ -528,6 +527,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
+                "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS,
                 "metric.reporters=" + StrimziMetricsReporterConfig.KAFKA_CLASS));
     }
 
@@ -545,6 +545,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
+                "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS,
                 "metric.reporters=" + CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER
                         + "," + StrimziMetricsReporterConfig.KAFKA_CLASS));
     }
@@ -698,6 +699,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
+                "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS,
                 "metric.reporters=my.domain.CustomMetricReporter," + StrimziMetricsReporterConfig.KAFKA_CLASS));
     }
 
@@ -718,6 +720,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "config.providers.strimzifile.param.allowed.paths=/opt/kafka",
                 "config.providers.strimzidir.class=org.apache.kafka.common.config.provider.DirectoryConfigProvider",
                 "config.providers.strimzidir.param.allowed.paths=/opt/kafka",
+                "kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS,
                 "metric.reporters=my.domain.CustomMetricReporter,"
                         + CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER + ","
                         + StrimziMetricsReporterConfig.KAFKA_CLASS));
