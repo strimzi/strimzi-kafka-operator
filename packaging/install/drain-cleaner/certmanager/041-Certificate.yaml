@@ -13,4 +13,6 @@ spec:
     - strimzi-drain-cleaner.strimzi-drain-cleaner
     - strimzi-drain-cleaner
   issuerRef:
+    group: cert-manager.io
+    kind: Issuer
     name: strimzi-drain-cleaner
