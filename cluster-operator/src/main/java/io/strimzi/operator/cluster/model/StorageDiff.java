@@ -134,7 +134,8 @@ public class StorageDiff extends AbstractJsonDiff {
                     }
 
                     if (pathValue.endsWith("/volumeAttributesClass") && desired.getType().equals(current.getType()) &&
-                        !persistentCurrent.getVolumeAttributesClass().equals(persistentDesired.getVolumeAttributesClass())) {
+                        (isNull(persistentCurrent.getVolumeAttributesClass()) || isNull(persistentDesired.getVolumeAttributesClass()) ||
+                            !persistentCurrent.getVolumeAttributesClass().equals(persistentDesired.getVolumeAttributesClass()))) {
                         volumeAttributesClassChanged = true;
                         continue;
                     }
