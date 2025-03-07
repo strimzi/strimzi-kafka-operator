@@ -774,12 +774,12 @@ public class KafkaAssemblyOperatorKRaftMockTest {
                     StrimziPodSet spsControllers = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(CLUSTER_NAME + "-controllers").get();
                     assertThat(spsControllers, is(notNullValue()));
 
-                    spsControllers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> brokerConfigurationAnnotations.put(pod.getMetadata().getName(), pod.getMetadata().getAnnotations().get(KafkaCluster.ANNO_STRIMZI_BROKER_CONFIGURATION_HASH)));
+                    spsControllers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> brokerConfigurationAnnotations.put(pod.getMetadata().getName(), pod.getMetadata().getAnnotations().get(KafkaCluster.ANNO_STRIMZI_IO_CONFIGURATION_HASH)));
 
                     StrimziPodSet spsBrokers = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(CLUSTER_NAME + "-brokers").get();
                     assertThat(spsBrokers, is(notNullValue()));
 
-                    spsBrokers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> brokerConfigurationAnnotations.put(pod.getMetadata().getName(), pod.getMetadata().getAnnotations().get(KafkaCluster.ANNO_STRIMZI_BROKER_CONFIGURATION_HASH)));
+                    spsBrokers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> brokerConfigurationAnnotations.put(pod.getMetadata().getName(), pod.getMetadata().getAnnotations().get(KafkaCluster.ANNO_STRIMZI_IO_CONFIGURATION_HASH)));
 
                     // Update Kafka with dynamically changeable option that is not controller relevant => controller pod annotations should not change
                     Crds.kafkaOperation(client).inNamespace(namespace).withName(CLUSTER_NAME)
@@ -792,7 +792,7 @@ public class KafkaAssemblyOperatorKRaftMockTest {
 
                     spsControllers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
                         // Controller annotations be the same
-                        assertThat(pod.getMetadata().getAnnotations().get(KafkaCluster.ANNO_STRIMZI_BROKER_CONFIGURATION_HASH), is(brokerConfigurationAnnotations.get(pod.getMetadata().getName())));
+                        assertThat(pod.getMetadata().getAnnotations().get(KafkaCluster.ANNO_STRIMZI_IO_CONFIGURATION_HASH), is(brokerConfigurationAnnotations.get(pod.getMetadata().getName())));
                     });
 
                     StrimziPodSet spsBrokers = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(CLUSTER_NAME + "-brokers").get();
@@ -800,7 +800,7 @@ public class KafkaAssemblyOperatorKRaftMockTest {
 
                     spsBrokers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
                         // Broker annotations should be the same
-                        assertThat(pod.getMetadata().getAnnotations().get(KafkaCluster.ANNO_STRIMZI_BROKER_CONFIGURATION_HASH), is(brokerConfigurationAnnotations.get(pod.getMetadata().getName())));
+                        assertThat(pod.getMetadata().getAnnotations().get(KafkaCluster.ANNO_STRIMZI_IO_CONFIGURATION_HASH), is(brokerConfigurationAnnotations.get(pod.getMetadata().getName())));
                     });
 
                     // Update Kafka with dynamically changeable controller relevant option => controller pod annotations should change
@@ -814,7 +814,7 @@ public class KafkaAssemblyOperatorKRaftMockTest {
 
                     spsControllers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
                         // Controller annotations should differ
-                        assertThat(pod.getMetadata().getAnnotations().get(KafkaCluster.ANNO_STRIMZI_BROKER_CONFIGURATION_HASH), is(not(brokerConfigurationAnnotations.get(pod.getMetadata().getName()))));
+                        assertThat(pod.getMetadata().getAnnotations().get(KafkaCluster.ANNO_STRIMZI_IO_CONFIGURATION_HASH), is(not(brokerConfigurationAnnotations.get(pod.getMetadata().getName()))));
                     });
 
                     StrimziPodSet spsBrokers = supplier.strimziPodSetOperator.client().inNamespace(namespace).withName(CLUSTER_NAME + "-brokers").get();
@@ -822,7 +822,7 @@ public class KafkaAssemblyOperatorKRaftMockTest {
 
                     spsBrokers.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
                         // Broker annotations should be the same
-                        assertThat(pod.getMetadata().getAnnotations().get(KafkaCluster.ANNO_STRIMZI_BROKER_CONFIGURATION_HASH), is(brokerConfigurationAnnotations.get(pod.getMetadata().getName())));
+                        assertThat(pod.getMetadata().getAnnotations().get(KafkaCluster.ANNO_STRIMZI_IO_CONFIGURATION_HASH), is(brokerConfigurationAnnotations.get(pod.getMetadata().getName())));
                     });
 
                     async.flag();

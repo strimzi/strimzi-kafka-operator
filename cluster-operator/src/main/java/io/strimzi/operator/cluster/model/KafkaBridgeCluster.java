@@ -48,7 +48,6 @@ import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.logging.SupportsLogging;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.InvalidResourceException;
@@ -97,12 +96,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
      * Key under which the bridge configuration is stored in ConfigMap
      */
     public static final String BRIDGE_CONFIGURATION_FILENAME = "application.properties";
-
-    /**
-     * Annotation for rolling the bridge whenever the configuration within the application.properties file is changed.
-     * When the configuration hash annotation change is detected, we force a pod restart.
-     */
-    public static final String ANNO_STRIMZI_IO_CONFIGURATION_HASH = Annotations.STRIMZI_DOMAIN + "configuration-hash";
 
     private int replicas;
     private ClientTls tls;

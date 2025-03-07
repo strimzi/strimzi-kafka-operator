@@ -161,11 +161,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     public static final String ANNO_STRIMZI_IO_KAFKA_VERSION = Annotations.STRIMZI_DOMAIN + "kafka-version";
 
     /**
-     * Records the state of the Kafka upgrade process. Unset outside of upgrades.
-     */
-    public static final String ANNO_STRIMZI_BROKER_CONFIGURATION_HASH = Annotations.STRIMZI_DOMAIN + "broker-configuration-hash";
-
-    /**
      * Annotation for keeping certificate thumbprints
      */
     public static final String ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS = Annotations.STRIMZI_DOMAIN + "custom-listener-cert-thumbprints";
