@@ -6,7 +6,7 @@ package io.strimzi.systemtest.kafkaclients.clientproperties;
 
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.OffsetResetStrategy;
+import org.apache.kafka.clients.consumer.internals.AutoOffsetResetStrategy;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.kafka.common.serialization.Deserializer;
 
@@ -46,12 +46,9 @@ public class ConsumerProperties extends AbstractKafkaClientProperties<ConsumerPr
             return this;
         }
 
-        // OffsetResetStrategy is deprecated and should be replaced by using AutoOffsetResetStrategy
-        // Tracked by issue https://github.com/strimzi/strimzi-kafka-operator/issues/11201
-        @SuppressWarnings("deprecation")
-        public ConsumerPropertiesBuilder withAutoOffsetResetConfig(OffsetResetStrategy offsetResetConfig) {
+        public ConsumerPropertiesBuilder withAutoOffsetResetConfig(AutoOffsetResetStrategy autoOffsetResetStrategy) {
 
-            this.properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, offsetResetConfig.name().toLowerCase(Locale.ENGLISH));
+            this.properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, autoOffsetResetStrategy.name().toLowerCase(Locale.ENGLISH));
             return this;
         }
 
@@ -72,7 +69,7 @@ public class ConsumerProperties extends AbstractKafkaClientProperties<ConsumerPr
     }
 
     @Override
-    @SuppressWarnings({"unchecked", "deprecation"}) // OffsetResetStrategy is deprecated
+    @SuppressWarnings({"unchecked"})
     public ConsumerProperties.ConsumerPropertiesBuilder toBuilder(ConsumerProperties clientProperties) {
         ConsumerPropertiesBuilder builder = new ConsumerProperties.ConsumerPropertiesBuilder();
 
@@ -90,7 +87,7 @@ public class ConsumerProperties extends AbstractKafkaClientProperties<ConsumerPr
         }
 
         builder.withClientIdConfig(clientProperties.getProperties().getProperty(ConsumerConfig.CLIENT_ID_CONFIG));
-        builder.withAutoOffsetResetConfig(OffsetResetStrategy.valueOf(clientProperties.getProperties().getProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG).toUpperCase(Locale.ENGLISH)));
+        builder.withAutoOffsetResetConfig(AutoOffsetResetStrategy.fromString(clientProperties.getProperties().getProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG).toUpperCase(Locale.ENGLISH)));
         builder.withSharedProperties();
 
         return builder;
