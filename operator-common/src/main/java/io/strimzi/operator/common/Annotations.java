@@ -23,6 +23,10 @@ import static java.lang.Integer.parseInt;
  * Class for holding some annotation keys and utility methods for handling annotations
  */
 public class Annotations extends ResourceAnnotations {
+    /**
+     * Annotation used to detect configuration changes that require a component restart.
+     */
+    public static final String ANNO_STRIMZI_IO_CONFIGURATION_HASH = STRIMZI_DOMAIN + "configuration-hash";
 
     /**
      * Annotation for keeping Kafka servers' certificate thumbprints.

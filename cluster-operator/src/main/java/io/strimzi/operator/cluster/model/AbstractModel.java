@@ -14,7 +14,6 @@ import io.strimzi.api.kafka.model.common.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderFactory;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
@@ -29,11 +28,6 @@ public abstract class AbstractModel {
      */
     public static final String STRIMZI_CLUSTER_OPERATOR_NAME = "strimzi-cluster-operator";
 
-    /**
-     * Annotation used to detect configuration changes that require a component restart.
-     */
-    public static final String ANNO_STRIMZI_IO_CONFIGURATION_HASH = Annotations.STRIMZI_DOMAIN + "configuration-hash";
-    
     protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractModel.class.getName());
 
     /**
