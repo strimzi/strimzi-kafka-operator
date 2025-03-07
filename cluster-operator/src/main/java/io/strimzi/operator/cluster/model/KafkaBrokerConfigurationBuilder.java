@@ -57,7 +57,6 @@ import java.util.stream.Collectors;
  */
 public class KafkaBrokerConfigurationBuilder {
     private final static String CONTROL_PLANE_LISTENER_NAME = "CONTROLPLANE-9090";
-    private final static String KAFKA_METRIC_REPORTERS_CONFIG_FIELD = "metric.reporters";
     private final static String REPLICATION_LISTENER_NAME = "REPLICATION-9091";
     // Names of environment variables expanded through config providers inside the Kafka node
     private final static String PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:CERTS_STORE_PASSWORD}";
@@ -146,8 +145,6 @@ public class KafkaBrokerConfigurationBuilder {
     public KafkaBrokerConfigurationBuilder withStrimziMetricsReporter(StrimziMetricsReporterModel model)   {
         if (model != null && model.isEnabled()) {
             printSectionHeader("Strimzi Metrics Reporter configuration");
-            // TODO handle in withUserConfiguration
-            writer.println("kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS);
             writer.println(StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true");
             writer.println(StrimziMetricsReporterConfig.LISTENER + "=http://0.0.0.0:" + StrimziMetricsReporterModel.METRICS_PORT);
             model.getAllowList().ifPresent(allowList -> writer.println(StrimziMetricsReporterConfig.ALLOW_LIST + "=" + allowList));
@@ -806,7 +803,7 @@ public class KafkaBrokerConfigurationBuilder {
     }
 
     /**
-     * Configures the configuration options passed by the user in the Kafka CR.
+     * Adds the configurations passed by the user in the Kafka CR, injecting Strimzi configurations when needed.
      *
      * @param userConfig                     The User configuration - Kafka broker configuration options specified by the user in the Kafka custom resource
      * @param injectCcMetricsReporter        Inject the Cruise Control Metrics Reporter into the configuration
@@ -814,66 +811,71 @@ public class KafkaBrokerConfigurationBuilder {
      *
      * @return Returns the builder instance
      */
-    public KafkaBrokerConfigurationBuilder withUserConfiguration(KafkaConfiguration userConfig, boolean injectCcMetricsReporter, boolean injectStrimziMetricsReporter)  {
-        if (userConfig != null && !userConfig.getConfiguration().isEmpty()) {
-            // We have to create a copy of the configuration before we modify it, to avoid modifying the original input.
-            userConfig = new KafkaConfiguration(userConfig);
+    public KafkaBrokerConfigurationBuilder withUserConfiguration(KafkaConfiguration userConfig,
+                                                                 boolean injectCcMetricsReporter,
+                                                                 boolean injectStrimziMetricsReporter) {
+        // we have to create a copy of the configuration before we modify it
+        userConfig = userConfig != null
+                ? new KafkaConfiguration(userConfig)
+                : new KafkaConfiguration(reconciliation, new ArrayList<>());
 
-            // Configure the configuration providers => we have to inject the Strimzi ones
-            configProviders(userConfig);
+        // configure config.providers
+        addConfigProviders(userConfig);
 
-            // Handle all combinations of metric.reporters
-            String metricReporters = userConfig.getConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD);
+        // configure metric.reporters
+        maybeAddMetricReporters(userConfig, injectCcMetricsReporter, injectStrimziMetricsReporter);
 
-            // If the injectCcMetricsReporter / injectStrimziMetricsReporter flag is set to true, it is appended to the list of metric reporters
-            if (injectCcMetricsReporter) {
-                metricReporters = appendMetricReporter(metricReporters, CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER);
-            }
-            if (injectStrimziMetricsReporter) {
-                metricReporters = appendMetricReporter(metricReporters, StrimziMetricsReporterConfig.KAFKA_CLASS);
-            }
-            if (metricReporters != null) {
-                // update the userConfig with the new list of metric reporters
-                userConfig.setConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD, metricReporters);
-            }
+        // configure kafka.metrics.reporters
+        maybeAddKafkaMetricsReporters(userConfig, injectStrimziMetricsReporter);
 
-            printSectionHeader("User provided configuration");
+        // print user config with Strimzi injections
+        if (!userConfig.getConfiguration().isBlank()) {
+            printSectionHeader("User provided configuration with Strimzi injections");
             writer.println(userConfig.getConfiguration());
             writer.println();
-        } else {
-            // Configure the configuration providers => we have to inject the Strimzi ones
-            configProviders(userConfig);
-
-            // There is no user provided configuration
-            if (injectCcMetricsReporter || injectStrimziMetricsReporter) {
-                printSectionHeader("CruiseControl Metrics Reporters and Strimzi Metrics Reporters");
-                String metricReporters = null;
-                if (injectCcMetricsReporter) {
-                    metricReporters = CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER;
-                }
-                if (injectStrimziMetricsReporter) {
-                    metricReporters = appendMetricReporter(metricReporters, StrimziMetricsReporterConfig.KAFKA_CLASS);
-                }
-                writer.println(KAFKA_METRIC_REPORTERS_CONFIG_FIELD + "=" + metricReporters);
-                writer.println();
-            }
         }
 
         return this;
     }
 
-    /**
-     * Appends a new metric reporter to the existing list of metric reporters.
-     *
-     * @param existingReporters The existing list of metric reporters, as a comma-separated string.
-     * @param newReporter The new metric reporter to add to the list.
-     * @return A comma-separated string containing the existing metric reporters and the new metric reporter.
-     */
-    private String appendMetricReporter(String existingReporters, String newReporter) {
-        if (existingReporters == null || existingReporters.isEmpty()) {
-            return newReporter;
+    private void addConfigProviders(KafkaConfiguration userConfig) {
+        String strimziConfigProviders;
+        if (node.broker()) {
+            // File and Directory providers are used only on broker nodes
+            strimziConfigProviders = "strimzienv,strimzifile,strimzidir";
         } else {
-            return existingReporters + "," + newReporter;
+            strimziConfigProviders = "strimzienv";
+        }
+
+        ModelUtils.createOrAddConfigListValue(userConfig, "config.providers", strimziConfigProviders);
+
+        ModelUtils.createOrUpdateConfigValue(userConfig, "config.providers.strimzienv.class", "org.apache.kafka.common.config.provider.EnvVarConfigProvider");
+        ModelUtils.createOrUpdateConfigValue(userConfig, "config.providers.strimzienv.param.allowlist.pattern", ".*");
+
+        if (node.broker()) {
+            // File and Directory providers are used only on broker nodes
+            ModelUtils.createOrUpdateConfigValue(userConfig, "config.providers.strimzifile.class", "org.apache.kafka.common.config.provider.FileConfigProvider");
+            ModelUtils.createOrUpdateConfigValue(userConfig, "config.providers.strimzifile.param.allowed.paths", "/opt/kafka");
+            ModelUtils.createOrUpdateConfigValue(userConfig, "config.providers.strimzidir.class", "org.apache.kafka.common.config.provider.DirectoryConfigProvider");
+            ModelUtils.createOrUpdateConfigValue(userConfig, "config.providers.strimzidir.param.allowed.paths", "/opt/kafka");
+        }
+    }
+
+    private void maybeAddMetricReporters(KafkaConfiguration userConfig, boolean injectCcMetricsReporter, boolean injectStrimziMetricsReporter) {
+        String ccReporter = CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER;
+        String strimziReporter = StrimziMetricsReporterConfig.KAFKA_CLASS;
+        if (injectCcMetricsReporter && injectStrimziMetricsReporter) {
+            ModelUtils.createOrAddConfigListValue(userConfig, "metric.reporters", ccReporter + "," + strimziReporter);
+        } else if (injectCcMetricsReporter) {
+            ModelUtils.createOrAddConfigListValue(userConfig, "metric.reporters", ccReporter);
+        } else if (injectStrimziMetricsReporter) {
+            ModelUtils.createOrAddConfigListValue(userConfig, "metric.reporters", strimziReporter);
+        }
+    }
+
+    private void maybeAddKafkaMetricsReporters(KafkaConfiguration userConfig, boolean injectStrimziMetricsReporter) {
+        if (injectStrimziMetricsReporter) {
+            ModelUtils.createOrAddConfigListValue(userConfig, "kafka.metrics.reporters", StrimziMetricsReporterConfig.YAMMER_CLASS);
         }
     }
 
