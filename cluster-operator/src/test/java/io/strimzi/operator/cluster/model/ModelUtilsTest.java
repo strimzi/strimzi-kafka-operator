@@ -34,7 +34,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ParallelSuite
 public class ModelUtilsTest {
-
     @ParallelTest
     public void testParseImageMap() {
         Map<String, String> m = parseMap(
@@ -46,7 +45,7 @@ public class ModelUtilsTest {
 
         m = parseMap(
                 KafkaVersionTestUtils.LATEST_KAFKA_VERSION + "=" + KafkaVersionTestUtils.LATEST_KAFKA_IMAGE + "," +
-                        KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION + "=" + KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE);
+                KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION + "=" + KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE);
         assertThat(m.size(), is(2));
         assertThat(m.get(KafkaVersionTestUtils.LATEST_KAFKA_VERSION), is(KafkaVersionTestUtils.LATEST_KAFKA_IMAGE));
         assertThat(m.get(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION), is(KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE));
@@ -71,10 +70,10 @@ public class ModelUtilsTest {
     }
 
     @ParallelTest
-    public void testStorageSerializationAndDeserialization() {
+    public void testStorageSerializationAndDeserialization()    {
         Storage jbod = new JbodStorageBuilder().withVolumes(
-                        new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("100Gi").build(),
-                        new PersistentClaimStorageBuilder().withStorageClass("gp2-st1").withDeleteClaim(true).withId(1).withSize("1000Gi").build())
+                new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("100Gi").build(),
+                new PersistentClaimStorageBuilder().withStorageClass("gp2-st1").withDeleteClaim(true).withId(1).withSize("1000Gi").build())
                 .build();
 
         Storage ephemeral = new EphemeralStorageBuilder().build();
@@ -87,11 +86,11 @@ public class ModelUtilsTest {
     }
 
     @ParallelTest
-    public void testCreateOwnerReference() {
+    public void testCreateOwnerReference()   {
         Kafka owner = new KafkaBuilder()
                 .withNewMetadata()
-                .withName("my-kafka")
-                .withUid("some-uid")
+                    .withName("my-kafka")
+                    .withUid("some-uid")
                 .endMetadata()
                 .build();
 
@@ -106,11 +105,11 @@ public class ModelUtilsTest {
     }
 
     @ParallelTest
-    public void testCreateControllerOwnerReference() {
+    public void testCreateControllerOwnerReference()   {
         StrimziPodSet owner = new StrimziPodSetBuilder()
                 .withNewMetadata()
-                .withName("my-cluster-kafka")
-                .withUid("some-uid")
+                    .withName("my-cluster-kafka")
+                    .withUid("some-uid")
                 .endMetadata()
                 .build();
 
@@ -125,7 +124,7 @@ public class ModelUtilsTest {
     }
 
     @ParallelTest
-    public void testHasOwnerReference() {
+    public void testHasOwnerReference()    {
         OwnerReference owner = new OwnerReferenceBuilder()
                 .withApiVersion("my-api")
                 .withKind("my-kind")
@@ -145,21 +144,21 @@ public class ModelUtilsTest {
                 .build();
 
         Pod pod = new PodBuilder()
-                .withNewMetadata()
-                .withName("my-pod")
-                .withNamespace("my-namespace")
-                .endMetadata()
-                .withNewSpec()
-                .withContainers(new ContainerBuilder()
-                        .withName("busybox")
-                        .withImage("busybox")
-                        .withCommand("sleep", "3600")
-                        .withImagePullPolicy("IfNotPresent")
-                        .build())
-                .withRestartPolicy("Always")
-                .withTerminationGracePeriodSeconds(0L)
-                .endSpec()
-                .build();
+                    .withNewMetadata()
+                        .withName("my-pod")
+                        .withNamespace("my-namespace")
+                    .endMetadata()
+                    .withNewSpec()
+                        .withContainers(new ContainerBuilder()
+                                .withName("busybox")
+                                .withImage("busybox")
+                                .withCommand("sleep", "3600")
+                                .withImagePullPolicy("IfNotPresent")
+                                .build())
+                        .withRestartPolicy("Always")
+                        .withTerminationGracePeriodSeconds(0L)
+                    .endSpec()
+                    .build();
 
         // No owner reference
         assertThat(ModelUtils.hasOwnerReference(pod, owner), is(false));
@@ -195,7 +194,6 @@ public class ModelUtilsTest {
         ModelUtils.createOrUpdateConfigValue(config, key, newValue);
 
         assertThat(config.getConfigOption(key), is(newValue));
-
     }
 
     @ParallelTest
@@ -203,14 +201,13 @@ public class ModelUtilsTest {
         // The value has changed, so new value should be added.
         KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
         String key = "test-key";
-        String updatedValue = "new-value";
+        String newValue = "new-value";
 
         config.setConfigOption(key, "initial-value");
-        ModelUtils.createOrUpdateConfigValue(config, key, updatedValue);
+        ModelUtils.createOrUpdateConfigValue(config, key, newValue);
 
-        assertThat(config.getConfigOption(key), is(updatedValue));
+        assertThat(config.getConfigOption(key), is(newValue));
     }
-
 
     @ParallelTest
     public void testCreateOrUpdateConfigValueSameValue() {
@@ -226,7 +223,7 @@ public class ModelUtilsTest {
     }
 
     @ParallelTest
-    public void testCreateOrAddConfigListValueNoValue() {
+    public void testCreateOrAddConfigListValueNewValue() {
         // The value does not exist in the list and should be appended.
         KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
         String key = "test-key";
@@ -238,7 +235,7 @@ public class ModelUtilsTest {
     }
 
     @ParallelTest
-    public void testCreateOrAddConfigListValueNewValue() {
+    public void testCreateOrAddConfigListValueExistingDoesNotContainValue() {
         // The value has changed in the list, so new value should be added.
         KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
         String key = "test-key";
@@ -252,7 +249,7 @@ public class ModelUtilsTest {
     }
 
     @ParallelTest
-    public void testCreateOrAddConfigListValueExistingValue() {
+    public void testCreateOrAddConfigListValueExistingContainsValue() {
         // The value already exists in the list, so it should not be added again.
         KafkaConfiguration config = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of());
         String key = "test-key";
