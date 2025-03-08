@@ -30,6 +30,8 @@ import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorageCustom;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.kafka.oauth.server.plain.ServerPlainConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
+import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
+import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 
@@ -59,7 +61,6 @@ public class KafkaBrokerConfigurationBuilder {
     // Names of environment variables expanded through config providers inside the Kafka node
     private final static String PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:CERTS_STORE_PASSWORD}";
     private final static String PLACEHOLDER_OAUTH_CLIENT_SECRET_TEMPLATE_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:STRIMZI_%s_OAUTH_CLIENT_SECRET}";
-
     private final StringWriter stringWriter = new StringWriter();
     private final PrintWriter writer = new PrintWriter(stringWriter);
     private final Reconciliation reconciliation;
@@ -128,6 +129,25 @@ public class KafkaBrokerConfigurationBuilder {
                 writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=" + ccMetricsReporter.minInSyncReplicas());
             }
 
+            writer.println();
+        }
+
+        return this;
+    }
+
+    /**
+     * Configures the Strimzi Metrics Reporter. It is set only if user enabled Strimzi Metrics Reporter.
+     *
+     * @param model     Strimzi Metrics Reporter configuration
+     *
+     * @return Returns the builder instance
+     */
+    public KafkaBrokerConfigurationBuilder withStrimziMetricsReporter(StrimziMetricsReporterModel model)   {
+        if (model != null && model.isEnabled()) {
+            printSectionHeader("Strimzi Metrics Reporter configuration");
+            writer.println(StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true");
+            writer.println(StrimziMetricsReporterConfig.LISTENER + "=http://0.0.0.0:" + StrimziMetricsReporterModel.METRICS_PORT);
+            model.getAllowList().ifPresent(allowList -> writer.println(StrimziMetricsReporterConfig.ALLOW_LIST + "=" + allowList));
             writer.println();
         }
 
@@ -783,48 +803,80 @@ public class KafkaBrokerConfigurationBuilder {
     }
 
     /**
-     * Configures the configuration options passed by the user in the Kafka CR.
+     * Adds the configurations passed by the user in the Kafka CR, injecting Strimzi configurations when needed.
      *
-     * @param userConfig                The User configuration - Kafka broker configuration options specified by the user in the Kafka custom resource
-     * @param injectCcMetricsReporter   Inject the Cruise Control Metrics Reporter into the configuration
+     * @param userConfig                     The User configuration - Kafka broker configuration options specified by the user in the Kafka custom resource
+     * @param injectCcMetricsReporter        Inject the Cruise Control Metrics Reporter into the configuration
+     * @param injectStrimziMetricsReporter   Inject the Strimzi Metrics Reporter into the configuration
      *
      * @return Returns the builder instance
      */
-    public KafkaBrokerConfigurationBuilder withUserConfiguration(KafkaConfiguration userConfig, boolean injectCcMetricsReporter)  {
-        if (userConfig != null && !userConfig.getConfiguration().isEmpty()) {
-            // We have to create a copy of the configuration before we modify it
-            userConfig = new KafkaConfiguration(userConfig);
+    public KafkaBrokerConfigurationBuilder withUserConfiguration(KafkaConfiguration userConfig,
+                                                                 boolean injectCcMetricsReporter,
+                                                                 boolean injectStrimziMetricsReporter) {
+        // we have to create a copy of the configuration before we modify it
+        userConfig = userConfig != null
+                ? new KafkaConfiguration(userConfig)
+                : new KafkaConfiguration(reconciliation, new ArrayList<>());
 
-            // Configure the configuration providers => we have to inject the Strimzi ones
-            configProviders(userConfig);
+        // configure config.providers
+        addConfigProviders(userConfig);
 
-            if (injectCcMetricsReporter)  {
-                // We configure the Cruise Control Metrics Reporter is needed
-                if (userConfig.getConfigOption(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD) != null) {
-                    if (!userConfig.getConfigOption(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD).contains(CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER)) {
-                        userConfig.setConfigOption(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD, userConfig.getConfigOption(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD) + "," + CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER);
-                    }
-                } else {
-                    userConfig.setConfigOption(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD, CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER);
-                }
-            }
+        // configure metric.reporters
+        maybeAddMetricReporters(userConfig, injectCcMetricsReporter, injectStrimziMetricsReporter);
 
-            printSectionHeader("User provided configuration");
+        // configure kafka.metrics.reporters
+        maybeAddKafkaMetricsReporters(userConfig, injectStrimziMetricsReporter);
+
+        // print user config with Strimzi injections
+        if (!userConfig.getConfiguration().isBlank()) {
+            printSectionHeader("User provided configuration with Strimzi injections");
             writer.println(userConfig.getConfiguration());
             writer.println();
-        } else {
-            // Configure the configuration providers => we have to inject the Strimzi ones
-            configProviders(userConfig);
-
-            if (injectCcMetricsReporter) {
-                // There is no user provided configuration. But we still need to inject the Cruise Control Metrics Reporter
-                printSectionHeader("Cruise Control Metrics Reporter");
-                writer.println(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD + "=" + CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER);
-                writer.println();
-            }
         }
 
         return this;
+    }
+
+    private void addConfigProviders(KafkaConfiguration userConfig) {
+        String strimziConfigProviders;
+        if (node.broker()) {
+            // File and Directory providers are used only on broker nodes
+            strimziConfigProviders = "strimzienv,strimzifile,strimzidir";
+        } else {
+            strimziConfigProviders = "strimzienv";
+        }
+
+        ModelUtils.createOrAddConfigListValue(userConfig, "config.providers", strimziConfigProviders);
+
+        ModelUtils.createOrUpdateConfigValue(userConfig, "config.providers.strimzienv.class", "org.apache.kafka.common.config.provider.EnvVarConfigProvider");
+        ModelUtils.createOrUpdateConfigValue(userConfig, "config.providers.strimzienv.param.allowlist.pattern", ".*");
+
+        if (node.broker()) {
+            // File and Directory providers are used only on broker nodes
+            ModelUtils.createOrUpdateConfigValue(userConfig, "config.providers.strimzifile.class", "org.apache.kafka.common.config.provider.FileConfigProvider");
+            ModelUtils.createOrUpdateConfigValue(userConfig, "config.providers.strimzifile.param.allowed.paths", "/opt/kafka");
+            ModelUtils.createOrUpdateConfigValue(userConfig, "config.providers.strimzidir.class", "org.apache.kafka.common.config.provider.DirectoryConfigProvider");
+            ModelUtils.createOrUpdateConfigValue(userConfig, "config.providers.strimzidir.param.allowed.paths", "/opt/kafka");
+        }
+    }
+
+    private void maybeAddMetricReporters(KafkaConfiguration userConfig, boolean injectCcMetricsReporter, boolean injectStrimziMetricsReporter) {
+        String ccReporter = CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER;
+        String strimziReporter = StrimziMetricsReporterConfig.KAFKA_CLASS;
+        if (injectCcMetricsReporter && injectStrimziMetricsReporter) {
+            ModelUtils.createOrAddConfigListValue(userConfig, "metric.reporters", ccReporter + "," + strimziReporter);
+        } else if (injectCcMetricsReporter) {
+            ModelUtils.createOrAddConfigListValue(userConfig, "metric.reporters", ccReporter);
+        } else if (injectStrimziMetricsReporter) {
+            ModelUtils.createOrAddConfigListValue(userConfig, "metric.reporters", strimziReporter);
+        }
+    }
+
+    private void maybeAddKafkaMetricsReporters(KafkaConfiguration userConfig, boolean injectStrimziMetricsReporter) {
+        if (injectStrimziMetricsReporter) {
+            ModelUtils.createOrAddConfigListValue(userConfig, "kafka.metrics.reporters", StrimziMetricsReporterConfig.YAMMER_CLASS);
+        }
     }
 
     /**
