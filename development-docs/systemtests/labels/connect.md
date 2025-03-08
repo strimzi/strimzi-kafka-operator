@@ -11,8 +11,8 @@ maintaining data consistency and availability in a streaming ecosystem.
 <!-- generated part -->
 **Tests:**
 - [testConnectLogSetting](../io.strimzi.systemtest.log.LogSettingST.md)
-- [testBuildFailsWithWrongChecksumOfArtifact](../io.strimzi.systemtest.connect.ConnectBuilderST.md)
 - [testScaleConnectWithoutConnectorToZero](../io.strimzi.systemtest.connect.ConnectST.md)
+- [testBuildFailsWithWrongChecksumOfArtifact](../io.strimzi.systemtest.connect.ConnectBuilderST.md)
 - [testBuildWithJarTgzAndZip](../io.strimzi.systemtest.connect.ConnectBuilderST.md)
 - [testKafkaConnectWithPlainAndScramShaAuthentication](../io.strimzi.systemtest.connect.ConnectST.md)
 - [testKafkaConnectScaleUpScaleDown](../io.strimzi.systemtest.connect.ConnectST.md)
@@ -32,8 +32,8 @@ maintaining data consistency and availability in a streaming ecosystem.
 - [testKafkaConnectAndConnectorMetrics](../io.strimzi.systemtest.metrics.MetricsST.md)
 - [testKafkaConnectWithScramShaAuthenticationRolledAfterPasswordChanged](../io.strimzi.systemtest.connect.ConnectST.md)
 - [testJvmAndResources](../io.strimzi.systemtest.connect.ConnectST.md)
-- [testBuildOtherPluginTypeWithAndWithoutFileName](../io.strimzi.systemtest.connect.ConnectBuilderST.md)
 - [testSecretsWithKafkaConnectWithTlsAndScramShaAuthentication](../io.strimzi.systemtest.connect.ConnectST.md)
+- [testBuildOtherPluginTypeWithAndWithoutFileName](../io.strimzi.systemtest.connect.ConnectBuilderST.md)
 - [testConnectScramShaAuthWithWeirdUserName](../io.strimzi.systemtest.connect.ConnectST.md)
 - [testBuildPluginUsingMavenCoordinatesArtifacts](../io.strimzi.systemtest.connect.ConnectBuilderST.md)
 - [testUpdateConnectWithAnotherPlugin](../io.strimzi.systemtest.connect.ConnectBuilderST.md)
