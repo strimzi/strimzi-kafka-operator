@@ -67,7 +67,6 @@ import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.metrics.SupportsMetrics;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
@@ -108,12 +107,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      * Key under which the Connect configuration is stored in ConfigMap
      */
     public static final String KAFKA_CONNECT_CONFIGURATION_FILENAME = "kafka-connect.properties";
-
-    /**
-     * Annotation for rolling the connect pod whenever the configuration within the kafka-connect.properties file is changed.
-     * When the configuration hash annotation change is detected, we force a pod restart.
-     */
-    public static final String ANNO_STRIMZI_IO_CONFIGURATION_HASH = Annotations.STRIMZI_DOMAIN + "configuration-hash";
 
     // Kafka Connect configuration keys (EnvVariables)
     protected static final String ENV_VAR_PREFIX = "KAFKA_CONNECT_";
