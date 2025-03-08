@@ -43,6 +43,8 @@ public class InitWriterConfig {
     private final Map<String, Object> map;
 
     /**
+     * Returns set of keys obtained from the {@link #CONFIG_VALUES} map.
+     *
      * @return Set of configuration key/names
      */
     public static Set<String> keyNames() {
@@ -79,34 +81,45 @@ public class InitWriterConfig {
     }
 
     /**
-     * @return Kubernetes cluster node name from which getting the rack related label
+     * Returns name of Kubernetes cluster node from which getting the rack related label
+     *
+     * @return Kubernetes cluster node name from {@link #NODE_NAME}
      */
     public String getNodeName() {
         return get(NODE_NAME);
     }
 
     /**
-     * @return the Kubernetes cluster node label to use as topology key for rack definition
+     * Returns the Kubernetes cluster node label to use as topology key for rack definition
+     *
+     * @return rack topology key from {@link #RACK_TOPOLOGY_KEY}
      */
     public String getRackTopologyKey() {
         return get(RACK_TOPOLOGY_KEY);
     }
 
     /**
-     * @return folder where the rackid file is written
+     * Returns folder where the rackid file is written, taken from the {@link #INIT_FOLDER}.
+     *
+     * @return init folder where the rackid file is written.
      */
     public String getInitFolder() {
         return get(INIT_FOLDER);
     }
 
     /**
-     * @return Return whether external address should be acquired
+     * Returns boolean value that determines if the external address should be acquired or not.
+     * Taken from {@link #EXTERNAL_ADDRESS}.
+     *
+     * @return boolean value determining if the external address should be acquired
      */
     public boolean isExternalAddress() {
         return get(EXTERNAL_ADDRESS);
     }
 
     /**
+     * Returns type of the external address, taken from the {@link #EXTERNAL_ADDRESS_TYPE}.
+     *
      * @return The address type which should be preferred in the selection
      */
     public String getAddressType() {

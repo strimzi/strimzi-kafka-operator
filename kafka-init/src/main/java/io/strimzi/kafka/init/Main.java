@@ -16,6 +16,14 @@ public class Main {
     private static final Logger LOGGER = LogManager.getLogger(Main.class);
 
     /**
+     * Default constructor for the Main class.
+     * The constructor is intentionally left empty.
+     */
+    public Main() {
+        // No initialization required
+    }
+
+    /**
      * The main method
      *
      * @param args  Array with arguments form the command line
