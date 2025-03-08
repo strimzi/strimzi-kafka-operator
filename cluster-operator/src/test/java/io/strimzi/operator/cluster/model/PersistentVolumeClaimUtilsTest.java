@@ -56,6 +56,7 @@ public class PersistentVolumeClaimUtilsTest {
             .build();
     private final static PersistentClaimStorage PERSISTENT_CLAIM_STORAGE = new PersistentClaimStorageBuilder()
             .withStorageClass("my-storage-class")
+            .withVolumeAttributesClass("my-volume-attributes-class")
             .withSize("100Gi")
             .build();
     private final static Set<NodeRef> SINGLE_NODE = Set.of(new NodeRef(NAME + "-" + 0, 0, null, false, true));
@@ -106,6 +107,7 @@ public class PersistentVolumeClaimUtilsTest {
         assertThat(pvcs.get(0).getSpec().getSelector(), is(nullValue()));
         assertThat(pvcs.get(0).getSpec().getResources().getRequests(), is(Map.of("storage", new Quantity("100Gi", null))));
         assertThat(pvcs.get(0).getSpec().getStorageClassName(), is("my-storage-class"));
+        assertThat(pvcs.get(0).getSpec().getVolumeAttributesClassName(), is("my-volume-attributes-class"));
     }
 
     @ParallelTest
