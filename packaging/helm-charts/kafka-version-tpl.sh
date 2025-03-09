@@ -15,20 +15,20 @@ get_default_kafka_version
 get_kafka_does_not_support
 
 # Set the default images
-kafka_exporter_version="{{ template \"strimzi.image\" (merge . (dict \"key\" \"kafkaExporter\" \"tagSuffix\" \"-kafka-${default_kafka_version}\")) }}"
+kafka_exporter_version="{{ template \"strimzi.image\" (merge . (dict \"key\" \"kafkaExporter\" \"version\" \"${default_kafka_version}\" \"defaultTagSuffix\" \"-kafka-${default_kafka_version}\")) }}"
 
 for version in "${versions[@]}"
 do
-    kafka_exporter_version="{{ template \"strimzi.image\" (merge . (dict \"key\" \"kafkaExporter\" \"tagSuffix\" \"-kafka-${version}\")) }}"
-    cruise_control_version="{{ template \"strimzi.image\" (merge . (dict \"key\" \"cruiseControl\" \"tagSuffix\" \"-kafka-${version}\")) }}"
+    kafka_exporter_version="{{ template \"strimzi.image\" (merge . (dict \"key\" \"kafkaExporter\" \"version\" \"${version}\" \"defaultTagSuffix\" \"-kafka-${version}\")) }}"
+    cruise_control_version="{{ template \"strimzi.image\" (merge . (dict \"key\" \"cruiseControl\" \"version\" \"${version}\" \"defaultTagSuffix\" \"-kafka-${version}\")) }}"
     kafka_versions="${kafka_versions}
-${version}={{ template \"strimzi.image\" (merge . (dict \"key\" \"kafka\" \"tagSuffix\" \"-kafka-${version}\")) }}"
+${version}={{ template \"strimzi.image\" (merge . (dict \"key\" \"kafka\" \"version\" \"${version}\" \"defaultTagSuffix\" \"-kafka-${version}\")) }}"
     kafka_connect_versions="${kafka_connect_versions}
-${version}={{ template \"strimzi.image\" (merge . (dict \"key\" \"kafkaConnect\" \"tagSuffix\" \"-kafka-${version}\")) }}"
+${version}={{ template \"strimzi.image\" (merge . (dict \"key\" \"kafkaConnect\" \"version\" \"${version}\" \"defaultTagSuffix\" \"-kafka-${version}\")) }}"
     kafka_exporter_versions="${kafka_exporter_versions}
-${version}={{ template \"strimzi.image\" (merge . (dict \"key\" \"kafkaExporter\" \"tagSuffix\" \"-kafka-${version}\")) }}"
+${version}={{ template \"strimzi.image\" (merge . (dict \"key\" \"kafkaExporter\" \"version\" \"${version}\" \"defaultTagSuffix\" \"-kafka-${version}\")) }}"
     kafka_mirror_maker_2_versions="${kafka_mirror_maker_2_versions}
-${version}={{ template \"strimzi.image\" (merge . (dict \"key\" \"kafkaMirrorMaker2\" \"tagSuffix\" \"-kafka-${version}\")) }}"
+${version}={{ template \"strimzi.image\" (merge . (dict \"key\" \"kafkaMirrorMaker2\" \"version\" \"${version}\" \"defaultTagSuffix\" \"-kafka-${version}\")) }}"
 done
 
 kafka_versions=$(echo "$kafka_versions" | sed 's/^/                /g')
