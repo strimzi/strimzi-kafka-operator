@@ -120,6 +120,8 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
 
         connectServiceAccount(reconciliation, namespace, KafkaMirrorMaker2Resources.serviceAccountName(mirrorMaker2Cluster.getCluster()), mirrorMaker2Cluster)
                 .compose(i -> connectInitClusterRoleBinding(reconciliation, initCrbName, initCrb))
+                .compose(i -> connectRole(reconciliation, namespace, mirrorMaker2Cluster))
+                .compose(i -> connectRoleBinding(reconciliation, namespace, mirrorMaker2Cluster))
                 .compose(i -> connectNetworkPolicy(reconciliation, namespace, mirrorMaker2Cluster, true))
                 .compose(i -> manualRollingUpdate(reconciliation, mirrorMaker2Cluster))
                 .compose(i -> serviceOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getServiceName(), mirrorMaker2Cluster.generateService()))

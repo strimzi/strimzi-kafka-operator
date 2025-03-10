@@ -17,6 +17,8 @@
 * Adopted new Kafka Connect health check endpoint (see [proposal 89](https://github.com/strimzi/proposals/blob/main/089-adopt-connect-health-endpoint.md)).
 * Update standalone User Operator to handle Cluster CA cert Secret being missing when TLS is not needed.
 * Strimzi Drain Cleaner updated to 1.3.0 (included in the Strimzi installation files)
+* Kafka Connect SSL configurations now uses Kafka Kubernetes Config Provider to load certificates directly from secrets.
+* Kafka Connect truststore and keystore configurations now uses Kafka Kubernetes Config Provider to load PEM certificates directly from secrets.
 
 ### Major changes, deprecations and removals
 
@@ -39,6 +41,8 @@
   Please use the template section to configure additional volumes instead.
 * Kafka 4.0 and newer is using Log4j2 for logging instead of Reload4j/Log4j1.
   If you have any custom logging configuration, you might need to update it during the upgrade to Kafka 4.0.
+* KafkaConnect now uses PEM files instead of PKCS12/JKS for keystore and truststore. 
+  * If you override "ssl.truststore.location" and "ssl.keystore.location" in your Connector configurations, then you must update them to override "ssl.truststore.certificates" and "ssl.keystore.certificate.chain" with PEM files instead.
 
 ## 0.45.0
 
