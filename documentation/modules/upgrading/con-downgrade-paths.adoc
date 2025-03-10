@@ -13,7 +13,9 @@ An incremental downgrade involves downgrading Strimzi from version {ProductVersi
 
 Multi-version downgrade::
 A multi-version downgrade involves downgrading from version {ProductVersion} to an older version of Strimzi within a single step, skipping one or more intermediate versions. 
-Downgrading to some older versions may not be sucessful, for example, due to configuration changes or extra steps for a particular Kafka version upgrade path performed by later versions that the target version is unable to undo. It is therefore necessary to validate your wanted downgrade path before attempting in a production environment. See table <<downgrade-version-limitations>> for details on specific paths.
+Downgrading to older versions may fail due to configuration changes or upgrade steps introduced in later versions that the target version cannot undo. 
+Validate your downgrade path before applying it in production. 
+See <<downgrade-version-limitations>> for details on specific paths.
 
 [id='con-downgrade-paths-kafka-versions-{context}']
 == Support for Kafka versions when downgrading
@@ -34,7 +36,7 @@ The following table details known limitations for specific downgrade paths.
 | Target Strimzi Version
 | Limitation
 
-| <= 0.45.0
+| \<= 0.45.0
 | The current Kafka version must be supported by the target Strimzi version.
 
 It is only possible to downgrade from unsupported Kafka versions in Strimzi version 0.46.0 and higher.

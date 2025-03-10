@@ -5,6 +5,10 @@
 [id='assembly-downgrade-cluster-operator-{context}']
 = Downgrading the Cluster Operator
 
+[role="_abstract"]
+Downgrading the Cluster Operator involves reverting the Strimzi Cluster Operator to a previous version. 
+You may also need to downgrade to a supported Kafka version.
+
 //steps to downgrade the operators
 include::../../modules/upgrading/proc-downgrade-cluster-operator.adoc[leveloffset=+1]
 
