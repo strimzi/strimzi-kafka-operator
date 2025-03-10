@@ -147,13 +147,16 @@ tests:
           repository: test-repo
           name: kafka-test
           tagPrefix: test-tag
+          tagSuffix: # these versions need to be updated to align with the compatible kafka version of the current release
+            "3.9.0": -test-suffix
+            "4.0.0": -test-suffix
     asserts:
       - equal:
           path: spec.template.spec.containers[0].env[5].name
           value: STRIMZI_KAFKA_IMAGES
       - matchRegex:
           path: spec.template.spec.containers[0].env[5].value
-          pattern: '[0-9]+\.[0-9]+\.[0-9]+=test.registry.com/test-repo/kafka-test:test-tag-kafka-[0-9]+\.[0-9]+\.[0-9]+'
+          pattern: '[0-9]+\.[0-9]+\.[0-9]+=test.registry.com/test-repo/kafka-test:test-tag-test-suffix'
 
   - it: should set IMAGE_PULL_SECRETS literally if provided as string
     set:

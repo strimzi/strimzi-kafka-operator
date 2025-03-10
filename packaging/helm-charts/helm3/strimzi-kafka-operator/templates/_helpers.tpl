@@ -39,16 +39,19 @@ Creates the image name from the registry, repository, image, tag, and digest
 - tagSuffix can be ignored by using tag instead of tagPrefix
 To use, add the following key/value pairs to the scope:
 - "key" [optional]: the key to lookup under .Values for the image map
-- "tagSuffix" [optional]: the suffix to add to tagPrefix or the default tag
-- Example: `template "strimzi.image" (merge . (dict "key" "cruiseControl" "tagSuffix" "-kafka-3.1.0"))`
+- "version" [optional]: used to specify tag prefixes by kafka version
+- "defaultTagSuffix" [optional]: the suffix to add to tagPrefix or the default tag if a version specific tag suffix isn't specified
+- Example: `template "strimzi.image" (merge . (dict "key" "cruiseControl" "defaultTagSuffix" "-kafka-3.1.0"))`
 */}}
 {{- define "strimzi.image" -}}
 {{- $vals := ternary .Values.image (index .Values .key).image (empty .key) -}}
 {{- $ref := join "/" (compact (list (default .Values.defaultImageRegistry $vals.registry) (default .Values.defaultImageRepository $vals.repository) (default .Values.defaultImageName $vals.name))) -}}
-{{- $tag := join "" (compact (list (coalesce $vals.tag $vals.tagPrefix .Values.defaultImageTag) (ternary .tagSuffix "" (empty $vals.tag)))) -}}
+{{- $tagSuffix := default .defaultTagSuffix (and $vals.tagSuffix .version (index $vals.tagSuffix .version)) -}}
+{{- $tag := join "" (compact (list (coalesce $vals.tag $vals.tagPrefix .Values.defaultImageTag) (ternary $tagSuffix "" (empty $vals.tag)))) -}}
 {{- join "" (compact (list $ref (ternary ":" "@" (empty $vals.digest)) (default $tag $vals.digest))) -}}
 {{- $_ := unset . "key" -}}
-{{- $_ := unset . "tagSuffix" -}}
+{{- $_ := unset . "version" -}}
+{{- $_ := unset . "defaultTagSuffix" -}}
 {{- end -}}
 
 {{/*
