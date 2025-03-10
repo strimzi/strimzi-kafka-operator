@@ -171,23 +171,6 @@ public class LogCaptor implements AutoCloseable {
     }
 
     /**
-     * Create a captor
-     * @param logger The logger though which the log message should (or should not) be omitted.
-     * @param level The level of the required message
-     * @param format The required message template text
-     * @param timeout A timeout
-     * @param unit A timeout unit
-     * @return Created LogCaptor
-     */
-    public static LogCaptor logFormatEquals(Logger logger,
-                                            Level level,
-                                            String format,
-                                            long timeout,
-                                            TimeUnit unit) {
-        return logEventMatches(logger, level, le -> format.equals(le.getMessage().getFormat()), timeout, unit);
-    }
-
-    /**
      * Cleans up the logging changes required by the captor
      * and either returns when the first matching log event is observed,
      * or throws a TimeoutException if the pre-configured timeout was reached before
