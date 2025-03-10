@@ -81,15 +81,16 @@ public class KafkaConnectConfigurationBuilder {
      * The configuration includes the trusted certificates store for TLS connection (server authentication)
      *
      * @param tls   client TLS configuration
+     * @param tlsCertsSecretName   name of the secret to read via config provider for truststore
      * @return  the builder instance
      */
-    public KafkaConnectConfigurationBuilder withTls(ClientTls tls) {
+    public KafkaConnectConfigurationBuilder withTls(ClientTls tls, String tlsCertsSecretName) {
         if (tls != null) {
             securityProtocol = "SSL";
 
             if (tls.getTrustedCertificates() != null && !tls.getTrustedCertificates().isEmpty()) {
                 printSectionHeader("TLS / SSL");
-                String configProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), tls.getTrustedCertificates().get(0).getSecretName(), "*.crt");
+                String configProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), tlsCertsSecretName, "*.crt");
                 writer.println("ssl.truststore.certificates=" + configProviderValue);
                 writer.println("ssl.truststore.type=PEM");
 

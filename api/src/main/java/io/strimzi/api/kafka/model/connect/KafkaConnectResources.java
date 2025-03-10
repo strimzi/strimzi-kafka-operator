@@ -120,12 +120,25 @@ public class KafkaConnectResources {
     /**
      * Get the name of the Kafka Connect role binding given the name of the {@code cluster}.
      *
-     * @param componentName  Name of the Kafka Connect component
+     * @param clusterName  The cluster name.
      *
-     * @return The name of the init container's cluster role binding.
+     * @return The name of Kafka Connect role binding.
      */
-    public static String connectRoleBindingName(String componentName) {
-        return componentName(componentName) + "-role";
+    public static String connectRoleBindingName(String clusterName) {
+        return componentName(clusterName) + "-connect-role";
+    }
+
+    /**
+     * Get the name of the internal secret that contains TLS trusted certificates.
+     * The operator copies user specified secrets for trusted certificates into
+     * a single secret with this name. It is then used when configuring Connect.
+     *
+     * @param clusterName The cluster name.
+     *
+     * @return Name of the internal secret that contains TLS trusted certificates.
+     */
+    public static String internalTlsCertsSecretName(String clusterName) {
+        return componentName(clusterName) + "connect-tls-certs";
     }
 
     /**
