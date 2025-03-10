@@ -15,6 +15,7 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.AbstractJsonDiff;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -36,6 +37,7 @@ public class StorageDiff extends AbstractJsonDiff {
     private final boolean volumesAddedOrRemoved;
     private final boolean tooManyKRaftMetadataVolumes;
     private final boolean duplicateVolumeIds;
+    private final boolean volumeAttributesClassChanged;
 
     /**
      * Diffs the storage for allowed or not allowed changes. Examples of allowed changes is increasing volume size or
@@ -70,6 +72,7 @@ public class StorageDiff extends AbstractJsonDiff {
         boolean volumesAddedOrRemoved = false;
         boolean tooManyKRaftMetadataVolumes = false;
         boolean duplicateVolumeIds = false;
+        boolean volumeAttributesClassChanged = false;
 
         if (current instanceof JbodStorage currentJbodStorage && desired instanceof JbodStorage desiredJbodStorage) {
             Set<Integer> volumeIds = new HashSet<>();
@@ -99,6 +102,7 @@ public class StorageDiff extends AbstractJsonDiff {
                 changesType |= diff.changesType();
                 shrinkSize |= diff.shrinkSize();
                 isEmpty &= diff.isEmpty();
+                volumeAttributesClassChanged |= diff.volumeAttributesClassChanged();
             }
         } else {
             JsonNode source = PATCH_MAPPER.valueToTree(current == null ? "{}" : current);
@@ -115,16 +119,25 @@ public class StorageDiff extends AbstractJsonDiff {
                     continue;
                 }
 
-                // It might be possible to increase the volume size, but never to shrink volumes
-                // When size changes, we need to detect whether it is shrinking or increasing
-                if (pathValue.endsWith("/size") && desired.getType().equals(current.getType()) && current instanceof PersistentClaimStorage persistentCurrent && desired instanceof PersistentClaimStorage persistentDesired)    {
+                if (current instanceof PersistentClaimStorage persistentCurrent && desired instanceof PersistentClaimStorage persistentDesired
+                    && desired.getType().equals(current.getType())) {
+                    // It might be possible to increase the volume size, but never to shrink volumes
+                    // When size changes, we need to detect whether it is shrinking or increasing
+                    if (pathValue.endsWith("/size")) {
 
-                    long currentSize = StorageUtils.convertToMillibytes(persistentCurrent.getSize());
-                    long desiredSize = StorageUtils.convertToMillibytes(persistentDesired.getSize());
+                        long currentSize = StorageUtils.convertToMillibytes(persistentCurrent.getSize());
+                        long desiredSize = StorageUtils.convertToMillibytes(persistentDesired.getSize());
 
-                    if (currentSize > desiredSize) {
-                        shrinkSize = true;
-                    } else {
+                        if (currentSize > desiredSize) {
+                            shrinkSize = true;
+                        } else {
+                            continue;
+                        }
+                    }
+
+                    if (pathValue.endsWith("/volumeAttributesClass") &&
+                        !Objects.equals(persistentCurrent.getVolumeAttributesClass(), persistentDesired.getVolumeAttributesClass())) {
+                        volumeAttributesClassChanged = true;
                         continue;
                     }
                 }
@@ -148,6 +161,7 @@ public class StorageDiff extends AbstractJsonDiff {
         this.volumesAddedOrRemoved = volumesAddedOrRemoved;
         this.tooManyKRaftMetadataVolumes = tooManyKRaftMetadataVolumes;
         this.duplicateVolumeIds = duplicateVolumeIds;
+        this.volumeAttributesClassChanged = volumeAttributesClassChanged;
     }
 
     /**
@@ -212,6 +226,15 @@ public class StorageDiff extends AbstractJsonDiff {
      */
     protected boolean shrinkSize() {
         return shrinkSize;
+    }
+
+    /**
+     * Returns true if there's a difference in {@code /volumeAttributesClass}
+     *
+     * @return true when the volumeAttributesClass changes
+     */
+    protected boolean volumeAttributesClassChanged() {
+        return volumeAttributesClassChanged;
     }
 
     /**
