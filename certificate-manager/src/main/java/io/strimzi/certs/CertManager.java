@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
+import java.security.spec.InvalidKeySpecException;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -96,8 +97,13 @@ public interface CertManager {
      * @param keyStoreFile path to the file related to the keystore
      * @param keyStorePassword password for protecting the keystore
      * @throws IOException If an input or output file could not be read/written.
+     * @throws CertificateException if any problems reading the certificate file in X509 format
+     * @throws KeyStoreException if any problems with reading/writing the keystore
+     * @throws NoSuchAlgorithmException if specified algorithm for keystore is not supported
+     * @throws InvalidKeySpecException if any problems while getting the private key
      */
-    void addKeyAndCertToKeyStore(File keyFile, File certFile, String alias, File keyStoreFile, String keyStorePassword) throws IOException;
+    void addKeyAndCertToKeyStore(File keyFile, File certFile, String alias, File keyStoreFile, String keyStorePassword)
+            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException, InvalidKeySpecException;
 
     /**
      * Remove entries with provided aliases from the truststore
