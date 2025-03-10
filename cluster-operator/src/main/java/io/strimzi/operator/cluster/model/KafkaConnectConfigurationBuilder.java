@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticatio
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScramSha256;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationTls;
+import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.operator.common.Reconciliation;
 
 import java.io.PrintWriter;
@@ -84,15 +85,16 @@ public class KafkaConnectConfigurationBuilder {
      * The configuration includes the trusted certificates store for TLS connection (server authentication)
      *
      * @param tls   client TLS configuration
+     * @param clusterName   name of the the cluster
      * @return  the builder instance
      */
-    public KafkaConnectConfigurationBuilder withTls(ClientTls tls) {
+    public KafkaConnectConfigurationBuilder withTls(ClientTls tls, String clusterName) {
         if (tls != null) {
             securityProtocol = "SSL";
 
             if (tls.getTrustedCertificates() != null && !tls.getTrustedCertificates().isEmpty()) {
                 printSectionHeader("TLS / SSL");
-                String configProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), tls.getTrustedCertificates().get(0).getSecretName(), "*.crt");
+                String configProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), KafkaConnectResources.internalTlsCertsSecretName(clusterName), "*.crt");
                 writer.println("ssl.truststore.certificates=" + configProviderValue);
                 writer.println("ssl.truststore.type=PEM");
 
