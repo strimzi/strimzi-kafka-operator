@@ -98,12 +98,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     protected static final String ENV_VAR_CRUISE_CONTROL_METRICS_ENABLED = "CRUISE_CONTROL_METRICS_ENABLED";
 
     /**
-     * Annotation for rolling a cluster whenever the server configuration has changed.
-     * When the configuration hash annotation change is detected, we force a pod restart.
-     */
-    public static final String ANNO_STRIMZI_SERVER_CONFIGURATION_HASH = Annotations.STRIMZI_DOMAIN + "server-configuration-hash";
-
-    /**
      * Annotation for rolling a cluster whenever the capacity configuration has changed.
      * When the configuration hash annotation change is detected, we force a pod restart.
      */
