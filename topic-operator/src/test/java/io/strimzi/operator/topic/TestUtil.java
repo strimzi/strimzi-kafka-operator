@@ -38,17 +38,16 @@ import java.util.function.UnaryOperator;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class TopicOperatorTestUtil {
-    private static final Logger LOGGER = LogManager.getLogger(TopicOperatorTestUtil.class);
+public class TestUtil {
+    private static final Logger LOGGER = LogManager.getLogger(TestUtil.class);
     
-    private TopicOperatorTestUtil() { }
+    private TestUtil() { }
 
     public static <T> String namespaceName(Class<T> clazz) {
         return clazz != null ? clazz.getSimpleName().toLowerCase(Locale.ROOT) : "strimzi-topic-operator";
     }
 
     public static void setupKubeCluster(KubernetesClient kubernetesClient, String namespace) {
-        deleteNamespace(kubernetesClient, namespace);
         createNamespace(kubernetesClient, namespace);
         createOrReplace(kubernetesClient, "file://" + TestUtils.USER_PATH + "/../packaging/install/topic-operator/01-ServiceAccount-strimzi-topic-operator.yaml", namespace);
         createOrReplace(kubernetesClient, "file://" + TestUtils.USER_PATH + "/../packaging/install/topic-operator/02-Role-strimzi-topic-operator.yaml", namespace);
@@ -101,16 +100,6 @@ public class TopicOperatorTestUtil {
         }
     }
 
-    public static void deleteNamespace(KubernetesClient kubernetesClient, String name) {
-        Resource<Namespace> resource = kubernetesClient.namespaces().withName(name);
-        if (resource != null && resource.get() != null) {
-            LOGGER.info("Deleting namespace {}", name);
-            cleanupNamespace(kubernetesClient, name); // in case a previous test was interrupted leaving topics with finalizers
-            kubernetesClient.namespaces().resource(resource.get()).delete();
-            waitUntilCondition(kubernetesClient.namespaces().withName(name), Objects::isNull);
-        }
-    }
-
     public static void cleanupNamespace(KubernetesClient kubernetesClient, String name) {
         LOGGER.debug("Cleaning up namespace {}", name);
         try {
@@ -146,8 +135,7 @@ public class TopicOperatorTestUtil {
         int i = 2;
         while (true) {
             try {
-                KafkaTopic edited = Crds.topicOperation(client).inNamespace(ns).withName(metadataName).edit(changer);
-                return edited;
+                return Crds.topicOperation(client).inNamespace(ns).withName(metadataName).edit(changer);
             } catch (KubernetesClientException e) {
                 if (i == 0 || e.getCode() != 409 /* conflict */) {
                     throw e;
@@ -158,7 +146,7 @@ public class TopicOperatorTestUtil {
     }
 
     public static <T> T waitUntilCondition(Resource<T> resource, Predicate<T> condition) {
-        long timeoutMs = 30000L;
+        long timeoutMs = 30_000;
         long deadline = System.currentTimeMillis() + timeoutMs;
         while (true) {
             try {
@@ -166,7 +154,7 @@ public class TopicOperatorTestUtil {
             } catch (KubernetesClientTimeoutException e) {
                 if (System.currentTimeMillis() > deadline) {
                     fail("Timeout after " + timeoutMs + "ms waiting for " + condition +
-                            ", current resource: " + e.getResourcesNotReady().get(0), e);
+                            ", resources not ready: " + e.getResourcesNotReady(), e);
                     throw new IllegalStateException(); // never actually thrown, because fail() will throw
                 }
             }

@@ -7,7 +7,7 @@ package io.strimzi.operator.topic.cruisecontrol;
 import io.strimzi.operator.common.CruiseControlUtil;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlParameters;
-import io.strimzi.operator.topic.TopicOperatorTestUtil;
+import io.strimzi.operator.topic.TestUtil;
 import io.strimzi.test.ReadWriteUtils;
 import org.mockserver.configuration.ConfigurationProperties;
 import org.mockserver.integration.ClientAndServer;
@@ -29,7 +29,7 @@ import java.util.logging.LogManager;
  * Cruise Control mock.
  */
 public class MockCruiseControl {
-    private ClientAndServer server;
+    private final ClientAndServer server;
     
     /**
      * Sets up and returns a Cruise Control mock server.
@@ -37,8 +37,6 @@ public class MockCruiseControl {
      * @param serverPort   The port number the server should listen on.
      * @param tlsKeyFile   File containing the CA key.
      * @param tlsCrtFile   File containing the CA crt.
-     * 
-     * @return             The mock CruiseControl instance.
      */
     public MockCruiseControl(int serverPort, File tlsKeyFile, File tlsCrtFile) {
         try {
@@ -102,7 +100,7 @@ public class MockCruiseControl {
                     .withPath(CruiseControlEndpoints.TOPIC_CONFIGURATION.toString())
                     .withContentType(MediaType.APPLICATION_JSON)
                     .withHeader(new Header("Authorization", CruiseControlUtil.buildBasicAuthValue(
-                        TopicOperatorTestUtil.contentFromTextFile(apiUserFile), TopicOperatorTestUtil.contentFromTextFile(apiPassFile))
+                        TestUtil.contentFromTextFile(apiUserFile), TestUtil.contentFromTextFile(apiPassFile))
                     ))
                     .withSecure(true))
             .respond(
@@ -141,7 +139,7 @@ public class MockCruiseControl {
                     .withPath(CruiseControlEndpoints.TOPIC_CONFIGURATION.toString())
                     .withContentType(MediaType.APPLICATION_JSON)
                     .withHeader(new Header("Authorization", CruiseControlUtil.buildBasicAuthValue(
-                        TopicOperatorTestUtil.contentFromTextFile(apiUserFile), TopicOperatorTestUtil.contentFromTextFile(apiPassFile)))
+                        TestUtil.contentFromTextFile(apiUserFile), TestUtil.contentFromTextFile(apiPassFile)))
                     ))
             .respond(
                 HttpResponse.response()
@@ -162,7 +160,7 @@ public class MockCruiseControl {
                     .withPath(CruiseControlEndpoints.TOPIC_CONFIGURATION.toString())
                     .withContentType(MediaType.APPLICATION_JSON)
                     .withHeader(new Header("Authorization", CruiseControlUtil.buildBasicAuthValue(
-                        TopicOperatorTestUtil.contentFromTextFile(apiUserFile), TopicOperatorTestUtil.contentFromTextFile(apiPassFile))
+                        TestUtil.contentFromTextFile(apiUserFile), TestUtil.contentFromTextFile(apiPassFile))
                     ))
                     .withSecure(true))
             .respond(
@@ -184,7 +182,7 @@ public class MockCruiseControl {
                     .withPath(CruiseControlEndpoints.TOPIC_CONFIGURATION.toString())
                     .withContentType(MediaType.APPLICATION_JSON)
                     .withHeader(new Header("Authorization", CruiseControlUtil.buildBasicAuthValue(
-                        TopicOperatorTestUtil.contentFromTextFile(apiUserFile), TopicOperatorTestUtil.contentFromTextFile(apiPassFile))
+                        TestUtil.contentFromTextFile(apiUserFile), TestUtil.contentFromTextFile(apiPassFile))
                     ))
                     .withSecure(true))
             .respond(
@@ -204,7 +202,7 @@ public class MockCruiseControl {
                     .withPath(CruiseControlEndpoints.TOPIC_CONFIGURATION.toString())
                     .withContentType(MediaType.APPLICATION_JSON)
                     .withHeader(new Header("Authorization", CruiseControlUtil.buildBasicAuthValue(
-                        TopicOperatorTestUtil.contentFromTextFile(apiUserFile), TopicOperatorTestUtil.contentFromTextFile(apiPassFile))
+                        TestUtil.contentFromTextFile(apiUserFile), TestUtil.contentFromTextFile(apiPassFile))
                     ))
                     .withSecure(true))
             .respond(
@@ -237,7 +235,7 @@ public class MockCruiseControl {
                     .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
                     .withPath(CruiseControlEndpoints.USER_TASKS.toString())
                     .withHeader(new Header("Authorization", CruiseControlUtil.buildBasicAuthValue(
-                        TopicOperatorTestUtil.contentFromTextFile(apiUserFile), TopicOperatorTestUtil.contentFromTextFile(apiPassFile))
+                        TestUtil.contentFromTextFile(apiUserFile), TestUtil.contentFromTextFile(apiPassFile))
                     ))
                     .withSecure(true))
             .respond(
@@ -270,7 +268,7 @@ public class MockCruiseControl {
                     .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
                     .withPath(CruiseControlEndpoints.USER_TASKS.toString())
                     .withHeader(new Header("Authorization", CruiseControlUtil.buildBasicAuthValue(
-                        TopicOperatorTestUtil.contentFromTextFile(apiUserFile), TopicOperatorTestUtil.contentFromTextFile(apiPassFile)))
+                        TestUtil.contentFromTextFile(apiUserFile), TestUtil.contentFromTextFile(apiPassFile)))
                     ))
             .respond(
                 HttpResponse.response()
@@ -288,7 +286,7 @@ public class MockCruiseControl {
                     .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
                     .withPath(CruiseControlEndpoints.USER_TASKS.toString())
                     .withHeader(new Header("Authorization", CruiseControlUtil.buildBasicAuthValue(
-                        TopicOperatorTestUtil.contentFromTextFile(apiUserFile), TopicOperatorTestUtil.contentFromTextFile(apiPassFile))
+                        TestUtil.contentFromTextFile(apiUserFile), TestUtil.contentFromTextFile(apiPassFile))
                     ))
                     .withSecure(true))
             .respond(
@@ -307,7 +305,7 @@ public class MockCruiseControl {
                     .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
                     .withPath(CruiseControlEndpoints.USER_TASKS.toString())
                     .withHeader(new Header("Authorization", CruiseControlUtil.buildBasicAuthValue(
-                        TopicOperatorTestUtil.contentFromTextFile(apiUserFile), TopicOperatorTestUtil.contentFromTextFile(apiPassFile))
+                        TestUtil.contentFromTextFile(apiUserFile), TestUtil.contentFromTextFile(apiPassFile))
                     ))
                     .withSecure(true))
             .respond(
@@ -325,7 +323,7 @@ public class MockCruiseControl {
                     .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.toString(), "true"))
                     .withPath(CruiseControlEndpoints.USER_TASKS.toString())
                     .withHeader(new Header("Authorization", CruiseControlUtil.buildBasicAuthValue(
-                        TopicOperatorTestUtil.contentFromTextFile(apiUserFile), TopicOperatorTestUtil.contentFromTextFile(apiPassFile))
+                        TestUtil.contentFromTextFile(apiUserFile), TestUtil.contentFromTextFile(apiPassFile))
                     ))
                     .withSecure(true))
             .respond(

@@ -46,10 +46,10 @@ import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
 
-public class TopicOperatorMetricsIT implements TestSeparator {
-    private static final Logger LOGGER = LogManager.getLogger(TopicOperatorMetricsIT.class);
+public class MetricsIT implements TestSeparator {
+    private static final Logger LOGGER = LogManager.getLogger(MetricsIT.class);
 
-    private static final String NAMESPACE = TopicOperatorTestUtil.namespaceName(TopicOperatorMetricsIT.class);
+    private static final String NAMESPACE = TestUtil.namespaceName(MetricsIT.class);
     private static final int MAX_QUEUE_SIZE = 200;
     private static final int MAX_BATCH_SIZE = 10;
     private static final long MAX_BATCH_LINGER_MS = 10_000;
@@ -85,7 +85,7 @@ public class TopicOperatorMetricsIT implements TestSeparator {
 
     @AfterEach
     public void afterEach() {
-        TopicOperatorTestUtil.cleanupNamespace(kubernetesClient, NAMESPACE);
+        TestUtil.cleanupNamespace(kubernetesClient, NAMESPACE);
     }
 
     @Test
@@ -102,7 +102,7 @@ public class TopicOperatorMetricsIT implements TestSeparator {
             KafkaTopic kafkaTopic = buildTopicWithVersion("my-topic" + i);
             eventHandler.onAdd(kafkaTopic);
         }
-        assertMetricMatches(metricsHolder, MetricsHolder.METRICS_RESOURCES, "gauge", is(Double.valueOf(numOfTestResources)));
+        assertMetricMatches(metricsHolder, MetricsHolder.METRICS_RESOURCES, "gauge", is((double) numOfTestResources));
 
         for (int i = 0; i < numOfTestResources; i++) {
             KafkaTopic kafkaTopic = buildTopicWithVersion("my-topic" + i);
@@ -145,9 +145,9 @@ public class TopicOperatorMetricsIT implements TestSeparator {
         }
 
         assertMetricMatches(metricsHolder, TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_MAX_QUEUE_SIZE, "gauge", greaterThan(0.0));
-        assertMetricMatches(metricsHolder, TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_MAX_QUEUE_SIZE, "gauge", lessThanOrEqualTo(Double.valueOf(MAX_QUEUE_SIZE)));
+        assertMetricMatches(metricsHolder, TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_MAX_QUEUE_SIZE, "gauge", lessThanOrEqualTo((double) MAX_QUEUE_SIZE));
         assertMetricMatches(metricsHolder, TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_MAX_BATCH_SIZE, "gauge", greaterThan(0.0));
-        assertMetricMatches(metricsHolder, TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_MAX_BATCH_SIZE, "gauge", lessThanOrEqualTo(Double.valueOf(MAX_BATCH_SIZE)));
+        assertMetricMatches(metricsHolder, TopicOperatorMetricsHolder.METRICS_RECONCILIATIONS_MAX_BATCH_SIZE, "gauge", lessThanOrEqualTo((double) MAX_BATCH_SIZE));
         assertMetricMatches(metricsHolder, MetricsHolder.METRICS_RECONCILIATIONS_LOCKED, "counter", greaterThan(0.0));
         batchingLoop.stop();
     }
@@ -184,9 +184,9 @@ public class TopicOperatorMetricsIT implements TestSeparator {
             var t2 = createTopic("t2");
             var t3 = createTopic("t3");
             controller.onUpdate(List.of(
-                    TopicOperatorTestUtil.reconcilableTopic(t1, NAMESPACE),
-                    TopicOperatorTestUtil.reconcilableTopic(t2, NAMESPACE),
-                    TopicOperatorTestUtil.reconcilableTopic(t3, NAMESPACE)
+                    TestUtil.reconcilableTopic(t1, NAMESPACE),
+                    TestUtil.reconcilableTopic(t2, NAMESPACE),
+                    TestUtil.reconcilableTopic(t3, NAMESPACE)
             ));
 
             assertMetricMatches(metricsHolder, MetricsHolder.METRICS_RECONCILIATIONS, "counter", is(3.0));
@@ -202,7 +202,7 @@ public class TopicOperatorMetricsIT implements TestSeparator {
                 kt.getSpec().setConfig(Map.of(TopicConfig.RETENTION_MS_CONFIG, "86400000"));
                 return kt;
             });
-            controller.onUpdate(List.of(TopicOperatorTestUtil.reconcilableTopic(t1ConfigChanged, NAMESPACE)));
+            controller.onUpdate(List.of(TestUtil.reconcilableTopic(t1ConfigChanged, NAMESPACE)));
 
             assertMetricMatches(metricsHolder, MetricsHolder.METRICS_RECONCILIATIONS, "counter", is(4.0));
             assertMetricMatches(metricsHolder, MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(4.0));
@@ -217,7 +217,7 @@ public class TopicOperatorMetricsIT implements TestSeparator {
                 kt.getSpec().setPartitions(5);
                 return kt;
             });
-            controller.onUpdate(List.of(TopicOperatorTestUtil.reconcilableTopic(t2PartIncreased, NAMESPACE)));
+            controller.onUpdate(List.of(TestUtil.reconcilableTopic(t2PartIncreased, NAMESPACE)));
 
             assertMetricMatches(metricsHolder, MetricsHolder.METRICS_RECONCILIATIONS, "counter", is(5.0));
             assertMetricMatches(metricsHolder, MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(5.0));
@@ -231,7 +231,7 @@ public class TopicOperatorMetricsIT implements TestSeparator {
                 kt.getSpec().setPartitions(4);
                 return kt;
             });
-            controller.onUpdate(List.of(TopicOperatorTestUtil.reconcilableTopic(t2PartDecreased, NAMESPACE)));
+            controller.onUpdate(List.of(TestUtil.reconcilableTopic(t2PartDecreased, NAMESPACE)));
 
             assertMetricMatches(metricsHolder, MetricsHolder.METRICS_RECONCILIATIONS, "counter", is(6.0));
             assertMetricMatches(metricsHolder, MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(5.0));
@@ -246,8 +246,8 @@ public class TopicOperatorMetricsIT implements TestSeparator {
                 kt.getSpec().setReplicas(2);
                 return kt;
             });
-            controller.onUpdate(List.of(TopicOperatorTestUtil.reconcilableTopic(t3ReplIncreased, NAMESPACE)));
-            controller.onUpdate(List.of(TopicOperatorTestUtil.reconcilableTopic(t3ReplIncreased, NAMESPACE)));
+            controller.onUpdate(List.of(TestUtil.reconcilableTopic(t3ReplIncreased, NAMESPACE)));
+            controller.onUpdate(List.of(TestUtil.reconcilableTopic(t3ReplIncreased, NAMESPACE)));
 
             assertMetricMatches(metricsHolder, MetricsHolder.METRICS_RECONCILIATIONS, "counter", is(8.0));
             assertMetricMatches(metricsHolder, MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(7.0));
@@ -264,7 +264,7 @@ public class TopicOperatorMetricsIT implements TestSeparator {
                 kt.getMetadata().setAnnotations(Map.of(TopicOperatorUtil.MANAGED, "false"));
                 return kt;
             });
-            controller.onUpdate(List.of(TopicOperatorTestUtil.reconcilableTopic(t1Unmanaged, NAMESPACE)));
+            controller.onUpdate(List.of(TestUtil.reconcilableTopic(t1Unmanaged, NAMESPACE)));
 
             assertMetricMatches(metricsHolder, MetricsHolder.METRICS_RECONCILIATIONS, "counter", is(9.0));
             assertMetricMatches(metricsHolder, MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(8.0));
@@ -274,7 +274,7 @@ public class TopicOperatorMetricsIT implements TestSeparator {
             assertMetricMatches(metricsHolder, TopicOperatorMetricsHolder.METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
 
             // delete managed topics
-            controller.onDelete(List.of(TopicOperatorTestUtil.reconcilableTopic(
+            controller.onDelete(List.of(TestUtil.reconcilableTopic(
                     Crds.topicOperation(kubernetesClient).resource(t2).get(), NAMESPACE)));
 
             assertMetricMatches(metricsHolder, MetricsHolder.METRICS_RECONCILIATIONS, "counter", is(10.0));
@@ -286,7 +286,7 @@ public class TopicOperatorMetricsIT implements TestSeparator {
             assertMetricMatches(metricsHolder, TopicOperatorMetricsHolder.METRICS_DELETE_TOPICS_DURATION, "timer", greaterThan(0.0));
 
             // delete unmanaged topic
-            controller.onDelete(List.of(TopicOperatorTestUtil.reconcilableTopic(
+            controller.onDelete(List.of(TestUtil.reconcilableTopic(
                     Crds.topicOperation(kubernetesClient).resource(t1).get(), NAMESPACE)));
 
             assertMetricMatches(metricsHolder, MetricsHolder.METRICS_RECONCILIATIONS, "counter", is(11.0));
@@ -302,7 +302,7 @@ public class TopicOperatorMetricsIT implements TestSeparator {
                 kt.getMetadata().setAnnotations(Map.of(ResourceAnnotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
                 return kt;
             });
-            controller.onUpdate(List.of(TopicOperatorTestUtil.reconcilableTopic(t3Paused, NAMESPACE)));
+            controller.onUpdate(List.of(TestUtil.reconcilableTopic(t3Paused, NAMESPACE)));
 
             assertMetricMatches(metricsHolder, MetricsHolder.METRICS_RECONCILIATIONS, "counter", is(12.0));
             assertMetricMatches(metricsHolder, MetricsHolder.METRICS_RECONCILIATIONS_SUCCESSFUL, "counter", is(11.0));
@@ -312,7 +312,7 @@ public class TopicOperatorMetricsIT implements TestSeparator {
             assertMetricMatches(metricsHolder, TopicOperatorMetricsHolder.METRICS_DESCRIBE_CONFIGS_DURATION, "timer", greaterThan(0.0));
 
             // delete paused topic
-            controller.onDelete(List.of(TopicOperatorTestUtil.reconcilableTopic(
+            controller.onDelete(List.of(TestUtil.reconcilableTopic(
                     Crds.topicOperation(kubernetesClient).resource(t3).get(), NAMESPACE)));
 
             assertMetricMatches(metricsHolder, MetricsHolder.METRICS_RECONCILIATIONS, "counter", is(13.0));
@@ -352,7 +352,7 @@ public class TopicOperatorMetricsIT implements TestSeparator {
 
     private KafkaTopic updateTopic(String name, UnaryOperator<KafkaTopic> changer) {
         var kafkaTopic = Crds.topicOperation(kubernetesClient).inNamespace(NAMESPACE).withName(name).get();
-        return TopicOperatorTestUtil.changeTopic(kubernetesClient, kafkaTopic, changer);
+        return TestUtil.changeTopic(kubernetesClient, kafkaTopic, changer);
     }
 
     private void assertMetricMatches(MetricsHolder metricsHolder, String name, String type, Matcher<Double> matcher) throws InterruptedException {
