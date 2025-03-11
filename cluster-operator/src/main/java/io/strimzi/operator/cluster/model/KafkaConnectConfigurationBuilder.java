@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.model;
 
 
+import io.strimzi.api.kafka.model.common.CertSecretSource;
 import io.strimzi.api.kafka.model.common.ClientTls;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.common.authentication.KafkaClientAuthenticationOAuth;
@@ -17,6 +18,7 @@ import io.strimzi.operator.common.Reconciliation;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.List;
 
 import static io.strimzi.operator.cluster.model.KafkaConnectCluster.OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT;
 import static io.strimzi.operator.cluster.model.KafkaConnectCluster.PASSWORD_VOLUME_MOUNT;
@@ -89,7 +91,20 @@ public class KafkaConnectConfigurationBuilder {
 
             if (tls.getTrustedCertificates() != null && !tls.getTrustedCertificates().isEmpty()) {
                 printSectionHeader("TLS / SSL");
-                String configProviderValue = String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), tls.getTrustedCertificates().get(0).getSecretName(), "*.crt");
+
+                List<String> secretsToAppend = tls.getTrustedCertificates().stream()
+                        .map(CertSecretSource::getSecretName)
+                        .distinct().toList();
+
+                final StringBuilder configProviderValue = new StringBuilder();
+                secretsToAppend.stream().forEach(secret -> {
+                    configProviderValue.append(String.format(PLACEHOLDER_SECRET_TEMPLATE_KUBE_CONFIG_PROVIDER, reconciliation.namespace(), secret, "*.crt"));
+
+                    if (secretsToAppend.size() > 1 && secretsToAppend.indexOf(secret) != secretsToAppend.size() - 1) {
+                        configProviderValue.append("\\n");
+                    }
+                });
+
                 writer.println("ssl.truststore.certificates=" + configProviderValue);
                 writer.println("ssl.truststore.type=PEM");
 
