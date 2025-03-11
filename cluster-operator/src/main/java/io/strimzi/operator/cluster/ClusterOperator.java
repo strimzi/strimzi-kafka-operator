@@ -98,7 +98,7 @@ public class ClusterOperator extends AbstractVerticle {
         sharedWorkerExecutor = getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", config.getOperationsThreadPoolSize(), TimeUnit.SECONDS.toNanos(120));
 
         List<Future<?>> startFutures = new ArrayList<>(8);
-        startFutures.add(maybeStartStrimziPodSetController());
+        startFutures.add(startStrimziPodSetController());
 
         if (!config.isPodSetReconciliationOnly()) {
             List<AbstractOperator<?, ?, ?, ?>> operators = new ArrayList<>(asList(
@@ -142,7 +142,7 @@ public class ClusterOperator extends AbstractVerticle {
                 .onComplete(start);
     }
 
-    private Future<Void> maybeStartStrimziPodSetController() {
+    private Future<Void> startStrimziPodSetController() {
         return vertx.executeBlocking(() -> {
             try {
                 strimziPodSetController = new StrimziPodSetController(
