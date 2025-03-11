@@ -350,17 +350,6 @@ public class KafkaConnectClusterTest {
         assertThat(connectConfigurations, containsString("ssl.truststore.type=PEM"));
         assertThat(connectConfigurations, containsString("security.protocol=SSL"));
         assertThat(connectConfigurations, not(containsString("ssl.keystore.")));
-
-        // Check PodSet
-        StrimziPodSet podSet = kc.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
-        PodSetUtils.podSetToPods(podSet).forEach(pod -> {
-            assertThat(pod.getSpec().getVolumes().get(2).getName(), is("my-secret"));
-            assertThat(pod.getSpec().getVolumes().get(3).getName(), is("my-another-secret"));
-
-            List<Container> containers = pod.getSpec().getContainers();
-            assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is(KafkaConnectCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "my-secret"));
-            assertThat(containers.get(0).getVolumeMounts().get(3).getMountPath(), is(KafkaConnectCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "my-another-secret"));
-        });
     }
 
     @ParallelTest
@@ -391,17 +380,6 @@ public class KafkaConnectClusterTest {
         assertThat(connectConfigurations, containsString("security.protocol=SSL"));
         assertThat(connectConfigurations, containsString("ssl.truststore.certificates=${strimzisecrets:namespace/my-secret:*.crt}"));
         assertThat(connectConfigurations, containsString("ssl.truststore.type=PEM"));
-
-        // Check PodSet
-        StrimziPodSet podSet = kc.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
-        PodSetUtils.podSetToPods(podSet).forEach(pod -> {
-            assertThat(pod.getSpec().getVolumes().get(3).getName(), is("user-secret"));
-
-            List<Container> containers = pod.getSpec().getContainers();
-
-            assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is(KafkaConnectCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "my-secret"));
-            assertThat(containers.get(0).getVolumeMounts().get(3).getMountPath(), is(KafkaConnectCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "user-secret"));
-        });
     }
 
     @ParallelTest
@@ -509,15 +487,13 @@ public class KafkaConnectClusterTest {
 
             List<Container> containers = pod.getSpec().getContainers();
 
-            assertThat(containers.get(0).getVolumeMounts().size(), is(4));
+            assertThat(containers.get(0).getVolumeMounts().size(), is(3));
             assertThat(containers.get(0).getVolumeMounts().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
             assertThat(containers.get(0).getVolumeMounts().get(0).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
             assertThat(containers.get(0).getVolumeMounts().get(1).getName(), is("kafka-connect-configurations"));
             assertThat(containers.get(0).getVolumeMounts().get(1).getMountPath(), is("/opt/kafka/custom-config/"));
             assertThat(containers.get(0).getVolumeMounts().get(2).getName(), is("my-secret"));
-            assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is(KafkaConnectCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "my-secret"));
-            assertThat(containers.get(0).getVolumeMounts().get(3).getName(), is("my-secret"));
-            assertThat(containers.get(0).getVolumeMounts().get(3).getMountPath(), is(KafkaConnectCluster.PASSWORD_VOLUME_MOUNT + "my-secret"));
+            assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is(KafkaConnectCluster.PASSWORD_VOLUME_MOUNT + "my-secret"));
         });
     }
 
@@ -598,15 +574,13 @@ public class KafkaConnectClusterTest {
 
             List<Container> containers = pod.getSpec().getContainers();
 
-            assertThat(containers.get(0).getVolumeMounts().size(), is(4));
+            assertThat(containers.get(0).getVolumeMounts().size(), is(3));
             assertThat(containers.get(0).getVolumeMounts().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
             assertThat(containers.get(0).getVolumeMounts().get(0).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
             assertThat(containers.get(0).getVolumeMounts().get(1).getName(), is("kafka-connect-configurations"));
             assertThat(containers.get(0).getVolumeMounts().get(1).getMountPath(), is("/opt/kafka/custom-config/"));
             assertThat(containers.get(0).getVolumeMounts().get(2).getName(), is("my-secret"));
-            assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is(KafkaConnectCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "my-secret"));
-            assertThat(containers.get(0).getVolumeMounts().get(3).getName(), is("my-secret"));
-            assertThat(containers.get(0).getVolumeMounts().get(3).getMountPath(), is(KafkaConnectCluster.PASSWORD_VOLUME_MOUNT + "my-secret"));
+            assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is(KafkaConnectCluster.PASSWORD_VOLUME_MOUNT + "my-secret"));
         });
     }
 
@@ -687,15 +661,13 @@ public class KafkaConnectClusterTest {
 
             List<Container> containers = pod.getSpec().getContainers();
 
-            assertThat(containers.get(0).getVolumeMounts().size(), is(4));
+            assertThat(containers.get(0).getVolumeMounts().size(), is(3));
             assertThat(containers.get(0).getVolumeMounts().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
             assertThat(containers.get(0).getVolumeMounts().get(0).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
             assertThat(containers.get(0).getVolumeMounts().get(1).getName(), is("kafka-connect-configurations"));
             assertThat(containers.get(0).getVolumeMounts().get(1).getMountPath(), is("/opt/kafka/custom-config/"));
             assertThat(containers.get(0).getVolumeMounts().get(2).getName(), is("my-secret"));
-            assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is(KafkaConnectCluster.TLS_CERTS_BASE_VOLUME_MOUNT + "my-secret"));
-            assertThat(containers.get(0).getVolumeMounts().get(3).getName(), is("my-secret"));
-            assertThat(containers.get(0).getVolumeMounts().get(3).getMountPath(), is(KafkaConnectCluster.PASSWORD_VOLUME_MOUNT + "my-secret"));
+            assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is(KafkaConnectCluster.PASSWORD_VOLUME_MOUNT + "my-secret"));
         });
     }
 

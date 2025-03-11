@@ -239,7 +239,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 .reconcile(
                         reconciliation,
                         namespace,
-                        KafkaConnectResources.connectRoleBindingName(connect.getComponentName()),
+                        KafkaConnectResources.connectRoleBindingName(connect.getCluster()),
                         connect.generateRoleBindingForRole())
                 .mapEmpty();
     }
