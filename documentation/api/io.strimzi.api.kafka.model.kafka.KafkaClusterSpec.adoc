@@ -119,30 +119,21 @@ Be aware that if the configured image is not compatible with Strimzi images, it 
 
 Kafka has its own configurable loggers, which include the following:
 
-* `log4j.logger.kafka`
-* `log4j.logger.org.apache.kafka`
-* `log4j.logger.kafka.request.logger`
-* `log4j.logger.kafka.network.Processor`
-* `log4j.logger.kafka.server.KafkaApis`
-* `log4j.logger.kafka.network.RequestChannel$`
-* `log4j.logger.kafka.controller`
-* `log4j.logger.kafka.log.LogCleaner`
-* `log4j.logger.state.change.logger`
-* `log4j.logger.kafka.authorizer.logger`
+* `logger.kafka`
+* `logger.org.apache.kafka`
+* `logger.kafka.request.logger`
+* `logger.kafka.network.RequestChannel$`
+* `logger.org.apache.kafka.controller`
+* `logger.kafka.log.LogCleaner`
+* `logger.state.change.logger`
+* `logger.kafka.authorizer.logger`
 
-Kafka uses the Apache `log4j` logger implementation.
-
+Kafka uses the Apache `log4j2` logger implementation.
 Use the `logging` property to configure loggers and logger levels.
 
-You can set the log levels by specifying the logger and level directly (inline) or use a custom (external) ConfigMap.
-If a ConfigMap is used, you set `logging.valueFrom.configMapKeyRef.name` property to the name of the ConfigMap containing the external logging configuration. Inside the ConfigMap, the logging configuration is described using `log4j.properties`. Both `logging.valueFrom.configMapKeyRef.name` and `logging.valueFrom.configMapKeyRef.key` properties are mandatory. A ConfigMap using the exact logging configuration specified is created with the custom resource when the Cluster Operator is running, then recreated after each reconciliation. If you do not specify a custom ConfigMap, default logging settings are used. If a specific logger value is not set, upper-level logger settings are inherited for that logger.
-For more information about log levels, see {ApacheLoggers}.
+You can set the log levels by specifying the logger and level directly (`inline`) or use a custom (`external`) `ConfigMap` to define logging configurations using the `log4j2.properties` key.
 
-Here we see examples of `inline` and `external` logging.
-The `inline` logging specifies the root logger level.
-You can also set log levels for specific classes or loggers by adding them to the loggers property.
-
-.Inline logging
+.Example inline logging configuration
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -154,18 +145,15 @@ spec:
     logging:
       type: inline
       loggers:
-        kafka.root.logger.level: INFO
-        log4j.logger.kafka.coordinator.transaction: TRACE
-        log4j.logger.kafka.log.LogCleanerManager: DEBUG
-        log4j.logger.kafka.request.logger: DEBUG
-        log4j.logger.io.strimzi.kafka.oauth: DEBUG
-        log4j.logger.org.openpolicyagents.kafka.OpaAuthorizer: DEBUG
+        rootLogger.level: INFO
+        logger.kafka.coordinator.transaction: TRACE
+        logger.kafka.log.LogCleanerManager: DEBUG
+        logger.kafka.request.logger: DEBUG
+        logger.io.strimzi.kafka.oauth: DEBUG
   # ...
 ----
 
-NOTE: Setting a log level to `DEBUG` may result in a large amount of log output and may have performance implications.
-
-.External logging
+.Example external logging configuration
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -176,17 +164,11 @@ spec:
     type: external
     valueFrom:
       configMapKeyRef:
+        # name and key are mandatory
         name: customConfigMap
-        key: kafka-log4j.properties
+        key: log4j2.properties
   # ...
 ----
-
-Any available loggers that are not configured have their level set to `OFF`.
-
-If Kafka was deployed using the Cluster Operator,
-changes to Kafka logging levels are applied dynamically.
-
-If you use external logging, a rolling update is triggered when logging appenders are changed.
 
 .Garbage collector (GC)
 

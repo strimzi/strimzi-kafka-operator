@@ -97,7 +97,7 @@ spec:
   logging: # <12>
     type: inline
     loggers:
-      log4j.rootLogger: INFO
+      rootLogger.level: INFO
   # Readiness probe (optional)
   readinessProbe: # <13>
     initialDelaySeconds: 15
@@ -172,7 +172,7 @@ By default, Kafka Connect connects to Kafka brokers using a plain text connectio
 <9> Build configuration properties for building a container image with connector plugins automatically.
 <10> (Required) Configuration of the container registry where new images are pushed.
 <11> (Required) List of connector plugins and their artifacts to add to the new container image. Each plugin must be configured with at least one `artifact`.
-<12> Specified Kafka Connect loggers and log levels added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom Log4j configuration must be placed under the `log4j.properties` or `log4j2.properties` key in the ConfigMap. For the Kafka Connect `log4j.rootLogger` logger, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
+<12> Kafka Connect loggers and log levels added directly (`inline`) or indirectly (`external`) through a `ConfigMap`. Custom Log4j configuration must be placed under the `log4j2.properties` key in the `ConfigMap`. You can set log levels to `INFO`, `ERROR`, `WARN`, `TRACE`, `DEBUG`, `FATAL` or `OFF`.
 <13> Healthchecks to know when to restart a container (liveness) and when a container can accept traffic (readiness).
 <14> Prometheus metrics, which are enabled by referencing a ConfigMap containing configuration for the Prometheus JMX exporter in this example. You can enable metrics without further configuration using a reference to a ConfigMap containing an empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
 <15> JVM configuration options to optimize performance for the Virtual Machine (VM) running Kafka Connect.

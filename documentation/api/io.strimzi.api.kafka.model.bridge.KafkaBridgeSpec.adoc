@@ -57,17 +57,9 @@ logger.ready.level = WARN
 The log level of all other operations is set to `INFO` by default.
 
 Use the `logging` property to configure loggers and logger levels.
+You can set the log levels by specifying the logger and level directly (`inline`) or use a custom (`external`) `ConfigMap` to define logging configurations using the `log4j2.properties` key.
 
-You can set the log levels by specifying the logger and level directly (inline) or use a custom (external) ConfigMap.
-If a ConfigMap is used, you set `logging.valueFrom.configMapKeyRef.name` property to the name of the ConfigMap containing the external logging configuration.
-The `logging.valueFrom.configMapKeyRef.name` and `logging.valueFrom.configMapKeyRef.key` properties are mandatory.
-Default logging is used if the `name` or `key` is not set.
-Inside the ConfigMap, the logging configuration is described using `log4j.properties`.
-For more information about log levels, see {ApacheLoggers}.
-
-Here we see examples of `inline` and `external` logging.
-
-.Inline logging
+.Example inline logging configuration
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -78,13 +70,13 @@ spec:
     type: inline
     loggers:
       rootLogger.level: INFO
-      # enabling DEBUG just for send operation
+      # enabling DEBUG for send operation
       logger.send.name: "http.openapi.operation.send"
       logger.send.level: DEBUG
   # ...
 ----
 
-.External logging
+.Example external logging configuration
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -95,17 +87,11 @@ spec:
     type: external
     valueFrom:
       configMapKeyRef:
+        # name and key are mandatory
         name: customConfigMap
-        key: bridge-logj42.properties
+        key: log4j2.properties
   # ...
 ----
-
-Any available loggers that are not configured have their level set to `OFF`.
-
-If the Kafka Bridge was deployed using the Cluster Operator,
-changes to Kafka Bridge logging levels are applied dynamically.
-
-If you use external logging, a rolling update is triggered when logging appenders are changed.
 
 .Garbage collector (GC)
 

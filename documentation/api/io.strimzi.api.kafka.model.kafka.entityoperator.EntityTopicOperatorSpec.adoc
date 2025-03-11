@@ -8,18 +8,13 @@ The Topic Operator has a configurable logger:
 * `rootLogger.level`
 
 The Topic Operator uses the Apache `log4j2` logger implementation.
-
-Use the `logging` property in the `entityOperator.topicOperator` field of the Kafka resource `Kafka` resource to configure loggers and logger levels.
+Use the `logging` property to configure loggers and logger levels.
 
 You can set the log levels by specifying the logger and level directly (inline) or use a custom (external) ConfigMap.
-If a ConfigMap is used, you set `logging.valueFrom.configMapKeyRef.name` property to the name of the ConfigMap containing the external logging configuration. Inside the ConfigMap, the logging configuration is described using `log4j2.properties`. Both `logging.valueFrom.configMapKeyRef.name` and `logging.valueFrom.configMapKeyRef.key` properties are mandatory. A ConfigMap using the exact logging configuration specified is created with the custom resource when the Cluster Operator is running, then recreated after each reconciliation. If you do not specify a custom ConfigMap, default logging settings are used. If a specific logger value is not set, upper-level logger settings are inherited for that logger.
-For more information about log levels, see {ApacheLoggers}.
 
-Here we see examples of `inline` and `external` logging.
-The `inline` logging specifies the root logger level.
-You can also set log levels for specific classes or loggers by adding them to the loggers property.
+You can set the log levels by specifying the logger and level directly (`inline`) or use a custom (`external`) `ConfigMap` to define logging configurations using the `log4j2.properties` key.
 
-.Inline logging
+.Example inline logging configuration
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -49,10 +44,7 @@ spec:
 <3> Creates a logger for the `TopicOperator` class.
 <4> Sets the logging level for the `TopicOperator` class.
 
-NOTE: When investigating an issue with the operator, it's usually sufficient to change the `rootLogger` to `DEBUG` to get more detailed logs. 
-However, keep in mind that setting the log level to `DEBUG` may result in a large amount of log output and may have performance implications.
-
-.External logging
+.Example external logging configuration
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -71,8 +63,9 @@ spec:
         type: external
         valueFrom:
           configMapKeyRef:
+            # name and key are mandatory
             name: customConfigMap
-            key: topic-operator-log4j2.properties
+            key: log4j2.properties
   # ...
 ----
 
