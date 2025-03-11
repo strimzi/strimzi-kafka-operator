@@ -392,9 +392,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
             volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "1Mi", "Memory"));
         }
 
-        if (tls != null) {
-            CertUtils.createTrustedCertificatesVolumes(volumeList, tls.getTrustedCertificates(), isOpenShift);
-        }
         AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, "oauth-certs", isOpenShift);
         volumeList.addAll(getExternalConfigurationVolumes(isOpenShift));
         
@@ -456,9 +453,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
             volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
         }
 
-        if (tls != null) {
-            CertUtils.createTrustedCertificatesVolumeMounts(volumeMountList, tls.getTrustedCertificates(), TLS_CERTS_BASE_VOLUME_MOUNT);
-        }
         AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, "oauth-certs");
         volumeMountList.addAll(getExternalConfigurationVolumeMounts());
 
@@ -844,7 +838,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         return role;
     }
 
-
     /**
      * Generates the Kafka Connect Role Binding
      *
@@ -864,7 +857,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                 .build();
 
         RoleBinding rb = RbacUtils
-                .createRoleBinding(KafkaConnectResources.connectRoleBindingName(componentName), namespace, roleRef, List.of(subject), labels, ownerReference, templateRoleBinding);
+                .createRoleBinding(KafkaConnectResources.connectRoleBindingName(cluster), namespace, roleRef, List.of(subject), labels, ownerReference, templateRoleBinding);
 
         return rb;
     }
