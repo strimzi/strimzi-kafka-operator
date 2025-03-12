@@ -265,6 +265,48 @@ EOF
     echo "KIND cluster '${KIND_CLUSTER_NAME}' created successfully with IP family '${IP_FAMILY}'."
 }
 
+: '
+@brief: Configures the network for Docker or Podman based on IP family.
+@param:
+        1) network_name - The name of the network to configure.
+@global:
+        IP_FAMILY   - Determines whether to configure IPv4 or IPv6 settings.
+        DOCKER_CMD  - The container runtime command (docker or podman).
+@note: Podman does not support IPv6/Dual stack in this installer. Docker allows explicit IPv6 configuration.
+'
+function configure_network {
+    local network_name="$1"
+
+    if is_podman; then
+        # Podman IPv6/Dual
+        if [[ "$IP_FAMILY" = "ipv6"  ||  "$IP_FAMILY" = "dual"  ]]; then
+            echo "[WARNING] IPv6/Dual not supported by this installer within Podman!"
+            exit 1
+        else
+        # Podman IPv4
+            if ! $DOCKER_CMD network exists "${network_name}"; then
+                $DOCKER_CMD network create "${network_name}"
+            fi
+        fi
+    elif is_docker; then
+        # Docker IPv6
+        if [[ "$IP_FAMILY" = "ipv6" ]]; then
+            if ! $DOCKER_CMD network inspect "${network_name}" >/dev/null 2>&1; then
+                $DOCKER_CMD network create \
+                  --ipv6 "${network_name}"
+            fi
+        else
+        # Docker dual/ipv4
+           if ! $DOCKER_CMD network inspect "${network_name}" >/dev/null 2>&1; then
+               $DOCKER_CMD network create "${network_name}"
+           fi
+       fi
+    else
+        echo "[WARNING] Unsupported container engine: $DOCKER_CMD!"
+        exit 1
+    fi
+}
+
 setup_kube_directory
 install_kubectl
 install_kubernetes_provisioner
@@ -281,9 +323,7 @@ if is_docker; then
     control_planes=3
 fi
 
-if ! $DOCKER_CMD network exists "${network_name}"; then
-    $DOCKER_CMD network create "${network_name}"
-fi
+configure_network "${network_name}"
 
 if [[ "$IP_FAMILY" = "ipv4" || "$IP_FAMILY" = "dual" ]]; then
     hostname=$(hostname --ip-address | grep -oE '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' | awk '$1 != "127.0.0.1" { print $1 }' | head -1)
