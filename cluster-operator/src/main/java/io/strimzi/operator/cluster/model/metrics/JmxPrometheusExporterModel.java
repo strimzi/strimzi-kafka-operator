@@ -58,14 +58,14 @@ public class JmxPrometheusExporterModel implements MetricsModel {
     }
 
     /**
-     * @return  The name of the Config Map with the metrics configuration
+     * @return  The name of the ConfigMap with the metrics configuration
      */
     public String getConfigMapName() {
         return configMapName;
     }
 
     /**
-     * @return  The key under which the metrics configuration is stored in the Config Map
+     * @return  The key under which the metrics configuration is stored in the ConfigMap
      */
     public String getConfigMapKey() {
         return configMapKey;
