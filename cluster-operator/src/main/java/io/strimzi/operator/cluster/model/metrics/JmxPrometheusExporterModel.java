@@ -121,10 +121,10 @@ public class JmxPrometheusExporterModel implements MetricsModel {
         List<String> errors = new ArrayList<>();
 
         if (config.getValueFrom().getConfigMapKeyRef() != null) {
-            // The Config Map reference exists
+            // The ConfigMap reference exists
             if (config.getValueFrom().getConfigMapKeyRef().getName() == null
                     || config.getValueFrom().getConfigMapKeyRef().getName().isEmpty()) {
-                errors.add("Name of the Config Map with metrics configuration is missing");
+                errors.add("Name of the ConfigMap with metrics configuration is missing");
             }
 
             if (config.getValueFrom().getConfigMapKeyRef().getKey() == null
@@ -132,8 +132,8 @@ public class JmxPrometheusExporterModel implements MetricsModel {
                 errors.add("The key under which the metrics configuration is stored in the ConfigMap is missing");
             }
         } else {
-            // The Config Map reference is missing
-            errors.add("Config Map reference is missing");
+            // The ConfigMap reference is missing
+            errors.add("ConfigMap reference is missing");
         }
 
         if (!errors.isEmpty())  {
