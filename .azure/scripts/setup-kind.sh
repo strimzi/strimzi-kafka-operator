@@ -289,14 +289,14 @@ function configure_network {
             fi
         fi
     elif is_docker; then
-        # Docker IPv6
-        if [[ "$IP_FAMILY" = "ipv6" ]]; then
+        # Docker IPv6/Dual
+        if [[ "$IP_FAMILY" = "ipv6"  ||  "$IP_FAMILY" = "dual" ]]; then
             if ! $DOCKER_CMD network inspect "${network_name}" >/dev/null 2>&1; then
                 $DOCKER_CMD network create \
                   --ipv6 "${network_name}"
             fi
         else
-        # Docker dual/ipv4
+        # Docker IPv4
            if ! $DOCKER_CMD network inspect "${network_name}" >/dev/null 2>&1; then
                $DOCKER_CMD network create "${network_name}"
            fi
