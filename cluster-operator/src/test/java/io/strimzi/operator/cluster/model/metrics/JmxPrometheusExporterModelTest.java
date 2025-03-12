@@ -75,15 +75,15 @@ public class JmxPrometheusExporterModelTest {
         assertDoesNotThrow(() -> JmxPrometheusExporterModel.validateJmxExporterMetricsConfig(new JmxPrometheusExporterMetricsBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector("my-key", "my-name", false)).endValueFrom().build()));
 
         InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> JmxPrometheusExporterModel.validateJmxExporterMetricsConfig(new JmxPrometheusExporterMetricsBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector()).endValueFrom().build()));
-        assertThat(ex.getMessage(), is("Metrics configuration is invalid: [Name of the Config Map with metrics configuration is missing, The key under which the metrics configuration is stored in the ConfigMap is missing]"));
+        assertThat(ex.getMessage(), is("Metrics configuration is invalid: [Name of the ConfigMap with metrics configuration is missing, The key under which the metrics configuration is stored in the ConfigMap is missing]"));
 
         ex = assertThrows(InvalidResourceException.class, () -> JmxPrometheusExporterModel.validateJmxExporterMetricsConfig(new JmxPrometheusExporterMetricsBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector(null, "my-name", false)).endValueFrom().build()));
         assertThat(ex.getMessage(), is("Metrics configuration is invalid: [The key under which the metrics configuration is stored in the ConfigMap is missing]"));
 
         ex = assertThrows(InvalidResourceException.class, () -> JmxPrometheusExporterModel.validateJmxExporterMetricsConfig(new JmxPrometheusExporterMetricsBuilder().withNewValueFrom().endValueFrom().build()));
-        assertThat(ex.getMessage(), is("Metrics configuration is invalid: [Config Map reference is missing]"));
+        assertThat(ex.getMessage(), is("Metrics configuration is invalid: [ConfigMap reference is missing]"));
         ex = assertThrows(InvalidResourceException.class, () -> JmxPrometheusExporterModel.validateJmxExporterMetricsConfig(new JmxPrometheusExporterMetricsBuilder().withNewValueFrom().endValueFrom().build()));
-        assertThat(ex.getMessage(), is("Metrics configuration is invalid: [Config Map reference is missing]"));
+        assertThat(ex.getMessage(), is("Metrics configuration is invalid: [ConfigMap reference is missing]"));
 
     }
 }
