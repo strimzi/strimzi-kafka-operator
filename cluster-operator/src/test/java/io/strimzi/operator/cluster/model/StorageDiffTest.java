@@ -38,7 +38,6 @@ public class StorageDiffTest {
         assertThat(diff.isEmpty(), is(true));
         assertThat(diff.shrinkSize(), is(false));
         assertThat(diff.isVolumesAddedOrRemoved(), is(false));
-        assertThat(diff.volumeAttributesClassChanged(), is(false));
         assertThat(diff.issuesDetected(), is(false));
 
         diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, jbod2, Set.of(0, 1, 5), Set.of(0, 1, 5));
@@ -46,7 +45,6 @@ public class StorageDiffTest {
         assertThat(diff.isEmpty(), is(false));
         assertThat(diff.shrinkSize(), is(false));
         assertThat(diff.isVolumesAddedOrRemoved(), is(false));
-        assertThat(diff.volumeAttributesClassChanged(), is(false));
         assertThat(diff.issuesDetected(), is(true));
     }
 
@@ -58,13 +56,11 @@ public class StorageDiffTest {
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, Set.of(0, 1, 5), Set.of(0, 1, 5)).changesType(), is(false));
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, Set.of(0, 1, 5), Set.of(0, 1, 5)).isEmpty(), is(true));
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, Set.of(0, 1, 5), Set.of(0, 1, 5)).volumeAttributesClassChanged(), is(false));
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, Set.of(0, 1, 5), Set.of(0, 1, 5)).issuesDetected(), is(false));
 
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 1, 5), Set.of(0, 1, 5)).changesType(), is(false));
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 1, 5), Set.of(0, 1, 5)).isEmpty(), is(false));
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 1, 5), Set.of(0, 1, 5)).volumeAttributesClassChanged(), is(false));
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 1, 5), Set.of(0, 1, 5)).issuesDetected(), is(true));
     }
 
@@ -100,19 +96,16 @@ public class StorageDiffTest {
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, Set.of(0, 1, 5), Set.of(0, 1, 5)).changesType(), is(false));
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, Set.of(0, 1, 5), Set.of(0, 1, 5)).isEmpty(), is(true));
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, Set.of(0, 1, 5), Set.of(0, 1, 5)).volumeAttributesClassChanged(), is(false));
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, Set.of(0, 1, 5), Set.of(0, 1, 5)).issuesDetected(), is(false));
 
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 1, 5), Set.of(0, 1, 5)).changesType(), is(false));
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 1, 5), Set.of(0, 1, 5)).isEmpty(), is(true));
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 1, 5), Set.of(0, 1, 5)).volumeAttributesClassChanged(), is(false));
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 1, 5), Set.of(0, 1, 5)).issuesDetected(), is(false));
 
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent3, Set.of(0, 1, 5), Set.of(0, 1, 5)).changesType(), is(false));
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent3, Set.of(0, 1, 5), Set.of(0, 1, 5)).isEmpty(), is(true));
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent3, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent3, Set.of(0, 1, 5), Set.of(0, 1, 5)).volumeAttributesClassChanged(), is(false));
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent3, Set.of(0, 1, 5), Set.of(0, 1, 5)).issuesDetected(), is(false));
     }
 
@@ -139,7 +132,6 @@ public class StorageDiffTest {
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, ephemeral, ephemeral, Set.of(0, 1, 5), Set.of(0, 1, 5)).changesType(), is(false));
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, ephemeral, ephemeral, Set.of(0, 1, 5), Set.of(0, 1, 5)).isEmpty(), is(true));
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, ephemeral, ephemeral, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, ephemeral, ephemeral, Set.of(0, 1, 5), Set.of(0, 1, 5)).volumeAttributesClassChanged(), is(false));
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, ephemeral, ephemeral, Set.of(0, 1, 5), Set.of(0, 1, 5)).issuesDetected(), is(false));
     }
 
@@ -379,15 +371,12 @@ public class StorageDiffTest {
         Storage persistent3 = new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("100Gi").withVolumeAttributesClass("vac-example-2").build();
 
         StorageDiff diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, Set.of(0, 1, 2), Set.of(0, 1, 2));
-        assertThat(diff.volumeAttributesClassChanged(), is(false));
         assertThat(diff.issuesDetected(), is(false));
 
         diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 1, 2), Set.of(0, 1, 2));
-        assertThat(diff.volumeAttributesClassChanged(), is(true));
         assertThat(diff.issuesDetected(), is(false));
 
         diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent3, Set.of(0, 1, 2), Set.of(0, 1, 2));
-        assertThat(diff.volumeAttributesClassChanged(), is(true));
         assertThat(diff.issuesDetected(), is(false));
 
         Storage jbod = new JbodStorageBuilder().withVolumes(
@@ -404,15 +393,12 @@ public class StorageDiffTest {
         ).build();
 
         diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, jbod, Set.of(0, 1, 2), Set.of(0, 1, 2));
-        assertThat(diff.volumeAttributesClassChanged(), is(false));
         assertThat(diff.issuesDetected(), is(false));
 
         diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, jbod2, Set.of(0, 1, 2), Set.of(0, 1, 2));
-        assertThat(diff.volumeAttributesClassChanged(), is(true));
         assertThat(diff.issuesDetected(), is(false));
 
         diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, jbod3, Set.of(0, 1, 2), Set.of(0, 1, 2));
-        assertThat(diff.volumeAttributesClassChanged(), is(true));
         assertThat(diff.issuesDetected(), is(false));
     }
 }
