@@ -5,6 +5,7 @@ rm -rf ~/.kube
 
 # There is a bug in 0.24.0 - https://github.com/kubernetes-sigs/kind/issues/3713
 KIND_VERSION=${KIND_VERSION:-"v0.23.0"}
+KIND_CLOUD_PROVIDER_VERSION=${KIND_CLOUD_PROVIDER_VERSION:-"v0.6.0"}
 # To properly upgrade Kind version check the releases in github https://github.com/kubernetes-sigs/kind/releases and use proper image based on Kind version
 KIND_NODE_IMAGE=${KIND_NODE_IMAGE:-"kindest/node:v1.25.16@sha256:5da57dfc290ac3599e775e63b8b6c49c0c85d3fec771cd7d55b45fae14b38d3b"}
 COPY_DOCKER_LOGIN=${COPY_DOCKER_LOGIN:-"false"}
@@ -37,7 +38,7 @@ function install_kubectl {
     sudo cp kubectl /usr/local/bin
 
     if is_podman; then
-        sudo ln -s /usr/local/bin/kubectl /usr/bin/kubectl
+        sudo ln -sf /usr/local/bin/kubectl /usr/bin/kubectl
     fi
 }
 
@@ -58,7 +59,7 @@ function install_kubernetes_provisioner {
 
     # Move the binary to a globally accessible location
     sudo mv kind /usr/local/bin/kind
-    sudo ln -s /usr/local/bin/kind /usr/bin/kind
+    sudo ln -sf /usr/local/bin/kind /usr/bin/kind
 
     if command -v kind >/dev/null 2>&1; then
         echo "Kind installed successfully at $(command -v kind)"
@@ -266,6 +267,49 @@ EOF
 }
 
 : '
+@brief: Installs and runs cloud-provider-kind in a container.
+@global:
+        KIND_CLOUD_PROVIDER_VERSION - Specifies the version of cloud-provider-kind to install.
+        DOCKER_CMD - Specifies the container runtime (docker or podman).
+@note:
+        Supports only Docker for now, as Podman support is pending resolution.
+        Uses docker.sock for Docker.
+        Ensures the container is not already running before starting it.
+        Enables LoadBalancer port mapping (--enable-lb-port-mapping=true).
+
+@see:
+        Podman support tracking issue:
+        https://github.com/kubernetes-sigs/cloud-provider-kind/issues/221
+        Enabling LoadBalancer Port Mapping:
+        https://github.com/kubernetes-sigs/cloud-provider-kind?tab=readme-ov-file#enabling-load-balancer-port-mapping
+'
+function run_cloud_provider_kind() {
+    local cloud_provider_kind="cloud-provider-kind"
+    local socket_path=""
+    local kind_network="$1"
+
+    # Check if using Podman and warn the user
+    if [[ "$DOCKER_CMD" == "podman" ]]; then
+        echo "[WARNING] cloud-provider-kind does not currently support Podman. See: https://github.com/kubernetes-sigs/cloud-provider-kind/issues/221"
+    else
+        socket_path="/var/run/docker.sock"
+
+        # Ensure the container is not already running
+        if $DOCKER_CMD ps --format "{{.Names}}" | grep -q "$cloud_provider_kind"; then
+            echo "[INFO] $cloud_provider_kind is already running."
+            return 0
+        fi
+
+        echo "[INFO] Starting $cloud_provider_kind with $DOCKER_CMD..."
+
+        $DOCKER_CMD run -d --name "$cloud_provider_kind" \
+             --network "$kind_network" \
+             -v "$socket_path:/var/run/docker.sock" \
+             registry.k8s.io/cloud-provider-kind/cloud-controller-manager:"${KIND_CLOUD_PROVIDER_VERSION}"
+    fi
+}
+
+: '
 @brief: Configures the network for Docker or Podman based on IP family.
 @param:
         1) network_name - The name of the network to configure.
@@ -402,3 +446,4 @@ fi
 
 create_cluster_role_binding_admin
 label_node
+run_cloud_provider_kind ${network_name}
