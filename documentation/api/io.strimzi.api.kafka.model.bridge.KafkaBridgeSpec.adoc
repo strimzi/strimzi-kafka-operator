@@ -13,8 +13,8 @@ Configuration options relate to:
 
 Kafka Bridge has its own configurable loggers:
 
-* `rootLogger.level`
-* `logger.__<operation-id>__`
+* `rootLogger.*`
+* `logger.<operation_id>`
 
 You can replace `_<operation-id>_` in the `logger.__<operation-id>__` logger to set log levels for specific operations:
 
@@ -37,7 +37,7 @@ You can replace `_<operation-id>_` in the `logger.__<operation-id>__` logger to 
 Each operation is defined according OpenAPI specification, and has a corresponding API endpoint through which the bridge receives requests from HTTP clients.
 You can change the log level on each endpoint to create fine-grained logging information about the incoming and outgoing HTTP requests.
 
-Each logger has to be configured assigning it a `name` as `http.openapi.operation.__<operation-id>__`.
+Each logger has to be configured assigning it a `name` as `http.openapi.operation.<operation_id>`.
 For example, configuring the logging level for the `send` operation logger means defining the following:
 
 ```

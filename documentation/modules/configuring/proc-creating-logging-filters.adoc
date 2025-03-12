@@ -6,7 +6,7 @@
 = Adding logging filters to Strimzi operators
 
 [role="_abstract"]
-Use a `ConfigMap` to configure (log4j2) logging levels for Strimzi operators and define logging filters to limit log returns.
+Use a `ConfigMap` to configure logging levels in Strimzi operators with Log4j2 and define filters to control log output.
 
 Filters are useful when too many logging messages are being produced. 
 For instance, if `rootLogger.level="DEBUG"`, filters reduce the number of logs to focus on a specific resource by logging only messages matching the filter.
@@ -18,10 +18,18 @@ For example, to isolate the logs of a failing Kafka cluster, set the kind to `Ka
 [source,yaml,subs="+attributes"]
 ----
 rootLogger.level="INFO"
-appender.console.filter.filter1.type=MarkerFilter <1>
-appender.console.filter.filter1.onMatch=ACCEPT <2>
-appender.console.filter.filter1.onMismatch=DENY <3>
-appender.console.filter.filter1.marker=Kafka(my-namespace/my-kafka-cluster) <4>
+rootLogger.appenderRefs = console
+rootLogger.appenderRef.console.ref = STDOUT
+
+appender.console.type = Console
+appender.console.name = STDOUT
+appender.console.layout.type = PatternLayout
+appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
+
+appender.console.filter.filter1.type = MarkerFilter <1>
+appender.console.filter.filter1.onMatch = ACCEPT <2>
+appender.console.filter.filter1.onMismatch = DENY <3>
+appender.console.filter.filter1.marker = Kafka(my-namespace/my-kafka-cluster) <4>
 ----
 <1> The `MarkerFilter` compares a specified marker.
 <2> `onMatch` accepts logs if the marker matches.
@@ -33,14 +41,19 @@ For multiple filters, define each one separately:
 .Multiple logging filter configuration
 [source,yaml,subs="+attributes"]
 ----
-appender.console.filter.filter1.type=MarkerFilter
-appender.console.filter.filter1.onMatch=ACCEPT
-appender.console.filter.filter1.onMismatch=DENY
-appender.console.filter.filter1.marker=Kafka(my-namespace/my-kafka-cluster-1)
-appender.console.filter.filter2.type=MarkerFilter
-appender.console.filter.filter2.onMatch=ACCEPT
-appender.console.filter.filter2.onMismatch=DENY
-appender.console.filter.filter2.marker=Kafka(my-namespace/my-kafka-cluster-2)
+# ...
+
+appender.console.name = STDOUT
+
+appender.console.filter.filter1.type = MarkerFilter
+appender.console.filter.filter1.onMatch = ACCEPT
+appender.console.filter.filter1.onMismatch = DENY
+appender.console.filter.filter1.marker = Kafka(my-namespace/my-kafka-cluster-1)
+
+appender.console.filter.filter2.type = MarkerFilter
+appender.console.filter.filter2.onMatch = ACCEPT
+appender.console.filter.filter2.onMismatch = DENY
+appender.console.filter.filter2.marker = Kafka(my-namespace/my-kafka-cluster-2)
 ----
 
 .Adding filters to the Cluster Operator
@@ -59,7 +72,15 @@ metadata:
   name: strimzi-cluster-operator
 data:
   log4j2.properties:
-    #...
+    rootLogger.level="INFO"
+    rootLogger.appenderRefs = console
+    rootLogger.appenderRef.console.ref = STDOUT
+
+    appender.console.type = Console
+    appender.console.name = STDOUT
+    appender.console.layout.type = PatternLayout
+    appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
+    
     appender.console.filter.filter1.type=MarkerFilter
     appender.console.filter.filter1.onMatch=ACCEPT
     appender.console.filter.filter1.onMismatch=DENY
@@ -93,11 +114,19 @@ metadata:
   name: logging-configmap
 data:
   log4j2.properties:
-    rootLogger.level="INFO"
-    appender.console.filter.filter1.type=MarkerFilter
-    appender.console.filter.filter1.onMatch=ACCEPT
-    appender.console.filter.filter1.onMismatch=DENY
-    appender.console.filter.filter1.marker=KafkaTopic(my-namespace/my-topic)
+    rootLogger.level = "INFO"
+    rootLogger.appenderRefs = console
+    rootLogger.appenderRef.console.ref = STDOUT
+
+    appender.console.type = Console
+    appender.console.name = STDOUT
+    appender.console.layout.type = PatternLayout
+    appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
+
+    appender.console.filter.filter1.type = MarkerFilter
+    appender.console.filter.filter1.onMatch = ACCEPT
+    appender.console.filter.filter1.onMismatch = DENY
+    appender.console.filter.filter1.marker = KafkaTopic(my-namespace/my-topic)
 ----
 +
 If you are using a properties file, define the logging configuration and specify the file at the command line when creating the `ConfigMap`.
@@ -106,12 +135,19 @@ If you are using a properties file, define the logging configuration and specify
 [source,text]
 ----
 # Define the logger
-rootLogger.level="INFO"
+rootLogger.level = "INFO"
+rootLogger.appenderRefs = console
+rootLogger.appenderRef.console.ref = STDOUT
+# Define the appenders
+appender.console.type = Console
+appender.console.name = STDOUT
+appender.console.layout.type = PatternLayout
+appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
 # Set the filters
-appender.console.filter.filter1.type=MarkerFilter
-appender.console.filter.filter1.onMatch=ACCEPT
-appender.console.filter.filter1.onMismatch=DENY
-appender.console.filter.filter1.marker=KafkaTopic(my-namespace/my-topic)
+appender.console.filter.filter1.type = MarkerFilter
+appender.console.filter.filter1.onMatch = ACCEPT
+appender.console.filter.filter1.onMismatch = DENY
+appender.console.filter.filter1.marker = KafkaTopic(my-namespace/my-topic)
 # ...
 ----
 +

@@ -29,6 +29,7 @@ With this `ConfigMap`, you can control the following aspects of logging:
 
 Netty is a framework used in Strimzi for network communication.
 The `monitorInterval` setting determines how often in seconds the logging configuration is dynamically reloaded.
+The default is 30 seconds.
 
 If the `ConfigMap` is missing when the Cluster Operator is deployed, the default logging values are used.
 

@@ -5,7 +5,7 @@ Configures the Topic Operator.
 
 The Topic Operator has a configurable logger:
 
-* `rootLogger.level`
+* `rootLogger.*`
 
 The Topic Operator uses the Apache `log4j2` logger implementation.
 Use the `logging` property to configure loggers and logger levels.

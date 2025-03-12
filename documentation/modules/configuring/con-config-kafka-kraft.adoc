@@ -85,7 +85,7 @@ spec:
     logging: # <14>
       type: inline
       loggers:
-        kafka.root.logger.level: INFO
+        rootLogger.level: INFO
     # Readiness probe (optional)
     readinessProbe: # <15>
       initialDelaySeconds: 15

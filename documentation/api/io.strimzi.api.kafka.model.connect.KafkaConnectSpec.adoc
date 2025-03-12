@@ -80,8 +80,9 @@ In this case, fix the configuration so that the Cluster Operator can roll out th
 = Logging
 Kafka Connect has its own configurable loggers:
 
-* `rootLogger.level`
-* `logger.org.reflections`
+* `rootLogger.*`
+* `logger.reflections.name = org.reflections`
+* `logger.reflections.*`
 
 Further loggers are added depending on the Kafka Connect plugins running.
 
@@ -108,8 +109,10 @@ spec:
     type: inline
     loggers:
       rootLogger.level: INFO
-      logger.org.apache.kafka.connect.runtime.WorkerSourceTask: TRACE
-      logger.org.apache.kafka.connect.runtime.WorkerSinkTask: DEBUG
+      logger.sourcetask.name: org.apache.kafka.connect.runtime.WorkerSourceTask
+      logger.sourcetask.level: TRACE
+      logger.sinktask.name: org.apache.kafka.connect.runtime.WorkerSinkTask
+      logger.sinktask.level: DEBUG
   # ...
 ----
 

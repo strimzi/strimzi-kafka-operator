@@ -119,14 +119,23 @@ Be aware that if the configured image is not compatible with Strimzi images, it 
 
 Kafka has its own configurable loggers, which include the following:
 
-* `logger.kafka`
-* `logger.org.apache.kafka`
-* `logger.kafka.request.logger`
-* `logger.kafka.network.RequestChannel$`
-* `logger.org.apache.kafka.controller`
-* `logger.kafka.log.LogCleaner`
-* `logger.state.change.logger`
-* `logger.kafka.authorizer.logger`
+* `rootLogger.*`
+* `logger.kafka.name = kafka`
+* `logger.kafka.*`
+* `logger.orgapachekafka.name = org.apache.kafka`
+* `logger.orgapachekafka.*`
+* `logger.requestlogger.name = kafka.request.logger`
+* `logger.requestlogger.*`
+* `logger.requestchannel.name = kafka.network.RequestChannel$`
+* `logger.requestchannel.*`
+* `logger.controller.name = org.apache.kafka.controller`
+* `logger.controller.*`
+* `logger.logcleaner.name = kafka.log.LogCleaner`
+* `logger.logcleaner.*`
+* `logger.statechange.name = state.change.logger`
+* `logger.statechange.*`
+* `logger.authorizer.name = kafka.authorizer.logger`
+* `logger.authorizer.*`
 
 Kafka uses the Apache `log4j2` logger implementation.
 Use the `logging` property to configure loggers and logger levels.
@@ -146,10 +155,15 @@ spec:
       type: inline
       loggers:
         rootLogger.level: INFO
-        logger.kafka.coordinator.transaction: TRACE
-        logger.kafka.log.LogCleanerManager: DEBUG
-        logger.kafka.request.logger: DEBUG
-        logger.io.strimzi.kafka.oauth: DEBUG
+        logger.kafka.name: kafka
+        logger.transaction.name: logger.kafka.coordinator.transaction
+        logger.transaction.level: TRACE
+        logger.cleaner.name: logger.kafka.log.LogCleanerManager
+        logger.cleaner.level: DEBUG
+        logger.request.name: logger.kafka.request.logger
+        logger.request.level: DEBUG
+        logger.oauth.name: logger.io.strimzi.kafka.oauth
+        logger.oauth.level: DEBUG
   # ...
 ----
 

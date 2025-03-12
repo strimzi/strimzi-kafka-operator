@@ -35,7 +35,7 @@ For `inline` configuration, use the `loggers` property to set the root logger le
 logging:
   type: inline
   loggers:
-    kafka.root.logger.level: INFO
+    rootLogger.level: INFO
 # ...
 ----
 
