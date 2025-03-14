@@ -214,6 +214,10 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             result.gcLoggingEnabled = ccSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : ccSpec.getJvmOptions().isGcLoggingEnabled();
             result.jvmOptions = ccSpec.getJvmOptions();
 
+            /*
+            Metrics Reporter is not yet supported with CruiseControl as CC's own metrics are only exposed through JMX.
+            Metrics config type check happens with CEL validation at the spec level.
+            */
             if (ccSpec.getMetricsConfig() instanceof JmxPrometheusExporterMetrics) {
                 result.metrics = new JmxPrometheusExporterModel(ccSpec);
             }
