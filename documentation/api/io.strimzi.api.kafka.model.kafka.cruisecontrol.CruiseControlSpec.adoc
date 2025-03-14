@@ -303,7 +303,7 @@ For more information, refer to the xref:type-BrokerCapacity-reference[BrokerCapa
 
 Cruise Control has its own configurable logger:
 
-* `rootLogger.*`
+* `rootLogger`
 
 Cruise Control uses the Apache `log4j2` logger implementation.
 Use the `logging` property to configure loggers and logger levels.

@@ -119,26 +119,22 @@ Be aware that if the configured image is not compatible with Strimzi images, it 
 
 Kafka has its own configurable loggers, which include the following:
 
-* `rootLogger.*`
-* `logger.kafka.name = kafka`
-* `logger.kafka.*`
-* `logger.orgapachekafka.name = org.apache.kafka`
-* `logger.orgapachekafka.*`
-* `logger.requestlogger.name = kafka.request.logger`
-* `logger.requestlogger.*`
-* `logger.requestchannel.name = kafka.network.RequestChannel$`
-* `logger.requestchannel.*`
-* `logger.controller.name = org.apache.kafka.controller`
-* `logger.controller.*`
-* `logger.logcleaner.name = kafka.log.LogCleaner`
-* `logger.logcleaner.*`
-* `logger.statechange.name = state.change.logger`
-* `logger.statechange.*`
-* `logger.authorizer.name = kafka.authorizer.logger`
-* `logger.authorizer.*`
+* `rootLogger`
+* `kafka`
+* `orgapachekafka`
+* `requestlogger`
+* `requestchannel`
+* `requestchannel`
+* `controller`
+* `logcleaner`
+* `statechange`
+* `authorizer`
 
 Kafka uses the Apache `log4j2` logger implementation.
 Use the `logging` property to configure loggers and logger levels.
+
+NOTE: For Strimzi 0.45 and earlier, log4j1 was used for Kafka components. 
+Refer to the Strimzi 0.45 documentation for loggers and logging configuration examples based on log4j1.
 
 You can set the log levels by specifying the logger and level directly (`inline`) or use a custom (`external`) `ConfigMap` to define logging configurations using the `log4j2.properties` key.
 

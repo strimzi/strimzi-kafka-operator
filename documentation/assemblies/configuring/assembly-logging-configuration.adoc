@@ -19,7 +19,7 @@ Advantages of using a `ConfigMap`:
 * For operators, the flexibility to append logging specifications to add filters
 
 NOTE: Log4j2 is used for logging of Kafka components and Strimzi operators. 
-For versions 0.45 and earlier, log4j1 was used for Kafka components.
+For Strimzi 0.45 and earlier, log4j1 was used for Kafka components.
 
 Specify a logging `type` in your logging specification:
 

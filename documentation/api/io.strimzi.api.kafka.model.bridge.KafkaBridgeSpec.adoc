@@ -13,10 +13,10 @@ Configuration options relate to:
 
 Kafka Bridge has its own configurable loggers:
 
-* `rootLogger.*`
-* `logger.<operation_id>`
+* `rootLogger`
+* `bridge`
 
-You can replace `_<operation-id>_` in the `logger.__<operation-id>__` logger to set log levels for specific operations:
+You can also log levels for specific operations based on endpoints:
 
 * `createConsumer`
 * `deleteConsumer`
@@ -30,15 +30,26 @@ You can replace `_<operation-id>_` in the `logger.__<operation-id>__` logger to 
 * `seekToBeginning`
 * `seekToEnd`
 * `seek`
-* `healthy`
-* `ready`
+* `healthy` (default: `WARN`)
+* `ready` (default: `WARN`)
 * `openapi`
 
-Each operation is defined according OpenAPI specification, and has a corresponding API endpoint through which the bridge receives requests from HTTP clients.
-You can change the log level on each endpoint to create fine-grained logging information about the incoming and outgoing HTTP requests.
+The healthy and ready loggers are set to `WARN` by default due to verbosity:
 
-Each logger has to be configured assigning it a `name` as `http.openapi.operation.<operation_id>`.
-For example, configuring the logging level for the `send` operation logger means defining the following:
+[source,properties]
+----
+logger.healthy.name = http.openapi.operation.healthy
+logger.healthy.level = WARN
+logger.ready.name = http.openapi.operation.ready
+logger.ready.level = WARN
+----
+
+The log level of all other operations is set to `INFO` by default.
+
+Each operation has a corresponding API endpoint, defined according to the OpenAPI specification, allowing fine-grained logging of HTTP requests.
+
+Configure each logger by assigning it a name as `http.openapi.operation.<operation_id>`. 
+For example, to set the logging level for the send operation logger:
 
 ```
 logger.send.name = http.openapi.operation.send
@@ -46,17 +57,8 @@ logger.send.level = DEBUG
 ```
 
 Kafka Bridge uses the Apache `log4j2` logger implementation.
-Loggers are defined in the `log4j2.properties` file, which has the following default configuration for `healthy` and `ready` endpoints:
-
-```
-logger.healthy.name = http.openapi.operation.healthy
-logger.healthy.level = WARN
-logger.ready.name = http.openapi.operation.ready
-logger.ready.level = WARN
-```
-The log level of all other operations is set to `INFO` by default.
-
 Use the `logging` property to configure loggers and logger levels.
+
 You can set the log levels by specifying the logger and level directly (`inline`) or use a custom (`external`) `ConfigMap` to define logging configurations using the `log4j2.properties` key.
 
 .Example inline logging configuration

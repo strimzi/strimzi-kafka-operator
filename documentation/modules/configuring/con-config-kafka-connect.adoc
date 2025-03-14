@@ -97,6 +97,7 @@ spec:
   logging: # <12>
     type: inline
     loggers:
+      # Kafka 4.0+ uses Log4j2
       rootLogger.level: INFO
   # Readiness probe (optional)
   readinessProbe: # <13>

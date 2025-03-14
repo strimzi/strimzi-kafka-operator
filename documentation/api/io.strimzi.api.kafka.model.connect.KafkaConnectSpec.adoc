@@ -80,9 +80,8 @@ In this case, fix the configuration so that the Cluster Operator can roll out th
 = Logging
 Kafka Connect has its own configurable loggers:
 
-* `rootLogger.*`
-* `logger.reflections.name = org.reflections`
-* `logger.reflections.*`
+* `rootLogger`
+* `reflections`
 
 Further loggers are added depending on the Kafka Connect plugins running.
 
@@ -95,6 +94,9 @@ curl -s http://<connect-cluster-name>-connect-api:8083/admin/loggers/
 
 Kafka Connect uses the Apache `log4j2` logger implementation.
 Use the `logging` property to configure loggers and logger levels.
+
+NOTE: For Strimzi 0.45 and earlier, log4j1 was used for Kafka components. 
+Refer to the Strimzi 0.45 documentation for loggers and logging configuration examples based on log4j1.
 
 You can set the log levels by specifying the logger and level directly (`inline`) or use a custom (`external`) `ConfigMap` to define logging configurations using the `log4j2.properties` key.
 

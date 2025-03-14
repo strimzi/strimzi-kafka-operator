@@ -85,6 +85,7 @@ spec:
     logging: # <14>
       type: inline
       loggers:
+        # Kafka 4.0+ uses Log4j2
         rootLogger.level: INFO
     # Readiness probe (optional)
     readinessProbe: # <15>
@@ -130,6 +131,7 @@ spec:
       logging: # <23>
         type: inline
         loggers:
+          # Kafka 4.0+ uses Log4j2
           rootLogger.level: INFO
     userOperator:
       watchedNamespace: my-topic-namespace
@@ -146,6 +148,7 @@ spec:
       logging: # <24>
         type: inline
         loggers:
+          # Kafka 4.0+ uses Log4j2
           rootLogger.level: INFO
   # Kafka Exporter (optional)
   kafkaExporter: # <25>
