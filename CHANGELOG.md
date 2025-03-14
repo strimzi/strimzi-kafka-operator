@@ -17,6 +17,7 @@
 * Adopted new Kafka Connect health check endpoint (see [proposal 89](https://github.com/strimzi/proposals/blob/main/089-adopt-connect-health-endpoint.md)).
 * Update standalone User Operator to handle Cluster CA cert Secret being missing when TLS is not needed.
 * Strimzi Drain Cleaner updated to 1.3.0 (included in the Strimzi installation files)
+* Improved the MirrorMaker2 example Grafana dashboard to set metric units and include chart descriptions.
 
 ### Major changes, deprecations and removals
 
