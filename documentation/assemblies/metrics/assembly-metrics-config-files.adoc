@@ -63,6 +63,10 @@ metrics
 <14> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for MirrorMaker 2.
 <15> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for OAuth 2.0.
 
+NOTE: The Prometheus JMX Exporter collects Java Management Extensions (JMX) metrics from Kafka components and converts them into Prometheus metrics.
+You do not require `jmxOptions` configuration in the custom resource of the component for the Prometheus JMX Exporter to function.
+`jmxOptions` is only required if you need direct access to JMX metrics from Kafka components.
+
 //Example Prometheus metrics files
 include::../../modules/metrics/ref-prometheus-metrics-config.adoc[leveloffset=+1]
 //Example Prometheus alert rules
