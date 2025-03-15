@@ -120,9 +120,9 @@
         <lombok.version>1.18.32</lombok.version>
 
         <!-- Runtime dependencies -->
-        <fabric8.kubernetes-client.version>6.13.4</fabric8.kubernetes-client.version>
-        <fabric8.openshift-client.version>6.13.4</fabric8.openshift-client.version>
-        <fabric8.kubernetes-model.version>6.13.4</fabric8.kubernetes-model.version>
+        <fabric8.kubernetes-client.version>7.1.0</fabric8.kubernetes-client.version>
+        <fabric8.openshift-client.version>7.1.0</fabric8.openshift-client.version>
+        <fabric8.kubernetes-model.version>7.1.0</fabric8.kubernetes-model.version>
         <fabric8.zjsonpatch.version>0.3.0</fabric8.zjsonpatch.version>
         <fasterxml.jackson-core.version>2.16.2</fasterxml.jackson-core.version>
         <fasterxml.jackson-databind.version>2.16.2</fasterxml.jackson-databind.version>
