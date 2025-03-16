@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.45.1
+
+* Dependency updates (Vert.x 4.5.13, Netty 4.1.118.Final)
+
 ## 0.45.0
 
 * Add support for Kafka 3.9.0 and 3.8.1. 
