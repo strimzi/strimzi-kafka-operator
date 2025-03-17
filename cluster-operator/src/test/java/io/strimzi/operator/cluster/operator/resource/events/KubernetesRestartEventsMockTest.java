@@ -296,7 +296,8 @@ public class KubernetesRestartEventsMockTest {
 
     @Test
     void testEventEmittedWhenCaCertHasOldGeneration(Vertx vertx, VertxTestContext context) {
-        Secret patched = modifySecretWithAnnotation(clusterCa.caCertSecret(), Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "-1");
+        Secret caCertSecret = createInitialCaCertSecret(namespace, CLUSTER_NAME, clusterCaCertSecretName(CLUSTER_NAME), MockCertManager.clusterCaCert(), MockCertManager.clusterCaCertStore(), "123456");
+        Secret patched = modifySecretWithAnnotation(caCertSecret, Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "-1");
         ClusterCa oldGenClusterCa = createClusterCaWithSecret(patched);
 
         KafkaCluster kafkaCluster = KafkaClusterCreator.createKafkaCluster(reconciliation,
