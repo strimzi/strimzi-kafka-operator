@@ -117,6 +117,10 @@ Be aware that if the configured image is not compatible with Strimzi images, it 
 [id='property-kafka-logging-{context}']
 = Logging
 
+WARNING: Kafka 3.9 and earlier versions use log4j1 for logging.
+For loggers and logging configuration examples based on log4j1, refer to the link:{DocArchive}[Strimzi 0.45 documentation^]. 
+These examples can also be used with Strimzi 0.46 and Kafka 3.9.x.
+
 Kafka has its own configurable loggers, which include the following:
 
 * `rootLogger`
@@ -133,9 +137,6 @@ Kafka has its own configurable loggers, which include the following:
 Kafka uses the Apache `log4j2` logger implementation.
 Use the `logging` property to configure loggers and logger levels.
 
-NOTE: For Strimzi 0.45 and earlier, log4j1 was used for Kafka components. 
-Refer to the Strimzi 0.45 documentation for loggers and logging configuration examples based on log4j1.
-
 You can set the log levels by specifying the logger and level directly (`inline`) or use a custom (`external`) `ConfigMap` to define logging configurations using the `log4j2.properties` key.
 
 .Example inline logging configuration
@@ -151,7 +152,6 @@ spec:
       type: inline
       loggers:
         rootLogger.level: INFO
-        logger.kafka.name: kafka
         logger.transaction.name: logger.kafka.coordinator.transaction
         logger.transaction.level: TRACE
         logger.cleaner.name: logger.kafka.log.LogCleanerManager

@@ -16,7 +16,7 @@ Kafka Bridge has its own configurable loggers:
 * `rootLogger`
 * `bridge`
 
-You can also log levels for specific operations based on endpoints:
+You can also set log levels for specific operations based on endpoints:
 
 * `createConsumer`
 * `deleteConsumer`
