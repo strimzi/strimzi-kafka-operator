@@ -2,9 +2,10 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.common.model;
+package io.strimzi.operator.common.ca;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
@@ -162,7 +163,7 @@ public class CertificateUtils {
      */
     public static List<X509Certificate> extractCertChain(String key, byte[] certBytes) {
         try (ByteArrayInputStream bis = new ByteArrayInputStream(certBytes)) {
-            Collection<? extends Certificate> certificates = certificateFactory().generateCertificates(bis);
+            Collection<? extends Certificate> certificates = CertificateUtils.certificateFactory().generateCertificates(bis);
             List<X509Certificate> x509Certificates = new ArrayList<>(certificates.size());
             for (Certificate certificate : certificates) {
                 if (certificate instanceof X509Certificate) {
@@ -175,5 +176,21 @@ public class CertificateUtils {
         } catch (CertificateException | IOException e) {
             throw new RuntimeException("Failed to decode "  + key, e);
         }
+    }
+
+    /**
+     * Create a subject
+     *
+     * @param commonName The CN of the certificate to be created.
+     * @param organization The O of the certificate to be created. May be null.
+     * @return The subject created with the given CN and O
+     */
+    public static Subject getSubject(String commonName, String organization) {
+        Subject.Builder subject = new Subject.Builder();
+        if (organization != null) {
+            subject.withOrganizationName(organization);
+        }
+        subject.withCommonName(commonName);
+        return subject.build();
     }
 }

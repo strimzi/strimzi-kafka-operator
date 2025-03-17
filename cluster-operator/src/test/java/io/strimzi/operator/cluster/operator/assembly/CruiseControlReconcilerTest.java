@@ -24,7 +24,6 @@ import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
-import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.NodeRef;
@@ -38,7 +37,9 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.model.Ca;
+import io.strimzi.operator.common.ca.Ca;
+import io.strimzi.operator.common.ca.CaConfig;
+import io.strimzi.operator.common.ca.InternalCa;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.operator.MockCertIssuer;
@@ -201,12 +202,14 @@ public class CruiseControlReconcilerTest {
                     .build());
         }
 
-        ClusterCa clusterCa = new ClusterCa(
+        InternalCa clusterCa = new InternalCa(
                 Reconciliation.DUMMY_RECONCILIATION,
+                Ca.CaRole.CLUSTER_CA,
                 new MockCertIssuer(),
                 new PasswordGenerator(10, "a", "a"),
                 ResourceUtils.createInitialCaCertSecret(NAMESPACE, NAME, AbstractModel.clusterCaCertSecretName(NAME), MockCertIssuer.clusterCaCert(), MockCertIssuer.clusterCaCertStore(), "123456"),
-                ResourceUtils.createInitialCaKeySecret(NAMESPACE, NAME, AbstractModel.clusterCaKeySecretName(NAME), MockCertIssuer.clusterCaKey())
+                ResourceUtils.createInitialCaKeySecret(NAMESPACE, NAME, AbstractModel.clusterCaKeySecretName(NAME), MockCertIssuer.clusterCaKey()),
+                CaConfig.createDefault()
         );
 
         CruiseControlReconciler rcnclr = new CruiseControlReconciler(
@@ -296,12 +299,14 @@ public class CruiseControlReconcilerTest {
 
         when(mockPodDisruptionBudget.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.componentName(NAME)), any())).thenReturn(CompletableFuture.completedFuture(null));
 
-        ClusterCa clusterCa = new ClusterCa(
+        InternalCa clusterCa = new InternalCa(
                 Reconciliation.DUMMY_RECONCILIATION,
+                Ca.CaRole.CLUSTER_CA,
                 new MockCertIssuer(),
                 new PasswordGenerator(10, "a", "a"),
                 ResourceUtils.createInitialCaCertSecret(NAMESPACE, NAME, AbstractModel.clusterCaCertSecretName(NAME), MockCertIssuer.clusterCaCert(), MockCertIssuer.clusterCaCertStore(), "123456"),
-                ResourceUtils.createInitialCaKeySecret(NAMESPACE, NAME, AbstractModel.clusterCaKeySecretName(NAME), MockCertIssuer.clusterCaKey())
+                ResourceUtils.createInitialCaKeySecret(NAMESPACE, NAME, AbstractModel.clusterCaKeySecretName(NAME), MockCertIssuer.clusterCaKey()),
+                CaConfig.createDefault()
         );
 
         CruiseControlReconciler rcnclr = new CruiseControlReconciler(

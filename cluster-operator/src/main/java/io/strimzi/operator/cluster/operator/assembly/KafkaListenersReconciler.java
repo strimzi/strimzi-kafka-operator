@@ -18,7 +18,6 @@ import io.strimzi.api.kafka.model.kafka.listener.ListenerStatusBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.NodeAddressType;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.CertSecretUtils;
-import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.DnsNameGenerator;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.ListenersUtils;
@@ -32,6 +31,7 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.TLSRouteOperator
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 import io.vertx.core.Future;
@@ -58,7 +58,7 @@ public class KafkaListenersReconciler {
     private final Reconciliation reconciliation;
     private final long operationTimeoutMs;
     private final KafkaCluster kafka;
-    private final ClusterCa clusterCa;
+    private final Ca clusterCa;
     private final PlatformFeaturesAvailability pfa;
 
     private final SecretOperator secretOperator;
@@ -86,7 +86,7 @@ public class KafkaListenersReconciler {
     public KafkaListenersReconciler(
             Reconciliation reconciliation,
             KafkaCluster kafka,
-            ClusterCa clusterCa,
+            Ca clusterCa,
             PlatformFeaturesAvailability pfa,
 
             long operationTimeoutMs,

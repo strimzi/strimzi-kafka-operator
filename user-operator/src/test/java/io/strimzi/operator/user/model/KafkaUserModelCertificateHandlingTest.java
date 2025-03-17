@@ -7,11 +7,9 @@ package io.strimzi.operator.user.model;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.user.KafkaUserTlsClientAuthentication;
-import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertIssuer;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.MockCertIssuer;
@@ -26,12 +24,14 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class KafkaUserModelCertificateHandlingTest {
     // Certificate used for expiration tests where actual expiration is needed. This certificate expires on 27th March 2023.
     // But with correct configuration or renewal days before expiration, it can be used to trigger expiration,
-    private final static String USER_CRT_FOR_EXPIRATION_TEST = "-----BEGIN CERTIFICATE-----\n" +
+    private final static byte[] USER_CRT_FOR_EXPIRATION_TEST = ("-----BEGIN CERTIFICATE-----\n" +
             "MIIECTCCAfGgAwIBAgIUAw8AFcPvJkD5ijYTuT5KBt6sUX4wDQYJKoZIhvcNAQEN\n" +
             "BQAwLTETMBEGA1UECgwKaW8uc3RyaW16aTEWMBQGA1UEAwwNY2xpZW50cy1jYSB2\n" +
             "MDAeFw0yMjAzMjcxNTQyNTBaFw0yMzAzMjcxNTQyNTBaMA8xDTALBgNVBAMMBHVz\n" +
@@ -54,7 +54,7 @@ public class KafkaUserModelCertificateHandlingTest {
             "4ebFTZY24EM5LNmWXaR6RVmbg0Xc1kSR8DqUzTaNA2s8lbtQId4yvzxOP5Lkcq/G\n" +
             "dJl3QtzbWBWFW2bU8MHZ2bUQsmw0RtmTg9tDMCHLAH+9Mw7yMWsEg5iX0H7hnwJA\n" +
             "T/DiI+A2t2dGukf5qfzqgiXkq4XqM6+p0zY1Cv0=\n" +
-            "-----END CERTIFICATE-----\n";
+            "-----END CERTIFICATE-----\n").getBytes(StandardCharsets.UTF_8);
 
     private final Secret clientsCaCert = ResourceUtils.createClientsCaCertSecret(ResourceUtils.NAMESPACE);
     private final Secret clientsCaKey = ResourceUtils.createClientsCaKeySecret(ResourceUtils.NAMESPACE);
@@ -66,8 +66,8 @@ public class KafkaUserModelCertificateHandlingTest {
         MockKafkaUserModel model = new MockKafkaUserModel();
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertIssuer, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC(), true);
 
-        assertThat(model.generateNewCertificateCalled, is(1));
-        assertThat(model.reuseCertificateCalled, is(0));
+        assertThat(model.caCert, is(clientsCaCert.getData().get("ca.crt")));
+        assertThat(model.userCertAndKey, notNullValue());
     }
 
     @Test
@@ -78,49 +78,58 @@ public class KafkaUserModelCertificateHandlingTest {
                     .withNamespace(ResourceUtils.NAMESPACE)
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_FORCE_RENEW, "true")
                 .endMetadata()
+                .withData(Map.of("ca.crt", clientsCaCert.getData().get("ca.crt"),
+                        "user.crt", MockCertIssuer.clientsCaCert(),
+                        "user.key", MockCertIssuer.clientsCaKey()))
                 .build();
 
         MockKafkaUserModel model = new MockKafkaUserModel();
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertIssuer, passwordGenerator, clientsCaCert, clientsCaKey, userSecret, 365, 30, null, Clock.systemUTC(), true);
 
-        assertThat(model.generateNewCertificateCalled, is(1));
-        assertThat(model.reuseCertificateCalled, is(0));
+        assertThat(model.caCert, is(clientsCaCert.getData().get("ca.crt")));
+        assertThat(model.userCertAndKey.certAsBase64String(), not(MockCertIssuer.clientsCaCert()));
+        assertThat(model.userCertAndKey.keyAsBase64String(), not(MockCertIssuer.clientsCaKey()));
     }
 
     @Test
     public void testExistingUserWithIncompleteSecret() {
+        String oldPassword = Base64.getEncoder().encodeToString("123456".getBytes(StandardCharsets.UTF_8));
         Secret userSecret = new SecretBuilder()
                 .withNewMetadata()
                     .withName(ResourceUtils.NAME)
                     .withNamespace(ResourceUtils.NAMESPACE)
                 .endMetadata()
-                .withData(Map.of("password", Base64.getEncoder().encodeToString("123456".getBytes(StandardCharsets.UTF_8))))
+                .withData(Map.of("password", oldPassword))
                 .build();
 
         MockKafkaUserModel model = new MockKafkaUserModel();
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertIssuer, passwordGenerator, clientsCaCert, clientsCaKey, userSecret, 365, 30, null, Clock.systemUTC(), true);
 
-        assertThat(model.generateNewCertificateCalled, is(1));
-        assertThat(model.reuseCertificateCalled, is(0));
+        assertThat(model.caCert, is(clientsCaCert.getData().get("ca.crt")));
+        assertThat(model.userCertAndKey.storePasswordAsBase64String(), not(oldPassword));
     }
 
     @Test
     public void testExistingUserWithCompleteSecretButOldCa() {
+        byte[] oldCaCert = "Some old CA public key".getBytes(StandardCharsets.UTF_8);
+        byte[] oldUserCrt = "User public key".getBytes(StandardCharsets.UTF_8);
+        byte[] oldUserKey = "User private key".getBytes(StandardCharsets.UTF_8);
         Secret userSecret = new SecretBuilder()
                 .withNewMetadata()
                     .withName(ResourceUtils.NAME)
                     .withNamespace(ResourceUtils.NAMESPACE)
                 .endMetadata()
-                .withData(Map.of("ca.crt", Base64.getEncoder().encodeToString("Some old CA public key".getBytes(StandardCharsets.UTF_8)),
-                        "user.crt", Base64.getEncoder().encodeToString("User public key".getBytes(StandardCharsets.UTF_8)),
-                        "user.key", Base64.getEncoder().encodeToString("User private key".getBytes(StandardCharsets.UTF_8))))
+                .withData(Map.of("ca.crt", Base64.getEncoder().encodeToString(oldCaCert),
+                        "user.crt", Base64.getEncoder().encodeToString(oldUserCrt),
+                        "user.key", Base64.getEncoder().encodeToString(oldUserKey)))
                 .build();
 
         MockKafkaUserModel model = new MockKafkaUserModel();
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertIssuer, passwordGenerator, clientsCaCert, clientsCaKey, userSecret, 365, 30, null, Clock.systemUTC(), true);
 
-        assertThat(model.generateNewCertificateCalled, is(1));
-        assertThat(model.reuseCertificateCalled, is(0));
+        assertThat(model.caCert, not(oldCaCert));
+        assertThat(model.userCertAndKey.cert(), not(oldUserCrt));
+        assertThat(model.userCertAndKey.key(), not(oldUserKey));
     }
 
     @Test
@@ -138,8 +147,9 @@ public class KafkaUserModelCertificateHandlingTest {
         MockKafkaUserModel model = new MockKafkaUserModel();
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertIssuer, passwordGenerator, clientsCaCert, clientsCaKey, userSecret, 365, 30, null, Clock.systemUTC(), true);
 
-        assertThat(model.generateNewCertificateCalled, is(0));
-        assertThat(model.reuseCertificateCalled, is(1));
+        assertThat(model.caCert, is(clientsCaCert.getData().get("ca.crt")));
+        assertThat(model.userCertAndKey.certAsBase64String(), is(MockCertIssuer.clientsCaCert()));
+        assertThat(model.userCertAndKey.keyAsBase64String(), is(MockCertIssuer.clientsCaKey()));
     }
 
     @Test
@@ -150,15 +160,14 @@ public class KafkaUserModelCertificateHandlingTest {
                     .withNamespace(ResourceUtils.NAMESPACE)
                 .endMetadata()
                 .withData(Map.of("ca.crt", clientsCaCert.getData().get("ca.crt"),
-                        "user.crt", Base64.getEncoder().encodeToString(USER_CRT_FOR_EXPIRATION_TEST.getBytes(StandardCharsets.UTF_8)),
+                        "user.crt", Base64.getEncoder().encodeToString(USER_CRT_FOR_EXPIRATION_TEST),
                         "user.key", Base64.getEncoder().encodeToString("User private key".getBytes(StandardCharsets.UTF_8))))
                 .build();
 
         MockKafkaUserModel model = new MockKafkaUserModel();
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertIssuer, passwordGenerator, clientsCaCert, clientsCaKey, userSecret, 1000, 500, null, Clock.systemUTC(), true);
 
-        assertThat(model.generateNewCertificateCalled, is(1));
-        assertThat(model.reuseCertificateCalled, is(0));
+        assertThat(model.userCertAndKey.cert(), not(USER_CRT_FOR_EXPIRATION_TEST));
     }
 
     @Test
@@ -169,15 +178,14 @@ public class KafkaUserModelCertificateHandlingTest {
                     .withNamespace(ResourceUtils.NAMESPACE)
                 .endMetadata()
                 .withData(Map.of("ca.crt", clientsCaCert.getData().get("ca.crt"),
-                        "user.crt", Base64.getEncoder().encodeToString(USER_CRT_FOR_EXPIRATION_TEST.getBytes(StandardCharsets.UTF_8)),
+                        "user.crt", Base64.getEncoder().encodeToString(USER_CRT_FOR_EXPIRATION_TEST),
                         "user.key", Base64.getEncoder().encodeToString("User private key".getBytes(StandardCharsets.UTF_8))))
                 .build();
 
         MockKafkaUserModel model = new MockKafkaUserModel();
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertIssuer, passwordGenerator, clientsCaCert, clientsCaKey, userSecret, 1000, 500, List.of("* * 8-10 * * ?", "* * 14-15 * * ?"), Clock.fixed(Instant.parse("2018-11-26T09:00:00Z"), Clock.systemUTC().getZone()), true);
 
-        assertThat(model.generateNewCertificateCalled, is(1));
-        assertThat(model.reuseCertificateCalled, is(0));
+        assertThat(model.userCertAndKey.cert(), not(USER_CRT_FOR_EXPIRATION_TEST));
     }
 
     @Test
@@ -188,36 +196,20 @@ public class KafkaUserModelCertificateHandlingTest {
                     .withNamespace(ResourceUtils.NAMESPACE)
                 .endMetadata()
                 .withData(Map.of("ca.crt", clientsCaCert.getData().get("ca.crt"),
-                        "user.crt", Base64.getEncoder().encodeToString(USER_CRT_FOR_EXPIRATION_TEST.getBytes(StandardCharsets.UTF_8)),
+                        "user.crt", Base64.getEncoder().encodeToString(USER_CRT_FOR_EXPIRATION_TEST),
                         "user.key", Base64.getEncoder().encodeToString("User private key".getBytes(StandardCharsets.UTF_8))))
                 .build();
 
         MockKafkaUserModel model = new MockKafkaUserModel();
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertIssuer, passwordGenerator, clientsCaCert, clientsCaKey, userSecret, 1000, 500, List.of("* * 8-10 * * ?", "* * 14-15 * * ?"), Clock.fixed(Instant.parse("2018-11-26T11:55:00Z"), Clock.systemUTC().getZone()), true);
 
-        assertThat(model.generateNewCertificateCalled, is(0));
-        assertThat(model.reuseCertificateCalled, is(1));
+        assertThat(model.userCertAndKey.cert(), is(USER_CRT_FOR_EXPIRATION_TEST));
     }
 
     static class MockKafkaUserModel extends KafkaUserModel {
-        public int reuseCertificateCalled = 0;
-        public int generateNewCertificateCalled = 0;
-
         protected MockKafkaUserModel() {
             super(ResourceUtils.NAMESPACE, ResourceUtils.NAME, Labels.EMPTY, null);
             this.authentication = new KafkaUserTlsClientAuthentication();
-        }
-
-        @Override
-        CertAndKey generateNewCertificate(Reconciliation reconciliation, Ca clientsCa) {
-            generateNewCertificateCalled++;
-            return null;
-        }
-
-        @Override
-        CertAndKey reuseCertificate(Reconciliation reconciliation, Ca clientsCa, Secret userSecret) {
-            reuseCertificateCalled++;
-            return null;
         }
     }
 }

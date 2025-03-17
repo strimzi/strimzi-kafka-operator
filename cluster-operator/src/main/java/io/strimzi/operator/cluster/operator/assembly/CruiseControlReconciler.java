@@ -15,7 +15,6 @@ import io.strimzi.api.kafka.model.kafka.Storage;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.CertSecretUtils;
-import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
@@ -31,7 +30,7 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.ServiceOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.model.Ca;
+import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
@@ -50,7 +49,7 @@ import java.util.Set;
 public class CruiseControlReconciler {
     private final Reconciliation reconciliation;
     private final CruiseControl cruiseControl;
-    private final ClusterCa clusterCa;
+    private final Ca clusterCa;
     private final List<String> maintenanceWindows;
     private final long operationTimeoutMs;
     private final String operatorNamespace;
@@ -99,7 +98,7 @@ public class CruiseControlReconciler {
             Set<NodeRef> kafkaBrokerNodes,
             Map<String, Storage> kafkaBrokerStorage,
             Map<String, ResourceRequirements> kafkaBrokerResources,
-            ClusterCa clusterCa
+            Ca clusterCa
     ) {
         this.reconciliation = reconciliation;
         this.cruiseControl = CruiseControl.fromCrd(reconciliation, kafkaAssembly, versions, kafkaBrokerNodes, kafkaBrokerStorage, 
@@ -242,17 +241,15 @@ public class CruiseControlReconciler {
     protected Future<Void> certificatesSecret(Clock clock) {
         if (cruiseControl != null) {
             return VertxUtil.toFuture(secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name())))
-                    .compose(oldSecret -> {
-                        Secret newSecret = cruiseControl.generateCertificatesSecret(reconciliation.namespace(), reconciliation.name(), clusterCa, oldSecret, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
-
-                        return VertxUtil.toFuture(secretOperator
-                                .reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name()), newSecret))
-                                .compose(i -> {
-                                    certificateHash = CertSecretUtils.getCertificateShortThumbprint(newSecret, Ca.SecretEntry.CRT.asKey(CruiseControl.COMPONENT_TYPE));
-
-                                    return Future.succeededFuture();
-                                });
-                    });
+                    .compose(oldSecret -> Future.fromCompletionStage(
+                        cruiseControl.generateCertificatesSecret(reconciliation.namespace(), reconciliation.name(), clusterCa, oldSecret, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()))))
+                    .compose(newSecret ->
+                            VertxUtil.toFuture(secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name()), newSecret))
+                                    .compose(i -> {
+                                        certificateHash = CertSecretUtils.getCertificateShortThumbprint(newSecret, Ca.SecretEntry.CRT.asKey(CruiseControl.COMPONENT_TYPE));
+                                        return Future.succeededFuture();
+                                    })
+                    );
         } else {
             return VertxUtil.toFuture(secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name()), null))
                     .mapEmpty();

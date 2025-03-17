@@ -36,6 +36,7 @@ import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlTemplate;
 import io.strimzi.certs.CertAndKey;
+import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.CapacityConfiguration;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration;
@@ -50,13 +51,13 @@ import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderCon
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlApiProperties;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.plugin.security.profiles.PodSecurityProviderContext;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -64,6 +65,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 
 import static io.strimzi.api.kafka.model.common.template.DeploymentStrategy.ROLLING_UPDATE;
 import static io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlConfiguration.CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS;
@@ -73,6 +75,7 @@ import static java.lang.String.format;
 /**
  * Cruise Control model
  */
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class CruiseControl extends AbstractModel implements SupportsMetrics, SupportsLogging {
     /**
      * Type of the component which this model class represents. It is used for labeling and naming purposes.
@@ -438,31 +441,54 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      *
      * @param namespace                             Namespace in which the Cruise Control cluster runs
      * @param clusterName                           Name of the Kafka cluster (it is used for the SANs in the certificate)
-     * @param clusterCa                             The cluster CA.
+     * @param ca                                    The cluster CA.
      * @param existingSecret                        The existing secret with Kafka certificates
      * @param isMaintenanceTimeWindowsSatisfied     Indicates whether we are in the maintenance window or not.
      *                                              This is used for certificate renewals
      *
      * @return The generated Secret.
      */
-    public Secret generateCertificatesSecret(String namespace, String clusterName, ClusterCa clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
+    public CompletionStage<Secret> generateCertificatesSecret(String namespace, String clusterName, Ca ca, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
         LOGGER.debugCr(reconciliation, "Generating certificates");
-        try {
-            CertAndKey existingCertAndKey = CertSecretUtils.keyStoreCertAndKey(existingSecret, CruiseControl.COMPONENT_TYPE, clusterCa.caCertGenerationAnnotation());
+        CertAndKey existingCertAndKey = CertSecretUtils.keyStoreCertAndKey(existingSecret, CruiseControl.COMPONENT_TYPE, ca.caCertGenerationAnnotation());
 
-            Map<String, CertAndKey> ccCerts = clusterCa.generateCcCerts(namespace, clusterName, existingCertAndKey,
-                    new NodeRef(CruiseControl.COMPONENT_TYPE, 0, null, false, false),
-                    isMaintenanceTimeWindowsSatisfied);
+        Subject subject = buildCruiseControlCertSubject(namespace, clusterName);
+
+        return ca.maybeCopyOrGenerateServerCerts(
+                reconciliation,
+                CruiseControl.COMPONENT_TYPE,
+                subject,
+                existingCertAndKey,
+                isMaintenanceTimeWindowsSatisfied,
+                false
+        ).thenApply(ccCerts -> {
             LOGGER.debugCr(reconciliation, "End generating certificates");
+            return ModelUtils.createSecret(
+                    CruiseControlResources.secretName(cluster),
+                    namespace,
+                    labels,
+                    ownerReference,
+                    CertSecretUtils.buildSecretData(Map.of(CruiseControl.COMPONENT_TYPE, ccCerts)),
+                    Map.of(ca.caCertGenerationAnnotation(), String.valueOf(ccCerts.caCertGeneration())),
+                    Map.of()
+            );
+        });
+    }
 
-            return ModelUtils.createSecret(CruiseControlResources.secretName(cluster), namespace, labels, ownerReference,
-                    CertSecretUtils.buildSecretData(ccCerts),
-                    Map.of(clusterCa.caCertGenerationAnnotation(), String.valueOf(ccCerts.get(CruiseControl.COMPONENT_TYPE).caCertGeneration())),
-                    Map.of());
-        } catch (IOException e) {
-            LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
-            throw new RuntimeException("Failed to prepare Cruise Control certificates", e);
-        }
+    private Subject buildCruiseControlCertSubject(String namespace, String clusterName) {
+        DnsNameGenerator ccDnsGenerator = DnsNameGenerator.of(namespace, CruiseControlResources.serviceName(clusterName));
+
+        Subject.Builder subject = new Subject.Builder()
+                .withOrganizationName(Ca.IO_STRIMZI)
+                .withCommonName(CruiseControlResources.serviceName(clusterName));
+
+        subject.addDnsName(CruiseControlResources.serviceName(clusterName));
+        subject.addDnsName(format("%s.%s", CruiseControlResources.serviceName(clusterName), namespace));
+        subject.addDnsName(ccDnsGenerator.serviceDnsNameWithoutClusterDomain());
+        subject.addDnsName(ccDnsGenerator.serviceDnsName());
+        subject.addDnsName("localhost");
+
+        return subject.build();
     }
 
     /**

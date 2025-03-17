@@ -69,6 +69,7 @@ We also control imports only in production classes and not in tests. This is con
         <allow pkg="io.strimzi.platform" />
         <allow pkg="io.strimzi.certs" />
         <allow pkg="io.strimzi.kafka.config.model" />
+        <allow pkg="io.strimzi.operator.common.ca" />
         <allow pkg="io.strimzi.operator.common.model" />
         <allow pkg="io.strimzi.operator.cluster.model" />
         <allow class="io.strimzi.operator.common.Reconciliation" />
@@ -98,6 +99,7 @@ We also control imports only in production classes and not in tests. This is con
         <allow pkg="io.strimzi.certs" />
         <allow pkg="io.strimzi.operator.common.model" />
         <allow pkg="io.strimzi.operator.user.model" />
+        <allow pkg="io.strimzi.operator.common.ca" />
         <allow class="io.strimzi.operator.common.Annotations" />
         <allow class="io.strimzi.operator.common.Reconciliation" />
         <allow class="io.strimzi.operator.common.ReconciliationLogger" />

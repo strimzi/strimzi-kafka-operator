@@ -33,7 +33,6 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
-import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaPool;
 import io.strimzi.operator.cluster.model.KafkaVersion;
@@ -53,8 +52,9 @@ import io.strimzi.operator.cluster.operator.resource.kubernetes.StrimziPodSetOpe
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.auth.TlsPemIdentity;
-import io.strimzi.operator.common.model.CaConfig;
-import io.strimzi.operator.common.model.ClientsCa;
+import io.strimzi.operator.common.ca.Ca;
+import io.strimzi.operator.common.ca.CaConfig;
+import io.strimzi.operator.common.ca.InternalCa;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.operator.MockCertIssuer;
@@ -194,16 +194,19 @@ public class KafkaAssemblyOperatorWithKRaftTest {
             7, Map.of("PLAIN_9092", "10007")
     );
 
-    private final static ClusterCa CLUSTER_CA = new ClusterCa(
+    private final static InternalCa CLUSTER_CA = new InternalCa(
             Reconciliation.DUMMY_RECONCILIATION,
+            Ca.CaRole.CLUSTER_CA,
             CERT_ISSUER,
             PASSWORD_GENERATOR,
             ResourceUtils.createInitialCaCertSecret(NAMESPACE, CLUSTER_NAME, AbstractModel.clusterCaCertSecretName(CLUSTER_NAME), MockCertIssuer.clusterCaCert(), MockCertIssuer.clusterCaCertStore(), "123456"),
-            ResourceUtils.createInitialCaKeySecret(NAMESPACE, CLUSTER_NAME, AbstractModel.clusterCaKeySecretName(CLUSTER_NAME), MockCertIssuer.clusterCaKey())
+            ResourceUtils.createInitialCaKeySecret(NAMESPACE, CLUSTER_NAME, AbstractModel.clusterCaKeySecretName(CLUSTER_NAME), MockCertIssuer.clusterCaKey()),
+            CaConfig.createDefault()
     );
 
-    private final static ClientsCa CLIENTS_CA = new ClientsCa(
+    private final static InternalCa CLIENTS_CA = new InternalCa(
             Reconciliation.DUMMY_RECONCILIATION,
+            Ca.CaRole.CLIENTS_CA,
             CERT_ISSUER,
             PASSWORD_GENERATOR,
             ResourceUtils.createInitialCaCertSecret(NAMESPACE, CLUSTER_NAME, AbstractModel.clusterCaCertSecretName(CLUSTER_NAME), MockCertIssuer.clusterCaCert(), MockCertIssuer.clusterCaCertStore(), "123456"),
@@ -1818,7 +1821,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         int maybeRollKafkaInvocations = 0;
         Function<Pod, RestartReasons> kafkaPodNeedsRestart = null;
 
-        public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, List<KafkaNodePool> nodePools, KafkaCluster kafkaCluster, ClusterCa clusterCa, ClientsCa clientsCa) {
+        public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, List<KafkaNodePool> nodePools, KafkaCluster kafkaCluster, Ca clusterCa, Ca clientsCa) {
             super(reconciliation, kafkaAssembly, nodePools, kafkaCluster, clusterCa, clientsCa, config, supplier, pfa, vertx);
 
             this.coTlsPemIdentity = new TlsPemIdentity(null, null);

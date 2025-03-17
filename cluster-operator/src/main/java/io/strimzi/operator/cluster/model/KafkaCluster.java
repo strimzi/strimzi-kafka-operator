@@ -73,6 +73,7 @@ import io.strimzi.api.kafka.model.kafka.tieredstorage.TieredStorage;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolStatus;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.certs.CertAndKey;
+import io.strimzi.certs.IpAndDnsValidation;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
 import io.strimzi.operator.cluster.model.jmx.JmxModel;
@@ -88,6 +89,7 @@ import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderCon
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.StatusUtils;
@@ -96,7 +98,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.kafka.server.common.MetadataVersion;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -105,6 +106,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -1309,44 +1312,97 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return  The generated Secrets containing Kafka node certificates and custom certificates
      */
-    public List<Secret> generateCertificatesSecrets(ClusterCa clusterCa, List<Secret> existingSecrets, Map<String, String> customCertsData, Set<String> externalBootstrapDnsName, Map<Integer, Set<String>> externalDnsNames, boolean isMaintenanceTimeWindowsSatisfied) {
+    public CompletionStage<List<Secret>> generateCertificatesSecrets(Ca clusterCa, List<Secret> existingSecrets, Map<String, String> customCertsData, Set<String> externalBootstrapDnsName, Map<Integer, Set<String>> externalDnsNames, boolean isMaintenanceTimeWindowsSatisfied) {
         Map<String, Secret> existingSecretWithName = existingSecrets.stream().collect(Collectors.toMap(secret -> secret.getMetadata().getName(), secret -> secret));
-        Set<NodeRef> nodes = nodes();
-        Map<String, CertAndKey> existingCerts = new HashMap<>();
-        for (NodeRef node : nodes) {
+
+        List<CompletableFuture<Map.Entry<String, CertAndKey>>> futureList = new ArrayList<>();
+
+        nodes().forEach(node -> {
             String podName = node.podName();
             // Reuse existing certificate if it exists
+            CertAndKey existingCertAndKey = null;
             if (existingSecretWithName.get(podName) != null) {
                 Secret existingSecret = existingSecretWithName.get(podName);
-                CertAndKey nodeCertAndKey = CertSecretUtils.keyStoreCertAndKey(existingSecret, podName, clusterCa.caCertGenerationAnnotation());
-                existingCerts.put(podName, nodeCertAndKey);
+                existingCertAndKey = CertSecretUtils.keyStoreCertAndKey(existingSecret, podName, clusterCa.caCertGenerationAnnotation());
             } else {
                 LOGGER.debugCr(reconciliation, "No existing certificate found for pod {}/{}", namespace, podName);
             }
+            @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to conflict with Fabric8
+            io.strimzi.certs.Subject subject = buildKafkaNodeCertsSubject(node, externalBootstrapDnsName, externalDnsNames);
+
+            futureList.add(clusterCa.maybeCopyOrGenerateServerCerts(reconciliation, podName, subject, existingCertAndKey, isMaintenanceTimeWindowsSatisfied, true)
+                    .thenApply(certAndKey -> Map.entry(podName, certAndKey))
+                    .toCompletableFuture());
+        });
+
+        return CompletableFuture.allOf(futureList.toArray(new CompletableFuture[0]))
+                .thenApply(v -> futureList.stream()
+                        .map(CompletableFuture::join)
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)))
+                .thenApply(certAndKeys -> buildSecretsFromCertAndKeys(
+                        certAndKeys,
+                        customCertsData,
+                        clusterCa
+                ));
+    }
+
+    @SuppressWarnings("checkstyle:NoFullyQualifiedClassNames") // Fully qualified class name used due to conflict with Fabric8
+    private io.strimzi.certs.Subject buildKafkaNodeCertsSubject(NodeRef node,
+                                                                                Set<String> externalBootstrapAddresses,
+                                                                                Map<Integer, Set<String>> externalAddresses
+    ) {
+        io.strimzi.certs.Subject.Builder subject = new io.strimzi.certs.Subject.Builder()
+                .withOrganizationName(Ca.IO_STRIMZI)
+                .withCommonName(KafkaResources.kafkaComponentName(cluster));
+
+        subject.addDnsNames(ModelUtils.generateAllServiceDnsNames(namespace, KafkaResources.bootstrapServiceName(cluster)));
+        subject.addDnsNames(ModelUtils.generateAllServiceDnsNames(namespace, KafkaResources.brokersServiceName(cluster)));
+
+        subject.addDnsName(DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(cluster), node.podName()));
+        subject.addDnsName(DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(cluster), node.podName()));
+
+        // Controller-only nodes do not have the SANs for external listeners.
+        // That helps us to avoid unnecessary rolling updates when the SANs change
+        if (node.broker())    {
+            if (externalBootstrapAddresses != null) {
+                for (String dnsName : externalBootstrapAddresses) {
+                    if (IpAndDnsValidation.isValidIpAddress(dnsName)) {
+                        subject.addIpAddress(dnsName);
+                    } else {
+                        subject.addDnsName(dnsName);
+                    }
+                }
+            }
+
+            if (externalAddresses.get(node.nodeId()) != null) {
+                for (String dnsName : externalAddresses.get(node.nodeId())) {
+                    if (IpAndDnsValidation.isValidIpAddress(dnsName)) {
+                        subject.addIpAddress(dnsName);
+                    } else {
+                        subject.addDnsName(dnsName);
+                    }
+                }
+            }
         }
 
-        Map<String, CertAndKey> updatedCerts;
-        try {
-            updatedCerts = clusterCa.generateBrokerCerts(namespace, cluster, existingCerts,
-                    nodes, externalBootstrapDnsName, externalDnsNames, isMaintenanceTimeWindowsSatisfied);
-        } catch (IOException e) {
-            LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
-            throw new RuntimeException("Failed to prepare Kafka certificates", e);
-        }
+        return subject.build();
+    }
 
-        return updatedCerts.entrySet()
+    private List<Secret> buildSecretsFromCertAndKeys(Map<String, CertAndKey> certAndKeys, Map<String, String> customCertsData, Ca clusterCa) {
+        return certAndKeys.entrySet()
                 .stream()
                 .map(entry -> {
                     Map<String, String> secretData = new HashMap<>(CertSecretUtils.buildSecretData(entry.getKey(), entry.getValue()));
+
                     if (customCertsData != null && !customCertsData.isEmpty()) {
                         secretData.putAll(customCertsData);
                     }
-
-                    return ModelUtils.createSecret(entry.getKey(), namespace, labels, ownerReference,
+                    return ModelUtils.createSecret(
+                            entry.getKey(), namespace, labels, ownerReference,
                             secretData,
-                            Map.ofEntries(
-                                    clusterCa.caCertGenerationFullAnnotation()),
-                            emptyMap());
+                            Map.ofEntries(clusterCa.caCertGenerationFullAnnotation()),
+                            emptyMap()
+                    );
                 })
                 .toList();
     }

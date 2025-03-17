@@ -328,7 +328,7 @@ public class KafkaUserOperator {
             .toCompletableFuture();
 
         return CompletableFuture.allOf(caCertPromise, caKeyPromise)
-                .thenRun(() -> user.maybeGenerateCertificates(
+                .thenCompose(v -> user.maybeGenerateCertificates(
                         reconciliation,
                         certIssuer,
                         passwordGenerator,

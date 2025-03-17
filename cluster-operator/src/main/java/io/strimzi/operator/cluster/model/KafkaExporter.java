@@ -34,12 +34,14 @@ import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProvi
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.plugin.security.profiles.PodSecurityProviderContext;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 
 import static io.strimzi.api.kafka.model.common.template.DeploymentStrategy.ROLLING_UPDATE;
 
@@ -296,21 +298,22 @@ public class KafkaExporter extends AbstractModel {
      *
      * @return The generated Secret.
      */
-    public Secret generateCertificatesSecret(ClusterCa clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
+    public CompletionStage<Secret> generateCertificatesSecret(Ca clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
         CertAndKey existingCertAndKey = CertSecretUtils.keyStoreCertAndKey(existingSecret, COMPONENT_TYPE, clusterCa.caCertGenerationAnnotation());
 
-        CertAndKey updatedCert = clusterCa.maybeCopyOrGenerateClientCert(reconciliation, componentName, existingCertAndKey, isMaintenanceTimeWindowsSatisfied);
-
-        Map<String, String> secretData = CertSecretUtils.buildSecretData(COMPONENT_TYPE, updatedCert);
-        return ModelUtils.createSecret(
-                KafkaExporterResources.secretName(cluster),
-                namespace,
-                labels,
-                ownerReference,
-                secretData,
-                Map.of(clusterCa.caCertGenerationAnnotation(), String.valueOf(updatedCert.caCertGeneration())),
-                Map.of()
-        );
+        return clusterCa.maybeCopyOrGenerateClientCert(reconciliation, componentName, existingCertAndKey, isMaintenanceTimeWindowsSatisfied)
+                .thenApply(updatedCert -> {
+                    Map<String, String> secretData = CertSecretUtils.buildSecretData(COMPONENT_TYPE, updatedCert);
+                    return ModelUtils.createSecret(
+                            KafkaExporterResources.secretName(cluster),
+                            namespace,
+                            labels,
+                            ownerReference,
+                            secretData,
+                            Map.of(clusterCa.caCertGenerationAnnotation(), String.valueOf(updatedCert.caCertGeneration())),
+                            Map.of()
+                    );
+                });
     }
 
     /**

@@ -29,11 +29,13 @@ import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.logging.SupportsLogging;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ca.Ca;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Represents the User Operator deployment
@@ -290,21 +292,22 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
      *
      * @return The generated Secret.
      */
-    public Secret generateCertificatesSecret(ClusterCa clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
+    public CompletionStage<Secret> generateCertificatesSecret(Ca clusterCa, Secret existingSecret, boolean isMaintenanceTimeWindowsSatisfied) {
         CertAndKey existingCertAndKey = CertSecretUtils.keyStoreCertAndKey(existingSecret, EntityOperator.COMPONENT_TYPE, clusterCa.caCertGenerationAnnotation());
 
-        CertAndKey updatedCert = clusterCa.maybeCopyOrGenerateClientCert(reconciliation, componentName, existingCertAndKey, isMaintenanceTimeWindowsSatisfied);
-
-        Map<String, String> secretData = CertSecretUtils.buildSecretData(EntityOperator.COMPONENT_TYPE, updatedCert);
-        return ModelUtils.createSecret(
-                KafkaResources.entityUserOperatorSecretName(cluster),
-                namespace,
-                labels,
-                ownerReference,
-                secretData,
-                Map.of(clusterCa.caCertGenerationAnnotation(), String.valueOf(updatedCert.caCertGeneration())),
-                Map.of()
-        );
+        return clusterCa.maybeCopyOrGenerateClientCert(reconciliation, componentName, existingCertAndKey, isMaintenanceTimeWindowsSatisfied)
+                .thenApply(updatedCert -> {
+                    Map<String, String> secretData = CertSecretUtils.buildSecretData(EntityOperator.COMPONENT_TYPE, updatedCert);
+                    return ModelUtils.createSecret(
+                            KafkaResources.entityUserOperatorSecretName(cluster),
+                            namespace,
+                            labels,
+                            ownerReference,
+                            secretData,
+                            Map.of(clusterCa.caCertGenerationAnnotation(), String.valueOf(updatedCert.caCertGeneration())),
+                            Map.of()
+                    );
+                });
     }
 
     /**
