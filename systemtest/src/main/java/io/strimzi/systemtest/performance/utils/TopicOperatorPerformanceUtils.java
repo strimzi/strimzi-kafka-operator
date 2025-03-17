@@ -37,7 +37,7 @@ public class TopicOperatorPerformanceUtils {
         "segment.ms", 123456L, "retention.bytes", 9876543L, "segment.bytes", 321654L, "flush.messages", 456123L);
     private static final int AVAILABLE_CPUS = Runtime.getRuntime().availableProcessors();
 
-    public static ExecutorService executorService = Executors.newFixedThreadPool(AVAILABLE_CPUS);
+    private static ExecutorService executorService = Executors.newFixedThreadPool(AVAILABLE_CPUS);
 
     private TopicOperatorPerformanceUtils() {}  // Prevent instantiation
 
