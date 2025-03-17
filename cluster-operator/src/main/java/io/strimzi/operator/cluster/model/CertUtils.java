@@ -20,6 +20,7 @@ import io.strimzi.operator.common.model.Labels;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -58,10 +59,20 @@ public class CertUtils {
     public static String getCertificateThumbprint(Secret certSecret, String key) {
         try {
             var cert = Ca.cert(certSecret, key);
-            return cert == null ? null : String.format("%040x", new BigInteger(1, Util.sha1Digest(cert.getEncoded())));
+            return cert == null ? null : getCertificateThumbprint(cert);
         } catch (CertificateEncodingException e) {
             throw new RuntimeException("Failed to get certificate thumbprint of " + key + " from Secret " + certSecret.getMetadata().getName(), e);
         }
+    }
+
+    /**
+     * Generates the full SHA1-hash of the server certificate which is used to track when the certificate changes.
+     *
+     * @param certificate   Certificate to generate the SHA1-hash for
+     * @return              SHA1-Hash of the certificate or null if certSecret contains no valid X509Certificate
+     */
+    public static String getCertificateThumbprint(X509Certificate certificate) throws CertificateEncodingException {
+        return String.format("%040x", new BigInteger(1, Util.sha1Digest(certificate.getEncoded())));
     }
 
     /**
