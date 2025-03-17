@@ -27,9 +27,10 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class IssuerRef implements UnknownPropertyPreserving {
+    public static final String GROUP_DEFAULT = "cert-manager.io";
     private String name;
     private IssuerKind kind;
-    private String group = "cert-manager.io";
+    private String group = GROUP_DEFAULT;
     private Map<String, Object> additionalProperties;
 
     @Description("The name of the cert-manager issuer. " +

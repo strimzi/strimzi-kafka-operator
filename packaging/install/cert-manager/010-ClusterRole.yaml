@@ -1,0 +1,20 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: strimzi-cluster-operator-cert-manager
+  labels:
+    app: strimzi
+rules:
+  - apiGroups:
+      - "cert-manager.io"
+    resources:
+      - certificates
+      - certificates/status
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - delete
+      - patch
+      - update

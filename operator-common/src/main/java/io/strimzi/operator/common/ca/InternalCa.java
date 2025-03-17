@@ -37,8 +37,6 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
 
 /**
  * A Certificate Authority which can renew its own (self-signed) certificates, and generate signed certificates
@@ -157,7 +155,7 @@ public class InternalCa extends Ca {
     /* test */
     static boolean certSubjectChanged(Reconciliation reconciliation, CertAndKey certAndKey, StrimziSubject desiredSubject, String podName)    {
         Collection<String> desiredAltNames = desiredSubject.subjectAltNames().values();
-        Collection<String> currentAltNames = getSubjectAltNames(reconciliation, certAndKey.cert());
+        Collection<String> currentAltNames = CertificateUtils.getSubjectAltNames(reconciliation, certAndKey.cert());
 
         if (currentAltNames != null && desiredAltNames.containsAll(currentAltNames) && currentAltNames.containsAll(desiredAltNames))   {
             LOGGER.traceCr(reconciliation, "Alternate subjects match. No need to refresh cert for pod {}.", podName);
@@ -168,32 +166,6 @@ public class InternalCa extends Ca {
             LOGGER.infoCr(reconciliation, "Desired alternate subjects: {}", desiredAltNames);
             return true;
         }
-    }
-
-    /**
-     * Extracts the alternate subject names out of existing certificate
-     *
-     * @param certificate   Existing X509 certificate as a byte array
-     *
-     * @return  List of certificate Subject Alternate Names
-     */
-    private static List<String> getSubjectAltNames(Reconciliation reconciliation, byte[] certificate) {
-        List<String> subjectAltNames = new ArrayList<>();
-
-        try {
-            X509Certificate cert = CertificateUtils.x509Certificate(certificate);
-            Collection<List<?>> altNames = cert.getSubjectAlternativeNames();
-            if (altNames != null) {
-                subjectAltNames = altNames.stream()
-                        .filter(name -> name.get(1) instanceof String)
-                        .map(item -> (String) item.get(1))
-                        .collect(Collectors.toList());
-            }
-        } catch (CertificateException | RuntimeException e) {
-            LOGGER.debugCr(reconciliation, "Failed to parse existing certificate", e);
-        }
-
-        return subjectAltNames;
     }
 
     /**

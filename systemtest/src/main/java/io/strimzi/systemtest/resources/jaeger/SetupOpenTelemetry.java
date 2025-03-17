@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
 import io.skodjob.kubetest4j.resources.KubeResourceManager;
 import io.skodjob.kubetest4j.resources.ResourceItem;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.resources.certManager.SetupCertManager;
 import io.strimzi.systemtest.tracing.TracingConstants;
 import io.strimzi.systemtest.utils.kubeUtils.NamespaceUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -24,10 +25,6 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.TestConstants.JAEGER_DEPLOYMENT_POLL;
 import static io.strimzi.systemtest.TestConstants.JAEGER_DEPLOYMENT_TIMEOUT;
-import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_CA_INJECTOR_DEPLOYMENT;
-import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_DEPLOYMENT;
-import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_NAMESPACE;
-import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_WEBHOOK_DEPLOYMENT;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_COLLECTOR_NAME;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_INSTANCE_NAME;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_NAMESPACE;
@@ -41,11 +38,8 @@ public class SetupOpenTelemetry {
 
     private static final Logger LOGGER = LogManager.getLogger(SetupOpenTelemetry.class);
 
-    private static final String CERT_MANAGER_PATH = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/cert-manager.yaml";
     private static final String JAEGER_INSTANCE_PATH = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/jaeger-instance.yaml";
     private static final String OPEN_TELEMETRY_OPERATOR_PATH = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/open-telemetry-operator.yaml";
-    private static final String CERT_MANAGER = "cert-manager";
-    private static final String JAEGER = "jaeger";
 
     /**
      * Delete Jaeger instance
@@ -55,63 +49,16 @@ public class SetupOpenTelemetry {
     }
 
     /**
-     * Encapsulates two methods for deploying Cert Manager and OpenTelemetry operator
+     * Encapsulates the methods for deploying Cert Manager and OpenTelemetry operator
      */
     public static void deployOpenTelemetryOperatorAndCertManager() {
-        deployAndWaitForCertManager();
-        allowNetworkPolicySettingsForCertManagerWebhook();
+        SetupCertManager.deployCertManager();
         deployOpenTelemetryOperator();
         allowNetworkPolicySettingsForOpenTelemetryOperator();
     }
 
     public static void allowNetworkPolicySettingsForOpenTelemetryOperator() {
         NetworkPolicyUtils.allowNetworkPolicySettingsForWebhook(JAEGER_NAMESPACE, OPEN_TELEMETRY_OPERATOR_DEPLOYMENT_NAME, Map.of("app.kubernetes.io/name", TracingConstants.OPEN_TELEMETRY_OPERATOR_NAME));
-    }
-
-    public static void allowNetworkPolicySettingsForCertManagerWebhook() {
-        NetworkPolicyUtils.allowNetworkPolicySettingsForWebhook(CERT_MANAGER_NAMESPACE, CERT_MANAGER, Map.of(TestConstants.APP_KUBERNETES_INSTANCE_LABEL, CERT_MANAGER));
-    }
-
-    /**
-     * Deletes all Cert Manager resources and waits for their deletion
-     */
-    private static void deleteCertManager() {
-        KubeResourceManager.get().kubeCmdClient().delete(CERT_MANAGER_PATH);
-        DeploymentUtils.waitForDeploymentDeletion(CERT_MANAGER_NAMESPACE, CERT_MANAGER_DEPLOYMENT);
-        DeploymentUtils.waitForDeploymentDeletion(CERT_MANAGER_NAMESPACE, CERT_MANAGER_WEBHOOK_DEPLOYMENT);
-        DeploymentUtils.waitForDeploymentDeletion(CERT_MANAGER_NAMESPACE, CERT_MANAGER_CA_INJECTOR_DEPLOYMENT);
-    }
-
-    /**
-     * Deploys Cert Manager and adds it to the stack of resources to be deleted on clean up
-     */
-    private static void deployCertManager() {
-        // create namespace `cert-manager`
-        NamespaceUtils.createNamespaceAndPrepare(CERT_MANAGER_NAMESPACE);
-
-        LOGGER.info("Deploying CertManager from {}", CERT_MANAGER_PATH);
-        // because we don't want to apply CertManager's file to specific namespace, passing the empty String will do the trick
-        KubeResourceManager.get().kubeCmdClient().apply(CERT_MANAGER_PATH);
-
-        KubeResourceManager.get().pushToStack(new ResourceItem<>(SetupOpenTelemetry::deleteCertManager));
-    }
-
-    /**
-     * Method that waits for all resources of Cert Manager to be up and running (ready) - Deployment, Webhook, and CA injector
-     */
-    private static void waitForCertManagerDeployment() {
-        DeploymentUtils.waitForDeploymentAndPodsReady(CERT_MANAGER_NAMESPACE, CERT_MANAGER_DEPLOYMENT, 1);
-        DeploymentUtils.waitForDeploymentAndPodsReady(CERT_MANAGER_NAMESPACE, CERT_MANAGER_WEBHOOK_DEPLOYMENT, 1);
-        DeploymentUtils.waitForDeploymentAndPodsReady(CERT_MANAGER_NAMESPACE, CERT_MANAGER_CA_INJECTOR_DEPLOYMENT, 1);
-        LOGGER.info("Cert-manager {}/{} is ready", CERT_MANAGER_NAMESPACE, CERT_MANAGER_DEPLOYMENT);
-    }
-
-    /**
-     * Encapsulates two other methods - deployment of CertManager and wait for deployment (and all resources of CM) to be ready
-     */
-    private static void deployAndWaitForCertManager() {
-        deployCertManager();
-        waitForCertManagerDeployment();
     }
 
     /**
