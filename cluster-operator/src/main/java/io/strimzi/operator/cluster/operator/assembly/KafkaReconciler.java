@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.api.kafka.model.common.CertificateManagerType;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
@@ -74,6 +75,7 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.auth.Identity;
 import io.strimzi.operator.common.ca.Ca;
+import io.strimzi.operator.common.ca.CertManagerCa;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NodeUtils;
 import io.strimzi.operator.common.model.StatusDiff;
@@ -781,6 +783,9 @@ public class KafkaReconciler {
                                 } else if (KafkaResources.kafkaJmxSecretName(reconciliation.name()).equals(secretName)) {
                                     //Don't delete jmx secrets
                                     secretIsDesired = true;
+                                } else if (CertificateManagerType.CERT_MANAGER_IO.equals(clusterCa.getType()) && CertManagerCa.matchesCertManagerSecretNaming(secretName)) {
+                                    // Don't delete cert-manager secrets
+                                    secretIsDesired = desiredCertSecretNames.contains(CertManagerCa.mapToStrimziSecretName(secretName));
                                 }
                                 if (!secretIsDesired) {
                                     secretsToDelete.add(secretName);

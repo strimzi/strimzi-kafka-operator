@@ -44,6 +44,7 @@ import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.ca.CaConfig;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.PasswordGenerator;
+import io.strimzi.operator.common.operator.resource.kubernetes.CertManagerCertificateOperator;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 
 import java.time.Clock;
@@ -63,10 +64,12 @@ public class CaReconciler {
 
     /* test */ final Reconciliation reconciliation;
     private final long operationTimeoutMs;
+    private final boolean certManagerCaTypeEnabled;
 
     /* test */ final DeploymentOperator deploymentOperator;
     private final StrimziPodSetOperator strimziPodSetOperator;
     private final SecretOperator secretOperator;
+    private final CertManagerCertificateOperator certManagerCertificateOperator;
     /* test */ final PodOperator podOperator;
     private final AdminClientProvider adminClientProvider;
     private final KafkaAgentClientProvider kafkaAgentClientProvider;
@@ -112,10 +115,12 @@ public class CaReconciler {
     ) {
         this.reconciliation = reconciliation;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
+        this.certManagerCaTypeEnabled = config.featureGates().certManagerCaTypeEnabled();
 
         this.deploymentOperator = supplier.deploymentOperations;
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
         this.secretOperator = supplier.secretOperations;
+        this.certManagerCertificateOperator = supplier.certManagerCertificateOperator;
         this.podOperator = supplier.podOperations;
 
         this.adminClientProvider = supplier.adminClientProvider;
@@ -202,6 +207,7 @@ public class CaReconciler {
                             clusterCaConfig,
                             existingClusterCaCertSecret,
                             existingClusterCaKeySecret,
+                            coSecret,
                             clock
                     ).createAndReconcileCa().thenApply(result -> {
                         clusterCa = result.ca();
@@ -214,6 +220,7 @@ public class CaReconciler {
                             clientsCaConfig,
                             existingClientsCaCertSecret,
                             existingClientsCaKeySecret,
+                            null,
                             clock
                     ).createAndReconcileCa().thenApply(result -> {
                         clientsCa = result.ca();
@@ -228,8 +235,8 @@ public class CaReconciler {
      *
      * @return  CaProvider instance
      */
-    /*test*/ CaProvider createCaProvider(Ca.CaRole caRole, CaConfig caConfig, Secret existingCaCertSecret, Secret existingCaKeySecret, Clock clock) {
-        return CaProvider.create(reconciliation, caRole, caConfig, kafkaCr, secretOperator, certIssuer, passwordGenerator, clock, existingCaCertSecret, existingCaKeySecret);
+    /*test*/ CaProvider createCaProvider(Ca.CaRole caRole, CaConfig caConfig, Secret existingCaCertSecret, Secret existingCaKeySecret, Secret coSecret, Clock clock) {
+        return CaProvider.create(reconciliation, caRole, caConfig, kafkaCr, certManagerCertificateOperator, secretOperator, certIssuer, passwordGenerator, clock, existingCaCertSecret, existingCaKeySecret, coSecret, certManagerCaTypeEnabled);
     }
 
     /**
@@ -329,7 +336,7 @@ public class CaReconciler {
         isClusterCaFullyUsed = true;
 
         // Building the selector for Kafka related components
-        Labels labels =  Labels.forStrimziCluster(reconciliation.name()).withStrimziKind(Kafka.RESOURCE_KIND);
+        Labels labels = Labels.forStrimziCluster(reconciliation.name()).withStrimziKind(Kafka.RESOURCE_KIND);
 
         return podOperator.listAsync(reconciliation.namespace(), labels)
                 .thenApply(pods -> {

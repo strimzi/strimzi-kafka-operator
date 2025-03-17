@@ -17,7 +17,9 @@ import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
+import io.strimzi.api.kafka.model.common.CertificateManagerType;
 import io.strimzi.api.kafka.model.common.JvmOptions;
+import io.strimzi.api.kafka.model.common.certmanager.IssuerKind;
 import io.strimzi.api.kafka.model.common.template.PodTemplate;
 import io.strimzi.api.kafka.model.common.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.kafka.Kafka;
@@ -68,6 +70,10 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     /* test */ static final String ENV_VAR_SECRET_PREFIX = "STRIMZI_SECRET_PREFIX";
     /* test */ static final String ENV_VAR_ACLS_ADMIN_API_SUPPORTED = "STRIMZI_ACLS_ADMIN_API_SUPPORTED";
     /* test */ static final String ENV_VAR_MAINTENANCE_TIME_WINDOWS = "STRIMZI_MAINTENANCE_TIME_WINDOWS";
+    /* test */ static final String ENV_VAR_CA_TYPE = "STRIMZI_CA_TYPE";
+    /* test */ static final String ENV_VAR_CM_ISSUER_NAME = "STRIMZI_CM_ISSUER_NAME";
+    /* test */ static final String ENV_VAR_CM_ISSUER_KIND = "STRIMZI_CM_ISSUER_KIND";
+    /* test */ static final String ENV_VAR_CM_ISSUER_GROUP = "STRIMZI_CM_ISSUER_GROUP";
 
     // Volume name of the temporary volume used by the UO container
     // Because the container shares the pod with other containers, it needs to have a unique name
@@ -88,6 +94,10 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     private List<String> maintenanceWindows;
     private LoggingModel logging;
     private boolean generatePkcs12Stores;
+    private CertificateManagerType certificateManagerType;
+    private String certManagerIssuerName;
+    private IssuerKind certManagerIssuerKind;
+    private String certManagerIssuerGroup;
 
     /**
      * Constructs a new EntityUserOperator.
@@ -149,6 +159,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
             result.featureGatesEnvVarValue = config.featureGates().toEnvironmentVariable();
             result.generatePkcs12Stores = config.isPkcs12KeystoreGeneration();
             result.securityContext = securityContext;
+            result.certificateManagerType = CertificateManagerType.STRIMZI_IO;
 
             if (kafkaAssembly.getSpec().getEntityOperator().getTemplate() != null)  {
                 result.templateRoleBinding = kafkaAssembly.getSpec().getEntityOperator().getTemplate().getUserOperatorRoleBinding();
@@ -161,6 +172,14 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
 
                 if (kafkaAssembly.getSpec().getClientsCa().getRenewalDays() > 0) {
                     result.clientsCaRenewalDays = kafkaAssembly.getSpec().getClientsCa().getRenewalDays();
+                }
+                result.certificateManagerType = kafkaAssembly.getSpec().getClientsCa().getType();
+                if (CertificateManagerType.CERT_MANAGER_IO.equals(result.certificateManagerType)
+                        && kafkaAssembly.getSpec().getClientsCa().getCertManager() != null
+                        && kafkaAssembly.getSpec().getClientsCa().getCertManager().getIssuerRef() != null) {
+                    result.certManagerIssuerName = kafkaAssembly.getSpec().getClientsCa().getCertManager().getIssuerRef().getName();
+                    result.certManagerIssuerKind = kafkaAssembly.getSpec().getClientsCa().getCertManager().getIssuerRef().getKind();
+                    result.certManagerIssuerGroup = kafkaAssembly.getSpec().getClientsCa().getCertManager().getIssuerRef().getGroup();
                 }
             }
 
@@ -222,6 +241,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_SECRET_PREFIX, secretPrefix));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_ACLS_ADMIN_API_SUPPORTED, String.valueOf(aclsAdminApiSupported)));
         varList.add(ContainerUtils.createEnvVar(ClusterOperatorConfig.PKCS12_KEYSTORE_GENERATION.key(), String.valueOf(generatePkcs12Stores)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_CA_TYPE, certificateManagerType.toValue()));
         JvmOptionUtils.javaOptions(varList, jvmOptions);
 
         // Add feature gates configuration if not empty
@@ -238,6 +258,19 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
         if (maintenanceWindows != null && !maintenanceWindows.isEmpty())    {
             // The Cron expressions can contain commas -> we use semi-colon as delimiter
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_MAINTENANCE_TIME_WINDOWS, String.join(";", maintenanceWindows)));
+        }
+
+        // if CA type is cert-manager, set cert-manager env vars
+        if (CertificateManagerType.CERT_MANAGER_IO.equals(certificateManagerType)) {
+            if (certManagerIssuerName != null && !certManagerIssuerName.isEmpty()) {
+                varList.add(ContainerUtils.createEnvVar(ENV_VAR_CM_ISSUER_NAME, certManagerIssuerName));
+            }
+            if (certManagerIssuerKind != null) {
+                varList.add(ContainerUtils.createEnvVar(ENV_VAR_CM_ISSUER_KIND, certManagerIssuerKind.toValue()));
+            }
+            if (certManagerIssuerGroup != null && !certManagerIssuerGroup.isEmpty()) {
+                varList.add(ContainerUtils.createEnvVar(ENV_VAR_CM_ISSUER_GROUP, certManagerIssuerGroup));
+            }
         }
 
         return varList;
@@ -259,6 +292,48 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
         TemplateUtils.addAdditionalVolumeMounts(volumeMounts, templateContainer);
 
         return volumeMounts;
+    }
+
+    /**
+     * Returns true when the clients CA type is set to cert-manager.io.
+     *
+     * @return True when cert-manager is used to issue user certificates.
+     */
+    public boolean isCertManagerEnabled() {
+        return CertificateManagerType.CERT_MANAGER_IO.equals(certificateManagerType);
+    }
+
+    /**
+     * Generates a RoleBinding granting the entity operator service account permission to manage
+     * cert-manager {@code Certificate} resources in the given namespace.
+     *
+     * @param namespace         Namespace where the entity operator service account lives
+     * @param watchedNamespace  Namespace where the RoleBinding should be created
+     *
+     * @return  RoleBinding for cert-manager Certificate access
+     */
+    public RoleBinding generateCertManagerRoleBinding(String namespace, String watchedNamespace) {
+        Subject subject = new SubjectBuilder()
+                .withKind("ServiceAccount")
+                .withName(KafkaResources.entityOperatorDeploymentName(cluster))
+                .withNamespace(namespace)
+                .build();
+
+        RoleRef roleRef = new RoleRefBuilder()
+                .withName("strimzi-entity-operator-cert-manager")
+                .withApiGroup("rbac.authorization.k8s.io")
+                .withKind("ClusterRole")
+                .build();
+
+        RoleBinding rb = RbacUtils
+                .createRoleBinding(KafkaResources.entityOperatorCertManagerRoleBinding(cluster), watchedNamespace, roleRef, List.of(subject), labels, ownerReference, templateRoleBinding);
+
+        // We set OwnerReference only within the same namespace since it does not work cross-namespace
+        if (!namespace.equals(watchedNamespace)) {
+            rb.getMetadata().setOwnerReferences(Collections.emptyList());
+        }
+
+        return rb;
     }
 
     /**

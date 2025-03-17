@@ -599,7 +599,7 @@ public class CaReconcilerTest {
         }
 
         @Override
-        CaProvider createCaProvider(Ca.CaRole caRole, CaConfig caConfig, Secret existingCaCertSecret, Secret existingCaKeySecret, Clock clock) {
+        CaProvider createCaProvider(Ca.CaRole caRole, CaConfig caConfig, Secret existingCaCertSecret, Secret coSecret, Secret existingCaKeySecret, Clock clock) {
             CaProviderResult result = caRole == Ca.CaRole.CLUSTER_CA
                     ? new CaProviderResult(clusterCa, providedClusterCaCertSecret)
                     : new CaProviderResult(clientsCa, providedClientsCaCertSecret);
