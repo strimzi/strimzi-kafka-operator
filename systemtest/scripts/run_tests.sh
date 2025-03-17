@@ -21,7 +21,6 @@ function run_test() {
       -pl systemtest \
       -am \
       -P"${PROFILE}" \
-      -Djava.net.preferIPv4Stack=true \
       -DfailIfNoTests=false \
       -Djansi.force=true \
       -Dstyle.color=always \
