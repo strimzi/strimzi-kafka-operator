@@ -19,7 +19,7 @@ public enum IssuerKind {
             case "ClusterIssuer":
                 return CLUSTER_ISSUER;
             default:
-                return null;
+                throw new IllegalArgumentException("Unknown IssuerKind: " + value + ". Must be 'Issuer' or 'ClusterIssuer'.");
         }
     }
 
