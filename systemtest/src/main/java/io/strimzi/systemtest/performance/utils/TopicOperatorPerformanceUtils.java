@@ -214,7 +214,7 @@ public class TopicOperatorPerformanceUtils {
 
         for (int topicIndex = warmUpTasksToProcess; topicIndex < numberOfTopics + warmUpTasksToProcess; topicIndex++) {
             final int finalTopicIndex = topicIndex;
-            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> performFullLifecycle(finalTopicIndex, testStorage, extensionContext), EXECUTOR);
+            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> performFullLifecycle(finalTopicIndex, testStorage, extensionContext), executorService);
             futures.add(future);
         }
 
