@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.common.CertificateAuthority;
 import io.strimzi.api.kafka.model.common.CertificateExpirationPolicy;
+import io.strimzi.api.kafka.model.common.CertificateManagerType;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlResources;
 import io.strimzi.certs.CertAndKey;
@@ -14,16 +15,27 @@ import io.strimzi.certs.CertManager;
 import io.strimzi.certs.IpAndDnsValidation;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.PasswordGenerator;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertPath;
+import java.security.cert.CertPathValidator;
+import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.PKIXParameters;
+import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,22 +66,23 @@ public class ClusterCa extends Ca {
      * @param caKeySecret           Name of the CA private key secret
      */
     public ClusterCa(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator, String clusterName, Secret caCertSecret, Secret caKeySecret) {
-        this(reconciliation, certManager, passwordGenerator, clusterName, caCertSecret, caKeySecret, CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS, CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS, true, null);
+        this(reconciliation, certManager, passwordGenerator, clusterName, caCertSecret, caKeySecret, CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS, CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS, true, CertificateManagerType.STRIMZI_IO, null);
     }
 
     /**
      * Constructor
      *
-     * @param reconciliation        Reconciliation marker
-     * @param certManager           Certificate manager instance
-     * @param passwordGenerator     Password generator instance
-     * @param clusterName           Name of the Kafka cluster
-     * @param clusterCaCert         Secret with the public key
-     * @param clusterCaKey          Secret with the private key
-     * @param validityDays          Validity days
-     * @param renewalDays           Renewal days (how many days before expiration should the CA be renewed)
-     * @param generateCa            Flag indicating if Strimzi CA should be generated or custom CA is used
-     * @param policy                Renewal policy
+     * @param reconciliation         Reconciliation marker
+     * @param certManager            Certificate manager instance
+     * @param passwordGenerator      Password generator instance
+     * @param clusterName            Name of the Kafka cluster
+     * @param clusterCaCert          Secret with the public key
+     * @param clusterCaKey           Secret with the private key
+     * @param validityDays           Validity days
+     * @param renewalDays            Renewal days (how many days before expiration should the CA be renewed)
+     * @param generateCa             Flag indicating if Strimzi CA should be generated or custom CA is used
+     * @param certificateManagerType Certificate manager type
+     * @param policy                 Renewal policy
      */
     public ClusterCa(Reconciliation reconciliation, CertManager certManager,
                      PasswordGenerator passwordGenerator,
@@ -79,13 +92,13 @@ public class ClusterCa extends Ca {
                      int validityDays,
                      int renewalDays,
                      boolean generateCa,
-                     CertificateExpirationPolicy policy) {
+                     CertificateManagerType certificateManagerType, CertificateExpirationPolicy policy) {
         super(reconciliation, certManager, passwordGenerator,
                 "cluster-ca",
                 AbstractModel.clusterCaCertSecretName(clusterName),
                 clusterCaCert,
                 AbstractModel.clusterCaKeySecretName(clusterName),
-                clusterCaKey, validityDays, renewalDays, generateCa, policy);
+                clusterCaKey, validityDays, renewalDays, generateCa, certificateManagerType, policy);
     }
 
     @Override
@@ -366,6 +379,62 @@ public class ClusterCa extends Ca {
                 LOGGER.infoCr(reconciliation, "{}: Old CA certificates removed", this);
                 this.caCertsRemoved = true;
             }
+        }
+    }
+
+    @Override
+    public void updateCertAndGenerations(String caCert, X509Certificate endEntityCertificate) {
+        X509Certificate x509CaCert;
+        try {
+            x509CaCert = x509Certificate(Util.decodeBytesFromBase64(caCert));
+        } catch (CertificateException e) {
+            throw new RuntimeException(e);
+        }
+        if (certPathIsValid(endEntityCertificate, x509CaCert)) {
+            // No key replacement
+            Map<String, String> newCaCertData = new HashMap<>();
+            newCaCertData.put(CA_CRT, caCert);
+            this.caCertData = newCaCertData;
+            renewalType = RenewalType.RENEW_CERT;
+            this.caCertGeneration++;
+        } else {
+            // key replacement
+            //TODO handle cert chain with intermediate certs
+            X509Certificate currentCert = currentCaCertX509();
+            String notAfterDate = DATE_TIME_FORMATTER.format(currentCert.getNotAfter().toInstant().atZone(ZoneId.of("Z")));
+            Map<String, String> newCaCertData = new HashMap<>();
+            newCaCertData.put(SecretEntry.CRT.asKey("ca-" + notAfterDate), caCertData.get(CA_CRT));
+            newCaCertData.put(CA_CRT, caCert);
+            this.caCertData = newCaCertData;
+            renewalType = RenewalType.REPLACE_KEY;
+            this.caCertGeneration++;
+            this.caKeyGeneration++;
+        }
+    }
+
+    private boolean certPathIsValid(X509Certificate certToValidate, X509Certificate caCert) {
+        CertPathValidator certPathValidator;
+        CertPath eeCertPath;
+        PKIXParameters pkixParams;
+        try {
+            certPathValidator = CertPathValidator.getInstance("PKIX");
+            CertificateFactory factory = CertificateFactory.getInstance("X.509");
+            TrustAnchor trustAnchor = new TrustAnchor(caCert, null);
+            pkixParams = new PKIXParameters(Collections.singleton(trustAnchor));
+            pkixParams.setRevocationEnabled(false);
+            eeCertPath = factory.generateCertPath(List.of(certToValidate));
+        } catch (NoSuchAlgorithmException | CertificateException | InvalidAlgorithmParameterException e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            certPathValidator.validate(eeCertPath, pkixParams);
+            System.out.println("Certificate valid");
+            return true;
+        } catch (CertPathValidatorException e) {
+            System.out.println("Validation failed: " + e);
+            return false;
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new RuntimeException(e);
         }
     }
 }
