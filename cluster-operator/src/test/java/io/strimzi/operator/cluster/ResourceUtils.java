@@ -49,6 +49,7 @@ import io.strimzi.operator.common.auth.AuthIdentity;
 import io.strimzi.operator.common.auth.TrustSet;
 import io.strimzi.operator.common.ca.Ca;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.operator.resource.kubernetes.CertManagerCertificateOperator;
 import io.strimzi.operator.common.operator.resource.kubernetes.CrdOperator;
 import io.strimzi.operator.common.operator.resource.kubernetes.SecretOperator;
 import org.apache.kafka.clients.admin.Admin;
@@ -403,7 +404,8 @@ public class ResourceUtils {
                 adminClientProvider(),
                 mock(KubernetesRestartEventPublisher.class),
                 new MockSharedEnvironmentProvider(),
-                mock(BrokersInUseCheck.class));
+                mock(BrokersInUseCheck.class),
+                mock(CertManagerCertificateOperator.class));
 
         when(supplier.secretOperations.getAsync(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
         when(supplier.secretOperations.getAsync(any(), or(endsWith("ca-cert"), endsWith("certs")))).thenReturn(CompletableFuture.completedFuture(
