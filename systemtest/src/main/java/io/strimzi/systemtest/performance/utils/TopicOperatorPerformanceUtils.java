@@ -37,7 +37,7 @@ public class TopicOperatorPerformanceUtils {
         "segment.ms", 123456L, "retention.bytes", 9876543L, "segment.bytes", 321654L, "flush.messages", 456123L);
     private static final int AVAILABLE_CPUS = Runtime.getRuntime().availableProcessors();
 
-    public static final ExecutorService EXECUTOR = Executors.newFixedThreadPool(AVAILABLE_CPUS);
+    public static ExecutorService executorService = Executors.newFixedThreadPool(AVAILABLE_CPUS);
 
     private TopicOperatorPerformanceUtils() {}  // Prevent instantiation
 
@@ -103,9 +103,9 @@ public class TopicOperatorPerformanceUtils {
      */
     private static CompletableFuture<Void> processBatch(int start, int end, ExtensionContext currentContext,
                                                         TestStorage testStorage) {
-        return CompletableFuture.runAsync(() -> performCreationWithWait(start, end, currentContext, testStorage), EXECUTOR)
-            .thenRunAsync(() -> performModificationWithWait(start, end, currentContext, testStorage, KAFKA_TOPIC_CONFIG_TO_MODIFY), EXECUTOR)
-            .thenRunAsync(() -> performDeletionWithWait(start, end, currentContext, testStorage), EXECUTOR)
+        return CompletableFuture.runAsync(() -> performCreationWithWait(start, end, currentContext, testStorage), executorService)
+            .thenRunAsync(() -> performModificationWithWait(start, end, currentContext, testStorage, KAFKA_TOPIC_CONFIG_TO_MODIFY), executorService)
+            .thenRunAsync(() -> performDeletionWithWait(start, end, currentContext, testStorage), executorService)
             .exceptionally(ex -> {
                 LOGGER.error("Error processing batch from {} to {}: {}", start, end, ex.getMessage(), ex);
                 return null;
@@ -202,6 +202,11 @@ public class TopicOperatorPerformanceUtils {
      * @return                      The total time taken to complete all topic lifecycles in milliseconds.
      */
     public static long processAllTopicsConcurrently(TestStorage testStorage, int numberOfTopics, int spareEvents, int warmUpTasksToProcess) {
+        if (executorService.isShutdown() || executorService.isTerminated()) {
+            executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+            LOGGER.info("Reinitialized ExecutorService for new test run.");
+        }
+
         List<CompletableFuture<Void>> futures = new ArrayList<>();
         ExtensionContext extensionContext = ResourceManager.getTestContext();
 
@@ -238,12 +243,14 @@ public class TopicOperatorPerformanceUtils {
     }
 
     public static void stopExecutor() {
-        try {
-            EXECUTOR.shutdown();
-            EXECUTOR.awaitTermination(5, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            if (!EXECUTOR.isTerminated()) {
-                EXECUTOR.shutdownNow();
+        if (!executorService.isShutdown()) {
+            try {
+                executorService.shutdown();
+                if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                    executorService.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                executorService.shutdownNow();
             }
         }
     }
