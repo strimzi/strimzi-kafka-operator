@@ -10,7 +10,6 @@ import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -71,7 +70,7 @@ public class InternalCaCertIssuerTest {
             "-----END CERTIFICATE-----\n";
 
     @Test
-    public void renewalOfCertificatesWithNullCertificates() throws IOException {
+    public void renewalOfCertificatesWithNullCertificates() {
         InternalCa mockedCa = new MockedClusterCa();
 
         CertAndKey newCert = mockedCa.maybeCopyOrGenerateServerCerts(

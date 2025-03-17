@@ -12,6 +12,7 @@ import io.strimzi.operator.common.Util;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
@@ -31,6 +32,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Utility class for handling certificate objects
@@ -222,5 +224,44 @@ public class CertificateUtils {
         }
         subject.withCommonName(commonName);
         return subject.build();
+    }
+
+    /**
+     * Generates the full SHA1-hash of the server certificate which is used to track when the certificate changes.
+     *
+     * @param certificate   Certificate to generate the SHA1-hash for
+     * @return              SHA1-Hash of the certificate or null if certSecret contains no valid X509Certificate
+     *
+     * @throws CertificateEncodingException if an encoding error occurs.
+     */
+    public static String getCertificateThumbprint(X509Certificate certificate) throws CertificateEncodingException {
+        return String.format("%040x", new BigInteger(1, Util.sha1Digest(certificate.getEncoded())));
+    }
+
+    /**
+     * Extracts the alternate subject names out of existing certificate
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param certificate       Existing X509 certificate as a byte array
+     *
+     * @return  List of certificate Subject Alternate Names
+     */
+    public static List<String> getSubjectAltNames(Reconciliation reconciliation, byte[] certificate) {
+        List<String> subjectAltNames = new ArrayList<>();
+
+        try {
+            X509Certificate cert = CertificateUtils.x509Certificate(certificate);
+            Collection<List<?>> altNames = cert.getSubjectAlternativeNames();
+            if (altNames != null) {
+                subjectAltNames = altNames.stream()
+                        .filter(name -> name.get(1) instanceof String)
+                        .map(item -> (String) item.get(1))
+                        .collect(Collectors.toList());
+            }
+        } catch (CertificateException | RuntimeException e) {
+            LOGGER.debugCr(reconciliation, "Failed to parse existing certificate", e);
+        }
+
+        return subjectAltNames;
     }
 }

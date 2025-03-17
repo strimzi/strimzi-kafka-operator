@@ -282,6 +282,17 @@ public class KafkaResources {
     }
 
     /**
+     * Get the name of the Entity Operator cert-manager role binding given the name of the Kafka cluster.
+     *
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     *
+     * @return The name of the Entity Operator cert-manager role binding.
+     */
+    public static String entityOperatorCertManagerRoleBinding(String clusterName) {
+        return clusterName + "-entity-operator-cert-manager-role";
+    }
+
+    /**
      * Name of the secret with the Cluster Operator certificates for connecting to this cluster
      *
      * @param cluster   Name of the Kafka cluster
