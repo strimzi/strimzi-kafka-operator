@@ -9,7 +9,7 @@
 
 WARNING: Strimzi operators and Kafka components use log4j2 for logging.
 However, Kafka 3.9 and earlier versions rely on log4j1.
-For loggers and logging configuration examples based on log4j1, refer to the link:{DocArchive}[Strimzi 0.45 documentation^]. These examples can also be used with Strimzi 0.46 and Kafka 3.9.x.
+For log4j1-based configuration examples, refer to the link:{DocArchive}[Strimzi 0.45 documentation^].
 
 Configure the logging levels of Kafka components and Strimzi operators through their custom resources.
 You can use either of these options:

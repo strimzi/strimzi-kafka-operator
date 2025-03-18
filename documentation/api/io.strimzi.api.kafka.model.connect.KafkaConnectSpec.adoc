@@ -80,8 +80,7 @@ In this case, fix the configuration so that the Cluster Operator can roll out th
 = Logging
 
 WARNING: Kafka 3.9 and earlier versions use log4j1 for logging.
-For loggers and logging configuration examples based on log4j1, refer to the link:{DocArchive}[Strimzi 0.45 documentation^]. 
-These examples can also be used with Strimzi 0.46 and Kafka 3.9.x.
+For log4j1-based configuration examples, refer to the link:{DocArchive}[Strimzi 0.45 documentation^]. 
 
 Kafka Connect has its own configurable loggers:
 
