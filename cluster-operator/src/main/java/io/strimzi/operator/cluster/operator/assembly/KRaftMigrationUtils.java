@@ -18,6 +18,7 @@ import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.admin.ZooKeeperAdmin;
 
 import java.io.File;
@@ -59,7 +60,10 @@ public class KRaftMigrationUtils {
                         zkAdmin.delete("/controller", -1);
                         LOGGER.infoCr(reconciliation, "Deleted the '/controller' znode as part of the KRaft migration rollback");
                         return Future.succeededFuture(zkAdmin);
-                    } catch (Exception e)    {
+                    } catch (KeeperException.NoNodeException noNodeException) {
+                        LOGGER.warnCr(reconciliation, "The '/controller' znode doesn't exist already. Nothing to delete as part of the KRaft migration rollback");
+                        return Future.succeededFuture(zkAdmin);
+                    } catch (Exception e) {
                         closeZooKeeperConnection(reconciliation, vertx, zkAdmin, trustStoreFile, keyStoreFile, operationTimeoutMs);
                         return Future.failedFuture(e);
                     }
@@ -69,7 +73,10 @@ public class KRaftMigrationUtils {
                         zkAdmin.delete("/migration", -1);
                         LOGGER.infoCr(reconciliation, "Deleted the '/migration' znode as part of the KRaft migration rollback");
                         return Future.succeededFuture();
-                    } catch (Exception e)    {
+                    } catch (KeeperException.NoNodeException noNodeException) {
+                        LOGGER.warnCr(reconciliation, "The '/migration' znode doesn't exist already. Nothing to delete as part of the KRaft migration rollback");
+                        return Future.succeededFuture();
+                    } catch (Exception e) {
                         return Future.failedFuture(e);
                     } finally {
                         closeZooKeeperConnection(reconciliation, vertx, zkAdmin, trustStoreFile, keyStoreFile, operationTimeoutMs);
