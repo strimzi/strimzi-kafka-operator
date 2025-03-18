@@ -2,7 +2,8 @@
 
 ## 0.45.1
 
-* Dependency updates (Vert.x 4.5.13, Netty 4.1.118.Final)
+* Dependency updates (Vert.x 4.5.13, Netty 4.1.118.Final).
+* Fixed bug which may lead to a broken cluster when restarting a KRaft migration after a previous rollback due to missing `/migration` znode deletion.
 
 ## 0.45.0
 
