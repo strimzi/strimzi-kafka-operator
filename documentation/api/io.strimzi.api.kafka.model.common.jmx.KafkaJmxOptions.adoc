@@ -59,6 +59,9 @@ spec:
     # ...
 ----
 
+NOTE: The `jmxOptions` configuration enables direct access to Java Management Extensions (JMX) from Kafka components. 
+It is not required for the Prometheus JMX Exporter, which collects and converts JMX metrics to Prometheus metrics without direct JMX access.
+
 [role="_additional-resources"]
 .Additional resources
 
