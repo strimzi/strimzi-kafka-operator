@@ -34,8 +34,8 @@ public class KRaftMigrationUtils {
     /**
      * This method deletes the /controller znode from ZooKeeper to allow the brokers, which are now in ZooKeeper mode again,
      * to elect a new controller among them taking the KRaft controllers out of the picture.
-     * It also deletes the /migration znode from ZooKeeper to reset the migration status in case of rollback and the user
-     * wants to start a KRaft migration again.
+     * It also deletes the /migration znode from ZooKeeper to reset the migration status and not skipping
+     * the initial ZooKeeper to KRaft sync, in case of rollback and the user wants to start a KRaft migration again.
      *
      * @param reconciliation            Reconciliation information
      * @param vertx                     Vert.x instance

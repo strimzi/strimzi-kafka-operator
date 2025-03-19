@@ -901,8 +901,8 @@ public class ZooKeeperReconciler {
     /**
      * Deletes the /controller znode to allow brokers to elect a new controller among them, now that KRaft
      * controllers are out of the picture.
-     * Also deletes the /migration znode to reset the migration status in case of rollback and the user
-     * wants to start a KRaft migration again.
+     * Also deletes the /migration znode from ZooKeeper to reset the migration status and not skipping
+     * the initial ZooKeeper to KRaft sync, in case of rollback and the user wants to start a KRaft migration again.
      *
      * @return  Completes when the /controller and /migration znodes deletion is done
      */
