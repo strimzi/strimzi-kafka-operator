@@ -261,10 +261,29 @@ The brokers are rolled back so that they can be connected to ZooKeeper again and
 kubectl delete KafkaNodePool controller -n my-project
 ----
 
-WARNING: Together with the controllers node pool, delete the corresponding PVCs used for storing the cluster metadata.
-If a new KRaft migration is started, but the old PVCs are retained after a rollback, it won't work.
-This is due to an inconsistency between the new ZooKeeper-based metadata and the old KRaft-based metadata in the existing PVCs.
-The new controllers must start from clean storage so that they can migrate the metadata from ZooKeeper successfully.
+. IMPORTANT: After deleting the controllers node pool, remove the corresponding PVCs storing cluster metadata.
++
+Delete each controller using specific names.
++
+For example:
++
+[source,shell]
+----
+kubectl get pvc -n my-project | grep data-my-cluster-controller
+
+kubectl delete pvc data-my-cluster-controller-0 -n my-project
+kubectl delete pvc data-my-cluster-controller-1 -n my-project
+kubectl delete pvc data-my-cluster-controller-2 -n my-project
+----
++
+PVCs take the name format `data-<kafka_cluster_name>-<pool_name>-<pod_id>`.
+For JBOD volumes, the name format includes a volume ID: `data-<id>-<kafka_cluster_name>-<pool_name>-<pod_id>`.
++
+WARNING: Deleting the controllers node pool also requires deleting the corresponding PVCs that store cluster metadata.
+If old PVCs remain after a rollback, KRaft migration fails due to metadata inconsistencies.
+The new controllers must start with an empty metadata directory to migrate metadata from ZooKeeper successfully.
+This operation should only be performed with an understanding of the potential for data loss when deleting PVCs.
+Before proceeding, ensure you have taken appropriate backups of any critical data.
 
 . Apply the `strimzi.io/kraft="disabled"` annotation to the `Kafka` resource to return the metadata state to `ZooKeeper`.
 +
