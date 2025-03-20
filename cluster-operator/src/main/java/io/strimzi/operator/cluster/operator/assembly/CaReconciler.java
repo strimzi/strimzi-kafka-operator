@@ -224,7 +224,7 @@ public class CaReconciler {
         String clientsCaKeyName = KafkaResources.clientsCaKeySecretName(reconciliation.name());
 
         return secretOperator.listAsync(reconciliation.namespace(), Labels.EMPTY.withStrimziKind(reconciliation.kind()).withStrimziCluster(reconciliation.name()))
-                .compose(clusterSecrets -> vertx.executeBlocking(() -> {
+                .compose(clusterSecrets -> {
                     Secret clusterCaCertSecret = null;
                     Secret clusterCaKeySecret = null;
                     Secret clientsCaCertSecret = null;
@@ -267,9 +267,6 @@ public class CaReconciler {
                             clientsCaConfig != null && !clientsCaConfig.isGenerateSecretOwnerReference() ? null : ownerRef,
                             Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
 
-                    return null;
-                }))
-                .compose(i -> {
                     Promise<Void> caUpdatePromise = Promise.promise();
 
                     List<Future<ReconcileResult<Secret>>> secretReconciliations = new ArrayList<>(2);
