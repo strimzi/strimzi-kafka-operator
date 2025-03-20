@@ -18,6 +18,7 @@ import io.strimzi.operator.common.auth.TlsPemIdentity;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.admin.ZooKeeperAdmin;
 
 import java.io.File;
@@ -33,6 +34,8 @@ public class KRaftMigrationUtils {
     /**
      * This method deletes the /controller znode from ZooKeeper to allow the brokers, which are now in ZooKeeper mode again,
      * to elect a new controller among them taking the KRaft controllers out of the picture.
+     * It also deletes the /migration znode from ZooKeeper to reset the migration status and not skipping
+     * the initial ZooKeeper to KRaft sync, in case of rollback and the user wants to start a KRaft migration again.
      *
      * @param reconciliation            Reconciliation information
      * @param vertx                     Vert.x instance
@@ -41,30 +44,47 @@ public class KRaftMigrationUtils {
      * @param operationTimeoutMs        Timeout to be set on the ZooKeeper request configuration
      * @param zkConnectionString        Connection string to the ZooKeeper ensemble to connect to
      *
-     * @return Completes when the /controller znode deletion is done or any error
+     * @return Completes when the /controller and /migration znodes deletion is done or any error
      */
-    public static Future<Void> deleteZooKeeperControllerZnode(Reconciliation reconciliation, Vertx vertx, ZooKeeperAdminProvider zooKeeperAdminProvider, TlsPemIdentity coTlsPemIdentity, long operationTimeoutMs, String zkConnectionString) {
+    public static Future<Void> deleteZooKeeperControllerAndMigrationZnodes(Reconciliation reconciliation, Vertx vertx, ZooKeeperAdminProvider zooKeeperAdminProvider, TlsPemIdentity coTlsPemIdentity, long operationTimeoutMs, String zkConnectionString) {
         // Setup truststore from PEM file in cluster CA secret
         File trustStoreFile = Util.createFileStore(KRaftMigrationUtils.class.getName(), PemTrustSet.CERT_SUFFIX, coTlsPemIdentity.pemTrustSet().trustedCertificatesPemBytes());
 
         // Setup keystore from PEM in cluster-operator secret
         File keyStoreFile = Util.createFileStore(KRaftMigrationUtils.class.getName(), PemAuthIdentity.PEM_SUFFIX, coTlsPemIdentity.pemAuthIdentity().pemKeyStore());
 
-        return connectToZooKeeper(reconciliation, vertx, zooKeeperAdminProvider, trustStoreFile, keyStoreFile, operationTimeoutMs, zkConnectionString)
+        Promise<Void> znodesDeleted = Promise.promise();
+        connectToZooKeeper(reconciliation, vertx, zooKeeperAdminProvider, trustStoreFile, keyStoreFile, operationTimeoutMs, zkConnectionString)
                 .compose(zkAdmin -> {
-                    Promise<Void> znodeDeleted = Promise.promise();
                     try {
                         zkAdmin.delete("/controller", -1);
                         LOGGER.infoCr(reconciliation, "Deleted the '/controller' znode as part of the KRaft migration rollback");
-                        znodeDeleted.complete();
-                    } catch (Exception e)    {
-                        LOGGER.warnCr(reconciliation, "Failed to delete '/controller' znode", e);
-                        znodeDeleted.fail(e);
+                        return Future.succeededFuture(zkAdmin);
+                    } catch (KeeperException.NoNodeException noNodeException) {
+                        LOGGER.warnCr(reconciliation, "The '/controller' znode doesn't exist already. Nothing to delete as part of the KRaft migration rollback");
+                        return Future.succeededFuture(zkAdmin);
+                    } catch (Exception e) {
+                        closeZooKeeperConnection(reconciliation, vertx, zkAdmin, trustStoreFile, keyStoreFile, operationTimeoutMs);
+                        return Future.failedFuture(e);
+                    }
+                })
+                .compose(zkAdmin -> {
+                    try {
+                        zkAdmin.delete("/migration", -1);
+                        LOGGER.infoCr(reconciliation, "Deleted the '/migration' znode as part of the KRaft migration rollback");
+                        return Future.succeededFuture();
+                    } catch (KeeperException.NoNodeException noNodeException) {
+                        LOGGER.warnCr(reconciliation, "The '/migration' znode doesn't exist already. Nothing to delete as part of the KRaft migration rollback");
+                        return Future.succeededFuture();
+                    } catch (Exception e) {
+                        return Future.failedFuture(e);
                     } finally {
                         closeZooKeeperConnection(reconciliation, vertx, zkAdmin, trustStoreFile, keyStoreFile, operationTimeoutMs);
                     }
-                    return znodeDeleted.future();
-                });
+                })
+                .onSuccess(v -> znodesDeleted.complete())
+                .onFailure(e -> znodesDeleted.fail(e));
+        return znodesDeleted.future();
     }
 
     private static Future<ZooKeeperAdmin> connectToZooKeeper(Reconciliation reconciliation, Vertx vertx, ZooKeeperAdminProvider zooKeeperAdminProvider, File trustStoreFile, File keyStoreFile, long operationTimeoutMs, String zkConnectionString) {

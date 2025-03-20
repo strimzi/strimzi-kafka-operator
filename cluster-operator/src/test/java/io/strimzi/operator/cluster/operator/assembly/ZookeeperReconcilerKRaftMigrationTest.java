@@ -145,7 +145,7 @@ public class ZookeeperReconcilerKRaftMigrationTest {
 
         zookeeperReconciler.reconcile(status, Clock.systemUTC()).onComplete(context.succeeding(v -> context.verify(() -> {
             verify(zookeeperReconciler, times(1)).maybeDeleteControllerZnode();
-            verify(zookeeperReconciler, times(1)).deleteControllerZnode();
+            verify(zookeeperReconciler, times(1)).deleteControllerAndMigrationZnodes();
             async.flag();
         })));
     }
@@ -191,7 +191,7 @@ public class ZookeeperReconcilerKRaftMigrationTest {
 
         zookeeperReconciler.reconcile(status, Clock.systemUTC()).onComplete(context.succeeding(res -> context.verify(() -> {
             verify(zookeeperReconciler, times(1)).maybeDeleteControllerZnode();
-            verify(zookeeperReconciler, times(0)).deleteControllerZnode();
+            verify(zookeeperReconciler, times(0)).deleteControllerAndMigrationZnodes();
             async.flag();
         })));
     }
@@ -207,7 +207,7 @@ public class ZookeeperReconcilerKRaftMigrationTest {
         }
 
         @Override
-        protected Future<Void> deleteControllerZnode() {
+        protected Future<Void> deleteControllerAndMigrationZnodes() {
             return Future.succeededFuture();
         }
     }
