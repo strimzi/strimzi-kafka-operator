@@ -19,6 +19,7 @@
 * Strimzi Drain Cleaner updated to 1.3.0 (included in the Strimzi installation files)
 * Implicit IPv4 preference when enabling JMX has been removed, and will now use JVM defaults.
   This will make the cluster boot up correctly in IPv6 only environments, where IPv4 preference will break it due to lack of IPv4 addresses.
+* Improved the MirrorMaker2 example Grafana dashboard to set metric units and include chart descriptions.
 
 ### Major changes, deprecations and removals
 

@@ -220,7 +220,7 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "Bytes/sec",
+            "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -263,7 +263,7 @@
               }
             ]
           },
-          "unit": "bytes"
+          "unit": "binBps"
         },
         "overrides": []
       },
@@ -317,7 +317,7 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "Bytes/sec",
+            "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -360,7 +360,7 @@
               }
             ]
           },
-          "unit": "bytes"
+          "unit": "binBps"
         },
         "overrides": []
       },
@@ -557,6 +557,7 @@
     },
     {
       "datasource": "${DS_PROMETHEUS}",
+      "description": "The number of records that this task has consumed from the source but not yet produced to the target.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -658,7 +659,7 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "bytes",
+            "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -700,7 +701,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "bytes"
         },
         "overrides": []
       },
@@ -740,6 +741,7 @@
     },
     {
       "datasource": "${DS_PROMETHEUS}",
+      "description": "Time duration that this task takes to commit its offsets to the target.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -749,7 +751,7 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "ms",
+            "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -791,7 +793,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "ms"
         },
         "overrides": []
       },
@@ -831,6 +833,7 @@
     },
     {
       "datasource": "${DS_PROMETHEUS}",
+      "description": "Time duration between record timestamp in the source topic and the time when the source connector handles the record (aka. MM2 consumer lag time).",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -894,6 +897,10 @@
               {
                 "id": "custom.width",
                 "value": 65
+              },
+              {
+                "id": "unit",
+                "value": "ms"
               }
             ]
           },
@@ -918,6 +925,10 @@
               {
                 "id": "custom.width",
                 "value": 45
+              },
+              {
+                "id": "unit",
+                "value": "ms"
               }
             ]
           },
@@ -930,6 +941,10 @@
               {
                 "id": "custom.width",
                 "value": 41
+              },
+              {
+                "id": "unit",
+                "value": "ms"
               }
             ]
           },
@@ -1064,6 +1079,7 @@
     },
     {
       "datasource": "${DS_PROMETHEUS}",
+      "description": "The end to end latency from the record timestamp in the source topic to the time when the record is written successfully to the target cluster.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1126,6 +1142,10 @@
               {
                 "id": "custom.width",
                 "value": 65
+              },
+              {
+                "id": "unit",
+                "value": "ms"
               }
             ]
           },
@@ -1138,6 +1158,10 @@
               {
                 "id": "custom.width",
                 "value": 70
+              },
+              {
+                "id": "unit",
+                "value": "ms"
               }
             ]
           },
@@ -1150,6 +1174,10 @@
               {
                 "id": "custom.width",
                 "value": 45
+              },
+              {
+                "id": "unit",
+                "value": "ms"
               }
             ]
           },
@@ -1162,6 +1190,10 @@
               {
                 "id": "custom.width",
                 "value": 41
+              },
+              {
+                "id": "unit",
+                "value": "ms"
               }
             ]
           },
@@ -1296,6 +1328,7 @@
     },
     {
       "datasource": "${DS_PROMETHEUS}",
+      "description": "The latency for synchronizing the consumer groups of the source cluster to the target cluster.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1333,7 +1366,7 @@
             "properties": [
               {
                 "id": "unit",
-                "value": "dtdurationms"
+                "value": "ms"
               },
               {
                 "id": "custom.width",
@@ -1379,7 +1412,7 @@
           "refId": "A"
         }
       ],
-      "title": "Offset Synchronization Latency",
+      "title": "Consumer Group Offset Sync Latency",
       "transformations": [
         {
           "id": "organize",
@@ -1416,6 +1449,7 @@
     },
     {
       "datasource": "${DS_PROMETHEUS}",
+      "description": "Consumer lag which in the context of the replication indicates whether the consumer in the source connector can keep up with the rate records are produced in the source.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1425,7 +1459,7 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "",
+            "axisLabel": "offset",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -1506,6 +1540,7 @@
     },
     {
       "datasource": "${DS_PROMETHEUS}",
+      "description": "Consumer lag which in the context of the replication indicates whether the consumer in the source connector can keep up with the rate records are produced in the source.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2321,6 +2356,6 @@
   },
   "timezone": "",
   "title": "Strimzi Kafka Mirror Maker 2",
-  "version": 9,
+  "version": 10,
   "weekStart": ""
 }
