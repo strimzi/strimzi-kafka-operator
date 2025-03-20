@@ -7,11 +7,10 @@
 
 [role="_abstract"]
 Cluster Operator logging is configured through a `ConfigMap` named `strimzi-cluster-operator`.
-A `ConfigMap` containing logging configuration is created when installing the Cluster Operator.
-This `ConfigMap` is described in the file `install/cluster-operator/050-ConfigMap-strimzi-cluster-operator.yaml`.
-You configure Cluster Operator logging by changing the `data.log4j2.properties` values in this `ConfigMap`.
+This `ConfigMap`, created with default values during installation, is described in the file `install/cluster-operator/050-ConfigMap-strimzi-cluster-operator.yaml`.
+Configure Cluster Operator logging by changing `data.log4j2.properties` values in the file.
 
-To update the logging configuration, you can edit the `050-ConfigMap-strimzi-cluster-operator.yaml` file and then run the following command:
+To update the logging configuration, edit the `050-ConfigMap-strimzi-cluster-operator.yaml` file and then run the following command:
 [source,shell,subs=+quotes]
 kubectl create -f _install/cluster-operator/050-ConfigMap-strimzi-cluster-operator.yaml_
 
@@ -19,14 +18,22 @@ Alternatively, edit the `ConfigMap` directly:
 [source,shell,subs=+quotes]
 kubectl edit configmap strimzi-cluster-operator
 
-With this ConfigMap, you can control various aspects of logging, including the root logger level, log output format, and log levels for different components. 
-The `monitorInterval` setting, determines how often the logging configuration is reloaded. 
-You can also control the logging levels for the Kafka `AdminClient` or Netty.
-Netty is a framework used in Strimzi for network communication, and OkHttp is a library used for making HTTP requests.
-  
+With this `ConfigMap`, you can control the following aspects of logging:
+
+* Root logger level
+* Log output format
+* Log levels for different components
+* Kafka `AdminClient` logging levels
+* Netty logging Levels
+* How often logging configuration is loaded
+
+Netty is a framework used in Strimzi for network communication.
+The `monitorInterval` setting determines how often in seconds the logging configuration is dynamically reloaded.
+The default is 30 seconds.
+
 If the `ConfigMap` is missing when the Cluster Operator is deployed, the default logging values are used.
 
 If the `ConfigMap` is accidentally deleted after the Cluster Operator is deployed, the most recently loaded logging configuration is used.
 Create a new `ConfigMap` to load a new logging configuration.
 
-NOTE: Do not remove the `monitorInterval` option from the `ConfigMap`.
+WARNING: Do not remove the `monitorInterval` option from the `ConfigMap`.
