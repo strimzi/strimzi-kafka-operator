@@ -21,6 +21,9 @@ import io.strimzi.operator.common.Reconciliation;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.stream.Collectors;
+
+import static io.strimzi.operator.cluster.model.KafkaBridgeCluster.OAUTH_SECRETS_BASE_VOLUME_MOUNT;
 
 /**
  * This class is used to generate the bridge configuration template. The template is later passed using a ConfigMap to
@@ -32,10 +35,9 @@ public class KafkaBridgeConfigurationBuilder {
 
     // placeholders expanded through config providers inside the bridge node
     private static final String PLACEHOLDER_CERT_STORE_PASSWORD_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:CERTS_STORE_PASSWORD}";
-    private static final String PLACEHOLDER_SASL_USERNAME_CONFIG_PROVIDER_ENV_VAR = "${strimzienv:KAFKA_BRIDGE_SASL_USERNAME}";
     private static final String PASSWORD_VOLUME_MOUNT = "/opt/strimzi/bridge-password/";
     // the SASL password file template includes: <volume_mount>/<secret_name>/<password_file>
-    private static final String PLACEHOLDER_SASL_PASSWORD_FILE_TEMPLATE_CONFIG_PROVIDER_DIR = "${strimzidir:%s%s:%s}";
+    private static final String PLACEHOLDER_VOLUME_MOUNTED_SECRET_TEMPLATE_CONFIG_PROVIDER_DIR = "${strimzidir:%s%s:%s}";
 
     private final Reconciliation reconciliation;
     private final StringWriter stringWriter = new StringWriter();
@@ -147,8 +149,8 @@ public class KafkaBridgeConfigurationBuilder {
 
                 if (authentication instanceof KafkaClientAuthenticationPlain passwordAuth) {
                     saslMechanism = "PLAIN";
-                    String passwordFilePath = String.format(PLACEHOLDER_SASL_PASSWORD_FILE_TEMPLATE_CONFIG_PROVIDER_DIR, PASSWORD_VOLUME_MOUNT, passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getPassword());
-                    jaasConfig.append("org.apache.kafka.common.security.plain.PlainLoginModule required username=" + PLACEHOLDER_SASL_USERNAME_CONFIG_PROVIDER_ENV_VAR + " password=" + passwordFilePath + ";");
+                    String passwordFilePath = String.format(PLACEHOLDER_VOLUME_MOUNTED_SECRET_TEMPLATE_CONFIG_PROVIDER_DIR, PASSWORD_VOLUME_MOUNT, passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getPassword());
+                    jaasConfig.append("org.apache.kafka.common.security.plain.PlainLoginModule required username=" + passwordAuth.getUsername() + " password=" + passwordFilePath + ";");
                 } else if (authentication instanceof KafkaClientAuthenticationScram scramAuth) {
 
                     if (scramAuth.getType().equals(KafkaClientAuthenticationScramSha256.TYPE_SCRAM_SHA_256)) {
@@ -157,26 +159,38 @@ public class KafkaBridgeConfigurationBuilder {
                         saslMechanism = "SCRAM-SHA-512";
                     }
 
-                    String passwordFilePath = String.format(PLACEHOLDER_SASL_PASSWORD_FILE_TEMPLATE_CONFIG_PROVIDER_DIR, PASSWORD_VOLUME_MOUNT, scramAuth.getPasswordSecret().getSecretName(), scramAuth.getPasswordSecret().getPassword());
-                    jaasConfig.append("org.apache.kafka.common.security.scram.ScramLoginModule required username=" + PLACEHOLDER_SASL_USERNAME_CONFIG_PROVIDER_ENV_VAR + " password=" + passwordFilePath + ";");
+                    String passwordFilePath = String.format(PLACEHOLDER_VOLUME_MOUNTED_SECRET_TEMPLATE_CONFIG_PROVIDER_DIR, PASSWORD_VOLUME_MOUNT, scramAuth.getPasswordSecret().getSecretName(), scramAuth.getPasswordSecret().getPassword());
+                    jaasConfig.append("org.apache.kafka.common.security.scram.ScramLoginModule required username=" + scramAuth.getUsername() + " password=" + passwordFilePath + ";");
                 } else if (authentication instanceof KafkaClientAuthenticationOAuth oauth) {
                     saslMechanism = "OAUTHBEARER";
-                    jaasConfig.append("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ${strimzienv:KAFKA_BRIDGE_OAUTH_CONFIG}");
+                    String oauthConfig = AuthenticationUtils.oauthJaasOptions(oauth).entrySet().stream()
+                            .map(e -> e.getKey() + "=\"" + e.getValue() + "\"")
+                            .collect(Collectors.joining(" "));
+
+                    if (!oauthConfig.isEmpty()) {
+                        jaasConfig.append("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " + oauthConfig);
+                    } else {
+                        jaasConfig.append("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required");
+                    }
 
                     if (oauth.getClientSecret() != null) {
-                        jaasConfig.append(" oauth.client.secret=${strimzienv:KAFKA_BRIDGE_OAUTH_CLIENT_SECRET}");
+                        jaasConfig.append(" oauth.client.secret=" + String.format(PLACEHOLDER_VOLUME_MOUNTED_SECRET_TEMPLATE_CONFIG_PROVIDER_DIR, OAUTH_SECRETS_BASE_VOLUME_MOUNT, oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getKey()));
                     }
 
                     if (oauth.getRefreshToken() != null) {
-                        jaasConfig.append(" oauth.refresh.token=${strimzienv:KAFKA_BRIDGE_OAUTH_REFRESH_TOKEN}");
+                        jaasConfig.append(" oauth.refresh.token=" + String.format(PLACEHOLDER_VOLUME_MOUNTED_SECRET_TEMPLATE_CONFIG_PROVIDER_DIR, OAUTH_SECRETS_BASE_VOLUME_MOUNT, oauth.getRefreshToken().getSecretName(), oauth.getRefreshToken().getKey()));
                     }
 
                     if (oauth.getAccessToken() != null) {
-                        jaasConfig.append(" oauth.access.token=${strimzienv:KAFKA_BRIDGE_OAUTH_ACCESS_TOKEN}");
+                        jaasConfig.append(" oauth.access.token=" + String.format(PLACEHOLDER_VOLUME_MOUNTED_SECRET_TEMPLATE_CONFIG_PROVIDER_DIR, OAUTH_SECRETS_BASE_VOLUME_MOUNT, oauth.getAccessToken().getSecretName(), oauth.getAccessToken().getKey()));
                     }
 
                     if (oauth.getPasswordSecret() != null) {
-                        jaasConfig.append(" oauth.password.grant.password=${strimzienv:KAFKA_BRIDGE_OAUTH_PASSWORD_GRANT_PASSWORD}");
+                        jaasConfig.append(" oauth.password.grant.password=" + String.format(PLACEHOLDER_VOLUME_MOUNTED_SECRET_TEMPLATE_CONFIG_PROVIDER_DIR, OAUTH_SECRETS_BASE_VOLUME_MOUNT, oauth.getPasswordSecret().getSecretName(), oauth.getPasswordSecret().getPassword()));
+                    }
+
+                    if (oauth.getClientAssertion() != null) {
+                        jaasConfig.append(" oauth.client.assertion=" + String.format(PLACEHOLDER_VOLUME_MOUNTED_SECRET_TEMPLATE_CONFIG_PROVIDER_DIR, OAUTH_SECRETS_BASE_VOLUME_MOUNT, oauth.getClientAssertion().getSecretName(), oauth.getClientAssertion().getKey()));
                     }
 
                     if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
