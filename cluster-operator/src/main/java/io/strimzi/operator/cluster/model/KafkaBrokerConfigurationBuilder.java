@@ -774,7 +774,6 @@ public class KafkaBrokerConfigurationBuilder {
             strimziConfigProviders = "strimzienv";
         }
 
-        writer.println("# Configuration providers configured by the user and Strimzi");
         createOrAddConfigListValue(userConfig, "config.providers", strimziConfigProviders);
 
         createOrUpdateConfigValue(userConfig, "config.providers.strimzienv.class", "org.apache.kafka.common.config.provider.EnvVarConfigProvider");
