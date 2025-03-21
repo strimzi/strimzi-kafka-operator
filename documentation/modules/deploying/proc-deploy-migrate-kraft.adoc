@@ -26,7 +26,7 @@ If you previously rolled back a KRaft migration, ensure that all required cleanu
 * The controller node pool and its associated PVCs must have been deleted.
 * The `/migration` znode in ZooKeeper must also have been removed manually.
 
-Failing to perform this cleanup before reattempting the migration can cause the migration to fail.
+Failing to perform this cleanup before reattempting the migration can cause metadata loss and the migration to fail.
 ====
 
 .Prerequisites
