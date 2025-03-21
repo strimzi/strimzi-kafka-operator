@@ -28,7 +28,7 @@ public class StorageDiff extends AbstractJsonDiff {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(StorageDiff.class.getName());
 
     private static final Pattern IGNORABLE_PATHS = Pattern.compile(
-            "^(/deleteClaim|/kraftMetadata|/overrides.*|/)$");
+            "^(/deleteClaim|/kraftMetadata|/overrides.*|/volumeAttributesClass|/)$");
 
     private final boolean isEmpty;
     private final boolean changesType;
