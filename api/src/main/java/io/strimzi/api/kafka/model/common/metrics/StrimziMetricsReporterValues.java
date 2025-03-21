@@ -29,7 +29,7 @@ import java.util.Map;
 @EqualsAndHashCode
 @ToString
 public class StrimziMetricsReporterValues implements UnknownPropertyPreserving {
-    private List<String> allowList = List.of();
+    private List<String> allowList;
     private Map<String, Object> additionalProperties;
 
     @Description("A comma separated list of regex patterns to specify the metrics to collect.")

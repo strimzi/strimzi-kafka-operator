@@ -29,7 +29,6 @@ public class JmxPrometheusExporterModel implements MetricsModel {
      */
     public static final String CONFIG_MAP_KEY = "metrics-config.json";
 
-    private final boolean isEnabled;
     private final String configMapName;
     private final String configMapKey;
 
@@ -42,19 +41,11 @@ public class JmxPrometheusExporterModel implements MetricsModel {
         if (spec.getMetricsConfig() != null) {
             JmxPrometheusExporterMetrics config = (JmxPrometheusExporterMetrics) spec.getMetricsConfig();
             validateJmxExporterMetricsConfig(config);
-            this.isEnabled = true;
             this.configMapName = config.getValueFrom().getConfigMapKeyRef().getName();
             this.configMapKey = config.getValueFrom().getConfigMapKeyRef().getKey();
         } else {
-            this.isEnabled = false;
-            this.configMapName = null;
-            this.configMapKey = null;
+            throw new InvalidConfigurationException("Unexpected empty metrics config");
         }
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return isEnabled;
     }
 
     /**
@@ -81,34 +72,30 @@ public class JmxPrometheusExporterModel implements MetricsModel {
      * @return  String with JSON formatted metrics configuration or null if metrics are not enabled
      */
     public String metricsJson(Reconciliation reconciliation, ConfigMap configMap) {
-        if (isEnabled)  {
-            if (configMap == null) {
-                LOGGER.warnCr(reconciliation, "ConfigMap {} does not exist.", configMapName);
-                throw new InvalidConfigurationException("ConfigMap " + configMapName + " does not exist");
+        if (configMap == null) {
+            LOGGER.warnCr(reconciliation, "ConfigMap {} does not exist.", configMapName);
+            throw new InvalidConfigurationException("ConfigMap " + configMapName + " does not exist");
+        } else {
+            String data = configMap.getData().get(configMapKey);
+
+            if (data == null) {
+                LOGGER.warnCr(reconciliation, "ConfigMap {} does not contain specified key {}.", configMapName, configMapKey);
+                throw new InvalidConfigurationException("ConfigMap " + configMapName + " does not contain specified key " + configMapKey);
             } else {
-                String data = configMap.getData().get(configMapKey);
+                if (data.isEmpty()) {
+                    return "{}";
+                }
 
-                if (data == null) {
-                    LOGGER.warnCr(reconciliation, "ConfigMap {} does not contain specified key {}.", configMapName, configMapKey);
-                    throw new InvalidConfigurationException("ConfigMap " + configMapName + " does not contain specified key " + configMapKey);
-                } else {
-                    if (data.isEmpty()) {
-                        return "{}";
-                    }
+                try {
+                    ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
+                    Object yaml = yamlReader.readValue(data, Object.class);
+                    ObjectMapper jsonWriter = new ObjectMapper();
 
-                    try {
-                        ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
-                        Object yaml = yamlReader.readValue(data, Object.class);
-                        ObjectMapper jsonWriter = new ObjectMapper();
-
-                        return jsonWriter.writeValueAsString(yaml);
-                    } catch (JsonProcessingException e) {
-                        throw new InvalidConfigurationException("Failed to parse metrics configuration", e);
-                    }
+                    return jsonWriter.writeValueAsString(yaml);
+                } catch (JsonProcessingException e) {
+                    throw new InvalidConfigurationException("Failed to parse metrics configuration", e);
                 }
             }
-        } else {
-            return null;
         }
     }
 

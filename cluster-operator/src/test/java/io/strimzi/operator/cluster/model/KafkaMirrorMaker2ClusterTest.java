@@ -2151,7 +2151,7 @@ public class KafkaMirrorMaker2ClusterTest {
 
         KafkaMirrorMaker2Cluster kmm = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaMirrorMaker2, VERSIONS, SHARED_ENV_PROVIDER);
 
-        assertThat(kmm.metrics().isEnabled(), is(true));
+        assertThat(kmm.metrics(), is(notNullValue()));
         assertThat(((JmxPrometheusExporterModel) kmm.metrics()).getConfigMapName(), is("my-metrics-configuration"));
         assertThat(((JmxPrometheusExporterModel) kmm.metrics()).getConfigMapKey(), is("config.yaml"));
     }
