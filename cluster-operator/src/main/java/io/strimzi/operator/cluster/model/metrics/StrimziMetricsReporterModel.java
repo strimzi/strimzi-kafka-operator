@@ -20,7 +20,7 @@ import java.util.regex.PatternSyntaxException;
  */
 public class StrimziMetricsReporterModel implements MetricsModel {
     /**
-     * Fully qualified class name of the Strimzi Kafka Prometheus Metrics Reporter.
+     * Fully qualified class name of the Strimzi Metrics Reporter.
      */
     private final List<String> allowList;
 
