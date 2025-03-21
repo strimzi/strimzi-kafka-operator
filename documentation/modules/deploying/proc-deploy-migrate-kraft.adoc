@@ -19,6 +19,16 @@ Note also, the following:
 * Throughout the migration process, ZooKeeper and controller nodes operate in parallel for a period, requiring sufficient compute resources in the cluster.
 * *Once KRaft mode is enabled, rollback to ZooKeeper is not possible. Consider this carefully before proceeding with the migration.*
 
+[WARNING]
+====
+If you previously rolled back a KRaft migration, ensure that all required cleanup steps were completed before attempting to migrate again.
+
+* The controller node pool and its associated PVCs must have been deleted.
+* The `/migration` znode in ZooKeeper must also have been removed manually.
+
+Failing to perform this cleanup before reattempting the migration can cause the migration to fail.
+====
+
 .Prerequisites
 
 * You must be using Strimzi 0.40 or newer with Kafka 3.7.0 or newer. If you are using an earlier version of Strimzi or Apache Kafka, upgrade before migrating to KRaft mode.
