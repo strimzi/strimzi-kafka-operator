@@ -774,6 +774,7 @@ public class KafkaBrokerConfigurationBuilder {
             strimziConfigProviders = "strimzienv";
         }
 
+        writer.println("# Configuration providers configured by the user and Strimzi");
         createOrAddConfigListValue(userConfig, "config.providers", strimziConfigProviders);
 
         createOrUpdateConfigValue(userConfig, "config.providers.strimzienv.class", "org.apache.kafka.common.config.provider.EnvVarConfigProvider");
@@ -1014,7 +1015,7 @@ public class KafkaBrokerConfigurationBuilder {
     /**
      * This method creates a configuration if it does not exist or adds a value to the list if it does exist.
      *
-     * @param config Configuration.
+     * @param config A list that the configuration value will be appended to.
      * @param key Property key.
      * @param value Property value to set or add.
      */
