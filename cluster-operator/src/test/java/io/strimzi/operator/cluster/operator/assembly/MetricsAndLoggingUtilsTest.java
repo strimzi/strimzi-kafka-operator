@@ -40,12 +40,11 @@ public class MetricsAndLoggingUtilsTest {
     @Test
     public void testNoMetricsAndNoExternalLogging(VertxTestContext context)   {
         LoggingModel logging = new LoggingModel(new KafkaConnectSpec(), "KafkaConnectCluster", false, true);
-        JmxPrometheusExporterModel metrics = new JmxPrometheusExporterModel(new KafkaConnectSpecBuilder().build());
 
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
 
         Checkpoint async = context.checkpoint();
-        MetricsAndLoggingUtils.metricsAndLogging(Reconciliation.DUMMY_RECONCILIATION, mockCmOps, logging, metrics)
+        MetricsAndLoggingUtils.metricsAndLogging(Reconciliation.DUMMY_RECONCILIATION, mockCmOps, logging, null)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(v.loggingCm(), is(nullValue()));
                     assertThat(v.metricsCm(), is(nullValue()));
@@ -83,13 +82,12 @@ public class MetricsAndLoggingUtilsTest {
     @Test
     public void testNoMetricsAndExternalLogging(VertxTestContext context)   {
         LoggingModel logging = new LoggingModel(new KafkaConnectSpecBuilder().withLogging(new ExternalLoggingBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector("log4j.properties", "logging-cm", false)).endValueFrom().build()).build(), "KafkaConnectCluster", false, true);
-        JmxPrometheusExporterModel metrics = new JmxPrometheusExporterModel(new KafkaConnectSpecBuilder().build());
 
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
         when(mockCmOps.getAsync(any(), eq("logging-cm"))).thenReturn(Future.succeededFuture(new ConfigMapBuilder().withNewMetadata().withName("logging-cm").endMetadata().withData(Map.of()).build()));
 
         Checkpoint async = context.checkpoint();
-        MetricsAndLoggingUtils.metricsAndLogging(Reconciliation.DUMMY_RECONCILIATION, mockCmOps, logging, metrics)
+        MetricsAndLoggingUtils.metricsAndLogging(Reconciliation.DUMMY_RECONCILIATION, mockCmOps, logging, null)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(v.loggingCm(), is(notNullValue()));
                     assertThat(v.loggingCm().getMetadata().getName(), is("logging-cm"));

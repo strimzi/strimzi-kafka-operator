@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model.metrics;
 
 import io.strimzi.api.kafka.model.common.HasConfigurableMetrics;
 import io.strimzi.api.kafka.model.common.metrics.StrimziMetricsReporter;
+import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.model.InvalidResourceException;
 
 import java.util.ArrayList;
@@ -21,17 +22,7 @@ public class StrimziMetricsReporterModel implements MetricsModel {
     /**
      * Fully qualified class name of the Strimzi Kafka Prometheus Metrics Reporter.
      */
-    private final boolean isEnabled;
     private final List<String> allowList;
-
-    /**
-     * Constructs the Metrics Model for managing configurable metrics to Strimzi.
-     *
-     * @param spec Custom resource section configuring metrics.
-     */
-    public StrimziMetricsReporterModel(HasConfigurableMetrics spec) {
-        this(spec, List.of(".*"));
-    }
 
         /**
          * Constructs the Metrics Model for managing configurable metrics to Strimzi.
@@ -43,18 +34,11 @@ public class StrimziMetricsReporterModel implements MetricsModel {
         if (spec.getMetricsConfig() != null) {
             StrimziMetricsReporter config = (StrimziMetricsReporter) spec.getMetricsConfig();
             validate(config);
-            this.isEnabled = true;
             this.allowList = config.getValues() != null && config.getValues().getAllowList() != null
                     ? config.getValues().getAllowList() : defaultAllowList;
         } else {
-            this.isEnabled = false;
-            this.allowList = null;
+            throw new InvalidConfigurationException("Unexpected empty metrics config");
         }
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return isEnabled;
     }
 
     /**

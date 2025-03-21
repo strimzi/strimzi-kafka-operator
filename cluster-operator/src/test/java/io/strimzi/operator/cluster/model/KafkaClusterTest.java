@@ -80,7 +80,6 @@ import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.jmx.JmxModel;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.metrics.JmxPrometheusExporterModel;
-import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterConfig;
 import io.strimzi.operator.cluster.model.metrics.StrimziMetricsReporterModel;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.common.Annotations;
@@ -325,10 +324,10 @@ public class KafkaClusterTest {
         assertThat(cms.size(), is(8));
 
         for (ConfigMap cm : cms) {
-            assertThat(cm.getData().toString(), containsString("kafka.metrics.reporters=" + StrimziMetricsReporterConfig.YAMMER_CLASS));
-            assertThat(cm.getData().toString(), containsString(StrimziMetricsReporterConfig.LISTENER_ENABLE + "=true"));
-            assertThat(cm.getData().toString(), containsString(StrimziMetricsReporterConfig.LISTENER + "=http://0.0.0.0:9404"));
-            assertThat(cm.getData().toString(), containsString(StrimziMetricsReporterConfig.ALLOW_LIST + "=kafka_log.*,kafka_network.*"));
+            assertThat(cm.getData().toString(), containsString("kafka.metrics.reporters=io.strimzi.kafka.metrics.YammerPrometheusMetricsReporter"));
+            assertThat(cm.getData().toString(), containsString("prometheus.metrics.reporter.listener.enable=true"));
+            assertThat(cm.getData().toString(), containsString("prometheus.metrics.reporter.listener=http://0.0.0.0:9404"));
+            assertThat(cm.getData().toString(), containsString("prometheus.metrics.reporter.allowlist=kafka_log.*,kafka_network.*"));
         }
     }
 
@@ -2093,7 +2092,7 @@ public class KafkaClusterTest {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_MIXED, POOL_BROKERS), Map.of(), KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, SHARED_ENV_PROVIDER);
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE, null, SHARED_ENV_PROVIDER);
 
-        assertThat(kc.metrics().isEnabled(), is(true));
+        assertThat(kc.metrics(), is(notNullValue()));
         assertThat(((JmxPrometheusExporterModel) kc.metrics()).getConfigMapName(), is("my-metrics-configuration"));
         assertThat(((JmxPrometheusExporterModel) kc.metrics()).getConfigMapKey(), is("config.yaml"));
     }

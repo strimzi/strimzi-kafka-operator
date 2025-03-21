@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -26,11 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class JmxPrometheusExporterModelTest {
     @Test
     public void testDisabled()   {
-        JmxPrometheusExporterModel metrics = new JmxPrometheusExporterModel(new KafkaConnectSpecBuilder().build());
-
-        assertThat(metrics.isEnabled(), is(false));
-        assertThat(metrics.getConfigMapName(), is(nullValue()));
-        assertThat(metrics.getConfigMapKey(), is(nullValue()));
+        InvalidConfigurationException ex = assertThrows(InvalidConfigurationException.class, () -> new JmxPrometheusExporterModel(new KafkaConnectSpecBuilder().build()));
+        assertThat(ex.getMessage(), is("Unexpected empty metrics config"));
     }
 
     @Test
@@ -43,7 +40,7 @@ public class JmxPrometheusExporterModelTest {
 
         JmxPrometheusExporterModel metrics = new JmxPrometheusExporterModel(new KafkaConnectSpecBuilder().withMetricsConfig(metricsConfig).build());
 
-        assertThat(metrics.isEnabled(), is(true));
+        assertThat(metrics, is(notNullValue()));
         assertThat(metrics.getConfigMapName(), is("my-name"));
         assertThat(metrics.getConfigMapKey(), is("my-key"));
         assertThat(metrics.metricsJson(Reconciliation.DUMMY_RECONCILIATION, new ConfigMapBuilder().withData(Map.of("my-key", "")).build()), is("{}"));

@@ -126,7 +126,7 @@ public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurabl
         this.apiUsers = apiUsers;
     }
 
-    @Description("Metrics configuration.")
+    @Description("Metrics configuration. Only `jmxPrometheusExporter` can be configured, as this component does not support `strimziMetricsReporter`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @CelValidation(rules = {
         @CelValidation.CelValidationRule(
