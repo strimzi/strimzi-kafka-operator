@@ -807,9 +807,11 @@ public class KafkaBrokerConfigurationBuilder {
 
         addConfigProviders(userConfig);
 
+        // Adds the Kafka metric.reporters to the user configuration.
         maybeAddMetricReporters(userConfig, injectCcMetricsReporter, injectStrimziMetricsReporter);
 
-        maybeAddKafkaMetricsReporters(userConfig, injectStrimziMetricsReporter);
+        // Adds the Yammer kafka.metrics.reporters to the user configuration.
+        maybeAddYammerMetricsReporters(userConfig, injectStrimziMetricsReporter);
 
         // print user config with Strimzi injections
         if (!userConfig.getConfiguration().isEmpty()) {
@@ -821,6 +823,13 @@ public class KafkaBrokerConfigurationBuilder {
         return this;
     }
 
+    /**
+     * Adds the Kafka metric.reporters to the user configuration.
+     *
+     * @param userConfig The user configuration to which the metric reporters will be added.
+     * @param injectCcMetricsReporter Flag indicating whether to inject the Cruise Control Metrics Reporter.
+     * @param injectStrimziMetricsReporter Flag indicating whether to inject the Strimzi Metrics Reporter.
+     */
     private void maybeAddMetricReporters(KafkaConfiguration userConfig, boolean injectCcMetricsReporter, boolean injectStrimziMetricsReporter) {
         String ccReporter = CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER;
         String strimziReporter = "io.strimzi.kafka.metrics.KafkaPrometheusMetricsReporter";
@@ -833,7 +842,13 @@ public class KafkaBrokerConfigurationBuilder {
         }
     }
 
-    private void maybeAddKafkaMetricsReporters(KafkaConfiguration userConfig, boolean injectStrimziMetricsReporter) {
+    /**
+     * Adds the Yammer kafka.metrics.reporters to the user configuration if the Strimzi Metrics Reporter is enabled.
+     *
+     * @param userConfig The user configuration to which the Yammer metrics reporter will be added.
+     * @param injectStrimziMetricsReporter Flag indicating whether to inject the Strimzi Metrics Reporter.
+     */
+    private void maybeAddYammerMetricsReporters(KafkaConfiguration userConfig, boolean injectStrimziMetricsReporter) {
         if (injectStrimziMetricsReporter) {
             createOrAddConfigListValue(userConfig, "kafka.metrics.reporters", "io.strimzi.kafka.metrics.YammerPrometheusMetricsReporter");
         }
