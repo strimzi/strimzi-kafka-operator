@@ -254,6 +254,24 @@ metadata:
 The migration process must be in the `KRaftPostMigration` state to do this. 
 The brokers are rolled back so that they can be connected to ZooKeeper again and the state returns to `KRaftDualWriting`.
 
+. Update the controller node pool to enable automatic PVC deletion.
++
+Before deleting the controllers node pool, ensure that `deleteClaim: true` is set in the storage configuration.
+This ensures that the corresponding PVCs storing cluster metadata are automatically deleted with the node pool.
++
+.Node pool setting to delete PVCs
+[source,yaml]
+----
+# ...
+storage:
+  type: persistent-claim
+  size: 500Gi
+  deleteClaim: true
+----
++
+If `deleteClaim` is already set to `true`, you can skip this step.
+If you prefer to delete the PVCs manually, follow the manual deletion step after the node pool has been deleted.
+
 . Delete the controllers node pool:
 +
 [source,shell]
@@ -261,9 +279,9 @@ The brokers are rolled back so that they can be connected to ZooKeeper again and
 kubectl delete KafkaNodePool controller -n my-project
 ----
 
-. IMPORTANT: After deleting the controllers node pool, remove the corresponding PVCs storing cluster metadata.
+. If `deleteClaim` was not set or is `false`, manually delete the corresponding PVCs.
 +
-Delete each controller using specific names.
+Delete each PVC using specific names.
 +
 For example:
 +
