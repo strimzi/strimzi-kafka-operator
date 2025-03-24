@@ -304,11 +304,11 @@ public class MigrationST extends AbstractST {
         PersistentVolumeClaimUtils.deletePvcsByPrefixWithWait(testStorage.getNamespaceName(), testStorage.getControllerPoolName());
 
         // Create one additional topic to ensure that it will be migrated to KRaft after the migration
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), rollbackZKTopic, testStorage.getClusterName()).build());
+        createKafkaTopicAndCheckMetadataWithMessageTransmission(testStorage, rollbackZKTopic, true, false);
 
         // Do the full migration to KRaft
         doFirstPartOfMigration(testStorage, deleteCoDuringProcess, withJbodStorage, false);
-        doSecondPartOfMigration(testStorage, deleteCoDuringProcess, zkDeleteClaim);
+        doSecondPartOfMigration(testStorage, deleteCoDuringProcess, zkDeleteClaim, false);
 
         // Check that all topics are present
         assertThatTopicIsPresentInKRaftMetadata(testStorage.getNamespaceName(), controllerSelector, postMigrationTopicName);
@@ -657,12 +657,17 @@ public class MigrationST extends AbstractST {
     }
 
     private void createKafkaTopicAndCheckMetadataWithMessageTransmission(TestStorage testStorage, String newTopicName, boolean checkZk) {
+        createKafkaTopicAndCheckMetadataWithMessageTransmission(testStorage, newTopicName, checkZk, true);
+    }
+
+    private void createKafkaTopicAndCheckMetadataWithMessageTransmission(TestStorage testStorage, String newTopicName, boolean checkZk, boolean checkKRaft) {
         LOGGER.info("Creating KafkaTopic: {} and checking if the metadata are in both ZK and KRaft", newTopicName);
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), newTopicName, testStorage.getClusterName()).build());
 
-        LOGGER.info("Checking if metadata about KafkaTopic: {} are in KRaft controller", newTopicName);
-
-        assertThatTopicIsPresentInKRaftMetadata(testStorage.getNamespaceName(), controllerSelector, newTopicName);
+        if (checkKRaft) {
+            LOGGER.info("Checking if metadata about KafkaTopic: {} are in KRaft controller", newTopicName);
+            assertThatTopicIsPresentInKRaftMetadata(testStorage.getNamespaceName(), controllerSelector, newTopicName);
+        }
 
         if (checkZk) {
             LOGGER.info("Checking if metadata about KafkaTopic: {} are in ZK", newTopicName);
