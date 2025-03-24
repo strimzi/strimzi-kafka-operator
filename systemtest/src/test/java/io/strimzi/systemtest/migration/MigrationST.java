@@ -308,7 +308,7 @@ public class MigrationST extends AbstractST {
 
         // Do the full migration to KRaft
         doFirstPartOfMigration(testStorage, deleteCoDuringProcess, withJbodStorage, false);
-        doSecondPartOfMigration(testStorage, deleteCoDuringProcess, zkDeleteClaim, false);
+        doSecondPartOfMigration(testStorage, deleteCoDuringProcess, zkDeleteClaim);
 
         // Check that all topics are present
         assertThatTopicIsPresentInKRaftMetadata(testStorage.getNamespaceName(), controllerSelector, postMigrationTopicName);
@@ -558,10 +558,6 @@ public class MigrationST extends AbstractST {
     }
 
     private void doSecondPartOfMigration(TestStorage testStorage, boolean deleteCoDuringProcess, boolean zkDeleteClaim) {
-        doSecondPartOfMigration(testStorage, deleteCoDuringProcess, zkDeleteClaim, true);
-    }
-
-    private void doSecondPartOfMigration(TestStorage testStorage, boolean deleteCoDuringProcess, boolean zkDeleteClaim, boolean createTopic) {
         LOGGER.info("Finishing migration - applying the {} annotation with value: {}, controllers should be rolled", Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"));
 
@@ -592,9 +588,7 @@ public class MigrationST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), brokerSelector, 3, brokerPodsSnapshot);
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), controllerSelector, 3, controllerPodsSnapshot);
 
-        if (createTopic) {
-            createKafkaTopicAndCheckMetadataWithMessageTransmission(testStorage, kraftTopicName, false);
-        }
+        createKafkaTopicAndCheckMetadataWithMessageTransmission(testStorage, kraftTopicName, false);
 
         LOGGER.info("Migration is completed, waiting for continuous clients to finish");
         ClientUtils.waitForClientsSuccess(testStorage.getNamespaceName(), continuousClients.getConsumerName(), continuousClients.getProducerName(), continuousClients.getMessageCount());
