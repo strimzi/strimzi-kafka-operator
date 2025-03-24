@@ -20,7 +20,6 @@
 * Implicit IPv4 preference when enabling JMX has been removed, and will now use JVM defaults.
   This will make the cluster boot up correctly in IPv6 only environments, where IPv4 preference will break it due to lack of IPv4 addresses.
 * Improved the MirrorMaker2 example Grafana dashboard to set metric units and include chart descriptions.
-* Kafka Connect SSL configurations now uses Kafka Kubernetes Config Provider to load certificates directly from secrets.
 * Kafka Connect truststore and keystore configurations now uses Kafka Kubernetes Config Provider to load PEM certificates directly from secrets.
 
 ### Major changes, deprecations and removals

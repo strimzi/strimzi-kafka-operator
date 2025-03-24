@@ -303,7 +303,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 .compose(ignore -> secretOperations.reconcile(
                                 reconciliation,
                                 namespace,
-                                KafkaConnectResources.internalTlsCertsSecretName(connect.getCluster()),
+                                KafkaConnectResources.internalTlsTrustedCertsSecretName(connect.getCluster()),
                                 connect.generateTlsCertsSecret(secretData))
                         .mapEmpty());
     }
