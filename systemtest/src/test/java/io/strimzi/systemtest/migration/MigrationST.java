@@ -282,6 +282,50 @@ public class MigrationST extends AbstractST {
         doSecondPartOfMigration(testStorage, deleteCoDuringProcess, zkDeleteClaim);
     }
 
+    /**
+     * @description This testcase covers the scenario mentioned in <a href="https://github.com/strimzi/strimzi-kafka-operator/issues/11274">strimzi#11274</a>.
+     * Steps:
+     *  - migration to `KRaftPostMigration` state
+     *  - creation of a topic
+     *  - roll back fully to ZK
+     *  - deletion of all the KRaft controllers and their PVCs
+     *  - creation of another topic
+     *  - full migration to KRaft
+     *  - check if all topics created during the testcase are present
+     *
+     * @steps
+     *  1. - Deploys Kafka resource (with enabled NodePools and KRaft set to disabled) with Broker NodePool
+     *  2. - Creates topics for continuous and immediate message transmission, TLS user
+     *  3. - Starts continuous producer & consumer
+     *  4. - Does immediate message transmission
+     *  5. - Starts the migration
+     *  6. - Creates Controller NodePool - the Pods will not be created until the migration starts (after we apply the migration annotation)
+     *  7. - Annotates the Kafka resource with strimzi.io/kraft:migration
+     *  8. - Controllers will be created and moved to RUNNING state
+     *  9. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaftMigration
+     *  10. - Waits for first rolling update of Broker Pods - bringing the Brokers to DualWrite mode
+     *  11. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaftDualWriting
+     *  12. - Waits for second rolling update of Broker Pods - removing dependency on ZK
+     *  13. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaftPostMigration
+     *  14. - Creates a new KafkaTopic and checks both ZK and KRaft metadata for presence of the KafkaTopic
+     *  15. - Does immediate message transmission to the new KafkaTopic
+     *  --------------------------------------------------------------------------------------------------------------------
+     *  16. - Rolling back the migration to KRaftDualWriting - annotates the Kafka resource with strimzi.io/kraft:rollback
+     *  17. - Waits for rolling update of Broker Pods - adding dependency on ZK back
+     *  18. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaftDualWriting
+     *  19. - Deletes the Controller NodePool
+     *  20. - Finishes rollback - annotates the Kafka resource with strimzi.io/kraft:disabled
+     *  21. - Waits for rolling update of Broker Pods - rolling back from DualWrite mode to ZooKeeper
+     *  22. - Checks that Kafka CR has .status.kafkaMetadataState set to ZooKeeper
+     *  --------------------------------------------------------------------------------------------------------------------
+     *  23. - Deleting KRaft controllers' PVCs
+     *  24. - Creating new Kafka Topic and verifies that it's present in ZooKeeper metadata
+     *  25. - Runs the full migration
+     *  26. - Checks that all topics created throughout the test case are correctly migrated to KRaft
+     *
+     * @usecase
+     *  - zk-to-kraft-migration
+     */
     @IsolatedTest
     void testMigrationWithRollbackAndCompleteMigrationAgain() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
@@ -299,8 +343,7 @@ public class MigrationST extends AbstractST {
         doSecondPartOfRollback(testStorage, deleteCoDuringProcess);
 
         // Delete Controllers and their PVCs
-        LOGGER.info("Deleting Controllers and their PVCs");
-        KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getControllerPoolName()).delete();
+        LOGGER.info("Deleting Controllers PVCs");
         PersistentVolumeClaimUtils.deletePvcsByPrefixWithWait(testStorage.getNamespaceName(), testStorage.getControllerPoolName());
 
         // Create one additional topic to ensure that it will be migrated to KRaft after the migration
