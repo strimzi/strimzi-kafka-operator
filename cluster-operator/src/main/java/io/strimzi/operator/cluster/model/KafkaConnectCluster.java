@@ -820,7 +820,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     public Role generateRole() {
         List<String> certSecretNames = new ArrayList<>();
         if (tls != null && tls.getTrustedCertificates() != null && !tls.getTrustedCertificates().isEmpty()) {
-            certSecretNames.add(KafkaConnectResources.internalTlsCertsSecretName(cluster));
+            certSecretNames.add(KafkaConnectResources.internalTlsTrustedCertsSecretName(cluster));
         }
 
         if (authentication != null && authentication instanceof KafkaClientAuthenticationTls tlsAuth && tlsAuth.getCertificateAndKey() != null) {
@@ -872,7 +872,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      * @return secret for tls certificates
      */
     public Secret generateTlsCertsSecret(Map<String, String> secretData) {
-        return ModelUtils.createSecret(KafkaConnectResources.internalTlsCertsSecretName(cluster), namespace, labels, ownerReference, secretData, Map.of(), Map.of());
+        return ModelUtils.createSecret(KafkaConnectResources.internalTlsTrustedCertsSecretName(cluster), namespace, labels, ownerReference, secretData, Map.of(), Map.of());
     }
 
     /**
