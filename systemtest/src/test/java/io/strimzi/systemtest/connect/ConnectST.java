@@ -599,7 +599,7 @@ class ConnectST extends AbstractST {
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(testStorage.getNamespaceName(), kafkaConnectPodName);
 
         // This is an internal secret created by the operator with copy of certificates from the trusted certificates secrets specified in the CR
-        String tlsCertSecretName = KafkaConnectResources.internalTlsCertsSecretName(testStorage.getClusterName());
+        String tlsCertSecretName = KafkaConnectResources.internalTlsTrustedCertsSecretName(testStorage.getClusterName());
         LOGGER.info("Verifying that tls cert secret {} is created for KafkaConnect truststore", tlsCertSecretName);
         Secret tlsCertSecret = kubeClient(testStorage.getNamespaceName()).getSecret(tlsCertSecretName);
         // The secret should contain certificates from both secrets

@@ -29,7 +29,6 @@
 * Update OAuth library to 0.16.2.
 * Update HTTP bridge to 0.32.0.
 * Kubernetes events emitted during a Pod restart updated to have the Kafka resource as the `regardingObject` and the Pod in the `related` field.
-* Kafka Connect SSL configurations now uses Kafka Kubernetes Config Provider to load certificates directly from secrets.
 * Kafka Connect truststore and keystore configurations now uses Kafka Kubernetes Config Provider to load PEM certificates directly from secrets.
 
 ### Major changes, deprecations and removals

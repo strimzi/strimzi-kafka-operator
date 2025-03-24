@@ -137,8 +137,8 @@ public class KafkaConnectResources {
      *
      * @return Name of the internal secret that contains TLS trusted certificates.
      */
-    public static String internalTlsCertsSecretName(String clusterName) {
-        return componentName(clusterName) + "-tls-certs";
+    public static String internalTlsTrustedCertsSecretName(String clusterName) {
+        return componentName(clusterName) + "-tls-trusted-certs";
     }
 
     /**
