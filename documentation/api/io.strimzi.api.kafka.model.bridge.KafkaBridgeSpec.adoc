@@ -11,12 +11,36 @@ Configuration options relate to:
 [id='property-kafka-bridge-logging-{context}']
 = Logging
 
-Kafka Bridge has its own configurable loggers:
+Kafka Bridge has its own preconfigured loggers:
 
-* `rootLogger`
-* `bridge`
+[cols="1m,2,1",options="header"]
+|===
+| Logger     | Description                                          | Default Level
 
-You can also set log levels for specific operations based on endpoints:
+| rootLogger | Default logger for all classes                       | INFO
+| bridge     | All classes in the `io.strimzi.kafka.bridge` package | INFO
+| healthy    | Uses `http.openapi.operation.healthy` endpoint       | WARN
+| ready      | Uses `http.openapi.operation.ready` endpoint         | WARN
+|===
+
+You can configure log levels directly for these loggers.
+For example:
+
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaBridge
+spec:
+  # ...
+  logging:
+    type: inline
+    loggers:
+      rootLogger.level: INFO
+      logger.ready.level: DEBUG
+  # ...
+----
+
+You can also specify custom loggers for other operations:
 
 * `createConsumer`
 * `deleteConsumer`
@@ -30,31 +54,25 @@ You can also set log levels for specific operations based on endpoints:
 * `seekToBeginning`
 * `seekToEnd`
 * `seek`
-* `healthy` (default: `WARN`)
-* `ready` (default: `WARN`)
 * `openapi`
 
-The healthy and ready loggers are set to `WARN` by default due to verbosity:
+Each operation maps to an API endpoint,  defined according to the OpenAPI specification, and supports fine-grained logging via `http.openapi.operation.<operation_id>`.
 
-[source,properties]
+For example, to set the logging level for the `send` operation logger:
+
+[source,yaml,subs="+quotes,attributes"]
 ----
-logger.healthy.name = http.openapi.operation.healthy
-logger.healthy.level = WARN
-logger.ready.name = http.openapi.operation.ready
-logger.ready.level = WARN
+apiVersion: {KafkaApiVersion}
+kind: KafkaBridge
+spec:
+  # ...
+  logging:
+    type: inline
+    loggers:
+      logger.send.name: "http.openapi.operation.send"
+      logger.send.level: DEBUG
+  # ...
 ----
-
-The log level of all other operations is set to `INFO` by default.
-
-Each operation has a corresponding API endpoint, defined according to the OpenAPI specification, allowing fine-grained logging of HTTP requests.
-
-Configure each logger by assigning it a name as `http.openapi.operation.<operation_id>`. 
-For example, to set the logging level for the send operation logger:
-
-```
-logger.send.name = http.openapi.operation.send
-logger.send.level = DEBUG
-```
 
 Kafka Bridge uses the Apache `log4j2` logger implementation.
 Use the `logging` property to configure loggers and logger levels.

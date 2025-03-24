@@ -3,9 +3,15 @@ Configures the User Operator.
 [id='property-user-operator-logging-{context}']
 = Logging
 
-The User Operator has a configurable logger:
+The User Operator has its own preconfigured loggers:
 
-* `rootLogger`
+[cols="1m,2,1",options="header"]
+|===
+| Logger     | Description                    | Default Level
+
+| rootLogger | Default logger for all classes | INFO
+| jetty      | Logs HTTP server activity      | INFO
+|===
 
 The User Operator uses the Apache `log4j2` logger implementation.
 Use the `logging` property to configure loggers and logger levels.
@@ -13,7 +19,6 @@ Use the `logging` property to configure loggers and logger levels.
 You can set the log levels by specifying the logger and level directly (`inline`) or use a custom (`external`) `ConfigMap` to define logging configurations using the `log4j2.properties` key.
 
 .Example inline logging configuration
-[source,yaml,subs="+quotes,attributes"]
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -32,20 +37,25 @@ spec:
         type: inline
         loggers:
           rootLogger.level: INFO
-          logger.uop.name: io.strimzi.operator.user # <1>
-          logger.uop.level: DEBUG # <2> 
-          logger.abstractcache.name: io.strimzi.operator.user.operator.cache.AbstractCache # <3>
-          logger.abstractcache.level: TRACE # <4>
-          logger.jetty.level: DEBUG # <5>
-          
+          logger.jetty.level: WARN  
   # ...
+----
+
+You can also define custom loggers by specifying the full class or package name using `logger.<name>.name`. 
+For example, to add more detailed logging for the User Operator:
+
+[source,yaml]
+----
+# ...
+logger.uop.name: io.strimzi.operator.user # <1>
+logger.uop.level: DEBUG # <2> 
+logger.abstractcache.name: io.strimzi.operator.user.operator.cache.AbstractCache # <3>
+logger.abstractcache.level: TRACE # <4>     
 ----
 <1> Creates a logger for the `user` package.
 <2> Sets the logging level for the `user` package.
 <3> Creates a logger for the `AbstractCache` class.
-<4> Sets the logging level for the `AbstractCache` class.
-<5> Changes the logging level for the default `jetty` logger. The `jetty` logger is part of the logging configuration provided with Strimzi.
-By default, it is set to `INFO`.  
+<4> Sets the logging level for the `AbstractCache` class. 
 
 .Example external logging configuration
 [source,yaml,subs="+quotes,attributes"]

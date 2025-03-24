@@ -3,14 +3,18 @@ Configures the Topic Operator.
 [id='property-topic-operator-logging-{context}']
 = Logging
 
-The Topic Operator has a configurable logger:
+The Topic Operator has its own preconfigured loggers:
 
-* `rootLogger`
+[cols="1m,2,1",options="header"]
+|===
+| Logger     | Description                    | Default Level
+
+| rootLogger | Default logger for all classes | INFO
+| jetty      | Logs HTTP server activity      | INFO
+|===
 
 The Topic Operator uses the Apache `log4j2` logger implementation.
 Use the `logging` property to configure loggers and logger levels.
-
-You can set the log levels by specifying the logger and level directly (inline) or use a custom (external) ConfigMap.
 
 You can set the log levels by specifying the logger and level directly (`inline`) or use a custom (`external`) `ConfigMap` to define logging configurations using the `log4j2.properties` key.
 
@@ -33,11 +37,20 @@ spec:
         type: inline
         loggers:
           rootLogger.level: INFO
-          logger.top.name: io.strimzi.operator.topic # <1>
-          logger.top.level: DEBUG # <2> 
-          logger.toc.name: io.strimzi.operator.topic.TopicOperator # <3>
-          logger.toc.level: TRACE # <4>
+          logger.jetty.level: WARN
   # ...
+----
+
+You can also define custom loggers by specifying the full class or package name using `logger.<name>.name`. 
+For example, to add more detailed logging for the Topic Operator:
+
+[source,yaml]
+----
+# ...
+logger.top.name: io.strimzi.operator.topic # <1>
+logger.top.level: DEBUG # <2> 
+logger.toc.name: io.strimzi.operator.topic.TopicOperator # <3>
+logger.toc.level: TRACE # <4>
 ----
 <1> Creates a logger for the `topic` package.
 <2> Sets the logging level for the `topic` package.

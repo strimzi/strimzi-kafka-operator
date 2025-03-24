@@ -82,10 +82,15 @@ In this case, fix the configuration so that the Cluster Operator can roll out th
 WARNING: Kafka 3.9 and earlier versions use log4j1 for logging.
 For log4j1-based configuration examples, refer to the link:{DocArchive}[Strimzi 0.45 documentation^]. 
 
-Kafka Connect has its own configurable loggers:
+Kafka Connect has its own preconfigured loggers:
 
-* `rootLogger`
-* `reflections`
+[cols="1m,2,1",options="header"]
+|===
+| Logger      | Description                                                         | Default Level
+
+| rootLogger  | Default logger for all classes                                      | INFO
+| reflections | Logs classpath scanning and metadata discovery used to find plugins | ERROR
+|===
 
 Further loggers are added depending on the Kafka Connect plugins running.
 
@@ -112,12 +117,25 @@ spec:
     type: inline
     loggers:
       rootLogger.level: INFO
-      logger.sourcetask.name: org.apache.kafka.connect.runtime.WorkerSourceTask
-      logger.sourcetask.level: TRACE
-      logger.sinktask.name: org.apache.kafka.connect.runtime.WorkerSinkTask
-      logger.sinktask.level: DEBUG
+      logger.reflections.level: DEBUG
   # ...
 ----
+
+You can also define custom loggers by specifying the full class or package name using `logger.<name>.name`. 
+For example, to configure logging for runtime tasks:
+
+[source,yaml]
+----
+# ...
+logger.sourcetask.name: org.apache.kafka.connect.runtime.WorkerSourceTask # <1>
+logger.sourcetask.level: TRACE # <2>
+logger.sinktask.name: org.apache.kafka.connect.runtime.WorkerSinkTask # <3>
+logger.sinktask.level: DEBUG # <4>
+----
+<1> Creates a logger for the runtime `WorkerSourceTask` class.
+<2> Sets the logging level for `WorkerSourceTask`.
+<3> Creates a logger for the runtime `WorkerSinkTask` class.
+<4> Sets the logging level for `WorkerSinkTask`.
 
 .Example external logging configuration
 [source,yaml,subs="+quotes,attributes"]

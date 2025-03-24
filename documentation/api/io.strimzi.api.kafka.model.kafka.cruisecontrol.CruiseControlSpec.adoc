@@ -301,9 +301,14 @@ For more information, refer to the xref:type-BrokerCapacity-reference[BrokerCapa
 [id='property-cruise-control-logging-{context}']
 = Logging
 
-Cruise Control has its own configurable logger:
+Cruise Control has its own preconfigured logger:
 
-* `rootLogger`
+[cols="1m,2,1",options="header"]
+|===
+| Logger     | Description                        | Default Level
+
+| rootLogger | Default logger for all classes     | INFO
+|===
 
 Cruise Control uses the Apache `log4j2` logger implementation.
 Use the `logging` property to configure loggers and logger levels.
@@ -323,11 +328,19 @@ spec:
       type: inline
       loggers:
         rootLogger.level: INFO
-        logger.exec.name: com.linkedin.kafka.cruisecontrol.executor.Executor # <1>
-        logger.exec.level: TRACE # <2>
-        logger.go.name: com.linkedin.kafka.cruisecontrol.analyzer.GoalOptimizer # <3>
-        logger.go.level: DEBUG # <4>
     # ...
+----
+
+You can also define custom loggers by specifying the full class or package name using `logger.<name>.name`. 
+For example, to add more detailed logging for Cruise Control:
+
+[source,yaml]
+----
+# ...
+logger.exec.name: com.linkedin.kafka.cruisecontrol.executor.Executor # <1>
+logger.exec.level: TRACE # <2>
+logger.go.name: com.linkedin.kafka.cruisecontrol.analyzer.GoalOptimizer # <3>
+logger.go.level: DEBUG # <4>
 ----
 <1> Creates a logger for the Cruise Control `Executor` class.
 <2> Sets the logging level for the `Executor` class.
