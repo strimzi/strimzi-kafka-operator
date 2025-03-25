@@ -17,7 +17,7 @@
 
     <properties>
         <strimzi-oauth.version>0.15.0</strimzi-oauth.version>
-        <cruise-control.version>2.5.141</cruise-control.version>
+        <cruise-control.version>2.5.142</cruise-control.version>
         <opa-authorizer.version>1.5.1</opa-authorizer.version>
         <kafka-quotas-plugin.version>0.3.1</kafka-quotas-plugin.version>
         <kafka-kubernetes-config-provider.version>1.2.0</kafka-kubernetes-config-provider.version>
@@ -277,6 +277,30 @@
                 <exclusion>
                     <groupId>org.apache.kafka</groupId>
                     <artifactId>kafka-clients</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.kafka</groupId>
+                    <artifactId>kafka-server</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.kafka</groupId>
+                    <artifactId>kafka-server-common</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.kafka</groupId>
+                    <artifactId>kafka-metadata</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.kafka</groupId>
+                    <artifactId>kafka-raft</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.kafka</groupId>
+                    <artifactId>kafka-group-coordinator</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.kafka</groupId>
+                    <artifactId>kafka-storage</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
