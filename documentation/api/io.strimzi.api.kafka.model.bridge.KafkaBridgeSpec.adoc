@@ -77,7 +77,9 @@ spec:
 Kafka Bridge uses the Apache `log4j2` logger implementation.
 Use the `logging` property to configure loggers and logger levels.
 
-You can set the log levels by specifying the logger and level directly (`inline`) or use a custom (`external`) `ConfigMap` to define logging configurations using the `log4j2.properties` key.
+You can set log levels using either the `inline` or `external` logging configuration types.
+
+Specify loggers and levels directly in the custom resource for inline configuration:
 
 .Example inline logging configuration
 [source,yaml,subs="+quotes,attributes"]
@@ -95,6 +97,8 @@ spec:
       logger.send.level: DEBUG
   # ...
 ----
+
+Alternatively, you can reference an external `ConfigMap` containing a complete `log4j2.properties` file that defines your own log4j2 configuration, including loggers, appenders, and layout configuration:
 
 .Example external logging configuration
 [source,yaml,subs="+quotes,attributes"]

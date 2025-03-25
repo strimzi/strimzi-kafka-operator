@@ -6,7 +6,7 @@
 = Adding logging filters to Strimzi operators
 
 [role="_abstract"]
-Use a `ConfigMap` to configure logging levels in Strimzi operators with Log4j2 and define filters to control log output.
+Add logging filters to Strimzi operators by using a `ConfigMap` that contains a complete `log4j2.properties` file with your custom log4j2 configuration.
 
 Filters are useful when too many logging messages are being produced. 
 For instance, if `rootLogger.level="DEBUG"`, filters reduce the number of logs to focus on a specific resource by logging only messages matching the filter.
@@ -15,7 +15,7 @@ Markers specify what to include in the log using kind, namespace, and resource n
 For example, to isolate the logs of a failing Kafka cluster, set the kind to `Kafka` and use the namespace and name of the cluster.
 
 .Basic logging filter configuration
-[source,yaml,subs="+attributes"]
+[source,properties]
 ----
 rootLogger.level="INFO"
 rootLogger.appenderRefs = console
@@ -39,7 +39,7 @@ appender.console.filter.filter1.marker = Kafka(my-namespace/my-kafka-cluster) <4
 For multiple filters, define each one separately:
 
 .Multiple logging filter configuration
-[source,yaml,subs="+attributes"]
+[source,properties]
 ----
 # ...
 
@@ -71,7 +71,7 @@ apiVersion: v1
 metadata:
   name: strimzi-cluster-operator
 data:
-  log4j2.properties:
+  log4j2.properties: |
     rootLogger.level="INFO"
     rootLogger.appenderRefs = console
     rootLogger.appenderRef.console.ref = STDOUT
@@ -113,7 +113,7 @@ apiVersion: v1
 metadata:
   name: logging-configmap
 data:
-  log4j2.properties:
+  log4j2.properties: |
     rootLogger.level = "INFO"
     rootLogger.appenderRefs = console
     rootLogger.appenderRef.console.ref = STDOUT

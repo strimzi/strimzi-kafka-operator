@@ -21,7 +21,7 @@ Advantages of using a `ConfigMap`:
 
 * Centralized maintenance
 * Reusable with multiple resources
-* For operators, the flexibility to append logging specifications to add filters
+* Flexibility to append logging specifications to add filters
 
 Specify a logging `type` in your logging specification:
 
@@ -41,7 +41,7 @@ logging:
 # ...
 ----
 
-Use a `ConfigMap` to define logging configurations using the `log4j2.properties` key. 
+For `external` configuration, use a `ConfigMap` to define logging configurations using a full `log4j2.properties` file. 
 Set the logging `name` and `key` properties to reference the `ConfigMap`. 
 Both properties are mandatory. 
 
@@ -60,12 +60,11 @@ logging:
 
 Default logging is used if logging is not specified in the resource using either method.
 Loggers that haven't been explicitly configured inherit settings from their parent loggers. 
-By default, any available loggers that are not configured have their level set to `OFF`.
 
 When a resource managed by the Cluster Operator is created, a `ConfigMap` with the specified logging configuration is also created. 
 For components managed by the Strimzi operators, changes to logging levels are applied dynamically.
 
-WARNING: Setting a log level to `DEBUG` may result in a large amount of log output and may have performance implications.
+WARNING: Setting a log level to `DEBUG` or `TRACE` may result in a large amount of log output and may have performance implications.
 
 == Configurable loggers
 

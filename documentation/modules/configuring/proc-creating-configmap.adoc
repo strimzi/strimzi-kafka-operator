@@ -23,8 +23,16 @@ apiVersion: v1
 metadata:
   name: logging-configmap
 data:
-  log4j2.properties:
+  log4j2.properties: |
     rootLogger.level="INFO"
+    appender.console.type = Console
+    appender.console.name = STDOUT
+    appender.console.layout.type = PatternLayout
+    appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n
+    rootLogger.level = INFO
+    rootLogger.appenderRefs = console
+    rootLogger.appenderRef.console.ref = STDOUT
+    rootLogger.additivity = false
 ----
 +
 If you are using a properties file, define the logging configuration and specify the file at the command line when creating the `ConfigMap`.

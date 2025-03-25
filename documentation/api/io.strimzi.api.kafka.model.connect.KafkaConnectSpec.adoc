@@ -104,7 +104,9 @@ curl -s http://<connect-cluster-name>-connect-api:8083/admin/loggers/
 Kafka Connect uses the Apache `log4j2` logger implementation.
 Use the `logging` property to configure loggers and logger levels.
 
-You can set the log levels by specifying the logger and level directly (`inline`) or use a custom (`external`) `ConfigMap` to define logging configurations using the `log4j2.properties` key.
+You can set log levels using either the `inline` or `external` logging configuration types.
+
+Specify loggers and levels directly in the custom resource for inline configuration:
 
 .Example inline logging configuration
 [source,yaml,subs="+quotes,attributes"]
@@ -121,9 +123,10 @@ spec:
   # ...
 ----
 
-You can also define custom loggers by specifying the full class or package name using `logger.<name>.name`. 
-For example, to configure logging for runtime tasks:
+You can define additional loggers by specifying the full class or package name using `logger.<name>.name`.
+For example, to configure logging for Kafka Connect runtime classes inline:
 
+.Example custom inline loggers
 [source,yaml]
 ----
 # ...
@@ -136,6 +139,8 @@ logger.sinktask.level: DEBUG # <4>
 <2> Sets the logging level for `WorkerSourceTask`.
 <3> Creates a logger for the runtime `WorkerSinkTask` class.
 <4> Sets the logging level for `WorkerSinkTask`.
+
+Alternatively, you can reference an external `ConfigMap` containing a complete `log4j2.properties` file that defines your own log4j2 configuration, including loggers, appenders, and layout configuration:
 
 .Example external logging configuration
 [source,yaml,subs="+quotes,attributes"]
