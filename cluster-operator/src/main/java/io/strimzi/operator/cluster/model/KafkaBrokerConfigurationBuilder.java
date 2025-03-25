@@ -774,17 +774,17 @@ public class KafkaBrokerConfigurationBuilder {
             strimziConfigProviders = "strimzienv";
         }
 
-        createOrAddConfigListValue(userConfig, "config.providers", strimziConfigProviders);
+        createOrAddConfigList(userConfig, "config.providers", strimziConfigProviders);
 
-        createOrUpdateConfigValue(userConfig, "config.providers.strimzienv.class", "org.apache.kafka.common.config.provider.EnvVarConfigProvider");
-        createOrUpdateConfigValue(userConfig, "config.providers.strimzienv.param.allowlist.pattern", ".*");
+        createConfigIfMissing(userConfig, "config.providers.strimzienv.class", "org.apache.kafka.common.config.provider.EnvVarConfigProvider");
+        createConfigIfMissing(userConfig, "config.providers.strimzienv.param.allowlist.pattern", ".*");
 
         if (node.broker()) {
             // File and Directory providers are used only on broker nodes
-            createOrUpdateConfigValue(userConfig, "config.providers.strimzifile.class", "org.apache.kafka.common.config.provider.FileConfigProvider");
-            createOrUpdateConfigValue(userConfig, "config.providers.strimzifile.param.allowed.paths", "/opt/kafka");
-            createOrUpdateConfigValue(userConfig, "config.providers.strimzidir.class", "org.apache.kafka.common.config.provider.DirectoryConfigProvider");
-            createOrUpdateConfigValue(userConfig, "config.providers.strimzidir.param.allowed.paths", "/opt/kafka");
+            createConfigIfMissing(userConfig, "config.providers.strimzifile.class", "org.apache.kafka.common.config.provider.FileConfigProvider");
+            createConfigIfMissing(userConfig, "config.providers.strimzifile.param.allowed.paths", "/opt/kafka");
+            createConfigIfMissing(userConfig, "config.providers.strimzidir.class", "org.apache.kafka.common.config.provider.DirectoryConfigProvider");
+            createConfigIfMissing(userConfig, "config.providers.strimzidir.param.allowed.paths", "/opt/kafka");
         }
     }
 
@@ -834,11 +834,11 @@ public class KafkaBrokerConfigurationBuilder {
         String ccReporter = CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER;
         String strimziReporter = "io.strimzi.kafka.metrics.KafkaPrometheusMetricsReporter";
         if (injectCcMetricsReporter && injectStrimziMetricsReporter) {
-            createOrAddConfigListValue(userConfig, "metric.reporters", ccReporter + "," + strimziReporter);
+            createOrAddConfigList(userConfig, "metric.reporters", ccReporter + "," + strimziReporter);
         } else if (injectCcMetricsReporter) {
-            createOrAddConfigListValue(userConfig, "metric.reporters", ccReporter);
+            createOrAddConfigList(userConfig, "metric.reporters", ccReporter);
         } else if (injectStrimziMetricsReporter) {
-            createOrAddConfigListValue(userConfig, "metric.reporters", strimziReporter);
+            createOrAddConfigList(userConfig, "metric.reporters", strimziReporter);
         }
     }
 
@@ -850,7 +850,7 @@ public class KafkaBrokerConfigurationBuilder {
      */
     private void maybeAddYammerMetricsReporters(KafkaConfiguration userConfig, boolean injectStrimziMetricsReporter) {
         if (injectStrimziMetricsReporter) {
-            createOrAddConfigListValue(userConfig, "kafka.metrics.reporters", "io.strimzi.kafka.metrics.YammerPrometheusMetricsReporter");
+            createOrAddConfigList(userConfig, "kafka.metrics.reporters", "io.strimzi.kafka.metrics.YammerPrometheusMetricsReporter");
         }
     }
 
@@ -1002,10 +1002,10 @@ public class KafkaBrokerConfigurationBuilder {
      * @param key Property key.
      * @param value Property value to add or replace.
      */
-    static void createOrUpdateConfigValue(AbstractConfiguration config, String key, String value) {
+    static void createConfigIfMissing(AbstractConfiguration config, String key, String value) {
         if (config != null && key != null && !key.isBlank() && value != null && !value.isBlank()) {
             String existingConfig = config.getConfigOption(key);
-            if (existingConfig == null || !existingConfig.equals(value)) {
+            if (existingConfig == null) {
                 config.setConfigOption(key, value);
             }
         }
@@ -1018,7 +1018,7 @@ public class KafkaBrokerConfigurationBuilder {
      * @param key Property key.
      * @param value Property value to set or add.
      */
-    static void createOrAddConfigListValue(AbstractConfiguration config, String key, String value) {
+    static void createOrAddConfigList(AbstractConfiguration config, String key, String value) {
         if (config != null && key != null && !key.isBlank() && value != null && !value.isBlank()) {
             String existingConfig = config.getConfigOption(key);
             if (existingConfig == null || !existingConfig.contains(value)) {
