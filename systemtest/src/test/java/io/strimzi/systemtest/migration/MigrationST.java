@@ -195,15 +195,16 @@ public class MigrationST extends AbstractST {
      *  19. - Waits for rolling update of Broker Pods - adding dependency on ZK back
      *  20. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaftDualWriting
      *  19. - Deletes the Controller NodePool
-     *  20. - Finishes rollback - annotates the Kafka resource with strimzi.io/kraft:disabled
+     *  20. - Deleting KRaft controllers' PVCs
+     *  21. - Finishes rollback - annotates the Kafka resource with strimzi.io/kraft:disabled
      *  ------------------------------- delete CO during process is set to true -------------------------------
-     *  21. - Waits for one of the Broker Pods to start rolling update
-     *  22. - Deletes the ClusterOperator Pod
+     *  22. - Waits for one of the Broker Pods to start rolling update
+     *  23. - Deletes the ClusterOperator Pod
      *  -------------------------------------------------------------------------------------------------------
-     *  23. - Waits for rolling update of Broker Pods - rolling back from DualWrite mode to ZooKeeper
-     *  24. - Checks that Kafka CR has .status.kafkaMetadataState set to ZooKeeper
-     *  25. - Checks that __cluster_metadata topic doesn't exist in Kafka Brokers
-     *  26. - Waits until continuous clients are finished successfully
+     *  24. - Waits for rolling update of Broker Pods - rolling back from DualWrite mode to ZooKeeper
+     *  25. - Checks that Kafka CR has .status.kafkaMetadataState set to ZooKeeper
+     *  26. - Checks that __cluster_metadata topic doesn't exist in Kafka Brokers
+     *  27. - Waits until continuous clients are finished successfully
      *
      * @usecase
      *  - zk-to-kraft-migration
@@ -314,11 +315,11 @@ public class MigrationST extends AbstractST {
      *  17. - Waits for rolling update of Broker Pods - adding dependency on ZK back
      *  18. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaftDualWriting
      *  19. - Deletes the Controller NodePool
-     *  20. - Finishes rollback - annotates the Kafka resource with strimzi.io/kraft:disabled
-     *  21. - Waits for rolling update of Broker Pods - rolling back from DualWrite mode to ZooKeeper
-     *  22. - Checks that Kafka CR has .status.kafkaMetadataState set to ZooKeeper
+     *  20. - Deleting KRaft controllers' PVCs
+     *  21. - Finishes rollback - annotates the Kafka resource with strimzi.io/kraft:disabled
+     *  22. - Waits for rolling update of Broker Pods - rolling back from DualWrite mode to ZooKeeper
+     *  23. - Checks that Kafka CR has .status.kafkaMetadataState set to ZooKeeper
      *  --------------------------------------------------------------------------------------------------------------------
-     *  23. - Deleting KRaft controllers' PVCs
      *  24. - Creating new Kafka Topic and verifies that it's present in ZooKeeper metadata
      *  25. - Runs the full migration
      *  26. - Checks that all topics created throughout the test case are correctly migrated to KRaft
@@ -341,10 +342,6 @@ public class MigrationST extends AbstractST {
         // Do complete rollback to ZooKeeper
         doFirstPartOfRollback(testStorage, deleteCoDuringProcess);
         doSecondPartOfRollback(testStorage, deleteCoDuringProcess);
-
-        // Delete Controllers and their PVCs
-        LOGGER.info("Deleting Controllers PVCs");
-        PersistentVolumeClaimUtils.deletePvcsByPrefixWithWait(testStorage.getNamespaceName(), testStorage.getControllerPoolName());
 
         // Create one additional topic to ensure that it will be migrated to KRaft after the migration
         createKafkaTopicAndCheckMetadataWithMessageTransmission(testStorage, rollbackZKTopic, true, false);
@@ -669,6 +666,9 @@ public class MigrationST extends AbstractST {
         LOGGER.info("Deleting Controller's NodePool");
         KafkaNodePool controllerPool = KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getControllerPoolName()).get();
         resourceManager.deleteResource(controllerPool);
+
+        LOGGER.info("Deleting Controllers PVCs");
+        PersistentVolumeClaimUtils.deletePvcsByPrefixWithWait(testStorage.getNamespaceName(), testStorage.getControllerPoolName());
 
         LOGGER.info("Finishing the rollback - applying the {} annotation with value: {}", Annotations.ANNO_STRIMZI_IO_KRAFT, "disabled");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "disabled"));
