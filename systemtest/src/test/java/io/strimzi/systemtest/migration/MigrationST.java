@@ -41,6 +41,7 @@ import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -194,15 +195,16 @@ public class MigrationST extends AbstractST {
      *  19. - Waits for rolling update of Broker Pods - adding dependency on ZK back
      *  20. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaftDualWriting
      *  19. - Deletes the Controller NodePool
-     *  20. - Finishes rollback - annotates the Kafka resource with strimzi.io/kraft:disabled
+     *  20. - Deleting KRaft controllers' PVCs
+     *  21. - Finishes rollback - annotates the Kafka resource with strimzi.io/kraft:disabled
      *  ------------------------------- delete CO during process is set to true -------------------------------
-     *  21. - Waits for one of the Broker Pods to start rolling update
-     *  22. - Deletes the ClusterOperator Pod
+     *  22. - Waits for one of the Broker Pods to start rolling update
+     *  23. - Deletes the ClusterOperator Pod
      *  -------------------------------------------------------------------------------------------------------
-     *  23. - Waits for rolling update of Broker Pods - rolling back from DualWrite mode to ZooKeeper
-     *  24. - Checks that Kafka CR has .status.kafkaMetadataState set to ZooKeeper
-     *  25. - Checks that __cluster_metadata topic doesn't exist in Kafka Brokers
-     *  26. - Waits until continuous clients are finished successfully
+     *  24. - Waits for rolling update of Broker Pods - rolling back from DualWrite mode to ZooKeeper
+     *  25. - Checks that Kafka CR has .status.kafkaMetadataState set to ZooKeeper
+     *  26. - Checks that __cluster_metadata topic doesn't exist in Kafka Brokers
+     *  27. - Waits until continuous clients are finished successfully
      *
      * @usecase
      *  - zk-to-kraft-migration
@@ -275,11 +277,83 @@ public class MigrationST extends AbstractST {
         doFirstPartOfRollback(testStorage, deleteCoDuringProcess);
 
         LOGGER.info("Applying the {} annotation with value: {}", Annotations.ANNO_STRIMZI_IO_KRAFT, "migration");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "migration")
-        );
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "migration"));
 
         moveToKRaftPostMigrationState(testStorage, postMigrationTopicName + "-2");
         doSecondPartOfMigration(testStorage, deleteCoDuringProcess, zkDeleteClaim);
+    }
+
+    /**
+     * @description This testcase covers the scenario mentioned in <a href="https://github.com/strimzi/strimzi-kafka-operator/issues/11274">strimzi#11274</a>.
+     * Steps:
+     *  - migration to `KRaftPostMigration` state
+     *  - creation of a topic
+     *  - roll back fully to ZK
+     *  - deletion of all the KRaft controllers and their PVCs
+     *  - creation of another topic
+     *  - full migration to KRaft
+     *  - check if all topics created during the testcase are present
+     *
+     * @steps
+     *  1. - Deploys Kafka resource (with enabled NodePools and KRaft set to disabled) with Broker NodePool
+     *  2. - Creates topics for continuous and immediate message transmission, TLS user
+     *  3. - Starts continuous producer & consumer
+     *  4. - Does immediate message transmission
+     *  5. - Starts the migration
+     *  6. - Creates Controller NodePool - the Pods will not be created until the migration starts (after we apply the migration annotation)
+     *  7. - Annotates the Kafka resource with strimzi.io/kraft:migration
+     *  8. - Controllers will be created and moved to RUNNING state
+     *  9. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaftMigration
+     *  10. - Waits for first rolling update of Broker Pods - bringing the Brokers to DualWrite mode
+     *  11. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaftDualWriting
+     *  12. - Waits for second rolling update of Broker Pods - removing dependency on ZK
+     *  13. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaftPostMigration
+     *  14. - Creates a new KafkaTopic and checks both ZK and KRaft metadata for presence of the KafkaTopic
+     *  15. - Does immediate message transmission to the new KafkaTopic
+     *  --------------------------------------------------------------------------------------------------------------------
+     *  16. - Rolling back the migration to KRaftDualWriting - annotates the Kafka resource with strimzi.io/kraft:rollback
+     *  17. - Waits for rolling update of Broker Pods - adding dependency on ZK back
+     *  18. - Checks that Kafka CR has .status.kafkaMetadataState set to KRaftDualWriting
+     *  19. - Deletes the Controller NodePool
+     *  20. - Deleting KRaft controllers' PVCs
+     *  21. - Finishes rollback - annotates the Kafka resource with strimzi.io/kraft:disabled
+     *  22. - Waits for rolling update of Broker Pods - rolling back from DualWrite mode to ZooKeeper
+     *  23. - Checks that Kafka CR has .status.kafkaMetadataState set to ZooKeeper
+     *  --------------------------------------------------------------------------------------------------------------------
+     *  24. - Creating new Kafka Topic and verifies that it's present in ZooKeeper metadata
+     *  25. - Runs the full migration
+     *  26. - Checks that all topics created throughout the test case are correctly migrated to KRaft
+     *
+     * @usecase
+     *  - zk-to-kraft-migration
+     */
+    @IsolatedTest
+    void testMigrationWithRollbackAndCompleteMigrationAgain() {
+        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final String rollbackZKTopic = testStorage.getTopicName() + "-rollback-zk-topic";
+        final boolean zkDeleteClaim = true;
+        final boolean deleteCoDuringProcess = false;
+        final boolean withJbodStorage = false;
+
+        // Do the migration to the point when we can do rollback
+        setupMigrationTestCase(testStorage, zkDeleteClaim, withJbodStorage);
+        doFirstPartOfMigration(testStorage, deleteCoDuringProcess, withJbodStorage);
+
+        // Do complete rollback to ZooKeeper
+        doFirstPartOfRollback(testStorage, deleteCoDuringProcess);
+        doSecondPartOfRollback(testStorage, deleteCoDuringProcess);
+
+        // Create one additional topic to ensure that it will be migrated to KRaft after the migration
+        createKafkaTopicAndCheckMetadataWithMessageTransmission(testStorage, rollbackZKTopic, true, false);
+
+        // Do the full migration to KRaft
+        doFirstPartOfMigration(testStorage, deleteCoDuringProcess, withJbodStorage, false);
+        doSecondPartOfMigration(testStorage, deleteCoDuringProcess, zkDeleteClaim);
+
+        // Check that all topics are present
+        assertThatTopicIsPresentInKRaftMetadata(testStorage.getNamespaceName(), controllerSelector, postMigrationTopicName);
+        assertThatTopicIsPresentInKRaftMetadata(testStorage.getNamespaceName(), controllerSelector, kraftTopicName);
+        assertThatTopicIsPresentInKRaftMetadata(testStorage.getNamespaceName(), controllerSelector, rollbackZKTopic);
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
@@ -447,6 +521,10 @@ public class MigrationST extends AbstractST {
     }
 
     private void doFirstPartOfMigration(TestStorage testStorage, boolean deleteCoDuringProcess, boolean withJbodStorage) {
+        doFirstPartOfMigration(testStorage, deleteCoDuringProcess, withJbodStorage, true);
+    }
+
+    private void doFirstPartOfMigration(TestStorage testStorage, boolean deleteCoDuringProcess, boolean withJbodStorage, boolean createTopic) {
         // starting the migration
         LOGGER.info("Starting the migration process");
 
@@ -471,8 +549,7 @@ public class MigrationST extends AbstractST {
             .build());
 
         LOGGER.info("Applying the {} annotation with value: {}", Annotations.ANNO_STRIMZI_IO_KRAFT, "migration");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "migration")
-        );
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "migration"));
 
         LOGGER.info("Waiting for controller Pods to be up and running");
         PodUtils.waitForPodsReady(testStorage.getNamespaceName(), controllerSelector, 3, true);
@@ -501,23 +578,28 @@ public class MigrationST extends AbstractST {
             deleteClusterOperator();
         }
 
-        moveToKRaftPostMigrationState(testStorage, postMigrationTopicName);
+        moveToKRaftPostMigrationState(testStorage, postMigrationTopicName, createTopic);
     }
 
     private void moveToKRaftPostMigrationState(TestStorage testStorage, String postMigrationTopicName) {
+        moveToKRaftPostMigrationState(testStorage, postMigrationTopicName, true);
+    }
+
+    private void moveToKRaftPostMigrationState(TestStorage testStorage, String postMigrationTopicName, boolean createTopic) {
         LOGGER.info("Waiting for second rolling update of broker Pods - removing dependency on ZK");
         brokerPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), brokerSelector, 3, brokerPodsSnapshot);
 
         LOGGER.info("Waiting until .status.kafkaMetadataState in Kafka will contain KRaftPostMigration state");
         KafkaUtils.waitUntilKafkaStatusContainsKafkaMetadataState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaMetadataState.KRaftPostMigration);
 
-        createKafkaTopicAndCheckMetadataWithMessageTransmission(testStorage, postMigrationTopicName, true);
+        if (createTopic) {
+            createKafkaTopicAndCheckMetadataWithMessageTransmission(testStorage, postMigrationTopicName, true);
+        }
     }
 
     private void doSecondPartOfMigration(TestStorage testStorage, boolean deleteCoDuringProcess, boolean zkDeleteClaim) {
         LOGGER.info("Finishing migration - applying the {} annotation with value: {}, controllers should be rolled", Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
-        );
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"));
 
         if (deleteCoDuringProcess) {
             LOGGER.info("Waiting for first controller Pod starts with rolling update, so CO can be deleted");
@@ -564,8 +646,7 @@ public class MigrationST extends AbstractST {
         LOGGER.info("From {} state we are going to roll back to ZK", KafkaMetadataState.KRaftPostMigration.name());
 
         LOGGER.info("Rolling migration back - applying the {} annotation with value: {}", Annotations.ANNO_STRIMZI_IO_KRAFT, "rollback");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "rollback")
-        );
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "rollback"));
 
         if (deleteCoDuringProcess) {
             LOGGER.info("Waiting for first broker Pod starts with rolling update, so CO can be deleted");
@@ -586,9 +667,11 @@ public class MigrationST extends AbstractST {
         KafkaNodePool controllerPool = KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getControllerPoolName()).get();
         resourceManager.deleteResource(controllerPool);
 
+        LOGGER.info("Deleting Controllers PVCs");
+        PersistentVolumeClaimUtils.deletePvcsByPrefixWithWait(testStorage.getNamespaceName(), testStorage.getControllerPoolName());
+
         LOGGER.info("Finishing the rollback - applying the {} annotation with value: {}", Annotations.ANNO_STRIMZI_IO_KRAFT, "disabled");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "disabled")
-        );
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> kafka.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_KRAFT, "disabled"));
 
         if (deleteCoDuringProcess) {
             LOGGER.info("Waiting for first broker Pod starts with rolling update, so CO can be deleted");
@@ -611,12 +694,17 @@ public class MigrationST extends AbstractST {
     }
 
     private void createKafkaTopicAndCheckMetadataWithMessageTransmission(TestStorage testStorage, String newTopicName, boolean checkZk) {
+        createKafkaTopicAndCheckMetadataWithMessageTransmission(testStorage, newTopicName, checkZk, true);
+    }
+
+    private void createKafkaTopicAndCheckMetadataWithMessageTransmission(TestStorage testStorage, String newTopicName, boolean checkZk, boolean checkKRaft) {
         LOGGER.info("Creating KafkaTopic: {} and checking if the metadata are in both ZK and KRaft", newTopicName);
         resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), newTopicName, testStorage.getClusterName()).build());
 
-        LOGGER.info("Checking if metadata about KafkaTopic: {} are in KRaft controller", newTopicName);
-
-        assertThatTopicIsPresentInKRaftMetadata(testStorage.getNamespaceName(), controllerSelector, newTopicName);
+        if (checkKRaft) {
+            LOGGER.info("Checking if metadata about KafkaTopic: {} are in KRaft controller", newTopicName);
+            assertThatTopicIsPresentInKRaftMetadata(testStorage.getNamespaceName(), controllerSelector, newTopicName);
+        }
 
         if (checkZk) {
             LOGGER.info("Checking if metadata about KafkaTopic: {} are in ZK", newTopicName);
