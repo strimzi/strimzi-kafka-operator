@@ -214,7 +214,7 @@ public class KafkaNodePoolST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasStartedRolling(testStorage.getNamespaceName(), volatilePoolLabelSelector, volatilePoolPodsSnapshot);
 
         LOGGER.info("Change role in {}/{}, from mixed to broker only resulting in revert", testStorage.getNamespaceName(), volatileRolePoolName);
-        KafkaNodePoolUtils.replaceInNamespace(testStorage.getNamespaceName(), volatileRolePoolName, knp -> {
+        KafkaNodePoolUtils.replace(testStorage.getNamespaceName(), volatileRolePoolName, knp -> {
             knp.getSpec().setRoles(List.of(ProcessRoles.CONTROLLER));
         });
 
@@ -234,7 +234,7 @@ public class KafkaNodePoolST extends AbstractST {
         volatilePoolPodsSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), volatilePoolLabelSelector, 3, volatilePoolPodsSnapshot);
 
         LOGGER.info("Change role in {}/{}, from broker only to mixed", testStorage.getNamespaceName(), volatileRolePoolName);
-        KafkaNodePoolUtils.replaceInNamespace(testStorage.getNamespaceName(), volatileRolePoolName,
+        KafkaNodePoolUtils.replace(testStorage.getNamespaceName(), volatileRolePoolName,
             knp -> knp.getSpec().setRoles(List.of(ProcessRoles.CONTROLLER, ProcessRoles.BROKER))
         );
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), volatilePoolLabelSelector, 3, volatilePoolPodsSnapshot);

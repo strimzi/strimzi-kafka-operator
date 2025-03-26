@@ -106,7 +106,6 @@ import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValu
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValueNullOrZero;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.getExporterRunScript;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.getResourceMetricPattern;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
@@ -266,7 +265,7 @@ public class MetricsST extends AbstractST {
 
         assertMetricValueNotNull(kafkaExporterCollector, "kafka_consumergroup_current_offset\\{.*\\}");
 
-        kubeClient().listPods(namespaceFirst, brokerPodsSelector).forEach(pod -> {
+        KubeResourceManager.get().kubeClient().listPods(namespaceFirst, brokerPodsSelector).forEach(pod -> {
             String address = pod.getMetadata().getName() + "." + kafkaClusterFirstName + "-kafka-brokers." + namespaceFirst + ".svc";
             Pattern pattern = Pattern.compile("kafka_broker_info\\{address=\"" + address + ".*\",.*} ([\\d])");
             List<Double> values = kafkaExporterCollector.waitForSpecificMetricAndCollect(pattern);
@@ -293,8 +292,8 @@ public class MetricsST extends AbstractST {
     )
     void testKafkaExporterDifferentSetting() throws InterruptedException, ExecutionException, IOException {
         String consumerOffsetsTopicName = "__consumer_offsets";
-        LabelSelector exporterSelector = kubeClient().getDeploymentSelectors(namespaceFirst, KafkaExporterResources.componentName(kafkaClusterFirstName));
-        String runScriptContent = getExporterRunScript(namespaceFirst, kubeClient().listPods(namespaceFirst, exporterSelector).get(0).getMetadata().getName());
+        LabelSelector exporterSelector = KubeResourceManager.get().kubeClient().getClient().apps().deployments().inNamespace(namespaceFirst).withName(KafkaExporterResources.componentName(kafkaClusterFirstName)).get().getSpec().getSelector();
+        String runScriptContent = getExporterRunScript(namespaceFirst, KubeResourceManager.get().kubeClient().listPods(namespaceFirst, exporterSelector).get(0).getMetadata().getName());
         assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--group.filter=\".*\""));
         assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--topic.filter=\".*\""));
         // Check that metrics contains info about consumer_offsets
@@ -302,14 +301,14 @@ public class MetricsST extends AbstractST {
 
         Map<String, String> kafkaExporterSnapshot = DeploymentUtils.depSnapshot(namespaceFirst, KafkaExporterResources.componentName(kafkaClusterFirstName));
 
-        KafkaUtils.replaceInNamespace(namespaceFirst, kafkaClusterFirstName, k -> {
+        KafkaUtils.replace(namespaceFirst, kafkaClusterFirstName, k -> {
             k.getSpec().getKafkaExporter().setGroupRegex("my-group.*");
             k.getSpec().getKafkaExporter().setTopicRegex(topicName);
         });
 
         kafkaExporterSnapshot = DeploymentUtils.waitTillDepHasRolled(namespaceFirst, KafkaExporterResources.componentName(kafkaClusterFirstName), 1, kafkaExporterSnapshot);
 
-        runScriptContent = getExporterRunScript(namespaceFirst, kubeClient().listPods(namespaceFirst, exporterSelector).get(0).getMetadata().getName());
+        runScriptContent = getExporterRunScript(namespaceFirst, KubeResourceManager.get().kubeClient().listPods(namespaceFirst, exporterSelector).get(0).getMetadata().getName());
         assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--group.filter=\"my-group.*\""));
         assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--topic.filter=\"" + topicName + "\""));
 
@@ -317,7 +316,7 @@ public class MetricsST extends AbstractST {
         assertMetricValueNullOrZero(kafkaExporterCollector, "kafka_topic_partitions\\{topic=\"" + consumerOffsetsTopicName + "\"}");
 
         LOGGER.info("Changing Topic and group regexes back to default");
-        KafkaUtils.replaceInNamespace(namespaceFirst, kafkaClusterFirstName, k -> {
+        KafkaUtils.replace(namespaceFirst, kafkaClusterFirstName, k -> {
             k.getSpec().getKafkaExporter().setGroupRegex(".*");
             k.getSpec().getKafkaExporter().setTopicRegex(".*");
         });
@@ -569,7 +568,7 @@ public class MetricsST extends AbstractST {
                 .endMetadata()
                 .build();
 
-        kubeClient().createConfigMapInNamespace(namespaceSecond, externalMetricsCm);
+        KubeResourceManager.get().createResourceWithWait(externalMetricsCm);
 
         // spec.kafka.metrics -> spec.kafka.jmxExporterMetrics
         ConfigMapKeySelector cmks = new ConfigMapKeySelectorBuilder()
@@ -582,14 +581,14 @@ public class MetricsST extends AbstractST {
                 .endValueFrom()
                 .build();
 
-        KafkaUtils.replaceInNamespace(namespaceSecond, kafkaClusterSecondName, k -> {
+        KafkaUtils.replace(namespaceSecond, kafkaClusterSecondName, k -> {
             k.getSpec().getKafka().setMetricsConfig(jmxPrometheusExporterMetrics);
         });
 
         PodUtils.verifyThatRunningPodsAreStable(namespaceSecond, kafkaClusterSecondName);
 
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(namespaceSecond, kafkaClusterSecondName)) {
-            ConfigMap actualCm = kubeClient(namespaceSecond).getConfigMap(cmName);
+            ConfigMap actualCm = KubeResourceManager.get().kubeClient().getClient().configMaps().inNamespace(namespaceSecond).withName(cmName).get();
             assertThat(actualCm.getData().get(TestConstants.METRICS_CONFIG_JSON_NAME), is(metricsConfigJson));
         }
 
@@ -602,11 +601,11 @@ public class MetricsST extends AbstractST {
                 .endMetadata()
                 .build();
 
-        kubeClient().updateConfigMapInNamespace(namespaceSecond, externalMetricsUpdatedCm);
+        KubeResourceManager.get().updateResource(externalMetricsUpdatedCm);
         PodUtils.verifyThatRunningPodsAreStable(namespaceSecond, kafkaClusterSecondName);
 
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(namespaceSecond, kafkaClusterSecondName)) {
-            ConfigMap actualCm = kubeClient(namespaceSecond).getConfigMap(cmName);
+            ConfigMap actualCm = KubeResourceManager.get().kubeClient().getClient().configMaps().inNamespace(namespaceSecond).withName(cmName).get();
             assertThat(actualCm.getData().get(TestConstants.METRICS_CONFIG_JSON_NAME), is(metricsConfigJson.replace("true", "false")));
         }
     }
@@ -666,8 +665,8 @@ public class MetricsST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(namespaceFirst, KafkaUserUtils.generateRandomNameOfKafkaUser(), kafkaClusterFirstName).build());
         KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(namespaceFirst, KafkaUserUtils.generateRandomNameOfKafkaUser(), kafkaClusterFirstName).build());
 
-        coScraperPodName = kubeClient().listPodsByPrefixInName(TestConstants.CO_NAMESPACE, coScraperName).get(0).getMetadata().getName();
-        scraperPodName = kubeClient().listPodsByPrefixInName(namespaceFirst, scraperName).get(0).getMetadata().getName();
+        coScraperPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(TestConstants.CO_NAMESPACE, coScraperName).get(0).getMetadata().getName();
+        scraperPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(namespaceFirst, scraperName).get(0).getMetadata().getName();
 
         // Allow connections from clients to operators pods when NetworkPolicies are set to denied by default
         NetworkPolicyUtils.allowNetworkPolicySettingsForClusterOperator(TestConstants.CO_NAMESPACE);

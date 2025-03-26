@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.storage;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
@@ -80,6 +81,7 @@ final public class TestStorage {
     private LabelSelector mixedSelector;
     private LabelSelector kafkaConnectSelector;
     private LabelSelector mm2Selector;
+    private LabelSelector bridgeSelector;
     private int messageCount;
     private int continuousMessageCount;
     private long testExecutionStartTime;
@@ -135,6 +137,7 @@ final public class TestStorage {
         this.mixedSelector = LabelSelectors.kafkaLabelSelector(clusterName, mixedComponentName);
         this.kafkaConnectSelector = LabelSelectors.connectLabelSelector(clusterName, KafkaConnectResources.componentName(clusterName));
         this.mm2Selector = LabelSelectors.mirrorMaker2LabelSelector(clusterName, KafkaMirrorMaker2Resources.componentName(clusterName));
+        this.bridgeSelector = LabelSelectors.bridgeLabelSelector(clusterName, KafkaBridgeResources.componentName(clusterName));
         this.messageCount = messageCount;
         this.continuousMessageCount = CONTINUOUS_MESSAGE_COUNT;
         this.testExecutionStartTime = System.currentTimeMillis();
@@ -178,6 +181,7 @@ final public class TestStorage {
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.MIXED_SELECTOR_KEY, this.mixedSelector);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.KAFKA_CONNECT_SELECTOR_KEY, this.kafkaConnectSelector);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.MM2_SELECTOR_KEY, this.mm2Selector);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.BRIDGE_SELECTOR_KEY, this.bridgeSelector);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.MESSAGE_COUNT_KEY, this.messageCount);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.CONTINUOUS_MESSAGE_COUNT_KEY, this.continuousMessageCount);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.TEST_EXECUTION_START_TIME_KEY, this.testExecutionStartTime);
@@ -349,6 +353,10 @@ final public class TestStorage {
 
     public LabelSelector getMM2Selector() {
         return (LabelSelector) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.MM2_SELECTOR_KEY);
+    }
+
+    public LabelSelector getBridgeSelector() {
+        return (LabelSelector) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.BRIDGE_SELECTOR_KEY);
     }
 
     public int getMessageCount() {

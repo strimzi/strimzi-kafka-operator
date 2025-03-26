@@ -26,7 +26,6 @@ import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.OlmUtils;
-import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
@@ -37,7 +36,6 @@ import java.util.HashMap;
 
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
 import static io.strimzi.systemtest.TestTags.OLM_UPGRADE;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.not;
@@ -86,7 +84,7 @@ public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
         File kafkaYaml = new File(dir, olmUpgradeData.getFromExamples() + olmUpgradeData.getKafkaFilePathBefore());
 
         LOGGER.info("Deploying Kafka in Namespace: {} from file: {}", CO_NAMESPACE, kafkaYaml.getPath());
-        KubeClusterResource.cmdKubeClient(CO_NAMESPACE).create(kafkaYaml);
+        KubeResourceManager.get().kubeCmdClient().inNamespace(CO_NAMESPACE).create(kafkaYaml);
         waitForReadinessOfKafkaCluster(CO_NAMESPACE);
 
         // Create KafkaTopic
@@ -120,7 +118,7 @@ public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
 
         KubeResourceManager.get().createResourceWithWait(kafkaBasicClientJob.producerStrimzi(), kafkaBasicClientJob.consumerStrimzi());
 
-        clusterOperatorConfiguration.setOperatorDeploymentName(kubeClient().namespace(CO_NAMESPACE).getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME));
+        clusterOperatorConfiguration.setOperatorDeploymentName(KubeResourceManager.get().kubeClient().getDeploymentNameByPrefix(CO_NAMESPACE, Environment.OLM_OPERATOR_DEPLOYMENT_NAME));
         LOGGER.info("Old deployment name of Cluster Operator is {}", clusterOperatorConfiguration.getOperatorDeploymentName());
 
         // ======== Cluster Operator upgrade starts ========
@@ -136,7 +134,7 @@ public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
         LOGGER.info("New deployment name of Cluster Operator is {}", clusterOperatorConfiguration.getOperatorDeploymentName());
 
         // Verification that Cluster Operator has been upgraded to a correct version
-        String afterUpgradeVersionOfCo = kubeClient().getCsvWithPrefix(CO_NAMESPACE, clusterOperatorConfiguration.getOlmAppBundlePrefix()).getSpec().getVersion();
+        String afterUpgradeVersionOfCo = OlmUtils.getCsvWithPrefix(CO_NAMESPACE, clusterOperatorConfiguration.getOlmAppBundlePrefix()).getSpec().getVersion();
         assertThat(afterUpgradeVersionOfCo, is(not(fromVersion)));
 
         // Wait for Rolling Update to finish
@@ -162,7 +160,7 @@ public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
         OlmUtils.waitForNonApprovedInstallPlanWithCsvNameOrPrefix(clusterOperatorConfiguration.getNamespaceName(), clusterOperatorConfiguration.getOlmAppBundlePrefix());
         String newDeploymentName = OlmUtils.approveNonApprovedInstallPlanAndReturnDeploymentName(clusterOperatorConfiguration.getNamespaceName(), clusterOperatorConfiguration.getOlmAppBundlePrefix());
 
-        clusterOperatorConfiguration.setOperatorDeploymentName(kubeClient().getDeploymentNameByPrefix(clusterOperatorConfiguration.getNamespaceName(), newDeploymentName));
+        clusterOperatorConfiguration.setOperatorDeploymentName(KubeResourceManager.get().kubeClient().getDeploymentNameByPrefix(clusterOperatorConfiguration.getNamespaceName(), newDeploymentName));
         DeploymentUtils.waitForCreationOfDeploymentWithPrefix(clusterOperatorConfiguration.getNamespaceName(), clusterOperatorConfiguration.getOperatorDeploymentName());
 
         DeploymentUtils.waitForDeploymentAndPodsReady(clusterOperatorConfiguration.getNamespaceName(), clusterOperatorConfiguration.getOperatorDeploymentName(), 1);

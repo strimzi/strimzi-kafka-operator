@@ -41,8 +41,6 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.BRIDGE;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -98,7 +96,7 @@ public class HttpBridgeCorsST extends AbstractST {
 
         String url = bridgeUrl + "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription";
         String headers = BridgeUtils.addHeadersToString(additionalHeaders, TestConstants.KAFKA_BRIDGE_JSON_JSON);
-        String response = cmdKubeClient().namespace(suiteTestStorage.getNamespaceName()).execInPod(suiteTestStorage.getScraperPodName(), "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.OPTIONS, url, headers, "")).out().trim();
+        String response = KubeResourceManager.get().kubeCmdClient().inNamespace(suiteTestStorage.getNamespaceName()).execInPod(suiteTestStorage.getScraperPodName(), "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.OPTIONS, url, headers, "")).out().trim();
         LOGGER.info("Response from Bridge: {}", response);
 
         String responseAllowHeaders = BridgeUtils.getHeaderValue("access-control-allow-headers", response);
@@ -116,7 +114,7 @@ public class HttpBridgeCorsST extends AbstractST {
 
         url = bridgeUrl + "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription";
         headers = BridgeUtils.addHeadersToString(Collections.singletonMap("Origin", ALLOWED_ORIGIN));
-        response = cmdKubeClient().namespace(suiteTestStorage.getNamespaceName()).execInPod(suiteTestStorage.getScraperPodName(), "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.GET, url, headers, "")).out().trim();
+        response = KubeResourceManager.get().kubeCmdClient().inNamespace(suiteTestStorage.getNamespaceName()).execInPod(suiteTestStorage.getScraperPodName(), "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.GET, url, headers, "")).out().trim();
         LOGGER.info("Response from Bridge: {}", response);
 
         assertThat(response, containsString("404"));
@@ -148,7 +146,7 @@ public class HttpBridgeCorsST extends AbstractST {
 
         String url = bridgeUrl + "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription";
         String headers = BridgeUtils.addHeadersToString(additionalHeaders);
-        String response = cmdKubeClient().namespace(suiteTestStorage.getNamespaceName()).execInPod(suiteTestStorage.getScraperPodName(), "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.OPTIONS, url, headers, "")).out().trim();
+        String response = KubeResourceManager.get().kubeCmdClient().inNamespace(suiteTestStorage.getNamespaceName()).execInPod(suiteTestStorage.getScraperPodName(), "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.OPTIONS, url, headers, "")).out().trim();
         LOGGER.info("Response from Bridge: {}", response);
 
         LOGGER.info("Checking if response from Bridge is correct");
@@ -157,7 +155,7 @@ public class HttpBridgeCorsST extends AbstractST {
 
         additionalHeaders.remove("Access-Control-Request-Method", HttpMethod.POST.toString());
         headers = BridgeUtils.addHeadersToString(additionalHeaders);
-        response = cmdKubeClient().namespace(suiteTestStorage.getNamespaceName()).execInPod(suiteTestStorage.getScraperPodName(), "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.POST, url, headers, "")).out().trim();
+        response = KubeResourceManager.get().kubeCmdClient().inNamespace(suiteTestStorage.getNamespaceName()).execInPod(suiteTestStorage.getScraperPodName(), "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.POST, url, headers, "")).out().trim();
         LOGGER.info("Response from Bridge: {}", response);
 
         LOGGER.info("Checking if response from Bridge is correct");
@@ -181,7 +179,8 @@ public class HttpBridgeCorsST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(suiteTestStorage.getNamespaceName(), suiteTestStorage.getClusterName(), 3).build());
 
         KubeResourceManager.get().createResourceWithWait(ScraperTemplates.scraperPod(suiteTestStorage.getNamespaceName(), suiteTestStorage.getScraperName()).build());
-        suiteTestStorage.addToTestStorage(TestConstants.SCRAPER_POD_KEY, kubeClient().listPodsByPrefixInName(suiteTestStorage.getNamespaceName(), suiteTestStorage.getScraperName()).get(0).getMetadata().getName());
+        suiteTestStorage.addToTestStorage(TestConstants.SCRAPER_POD_KEY,
+            KubeResourceManager.get().kubeClient().listPodsByPrefixInName(suiteTestStorage.getNamespaceName(), suiteTestStorage.getScraperName()).get(0).getMetadata().getName());
 
         KubeResourceManager.get().createResourceWithWait(
             KafkaBridgeTemplates.kafkaBridgeWithCors(

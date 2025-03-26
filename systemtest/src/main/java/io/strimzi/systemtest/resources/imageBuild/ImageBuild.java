@@ -33,7 +33,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import static io.strimzi.systemtest.Environment.KANIKO_IMAGE;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class ImageBuild {
     private static final Logger LOGGER = LogManager.getLogger(ImageBuild.class);
@@ -171,7 +170,7 @@ public class ImageBuild {
 
         KubeResourceManager.get().createResourceWithoutWait(imageStream);
         KubeResourceManager.get().createResourceWithoutWait(buildConfig);
-        kubeClient().getClient().adapt(OpenShiftClient.class).buildConfigs().inNamespace(namespace).withName(name).instantiate(buildRequest);
+        KubeResourceManager.get().kubeClient().getClient().adapt(OpenShiftClient.class).buildConfigs().inNamespace(namespace).withName(name).instantiate(buildRequest);
 
         BuildUtils.waitForBuildComplete(namespace, name);
     }

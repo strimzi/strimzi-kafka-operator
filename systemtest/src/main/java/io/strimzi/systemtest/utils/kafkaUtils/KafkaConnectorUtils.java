@@ -28,7 +28,6 @@ import static io.strimzi.systemtest.TestConstants.GLOBAL_RECONCILIATION_COUNT;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.CrdClients.kafkaConnectorClient;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 public class KafkaConnectorUtils {
 
@@ -44,7 +43,7 @@ public class KafkaConnectorUtils {
      * @param resourceName      name of the KafkaConnector's name.
      * @param editor            editor containing all the changes that should be done to the resource.
      */
-    public static void replaceInNamespace(String namespaceName, String resourceName, Consumer<KafkaConnector> editor) {
+    public static void replace(String namespaceName, String resourceName, Consumer<KafkaConnector> editor) {
         KafkaConnector kafkaConnector = kafkaConnectorClient().inNamespace(namespaceName).withName(resourceName).get();
         KubeResourceManager.get().replaceResourceWithRetries(kafkaConnector, editor);
     }
@@ -74,14 +73,14 @@ public class KafkaConnectorUtils {
                 return true;
             } else {
                 LOGGER.info("KafkaConnector: {}/{} is not deleted yet, triggering force delete", namespaceName, connectorName);
-                cmdKubeClient().deleteByName(KafkaConnector.RESOURCE_KIND, connectorName);
+                KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).deleteByName(KafkaConnector.RESOURCE_KIND, connectorName);
                 return false;
             }
         });
     }
 
     public static void createFileSinkConnector(String namespaceName, String podName, String topicName, String sinkFileName, String apiUrl) {
-        cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c",
+        KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(podName, "/bin/bash", "-c",
             "curl -X POST -H \"Content-Type: application/json\" " + "--data '{ \"name\": \"sink-test\", " +
                 "\"config\": " + "{ \"connector.class\": \"FileStreamSink\", " +
                 "\"tasks.max\": \"1\", \"topics\": \"" + topicName + "\"," + " \"file\": \"" + sinkFileName + "\" } }' " +
@@ -135,12 +134,12 @@ public class KafkaConnectorUtils {
     }
 
     public static String getConnectorSpecFromConnectAPI(String namespaceName, String podName, String connectorName) {
-        return cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c",
+        return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(podName, "/bin/bash", "-c",
             "curl http://localhost:8083/connectors/" + connectorName).out();
     }
 
     public static String getConnectorConfig(String namespaceName, String podName, String connectorName, String apiUrl) {
-        return cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c", "curl http://" + apiUrl + ":8083/connectors/" +
+        return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(podName, "/bin/bash", "-c", "curl http://" + apiUrl + ":8083/connectors/" +
             connectorName + "/config").out();
     }
 
@@ -179,7 +178,7 @@ public class KafkaConnectorUtils {
         TestUtils.waitFor("KafkaConnector's:" + connectorName + " worker to be in state: " + state, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, TestConstants.GLOBAL_TIMEOUT,
             () -> {
                 JsonObject connectorStatus = new JsonObject(
-                        cmdKubeClient().namespace(namespaceName).execInPod(podName,
+                        KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(podName,
                         "curl", "GET",
                         "http://" + KafkaConnectResources.serviceName(connectName) + ":8083/connectors/" + connectorName + "/status").out().trim()
                 );
@@ -192,7 +191,7 @@ public class KafkaConnectorUtils {
         int[] counter = {0};
         TestUtils.waitFor("KafkaConnector logger to be stable", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () ->  {
-                String logger = cmdKubeClient().namespace(namespaceName).execInPod(podName, "curl",
+                String logger = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(podName, "curl",
                     "http://" + KafkaConnectResources.serviceName(connectClusterName) + ":8083/admin/loggers/" + connectorName).out();
                 if (logger.contains(desiredLogger)) {
                     counter[0]++;
@@ -247,7 +246,7 @@ public class KafkaConnectorUtils {
     ) throws JsonProcessingException {
         final ObjectMapper mapper = new ObjectMapper();
 
-        return mapper.readTree(cmdKubeClient().namespace(namespaceName).execInPod(scraperPodName,
+        return mapper.readTree(KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(scraperPodName,
                 "curl", "-X", "GET",
                 "http://" + serviceName + ":8083/connectors/" + connectorName + "/offsets").out().trim());
     }

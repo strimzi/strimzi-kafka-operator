@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.upgrade;
 
 import io.skodjob.testframe.resources.KubeResourceManager;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.kafka.KafkaBuilder;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Annotations;
@@ -34,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.KRAFT_UPGRADE;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -188,7 +186,7 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
         LOGGER.info("Updating Kafka CR version field to " + newVersion.version());
 
         // Change the version in Kafka CR
-        KafkaUtils.replaceInNamespace(testStorage.getNamespaceName(), CLUSTER_NAME, kafka -> {
+        KafkaUtils.replace(testStorage.getNamespaceName(), CLUSTER_NAME, kafka -> {
             kafka.getSpec().getKafka().setVersion(newVersion.version());
         });
 
@@ -208,8 +206,8 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
 
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), CLUSTER_NAME);
 
-        String controllerPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaComponents.getPodSetName(CLUSTER_NAME, CONTROLLER_NODE_NAME)).get(0).getMetadata().getName();
-        String brokerPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaComponents.getPodSetName(CLUSTER_NAME, BROKER_NODE_NAME)).get(0).getMetadata().getName();
+        String controllerPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaComponents.getPodSetName(CLUSTER_NAME, CONTROLLER_NODE_NAME)).get(0).getMetadata().getName();
+        String brokerPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaComponents.getPodSetName(CLUSTER_NAME, BROKER_NODE_NAME)).get(0).getMetadata().getName();
 
         // Extract the Kafka version number from the jars in the lib directory
         controllerVersionResult = KafkaUtils.getVersionFromKafkaPodLibs(testStorage.getNamespaceName(), controllerPodName);
@@ -228,7 +226,7 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
         if (isUpgrade && !sameMinorVersion) {
             LOGGER.info("Updating Kafka config attribute 'metadataVersion' from '{}' to '{}' version", initialVersion.metadataVersion(), newVersion.metadataVersion());
 
-            KafkaUtils.replaceInNamespace(testStorage.getNamespaceName(), CLUSTER_NAME, kafka -> {
+            KafkaUtils.replace(testStorage.getNamespaceName(), CLUSTER_NAME, kafka -> {
                 LOGGER.info("Kafka config before updating '{}'", kafka.getSpec().getKafka().toString());
 
                 kafka.getSpec().getKafka().setMetadataVersion(newVersion.metadataVersion());
@@ -246,14 +244,14 @@ public class KRaftKafkaUpgradeDowngradeST extends AbstractKRaftUpgradeST {
             LOGGER.info("Verifying that metadataVersion attribute updated correctly to version {}", initMetadataVersion);
             TestUtils.waitFor(String.format("metadataVersion attribute updated correctly to version %s", initMetadataVersion),
                 TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
-                () -> Crds.kafkaOperation(kubeClient().getClient()).inNamespace(testStorage.getNamespaceName()).withName(CLUSTER_NAME)
+                () -> CrdClients.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(CLUSTER_NAME)
                     .get().getStatus().getKafkaMetadataVersion().contains(initMetadataVersion));
         } else {
             if (currentMetadataVersion != null) {
                 LOGGER.info("Verifying that metadataVersion attribute updated correctly to version {}", newVersion.metadataVersion());
                 TestUtils.waitFor(String.format("metadataVersion attribute updated correctly to version %s", newVersion.metadataVersion()),
                     TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
-                    () -> Crds.kafkaOperation(kubeClient().getClient()).inNamespace(testStorage.getNamespaceName()).withName(CLUSTER_NAME)
+                    () -> CrdClients.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(CLUSTER_NAME)
                         .get().getStatus().getKafkaMetadataVersion().contains(newVersion.metadataVersion()));
             }
         }

@@ -40,7 +40,6 @@ import org.junit.jupiter.api.Tag;
 import java.util.List;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 /**
  * Class for testing the usage of Kafka Access Operator together with operators and Kafka/KafkaUser CRs in real environment.
@@ -130,7 +129,7 @@ public class AccessOperatorST extends AbstractST {
 
         SecretUtils.waitForSecretReady(testStorage.getNamespaceName(), kafkaAccessName, () -> { });
 
-        Secret accessSecret = kubeClient().getSecret(testStorage.getNamespaceName(), kafkaAccessName);
+        Secret accessSecret = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(kafkaAccessName).get();
         String bootstrapServer = Util.decodeFromBase64(accessSecret.getData().get("bootstrapServers"));
 
         List<EnvVar> tlsEnvVarsForKafkaAccess = List.of(

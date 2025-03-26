@@ -56,7 +56,6 @@ import static io.strimzi.systemtest.TestConstants.GLOBAL_TIMEOUT;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.TestTags.TIERED_STORAGE;
 import static io.strimzi.systemtest.utils.specific.NfsUtils.NFS_PVC_NAME;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @MicroShiftNotSupported("We are using Kaniko and OpenShift builds to build Kafka image with TS. To make it working on Microshift we will invest much time with not much additional value.")
@@ -192,7 +191,7 @@ public class TieredStorageST extends AbstractST {
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), MESSAGE_COUNT);
 
         // Delete data
-        KafkaTopicUtils.replaceInNamespace(
+        KafkaTopicUtils.replace(
             testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().getConfig().put("retention.ms", 10000)
         );
 
@@ -314,7 +313,7 @@ public class TieredStorageST extends AbstractST {
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), MESSAGE_COUNT);
 
         // Delete data
-        KafkaTopicUtils.replaceInNamespace(
+        KafkaTopicUtils.replace(
             testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().getConfig().put("retention.ms", 10000)
         );
 
@@ -356,13 +355,13 @@ public class TieredStorageST extends AbstractST {
         TestUtils.waitFor("NFS Instance deploy", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT, () -> {
             try {
                 LOGGER.info("Creating NFS Instance from {}", NFS_INSTANCE_PATH);
-                cmdKubeClient(suiteStorage.getNamespaceName()).applyContent(instanceYamlContent);
+                KubeResourceManager.get().kubeCmdClient().inNamespace(suiteStorage.getNamespaceName()).applyContent(instanceYamlContent);
                 return true;
             } catch (Exception e) {
                 LOGGER.error("Following exception has been thrown during NFS Instance Deployment: {}", e.getMessage());
                 return false;
             } finally {
-                KubeResourceManager.get().pushToStack(new ResourceItem<>(() -> cmdKubeClient(suiteStorage.getNamespaceName()).deleteContent(instanceYamlContent)));
+                KubeResourceManager.get().pushToStack(new ResourceItem<>(() -> KubeResourceManager.get().kubeCmdClient().inNamespace(suiteStorage.getNamespaceName()).deleteContent(instanceYamlContent)));
             }
         });
         StatefulSetUtils.waitForAllStatefulSetPodsReady(suiteStorage.getNamespaceName(), "test-nfs-server-provisioner", 1);

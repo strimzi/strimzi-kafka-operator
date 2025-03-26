@@ -6,12 +6,11 @@ package io.strimzi.systemtest.utils.kubeUtils.objects;
 
 import io.fabric8.openshift.api.model.BuildStatus;
 import io.fabric8.openshift.client.OpenShiftClient;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class BuildUtils {
 
@@ -39,10 +38,10 @@ public class BuildUtils {
         LOGGER.info("Waiting for build of {} to be completed", buildConfigName);
 
         TestUtils.waitFor("build " + buildConfigName + " complete", TestConstants.GLOBAL_POLL_INTERVAL_5_SECS, TestConstants.GLOBAL_TIMEOUT, () -> {
-            Long buildLatestVersion = kubeClient().getClient().adapt(OpenShiftClient.class).buildConfigs().inNamespace(namespaceName).withName(buildConfigName).get().getStatus().getLastVersion();
+            Long buildLatestVersion = KubeResourceManager.get().kubeClient().getClient().adapt(OpenShiftClient.class).buildConfigs().inNamespace(namespaceName).withName(buildConfigName).get().getStatus().getLastVersion();
             String buildName = getBuildName(buildConfigName, buildLatestVersion);
 
-            BuildStatus buildStatus = kubeClient().getClient().adapt(OpenShiftClient.class).builds().inNamespace(namespaceName).withName(buildName).get().getStatus();
+            BuildStatus buildStatus = KubeResourceManager.get().kubeClient().getClient().adapt(OpenShiftClient.class).builds().inNamespace(namespaceName).withName(buildName).get().getStatus();
 
             LOGGER.debug("Build status of {} is '{}'", buildName, buildStatus.getPhase());
 

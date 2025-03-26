@@ -29,8 +29,6 @@ import io.strimzi.api.kafka.model.topic.KafkaTopicList;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.api.kafka.model.user.KafkaUserList;
 
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-
 /**
  * Class containing encapsulations of clients for Strimzi's CRs.
  */
@@ -84,7 +82,7 @@ public class CrdClients {
      * @return  {@link KafkaNodePool} client.
      */
     public static MixedOperation<KafkaNodePool, KafkaNodePoolList, Resource<KafkaNodePool>> kafkaNodePoolClient() {
-        return Crds.kafkaNodePoolOperation(kubeClient().getClient());
+        return Crds.kafkaNodePoolOperation(KubeResourceManager.get().kubeClient().getClient());
     }
 
     /**

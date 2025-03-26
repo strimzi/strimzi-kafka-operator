@@ -22,7 +22,6 @@ import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Status;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
@@ -77,8 +76,6 @@ import static io.strimzi.systemtest.TestTags.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.TestTags.MIRROR_MAKER2;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -145,7 +142,7 @@ class MirrorMaker2ST extends AbstractST {
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
         LOGGER.info("Verifying configurations in config map");
-        ConfigMap configMap = kubeClient().namespace(testStorage.getNamespaceName()).getConfigMap(KafkaMirrorMaker2Resources.configMapName(testStorage.getClusterName()));
+        ConfigMap configMap = KubeResourceManager.get().kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).withName(KafkaMirrorMaker2Resources.configMapName(testStorage.getClusterName())).get();
         String connectConfigurations = configMap.getData().get("kafka-connect.properties");
         Map<String, Object> config = StUtils.loadProperties(connectConfigurations);
         assertThat(config.entrySet().containsAll(expectedConfig.entrySet()), is(true));
@@ -190,7 +187,7 @@ class MirrorMaker2ST extends AbstractST {
         assertThat(mirroredTopic.partitionCount(), is(3));
 
         // Replace source topic resource with new data and check that mm2 update target topic as well
-        KafkaTopicUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getTopicName(), kt -> kt.getSpec().setPartitions(8));
+        KafkaTopicUtils.replace(testStorage.getNamespaceName(), testStorage.getTopicName(), kt -> kt.getSpec().setPartitions(8));
         AdminClientUtils.waitForTopicPartitionInKafka(targetClusterAdminClient, testStorage.getMirroredSourceTopicName(), 8);
     }
 
@@ -471,20 +468,18 @@ class MirrorMaker2ST extends AbstractST {
 
         int scaleTo = 2;
         long mm2ObsGen = CrdClients.kafkaMirrorMaker2Client().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getObservedGeneration();
-        String mm2GenName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND).get(0).getMetadata().getGenerateName();
 
         LOGGER.info("-------> Scaling KafkaMirrorMaker2 up <-------");
 
         LOGGER.info("Scaling subresource replicas to {}", scaleTo);
 
-        cmdKubeClient(testStorage.getNamespaceName()).scaleByName(KafkaMirrorMaker2.RESOURCE_KIND, testStorage.getClusterName(), scaleTo);
+        KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).scaleByName(KafkaMirrorMaker2.RESOURCE_KIND, testStorage.getClusterName(), scaleTo);
         RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), testStorage.getMM2Selector(), scaleTo);
 
         LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);
-        List<String> mm2Pods = kubeClient(testStorage.getNamespaceName()).listPodNames(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND);
 
         StUtils.waitUntilSupplierIsSatisfied("KafkaMirrorMaker2 expected size (status, replicas, pod count)",
-            () -> kubeClient(testStorage.getNamespaceName()).listPodNames(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND).size() == scaleTo &&
+            () -> PodUtils.listPodNames(testStorage.getNamespaceName(), testStorage.getMM2Selector()).size() == scaleTo &&
                 CrdClients.kafkaMirrorMaker2Client().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getReplicas() == scaleTo &&
                 CrdClients.kafkaMirrorMaker2Client().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getReplicas() == scaleTo);
 
@@ -501,11 +496,11 @@ class MirrorMaker2ST extends AbstractST {
         LOGGER.info("-------> Scaling KafkaMirrorMaker2 down <-------");
 
         LOGGER.info("Scaling MirrorMaker2 to zero");
-        KafkaMirrorMaker2Utils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), mm2 -> mm2.getSpec().setReplicas(0));
+        KafkaMirrorMaker2Utils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), mm2 -> mm2.getSpec().setReplicas(0));
 
         PodUtils.waitForPodsReady(testStorage.getNamespaceName(), testStorage.getMM2Selector(), 0, true, () -> { });
 
-        mm2Pods = kubeClient().listPodNames(testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND);
+        List<String>  mm2Pods = PodUtils.listPodNames(testStorage.getNamespaceName(), testStorage.getMM2Selector());
         KafkaMirrorMaker2Status mm2Status = CrdClients.kafkaMirrorMaker2Client().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
         actualObsGen = CrdClients.kafkaMirrorMaker2Client().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getMetadata().getGeneration();
 
@@ -563,7 +558,7 @@ class MirrorMaker2ST extends AbstractST {
         LOGGER.info("Checking log of {} Job if the headers are correct", testStorage.getConsumerName());
         String header1 = "key: header_key_one, value: header_value_one";
         String header2 = "key: header_key_two, value: header_value_two";
-        String log = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(testStorage.getConsumerName()).get(0).getMetadata().getName(), "", testStorage.getMessageCount() + "s");
+        String log = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getConsumerName()).get(0).getMetadata().getName(), "", testStorage.getMessageCount() + "s");
         assertThat(String.format("Consumer's log doesn't contain header: %s", header1), log.contains(header1), is(true));
         assertThat(String.format("Consumer's log doesn't contain header: %s", header2), log.contains(header2), is(true));
     }
@@ -588,7 +583,7 @@ class MirrorMaker2ST extends AbstractST {
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
         );
 
-        final String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
+        final String scraperPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
         // Create topic
         KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getSourceClusterName(), 3).build());
@@ -816,7 +811,7 @@ class MirrorMaker2ST extends AbstractST {
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2StatusMessage(testStorage.getNamespaceName(), testStorage.getClusterName(), errorMessage);
 
         LOGGER.info("Modify originally wrong bootstrap service name configuration in KafkaMirrorMaker2: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
-        KafkaMirrorMaker2Utils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), mm2 ->
+        KafkaMirrorMaker2Utils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), mm2 ->
             mm2.getSpec().getClusters().stream().filter(mm2ClusterSpec -> mm2ClusterSpec.getAlias().equals(testStorage.getSourceClusterName()))
                 .findFirst().get().setBootstrapServers(KafkaUtils.namespacedPlainBootstrapAddress(testStorage.getNamespaceName(), testStorage.getSourceClusterName())));
 
@@ -826,7 +821,7 @@ class MirrorMaker2ST extends AbstractST {
         assertFalse(kmm2Status.getConditions().stream().anyMatch(condition -> condition.getMessage() != null && condition.getMessage().contains(errorMessage)));
 
         LOGGER.info("Pausing KafkaMirrorMaker2: {}/{} source connector", testStorage.getNamespaceName(), testStorage.getClusterName());
-        KafkaMirrorMaker2Utils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+        KafkaMirrorMaker2Utils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(),
             mm2 -> mm2.getSpec().getMirrors().get(0).getSourceConnector().setState(ConnectorState.PAUSED)
         );
 
@@ -840,7 +835,7 @@ class MirrorMaker2ST extends AbstractST {
         ClientUtils.waitForInstantConsumerClientTimeout(testStorage);
 
         LOGGER.info("Re-running KafkaMirrorMaker2: {}/{} source connector", testStorage.getNamespaceName(), testStorage.getClusterName());
-        KafkaMirrorMaker2Utils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+        KafkaMirrorMaker2Utils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(),
             mm2 -> mm2.getSpec().getMirrors().get(0).getSourceConnector().setState(ConnectorState.RUNNING)
         );
 
@@ -858,7 +853,7 @@ class MirrorMaker2ST extends AbstractST {
         );
 
         LOGGER.info("Checking Source Connector's offset using the offset management");
-        KafkaMirrorMaker2Utils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+        KafkaMirrorMaker2Utils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(),
             mm2 -> mm2.getMetadata().getAnnotations().putAll(Map.of(
                     Annotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, "list",
                     Annotations.ANNO_STRIMZI_IO_MIRRORMAKER_CONNECTOR, sourceConnectorName
@@ -869,7 +864,7 @@ class MirrorMaker2ST extends AbstractST {
         ConfigMapUtils.waitForCreationOfConfigMap(testStorage.getNamespaceName(), listOffsetsConfigMap);
 
         // checking the config map
-        ConfigMap listConfigMap = kubeClient().getConfigMap(testStorage.getNamespaceName(), listOffsetsConfigMap);
+        ConfigMap listConfigMap = KubeResourceManager.get().kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).withName(listOffsetsConfigMap).get();
         JsonNode offsets = mapper.readTree(listConfigMap.getData().get(sourceConnectorName.replace("->", "--") + ".json"));
 
         assertThat("Offset config map contains correct offset value", offsets.get("offsets").get(0).get("offset").get("offset").asInt(), is(99));

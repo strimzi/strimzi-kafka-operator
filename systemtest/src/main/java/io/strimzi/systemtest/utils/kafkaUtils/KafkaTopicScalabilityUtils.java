@@ -138,7 +138,7 @@ public class KafkaTopicScalabilityUtils {
 
         for (int i = startIndex; i < endIndex; i++) {
             String currentTopicName = topicPrefix + "-" + i;
-            KafkaTopicUtils.replaceInNamespace(namespaceName, currentTopicName, kafkaTopic -> kafkaTopic.setSpec(topicSpec));
+            KafkaTopicUtils.replace(namespaceName, currentTopicName, kafkaTopic -> kafkaTopic.setSpec(topicSpec));
         }
     }
 

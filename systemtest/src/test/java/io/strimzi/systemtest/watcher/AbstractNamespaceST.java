@@ -8,17 +8,17 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.Condition;
-import io.strimzi.api.kafka.model.connect.KafkaConnect;
+import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.cruisecontrol.CruiseControlSpec;
 import io.strimzi.api.kafka.model.kafka.exporter.KafkaExporterSpec;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.labels.LabelSelectors;
 import io.strimzi.systemtest.resources.CrdClients;
 import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -48,7 +48,6 @@ import static io.strimzi.systemtest.TestTags.CONNECTOR_OPERATOR;
 import static io.strimzi.systemtest.TestTags.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.TestTags.MIRROR_MAKER2;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
@@ -88,9 +87,9 @@ public abstract class AbstractNamespaceST extends AbstractST {
     @ParallelTest
     final void testDeployKafkaWithOperandsInNamespaceDifferentFromCO() {
         LOGGER.info("Verifying that Kafka: {}/{} ,and its component (KafkaExporter and CruiseControl) are deployed correctly", MAIN_TEST_NAMESPACE, PRIMARY_KAFKA_NAME);
-        assertThat("CruiseControl Deployment is not ready", kubeClient().getDeploymentStatus(MAIN_TEST_NAMESPACE, PRIMARY_KAFKA_NAME + "-cruise-control"));
-        assertThat("KafkaExporter Deployment is not ready", kubeClient().getDeploymentStatus(MAIN_TEST_NAMESPACE, PRIMARY_KAFKA_NAME + "-kafka-exporter"));
-        assertThat("KafkaExporter Deployment is not ready", kubeClient().getDeploymentStatus(MAIN_TEST_NAMESPACE, PRIMARY_KAFKA_NAME + "-entity-operator"));
+        assertThat("CruiseControl Deployment is not ready", KubeResourceManager.get().kubeClient().getClient().apps().deployments().inNamespace(MAIN_TEST_NAMESPACE).withName(PRIMARY_KAFKA_NAME + "-cruise-control").isReady());
+        assertThat("KafkaExporter Deployment is not ready", KubeResourceManager.get().kubeClient().getClient().apps().deployments().inNamespace(MAIN_TEST_NAMESPACE).withName(PRIMARY_KAFKA_NAME + "-kafka-exporter").isReady());
+        assertThat("KafkaExporter Deployment is not ready", KubeResourceManager.get().kubeClient().getClient().apps().deployments().inNamespace(MAIN_TEST_NAMESPACE).withName(PRIMARY_KAFKA_NAME + "-entity-operator").isReady());
     }
 
     /**
@@ -178,7 +177,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
         assertThat(kafkaCondition.getType(), is(Ready.toString()));
 
         LOGGER.info("Finding and Copying Secrets related to created KafkaUser into Namespace: {} which holds Kafka", testStorage.getNamespaceName());
-        List<Secret> secretsOfSecondNamespace = kubeClient(PRIMARY_KAFKA_WATCHED_NAMESPACE).listSecrets();
+        List<Secret> secretsOfSecondNamespace = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(PRIMARY_KAFKA_WATCHED_NAMESPACE).list().getItems();
 
         for (Secret s : secretsOfSecondNamespace) {
             if (s.getMetadata().getName().equals(testStorage.getUsername())) {
@@ -257,17 +256,16 @@ public abstract class AbstractNamespaceST extends AbstractST {
     final void testDeployKafkaConnectAndKafkaConnectorInNamespaceDifferentFromCO(ExtensionContext extensionContext) {
 
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
-        String kafkaConnectName = testStorage.getClusterName() + "kafka-connect";
 
         // Deploy Kafka Connect in other namespace than CO
-        KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(MAIN_TEST_NAMESPACE, kafkaConnectName, PRIMARY_KAFKA_NAME, 1)
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(MAIN_TEST_NAMESPACE, testStorage.getClusterName(), PRIMARY_KAFKA_NAME, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .build());
 
-        LOGGER.info("Deploying KafkaConnector: {}/{}", MAIN_TEST_NAMESPACE, kafkaConnectName);
-        deployKafkaConnectorWithSink(extensionContext, kafkaConnectName);
+        LOGGER.info("Deploying KafkaConnector: {}/{}", MAIN_TEST_NAMESPACE, testStorage.getClusterName());
+        deployKafkaConnectorWithSink(extensionContext, testStorage.getClusterName());
     }
 
     private void copySecret(Secret sourceSecret, String targetNamespace, String targetName) {
@@ -278,7 +276,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
             .endMetadata()
             .build();
 
-        kubeClient().createSecret(s);
+        KubeResourceManager.get().createResourceWithWait(s);
     }
 
     private void deployKafkaConnectorWithSink(ExtensionContext extensionContext, String clusterName) {
@@ -300,7 +298,8 @@ public abstract class AbstractNamespaceST extends AbstractST {
             .build());
         KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), clusterName);
 
-        String kafkaConnectPodName = kubeClient(testStorage.getNamespaceName()).listPods(clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        String kafkaConnectPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(),
+            LabelSelectors.connectLabelSelector(clusterName, KafkaConnectResources.componentName(clusterName))).get(0).getMetadata().getName();
         LOGGER.info("KafkaConnect Pod: {}/{}", testStorage.getNamespaceName(), kafkaConnectPodName);
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(testStorage.getNamespaceName(), kafkaConnectPodName);
 
@@ -344,7 +343,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
             ScraperTemplates.scraperPod(MAIN_TEST_NAMESPACE, scraperName).build()
         );
 
-        scraperPodName = kubeClient().listPodsByPrefixInName(MAIN_TEST_NAMESPACE, scraperName).get(0).getMetadata().getName();
+        scraperPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(MAIN_TEST_NAMESPACE, scraperName).get(0).getMetadata().getName();
 
     }
 }

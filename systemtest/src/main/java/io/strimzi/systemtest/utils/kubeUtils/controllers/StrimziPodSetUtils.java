@@ -43,7 +43,7 @@ public class StrimziPodSetUtils {
      * @param resourceName   name of the StrimziPodSet's name.
      * @param editor         editor containing all the changes that should be done to the resource.
      */
-    public static void replaceInNamespace(String namespaceName, String resourceName, Consumer<StrimziPodSet> editor) {
+    public static void replace(String namespaceName, String resourceName, Consumer<StrimziPodSet> editor) {
         StrimziPodSet strimziPodSet = strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get();
         KubeResourceManager.get().replaceResourceWithRetries(strimziPodSet, editor);
     }
@@ -132,7 +132,7 @@ public class StrimziPodSetUtils {
 
     public static void annotateStrimziPodSet(String namespaceName, String resourceName, Map<String, String> annotations) {
         LOGGER.info("Annotating StrimziPodSet {}/{} with annotations: {}", namespaceName, resourceName, annotations);
-        replaceInNamespace(namespaceName, resourceName, strimziPodSet -> strimziPodSet.getMetadata().setAnnotations(annotations));
+        replace(namespaceName, resourceName, strimziPodSet -> strimziPodSet.getMetadata().setAnnotations(annotations));
     }
 
     public static Map<String, String> getAnnotationsOfStrimziPodSet(String namespaceName, String resourceName) {

@@ -38,7 +38,6 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.CRUISE_CONTROL;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 
@@ -113,7 +112,7 @@ public class TopicReplicasChangeST extends AbstractST {
         final int newTopicReplicationFactor = 3;
         long topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
-        KafkaTopicUtils.replaceInNamespace(
+        KafkaTopicUtils.replace(
             sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().setReplicas(newTopicReplicationFactor)
         );
 
@@ -158,7 +157,7 @@ public class TopicReplicasChangeST extends AbstractST {
         KafkaTopicUtils.waitUntilTopicObservationGenerationIsPresent(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
         long topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
-        KafkaTopicUtils.replaceInNamespace(
+        KafkaTopicUtils.replace(
             testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().setReplicas(increasedTopicReplicationFactor)
         );
 
@@ -172,7 +171,7 @@ public class TopicReplicasChangeST extends AbstractST {
         // --- 3rd stage (go back to 2 replicas)
         topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
-        KafkaTopicUtils.replaceInNamespace(
+        KafkaTopicUtils.replace(
             testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().setReplicas(startingTopicReplicationFactor)
         );
 
@@ -219,7 +218,7 @@ public class TopicReplicasChangeST extends AbstractST {
         KafkaTopicUtils.waitUntilTopicObservationGenerationIsPresent(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
         long topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
-        KafkaTopicUtils.replaceInNamespace(
+        KafkaTopicUtils.replace(
             testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().setReplicas(wrongTopicReplicationFactor)
         );
 
@@ -235,7 +234,7 @@ public class TopicReplicasChangeST extends AbstractST {
         // ----- 3rd stage (back to correct 3 replicas)
         topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
-        KafkaTopicUtils.replaceInNamespace(
+        KafkaTopicUtils.replace(
             testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().setReplicas(startingTopicReplicationFactor)
         );
 
@@ -271,7 +270,7 @@ public class TopicReplicasChangeST extends AbstractST {
         final int topicPartitions = 3;
         final int startingTopicReplicationFactor = 2;
         final int increasedTopicReplicationFactor = 3;
-        final String ccPodName = kubeClient().listPodsByPrefixInName(sharedTestStorage.getNamespaceName(), CruiseControlResources.componentName(sharedTestStorage.getClusterName())).get(0).getMetadata().getName();
+        final String ccPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(sharedTestStorage.getNamespaceName(), CruiseControlResources.componentName(sharedTestStorage.getClusterName())).get(0).getMetadata().getName();
         final KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(sharedTestStorage.getNamespaceName(), testStorage.getTopicName(), sharedTestStorage.getClusterName(), topicPartitions, startingTopicReplicationFactor, 1).build();
 
         // -- 1st stage (start with 2 replicas)
@@ -281,7 +280,7 @@ public class TopicReplicasChangeST extends AbstractST {
         KafkaTopicUtils.waitUntilTopicObservationGenerationIsPresent(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
         long topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
-        KafkaTopicUtils.replaceInNamespace(
+        KafkaTopicUtils.replace(
             testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().setReplicas(increasedTopicReplicationFactor)
         );
 
@@ -295,7 +294,7 @@ public class TopicReplicasChangeST extends AbstractST {
         final Map<String, String> ccPod = DeploymentUtils.depSnapshot(sharedTestStorage.getNamespaceName(), CruiseControlResources.componentName(sharedTestStorage.getClusterName()));
 
         // --- 3rd stage (during ongoing replicaChange task we induce chaos and delete CruiseControl Pod)
-        kubeClient().deletePodWithName(sharedTestStorage.getNamespaceName(), ccPodName);
+        KubeResourceManager.get().deleteResourceWithoutWait(KubeResourceManager.get().kubeClient().getClient().pods().inNamespace(sharedTestStorage.getNamespaceName()).withName(ccPodName).get());
 
         // we should see that KafkaTopic is ongoing
         KafkaTopicUtils.waitUntilReplicaChangeOngoing(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
@@ -333,7 +332,7 @@ public class TopicReplicasChangeST extends AbstractST {
         final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final int topicPartitions = 3;
         final int startingTopicReplicationFactor = 3;
-        final String eoPodName = kubeClient().listPods(sharedTestStorage.getNamespaceName(),
+        final String eoPodName = KubeResourceManager.get().kubeClient().listPods(sharedTestStorage.getNamespaceName(),
                         LabelSelectors.entityOperatorLabelSelector(sharedTestStorage.getClusterName())).stream()
                 .findFirst()
                 .orElseThrow()
@@ -348,7 +347,7 @@ public class TopicReplicasChangeST extends AbstractST {
         KafkaTopicUtils.waitUntilTopicObservationGenerationIsPresent(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
         long topicObservationGeneration = KafkaTopicUtils.topicObservationGeneration(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());
 
-        KafkaTopicUtils.replaceInNamespace(
+        KafkaTopicUtils.replace(
             testStorage.getNamespaceName(), testStorage.getTopicName(), topic -> topic.getSpec().setReplicas(decreasedTopicReplicationFactor)
         );
 
@@ -363,7 +362,7 @@ public class TopicReplicasChangeST extends AbstractST {
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(sharedTestStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(sharedTestStorage.getClusterName()));
 
         // delete EntityOperator Pod during replicaChange process
-        kubeClient().deletePodWithName(sharedTestStorage.getNamespaceName(), eoPodName);
+        KubeResourceManager.get().deleteResourceWithoutWait(KubeResourceManager.get().kubeClient().getClient().pods().inNamespace(sharedTestStorage.getNamespaceName()).withName(eoPodName).get());
 
         // we should see that KafkaTopic is ongoing
         KafkaTopicUtils.waitUntilReplicaChangeOngoing(sharedTestStorage.getNamespaceName(), testStorage.getTopicName());

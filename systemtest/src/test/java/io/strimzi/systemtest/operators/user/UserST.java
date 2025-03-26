@@ -7,7 +7,6 @@ package io.strimzi.systemtest.operators.user;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.skodjob.testframe.resources.KubeResourceManager;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
@@ -50,7 +49,6 @@ import org.junit.jupiter.api.Tag;
 
 import static io.strimzi.systemtest.TestTags.ACCEPTANCE;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -104,7 +102,7 @@ class UserST extends AbstractST {
 
         KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername(), sharedTestStorage.getClusterName()).build());
 
-        String kafkaUserSecret = ReadWriteUtils.writeObjectToJsonString(kubeClient(Environment.TEST_SUITE_NAMESPACE).getSecret(testStorage.getKafkaUsername()));
+        String kafkaUserSecret = ReadWriteUtils.writeObjectToJsonString(KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getKafkaUsername()).get());
         assertThat(kafkaUserSecret, hasJsonPath("$.data['ca.crt']", notNullValue()));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['user.crt']", notNullValue()));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['user.key']", notNullValue()));
@@ -128,18 +126,18 @@ class UserST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(sharedTestStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(sharedTestStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        KafkaUserUtils.replaceInNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername(), ku -> {
+        KafkaUserUtils.replace(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername(), ku -> {
             ku.getSpec().setAuthentication(new KafkaUserScramSha512ClientAuthentication());
         });
 
         KafkaUserUtils.waitForKafkaUserIncreaseObserverGeneration(Environment.TEST_SUITE_NAMESPACE, observedGeneration, testStorage.getKafkaUsername());
         KafkaUserUtils.waitForKafkaUserCreation(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername());
 
-        String anotherKafkaUserSecret = ReadWriteUtils.writeObjectToJsonString(kubeClient(Environment.TEST_SUITE_NAMESPACE).getSecret(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername()));
+        String anotherKafkaUserSecret = ReadWriteUtils.writeObjectToJsonString(KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getKafkaUsername()).get());
 
         assertThat(anotherKafkaUserSecret, hasJsonPath("$.data.password", notNullValue()));
 
-        kUser = Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getKafkaUsername()).get();
+        kUser = CrdClients.kafkaUserClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getKafkaUsername()).get();
         kafkaUserAsJson = ReadWriteUtils.writeObjectToJsonString(kUser);
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(testStorage.getKafkaUsername())));
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(Environment.TEST_SUITE_NAMESPACE)));
@@ -283,8 +281,8 @@ class UserST extends AbstractST {
             KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), scramShaUserName, testStorage.getClusterName()).build()
         );
 
-        Secret tlsSecret = kubeClient().getSecret(testStorage.getNamespaceName(), secretPrefix + tlsUserName);
-        Secret scramShaSecret = kubeClient().getSecret(testStorage.getNamespaceName(), secretPrefix + scramShaUserName);
+        Secret tlsSecret = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(secretPrefix + tlsUserName).get();
+        Secret scramShaSecret = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(secretPrefix + scramShaUserName).get();
 
         LOGGER.info("Checking for existing user Secrets with prefix: {}", secretPrefix);
         assertNotNull(tlsSecret);
@@ -320,8 +318,8 @@ class UserST extends AbstractST {
         LOGGER.info("Checking if Secrets are deleted");
         SecretUtils.waitForSecretDeletion(testStorage.getNamespaceName(), tlsSecret.getMetadata().getName());
         SecretUtils.waitForSecretDeletion(testStorage.getNamespaceName(), scramShaSecret.getMetadata().getName());
-        assertNull(kubeClient().getSecret(testStorage.getNamespaceName(), tlsSecret.getMetadata().getName()));
-        assertNull(kubeClient().getSecret(testStorage.getNamespaceName(), scramShaSecret.getMetadata().getName()));
+        assertNull(KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(tlsSecret.getMetadata().getName()).get());
+        assertNull(KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(scramShaSecret.getMetadata().getName()).get());
     }
 
     @ParallelNamespaceTest
@@ -375,7 +373,7 @@ class UserST extends AbstractST {
 
         // For clients of authentication type tls-external, operator should not create a secret
         KafkaUserUtils.waitForKafkaUserReady(testStorage.getNamespaceName(), testStorage.getKafkaUsername());
-        assertThat(kubeClient().getSecret(testStorage.getNamespaceName(), testStorage.getKafkaUsername()), nullValue());
+        assertThat(KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getKafkaUsername()).get(), nullValue());
         assertThat(CrdClients.kafkaUserClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getKafkaUsername()).get().getStatus().getUsername(), is("CN=" + testStorage.getKafkaUsername()));
 
         SecretUtils.createExternalTlsUserSecret(testStorage.getNamespaceName(), testStorage.getKafkaUsername(), testStorage.getClusterName());
@@ -388,7 +386,7 @@ class UserST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        KafkaUserUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getKafkaUsername(), user -> {
+        KafkaUserUtils.replace(testStorage.getNamespaceName(), testStorage.getKafkaUsername(), user -> {
             user.getSpec().setAuthorization(new KafkaUserAuthorizationSimpleBuilder()
                     .addNewAcl()
                         .withNewAclRuleTopicResource()
@@ -439,6 +437,6 @@ class UserST extends AbstractST {
             ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getScraperName()).build()
         );
 
-        scraperPodName = kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getScraperName()).get(0).getMetadata().getName();
+        scraperPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getScraperName()).get(0).getMetadata().getName();
     }
 }

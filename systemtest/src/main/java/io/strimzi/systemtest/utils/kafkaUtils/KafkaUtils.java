@@ -12,6 +12,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.skodjob.testframe.executor.ExecResult;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.kafka.Kafka;
@@ -37,7 +38,6 @@ import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.executor.ExecResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
@@ -61,8 +61,6 @@ import static io.strimzi.api.kafka.model.kafka.KafkaClusterSpec.FORBIDDEN_PREFIX
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.types.KafkaType.kafkaClient;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class KafkaUtils {
@@ -80,7 +78,7 @@ public class KafkaUtils {
      * @param resourceName      name of the Kafka's name.
      * @param editor            editor containing all the changes that should be done to the resource.
      */
-    public static void replaceInNamespace(String namespaceName, String resourceName, Consumer<Kafka> editor) {
+    public static void replace(String namespaceName, String resourceName, Consumer<Kafka> editor) {
         Kafka kafka = kafkaClient().inNamespace(namespaceName).withName(resourceName).get();
         KubeResourceManager.get().replaceResourceWithRetries(kafka, editor);
     }
@@ -152,8 +150,7 @@ public class KafkaUtils {
     }
 
     public static String getKafkaSecretCertificates(String namespaceName, String secretName, String certType) {
-        String secretCerts = "";
-        secretCerts = kubeClient(namespaceName).getSecret(namespaceName, secretName).getData().get(certType);
+        String secretCerts = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(namespaceName).withName(secretName).get().getData().get(certType);
         return Util.decodeFromBase64(secretCerts, Charset.defaultCharset());
     }
 
@@ -225,7 +222,7 @@ public class KafkaUtils {
      * @param value value of specific property
      */
     public static void updateSpecificConfiguration(final String namespaceName, String clusterName, String brokerConfigName, Object value) {
-        replaceInNamespace(namespaceName, clusterName, kafka -> {
+        replace(namespaceName, clusterName, kafka -> {
             LOGGER.info("Kafka config before updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
             Map<String, Object> config = kafka.getSpec().getKafka().getConfig();
             config.put(brokerConfigName, value);
@@ -274,8 +271,7 @@ public class KafkaUtils {
      * false = if specific property doesn't match the excepted property
      */
     public synchronized static boolean verifyPodDynamicConfiguration(final String namespaceName, String scraperPodName, String bootstrapServer, String kafkaPodNamePrefix, String brokerConfigName, Object value) {
-
-        List<Pod> brokerPods = kubeClient().listPodsByPrefixInName(namespaceName, kafkaPodNamePrefix);
+        List<Pod> brokerPods = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(namespaceName, kafkaPodNamePrefix);
         int[] brokerId = {0};
 
         for (Pod pod : brokerPods) {
@@ -382,13 +378,17 @@ public class KafkaUtils {
 
     public static String getVersionFromKafkaPodLibs(String namespaceName, String kafkaPodName) {
         String command = "ls libs | grep -Po 'kafka_\\d+.\\d+-\\K(\\d+.\\d+.\\d+)(?=.*jar)' | head -1 | cut -d \"-\" -f2";
-        return cmdKubeClient(namespaceName).execInPodContainer(
-            kafkaPodName,
-            "kafka",
-            "/bin/bash",
-            "-c",
-            command
-        ).out().trim();
+        return KubeResourceManager.get().kubeCmdClient()
+            .inNamespace(namespaceName)
+            .execInPodContainer(
+                kafkaPodName,
+                "kafka",
+                "/bin/bash",
+                "-c",
+                command
+            )
+            .out()
+            .trim();
     }
 
     public static void waitForKafkaDeletion(String namespaceName, String kafkaClusterName) {
@@ -398,10 +398,10 @@ public class KafkaUtils {
                 if (kafkaClient().inNamespace(namespaceName).withName(kafkaClusterName).get() == null &&
                     CrdClients.strimziPodSetClient().inNamespace(namespaceName).withName(KafkaComponents.getControllerPodSetName(kafkaClusterName)).get() == null  &&
                     CrdClients.strimziPodSetClient().inNamespace(namespaceName).withName(KafkaComponents.getBrokerPodSetName(kafkaClusterName)).get() == null  &&
-                    kubeClient(namespaceName).getDeployment(namespaceName, KafkaResources.entityOperatorDeploymentName(kafkaClusterName)) == null) {
+                    KubeResourceManager.get().kubeClient().getClient().apps().deployments().inNamespace(namespaceName).withName(KafkaResources.entityOperatorDeploymentName(kafkaClusterName)).get() == null) {
                     return true;
                 } else {
-                    cmdKubeClient(namespaceName).deleteByName(Kafka.RESOURCE_KIND, kafkaClusterName);
+                    KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).deleteByName(Kafka.RESOURCE_KIND, kafkaClusterName);
                     return false;
                 }
             },
@@ -446,7 +446,7 @@ public class KafkaUtils {
             entity.set("topicOperator", mapper.createObjectNode());
 
             // workaround for current Strimzi upgrade (before we will have release containing metadataVersion in examples + CRDs)
-            boolean metadataVersionFieldSupported = !cmdKubeClient().exec(false, "explain", "kafka.spec.kafka.metadataVersion").err().contains("does not exist");
+            boolean metadataVersionFieldSupported = !KubeResourceManager.get().kubeCmdClient().exec(false, "explain", "kafka.spec.kafka.metadataVersion").err().contains("does not exist");
 
             if (version == null) {
                 kafkaNode.remove("version");
@@ -507,11 +507,11 @@ public class KafkaUtils {
     }
 
     public static void annotateKafka(String namespaceName, String clusterName, Map<String, String> annotations) {
-        replaceInNamespace(namespaceName, clusterName, kafka -> kafka.getMetadata().getAnnotations().putAll(annotations));
+        replace(namespaceName, clusterName, kafka -> kafka.getMetadata().getAnnotations().putAll(annotations));
     }
 
     public static void removeAnnotation(String namespaceName, String clusterName, String annotationKey) {
-        replaceInNamespace(namespaceName, clusterName, kafka -> kafka.getMetadata().getAnnotations().remove(annotationKey));
+        replace(namespaceName, clusterName, kafka -> kafka.getMetadata().getAnnotations().remove(annotationKey));
     }
 
     /**
@@ -529,14 +529,14 @@ public class KafkaUtils {
      *                                  This dictates how many volume directories the method will check within each Kafka pod.
      */
     public static void verifyKafkaKraftMetadataLog(final TestStorage testStorage, final int kraftMetadataVolumeId, final int numberOfVolumes) {
-        final List<Pod> kafkaPods = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
+        final List<Pod> kafkaPods = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
         int kafkaIndex = 0; // Ensure this index is managed appropriately if used outside this method context.
 
         for (final Pod kafkaPod : kafkaPods) {
             // Directly iterate over volumes instead of creating a list
             for (int volumeId = 0; volumeId < numberOfVolumes; volumeId++) {
                 final String dir = buildDirectoryPath(volumeId, kafkaIndex);
-                final int result = cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(false,
+                final int result = KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).execInPodContainer(false, false,
                     kafkaPod.getMetadata().getName(),
                     "kafka",
                     "/bin/bash", "-c", "test -d " + dir).returnCode();
@@ -646,7 +646,7 @@ public class KafkaUtils {
                                                 final String command) {
         LOGGER.info("Executing command in broker {} volume {}: {}", brokerId, volumeId, command);
 
-        final ExecResult execResult = cmdKubeClient(namespaceName)
+        final ExecResult execResult = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName)
             .execInPodContainer(brokerPodName, "kafka", "bash", "-c", command);
 
         if (execResult.returnCode() != 0) {

@@ -17,9 +17,8 @@ import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
 import io.skodjob.testframe.resources.KubeResourceManager;
-import io.strimzi.api.kafka.model.connect.KafkaConnect;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
@@ -41,7 +40,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 @Tag(REGRESSION)
 @SuiteDoc(
@@ -100,7 +98,7 @@ public class ConfigProviderST extends AbstractST {
             .withData(configData)
             .build();
 
-        kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).resource(connectorConfig).create();
+        KubeResourceManager.get().kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).resource(connectorConfig).create();
 
         KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editOrNewMetadata()
@@ -172,7 +170,7 @@ public class ConfigProviderST extends AbstractST {
             .endRule()
             .build();
 
-        kubeClient().namespace(testStorage.getNamespaceName()).createOrUpdateRole(configRole);
+        KubeResourceManager.get().createOrUpdateResourceWithWait(configRole);
 
         String configPrefix = "configmaps:" + testStorage.getNamespaceName() + "/connector-config:";
 
@@ -189,7 +187,7 @@ public class ConfigProviderST extends AbstractST {
         final KafkaClients kafkaBasicClientJob = ClientUtils.getInstantPlainClients(testStorage);
         KubeResourceManager.get().createResourceWithWait(kafkaBasicClientJob.producerStrimzi());
 
-        String kafkaConnectPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        String kafkaConnectPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()).get(0).getMetadata().getName();
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, customFileSinkPath, testStorage.getMessageCount());
     }
 

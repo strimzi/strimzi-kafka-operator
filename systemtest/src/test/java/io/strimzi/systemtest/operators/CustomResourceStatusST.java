@@ -78,7 +78,6 @@ import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaSecretCertificates;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaStatusCertificates;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
@@ -118,7 +117,7 @@ class CustomResourceStatusST extends AbstractST {
             .addToRequests("cpu", new Quantity("100000m"))
             .build();
 
-        KafkaNodePoolUtils.replaceInNamespace(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getBrokerPoolName(), knp ->
+        KafkaNodePoolUtils.replace(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getBrokerPoolName(), knp ->
             knp.getSpec().setResources(resources));
 
         LOGGER.info("Waiting for cluster to be in NotReady state");
@@ -127,7 +126,7 @@ class CustomResourceStatusST extends AbstractST {
         LOGGER.info("Recover cluster to Ready state");
         resources.setRequests(Collections.singletonMap("cpu", new Quantity("100m")));
 
-        KafkaNodePoolUtils.replaceInNamespace(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getBrokerPoolName(), knp ->
+        KafkaNodePoolUtils.replace(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getBrokerPoolName(), knp ->
             knp.getSpec().setResources(resources));
 
         KafkaUtils.waitForKafkaReady(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName());
@@ -155,7 +154,7 @@ class CustomResourceStatusST extends AbstractST {
 
         KafkaUserUtils.waitForKafkaUserNotReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername());
 
-        KafkaUserUtils.replaceInNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername(), user -> user.getSpec().setAuthorization(null));
+        KafkaUserUtils.replace(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername(), user -> user.getSpec().setAuthorization(null));
         KafkaUserUtils.waitForKafkaUserReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getKafkaUsername());
 
         LOGGER.info("Checking status of deployed KafkaUser");
@@ -175,12 +174,12 @@ class CustomResourceStatusST extends AbstractST {
         KafkaBridgeUtils.waitForKafkaBridgeReady(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName());
         assertKafkaBridgeStatus(1, bridgeUrl);
 
-        KafkaBridgeUtils.replaceInNamespace(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
+        KafkaBridgeUtils.replace(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100000000m"))
                 .build()));
         KafkaBridgeUtils.waitForKafkaBridgeNotReady(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName());
 
-        KafkaBridgeUtils.replaceInNamespace(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
+        KafkaBridgeUtils.replace(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName(), kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("10m"))
                 .build()));
         KafkaBridgeUtils.waitForKafkaBridgeReady(Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName());
@@ -209,23 +208,23 @@ class CustomResourceStatusST extends AbstractST {
 
         assertKafkaConnectStatus(1, connectUrl);
 
-        KafkaConnectUtils.replaceInNamespace(testStorage.getNamespaceName(), sharedTestStorage.getClusterName(),
+        KafkaConnectUtils.replace(testStorage.getNamespaceName(), sharedTestStorage.getClusterName(),
             kb -> kb.getSpec().setBootstrapServers("non-existing-bootstrap"));
 
         KafkaConnectUtils.waitForConnectNotReady(testStorage.getNamespaceName(), sharedTestStorage.getClusterName());
 
-        KafkaConnectUtils.replaceInNamespace(testStorage.getNamespaceName(), sharedTestStorage.getClusterName(),
+        KafkaConnectUtils.replace(testStorage.getNamespaceName(), sharedTestStorage.getClusterName(),
             kb -> kb.getSpec().setBootstrapServers(KafkaResources.tlsBootstrapAddress(sharedTestStorage.getClusterName())));
 
         KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), sharedTestStorage.getClusterName());
         assertKafkaConnectStatus(3, connectUrl);
 
-        KafkaConnectorUtils.replaceInNamespace(testStorage.getNamespaceName(), sharedTestStorage.getClusterName(),
+        KafkaConnectorUtils.replace(testStorage.getNamespaceName(), sharedTestStorage.getClusterName(),
             kc -> kc.getMetadata().setLabels(Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, "non-existing-connect-cluster")));
         KafkaConnectorUtils.waitForConnectorNotReady(testStorage.getNamespaceName(), sharedTestStorage.getClusterName());
         assertThat(CrdClients.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(sharedTestStorage.getClusterName()).get().getStatus().getConnectorStatus(), is(nullValue()));
 
-        KafkaConnectorUtils.replaceInNamespace(testStorage.getNamespaceName(), sharedTestStorage.getClusterName(),
+        KafkaConnectorUtils.replace(testStorage.getNamespaceName(), sharedTestStorage.getClusterName(),
             kc -> kc.getMetadata().setLabels(Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, sharedTestStorage.getClusterName())));
 
         KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), sharedTestStorage.getClusterName());
@@ -233,12 +232,12 @@ class CustomResourceStatusST extends AbstractST {
 
         String defaultClass = CrdClients.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(sharedTestStorage.getClusterName()).get().getSpec().getClassName();
 
-        KafkaConnectorUtils.replaceInNamespace(testStorage.getNamespaceName(), sharedTestStorage.getClusterName(),
+        KafkaConnectorUtils.replace(testStorage.getNamespaceName(), sharedTestStorage.getClusterName(),
             kc -> kc.getSpec().setClassName("non-existing-class"));
         KafkaConnectorUtils.waitForConnectorNotReady(testStorage.getNamespaceName(), sharedTestStorage.getClusterName());
         assertThat(CrdClients.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(sharedTestStorage.getClusterName()).get().getStatus().getConnectorStatus(), is(nullValue()));
 
-        KafkaConnectorUtils.replaceInNamespace(testStorage.getNamespaceName(), sharedTestStorage.getClusterName(),
+        KafkaConnectorUtils.replace(testStorage.getNamespaceName(), sharedTestStorage.getClusterName(),
             kc -> {
                 kc.getMetadata().setLabels(Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, sharedTestStorage.getClusterName()));
                 kc.getSpec().setClassName(defaultClass);
@@ -297,13 +296,13 @@ class CustomResourceStatusST extends AbstractST {
         assertKafkaMirrorMaker2Status(1, mm2Url, testStorage.getClusterName());
 
         // Corrupt MirrorMaker Pods
-        KafkaMirrorMaker2Utils.replaceInNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(),
+        KafkaMirrorMaker2Utils.replace(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(),
             mm2 -> mm2.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100000000m"))
                 .build()));
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2NotReady(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName());
         // Restore MirrorMaker Pod
-        KafkaMirrorMaker2Utils.replaceInNamespace(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(),
+        KafkaMirrorMaker2Utils.replace(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(),
             mm2 -> mm2.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100m"))
                 .build()));
@@ -407,7 +406,7 @@ class CustomResourceStatusST extends AbstractST {
                     assertThat("Plain bootstrap has incorrect host", listener.getAddresses().get(0).getHost(), is(internalAddress));
                     break;
                 case TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME:
-                    Service extBootstrapService = kubeClient(Environment.TEST_SUITE_NAMESPACE).getClient().services()
+                    Service extBootstrapService = KubeResourceManager.get().kubeClient().getClient().services()
                             .inNamespace(Environment.TEST_SUITE_NAMESPACE)
                             .withName(sharedTestStorage.getClusterName() + "-kafka-external-bootstrap")
                             .get();

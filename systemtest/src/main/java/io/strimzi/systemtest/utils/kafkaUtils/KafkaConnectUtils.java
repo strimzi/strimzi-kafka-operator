@@ -4,19 +4,20 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.PodCondition;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.Condition;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.TestConstants;
+import io.strimzi.systemtest.labels.LabelSelectors;
 import io.strimzi.systemtest.resources.ResourceConditions;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,8 +29,6 @@ import java.util.function.Predicate;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.CrdClients.kafkaConnectClient;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaConnectUtils {
 
@@ -44,11 +43,11 @@ public class KafkaConnectUtils {
      * @param resourceName      name of the KafkaConnect's name.
      * @param editor            editor containing all the changes that should be done to the resource.
      */
-    public static void replaceInNamespace(String namespaceName, String resourceName, Consumer<KafkaConnect> editor) {
+    public static void replace(String namespaceName, String resourceName, Consumer<KafkaConnect> editor) {
         KafkaConnect kafkaConnect = kafkaConnectClient().inNamespace(namespaceName).withName(resourceName).get();
         KubeResourceManager.get().replaceResourceWithRetries(kafkaConnect, editor);
     }
-    
+
     /**
      * Wait until the given Kafka Connect is in desired state.
      * @param namespaceName Namespace name
@@ -71,7 +70,7 @@ public class KafkaConnectUtils {
     public static void waitUntilKafkaConnectRestApiIsAvailable(String namespaceName, String podNamePrefix) {
         LOGGER.info("Waiting for KafkaConnect API to be available");
         TestUtils.waitFor("KafkaConnect API to be available", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
-            () -> cmdKubeClient(namespaceName).execInPod(podNamePrefix, "/bin/bash", "-c", "curl -I http://localhost:8083/connectors").out().contains("HTTP/1.1 200 OK\n"));
+            () -> KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(podNamePrefix, "/bin/bash", "-c", "curl -I http://localhost:8083/connectors").out().contains("HTTP/1.1 200 OK\n"));
         LOGGER.info("KafkaConnect API is available");
     }
 
@@ -79,13 +78,13 @@ public class KafkaConnectUtils {
         final String lastReceivedMessageIndex = Integer.toString(sinkReceivedMsgCount - 1);
         LOGGER.info("Waiting for messages to be present in file sink on {}/{}", namespaceName, kafkaConnectPodName);
         TestUtils.waitFor("messages to be present in file sink", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.TIMEOUT_FOR_SEND_RECEIVE_MSG,
-            () -> cmdKubeClient(namespaceName).execInPod(Level.TRACE, kafkaConnectPodName, "/bin/bash", "-c", "cat " + sinkFileName).out().contains(lastReceivedMessageIndex),
-            () -> LOGGER.warn(cmdKubeClient(namespaceName).execInPod(Level.TRACE, kafkaConnectPodName, "/bin/bash", "-c", "cat " + sinkFileName).out()));
+            () -> KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat " + sinkFileName).out().contains(lastReceivedMessageIndex),
+            () -> LOGGER.warn(KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat " + sinkFileName).out()));
         LOGGER.info("Expected messages are in file sink on {}/{}", namespaceName, kafkaConnectPodName);
     }
 
     public static void clearFileSinkFile(String namespaceName, String kafkaConnectPodName, String sinkFileName) {
-        cmdKubeClient(namespaceName).execInPod(kafkaConnectPodName, "/bin/bash", "-c", "truncate -s 0 " + sinkFileName);
+        KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(kafkaConnectPodName, "/bin/bash", "-c", "truncate -s 0 " + sinkFileName);
     }
 
     /**
@@ -117,10 +116,12 @@ public class KafkaConnectUtils {
      * @param timeoutMs       Max wait time in ms
      */
     public static void waitForConnectPodCondition(String namespaceName, String conditionReason, String clusterName, long timeoutMs) {
+        LabelSelector labelSelector = LabelSelectors.connectLabelSelector(clusterName, KafkaConnectResources.componentName(clusterName));
+
         TestUtils.waitFor("KafkaConnect Pod to have condition: " + conditionReason,
             TestConstants.GLOBAL_POLL_INTERVAL, timeoutMs, () -> {
-                List<String> connectPods = kubeClient().listPodNames(namespaceName, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
-                List<PodCondition> conditions = kubeClient().getPod(namespaceName, connectPods.get(0)).getStatus().getConditions();
+                List<String> connectPods = PodUtils.listPodNames(namespaceName, labelSelector);
+                List<PodCondition> conditions = KubeResourceManager.get().kubeClient().getClient().pods().inNamespace(namespaceName).withName(connectPods.get(0)).get().getStatus().getConditions();
                 for (PodCondition condition : conditions) {
                     if (condition.getReason().matches(conditionReason)) {
                         return true;
@@ -165,7 +166,7 @@ public class KafkaConnectUtils {
     public static void waitForConnectLogLevelChangePropagation(TestStorage testStorage, Map<String, String> connectPods, String scraperPodName, Predicate<String> connectLogMatch, String logLevel) {
         LOGGER.info("Waiting for log4j.properties will contain desired settings");
         TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPod(scraperPodName, "curl", "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName())
+            () -> KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).execInPod(scraperPodName, "curl", "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName())
                 + ":8083/admin/loggers/root").out().contains(logLevel)
         );
 

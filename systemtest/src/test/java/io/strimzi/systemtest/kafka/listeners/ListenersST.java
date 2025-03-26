@@ -14,7 +14,6 @@ import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
 import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVarBuilder;
-import io.strimzi.api.kafka.model.kafka.Kafka;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerConfigurationBroker;
@@ -25,7 +24,6 @@ import io.strimzi.api.kafka.model.kafka.listener.ListenerAddress;
 import io.strimzi.api.kafka.model.kafka.listener.ListenerStatus;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
@@ -73,7 +71,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.TestTags.ACCEPTANCE;
 import static io.strimzi.systemtest.TestTags.EXTERNAL_CLIENTS_USED;
@@ -88,7 +85,6 @@ import static io.strimzi.systemtest.security.SystemTestCertManager.generateInter
 import static io.strimzi.systemtest.security.SystemTestCertManager.generateRootCaCertAndKey;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaSecretCertificates;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaStatusCertificates;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -145,7 +141,7 @@ public class ListenersST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        Service kafkaService = kubeClient(testStorage.getNamespaceName()).getService(testStorage.getNamespaceName(), KafkaResources.bootstrapServiceName(testStorage.getClusterName()));
+        Service kafkaService = KubeResourceManager.get().kubeClient().getClient().services().inNamespace(testStorage.getNamespaceName()).withName(KafkaResources.bootstrapServiceName(testStorage.getClusterName())).get();
         String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
         assertThat(StUtils.expectedServiceDiscoveryInfo("none", "none", false, true), is(serviceDiscoveryArray));
@@ -221,7 +217,7 @@ public class ListenersST extends AbstractST {
         );
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        Service kafkaService = kubeClient(testStorage.getNamespaceName()).getService(testStorage.getNamespaceName(), KafkaResources.bootstrapServiceName(testStorage.getClusterName()));
+        Service kafkaService = KubeResourceManager.get().kubeClient().getClient().services().inNamespace(testStorage.getNamespaceName()).withName(KafkaResources.bootstrapServiceName(testStorage.getClusterName())).get();
         String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
         assertThat(StUtils.expectedServiceDiscoveryInfo("none", TestConstants.TLS_LISTENER_DEFAULT_NAME, false, true), is(serviceDiscoveryArray));
@@ -274,8 +270,7 @@ public class ListenersST extends AbstractST {
         );
 
         String brokerPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
-        String brokerPodLog = kubeClient(testStorage.getNamespaceName()).logsInSpecificNamespace(testStorage.getNamespaceName(),
-            brokerPodName, "kafka");
+        String brokerPodLog = KubeResourceManager.get().kubeClient().getLogsFromContainer(testStorage.getNamespaceName(), brokerPodName, "kafka");
 
         Pattern p = Pattern.compile("^.*" + Pattern.quote(testStorage.getUsername()) + ".*$", Pattern.MULTILINE);
         Matcher m = p.matcher(brokerPodLog);
@@ -295,7 +290,7 @@ public class ListenersST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(kafkaClients.producerScramShaPlainStrimzi(), kafkaClients.consumerScramShaPlainStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
-        Service kafkaService = kubeClient(testStorage.getNamespaceName()).getService(testStorage.getNamespaceName(), KafkaResources.bootstrapServiceName(testStorage.getClusterName()));
+        Service kafkaService = KubeResourceManager.get().kubeClient().getClient().services().inNamespace(testStorage.getNamespaceName()).withName(KafkaResources.bootstrapServiceName(testStorage.getClusterName())).get();
         String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
         assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(9095, "kafka", "scram-sha-512", false)));
@@ -370,12 +365,12 @@ public class ListenersST extends AbstractST {
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
         LOGGER.info("Checking if generated password has {} characters", passwordLength);
-        String password = kubeClient().namespace(testStorage.getNamespaceName()).getSecret(testStorage.getUsername()).getData().get("password");
+        String password = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getUsername()).get().getData().get("password");
         String decodedPassword = Util.decodeFromBase64(password);
 
         assertEquals(decodedPassword.length(), passwordLength);
 
-        Service kafkaService = kubeClient(testStorage.getNamespaceName()).getService(testStorage.getNamespaceName(), KafkaResources.bootstrapServiceName(testStorage.getClusterName()));
+        Service kafkaService = KubeResourceManager.get().kubeClient().getClient().services().inNamespace(testStorage.getNamespaceName()).withName(KafkaResources.bootstrapServiceName(testStorage.getClusterName())).get();
         String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
         assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(9096, "kafka", "scram-sha-512", true)));
@@ -513,12 +508,12 @@ public class ListenersST extends AbstractST {
                 if (listenerStatus.getName().equals(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)) {
                     List<String> listStatusAddresses = listenerStatus.getAddresses().stream().map(ListenerAddress::getHost).sorted(Comparator.comparing(String::toString)).toList();
                     List<Integer> listStatusPorts = listenerStatus.getAddresses().stream().map(ListenerAddress::getPort).toList();
-                    Integer nodePort = kubeClient().getService(testStorage.getNamespaceName(), testStorage.getClusterName() + "-kafka-external-bootstrap").getSpec().getPorts().get(0).getNodePort();
+                    Integer nodePort = KubeResourceManager.get().kubeClient().getClient().services().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName() + "-kafka-external-bootstrap").get().getSpec().getPorts().get(0).getNodePort();
 
-                    List<String> nodeIPsBrokers = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector())
+                    List<String> nodeIPsBrokers = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector())
                             .stream().map(pods -> pods.getStatus().getHostIP()).distinct().sorted(Comparator.comparing(String::toString)).toList();
 
-                    List<String> nodeIPsControllers = new java.util.ArrayList<>(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getControllerSelector())
+                    List<String> nodeIPsControllers = new java.util.ArrayList<>(KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getControllerSelector())
                             .stream().map(pods -> pods.getStatus().getHostIP()).distinct().sorted(Comparator.comparing(String::toString)).toList());
 
                     // Remove all nodes that contains broker nodes
@@ -610,12 +605,12 @@ public class ListenersST extends AbstractST {
             .build());
 
         LOGGER.info("Checking nodePort to {} for bootstrap service {}", clusterBootstrapNodePort, testStorage.getClusterName() + "-kafka-external-bootstrap");
-        assertThat(kubeClient(testStorage.getNamespaceName()).getService(testStorage.getNamespaceName(), testStorage.getClusterName() + "-kafka-external-bootstrap")
-                .getSpec().getPorts().get(0).getNodePort(), is(clusterBootstrapNodePort));
+        assertThat(KubeResourceManager.get().kubeClient().getClient().services().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName() + "-kafka-external-bootstrap").get()
+            .getSpec().getPorts().get(0).getNodePort(), is(clusterBootstrapNodePort));
         String firstExternalService = KafkaComponents.getPodSetName(testStorage.getClusterName(), KafkaComponents.getBrokerPoolName(testStorage.getClusterName())) + "-" + TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME + "-" + 0;
         LOGGER.info("Checking nodePort to {} for kafka-broker service {}", brokerNodePort, firstExternalService);
-        assertThat(kubeClient(testStorage.getNamespaceName()).getService(testStorage.getNamespaceName(), firstExternalService)
-                .getSpec().getPorts().get(0).getNodePort(), is(brokerNodePort));
+        assertThat(KubeResourceManager.get().kubeClient().getClient().services().inNamespace(testStorage.getNamespaceName()).withName(firstExternalService).get()
+            .getSpec().getPorts().get(0).getNodePort(), is(brokerNodePort));
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
             .withTopicName(testStorage.getTopicName())
@@ -1607,7 +1602,7 @@ public class ListenersST extends AbstractST {
 
         Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
-        KafkaUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+        KafkaUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setListeners(asList(
                     new GenericKafkaListenerBuilder()
                             .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
@@ -1713,7 +1708,7 @@ public class ListenersST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForClientSuccess(testStorage.getNamespaceName(), testStorage.getConsumerName(), testStorage.getMessageCount() * 5);
 
-        KafkaUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+        KafkaUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setListeners(asList(
                     new GenericKafkaListenerBuilder()
                             .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
@@ -1865,7 +1860,7 @@ public class ListenersST extends AbstractST {
 
         Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
-        KafkaUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+        KafkaUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setListeners(asList(
                     new GenericKafkaListenerBuilder()
                             .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
@@ -1978,7 +1973,7 @@ public class ListenersST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
-        KafkaUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+        KafkaUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setListeners(asList(
                     new GenericKafkaListenerBuilder()
                             .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
@@ -2123,7 +2118,7 @@ public class ListenersST extends AbstractST {
 
         Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
-        KafkaUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+        KafkaUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setListeners(asList(
                     new GenericKafkaListenerBuilder()
                             .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
@@ -2242,7 +2237,7 @@ public class ListenersST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
-        KafkaUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+        KafkaUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setListeners(asList(
                     new GenericKafkaListenerBuilder()
                             .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
@@ -2496,8 +2491,8 @@ public class ListenersST extends AbstractST {
             .addToData("password", firstEncodedPassword)
             .build();
 
-        kubeClient().namespace(testStorage.getNamespaceName()).createSecret(password);
-        assertThat("Password in secret is not correct", kubeClient().namespace(testStorage.getNamespaceName()).getSecret(secretName).getData().get("password"), is(firstEncodedPassword));
+        KubeResourceManager.get().createResourceWithWait(password);
+        assertThat("Password in secret is not correct", KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(secretName).get().getData().get("password"), is(firstEncodedPassword));
 
         KafkaUser kafkaUser = KafkaUserTemplates.scramShaUser(testStorage)
             .editSpec()
@@ -2548,7 +2543,7 @@ public class ListenersST extends AbstractST {
             .addToData("password", secondEncodedPassword)
             .build();
 
-        kubeClient().namespace(testStorage.getNamespaceName()).updateSecret(password);
+        KubeResourceManager.get().updateResource(password);
         SecretUtils.waitForUserPasswordChange(testStorage.getNamespaceName(), testStorage.getUsername(), secondEncodedPassword);
 
         LOGGER.info("Receiving messages with new password");
@@ -2666,12 +2661,11 @@ public class ListenersST extends AbstractST {
                 .endSpec()
                 .build());
 
-        List<String> brokerPods = kubeClient().listPodNamesInSpecificNamespace(testStorage.getNamespaceName(), Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND)
-            .stream().filter(podName -> podName.contains("kafka")).collect(Collectors.toList());
+        List<String> brokerPods = PodUtils.listPodNames(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
         int index = 0;
         for (String kafkaBroker : brokerPods) {
-            Map<String, String> secretData = kubeClient().getSecret(testStorage.getNamespaceName(), kafkaBroker).getData();
+            Map<String, String> secretData = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(kafkaBroker).get().getData();
             String cert = secretData.get(kafkaBroker + ".crt");
 
             LOGGER.info("Encoding {}.crt", kafkaBroker);
@@ -2688,7 +2682,7 @@ public class ListenersST extends AbstractST {
     @AfterEach
     void afterEach() {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, KubeResourceManager.get().getTestContext());
-        kubeClient(namespaceName).getClient().persistentVolumeClaims().inNamespace(namespaceName).delete();
+        KubeResourceManager.get().kubeClient().getClient().persistentVolumeClaims().inNamespace(namespaceName).delete();
     }
 
     @BeforeAll

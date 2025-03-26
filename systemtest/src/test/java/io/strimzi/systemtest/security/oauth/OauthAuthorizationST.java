@@ -400,7 +400,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
         Map<String, String> brokerPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, brokerSelector);
 
-        KafkaUtils.replaceInNamespace(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafka -> {
+        KafkaUtils.replace(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafka -> {
 
             List<String> superUsers = new ArrayList<>(2);
             superUsers.add("service-account-" + TEAM_A_CLIENT);
@@ -473,7 +473,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, teamAProducerName, testStorage.getMessageCount());
 
         LOGGER.info("Adding the maxSecondsWithoutReauthentication to Kafka listener with OAuth authentication");
-        KafkaUtils.replaceInNamespace(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafka -> {
+        KafkaUtils.replace(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafka -> {
             kafka.getSpec().getKafka().setListeners(Arrays.asList(new GenericKafkaListenerBuilder()
                     .withName("tls")
                     .withPort(9093)
@@ -574,7 +574,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, teamAProducerName, testStorage.getMessageCount());
 
         LOGGER.info("Changing configuration of Kafka back to it's original form");
-        KafkaUtils.replaceInNamespace(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafka -> {
+        KafkaUtils.replace(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafka -> {
             kafka.getSpec().getKafka().setListeners(Collections.singletonList(OauthAbstractST.BUILD_OAUTH_TLS_LISTENER.apply(keycloakInstance)));
         });
 

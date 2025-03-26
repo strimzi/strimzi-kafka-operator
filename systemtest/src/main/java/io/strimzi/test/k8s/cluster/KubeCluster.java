@@ -5,11 +5,7 @@
 package io.strimzi.test.k8s.cluster;
 
 import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.KubernetesClientBuilder;
-import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftConfig;
-import io.strimzi.test.k8s.KubeClient;
-import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
 import io.strimzi.test.k8s.exceptions.NoClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,13 +26,6 @@ public interface KubeCluster {
 
     /** Return true iff this kind of cluster is running on the local machine */
     boolean isClusterUp();
-
-    /** Return a default CMD cmdClient for this kind of cluster. */
-    KubeCmdClient defaultCmdClient();
-
-    default KubeClient defaultClient() {
-        return new KubeClient(new KubernetesClientBuilder().withConfig(CONFIG).build().adapt(OpenShiftClient.class), "default");
-    }
 
     /**
      * Returns the cluster named by the TEST_CLUSTER environment variable, if set, otherwise finds a cluster that's

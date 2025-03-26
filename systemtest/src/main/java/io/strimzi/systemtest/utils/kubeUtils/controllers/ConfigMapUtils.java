@@ -4,15 +4,17 @@
  */
 package io.strimzi.systemtest.utils.kubeUtils.controllers;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.List;
 import java.util.Map;
-
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import java.util.stream.Collectors;
 
 public class ConfigMapUtils {
 
@@ -29,7 +31,7 @@ public class ConfigMapUtils {
                 LOGGER.info("Waiting for ConfigMap: {}/{} label to change {} -> {}", namespaceName, configMapName, entry.getKey(), entry.getValue());
                 TestUtils.waitFor("ConfigMap label to change " + entry.getKey() + " -> " + entry.getValue(), TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
                     TestConstants.GLOBAL_TIMEOUT, () ->
-                        kubeClient(namespaceName).getConfigMap(namespaceName, configMapName).getMetadata().getLabels().get(entry.getKey()).equals(entry.getValue())
+                        KubeResourceManager.get().kubeClient().getClient().configMaps().inNamespace(namespaceName).withName(configMapName).get().getMetadata().getLabels().get(entry.getKey()).equals(entry.getValue())
                 );
             }
         }
@@ -46,7 +48,22 @@ public class ConfigMapUtils {
         TestUtils.waitFor(String.format("ConfigMap: %s/%s to be created", namespaceName, configMapName),
             TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
             TestConstants.GLOBAL_TIMEOUT,
-            () -> kubeClient().getConfigMap(namespaceName, configMapName) != null
+            () -> KubeResourceManager.get().kubeClient().getClient().configMaps().inNamespace(namespaceName).withName(configMapName).get() != null
         );
+    }
+
+    /**
+     * Returns list of ConfigMaps in specified Namespace with specified prefix in name.
+     *
+     * @param namespaceName     desired Namespace from which the ConfigMaps should be collected.
+     * @param prefix            prefix that should collected ConfigMaps contain in their names.
+     *
+     * @return  list of ConfigMaps in specified Namespace with specified prefix in name.
+     */
+    public static List<ConfigMap> listWithPrefix(String namespaceName, String prefix) {
+        return KubeResourceManager.get().kubeClient().getClient().configMaps().inNamespace(namespaceName).list().getItems()
+            .stream()
+            .filter(cm -> cm.getMetadata().getName().startsWith(prefix))
+            .collect(Collectors.toList());
     }
 }

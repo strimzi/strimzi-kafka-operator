@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.Environment;
@@ -27,8 +28,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 @Buildable(editableEnabled = false)
 public class KafkaClients extends BaseClients {
@@ -468,7 +467,7 @@ public class KafkaClients extends BaseClients {
             throw new InvalidParameterException("User name for SCRAM-SHA is not set");
         }
 
-        final String saslJaasConfigEncrypted = kubeClient().getSecret(this.getNamespaceName(), this.getUsername()).getData().get("sasl.jaas.config");
+        final String saslJaasConfigEncrypted = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(this.getNamespaceName()).withName(this.getUsername()).get().getData().get("sasl.jaas.config");
         final String saslJaasConfigDecrypted = Util.decodeFromBase64(saslJaasConfigEncrypted);
 
         this.setAdditionalConfig(this.getAdditionalConfig() +

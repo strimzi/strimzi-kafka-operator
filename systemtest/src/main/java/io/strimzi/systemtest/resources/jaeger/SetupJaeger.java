@@ -31,7 +31,6 @@ import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_WEBHOO
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_INSTANCE_NAME;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_NAMESPACE;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_OPERATOR_DEPLOYMENT_NAME;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 /**
  * Class containing methods for deployment and deletion of Jaeger operator, Cert Manager, and Jaeger instance.
@@ -51,7 +50,7 @@ public class SetupJaeger {
      * Delete Jaeger instance
      */
     private static void deleteJaeger(String yamlContent) {
-        cmdKubeClient().namespace(JAEGER_NAMESPACE).deleteContent(yamlContent);
+        KubeResourceManager.get().kubeCmdClient().inNamespace(JAEGER_NAMESPACE).deleteContent(yamlContent);
     }
 
     /**
@@ -76,7 +75,7 @@ public class SetupJaeger {
      * Deletes all Cert Manager resources and waits for their deletion
      */
     private static void deleteCertManager() {
-        cmdKubeClient().delete(CERT_MANAGER_PATH);
+        KubeResourceManager.get().kubeCmdClient().delete(CERT_MANAGER_PATH);
         DeploymentUtils.waitForDeploymentDeletion(CERT_MANAGER_NAMESPACE, CERT_MANAGER_DEPLOYMENT);
         DeploymentUtils.waitForDeploymentDeletion(CERT_MANAGER_NAMESPACE, CERT_MANAGER_WEBHOOK_DEPLOYMENT);
         DeploymentUtils.waitForDeploymentDeletion(CERT_MANAGER_NAMESPACE, CERT_MANAGER_CA_INJECTOR_DEPLOYMENT);
@@ -91,7 +90,7 @@ public class SetupJaeger {
 
         LOGGER.info("Deploying CertManager from {}", CERT_MANAGER_PATH);
         // because we don't want to apply CertManager's file to specific namespace, passing the empty String will do the trick
-        cmdKubeClient("").apply(CERT_MANAGER_PATH);
+        KubeResourceManager.get().kubeCmdClient().apply(CERT_MANAGER_PATH);
 
         KubeResourceManager.get().pushToStack(new ResourceItem<>(SetupJaeger::deleteCertManager));
     }
@@ -123,7 +122,7 @@ public class SetupJaeger {
                 String jaegerOperator = Files.readString(Paths.get(JAEGER_OPERATOR_PATH)).replace("observability", JAEGER_NAMESPACE);
 
                 LOGGER.info("Creating Jaeger Operator (and needed resources) from {}", JAEGER_OPERATOR_PATH);
-                cmdKubeClient(JAEGER_NAMESPACE).applyContent(jaegerOperator);
+                KubeResourceManager.get().kubeCmdClient().inNamespace(JAEGER_NAMESPACE).applyContent(jaegerOperator);
                 KubeResourceManager.get().pushToStack(new ResourceItem<>(() -> deleteJaeger(jaegerOperator)));
                 return true;
             } catch (Exception e) {
@@ -178,14 +177,14 @@ public class SetupJaeger {
             try {
 
                 LOGGER.info("Creating Jaeger Instance from {}", JAEGER_OPERATOR_PATH);
-                cmdKubeClient(namespaceName).applyContent(instanceYamlContent);
+                KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).applyContent(instanceYamlContent);
 
                 return true;
             } catch (Exception e) {
                 LOGGER.error("Following exception has been thrown during Jaeger Instance Deployment: {}", e.getMessage());
                 return false;
             } finally {
-                KubeResourceManager.get().pushToStack(new ResourceItem<>(() -> cmdKubeClient(namespaceName).deleteContent(instanceYamlContent)));
+                KubeResourceManager.get().pushToStack(new ResourceItem<>(() -> KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).deleteContent(instanceYamlContent)));
             }
         });
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, JAEGER_INSTANCE_NAME, 1);

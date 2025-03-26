@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.CrdClients.kafkaUserClient;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 public class KafkaUserUtils {
 
@@ -50,11 +49,11 @@ public class KafkaUserUtils {
      * @param resourceName      name of the KafkaUser's name.
      * @param editor            editor containing all the changes that should be done to the resource.
      */
-    public static void replaceInNamespace(String namespaceName, String resourceName, Consumer<KafkaUser> editor) {
+    public static void replace(String namespaceName, String resourceName, Consumer<KafkaUser> editor) {
         KafkaUser kafkaUser = kafkaUserClient().inNamespace(namespaceName).withName(resourceName).get();
         KubeResourceManager.get().replaceResourceWithRetries(kafkaUser, editor);
     }
-    
+
     /**
      * Generated random name for the KafkaUser resource
      * @return random name with additional salt
@@ -82,7 +81,7 @@ public class KafkaUserUtils {
                     return true;
                 } else {
                     LOGGER.warn("KafkaUser: {}/{} is not deleted yet! Triggering force delete via cmd client!", namespaceName, userName);
-                    cmdKubeClient().deleteByName(KafkaUser.RESOURCE_KIND, userName);
+                    KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).deleteByName(KafkaUser.RESOURCE_KIND, userName);
                     return false;
                 }
             },
@@ -198,7 +197,7 @@ public class KafkaUserUtils {
 
         KubeResourceManager.get().createResourceWithWait(userDefinedSecret);
 
-        KafkaUserUtils.replaceInNamespace(ns, kafkaUserResourceName, ku -> {
+        KafkaUserUtils.replace(ns, kafkaUserResourceName, ku -> {
 
             ku.getSpec().setAuthentication(
                 new KafkaUserScramSha512ClientAuthenticationBuilder()

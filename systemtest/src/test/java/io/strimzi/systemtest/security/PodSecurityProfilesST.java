@@ -9,12 +9,8 @@ import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.skodjob.testframe.resources.KubeResourceManager;
-import io.strimzi.api.kafka.model.bridge.KafkaBridge;
-import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
@@ -43,11 +39,11 @@ import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
@@ -172,14 +168,14 @@ public class PodSecurityProfilesST extends AbstractST {
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
         // verifies that Pods and Containers have proper generated SC
-        final List<Pod> podsWithProperlyGeneratedSecurityContexts = PodUtils.getKafkaClusterPods(testStorage);
-        podsWithProperlyGeneratedSecurityContexts.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND));
-        podsWithProperlyGeneratedSecurityContexts.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND));
-        podsWithProperlyGeneratedSecurityContexts.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND));
+        final List<Pod> podsWithProperlyGeneratedSecurityContexts = new ArrayList<>(PodUtils.getKafkaClusterPods(testStorage));
+        podsWithProperlyGeneratedSecurityContexts.addAll(KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBridgeSelector()));
+        podsWithProperlyGeneratedSecurityContexts.addAll(KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()));
+        podsWithProperlyGeneratedSecurityContexts.addAll(KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getMM2Selector()));
         verifyPodAndContainerSecurityContext(podsWithProperlyGeneratedSecurityContexts);
 
         // verify KafkaConnect
-        final String kafkaConnectPodName = kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        final String kafkaConnectPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()).get(0).getMetadata().getName();
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
 
         // verify MM2

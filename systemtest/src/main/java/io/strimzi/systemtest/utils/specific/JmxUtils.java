@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.utils.specific;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.test.TestUtils;
@@ -12,9 +13,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.StandardCharsets;
-
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class JmxUtils {
 
@@ -33,7 +31,7 @@ public class JmxUtils {
 
         scriptBody += String.join("\n", commands);
 
-        cmdKubeClient().namespace(namespaceName).execInPod(podName, "/bin/bash", "-c", "echo '" + scriptBody + "' > /tmp/" + serviceName + ".sh");
+        KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(podName, "/bin/bash", "-c", "echo '" + scriptBody + "' > /tmp/" + serviceName + ".sh");
     }
 
     private static String getResultOfJMXTermExec(String namespaceName, String podName, String serviceName) {
@@ -45,7 +43,7 @@ public class JmxUtils {
             "/tmp/" + serviceName + ".sh"
         };
 
-        return cmdKubeClient().namespace(namespaceName).execInPod(podName, cmd).out().trim();
+        return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(podName, cmd).out().trim();
     }
 
     public static void downloadJmxTermToPod(String namespaceName, String podName) {
@@ -57,11 +55,11 @@ public class JmxUtils {
             "/tmp/jmxterm.jar"
         };
 
-        cmdKubeClient().namespace(namespaceName).execInPod(podName, cmd);
+        KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(podName, cmd);
     }
 
     public static String collectJmxMetricsWithWait(String namespaceName, String serviceName, String secretName, String podName, String commands) {
-        Secret jmxSecret = kubeClient(namespaceName).getSecret(secretName);
+        Secret jmxSecret = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(namespaceName).withName(secretName).get();
 
         LOGGER.info("Getting username and password for Service: {}/{} and Secret: {}/{}", namespaceName, serviceName, namespaceName, secretName);
         String userName = Util.decodeFromBase64(jmxSecret.getData().get("jmx-username"), StandardCharsets.UTF_8);

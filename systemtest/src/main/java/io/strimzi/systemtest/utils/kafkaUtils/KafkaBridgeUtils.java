@@ -25,7 +25,7 @@ public class KafkaBridgeUtils {
      * @param resourceName      name of the KafkaBridge's name.
      * @param editor            editor containing all the changes that should be done to the resource.
      */
-    public static void replaceInNamespace(String namespaceName, String resourceName, Consumer<KafkaBridge> editor) {
+    public static void replace(String namespaceName, String resourceName, Consumer<KafkaBridge> editor) {
         KafkaBridge kafkaBridge = kafkaBridgeClient().inNamespace(namespaceName).withName(resourceName).get();
         KubeResourceManager.get().replaceResourceWithRetries(kafkaBridge, editor);
     }

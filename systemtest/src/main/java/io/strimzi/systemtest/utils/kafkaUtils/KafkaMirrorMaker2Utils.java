@@ -33,7 +33,7 @@ public class KafkaMirrorMaker2Utils {
      * @param resourceName      name of the KafkaMirrorMaker2's name.
      * @param editor            editor containing all the changes that should be done to the resource.
      */
-    public static void replaceInNamespace(String namespaceName, String resourceName, Consumer<KafkaMirrorMaker2> editor) {
+    public static void replace(String namespaceName, String resourceName, Consumer<KafkaMirrorMaker2> editor) {
         KafkaMirrorMaker2 kafkaMirrorMaker2 = kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(resourceName).get();
         KubeResourceManager.get().replaceResourceWithRetries(kafkaMirrorMaker2, editor);
     }

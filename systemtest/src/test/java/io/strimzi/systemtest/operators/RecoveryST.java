@@ -42,7 +42,6 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.generateRandomNameOfKafka;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 @Tag(REGRESSION)
 class RecoveryST extends AbstractST {
@@ -58,11 +57,11 @@ class RecoveryST extends AbstractST {
         String kafkaName = KafkaComponents.getBrokerPodSetName(sharedClusterName);
         String kafkaUid = StrimziPodSetUtils.getStrimziPodSetUID(Environment.TEST_SUITE_NAMESPACE, kafkaName);
 
-        kubeClient().getClient().apps().deployments().inNamespace(SetupClusterOperator.getInstance().getOperatorNamespace()).withName(SetupClusterOperator.getInstance().getOperatorDeploymentName()).withTimeoutInMillis(600_000L).scale(0);
+        KubeResourceManager.get().kubeClient().getClient().apps().deployments().inNamespace(SetupClusterOperator.getInstance().getOperatorNamespace()).withName(SetupClusterOperator.getInstance().getOperatorDeploymentName()).withTimeoutInMillis(600_000L).scale(0);
         StrimziPodSetUtils.deleteStrimziPodSet(Environment.TEST_SUITE_NAMESPACE, kafkaName);
 
-        PodUtils.waitForPodsWithPrefixDeletion(kafkaName);
-        kubeClient().getClient().apps().deployments().inNamespace(SetupClusterOperator.getInstance().getOperatorNamespace()).withName(SetupClusterOperator.getInstance().getOperatorDeploymentName()).withTimeoutInMillis(600_000L).scale(1);
+        PodUtils.waitForPodsWithPrefixDeletion(Environment.TEST_SUITE_NAMESPACE, kafkaName);
+        KubeResourceManager.get().kubeClient().getClient().apps().deployments().inNamespace(SetupClusterOperator.getInstance().getOperatorNamespace()).withName(SetupClusterOperator.getInstance().getOperatorDeploymentName()).withTimeoutInMillis(600_000L).scale(1);
 
         LOGGER.info("Waiting for recovery {}", kafkaName);
         StrimziPodSetUtils.waitForStrimziPodSetRecovery(Environment.TEST_SUITE_NAMESPACE, kafkaName, kafkaUid);
@@ -77,9 +76,9 @@ class RecoveryST extends AbstractST {
         LOGGER.info("Running deleteKafkaService with cluster {}", sharedClusterName);
 
         String kafkaServiceName = KafkaResources.bootstrapServiceName(sharedClusterName);
-        String kafkaServiceUid = kubeClient().getServiceUid(kafkaServiceName);
+        String kafkaServiceUid = KubeResourceManager.get().kubeClient().getClient().services().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(kafkaServiceName).get().getMetadata().getUid();
 
-        kubeClient().deleteService(kafkaServiceName);
+        KubeResourceManager.get().kubeClient().getClient().services().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(kafkaServiceName).delete();
 
         LOGGER.info("Waiting for creation {}", kafkaServiceName);
         ServiceUtils.waitForServiceRecovery(Environment.TEST_SUITE_NAMESPACE, kafkaServiceName, kafkaServiceUid);
@@ -94,9 +93,9 @@ class RecoveryST extends AbstractST {
         LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", sharedClusterName);
 
         String kafkaHeadlessServiceName = KafkaResources.brokersServiceName(sharedClusterName);
-        String kafkaHeadlessServiceUid = kubeClient().getServiceUid(kafkaHeadlessServiceName);
+        String kafkaHeadlessServiceUid = KubeResourceManager.get().kubeClient().getClient().services().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(kafkaHeadlessServiceName).get().getMetadata().getUid();
 
-        kubeClient().deleteService(kafkaHeadlessServiceName);
+        KubeResourceManager.get().kubeClient().getClient().services().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(kafkaHeadlessServiceName).delete();
 
         LOGGER.info("Waiting for creation {}", kafkaHeadlessServiceName);
         ServiceUtils.waitForServiceRecovery(Environment.TEST_SUITE_NAMESPACE, kafkaHeadlessServiceName, kafkaHeadlessServiceUid);
@@ -121,7 +120,7 @@ class RecoveryST extends AbstractST {
             .withRequests(requests)
             .build();
 
-        KafkaNodePoolUtils.replaceInNamespace(Environment.TEST_SUITE_NAMESPACE, KafkaComponents.getBrokerPoolName(sharedClusterName), knp -> knp.getSpec().setResources(resourceReq));
+        KafkaNodePoolUtils.replace(Environment.TEST_SUITE_NAMESPACE, KafkaComponents.getBrokerPoolName(sharedClusterName), knp -> knp.getSpec().setResources(resourceReq));
 
         PodUtils.waitForPendingPod(Environment.TEST_SUITE_NAMESPACE, kafkaSsName);
         PodUtils.verifyThatPendingPodsAreStable(Environment.TEST_SUITE_NAMESPACE, kafkaSsName);
@@ -129,7 +128,7 @@ class RecoveryST extends AbstractST {
         requests.put("memory", new Quantity("512Mi"));
         resourceReq.setRequests(requests);
 
-        KafkaNodePoolUtils.replaceInNamespace(Environment.TEST_SUITE_NAMESPACE, KafkaComponents.getBrokerPoolName(sharedClusterName), knp -> knp.getSpec().setResources(resourceReq));
+        KafkaNodePoolUtils.replace(Environment.TEST_SUITE_NAMESPACE, KafkaComponents.getBrokerPoolName(sharedClusterName), knp -> knp.getSpec().setResources(resourceReq));
 
         RollingUpdateUtils.waitForComponentAndPodsReady(Environment.TEST_SUITE_NAMESPACE, brokerSelector, KAFKA_REPLICAS);
         KafkaUtils.waitForKafkaReady(Environment.TEST_SUITE_NAMESPACE, sharedClusterName);
@@ -148,8 +147,8 @@ class RecoveryST extends AbstractST {
         final LabelSelector brokerSelector = LabelSelectors.allKafkaPodsLabelSelector(sharedClusterName);
 
         LOGGER.info("Deleting most of the Kafka broker pods");
-        List<Pod> kafkaPodList = kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE, brokerSelector);
-        kafkaPodList.subList(0, kafkaPodList.size() - 1).forEach(pod -> kubeClient().deletePod(pod));
+        List<Pod> kafkaPodList = KubeResourceManager.get().kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE, brokerSelector);
+        kafkaPodList.subList(0, kafkaPodList.size() - 1).forEach(pod -> KubeResourceManager.get().deleteResourceWithoutWait(pod));
 
         StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(Environment.TEST_SUITE_NAMESPACE, sharedClusterName, kafkaSPsName, KAFKA_REPLICAS);
         KafkaUtils.waitForKafkaReady(Environment.TEST_SUITE_NAMESPACE, sharedClusterName);

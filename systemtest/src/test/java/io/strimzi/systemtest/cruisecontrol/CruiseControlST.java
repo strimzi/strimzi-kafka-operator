@@ -73,8 +73,6 @@ import static io.strimzi.systemtest.TestTags.ACCEPTANCE;
 import static io.strimzi.systemtest.TestTags.CRUISE_CONTROL;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.TestTags.SANITY;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -142,8 +140,8 @@ public class CruiseControlST extends AbstractST {
             .endSpec()
             .build());
 
-        String ccPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName())).get(0).getMetadata().getName();
-        Container container = kubeClient().getPod(testStorage.getNamespaceName(), ccPodName).getSpec().getContainers().stream().filter(c -> c.getName().equals("cruise-control")).findFirst().get();
+        String ccPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName())).get(0).getMetadata().getName();
+        Container container = KubeResourceManager.get().kubeClient().getClient().pods().inNamespace(testStorage.getNamespaceName()).withName(ccPodName).get().getSpec().getContainers().stream().filter(c -> c.getName().equals("cruise-control")).findFirst().get();
         assertThat(container.getResources().getLimits().get("memory"), is(new Quantity("300Mi")));
         assertThat(container.getResources().getRequests().get("memory"), is(new Quantity("300Mi")));
         VerificationUtils.assertJvmOptions(testStorage.getNamespaceName(), ccPodName, "cruise-control",
@@ -216,7 +214,7 @@ public class CruiseControlST extends AbstractST {
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
         // CruiseControl spec is now enabled
-        KafkaUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+        KafkaUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             // Get default CC spec with tune options and set it to existing Kafka
             Kafka kafkaUpdated = KafkaTemplates.kafkaWithCruiseControlTunedForFastModelGeneration(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build();
             kafka.getSpec().setCruiseControl(kafkaUpdated.getSpec().getCruiseControl());
@@ -268,7 +266,7 @@ public class CruiseControlST extends AbstractST {
         KafkaRebalanceUtils.annotateKafkaRebalanceResource(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceAnnotation.approve);
 
         // updating the KafkaRebalance resource by configuring replication throttle
-        KafkaRebalanceUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaRebalance -> kafkaRebalance.getSpec().setReplicationThrottle(100000));
+        KafkaRebalanceUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaRebalance -> kafkaRebalance.getSpec().setReplicationThrottle(100000));
 
         // the resource moved to `ProposalReady` state
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceState.ProposalReady);
@@ -314,7 +312,7 @@ public class CruiseControlST extends AbstractST {
 
         int scaleTo = 3;
 
-        KafkaNodePoolUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(),
+        KafkaNodePoolUtils.replace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(),
             knp -> knp.getSpec().setReplicas(scaleTo));
 
         KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName());
@@ -404,7 +402,7 @@ public class CruiseControlST extends AbstractST {
         );
         KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafkaWithCruiseControl(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
 
-        String ccPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName())).get(0).getMetadata().getName();
+        String ccPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName())).get(0).getMetadata().getName();
 
         LOGGER.info("Check for default CruiseControl replicaMovementStrategy in Pod configuration file");
         Map<String, Object> actualStrategies = CrdClients.kafkaClient().inNamespace(testStorage.getNamespaceName())
@@ -412,7 +410,7 @@ public class CruiseControlST extends AbstractST {
         // Check that config contains only configurations for max.active.user.tasks, metric.sampling.interval.ms, cruise.control.metrics.reporter.metrics.reporting.interval.ms, metadata.max.age.ms
         assertThat(actualStrategies.size(), is(4));
 
-        String ccConfFileContent = cmdKubeClient(testStorage.getNamespaceName()).execInPodContainer(ccPodName, TestConstants.CRUISE_CONTROL_CONTAINER_NAME, "cat", TestConstants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
+        String ccConfFileContent = KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).execInPodContainer(ccPodName, TestConstants.CRUISE_CONTROL_CONTAINER_NAME, "cat", TestConstants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
         assertThat(ccConfFileContent, not(containsString(replicaMovementStrategies)));
 
         Map<String, String> kafkaRebalanceSnapshot = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName()));
@@ -420,7 +418,7 @@ public class CruiseControlST extends AbstractST {
         Map<String, Object> ccConfigMap = new HashMap<>();
         ccConfigMap.put(replicaMovementStrategies, newReplicaMovementStrategies);
 
-        KafkaUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+        KafkaUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             LOGGER.info("Set non-default CruiseControl replicaMovementStrategies to KafkaRebalance resource");
             kafka.getSpec().getCruiseControl().setConfig(ccConfigMap);
         });
@@ -428,8 +426,8 @@ public class CruiseControlST extends AbstractST {
         LOGGER.info("Verifying that CC Pod is rolling, because of change size of disk");
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName()), 1, kafkaRebalanceSnapshot);
 
-        ccPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName())).get(0).getMetadata().getName();
-        ccConfFileContent = cmdKubeClient(testStorage.getNamespaceName()).execInPodContainer(ccPodName, TestConstants.CRUISE_CONTROL_CONTAINER_NAME, "cat", TestConstants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
+        ccPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName())).get(0).getMetadata().getName();
+        ccConfFileContent = KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).execInPodContainer(ccPodName, TestConstants.CRUISE_CONTROL_CONTAINER_NAME, "cat", TestConstants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
         assertThat(ccConfFileContent, containsString(newReplicaMovementStrategies));
     }
 
@@ -525,14 +523,14 @@ public class CruiseControlST extends AbstractST {
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
         );
 
-        final String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
+        final String scraperPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
         LOGGER.info("Scaling Kafka up to {}", scaleTo);
 
         // Collect CC pod snapshot to wait for rolling
         Map<String, String> cruiseControlSnapshot = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName()));
 
-        KafkaNodePoolUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp ->
+        KafkaNodePoolUtils.replace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp ->
             knp.getSpec().setReplicas(scaleTo));
 
         RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), scaleTo);
@@ -584,7 +582,7 @@ public class CruiseControlST extends AbstractST {
         // Collect CC pod snapshot to wait for rolling
         cruiseControlSnapshot = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName()));
 
-        KafkaNodePoolUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp ->
+        KafkaNodePoolUtils.replace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp ->
             knp.getSpec().setReplicas(initialReplicas));
 
         RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), initialReplicas);
@@ -699,7 +697,7 @@ public class CruiseControlST extends AbstractST {
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
         );
 
-        final String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
+        final String scraperPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
         // check that Kafka has `Idle` in auto-rebalance status
         KafkaUtils.waitUntilKafkaHasAutoRebalanceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaAutoRebalanceState.Idle);
@@ -708,7 +706,7 @@ public class CruiseControlST extends AbstractST {
         Map<String, String> ccPod = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), CruiseControlResources.componentName(testStorage.getClusterName()));
 
         LOGGER.info("Scaling Kafka up to {}", scaleTo);
-        KafkaNodePoolUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp ->
+        KafkaNodePoolUtils.replace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp ->
             knp.getSpec().setReplicas(scaleTo));
 
         final int kafkaClusterPodIndex = initialReplicas;
@@ -741,7 +739,7 @@ public class CruiseControlST extends AbstractST {
 
         LOGGER.info("Scaling Kafka down to {}", initialReplicas);
 
-        KafkaNodePoolUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp ->
+        KafkaNodePoolUtils.replace(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), knp ->
             knp.getSpec().setReplicas(initialReplicas));
 
         KafkaUtils.waitUntilKafkaHasExpectedAutoRebalanceModeAndBrokers(testStorage.getNamespaceName(), testStorage.getClusterName(),

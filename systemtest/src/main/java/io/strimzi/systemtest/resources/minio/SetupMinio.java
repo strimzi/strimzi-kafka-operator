@@ -6,6 +6,8 @@ package io.strimzi.systemtest.resources.minio;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
@@ -16,13 +18,11 @@ import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.DeploymentTypes;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Map;
-
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class SetupMinio {
     private static final Logger LOGGER = LogManager.getLogger(SetupMinio.class);
@@ -108,9 +108,13 @@ public class SetupMinio {
      * @param namespace where Minio is installed
      */
     private static void initMinioClient(String namespace) {
-        final String minioPod = kubeClient().listPods(namespace, Map.of(TestConstants.APP_POD_LABEL, MINIO)).get(0).getMetadata().getName();
+        LabelSelector labelSelector = new LabelSelectorBuilder()
+            .withMatchLabels(Map.of(TestConstants.APP_POD_LABEL, MINIO))
+            .build();
 
-        cmdKubeClient().namespace(namespace).execInPod(minioPod,
+        final String minioPod = PodUtils.listPodNames(namespace, labelSelector).get(0);
+
+        KubeResourceManager.get().kubeCmdClient().inNamespace(namespace).execInPod(minioPod,
             "mc",
             "config",
             "host",
@@ -126,9 +130,13 @@ public class SetupMinio {
      * @param bucketName name of the bucket that will be created and used within the tests
      */
     public static void createBucket(String namespace, String bucketName) {
-        final String minioPod = kubeClient().listPods(namespace, Map.of(TestConstants.APP_POD_LABEL, MINIO)).get(0).getMetadata().getName();
+        LabelSelector labelSelector = new LabelSelectorBuilder()
+            .withMatchLabels(Map.of(TestConstants.APP_POD_LABEL, MINIO))
+            .build();
 
-        cmdKubeClient().namespace(namespace).execInPod(minioPod,
+        final String minioPod = PodUtils.listPodNames(namespace, labelSelector).get(0);
+
+        KubeResourceManager.get().kubeCmdClient().inNamespace(namespace).execInPod(minioPod,
             "mc",
             "mb",
             MINIO_STORAGE_ALIAS + "/" + bucketName);

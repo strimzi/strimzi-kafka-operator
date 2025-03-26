@@ -209,7 +209,7 @@
         <testcontainer.version>1.20.1</testcontainer.version>
         <docker-java.version>3.4.0</docker-java.version>
         <junit4.version>4.13.2</junit4.version>
-        <skodjob.test-frame.version>0.13.0-SNAPSHOT</skodjob.test-frame.version>
+        <skodjob.test-frame.version>0.14.0-SNAPSHOT</skodjob.test-frame.version>
         <skodjob-doc.version>0.4.0</skodjob-doc.version>
         <helm-client.version>0.0.15</helm-client.version>
         <!--

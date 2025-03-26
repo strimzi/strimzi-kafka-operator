@@ -41,7 +41,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
@@ -189,7 +188,7 @@ public class RbacST extends AbstractST {
                 case TestConstants.LEASE:
                     // Loads the resource through Fabric8 Kubernetes Client => that way we do not need to add a direct
                     // dependency on Jackson Datatype JSR310 to decode the Lease resource
-                    Lease lease = kubeClient().getClient().leases().load(operatorFile).item();
+                    Lease lease = KubeResourceManager.get().kubeClient().getClient().leases().load(operatorFile).item();
                     KubeResourceManager.get().createResourceWithWait(new LeaseBuilder(lease)
                         .editMetadata()
                             .withNamespace(clusterOperatorConfiguration.getNamespaceName())

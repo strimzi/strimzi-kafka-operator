@@ -28,7 +28,6 @@ import java.util.Map;
 
 import static io.strimzi.api.ResourceLabels.STRIMZI_KIND_LABEL;
 import static io.strimzi.api.ResourceLabels.STRIMZI_NAME_LABEL;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class NetworkPolicyUtils {
     private static final Logger LOGGER = LogManager.getLogger(NetworkPolicyUtils.class);
@@ -190,8 +189,8 @@ public class NetworkPolicyUtils {
             // otherwise use resource namespace
             resource.getMetadata().getNamespace();
 
-        if (kubeClient(namespaceName).listPods(namespaceName, labelSelector).isEmpty()) {
-            List<String> pods = kubeClient(namespaceName).listPods(namespaceName).stream()
+        if (KubeResourceManager.get().kubeClient().listPods(namespaceName, labelSelector).isEmpty()) {
+            List<String> pods = KubeResourceManager.get().kubeClient().listPods(namespaceName).stream()
                 .map(pod -> pod.getMetadata().getName()).toList();
             LOGGER.error("Pods inside Namespace: {} are: {}", namespaceName, pods.toString());
             throw new RuntimeException("You did not create the Scraper instance(pod) before using the " + resource.getKind() + " in namespace:" + namespaceName);

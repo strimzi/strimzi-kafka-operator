@@ -38,7 +38,6 @@ import org.junit.jupiter.api.Tag;
 import java.util.Collections;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
@@ -129,8 +128,8 @@ public class QuotasST extends AbstractST {
         JobUtils.waitForJobContainingLogMessage(testStorage.getNamespaceName(), testStorage.getProducerName(), "Failed to send messages");
         JobUtils.deleteJobWithWait(testStorage.getNamespaceName(), testStorage.getProducerName());
 
-        String brokerPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
-        String kafkaLog = kubeClient().logsInSpecificNamespace(testStorage.getNamespaceName(), brokerPodName);
+        String brokerPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBrokerSelector()).get(0).getMetadata().getName();
+        String kafkaLog = KubeResourceManager.get().kubeClient().getLogsFromPod(testStorage.getNamespaceName(), brokerPodName);
 
         String belowLimitLog = String.format("below the limit of %s", minAvailableBytes);
 
@@ -234,7 +233,7 @@ public class QuotasST extends AbstractST {
     @AfterEach
     void afterEach() {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, KubeResourceManager.get().getTestContext());
-        kubeClient().getClient().persistentVolumeClaims().inNamespace(namespaceName).delete();
+        KubeResourceManager.get().kubeClient().getClient().persistentVolumeClaims().inNamespace(namespaceName).delete();
     }
 
     @BeforeAll

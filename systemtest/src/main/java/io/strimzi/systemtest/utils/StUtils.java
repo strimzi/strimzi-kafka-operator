@@ -12,10 +12,13 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.client.VersionInfo;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVar;
 import io.strimzi.api.kafka.model.common.template.ContainerEnvVarBuilder;
 import io.strimzi.systemtest.Environment;
@@ -25,11 +28,11 @@ import io.strimzi.systemtest.annotations.SkipDefaultNetworkPolicyCreation;
 import io.strimzi.systemtest.labels.LabelSelectors;
 import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.ClassDescriptor;
@@ -53,9 +56,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import java.util.stream.Collectors;
 
 public class StUtils {
 
@@ -164,11 +165,6 @@ public class StUtils {
         return testEnvs;
     }
 
-    public static String checkEnvVarInPod(String namespaceName, String podName, String envVarName) {
-        return kubeClient(namespaceName).getPod(podName).getSpec().getContainers().get(0).getEnv()
-                .stream().filter(envVar -> envVar.getName().equals(envVarName)).findFirst().orElseThrow().getValue();
-    }
-
     /**
      * Translate key/value pairs formatted like properties into a Map
      * @param keyValuePairs Pairs in key=value format; pairs are separated by newlines
@@ -271,7 +267,7 @@ public class StUtils {
         TestUtils.waitFor("JSON log to be present in " + pods, TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT, () -> {
             boolean isJSON = false;
             for (String podName : pods.keySet()) {
-                String log = cmdKubeClient().namespace(namespaceName).execInCurrentNamespace(Level.TRACE, "logs", podName, "-c", containerName, "--tail=100").out();
+                String log = KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).exec("logs", podName, "-c", containerName, "--tail=100").out();
 
                 JsonArray jsonArray = getJsonArrayFromLog(log);
 
@@ -294,7 +290,16 @@ public class StUtils {
         if (maxKubernetesVersion.equals("latest")) {
             return true;
         }
-        return Double.parseDouble(kubeClient().clusterKubernetesVersion()) < Double.parseDouble(maxKubernetesVersion);
+        return Double.parseDouble(getKubernetesClusterVersion()) < Double.parseDouble(maxKubernetesVersion);
+    }
+
+    /**
+     * Method which return kubernetes version
+     * @return kubernetes version
+     */
+    public static String getKubernetesClusterVersion() {
+        VersionInfo versionInfo = KubeResourceManager.get().kubeClient().getClient().getKubernetesVersion();
+        return versionInfo.getMajor() + "." + versionInfo.getMinor().replace("+", "");
     }
 
     /**
@@ -306,7 +311,7 @@ public class StUtils {
      * @return log from the pod
      */
     public static String getLogFromPodByTime(String namespaceName, String podName, String containerName, String timeSince) {
-        return cmdKubeClient().namespace(namespaceName).execInCurrentNamespace("logs", podName, "-c", containerName, "--since=" + timeSince).out();
+        return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).exec("logs", podName, "-c", containerName, "--since=" + timeSince).out();
     }
 
     /**
@@ -370,9 +375,9 @@ public class StUtils {
 
     public static String getLineFromPodContainer(String namespaceName, String podName, String containerName, String filePath, String grepString) {
         if (containerName == null) {
-            return cmdKubeClient(namespaceName).execInPod(podName, "grep", "-i", grepString, filePath).out().trim();
+            return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(podName, "grep", "-i", grepString, filePath).out().trim();
         } else {
-            return cmdKubeClient(namespaceName).execInPodContainer(podName, containerName, "grep", "-i", grepString, filePath).out().trim();
+            return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPodContainer(podName, containerName, "grep", "-i", grepString, filePath).out().trim();
         }
     }
 
@@ -435,12 +440,12 @@ public class StUtils {
     public static void copyImagePullSecrets(String namespaceName) {
         if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
             LOGGER.info("Checking if Secret: {} is in the default Namespace", Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
-            if (kubeClient("default").getSecret(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET) == null) {
+            if (KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace("default").withName(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET).get() == null) {
                 throw new RuntimeException(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET + " is not in the default Namespace!");
             }
             LOGGER.info("Creating pull Secret: {}/{}", namespaceName, Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
-            Secret pullSecret = kubeClient("default").getSecret(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
-            kubeClient(namespaceName).createSecret(new SecretBuilder()
+            Secret pullSecret = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace("default").withName(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET).get();
+            KubeResourceManager.get().createResourceWithWait(new SecretBuilder()
                 .withApiVersion("v1")
                 .withKind("Secret")
                 .withNewMetadata()
@@ -453,12 +458,12 @@ public class StUtils {
         }
         if (Environment.CONNECT_BUILD_REGISTRY_SECRET != null && !Environment.CONNECT_BUILD_REGISTRY_SECRET.isEmpty()) {
             LOGGER.info("Checking if Secret: {} is in the default Namespace", Environment.CONNECT_BUILD_REGISTRY_SECRET);
-            if (kubeClient("default").getSecret(Environment.CONNECT_BUILD_REGISTRY_SECRET) == null) {
+            if (KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace("default").withName(Environment.CONNECT_BUILD_REGISTRY_SECRET).get() == null) {
                 throw new RuntimeException(Environment.CONNECT_BUILD_REGISTRY_SECRET + " is not in the default namespace!");
             }
             LOGGER.info("Creating pull Secret: {}/{}", namespaceName, Environment.CONNECT_BUILD_REGISTRY_SECRET);
-            Secret pullSecret = kubeClient("default").getSecret(Environment.CONNECT_BUILD_REGISTRY_SECRET);
-            kubeClient(namespaceName).createSecret(new SecretBuilder()
+            Secret pullSecret = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace("default").withName(Environment.CONNECT_BUILD_REGISTRY_SECRET).get();
+            KubeResourceManager.get().createResourceWithWait(new SecretBuilder()
                 .withApiVersion("v1")
                 .withKind("Secret")
                 .withNewMetadata()
@@ -550,7 +555,7 @@ public class StUtils {
      * @return                  List with ConfigMaps containing the configuration
      */
     public static List<String> getKafkaConfigurationConfigMaps(String namespaceName, String kafkaClusterName) {
-        return kubeClient().listPodNames(namespaceName, LabelSelectors.kafkaLabelSelector(kafkaClusterName, KafkaComponents.getBrokerPodSetName(kafkaClusterName)));
+        return PodUtils.listPodNames(namespaceName, LabelSelectors.kafkaLabelSelector(kafkaClusterName, KafkaComponents.getBrokerPodSetName(kafkaClusterName)));
     }
 
     public static void waitUntilSuppliersAreMatching(final Supplier<?> sup, final Supplier<?> anotherSup) {
@@ -644,5 +649,16 @@ public class StUtils {
         }
 
         return testCaseName;
+    }
+
+    public static List<Event> listEventsByResourceUid(String namespaceName, String resourceUid) {
+        return KubeResourceManager.get().kubeClient().getClient().v1().events().inNamespace(namespaceName).list().getItems().stream()
+            .filter(event -> {
+                if (event.getInvolvedObject().getUid() == null) {
+                    return false;
+                }
+                return event.getInvolvedObject().getUid().equals(resourceUid);
+            })
+            .collect(Collectors.toList());
     }
 }

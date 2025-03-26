@@ -50,7 +50,6 @@ import java.util.Properties;
 
 import static io.strimzi.systemtest.TestTags.CRUISE_CONTROL;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
@@ -109,7 +108,7 @@ public class CruiseControlConfigurationST extends AbstractST {
 
         Map<String, String> brokerPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getBrokerSelector());
 
-        KafkaUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+        KafkaUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             LOGGER.info("Removing CruiseControl from Kafka");
             kafka.getSpec().setCruiseControl(null);
         });
@@ -137,7 +136,7 @@ public class CruiseControlConfigurationST extends AbstractST {
         LOGGER.info("Cruise Control Topics will not be deleted and will stay in the Kafka cluster");
         CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(adminClient, defaultBrokerReplicaCount);
 
-        KafkaUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+        KafkaUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             LOGGER.info("Adding CruiseControl to the classic Kafka");
             kafka.getSpec().setCruiseControl(new CruiseControlSpec());
         });
@@ -185,7 +184,7 @@ public class CruiseControlConfigurationST extends AbstractST {
                 put(CruiseControlConfigurationParameters.REPLICATION_THROTTLE.getValue(), -1);
             }};
 
-        KafkaUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
+        KafkaUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafka -> {
             LOGGER.info("Changing CruiseControl performance tuning options");
             kafka.getSpec().setCruiseControl(new CruiseControlSpecBuilder()
                     .addToConfig(performanceTuningOpts)
@@ -199,7 +198,7 @@ public class CruiseControlConfigurationST extends AbstractST {
         RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), kafkaSnapShot);
 
         LOGGER.info("Verifying new configuration in the Kafka CR");
-        ConfigMap configMap = kubeClient(testStorage.getNamespaceName()).getConfigMap(testStorage.getNamespaceName(), CruiseControlResources.configMapName(testStorage.getClusterName()));
+        ConfigMap configMap = KubeResourceManager.get().kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).withName(CruiseControlResources.configMapName(testStorage.getClusterName())).get();
 
         InputStream configurationContainerStream = new ByteArrayInputStream(
                 Objects.requireNonNull(configMap.getData().get("cruisecontrol.properties")).getBytes(StandardCharsets.UTF_8));

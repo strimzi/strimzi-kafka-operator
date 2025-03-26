@@ -42,7 +42,6 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static io.strimzi.systemtest.TestTags.DYNAMIC_CONFIGURATION;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -263,6 +262,6 @@ public class DynamicConfSharedST extends AbstractST {
             ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, suiteTestStorage.getScraperName()).build()
         );
 
-        scraperPodName = kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, suiteTestStorage.getScraperName()).get(0).getMetadata().getName();
+        scraperPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, suiteTestStorage.getScraperName()).get(0).getMetadata().getName();
     }
 }

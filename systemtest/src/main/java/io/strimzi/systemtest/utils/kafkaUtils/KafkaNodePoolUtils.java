@@ -23,12 +23,11 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import static io.strimzi.systemtest.resources.CrdClients.kafkaNodePoolClient;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 public class KafkaNodePoolUtils {
 
     private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
-    private static final Logger LOGGER = LogManager.getLogger(PodUtils.class);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaNodePoolUtils.class);
 
     private KafkaNodePoolUtils() {}
 
@@ -39,7 +38,7 @@ public class KafkaNodePoolUtils {
      * @param resourceName      name of the KafkaNodePool's name.
      * @param editor            editor containing all the changes that should be done to the resource.
      */
-    public static void replaceInNamespace(String namespaceName, String resourceName, Consumer<KafkaNodePool> editor) {
+    public static void replace(String namespaceName, String resourceName, Consumer<KafkaNodePool> editor) {
         KafkaNodePool kafkaNodePool = kafkaNodePoolClient().inNamespace(namespaceName).withName(resourceName).get();
         KubeResourceManager.get().replaceResourceWithRetries(kafkaNodePool, editor);
     }
@@ -54,7 +53,7 @@ public class KafkaNodePoolUtils {
 
     public static void setKafkaNodePoolAnnotation(String namespaceName, String resourceName,  Map<String, String> annotations) {
         LOGGER.info("Annotating KafkaNodePool: {}/{} with annotation: {}", namespaceName, resourceName, annotations);
-        replaceInNamespace(namespaceName, resourceName,
+        replace(namespaceName, resourceName,
             kafkaNodePool -> kafkaNodePool.getMetadata().setAnnotations(annotations));
     }
 
@@ -72,7 +71,7 @@ public class KafkaNodePoolUtils {
                 ) {
                     return true;
                 } else {
-                    cmdKubeClient(namespaceName).deleteByName(KafkaNodePool.RESOURCE_KIND, kafkaNodePoolName);
+                    KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).deleteByName(KafkaNodePool.RESOURCE_KIND, kafkaNodePoolName);
                     return false;
                 }
             },

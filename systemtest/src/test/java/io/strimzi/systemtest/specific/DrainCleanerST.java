@@ -68,7 +68,7 @@ public class DrainCleanerST extends AbstractST {
             continuousClients.producerStrimzi(),
             continuousClients.consumerStrimzi());
 
-        List<String> brokerPods = kubeClient().listPodNames(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getBrokerSelector());
+        List<String> brokerPods = PodUtils.listPodNames(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getBrokerSelector());
 
         String kafkaPodName = brokerPods.get(0);
 
@@ -85,7 +85,7 @@ public class DrainCleanerST extends AbstractST {
         LOGGER.info("Evicting Pod: {}", podName);
 
         try {
-            kubeClient().getClient().pods().inNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE).withName(podName).evict();
+            KubeResourceManager.get().kubeClient().getClient().pods().inNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE).withName(podName).evict();
         } catch (KubernetesClientException e)   {
             if (e.getCode() == 500 && e.getMessage().contains("The pod will be rolled by the Strimzi Cluster Operator"))    {
                 LOGGER.info("Eviction request for pod {} was denied by the Drain Cleaner", podName);

@@ -25,7 +25,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.resources.CrdClients.kafkaRebalanceClient;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 public class KafkaRebalanceUtils {
 
@@ -40,7 +39,7 @@ public class KafkaRebalanceUtils {
      * @param resourceName      name of the KafkaRebalance's name.
      * @param editor            editor containing all the changes that should be done to the resource.
      */
-    public static void replaceInNamespace(String namespaceName, String resourceName, Consumer<KafkaRebalance> editor) {
+    public static void replace(String namespaceName, String resourceName, Consumer<KafkaRebalance> editor) {
         KafkaRebalance kafkaRebalance = kafkaRebalanceClient().inNamespace(namespaceName).withName(resourceName).get();
         KubeResourceManager.get().replaceResourceWithRetries(kafkaRebalance, editor);
     }
@@ -71,8 +70,8 @@ public class KafkaRebalanceUtils {
 
     public static String annotateKafkaRebalanceResource(String namespaceName, String resourceName, KafkaRebalanceAnnotation annotation) {
         LOGGER.info("Annotating KafkaRebalance: {} with annotation: {}", resourceName, annotation.toString());
-        return cmdKubeClient().namespace(namespaceName)
-            .execInCurrentNamespace("annotate", "kafkarebalance", resourceName, Annotations.ANNO_STRIMZI_IO_REBALANCE + "=" + annotation.toString())
+        return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName)
+            .exec("annotate", "kafkarebalance", resourceName, Annotations.ANNO_STRIMZI_IO_REBALANCE + "=" + annotation)
             .out()
             .trim();
     }

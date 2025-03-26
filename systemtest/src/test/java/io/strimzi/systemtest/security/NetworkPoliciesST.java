@@ -52,7 +52,6 @@ import java.util.stream.Collectors;
 import static io.strimzi.systemtest.TestTags.CRUISE_CONTROL;
 import static io.strimzi.systemtest.TestTags.NETWORKPOLICIES_SUPPORTED;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -222,7 +221,7 @@ public class NetworkPoliciesST extends AbstractST {
 
         LOGGER.info("Check metrics exported by KafkaExporter");
 
-        final String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
+        final String scraperPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
         MetricsCollector metricsCollector = new MetricsCollector.Builder()
             .withNamespaceName(testStorage.getNamespaceName())
             .withScraperPodName(scraperPodName)
@@ -273,8 +272,8 @@ public class NetworkPoliciesST extends AbstractST {
             )
             .install();
 
-        Namespace actualNamespace = kubeClient().getClient().namespaces().withName(Environment.TEST_SUITE_NAMESPACE).get();
-        kubeClient().getClient().namespaces().withName(Environment.TEST_SUITE_NAMESPACE).edit(ns -> new NamespaceBuilder(actualNamespace)
+        Namespace actualNamespace = KubeResourceManager.get().kubeClient().getClient().namespaces().withName(Environment.TEST_SUITE_NAMESPACE).get();
+        KubeResourceManager.get().kubeClient().getClient().namespaces().withName(Environment.TEST_SUITE_NAMESPACE).edit(ns -> new NamespaceBuilder(actualNamespace)
             .editOrNewMetadata()
                 .addToLabels(labels)
             .endMetadata()
@@ -340,7 +339,7 @@ public class NetworkPoliciesST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnect(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), 1)
                 .build());
 
-        List<NetworkPolicy> networkPolicyList = kubeClient().getClient().network().networkPolicies().list().getItems().stream()
+        List<NetworkPolicy> networkPolicyList = KubeResourceManager.get().kubeClient().getClient().network().networkPolicies().list().getItems().stream()
             .filter(item -> item.getMetadata().getLabels() != null && item.getMetadata().getLabels().containsKey("strimzi.io/name"))
             .collect(Collectors.toList());
 
@@ -348,7 +347,7 @@ public class NetworkPoliciesST extends AbstractST {
     }
 
     void checkNetworkPoliciesInNamespace(String namespaceName, String clusterName) {
-        List<NetworkPolicy> networkPolicyList = new ArrayList<>(kubeClient().getClient().network().networkPolicies().inNamespace(namespaceName).list().getItems());
+        List<NetworkPolicy> networkPolicyList = new ArrayList<>(KubeResourceManager.get().kubeClient().getClient().network().networkPolicies().inNamespace(namespaceName).list().getItems());
 
         assertNotNull(networkPolicyList.stream().filter(networkPolicy ->  networkPolicy.getMetadata().getName().contains(KafkaResources.kafkaNetworkPolicyName(clusterName))).findFirst());
         assertNotNull(networkPolicyList.stream().filter(networkPolicy ->  networkPolicy.getMetadata().getName().contains(KafkaResources.entityOperatorDeploymentName(clusterName))).findFirst());

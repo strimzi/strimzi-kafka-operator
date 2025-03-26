@@ -7,9 +7,8 @@ package io.strimzi.systemtest.utils.specific;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
-
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 /**
  *  Provides auxiliary methods for Scraper Pod, which reaches KafkaConnect API in the Kubernetes cluster.
@@ -19,7 +18,7 @@ public class ScraperUtils {
     private ScraperUtils() { }
 
     public static Pod getScraperPod(final String namespaceName) {
-        return kubeClient(namespaceName).listPods(namespaceName, getDefaultLabelSelector()).stream().findFirst().orElseThrow();
+        return KubeResourceManager.get().kubeClient().listPods(namespaceName, getDefaultLabelSelector()).stream().findFirst().orElseThrow();
     }
 
     private static LabelSelector getDefaultLabelSelector() {

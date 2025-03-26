@@ -18,7 +18,6 @@ import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeStatus;
 import io.strimzi.api.kafka.model.common.template.DeploymentStrategy;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
@@ -59,8 +58,6 @@ import java.util.stream.Collectors;
 import static io.strimzi.systemtest.TestTags.BRIDGE;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -186,7 +183,6 @@ class HttpBridgeST extends AbstractST {
         }
     )
     void testCustomAndUpdatedValues() {
-
         String bridgeName = "custom-bridge";
         LinkedHashMap<String, String> envVarGeneral = new LinkedHashMap<>();
         envVarGeneral.put("TEST_ENV_1", "test.env.one");
@@ -248,7 +244,7 @@ class HttpBridgeST extends AbstractST {
         VerificationUtils.verifyContainerEnvVariables(Environment.TEST_SUITE_NAMESPACE, KafkaBridgeResources.componentName(bridgeName), KafkaBridgeResources.componentName(bridgeName), envVarGeneral);
 
         LOGGER.info("Updating values in Bridge container");
-        KafkaBridgeUtils.replaceInNamespace(Environment.TEST_SUITE_NAMESPACE, bridgeName, kb -> {
+        KafkaBridgeUtils.replace(Environment.TEST_SUITE_NAMESPACE, bridgeName, kb -> {
             kb.getSpec().getTemplate().getBridgeContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
             kb.getSpec().getProducer().setConfig(producerConfig);
             kb.getSpec().getConsumer().setConfig(consumerConfig);
@@ -269,7 +265,7 @@ class HttpBridgeST extends AbstractST {
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
         VerificationUtils.verifyContainerEnvVariables(Environment.TEST_SUITE_NAMESPACE, KafkaBridgeResources.componentName(bridgeName), KafkaBridgeResources.componentName(bridgeName), envVarUpdated);
 
-        ConfigMap configMap = kubeClient().namespace(Environment.TEST_SUITE_NAMESPACE).getConfigMap(KafkaBridgeResources.configMapName(bridgeName));
+        ConfigMap configMap = KubeResourceManager.get().kubeClient().getClient().configMaps().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(KafkaBridgeResources.configMapName(bridgeName)).get();
         String bridgeConfiguration = configMap.getData().get("application.properties");
         Map<String, Object> config = StUtils.loadProperties(bridgeConfiguration);
         Map<String, Object> producerConfigMap = config.entrySet().stream().filter(e -> e.getKey().startsWith("kafka.producer.")).collect(Collectors.toMap(e -> e.getKey().replace("kafka.producer.", ""), Map.Entry::getValue));
@@ -293,7 +289,7 @@ class HttpBridgeST extends AbstractST {
         }
     )
     void testDiscoveryAnnotation() {
-        Service bridgeService = kubeClient().getService(Environment.TEST_SUITE_NAMESPACE, KafkaBridgeResources.serviceName(suiteTestStorage.getClusterName()));
+        Service bridgeService = KubeResourceManager.get().kubeClient().getClient().services().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(KafkaBridgeResources.serviceName(suiteTestStorage.getClusterName())).get();
         String bridgeServiceDiscoveryAnnotation = bridgeService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(bridgeServiceDiscoveryAnnotation);
         assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(8080, "http", "none", false)));
@@ -315,24 +311,23 @@ class HttpBridgeST extends AbstractST {
         }
     )
     void testScaleBridgeToZero() {
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        String bridgeName = "scaling-bridge-down";
+        KubeResourceManager.get().createResourceWithWait(KafkaBridgeTemplates.kafkaBridge(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()), 1).build());
 
-        KubeResourceManager.get().createResourceWithWait(KafkaBridgeTemplates.kafkaBridge(Environment.TEST_SUITE_NAMESPACE, bridgeName, KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()), 1).build());
-
-        List<String> bridgePods = kubeClient(Environment.TEST_SUITE_NAMESPACE).listPodNames(Labels.STRIMZI_CLUSTER_LABEL, bridgeName);
-        String deploymentName = KafkaBridgeResources.componentName(bridgeName);
+        List<String> bridgePods = PodUtils.listPodNames(testStorage.getNamespaceName(), testStorage.getBridgeSelector());
+        String deploymentName = KafkaBridgeResources.componentName(testStorage.getClusterName());
 
         assertThat(bridgePods.size(), is(1));
 
         LOGGER.info("Scaling KafkaBridge to zero replicas");
-        KafkaBridgeUtils.replaceInNamespace(Environment.TEST_SUITE_NAMESPACE, bridgeName, kafkaBridge -> kafkaBridge.getSpec().setReplicas(0));
+        KafkaBridgeUtils.replace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaBridge -> kafkaBridge.getSpec().setReplicas(0));
 
-        KafkaBridgeUtils.waitForKafkaBridgeReady(Environment.TEST_SUITE_NAMESPACE, suiteTestStorage.getClusterName());
-        PodUtils.waitForPodsReady(Environment.TEST_SUITE_NAMESPACE, kubeClient().getDeploymentSelectors(Environment.TEST_SUITE_NAMESPACE, deploymentName), 0, true);
+        KafkaBridgeUtils.waitForKafkaBridgeReady(testStorage.getNamespaceName(), suiteTestStorage.getClusterName());
+        PodUtils.waitForPodsReady(testStorage.getNamespaceName(), KubeResourceManager.get().kubeClient().getClient().apps().deployments().inNamespace(testStorage.getNamespaceName()).withName(deploymentName).get().getSpec().getSelector(), 0, true);
 
-        bridgePods = kubeClient().listPodNames(Environment.TEST_SUITE_NAMESPACE, suiteTestStorage.getClusterName(), Labels.STRIMZI_CLUSTER_LABEL, bridgeName);
-        KafkaBridgeStatus bridgeStatus = CrdClients.kafkaBridgeClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(bridgeName).get().getStatus();
+        bridgePods = PodUtils.listPodNames(testStorage.getNamespaceName(), testStorage.getBridgeSelector());
+        KafkaBridgeStatus bridgeStatus = CrdClients.kafkaBridgeClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
 
         assertThat(bridgePods.size(), is(0));
         assertThat(bridgeStatus.getConditions().get(0).getType(), is(Ready.toString()));
@@ -352,35 +347,35 @@ class HttpBridgeST extends AbstractST {
         }
     )
     void testScaleBridgeSubresource() {
-        String bridgeName = "scaling-bridge-up";
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        KubeResourceManager.get().createResourceWithWait(KafkaBridgeTemplates.kafkaBridge(Environment.TEST_SUITE_NAMESPACE, bridgeName, KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()), 1).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaBridgeTemplates.kafkaBridge(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()), 1).build());
 
         int scaleTo = 4;
-        long bridgeObsGen = CrdClients.kafkaBridgeClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(bridgeName).get().getStatus().getObservedGeneration();
-        String bridgeGenName = kubeClient(Environment.TEST_SUITE_NAMESPACE).listPodsByPrefixInName(bridgeName).get(0).getMetadata().getGenerateName();
+        long bridgeObsGen = CrdClients.kafkaBridgeClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getObservedGeneration();
+        String bridgeGenName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getClusterName()).get(0).getMetadata().getGenerateName();
 
         LOGGER.info("-------> Scaling KafkaBridge subresource <-------");
         LOGGER.info("Scaling subresource replicas to {}", scaleTo);
-        cmdKubeClient(Environment.TEST_SUITE_NAMESPACE).scaleByName(KafkaBridge.RESOURCE_KIND, bridgeName, scaleTo);
-        DeploymentUtils.waitForDeploymentAndPodsReady(Environment.TEST_SUITE_NAMESPACE, KafkaBridgeResources.componentName(bridgeName), scaleTo);
+        KubeResourceManager.get().kubeCmdClient().inNamespace(testStorage.getNamespaceName()).scaleByName(KafkaBridge.RESOURCE_KIND, testStorage.getClusterName(), scaleTo);
+        DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespaceName(), KafkaBridgeResources.componentName(testStorage.getClusterName()), scaleTo);
 
         LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);
         StUtils.waitUntilSupplierIsSatisfied("KafkaBridge replica is 4 and observedGeneration is lower than 4",
             () -> {
-                List<String> bridgePods = kubeClient(Environment.TEST_SUITE_NAMESPACE).listPodNames(Labels.STRIMZI_CLUSTER_LABEL, bridgeName);
+                List<String> bridgePods = PodUtils.listPodNames(testStorage.getNamespaceName(), testStorage.getBridgeSelector());
 
                 return bridgePods.size() == 4 &&
-                    CrdClients.kafkaBridgeClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(bridgeName).get().getSpec().getReplicas() == 4 &&
-                    CrdClients.kafkaBridgeClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(bridgeName).get().getStatus().getReplicas() == 4 &&
+                    CrdClients.kafkaBridgeClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getReplicas() == 4 &&
+                    CrdClients.kafkaBridgeClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getReplicas() == 4 &&
                     /*
                     observed generation should be higher than before scaling -> after change of spec and successful reconciliation,
                     the observed generation is increased
                     */
-                    bridgeObsGen < CrdClients.kafkaBridgeClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(bridgeName).get().getStatus().getObservedGeneration();
+                    bridgeObsGen < CrdClients.kafkaBridgeClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getObservedGeneration();
             });
 
-        for (final String pod : kubeClient(Environment.TEST_SUITE_NAMESPACE).listPodNames(Labels.STRIMZI_CLUSTER_LABEL, bridgeName)) {
+        for (final String pod : PodUtils.listPodNames(testStorage.getNamespaceName(), testStorage.getBridgeSelector())) {
             assertThat(pod.contains(bridgeGenName), is(true));
         }
     }
@@ -416,7 +411,7 @@ class HttpBridgeST extends AbstractST {
         String bridgeDepName = KafkaBridgeResources.componentName(bridgeName);
 
         LOGGER.info("Adding label to KafkaBridge resource, the CR should be recreated");
-        KafkaBridgeUtils.replaceInNamespace(Environment.TEST_SUITE_NAMESPACE, bridgeName,
+        KafkaBridgeUtils.replace(Environment.TEST_SUITE_NAMESPACE, bridgeName,
             kb -> kb.getMetadata().setLabels(Collections.singletonMap("some", "label")));
         DeploymentUtils.waitForDeploymentAndPodsReady(Environment.TEST_SUITE_NAMESPACE, bridgeDepName, 1);
 
@@ -428,12 +423,12 @@ class HttpBridgeST extends AbstractST {
         assertThat(kafkaBridge.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.RECREATE));
 
         LOGGER.info("Changing Deployment strategy to {}", DeploymentStrategy.ROLLING_UPDATE);
-        KafkaBridgeUtils.replaceInNamespace(Environment.TEST_SUITE_NAMESPACE, bridgeName,
+        KafkaBridgeUtils.replace(Environment.TEST_SUITE_NAMESPACE, bridgeName,
             kb -> kb.getSpec().getTemplate().getDeployment().setDeploymentStrategy(DeploymentStrategy.ROLLING_UPDATE));
         KafkaBridgeUtils.waitForKafkaBridgeReady(Environment.TEST_SUITE_NAMESPACE, bridgeName);
 
         LOGGER.info("Adding another label to KafkaBridge resource, Pods should be rolled");
-        KafkaBridgeUtils.replaceInNamespace(Environment.TEST_SUITE_NAMESPACE, bridgeName, kb -> kb.getMetadata().getLabels().put("another", "label"));
+        KafkaBridgeUtils.replace(Environment.TEST_SUITE_NAMESPACE, bridgeName, kb -> kb.getMetadata().getLabels().put("another", "label"));
         DeploymentUtils.waitForDeploymentAndPodsReady(Environment.TEST_SUITE_NAMESPACE, bridgeDepName, 1);
 
         LOGGER.info("Checking that observed gen. higher (rolling update) and label is changed");
@@ -468,7 +463,7 @@ class HttpBridgeST extends AbstractST {
         KubeResourceManager.get().createResourceWithWait(KafkaBridgeTemplates.kafkaBridge(Environment.TEST_SUITE_NAMESPACE, bridgeName, KafkaResources.plainBootstrapAddress(suiteTestStorage.getClusterName()), 1).build());
 
         // get service with custom labels
-        final Service kafkaBridgeService = kubeClient().getService(Environment.TEST_SUITE_NAMESPACE, KafkaBridgeResources.serviceName(bridgeName));
+        final Service kafkaBridgeService = KubeResourceManager.get().kubeClient().getClient().services().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(KafkaBridgeResources.serviceName(bridgeName)).get();
 
         // filter only app-bar service
         final Map<String, String> filteredActualKafkaBridgeCustomLabels =

@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.utils.kubeUtils.crds;
 
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import io.skodjob.testframe.resources.KubeResourceManager;
 
 public class CrdUtils {
 
@@ -19,6 +19,6 @@ public class CrdUtils {
      */
     public static boolean isCrdPresent(final String resourcePluralName, final String resourceApiGroupName) {
         final String fullyQualifiedCrdName = resourcePluralName + "." + resourceApiGroupName;
-        return cmdKubeClient().exec(false, "get", "crd", fullyQualifiedCrdName).returnCode() == 0;
+        return KubeResourceManager.get().kubeCmdClient().exec(false, "get", "crd", fullyQualifiedCrdName).returnCode() == 0;
     }
 }
