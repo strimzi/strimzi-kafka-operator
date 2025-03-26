@@ -158,6 +158,10 @@
         <kafka.version>4.0.0</kafka.version>
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
         <snappy.version>1.1.10.5</snappy.version>
+        <!-- Used for test-frame and the systemtests-->
+        <slf4j2.version>2.0.16</slf4j2.version>
+        <log4j2.version>2.24.1</log4j2.version>
+
         <slf4j.version>1.7.36</slf4j.version>
         <log4j.version>2.17.2</log4j.version>
         <quartz.version>2.3.2</quartz.version>
@@ -194,8 +198,9 @@
         <testcontainer.version>1.20.1</testcontainer.version>
         <docker-java.version>3.4.0</docker-java.version>
         <junit4.version>4.13.2</junit4.version>
-        <skodjob.test-frame.version>0.8.0</skodjob.test-frame.version>
+        <skodjob.test-frame.version>0.10.0</skodjob.test-frame.version>
         <skodjob-doc.version>0.4.0</skodjob-doc.version>
+        <helm-client.version>0.0.15</helm-client.version>
         <!--
             Currently, there are no released versions in Maven repository of this module,
             using SNAPSHOT for having the `api` module available and usable in the STs.
@@ -735,6 +740,11 @@
                 <artifactId>test-frame-common</artifactId>
                 <version>${skodjob.test-frame.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.skodjob</groupId>
+                <artifactId>test-frame-kubernetes</artifactId>
+                <version>${skodjob.test-frame.version}</version>
+            </dependency>
             <!-- Test dependencies -->
             <dependency>
                 <groupId>io.strimzi</groupId>
@@ -857,6 +867,11 @@
                 <groupId>com.dajudge.kindcontainer</groupId>
                 <artifactId>kindcontainer</artifactId>
                 <version>${kindcontainer.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.marcnuri.helm-java</groupId>
+                <artifactId>helm-java</artifactId>
+                <version>${helm-client.version}</version>
             </dependency>
             <!-- JUnit dependency is needed at compile time by MockKube because of how Test Containers are designed -->
             <dependency>

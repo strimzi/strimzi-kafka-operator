@@ -15,6 +15,7 @@ import io.strimzi.systemtest.annotations.IPv6NotSupported;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.keycloak.SetupKeycloak;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import org.apache.logging.log4j.LogManager;
@@ -115,7 +116,10 @@ public class OauthAbstractST extends AbstractST {
     };
 
     protected void setupCoAndKeycloak(String keycloakNamespace) {
-        clusterOperator.defaultInstallation().createInstallation().runInstallation();
+        SetupClusterOperator
+            .getInstance()
+            .withDefaultConfiguration()
+            .install();
 
         resourceManager.createResourceWithoutWait(ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, TestConstants.SCRAPER_NAME).build());
 

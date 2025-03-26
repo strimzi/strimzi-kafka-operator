@@ -338,4 +338,9 @@ public interface TestConstants {
      */
     String DOCKER = "docker";
     String PODMAN = "podman";
+
+    /**
+     * OLM related constants
+     */
+    String OLM_OPERATOR_GROUP_NAME = "strimzi-group";
 }

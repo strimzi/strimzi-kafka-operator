@@ -8,7 +8,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.Service;
-import io.strimzi.systemtest.enums.ClusterOperatorInstallType;
+import io.skodjob.testframe.enums.InstallType;
+import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -104,9 +105,6 @@ public class Environment {
      * CO Roles only mode.
      */
     public static final String STRIMZI_RBAC_SCOPE_ENV = "STRIMZI_RBAC_SCOPE";
-    public static final String STRIMZI_RBAC_SCOPE_CLUSTER = "CLUSTER";
-    public static final String STRIMZI_RBAC_SCOPE_NAMESPACE = "NAMESPACE";
-    public static final String STRIMZI_RBAC_SCOPE_DEFAULT = STRIMZI_RBAC_SCOPE_CLUSTER;
 
     /**
      * OLM env variables
@@ -190,7 +188,6 @@ public class Environment {
     public static final String OLM_APP_BUNDLE_PREFIX_DEFAULT = "strimzi-cluster-operator";
     public static final String OLM_OPERATOR_CHANNEL_DEFAULT = "stable";
     private static final boolean DEFAULT_TO_DENY_NETWORK_POLICIES_DEFAULT = true;
-    private static final ClusterOperatorInstallType CLUSTER_OPERATOR_INSTALL_TYPE_DEFAULT = ClusterOperatorInstallType.BUNDLE;
     private static final boolean LB_FINALIZERS_DEFAULT = false;
     private static final String STRIMZI_FEATURE_GATES_DEFAULT = "";
     private static final String RESOURCE_ALLOCATION_STRATEGY_DEFAULT = "SHARE_MEMORY_FOR_ALL_COMPONENTS";
@@ -222,7 +219,8 @@ public class Environment {
     public static final String CLIENTS_KAFKA_VERSION = getOrDefault(CLIENTS_KAFKA_VERSION_ENV, ST_CLIENTS_KAFKA_VERSION_DEFAULT);
     public static final String STRIMZI_LOG_LEVEL = getOrDefault(STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL_DEFAULT);
     public static final boolean SKIP_TEARDOWN = getOrDefault(SKIP_TEARDOWN_ENV, Boolean::parseBoolean, false);
-    public static final String STRIMZI_RBAC_SCOPE = getOrDefault(STRIMZI_RBAC_SCOPE_ENV, STRIMZI_RBAC_SCOPE_DEFAULT);
+    public static final ClusterOperatorRBACType STRIMZI_RBAC_SCOPE =  getOrDefault(STRIMZI_RBAC_SCOPE_ENV, value -> ClusterOperatorRBACType.valueOf(value.toUpperCase(Locale.ENGLISH)), ClusterOperatorRBACType.CLUSTER);
+
     public static final String STRIMZI_FEATURE_GATES = getOrDefault(STRIMZI_FEATURE_GATES_ENV, STRIMZI_FEATURE_GATES_DEFAULT);
 
     // variables for kafka client app images
@@ -249,8 +247,8 @@ public class Environment {
     public static final String OLM_OPERATOR_CHANNEL = getOrDefault(OLM_OPERATOR_CHANNEL_ENV, OLM_OPERATOR_CHANNEL_DEFAULT);
     // NetworkPolicy variable
     public static final boolean DEFAULT_TO_DENY_NETWORK_POLICIES = getOrDefault(DEFAULT_TO_DENY_NETWORK_POLICIES_ENV, Boolean::parseBoolean, DEFAULT_TO_DENY_NETWORK_POLICIES_DEFAULT);
-    // Cluster Operator installation type variable
-    public static final ClusterOperatorInstallType CLUSTER_OPERATOR_INSTALL_TYPE = getOrDefault(CLUSTER_OPERATOR_INSTALL_TYPE_ENV, value -> ClusterOperatorInstallType.valueOf(value.toUpperCase(Locale.ENGLISH)), CLUSTER_OPERATOR_INSTALL_TYPE_DEFAULT);
+    public static final InstallType CLUSTER_OPERATOR_INSTALL_TYPE = getOrDefault(CLUSTER_OPERATOR_INSTALL_TYPE_ENV, InstallType::fromString, InstallType.Yaml);
+
     public static final boolean LB_FINALIZERS = getOrDefault(LB_FINALIZERS_ENV, Boolean::parseBoolean, LB_FINALIZERS_DEFAULT);
     public static final String RESOURCE_ALLOCATION_STRATEGY = getOrDefault(RESOURCE_ALLOCATION_STRATEGY_ENV, RESOURCE_ALLOCATION_STRATEGY_DEFAULT);
 
@@ -284,15 +282,15 @@ public class Environment {
     }
 
     public static boolean isOlmInstall() {
-        return CLUSTER_OPERATOR_INSTALL_TYPE.equals(ClusterOperatorInstallType.OLM);
+        return CLUSTER_OPERATOR_INSTALL_TYPE.equals(InstallType.Olm);
     }
 
     public static boolean isHelmInstall() {
-        return CLUSTER_OPERATOR_INSTALL_TYPE.equals(ClusterOperatorInstallType.HELM);
+        return CLUSTER_OPERATOR_INSTALL_TYPE.equals(InstallType.Helm);
     }
 
     public static boolean isNamespaceRbacScope() {
-        return STRIMZI_RBAC_SCOPE_NAMESPACE.equals(STRIMZI_RBAC_SCOPE);
+        return ClusterOperatorRBACType.NAMESPACE.equals(STRIMZI_RBAC_SCOPE);
     }
 
     /**
@@ -328,10 +326,10 @@ public class Environment {
 
     private static <T> T getOrDefault(String var, Function<String, T> converter, T defaultValue) {
         String value = isEnvVarSet(var) ?
-                System.getenv(var) :
-                (Objects.requireNonNull(YAML_DATA).get(var) != null ?
-                        YAML_DATA.get(var).toString() :
-                        null);
+            System.getenv(var) :
+            (Objects.requireNonNull(YAML_DATA).get(var) != null ?
+                YAML_DATA.get(var).toString() :
+                null);
         T returnValue = defaultValue;
         if (value != null) {
             returnValue = converter.apply(value);
@@ -400,7 +398,7 @@ public class Environment {
 
     private static Map<String, Object> loadConfigurationFile() {
         String config = System.getenv().getOrDefault(CONFIG_FILE_PATH_ENV,
-                Paths.get(System.getProperty("user.dir"), "config.yaml").toAbsolutePath().toString());
+            Paths.get(System.getProperty("user.dir"), "config.yaml").toAbsolutePath().toString());
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         try {
             return mapper.readValue(new File(config), new TypeReference<>() { });
@@ -412,9 +410,9 @@ public class Environment {
 
     private static boolean isWriteable(String var, String value) {
         return !value.equals("null")
-                && !var.equals(CONFIG_FILE_PATH_ENV)
-                && !var.equals(TEST_LOG_DIR)
-                && !var.equals("USER");
+            && !var.equals(CONFIG_FILE_PATH_ENV)
+            && !var.equals(TEST_LOG_DIR)
+            && !var.equals("USER");
     }
 
     public static boolean isEnvVarSet(String envVarName) {

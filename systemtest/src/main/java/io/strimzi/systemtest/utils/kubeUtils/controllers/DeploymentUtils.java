@@ -205,7 +205,7 @@ public class DeploymentUtils {
     }
 
     public static void waitForCreationOfDeploymentWithPrefix(String namespaceName, String deploymentNamePrefix) {
-        TestUtils.waitFor(String.join("creation of Deployment with prefix: %s in Namespace: %s", deploymentNamePrefix, namespaceName), TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
+        TestUtils.waitFor(String.format("creation of Deployment with prefix: %s in Namespace: %s", deploymentNamePrefix, namespaceName), TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
             () -> kubeClient().getDeploymentNameByPrefix(namespaceName, deploymentNamePrefix) != null);
     }
 }
