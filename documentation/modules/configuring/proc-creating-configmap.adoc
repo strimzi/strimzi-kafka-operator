@@ -24,7 +24,7 @@ metadata:
   name: logging-configmap
 data:
   log4j2.properties: |
-    rootLogger.level="INFO"
+    rootLogger.level = "INFO"
     appender.console.type = Console
     appender.console.name = STDOUT
     appender.console.layout.type = PatternLayout
@@ -41,7 +41,7 @@ If you are using a properties file, define the logging configuration and specify
 [source,text]
 ----
 # Define the logger
-rootLogger.level="INFO"
+rootLogger.level = "INFO"
 # ...
 ----
 +

@@ -70,7 +70,7 @@ spec:
     loggers:
       rootLogger.level: INFO
       # Enabling DEBUG just for send operation
-      logger.send.name: "http.openapi.operation.send"
+      logger.send.name: http.openapi.operation.send
       logger.send.level: DEBUG
   # JVM options (optional)
   jvmOptions: # <11>

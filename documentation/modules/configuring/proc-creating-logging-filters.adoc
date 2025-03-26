@@ -17,7 +17,7 @@ For example, to isolate the logs of a failing Kafka cluster, set the kind to `Ka
 .Basic logging filter configuration
 [source,properties]
 ----
-rootLogger.level="INFO"
+rootLogger.level = "INFO"
 rootLogger.appenderRefs = console
 rootLogger.appenderRef.console.ref = STDOUT
 
@@ -72,7 +72,7 @@ metadata:
   name: strimzi-cluster-operator
 data:
   log4j2.properties: |
-    rootLogger.level="INFO"
+    rootLogger.level = "INFO"
     rootLogger.appenderRefs = console
     rootLogger.appenderRef.console.ref = STDOUT
 

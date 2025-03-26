@@ -69,7 +69,7 @@ spec:
   logging:
     type: inline
     loggers:
-      logger.send.name: "http.openapi.operation.send"
+      logger.send.name: http.openapi.operation.send
       logger.send.level: DEBUG
   # ...
 ----
@@ -93,7 +93,7 @@ spec:
     loggers:
       rootLogger.level: INFO
       # enabling DEBUG for send operation
-      logger.send.name: "http.openapi.operation.send"
+      logger.send.name: http.openapi.operation.send
       logger.send.level: DEBUG
   # ...
 ----
