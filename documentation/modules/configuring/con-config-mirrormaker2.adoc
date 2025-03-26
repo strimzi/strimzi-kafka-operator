@@ -169,7 +169,8 @@ spec:
   logging: # <36>
     type: inline
     loggers:
-      connect.root.logger.level: INFO
+      # Kafka 4.0+ uses Log4j2
+      rootLogger.level: INFO
   # Readiness probe (optional)
   readinessProbe: # <37>
     initialDelaySeconds: 15
@@ -247,7 +248,7 @@ Standard Apache Kafka configuration may be provided, restricted to those propert
 <33> Adjusts the frequency of checks for offset tracking. If you change the frequency of offset synchronization, you might also need to adjust the frequency of these checks.
 <34> The Kafka Connect and MirrorMaker 2 version, which will always be the same.
 <35> Requests for reservation of supported resources, currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
-<36> Specified Kafka Connect loggers and log levels added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom Log4j configuration must be placed under the `log4j.properties` or `log4j2.properties` key in the ConfigMap. For the Kafka Connect `log4j.rootLogger` logger, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
+<36> Specified Kafka Connect loggers and log levels added directly (`inline`) or indirectly (`external`) through a `ConfigMap`. Custom Log4j configuration must be placed under the `log4j2.properties` key in the `ConfigMap`. You can set log levels to `INFO`, `ERROR`, `WARN`, `TRACE`, `DEBUG`, `FATAL` or `OFF`.
 <37> Healthchecks to know when to restart a container (liveness) and when a container can accept traffic (readiness).
 <38> JVM configuration options to optimize performance for the Virtual Machine (VM) running Kafka MirrorMaker.
 <39> ADVANCED OPTION: Container image configuration, which is recommended only in special situations.

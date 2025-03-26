@@ -6,31 +6,46 @@
 = Configuring logging levels
 
 [role="_abstract"]
-Configure logging levels in the custom resources of Kafka components and Strimzi operators.
-You can specify the logging levels directly in the `spec.logging` property of the custom resource.
-Or you can define the logging properties in a ConfigMap that's referenced in the custom resource using the `configMapKeyRef` property.
 
-The advantages of using a ConfigMap are that the logging properties are maintained in one place and are accessible to more than one resource.
-You can also reuse the ConfigMap for more than one resource.
-If you are using a ConfigMap to specify loggers for Strimzi Operators, you can also append the logging specification to add filters.
+WARNING: Strimzi operators and Kafka components use log4j2 for logging.
+However, Kafka 3.9 and earlier versions rely on log4j1.
+For log4j1-based configuration examples, refer to the link:{DocArchive}[Strimzi 0.45 documentation^].
 
-You specify a logging `type` in your logging specification:
+Configure the logging levels of Kafka components and Strimzi operators through their custom resources.
+You can use either of these options:
+
+* Specify logging levels directly in the `spec.logging` property of the custom resource.
+* Define logging properties in a custom `ConfigMap` and reference it using the `configMapKeyRef` property.
+
+Advantages of using a `ConfigMap`:
+
+* Centralized maintenance
+* Reusable with multiple resources
+* Flexibility to append logging specifications to add filters
+
+Specify a logging `type` in your logging specification:
 
 * `inline` when specifying logging levels directly
-* `external` when referencing a ConfigMap
+* `external` when referencing a `ConfigMap`
 
-.Example `inline` logging configuration
+For `inline` configuration, use the `loggers` property to set the root logger level and levels for specific classes or loggers.
+
+.Example inline logging configuration
 [source,shell,subs="+quotes,attributes"]
 ----
 # ...
 logging:
   type: inline
   loggers:
-    kafka.root.logger.level: INFO
+    rootLogger.level: INFO
 # ...
 ----
 
-.Example `external` logging configuration
+For `external` configuration, use a `ConfigMap` to define logging configurations using a full `log4j2.properties` file. 
+Set the logging `name` and `key` properties to reference the `ConfigMap`. 
+Both properties are mandatory. 
+
+.Example external logging configuration
 [source,shell,subs="+quotes,attributes"]
 ----
 # ...
@@ -39,29 +54,31 @@ logging:
   valueFrom:
     configMapKeyRef:
       name: my-config-map
-      key: my-config-map-key
+      key: log4j2.properties
 # ...
 ----
 
-Values for the `name` and `key` of the ConfigMap are mandatory.
-Default logging is used if the `name` or `key` is not set.
+Default logging is used if logging is not specified in the resource using either method.
+Loggers that haven't been explicitly configured inherit settings from their parent loggers. 
 
-== Logging options for Kafka components and operators
+When a resource managed by the Cluster Operator is created, a `ConfigMap` with the specified logging configuration is also created. 
+For components managed by the Strimzi operators, changes to logging levels are applied dynamically.
 
-For more information on configuring logging for specific Kafka components or operators, see the following sections.
+WARNING: Setting a log level to `DEBUG` or `TRACE` may result in a large amount of log output and may have performance implications.
 
-.Kafka component logging
+== Configurable loggers
 
-* link:{BookURLConfiguring}#property-kafka-logging-reference[Kafka logging^]
-* link:{BookURLConfiguring}#property-kafka-connect-logging-reference[Kafka Connect and MirrorMaker 2 logging^]
-* link:{BookURLConfiguring}#property-kafka-bridge-logging-reference[Kafka Bridge logging^]
-* link:{BookURLConfiguring}#property-cruise-control-logging-reference[Cruise Control logging^]
+The following Kafka components and operators have specific loggers available for configuration:
 
-.Operator logging
+* link:{BookURLConfiguring}#property-kafka-logging-reference[Kafka loggers^]
+* link:{BookURLConfiguring}#property-kafka-connect-logging-reference[Kafka Connect and MirrorMaker 2 loggers^]
+* link:{BookURLConfiguring}#property-kafka-bridge-logging-reference[Kafka Bridge loggers^]
+* link:{BookURLConfiguring}#property-cruise-control-logging-reference[Cruise Control loggers^]
+* xref:ref-operator-cluster-logging-configmap-str[Cluster Operator loggers]
+* link:{BookURLConfiguring}#property-topic-operator-logging-reference[Topic Operator loggers^]
+* link:{BookURLConfiguring}#property-user-operator-logging-reference[User Operator loggers^]
 
-* xref:ref-operator-cluster-logging-configmap-str[Cluster Operator logging]
-* link:{BookURLConfiguring}#property-topic-operator-logging-reference[Topic Operator logging^]
-* link:{BookURLConfiguring}#property-user-operator-logging-reference[User Operator logging^]
+For information about log levels, see {ApacheLoggers}.
 
 //creating a configmap for logging
 include::../../modules/configuring/proc-creating-configmap.adoc[leveloffset=+1]

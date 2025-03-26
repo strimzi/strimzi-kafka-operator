@@ -68,9 +68,9 @@ spec:
   logging: # <10>
     type: inline
     loggers:
-      logger.bridge.level: INFO
+      rootLogger.level: INFO
       # Enabling DEBUG just for send operation
-      logger.send.name: "http.openapi.operation.send"
+      logger.send.name: http.openapi.operation.send
       logger.send.level: DEBUG
   # JVM options (optional)
   jvmOptions: # <11>
@@ -120,7 +120,7 @@ spec:
 By default, the Kafka Bridge connects to Kafka brokers without authentication.
 <8> Consumer configuration options.
 <9> Producer configuration options.
-<10> Specified Kafka Bridge loggers and log levels added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom Log4j configuration must be placed under the `log4j.properties` or `log4j2.properties` key in the ConfigMap. For the Kafka Bridge loggers, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
+<10> Kafka Bridge loggers and log levels added directly (`inline`) or indirectly (`external`) through a `ConfigMap`. Custom Log4j configuration must be placed under the `log4j2.properties` key in the `ConfigMap`. You can set log levels to `INFO`, `ERROR`, `WARN`, `TRACE`, `DEBUG`, `FATAL` or `OFF`.
 <11> JVM configuration options to optimize performance for the Virtual Machine (VM) running the Kafka Bridge.
 <12> Healthchecks to know when to restart a container (liveness) and when a container can accept traffic (readiness).
 <13> Optional: Container image configuration, which is recommended only in special situations.

@@ -3,23 +3,24 @@ Configures the User Operator.
 [id='property-user-operator-logging-{context}']
 = Logging
 
-The User Operator has a configurable logger:
+The User Operator has its own preconfigured loggers:
 
-* `rootLogger.level`
+[cols="1m,2,1",options="header"]
+|===
+| Logger     | Description                    | Default Level
+
+| rootLogger | Default logger for all classes | INFO
+| jetty      | Logs HTTP server activity      | INFO
+|===
 
 The User Operator uses the Apache `log4j2` logger implementation.
+Use the `logging` property to configure loggers and logger levels.
 
-Use the `logging` property in the `entityOperator.userOperator` field of the `Kafka` resource to configure loggers and logger levels.
+You can set log levels using either the `inline` or `external` logging configuration types.
 
-You can set the log levels by specifying the logger and level directly (inline) or use a custom (external) ConfigMap.
-If a ConfigMap is used, you set `logging.valueFrom.configMapKeyRef.name` property to the name of the ConfigMap containing the external logging configuration. Inside the ConfigMap, the logging configuration is described using `log4j2.properties`. Both `logging.valueFrom.configMapKeyRef.name` and `logging.valueFrom.configMapKeyRef.key` properties are mandatory. A ConfigMap using the exact logging configuration specified is created with the custom resource when the Cluster Operator is running, then recreated after each reconciliation. If you do not specify a custom ConfigMap, default logging settings are used. If a specific logger value is not set, upper-level logger settings are inherited for that logger.
-For more information about log levels, see {ApacheLoggers}.
+Specify loggers and levels directly in the custom resource for inline configuration:
 
-Here we see examples of `inline` and `external` logging.
-The `inline` logging specifies the `rootLogger.level`.
-You can also set log levels for specific classes or loggers by adding them to the loggers property.
-
-.Inline logging
+.Example inline logging configuration
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -38,24 +39,30 @@ spec:
         type: inline
         loggers:
           rootLogger.level: INFO
-          logger.uop.name: io.strimzi.operator.user # <1>
-          logger.uop.level: DEBUG # <2> 
-          logger.abstractcache.name: io.strimzi.operator.user.operator.cache.AbstractCache # <3>
-          logger.abstractcache.level: TRACE # <4>
-          logger.jetty.level: DEBUG # <5>
-          
+          logger.jetty.level: WARN  
   # ...
+----
+
+You can define additional loggers by specifying the full class or package name using `logger.<name>.name`. 
+For example, to configure more detailed logging for the User Operator inline:
+
+.Example custom inline loggers
+[source,yaml]
+----
+# ...
+logger.uop.name: io.strimzi.operator.user # <1>
+logger.uop.level: DEBUG # <2> 
+logger.abstractcache.name: io.strimzi.operator.user.operator.cache.AbstractCache # <3>
+logger.abstractcache.level: TRACE # <4>     
 ----
 <1> Creates a logger for the `user` package.
 <2> Sets the logging level for the `user` package.
 <3> Creates a logger for the `AbstractCache` class.
-<4> Sets the logging level for the `AbstractCache` class.
-<5> Changes the logging level for the default `jetty` logger. The `jetty` logger is part of the logging configuration provided with Strimzi.
-By default, it is set to `INFO`.  
+<4> Sets the logging level for the `AbstractCache` class. 
 
-NOTE: When investigating an issue with the operator, it's usually sufficient to change the `rootLogger` to `DEBUG` to get more detailed logs. However, keep in mind that setting the log level to `DEBUG` may result in a large amount of log output and may have performance implications.
+Alternatively, you can reference an external `ConfigMap` containing a complete `log4j2.properties` file that defines your own log4j2 configuration, including loggers, appenders, and layout configuration:
 
-.External logging
+.Example external logging configuration
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -74,8 +81,9 @@ spec:
         type: external
         valueFrom:
           configMapKeyRef:
+            # name and key are mandatory
             name: customConfigMap
-            key: user-operator-log4j2.properties
+            key: log4j2.properties
    # ...
 ----
 

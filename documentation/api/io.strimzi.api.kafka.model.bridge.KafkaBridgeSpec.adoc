@@ -11,12 +11,36 @@ Configuration options relate to:
 [id='property-kafka-bridge-logging-{context}']
 = Logging
 
-Kafka Bridge has its own configurable loggers:
+Kafka Bridge has its own preconfigured loggers:
 
-* `rootLogger.level`
-* `logger.__<operation-id>__`
+[cols="1m,2,1",options="header"]
+|===
+| Logger     | Description                                          | Default Level
 
-You can replace `_<operation-id>_` in the `logger.__<operation-id>__` logger to set log levels for specific operations:
+| rootLogger | Default logger for all classes                       | INFO
+| bridge     | All classes in the `io.strimzi.kafka.bridge` package | INFO
+| healthy    | Uses `http.openapi.operation.healthy` endpoint       | WARN
+| ready      | Uses `http.openapi.operation.ready` endpoint         | WARN
+|===
+
+You can configure log levels directly for these loggers.
+For example:
+
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaBridge
+spec:
+  # ...
+  logging:
+    type: inline
+    loggers:
+      rootLogger.level: INFO
+      logger.ready.level: DEBUG
+  # ...
+----
+
+You can also specify custom loggers for other operations:
 
 * `createConsumer`
 * `deleteConsumer`
@@ -30,44 +54,34 @@ You can replace `_<operation-id>_` in the `logger.__<operation-id>__` logger to 
 * `seekToBeginning`
 * `seekToEnd`
 * `seek`
-* `healthy`
-* `ready`
 * `openapi`
 
-Each operation is defined according OpenAPI specification, and has a corresponding API endpoint through which the bridge receives requests from HTTP clients.
-You can change the log level on each endpoint to create fine-grained logging information about the incoming and outgoing HTTP requests.
+Each operation maps to an API endpoint,  defined according to the OpenAPI specification, and supports fine-grained logging via `http.openapi.operation.<operation_id>`.
 
-Each logger has to be configured assigning it a `name` as `http.openapi.operation.__<operation-id>__`.
-For example, configuring the logging level for the `send` operation logger means defining the following:
+For example, to set the logging level for the `send` operation logger:
 
-```
-logger.send.name = http.openapi.operation.send
-logger.send.level = DEBUG
-```
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaBridge
+spec:
+  # ...
+  logging:
+    type: inline
+    loggers:
+      logger.send.name: http.openapi.operation.send
+      logger.send.level: DEBUG
+  # ...
+----
 
 Kafka Bridge uses the Apache `log4j2` logger implementation.
-Loggers are defined in the `log4j2.properties` file, which has the following default configuration for `healthy` and `ready` endpoints:
-
-```
-logger.healthy.name = http.openapi.operation.healthy
-logger.healthy.level = WARN
-logger.ready.name = http.openapi.operation.ready
-logger.ready.level = WARN
-```
-The log level of all other operations is set to `INFO` by default.
-
 Use the `logging` property to configure loggers and logger levels.
 
-You can set the log levels by specifying the logger and level directly (inline) or use a custom (external) ConfigMap.
-If a ConfigMap is used, you set `logging.valueFrom.configMapKeyRef.name` property to the name of the ConfigMap containing the external logging configuration.
-The `logging.valueFrom.configMapKeyRef.name` and `logging.valueFrom.configMapKeyRef.key` properties are mandatory.
-Default logging is used if the `name` or `key` is not set.
-Inside the ConfigMap, the logging configuration is described using `log4j.properties`.
-For more information about log levels, see {ApacheLoggers}.
+You can set log levels using either the `inline` or `external` logging configuration types.
 
-Here we see examples of `inline` and `external` logging.
+Specify loggers and levels directly in the custom resource for inline configuration:
 
-.Inline logging
+.Example inline logging configuration
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -78,13 +92,15 @@ spec:
     type: inline
     loggers:
       rootLogger.level: INFO
-      # enabling DEBUG just for send operation
-      logger.send.name: "http.openapi.operation.send"
+      # enabling DEBUG for send operation
+      logger.send.name: http.openapi.operation.send
       logger.send.level: DEBUG
   # ...
 ----
 
-.External logging
+Alternatively, you can reference an external `ConfigMap` containing a complete `log4j2.properties` file that defines your own log4j2 configuration, including loggers, appenders, and layout configuration:
+
+.Example external logging configuration
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -95,17 +111,11 @@ spec:
     type: external
     valueFrom:
       configMapKeyRef:
+        # name and key are mandatory
         name: customConfigMap
-        key: bridge-logj42.properties
+        key: log4j2.properties
   # ...
 ----
-
-Any available loggers that are not configured have their level set to `OFF`.
-
-If the Kafka Bridge was deployed using the Cluster Operator,
-changes to Kafka Bridge logging levels are applied dynamically.
-
-If you use external logging, a rolling update is triggered when logging appenders are changed.
 
 .Garbage collector (GC)
 
