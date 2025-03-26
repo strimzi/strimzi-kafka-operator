@@ -13,10 +13,10 @@ An incremental downgrade moves between consecutive minor versions (such as {Prod
 
 Multi-version downgrade::
 A multi-version downgrade skips one or more minor versions. 
-While possible, this approach is not tested or supported, and may result in errors due to configuration changes or incompatible Kafka versions. 
+It may result in errors due to configuration changes or incompatible Kafka versions. 
 See <<downgrade-version-limitations>> for details on specific paths.
 
-Always validate your downgrade path before applying it in production.
+Before downgrading in production, test your specific scenario in a controlled environment to identify potential issues.
 
 [id='con-downgrade-paths-kafka-versions-{context}']
 == Support for Kafka versions when downgrading
