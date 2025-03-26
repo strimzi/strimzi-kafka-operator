@@ -29,6 +29,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -46,8 +47,6 @@ import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-
-import java.util.List;
 
 import static io.strimzi.systemtest.TestTags.ACCEPTANCE;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
@@ -350,7 +349,7 @@ class UserST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName()).build());
 
         final KafkaUser tlsExternalUserWithQuotasAndAcls = KafkaUserTemplates.tlsExternalUser(testStorage.getNamespaceName(), testStorage.getKafkaUsername(), testStorage.getClusterName())
             .editSpec()
@@ -413,12 +412,11 @@ class UserST extends AbstractST {
     @BeforeAll
     void setup() {
         sharedTestStorage = new TestStorage(ResourceManager.getTestContext());
-        
-        this.clusterOperator = this.clusterOperator
-            .defaultInstallation()
-            .withBindingsNamespaces(List.of(Environment.TEST_SUITE_NAMESPACE, TestConstants.CO_NAMESPACE))
-            .createInstallation()
-            .runInstallation();
+
+        SetupClusterOperator
+            .getInstance()
+            .withDefaultConfiguration()
+            .install();
 
         resourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(sharedTestStorage.getNamespaceName(), sharedTestStorage.getBrokerPoolName(), sharedTestStorage.getClusterName(), 1).build(),

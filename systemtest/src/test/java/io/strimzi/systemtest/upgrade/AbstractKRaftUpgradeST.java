@@ -7,6 +7,8 @@ package io.strimzi.systemtest.upgrade;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.testframe.resources.ResourceItem;
 import io.strimzi.api.kafka.model.common.Constants;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connect.KafkaConnectBuilder;
@@ -30,6 +32,8 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.resources.operator.ClusterOperatorConfiguration;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
@@ -109,6 +113,9 @@ public class AbstractKRaftUpgradeST extends AbstractST {
     protected final LabelSelector eoSelector = KafkaResource.getLabelSelector(CLUSTER_NAME, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
     protected final LabelSelector coSelector = new LabelSelectorBuilder().withMatchLabels(Map.of(Labels.STRIMZI_KIND_LABEL, "cluster-operator")).build();
     protected final LabelSelector connectLabelSelector = KafkaConnectResource.getLabelSelector(CLUSTER_NAME, KafkaConnectResources.componentName(CLUSTER_NAME));
+
+    // We want to keep the default configuration (as configured via the env variables)
+    protected final ClusterOperatorConfiguration clusterOperatorConfiguration = new ClusterOperatorConfiguration();
 
     protected void makeComponentsSnapshots(String componentsNamespaceName) {
         eoPods = DeploymentUtils.depSnapshot(componentsNamespaceName, KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME));
@@ -301,7 +308,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
     }
 
     protected void deployCoWithWaitForReadiness(final String clusterOperatorNamespaceName, final String componentsNamespaceName, final BundleVersionModificationData upgradeData) throws IOException {
-        LOGGER.info("Deploying CO: {} in Namespace: {}", ResourceManager.getCoDeploymentName(), clusterOperatorNamespaceName);
+        LOGGER.info("Deploying CO: {} in Namespace: {}", clusterOperatorConfiguration.getOperatorDeploymentName(), clusterOperatorNamespaceName);
 
         if (upgradeData.getFromVersion().equals("HEAD")) {
             coDir = new File(TestUtils.USER_PATH + "/../packaging/install/cluster-operator");
@@ -314,9 +321,9 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         // Modify + apply installation files
         modifyApplyClusterOperatorWithCRDsFromFile(clusterOperatorNamespaceName, componentsNamespaceName, coDir, upgradeData.getFeatureGatesBefore());
 
-        LOGGER.info("Waiting for Cluster Operator Deployment: {}", ResourceManager.getCoDeploymentName());
-        DeploymentUtils.waitForDeploymentAndPodsReady(clusterOperatorNamespaceName, ResourceManager.getCoDeploymentName(), 1);
-        LOGGER.info("{} is ready", ResourceManager.getCoDeploymentName());
+        LOGGER.info("Waiting for Cluster Operator Deployment: {}", clusterOperatorConfiguration.getOperatorDeploymentName());
+        DeploymentUtils.waitForDeploymentAndPodsReady(clusterOperatorNamespaceName, clusterOperatorConfiguration.getOperatorDeploymentName(), 1);
+        LOGGER.info("{} is ready", clusterOperatorConfiguration.getOperatorDeploymentName());
     }
 
     protected void deployKafkaClusterWithWaitForReadiness(final String componentsNamespaceName,
@@ -428,9 +435,12 @@ public class AbstractKRaftUpgradeST extends AbstractST {
 
                 final String imageFullPath = Environment.getImageOutputRegistry(testStorage.getNamespaceName(), TestConstants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
+                LOGGER.info("Deploying KafkaConnect from: {}", kafkaConnectYaml.getPath());
+
                 KafkaConnect kafkaConnect = new KafkaConnectBuilder(ReadWriteUtils.readObjectFromYamlFilepath(kafkaConnectYaml, KafkaConnect.class))
                     .editMetadata()
                         .withName(CLUSTER_NAME)
+                        .withNamespace(testStorage.getNamespaceName())
                         .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                     .endMetadata()
                     .editSpec()
@@ -446,10 +456,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
                     .endSpec()
                     .build();
 
-                LOGGER.info("Deploying KafkaConnect from: {}", kafkaConnectYaml.getPath());
-
-                cmdKubeClient(testStorage.getNamespaceName()).applyContent(ReadWriteUtils.writeObjectToYamlString(kafkaConnect));
-                ResourceManager.waitForResourceReadiness(testStorage.getNamespaceName(), getResourceApiVersion(KafkaConnect.RESOURCE_PLURAL), kafkaConnect.getMetadata().getName());
+                resourceManager.createResourceWithWait(kafkaConnect);
 
                 // in our examples is no sink connector and thus we are using the same as in HEAD verification
                 resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), CLUSTER_NAME)
@@ -486,7 +493,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
     }
 
     protected void changeClusterOperator(String clusterOperatorNamespaceName, String componentsNamespaceName, BundleVersionModificationData versionModificationData) throws IOException {
-        final Map<String, String> coPods = DeploymentUtils.depSnapshot(clusterOperatorNamespaceName, ResourceManager.getCoDeploymentName());
+        final Map<String, String> coPods = DeploymentUtils.depSnapshot(clusterOperatorNamespaceName, clusterOperatorConfiguration.getOperatorDeploymentName());
 
         File coDir;
         // Modify + apply installation files
@@ -502,7 +509,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         modifyApplyClusterOperatorWithCRDsFromFile(clusterOperatorNamespaceName, componentsNamespaceName, coDir, versionModificationData.getFeatureGatesAfter());
 
         LOGGER.info("Waiting for CO upgrade");
-        DeploymentUtils.waitTillDepHasRolled(clusterOperatorNamespaceName, ResourceManager.getCoDeploymentName(), 1, coPods);
+        DeploymentUtils.waitTillDepHasRolled(clusterOperatorNamespaceName, clusterOperatorConfiguration.getOperatorDeploymentName(), 1, coPods);
     }
 
     /**
@@ -685,6 +692,7 @@ public class AbstractKRaftUpgradeST extends AbstractST {
         kafkaTopicYaml = new File(examplesPath + "/examples/topic/kafka-topic.yaml");
         LOGGER.info("Deploying KafkaTopic from: {}, in Namespace {}", kafkaTopicYaml.getPath(), namespaceName);
         cmdKubeClient(namespaceName).applyContent(ReadWriteUtils.readFile(kafkaTopicYaml));
+        KubeResourceManager.get().pushToStack(new ResourceItem<>(() -> KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName("my-topic").delete()));
     }
 
     private String getKafkaYamlWithName(String name) {

@@ -7,8 +7,13 @@ package io.strimzi.systemtest.utils.specific;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.InstallPlan;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.test.TestUtils;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -99,5 +104,18 @@ public class OlmUtils {
         waitForCsvWithNameCreation(namespaceName, csvName);
 
         return kubeClient().getCsv(namespaceName, csvName).getSpec().getInstall().getSpec().getDeployments().get(0).getName();
+    }
+
+    /**
+     * Returns Map of Kind and particular object in JsonObject from CSV.
+     *
+     * @param coNamespaceName   Namespace name where the CSV should be located
+     * @param olmBundlePrefix   Prefix for the OLM bundle - by that the CSV is taken
+     *
+     * @return  Map of examples that particular CSV contains
+     */
+    public static Map<String, JsonObject> getExamplesFromCsv(String coNamespaceName, String olmBundlePrefix) {
+        JsonArray examples = new JsonArray(kubeClient().getCsvWithPrefix(coNamespaceName, olmBundlePrefix).getMetadata().getAnnotations().get("alm-examples"));
+        return examples.stream().map(o -> (JsonObject) o).collect(Collectors.toMap(object -> object.getString("kind"), object -> object));
     }
 }

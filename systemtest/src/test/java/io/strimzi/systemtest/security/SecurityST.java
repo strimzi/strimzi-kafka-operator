@@ -36,6 +36,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -343,8 +344,8 @@ class SecurityST extends AbstractST {
         for (int i = 1; i <= expectedRolls; i++) {
             // In case the first rolling update is finished, shut down cluster operator to see if the rolling update can be finished
             if (i == 2) {
-                Pod coPod = kubeClient().listPodsByPrefixInName(clusterOperator.getDeploymentNamespace(), clusterOperator.getClusterOperatorName()).get(0);
-                kubeClient().deletePod(clusterOperator.getDeploymentNamespace(), coPod);
+                Pod coPod = kubeClient().listPodsByPrefixInName(SetupClusterOperator.getInstance().getOperatorNamespace(), SetupClusterOperator.getInstance().getOperatorDeploymentName()).get(0);
+                kubeClient().deletePod(SetupClusterOperator.getInstance().getOperatorNamespace(), coPod);
             }
 
             if (kafkaShouldRoll) {
@@ -1363,9 +1364,9 @@ class SecurityST extends AbstractST {
 
     @BeforeAll
     void setup() {
-        this.clusterOperator = this.clusterOperator
-                .defaultInstallation()
-                .createInstallation()
-                .runInstallation();
+        SetupClusterOperator
+            .getInstance()
+            .withDefaultConfiguration()
+            .install();
     }
 }

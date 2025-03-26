@@ -26,6 +26,12 @@
         <dependency>
             <groupId>io.strimzi</groupId>
             <artifactId>operator-common</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-slf4j-impl</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.valid4j</groupId>
@@ -41,10 +47,12 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
+            <version>${log4j2.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
+            <version>${log4j2.version}</version>
         </dependency>
         <dependency>
             <groupId>io.strimzi</groupId>
@@ -105,6 +113,16 @@
         <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>openshift-client-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j2.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <version>${log4j2.version}</version>
         </dependency>
         <dependency>
             <groupId>io.fabric8</groupId>
@@ -230,12 +248,20 @@
         </dependency>
         <dependency>
             <groupId>io.skodjob</groupId>
+            <artifactId>test-frame-kubernetes</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.skodjob</groupId>
             <artifactId>test-docs-generator-maven-plugin</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.strimzi.access-operator</groupId>
             <artifactId>api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.marcnuri.helm-java</groupId>
+            <artifactId>helm-java</artifactId>
         </dependency>
     </dependencies>
 
@@ -273,6 +299,8 @@
                                 <!-- Needed for logging in tests using the Kubernetes Client (uses SLF4J) -->
                                 <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-slf4j-impl</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>io.skodjob:test-frame-common</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.slf4j:slf4j-api</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-slf4j2-impl</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                         </configuration>
                     </execution>

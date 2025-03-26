@@ -35,6 +35,8 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
+import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -147,7 +149,7 @@ class MirrorMaker2ST extends AbstractST {
         String connectConfigurations = configMap.getData().get("kafka-connect.properties");
         Map<String, Object> config = StUtils.loadProperties(connectConfigurations);
         assertThat(config.entrySet().containsAll(expectedConfig.entrySet()), is(true));
-        VerificationUtils.verifyClusterOperatorMM2DockerImage(clusterOperator.getDeploymentNamespace(), testStorage.getNamespaceName(), testStorage.getClusterName());
+        VerificationUtils.verifyClusterOperatorMM2DockerImage(SetupClusterOperator.getInstance().getOperatorNamespace(), testStorage.getNamespaceName(), testStorage.getClusterName());
 
         VerificationUtils.verifyPodsLabels(testStorage.getNamespaceName(), KafkaMirrorMaker2Resources.componentName(testStorage.getClusterName()), testStorage.getMM2Selector());
         VerificationUtils.verifyServiceLabels(testStorage.getNamespaceName(), KafkaMirrorMaker2Resources.serviceName(testStorage.getClusterName()), testStorage.getMM2Selector());
@@ -1195,10 +1197,12 @@ class MirrorMaker2ST extends AbstractST {
 
     @BeforeAll
     void setup() {
-
-        clusterOperator = clusterOperator.defaultInstallation()
-            .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_MEDIUM)
-            .createInstallation()
-            .runInstallation();
+        SetupClusterOperator
+            .getInstance()
+            .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
+                .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_MEDIUM)
+                .build()
+            )
+            .install();
     }
 }

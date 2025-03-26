@@ -13,6 +13,8 @@ import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -23,8 +25,6 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
-
-import java.util.Arrays;
 
 import static io.strimzi.systemtest.TestTags.CONNECT;
 import static io.strimzi.systemtest.TestTags.CONNECT_COMPONENTS;
@@ -49,13 +49,14 @@ public class ClusterOperatorRbacST extends AbstractST {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        // 060-Deployment
-        this.clusterOperator = this.clusterOperator.defaultInstallation()
-            .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
-            .withWatchingNamespaces(Environment.TEST_SUITE_NAMESPACE)
-            .withBindingsNamespaces(Arrays.asList(TestConstants.CO_NAMESPACE, Environment.TEST_SUITE_NAMESPACE))
-            .createInstallation()
-            .runBundleInstallation();
+        SetupClusterOperator
+            .getInstance()
+            .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
+                .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
+                .withNamespacesToWatch(TestConstants.CO_NAMESPACE + "," + Environment.TEST_SUITE_NAMESPACE)
+                .build()
+            )
+            .install();
 
         cluster.setNamespace(Environment.TEST_SUITE_NAMESPACE);
 
@@ -86,13 +87,14 @@ public class ClusterOperatorRbacST extends AbstractST {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        // 060-Deployment
-        this.clusterOperator = this.clusterOperator.defaultInstallation()
-            .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
-            .withWatchingNamespaces(Environment.TEST_SUITE_NAMESPACE)
-            .withBindingsNamespaces(Arrays.asList(TestConstants.CO_NAMESPACE, Environment.TEST_SUITE_NAMESPACE))
-            .createInstallation()
-            .runBundleInstallation();
+        SetupClusterOperator
+            .getInstance()
+            .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
+                .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
+                .withNamespacesToWatch(TestConstants.CO_NAMESPACE + "," + Environment.TEST_SUITE_NAMESPACE)
+                .build()
+            )
+            .install();
 
         String rackKey = "rack-key";
 

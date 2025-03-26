@@ -17,6 +17,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -246,11 +247,11 @@ public class DynamicConfSharedST extends AbstractST {
     @BeforeAll
     void setup() {
         suiteTestStorage = new TestStorage(ResourceManager.getTestContext());
-        
-        this.clusterOperator = this.clusterOperator
-            .defaultInstallation()
-            .createInstallation()
-            .runInstallation();
+
+        SetupClusterOperator
+            .getInstance()
+            .withDefaultConfiguration()
+            .install();
 
         LOGGER.info("Deploying shared Kafka across all test cases!");
         resourceManager.createResourceWithWait(
