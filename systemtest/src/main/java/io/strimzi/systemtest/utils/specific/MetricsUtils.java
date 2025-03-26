@@ -5,17 +5,17 @@
 package io.strimzi.systemtest.utils.specific;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.skodjob.testframe.executor.Exec;
 import io.skodjob.testframe.metrics.Counter;
 import io.skodjob.testframe.metrics.Gauge;
 import io.skodjob.testframe.metrics.Histogram;
 import io.skodjob.testframe.metrics.Metric;
 import io.skodjob.testframe.metrics.Summary;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.metrics.ClusterOperatorMetricsComponent;
 import io.strimzi.systemtest.performance.gather.collectors.BaseMetricsCollector;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,7 +28,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.is;
@@ -49,12 +48,12 @@ public class MetricsUtils {
         command.add("cat");
         command.add("/tmp/run.sh");
         ArrayList<String> executableCommand = new ArrayList<>();
-        executableCommand.addAll(Arrays.asList(cmdKubeClient().toString(), "exec", podName, "-n", namespaceName, "--"));
+        executableCommand.addAll(Arrays.asList(KubeResourceManager.get().kubeCmdClient().cmd(), "exec", podName, "-n", namespaceName, "--"));
         executableCommand.addAll(command);
 
         Exec exec = new Exec();
         // 20 seconds should be enough for collect data from the Pod
-        int ret = exec.execute(null, executableCommand, 20_000);
+        int ret = exec.execute(null, executableCommand, null, 20_000);
 
         synchronized (LOCK) {
             LOGGER.info("Metrics collection for Pod: {}/{} return code - {}", namespaceName, podName, ret);
@@ -66,7 +65,7 @@ public class MetricsUtils {
 
     public static BaseMetricsCollector setupCOMetricsCollectorInNamespace(String coNamespace, String coName, String coScraperName) {
         LabelSelector scraperDeploymentPodLabel = new LabelSelector(null, Map.of(TestConstants.APP_POD_LABEL, coScraperName));
-        String coScraperPodName = ResourceManager.kubeClient().listPods(coNamespace, scraperDeploymentPodLabel).get(0).getMetadata().getName();
+        String coScraperPodName = KubeResourceManager.get().kubeClient().listPods(coNamespace, scraperDeploymentPodLabel).get(0).getMetadata().getName();
 
         return new BaseMetricsCollector.Builder()
             .withScraperPodName(coScraperPodName)

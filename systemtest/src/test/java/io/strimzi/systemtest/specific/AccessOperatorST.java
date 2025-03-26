@@ -11,6 +11,7 @@ import io.skodjob.annotations.Desc;
 import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.TestDoc;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
 import io.strimzi.api.kafka.model.user.KafkaUser;
@@ -22,8 +23,8 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.access.SetupAccessOperator;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -39,7 +40,6 @@ import org.junit.jupiter.api.Tag;
 import java.util.List;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 /**
  * Class for testing the usage of Kafka Access Operator together with operators and Kafka/KafkaUser CRs in real environment.
@@ -66,14 +66,14 @@ public class AccessOperatorST extends AbstractST {
         }
     )
     void testAccessOperator() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String kafkaAccessName = testStorage.getClusterName() + "-access";
 
         LOGGER.info("Deploying Kafka Access Operator");
         SetupAccessOperator.install(testStorage.getNamespaceName());
 
         LOGGER.info("Deploying Kafka cluster and creating KafkaUser");
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
@@ -100,13 +100,13 @@ public class AccessOperatorST extends AbstractST {
                 .build()
         );
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaTopicTemplates.topic(testStorage).build(),
             KafkaUserTemplates.tlsUser(testStorage).build()
         );
 
         LOGGER.info("Creating KafkaAccess for collecting information about KafkaUser: {} for Kafka: {}", testStorage.getUsername(), testStorage.getClusterName());
-        resourceManager.createResourceWithWait(new KafkaAccessBuilder()
+        KubeResourceManager.get().createResourceWithWait(new KafkaAccessBuilder()
             .editOrNewMetadata()
                 .withName(kafkaAccessName)
                 .withNamespace(testStorage.getNamespaceName())
@@ -129,7 +129,7 @@ public class AccessOperatorST extends AbstractST {
 
         SecretUtils.waitForSecretReady(testStorage.getNamespaceName(), kafkaAccessName, () -> { });
 
-        Secret accessSecret = kubeClient().getSecret(testStorage.getNamespaceName(), kafkaAccessName);
+        Secret accessSecret = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(testStorage.getNamespaceName()).withName(kafkaAccessName).get();
         String bootstrapServer = Util.decodeFromBase64(accessSecret.getData().get("bootstrapServers"));
 
         List<EnvVar> tlsEnvVarsForKafkaAccess = List.of(
@@ -172,7 +172,7 @@ public class AccessOperatorST extends AbstractST {
             .build();
 
         LOGGER.info("Deploying Kafka clients with configured TLS using the KafkaAccess' secret");
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             kafkaClients.producerTlsStrimziWithTlsEnvVars(tlsEnvVarsForKafkaAccess),
             kafkaClients.consumerTlsStrimziWithTlsEnvVars(tlsEnvVarsForKafkaAccess)
         );
@@ -183,9 +183,9 @@ public class AccessOperatorST extends AbstractST {
 
     @BeforeAll
     void setup() {
-        clusterOperator = clusterOperator
-            .defaultInstallation()
-            .createInstallation()
-            .runInstallation();
+        SetupClusterOperator
+            .getInstance()
+            .withDefaultConfiguration()
+            .install();
     }
 }

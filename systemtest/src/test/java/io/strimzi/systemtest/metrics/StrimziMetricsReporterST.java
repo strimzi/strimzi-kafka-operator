@@ -9,14 +9,14 @@ import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.performance.gather.collectors.BaseMetricsCollector;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -84,24 +84,23 @@ public class StrimziMetricsReporterST extends AbstractST {
 
     @BeforeAll
     void setupEnvironment() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         // metrics tests are not designed to run with namespace RBAC scope
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        clusterOperator = clusterOperator.defaultInstallation()
-            .createInstallation()
-            .runInstallation();
+        SetupClusterOperator
+            .getInstance()
+            .withDefaultConfiguration()
+            .install();
 
         cluster.setNamespace(testStorage.getNamespaceName());
 
-        resourceManager.createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(),
-                KafkaNodePoolResource.getBrokerPoolName(testStorage.getClusterName()), testStorage.getClusterName(), 3).build(),
-            KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(),
-                KafkaNodePoolResource.getControllerPoolName(testStorage.getClusterName()), testStorage.getClusterName(), 3).build()
+        KubeResourceManager.get().createResourceWithWait(
+            KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
+            KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
                 .editSpec()
                     .editKafka()
@@ -114,7 +113,7 @@ public class StrimziMetricsReporterST extends AbstractST {
                 .endSpec().build()
         );
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build(),
             KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName(), 5, 2).build()
         );
@@ -125,7 +124,7 @@ public class StrimziMetricsReporterST extends AbstractST {
         LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(TestConstants.SAFETY_RECONCILIATION_INTERVAL));
 
         kafkaCollector = new BaseMetricsCollector.Builder()
-            .withScraperPodName(ResourceManager.kubeClient()
+            .withScraperPodName(KubeResourceManager.get().kubeClient()
                 .listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName())
             .withNamespaceName(testStorage.getNamespaceName())
             .withComponent(KafkaMetricsComponent.create(testStorage.getClusterName()))

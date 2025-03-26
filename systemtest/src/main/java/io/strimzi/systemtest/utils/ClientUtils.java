@@ -10,17 +10,13 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.WaitException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.Random;
-
-import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 /**
  * ClientUtils class, which provides static methods for the all type clients
@@ -89,8 +85,8 @@ public class ClientUtils {
     public static void waitForClientsSuccess(String namespaceName, String consumerName, String producerName, int messageCount, boolean deleteAfterSuccess) {
         LOGGER.info("Waiting for producer: {}/{} and consumer: {}/{} Jobs to finish successfully", namespaceName, producerName, namespaceName, consumerName);
         TestUtils.waitFor("client Jobs to finish successfully", TestConstants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
-            () -> kubeClient().checkSucceededJobStatus(namespaceName, producerName, 1)
-                && kubeClient().checkSucceededJobStatus(namespaceName, consumerName, 1),
+            () -> JobUtils.checkSucceededJobStatus(namespaceName, producerName, 1)
+                && JobUtils.checkSucceededJobStatus(namespaceName, consumerName, 1),
             () -> {
                 JobUtils.logCurrentJobStatus(namespaceName, producerName);
                 JobUtils.logCurrentJobStatus(namespaceName, consumerName);
@@ -142,10 +138,7 @@ public class ClientUtils {
     public static void waitForClientSuccess(String namespaceName, String jobName, int messageCount, boolean deleteAfterSuccess) {
         LOGGER.info("Waiting for client Job: {}/{} to finish successfully", namespaceName, jobName);
         TestUtils.waitFor("client Job to finish successfully", TestConstants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
-            () -> {
-                LOGGER.debug("Client Job: {}/{} has status {}", namespaceName, jobName, kubeClient().namespace(namespaceName).getJobStatus(jobName));
-                return kubeClient().checkSucceededJobStatus(namespaceName, jobName, 1);
-            },
+            () -> JobUtils.checkSucceededJobStatus(namespaceName, jobName, 1),
             () -> JobUtils.logCurrentJobStatus(namespaceName, jobName));
 
         if (deleteAfterSuccess) {
@@ -205,7 +198,7 @@ public class ClientUtils {
         LOGGER.info("Waiting for client Job: {}/{} to reach the timeout limit", namespaceName, jobName);
         try {
             TestUtils.waitFor("client Job: " + namespaceName + "/" + jobName + "to reach the the timeout limit", TestConstants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
-                () -> kubeClient().checkFailedJobStatus(namespaceName, jobName, 1),
+                () -> JobUtils.checkFailedJobStatus(namespaceName, jobName, 1),
                 () -> JobUtils.logCurrentJobStatus(namespaceName, jobName));
 
             if (deleteAfterSuccess) {
@@ -246,8 +239,8 @@ public class ClientUtils {
 
         try {
             TestUtils.waitFor("client Jobs: " + producerName + " and " + consumerName + " in Namespace: " + namespaceName + " to reach the timeout limit", TestConstants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
-                () -> kubeClient().checkFailedJobStatus(namespaceName, producerName, 1)
-                    && kubeClient().checkFailedJobStatus(namespaceName, consumerName, 1),
+                () -> JobUtils.checkFailedJobStatus(namespaceName, producerName, 1)
+                    && JobUtils.checkFailedJobStatus(namespaceName, consumerName, 1),
                 () -> {
                     JobUtils.logCurrentJobStatus(namespaceName, producerName);
                     JobUtils.logCurrentJobStatus(namespaceName, consumerName);
@@ -265,58 +258,6 @@ public class ClientUtils {
             } else {
                 throw e;
             }
-        }
-    }
-
-    public static void waitForClientContainsAllMessages(String namespaceName, String jobName, List<String> messages, boolean deleteAfterSuccess) {
-        String jobPodName = PodUtils.getPodNameByPrefix(namespaceName, jobName);
-        List<String> notReadyMessages = messages;
-        TestUtils.waitFor("client Job to contain all messages: [" + messages.toString() + "]", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.THROTTLING_EXCEPTION_TIMEOUT, () -> {
-            for (String message : messages) {
-                if (kubeClient().logsInSpecificNamespace(namespaceName, jobPodName).contains(message)) {
-                    notReadyMessages.remove(message);
-                }
-            }
-
-            if (deleteAfterSuccess && notReadyMessages.isEmpty()) {
-                JobUtils.deleteJobWithWait(namespaceName, jobName);
-            }
-
-            return notReadyMessages.isEmpty();
-        });
-    }
-
-    public static void waitForClientContainsMessage(String namespaceName, String jobName, String message) {
-        waitForClientContainsMessage(namespaceName, jobName, message, true);
-    }
-
-    public static void waitForClientContainsMessage(String namespaceName, String jobName, String message, boolean deleteAfterSuccess) {
-        String jobPodName = PodUtils.getPodNameByPrefix(namespaceName, jobName);
-        LOGGER.info("Waiting for client Job: {}/{} to contain message: [{}]", namespaceName, jobName, message);
-
-        TestUtils.waitFor("client Job to contain message: [" + message + "]", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.THROTTLING_EXCEPTION_TIMEOUT,
-            () -> kubeClient().logsInSpecificNamespace(namespaceName, jobPodName).contains(message),
-            () -> JobUtils.logCurrentJobStatus(namespaceName, jobName));
-
-        if (deleteAfterSuccess) {
-            JobUtils.deleteJobWithWait(namespaceName, jobName);
-        }
-    }
-
-    public static void waitForClientNotContainsMessage(String namespaceName, String jobName, String message) {
-        waitForClientNotContainsMessage(namespaceName, jobName, message, true);
-    }
-
-    public static void waitForClientNotContainsMessage(String namespaceName, String jobName, String message, boolean deleteAfterSuccess) {
-        String jobPodName = PodUtils.getPodNameByPrefix(namespaceName, jobName);
-        LOGGER.info("Waiting for client Job: {}/{} to not contain message: [{}]", namespaceName, jobName, message);
-
-        TestUtils.waitFor("client Job to contain message: [" + message + "]", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.THROTTLING_EXCEPTION_TIMEOUT,
-            () -> !kubeClient().logsInSpecificNamespace(namespaceName, jobPodName).contains(message),
-            () -> JobUtils.logCurrentJobStatus(namespaceName, jobName));
-
-        if (deleteAfterSuccess) {
-            JobUtils.deleteJobWithWait(namespaceName, jobName);
         }
     }
 
