@@ -5,10 +5,9 @@
 package io.strimzi.systemtest.metrics;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.systemtest.TestConstants;
-
-import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 /**
  * Concrete implementation of BaseMetricsComponent for the Topic Operator.
@@ -47,6 +46,6 @@ public class TopicOperatorMetricsComponent extends BaseMetricsComponent {
      */
     @Override
     public LabelSelector getLabelSelector() {
-        return kubeClient().getDeploymentSelectors(namespaceName, KafkaResources.entityOperatorDeploymentName(componentName));
+        return KubeResourceManager.get().kubeClient().getClient().apps().deployments().inNamespace(namespaceName).withName(KafkaResources.entityOperatorDeploymentName(componentName)).get().getSpec().getSelector();
     }
 }

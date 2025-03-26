@@ -8,22 +8,19 @@ import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.readiness.Readiness;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class PodUtils {
 
@@ -34,11 +31,26 @@ public class PodUtils {
     private PodUtils() { }
 
     /**
+     * Returns list of Pod names in specified Namespace with specified label selector.
+     *
+     * @param namespaceName     Namespace name where the Pods with specific label selector should be present.
+     * @param labelSelector     {@link LabelSelector} matching particular Pods.
+     *
+     * @return  list of Pod names in specified Namespace with specified label selector.
+     */
+    public static List<String> listPodNames(String namespaceName, LabelSelector labelSelector) {
+        return KubeResourceManager.get().kubeClient().listPods(namespaceName, labelSelector)
+            .stream()
+            .map(pod -> pod.getMetadata().getName())
+            .toList();
+    }
+
+    /**
      * Returns a map of resource name to resource version for all the pods in the given {@code namespace}
      * matching the given {@code selector}.
      */
     public static Map<String, String> podSnapshot(String namespaceName, LabelSelector selector) {
-        List<Pod> pods = kubeClient(namespaceName).listPods(namespaceName, selector);
+        List<Pod> pods = KubeResourceManager.get().kubeClient().listPods(namespaceName, selector);
         return pods.stream()
             .collect(
                 Collectors.toMap(pod -> pod.getMetadata().getName(),
@@ -46,17 +58,17 @@ public class PodUtils {
     }
 
     public static String getFirstContainerImageNameFromPod(String namespaceName, String podName) {
-        return kubeClient(namespaceName).getPod(namespaceName, podName).getSpec().getContainers().get(0).getImage();
+        return KubeResourceManager.get().kubeClient().getClient().pods().inNamespace(namespaceName).withName(podName).get().getSpec().getContainers().get(0).getImage();
     }
 
     public static String getContainerImageNameFromPod(String namespaceName, String podName, String containerName) {
-        return kubeClient(namespaceName).getPod(podName).getSpec().getContainers().stream()
+        return KubeResourceManager.get().kubeClient().getClient().pods().inNamespace(namespaceName).withName(podName).get().getSpec().getContainers().stream()
             .filter(c -> c.getName().equals(containerName))
             .findFirst().orElseThrow().getImage();
     }
 
-    public static String getInitContainerImageName(String podName) {
-        return kubeClient().getPod(podName).getSpec().getInitContainers().get(0).getImage();
+    public static String getInitContainerImageName(String namespaceName, String podName) {
+        return KubeResourceManager.get().kubeClient().getClient().pods().inNamespace(namespaceName).withName(podName).get().getSpec().getInitContainers().get(0).getImage();
     }
 
     public static void waitForPodsReady(String namespaceName, LabelSelector selector, int expectPods, boolean containers) {
@@ -77,7 +89,7 @@ public class PodUtils {
         TestUtils.waitFor("readiness of all Pods matching: " + selector,
             TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, ResourceOperation.timeoutForPodsOperation(expectPods),
             () -> {
-                List<Pod> pods = kubeClient(namespaceName).listPods(namespaceName, selector);
+                List<Pod> pods = KubeResourceManager.get().kubeClient().listPods(namespaceName, selector);
                 if (pods.isEmpty() && expectPods == 0) {
                     LOGGER.debug("Expected Pods are ready");
                     return true;
@@ -116,15 +128,15 @@ public class PodUtils {
      * {@link io.strimzi.systemtest.utils.RollingUpdateUtils#waitTillComponentHasRolled(String, LabelSelector, int, Map)} )}
      * @param podsNamePrefix Cluster name where pods should be deleted
      */
-    public static void waitForPodsWithPrefixDeletion(String podsNamePrefix) {
+    public static void waitForPodsWithPrefixDeletion(String namespaceName, String podsNamePrefix) {
         LOGGER.info("Waiting for all Pods with prefix: {} to be deleted", podsNamePrefix);
-        kubeClient().listPods().stream()
+        KubeResourceManager.get().kubeClient().listPods(namespaceName).stream()
             .filter(p -> p.getMetadata().getName().startsWith(podsNamePrefix))
             .forEach(p -> deletePodWithWait(p.getMetadata().getNamespace(), p.getMetadata().getName()));
     }
 
     public static String getPodNameByPrefix(String namespaceName, String prefix) {
-        return kubeClient(namespaceName).listPods(namespaceName).stream().filter(pod -> pod.getMetadata().getName().startsWith(prefix))
+        return KubeResourceManager.get().kubeClient().listPods(namespaceName).stream().filter(pod -> pod.getMetadata().getName().startsWith(prefix))
             .findFirst().orElseThrow().getMetadata().getName();
     }
 
@@ -133,7 +145,7 @@ public class PodUtils {
 
         TestUtils.waitFor("Pod with prefix: " + podNamePrefix + " to be present.", TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT,
             () -> {
-                List<Pod> listOfPods = kubeClient(namespaceName).listPods(namespaceName)
+                List<Pod> listOfPods = KubeResourceManager.get().kubeClient().listPods(namespaceName)
                     .stream().filter(p -> p.getMetadata().getName().startsWith(podNamePrefix)
                         && !p.getMetadata().getName().contains("producer")
                         && !p.getMetadata().getName().contains("consumer")
@@ -147,7 +159,7 @@ public class PodUtils {
     }
 
     public static String getFirstPodNameContaining(final String namespaceName, String searchTerm) {
-        return kubeClient(namespaceName).listPods(namespaceName).stream().filter(pod -> pod.getMetadata().getName().contains(searchTerm))
+        return KubeResourceManager.get().kubeClient().listPods(namespaceName).stream().filter(pod -> pod.getMetadata().getName().contains(searchTerm))
                 .findFirst().orElseThrow().getMetadata().getName();
     }
 
@@ -156,12 +168,12 @@ public class PodUtils {
 
         TestUtils.waitFor("Pod: " + namespaceName + "/" + name + " could not be deleted", TestConstants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT,
             () -> {
-                List<Pod> pods = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, name);
+                List<Pod> pods = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(namespaceName, name);
                 if (pods.size() != 0) {
                     for (Pod pod : pods) {
                         if (pod.getStatus().getPhase().equals("Terminating")) {
                             LOGGER.debug("Deleting Pod: {}/{}", namespaceName, pod.getMetadata().getName());
-                            cmdKubeClient(namespaceName).deleteByName("pod", pod.getMetadata().getName());
+                            KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).deleteByName("pod", pod.getMetadata().getName());
                         }
                     }
                     return false;
@@ -172,17 +184,10 @@ public class PodUtils {
         LOGGER.info("Pod: {}/{} deleted", namespaceName, name);
     }
 
-    public static void waitUntilPodsCountIsPresent(String podNamePrefix, int numberOfPods) {
-        LOGGER.info("Waiting for {} Pod(s) with prefix '{}' to be present", numberOfPods, podNamePrefix);
-        TestUtils.waitFor("Pod(s) with prefix: '" + podNamePrefix + "' to be present", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
-            () -> kubeClient().listPodsByPrefixInName(podNamePrefix).size() == numberOfPods);
-        LOGGER.info("Pod(s) with count {} are present", numberOfPods);
-    }
-
     public static void waitUntilMessageIsInPodLogs(final String namespaceName, String podName, String message, long duration) {
         LOGGER.info("Waiting for log from Pod: {}/{} to contain message [{}]", namespaceName, podName, message);
         TestUtils.waitFor("log from Pod: " + namespaceName + "/" + podName + " to contain message: [" + message + "]", TestConstants.GLOBAL_POLL_INTERVAL, duration,
-            () -> kubeClient(namespaceName).logsInSpecificNamespace(namespaceName, podName).contains(message));
+            () -> KubeResourceManager.get().kubeClient().getLogsFromPod(namespaceName, podName).contains(message));
         LOGGER.info("Message: {} found in log of Pod: {}/{}", message, namespaceName, podName);
     }
 
@@ -194,7 +199,7 @@ public class PodUtils {
         LOGGER.info("Waiting for Pod: {}/{} to have {} containers", namespaceName, podNamePrefix, numberOfContainers);
         TestUtils.waitFor("Pod: " + namespaceName + "/" + podNamePrefix + " to have " + numberOfContainers + " containers",
             TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
-            () -> kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, podNamePrefix).get(0).getSpec().getContainers().size() == numberOfContainers);
+            () -> KubeResourceManager.get().kubeClient().listPodsByPrefixInName(namespaceName, podNamePrefix).get(0).getSpec().getContainers().size() == numberOfContainers);
         LOGGER.info("Pod: {}/{} has {} containers", namespaceName, podNamePrefix, numberOfContainers);
     }
 
@@ -204,7 +209,7 @@ public class PodUtils {
         TestUtils.waitFor("Pod: " + namespaceName + "/" + podNamePrefix + " to have " + expectedPods + " stable replicas",
             TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
             () -> {
-                if (kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, podNamePrefix).size() == expectedPods) {
+                if (KubeResourceManager.get().kubeClient().listPodsByPrefixInName(namespaceName, podNamePrefix).size() == expectedPods) {
                     stableCounter[0]++;
                     if (stableCounter[0] == TestConstants.GLOBAL_STABILITY_OFFSET_COUNT) {
                         LOGGER.info("Pod replicas are stable for {} poll intervals", stableCounter[0]);
@@ -225,7 +230,7 @@ public class PodUtils {
         LOGGER.info("Waiting for Pod: {}/{} to be in CrashLoopBackOff state", namespaceName, podName);
         TestUtils.waitFor("Pod: " + namespaceName + "/" + podName + " to be in CrashLoopBackOff state",
             TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
-            () -> kubeClient(namespaceName).getPod(namespaceName, podName).getStatus().getContainerStatuses().get(0)
+            () -> KubeResourceManager.get().kubeClient().getClient().pods().inNamespace(namespaceName).withName(podName).get().getStatus().getContainerStatuses().get(0)
                 .getState().getWaiting().getReason().equals("CrashLoopBackOff"));
         LOGGER.info("Pod: {}/{} is in CrashLoopBackOff state", namespaceName, podName);
     }
@@ -234,19 +239,8 @@ public class PodUtils {
         LOGGER.info("Waiting for Pod: {}/{} to be present", namespaceName, podNamePrefix);
         TestUtils.waitFor("Pod: " + namespaceName + "/" + podNamePrefix + " to be present",
             TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
-            () -> kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, podNamePrefix).get(0) != null);
+            () -> KubeResourceManager.get().kubeClient().listPodsByPrefixInName(namespaceName, podNamePrefix).get(0) != null);
         LOGGER.info("Pod: {}/{} is present", namespaceName, podNamePrefix);
-    }
-
-    public static void waitUntilPodLabelsDeletion(String namespaceName, String podName, Collection<String> labelKeys) {
-        for (final String labelKey : labelKeys) {
-            LOGGER.info("Waiting for Pod: {}/{} to change label: {} -> {}", namespaceName, podName, labelKey, null);
-            TestUtils.waitFor("Pod to change label " + labelKey + " -> " + null, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
-                DELETION_TIMEOUT, () ->
-                    kubeClient(namespaceName).getPod(namespaceName, podName).getMetadata().getLabels().get(labelKey) == null
-            );
-            LOGGER.info("Pod: {}/{} changed label {} -> {}", namespaceName, podName, labelKey, null);
-        }
     }
 
     /**
@@ -258,7 +252,7 @@ public class PodUtils {
         LOGGER.info("Waiting for at least one Pod with prefix {}/{} to be in pending phase", namespaceName, podPrefix);
         TestUtils.waitFor("One Pod to be in PENDING state", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> {
-                List<Pod> actualPods = kubeClient(namespaceName).listPodsByPrefixInName(podPrefix);
+                List<Pod> actualPods = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(namespaceName, podPrefix);
                 return actualPods.stream().anyMatch(pod -> pod.getStatus().getPhase().equals("Pending"));
             });
     }
@@ -287,7 +281,7 @@ public class PodUtils {
 
         TestUtils.waitFor(String.format("Pods %s#%s stability in phase %s", namespaceName, podPrefix, phase), TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> {
-                List<Pod> actualPods = runningPods.stream().map(p -> kubeClient(namespaceName).getPod(namespaceName, p.getMetadata().getName())).collect(Collectors.toList());
+                List<Pod> actualPods = runningPods.stream().map(p -> KubeResourceManager.get().kubeClient().getClient().pods().inNamespace(namespaceName).withName(p.getMetadata().getName()).get()).collect(Collectors.toList());
 
                 for (Pod pod : actualPods) {
                     if (pod.getStatus().getPhase().equals(phase)) {
@@ -314,7 +308,7 @@ public class PodUtils {
     public static void waitForPodContainerReady(String namespaceName, String podName, String containerName) {
         LOGGER.info("Waiting for Pod: {}/{} container {} to be ready", namespaceName, podName, containerName);
         TestUtils.waitFor("Pod: " + namespaceName + "/" + podName + " container " + containerName + " to be ready", TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT, () ->
-            kubeClient(namespaceName).getPod(podName).getStatus().getContainerStatuses().stream().filter(container -> container.getName().equals(containerName)).findFirst().orElseThrow().getReady()
+            KubeResourceManager.get().kubeClient().getClient().pods().inNamespace(namespaceName).withName(podName).get().getStatus().getContainerStatuses().stream().filter(container -> container.getName().equals(containerName)).findFirst().orElseThrow().getReady()
         );
         LOGGER.info("Pod: {}/{} container {} is ready", namespaceName, podName, containerName);
     }
@@ -327,21 +321,18 @@ public class PodUtils {
      */
     public static List<Pod> getKafkaClusterPods(final TestStorage testStorage) {
         // broker pods
-        List<Pod> kafkaClusterPods = kubeClient(testStorage.getNamespaceName())
-            .listPodsByPrefixInName(testStorage.getBrokerComponentName());
+        List<Pod> kafkaClusterPods = new ArrayList<>(KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getBrokerComponentName()));
         // controller pods
-        kafkaClusterPods.addAll(kubeClient(testStorage.getNamespaceName())
-            .listPodsByPrefixInName(testStorage.getControllerComponentName()));
+        kafkaClusterPods.addAll(KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getControllerComponentName()));
         // eo pod
-        kafkaClusterPods.addAll(kubeClient(testStorage.getNamespaceName())
-            .listPodsByPrefixInName(testStorage.getEoDeploymentName()));
+        kafkaClusterPods.addAll(KubeResourceManager.get().kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getEoDeploymentName()));
 
         return kafkaClusterPods;
     }
 
     public static void annotatePod(String namespaceName, String podName, String annotationKey, String annotationValue) {
         LOGGER.info("Annotating Pod: {}/{} with annotation {}={}", namespaceName, podName, annotationKey, annotationValue);
-        ResourceManager.cmdKubeClient().namespace(namespaceName)
-                .execInCurrentNamespace("annotate", "pod", podName, annotationKey + "=" + annotationValue);
+        KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName)
+                .exec("annotate", "pod", podName, annotationKey + "=" + annotationValue);
     }
 }

@@ -6,17 +6,16 @@ package io.strimzi.systemtest.utils.kubeUtils.objects;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.security.CertAndKeyFiles;
 import io.strimzi.systemtest.security.OpenSsl;
 import io.strimzi.systemtest.security.SystemTestCertManager;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -34,8 +33,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-
 public class SecretUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(SecretUtils.class);
@@ -47,7 +44,7 @@ public class SecretUtils {
     public static void waitForSecretReady(String namespaceName, String secretName, Runnable onTimeout) {
         LOGGER.info("Waiting for Secret: {}/{} to exist", namespaceName, secretName);
         TestUtils.waitFor("Secret: " + secretName + " to exist", TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
-            () -> kubeClient(namespaceName).getSecret(namespaceName, secretName) != null,
+            () -> KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(namespaceName).withName(secretName).get() != null,
             onTimeout);
         LOGGER.info("Secret: {}/{} created", namespaceName, secretName);
     }
@@ -55,7 +52,7 @@ public class SecretUtils {
     public static void waitForSecretDeletion(final String namespaceName, String secretName, Runnable onTimeout) {
         LOGGER.info("Waiting for Secret: {}/{} deletion", namespaceName, secretName);
         TestUtils.waitFor("Secret: " + namespaceName + "/" + secretName + " deletion", TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
-            () -> kubeClient(namespaceName).getSecret(namespaceName, secretName) == null,
+            () -> KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(namespaceName).withName(secretName).get() == null,
             onTimeout);
         LOGGER.info("Secret: {}/{} deleted", namespaceName, secretName);
     }
@@ -66,7 +63,7 @@ public class SecretUtils {
 
     public static void createSecret(String namespaceName, String secretName, String dataKey, String dataValue) {
         LOGGER.info("Creating Secret: {}/{}", namespaceName, secretName);
-        kubeClient(namespaceName).createSecret(new SecretBuilder()
+        KubeResourceManager.get().createResourceWithWait(new SecretBuilder()
             .withApiVersion("v1")
             .withKind("Secret")
             .withNewMetadata()
@@ -144,7 +141,7 @@ public class SecretUtils {
         certsPaths.put("ca.key", certAndKeyFiles.getKeyPath());
 
         Secret secret = createSecretFromFile(namespaceName, name, certsPaths, secretLabels);
-        kubeClient().namespace(namespaceName).createSecret(secret);
+        KubeResourceManager.get().createResourceWithWait(secret);
         waitForSecretReady(namespaceName, name, () -> { });
     }
 
@@ -158,14 +155,14 @@ public class SecretUtils {
         certsPaths.put("ca.key", certAndKeyFiles.getKeyPath());
 
         Secret secret = createSecretFromFile(namespaceName, name, certsPaths, secretLabels);
-        kubeClient().namespace(namespaceName).updateSecret(secret);
+        KubeResourceManager.get().updateResource(secret);
         waitForSecretReady(namespaceName, name, () -> { });
     }
 
     public static void waitForCertToChange(String namespaceName, String originalCert, String secretName) {
         LOGGER.info("Waiting for Secret: {}/{} certificate to be replaced", namespaceName, secretName);
         TestUtils.waitFor("cert to be replaced", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
-            Secret secret = kubeClient(namespaceName).getSecret(namespaceName, secretName);
+            Secret secret = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(namespaceName).withName(secretName).get();
             if (secret != null && secret.getData() != null && secret.getData().containsKey("ca.crt")) {
                 String currentCert = Util.decodeFromBase64((secret.getData().get("ca.crt")));
                 boolean changed = !originalCert.equals(currentCert);
@@ -180,11 +177,11 @@ public class SecretUtils {
     }
 
     public static void deleteSecretWithWait(String namespaceName, String secretName) {
-        kubeClient().getClient().secrets().inNamespace(namespaceName).withName(secretName).delete();
+        KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(namespaceName).withName(secretName).delete();
 
         LOGGER.info("Waiting for Secret: {}/{} to be deleted", namespaceName, secretName);
         TestUtils.waitFor(String.format("Deletion of Secret %s#%s", namespaceName, secretName), TestConstants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
-            () -> kubeClient().getSecret(namespaceName, secretName) == null);
+            () -> KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(namespaceName).withName(secretName).get() == null);
 
         LOGGER.info("Secret: {}/{} successfully deleted", namespaceName, secretName);
     }
@@ -206,46 +203,26 @@ public class SecretUtils {
         LOGGER.info("Waiting for user password will be changed to {} in Secret: {}/{}", expectedEncodedPassword, namespaceName, secretName);
         TestUtils.waitFor(String.format("user password will be changed to: %s in secret: %s(%s)", expectedEncodedPassword, namespaceName, secretName),
             TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
-            () -> kubeClient().namespace(namespaceName).getSecret(secretName).getData().get("password").equals(expectedEncodedPassword));
+            () -> KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(namespaceName).withName(secretName)
+                .get().getData().get("password").equals(expectedEncodedPassword));
     }
 
     public static String annotateSecret(String namespaceName, String secretName, String annotationKey, String annotationValue) {
         LOGGER.info("Annotating Secret: {}/{} with annotation {}={}", namespaceName, secretName, annotationKey, annotationValue);
-        return ResourceManager.cmdKubeClient().namespace(namespaceName)
-                .execInCurrentNamespace("annotate", "secret", secretName, annotationKey + "=" + annotationValue)
+        return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName)
+                .exec("annotate", "secret", secretName, annotationKey + "=" + annotationValue)
                 .out()
                 .trim();
     }
 
     public static SecretBuilder createCopyOfSecret(String fromNamespace, String toNamespace, String secretName) {
-        Secret desiredSecret = kubeClient().getSecret(fromNamespace, secretName);
+        Secret desiredSecret = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(fromNamespace).withName(secretName).get();
 
         return new SecretBuilder(desiredSecret)
             .withNewMetadata()
                 .withName(secretName)
                 .withNamespace(toNamespace)
             .endMetadata();
-    }
-
-    /**
-     * Method which waits for {@code secretName} Secret in {@code namespace} namespace to have
-     * label with {@code labelKey} key and {@code labelValue} value.
-     *
-     * @param namespaceName name of Namespace
-     * @param secretName    name of Secret
-     * @param labelKey      label key
-     * @param labelValue    label value
-     */
-    public static void waitForSpecificLabelKeyValue(String namespaceName, String secretName, String labelKey, String labelValue) {
-        LOGGER.info("Waiting for Secret: {}/{} (corresponding to KafkaUser) to have expected label: {}={}", namespaceName, secretName, labelKey, labelValue);
-        TestUtils.waitFor("Secret: " + namespaceName + "/" + secretName + " to exist with the corresponding label: " + labelKey + "=" + labelValue + " for the Kafka cluster", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
-            () -> kubeClient().listSecrets(namespaceName)
-                .stream()
-                .anyMatch(secret -> secretName.equals(secret.getMetadata().getName())
-                    && secret.getMetadata().getLabels().containsKey(Labels.STRIMZI_CLUSTER_LABEL)
-                    && secret.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL).equals(labelValue)
-                )
-        );
     }
 
     /**
@@ -263,9 +240,8 @@ public class SecretUtils {
             File clientPrivateKey = OpenSsl.generatePrivateKey();
 
             File csr = OpenSsl.generateCertSigningRequest(clientPrivateKey, "/CN=" + userName);
-            String caCrt = KubeClusterResource.kubeClient(namespaceName).getSecret(
-                KafkaResources.clientsCaCertificateSecretName(clusterName)).getData().get("ca.crt");
-            String caKey = KubeClusterResource.kubeClient(namespaceName).getSecret(KafkaResources.clientsCaKeySecretName(clusterName)).getData().get("ca.key");
+            String caCrt = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(namespaceName).withName(KafkaResources.clientsCaCertificateSecretName(clusterName)).get().getData().get("ca.crt");
+            String caKey = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(namespaceName).withName(KafkaResources.clientsCaKeySecretName(clusterName)).get().getData().get("ca.key");
 
             File clientCert = OpenSsl.generateSignedCert(csr,
                                                          SystemTestCertManager.exportCaDataToFile(Util.decodeFromBase64(caCrt, StandardCharsets.UTF_8), "ca", ".crt"),
@@ -282,8 +258,7 @@ public class SecretUtils {
                 .withType("Opaque")
                 .build();
 
-            kubeClient().namespace(namespaceName).createSecret(secretBuilder);
-            SecretUtils.waitForSecretReady(namespaceName, userName, () -> { });
+            KubeResourceManager.get().createResourceWithWait(secretBuilder);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -17,7 +17,7 @@ public class KafkaTopicTemplates {
     }
 
     public static KafkaTopicBuilder continuousTopic(TestStorage testStorage) {
-        return defaultTopic(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getContinuousTopicName(), 1, 1, 1);
+        return defaultTopic(testStorage.getNamespaceName(), testStorage.getContinuousTopicName(), testStorage.getClusterName(), 1, 1, 1);
     }
 
     public static KafkaTopicBuilder topic(String namespaceName, String topicName, String kafkaClusterName) {

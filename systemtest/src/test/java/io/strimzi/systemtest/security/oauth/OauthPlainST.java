@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.security.oauth;
 
 import io.skodjob.testframe.MetricsCollector;
-import io.strimzi.api.kafka.model.bridge.KafkaBridge;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.bridge.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.common.InlineLogging;
 import io.strimzi.api.kafka.model.common.metrics.JmxPrometheusExporterMetrics;
@@ -15,10 +15,9 @@ import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
-import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2ClusterSpecBuilder;
-import io.strimzi.operator.common.model.Labels;
+import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2Resources;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.FIPSNotSupported;
@@ -28,15 +27,12 @@ import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaOauthClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaOauthClientsBuilder;
+import io.strimzi.systemtest.labels.LabelSelectors;
 import io.strimzi.systemtest.metrics.KafkaBridgeMetricsComponent;
 import io.strimzi.systemtest.metrics.KafkaConnectMetricsComponent;
 import io.strimzi.systemtest.metrics.KafkaMetricsComponent;
 import io.strimzi.systemtest.metrics.KafkaMirrorMaker2MetricsComponent;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
-import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
+import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -50,11 +46,10 @@ import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.WaitException;
-import io.strimzi.test.k8s.KubeClusterResource;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -74,8 +69,6 @@ import static io.strimzi.systemtest.TestTags.MIRROR_MAKER2;
 import static io.strimzi.systemtest.TestTags.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.TestTags.OAUTH;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 @Tag(OAUTH)
@@ -114,11 +107,11 @@ public class OauthPlainST extends OauthAbstractST {
     @ParallelTest
     @Tag(METRICS)
     void testProducerConsumerWithOauthMetrics() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String consumerName = OAUTH_CONSUMER_NAME + "-" + testStorage.getClusterName();
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), oauthClusterName).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), oauthClusterName).build());
 
         KafkaOauthClients oauthExampleClients = new KafkaOauthClientsBuilder()
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
@@ -132,10 +125,10 @@ public class OauthPlainST extends OauthAbstractST {
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        resourceManager.createResourceWithWait(oauthExampleClients.producerStrimziOauthPlain());
+        KubeResourceManager.get().createResourceWithWait(oauthExampleClients.producerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, producerName, testStorage.getMessageCount());
 
-        resourceManager.createResourceWithWait(oauthExampleClients.consumerStrimziOauthPlain());
+        KubeResourceManager.get().createResourceWithWait(oauthExampleClients.consumerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, consumerName, testStorage.getMessageCount());
 
         assertOauthMetricsForComponent(
@@ -147,7 +140,7 @@ public class OauthPlainST extends OauthAbstractST {
 
     @ParallelTest
     void testSaslPlainProducerConsumer() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String audienceProducerName = OAUTH_CLIENT_AUDIENCE_PRODUCER + "-" + testStorage.getClusterName();
         String audienceConsumerName = OAUTH_CLIENT_AUDIENCE_CONSUMER + "-" + testStorage.getClusterName();
 
@@ -179,16 +172,16 @@ public class OauthPlainST extends OauthAbstractST {
             .withAdditionalConfig(String.format(plainAdditionalConfig, OAUTH_CLIENT_AUDIENCE_PRODUCER, OAUTH_CLIENT_AUDIENCE_SECRET))
             .build();
 
-        resourceManager.createResourceWithWait(plainSaslOauthProducerClientsJob.producerStrimziOauthPlain());
+        KubeResourceManager.get().createResourceWithWait(plainSaslOauthProducerClientsJob.producerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, audienceProducerName, testStorage.getMessageCount());
 
-        resourceManager.createResourceWithWait(plainSaslOauthConsumerClientsJob.consumerStrimziOauthPlain());
+        KubeResourceManager.get().createResourceWithWait(plainSaslOauthConsumerClientsJob.consumerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, audienceConsumerName, testStorage.getMessageCount());
     }
 
     @ParallelTest
     void testProducerConsumerAudienceTokenChecks() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String consumerName = OAUTH_CONSUMER_NAME + "-" + testStorage.getClusterName();
         String audienceProducerName = OAUTH_CLIENT_AUDIENCE_PRODUCER + "-" + testStorage.getClusterName();
@@ -208,9 +201,9 @@ public class OauthPlainST extends OauthAbstractST {
             .build();
 
         LOGGER.info("Use clients without access token containing audience token");
-        resourceManager.createResourceWithWait(oauthInternalClientJob.producerStrimziOauthPlain());
+        KubeResourceManager.get().createResourceWithWait(oauthInternalClientJob.producerStrimziOauthPlain());
         assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(Environment.TEST_SUITE_NAMESPACE, producerName, testStorage.getMessageCount()));
-        resourceManager.createResourceWithWait(oauthInternalClientJob.consumerStrimziOauthPlain());
+        KubeResourceManager.get().createResourceWithWait(oauthInternalClientJob.consumerStrimziOauthPlain());
         assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(Environment.TEST_SUITE_NAMESPACE, consumerName, testStorage.getMessageCount()));
 
         JobUtils.deleteJobWithWait(Environment.TEST_SUITE_NAMESPACE, producerName);
@@ -230,16 +223,16 @@ public class OauthPlainST extends OauthAbstractST {
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        resourceManager.createResourceWithWait(oauthAudienceInternalClientJob.producerStrimziOauthPlain());
+        KubeResourceManager.get().createResourceWithWait(oauthAudienceInternalClientJob.producerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, audienceProducerName, testStorage.getMessageCount());
 
-        resourceManager.createResourceWithWait(oauthAudienceInternalClientJob.consumerStrimziOauthPlain());
+        KubeResourceManager.get().createResourceWithWait(oauthAudienceInternalClientJob.consumerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, audienceConsumerName, testStorage.getMessageCount());
     }
 
     @ParallelTest
     void testAccessTokenClaimCheck() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String consumerName = OAUTH_CONSUMER_NAME + "-" + testStorage.getClusterName();
         String audienceProducerName = OAUTH_CLIENT_AUDIENCE_PRODUCER + "-" + testStorage.getClusterName();
@@ -260,9 +253,9 @@ public class OauthPlainST extends OauthAbstractST {
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        resourceManager.createResourceWithWait(oauthAudienceInternalClientJob.producerStrimziOauthPlain());
+        KubeResourceManager.get().createResourceWithWait(oauthAudienceInternalClientJob.producerStrimziOauthPlain());
         assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(Environment.TEST_SUITE_NAMESPACE, audienceProducerName, testStorage.getMessageCount()));
-        resourceManager.createResourceWithWait(oauthAudienceInternalClientJob.consumerStrimziOauthPlain());
+        KubeResourceManager.get().createResourceWithWait(oauthAudienceInternalClientJob.consumerStrimziOauthPlain());
         assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(Environment.TEST_SUITE_NAMESPACE, audienceConsumerName, testStorage.getMessageCount()));
 
         JobUtils.deleteJobWithWait(Environment.TEST_SUITE_NAMESPACE, audienceProducerName);
@@ -282,9 +275,9 @@ public class OauthPlainST extends OauthAbstractST {
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        resourceManager.createResourceWithWait(oauthInternalClientJob.producerStrimziOauthPlain());
+        KubeResourceManager.get().createResourceWithWait(oauthInternalClientJob.producerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, producerName, testStorage.getMessageCount());
-        resourceManager.createResourceWithWait(oauthInternalClientJob.consumerStrimziOauthPlain());
+        KubeResourceManager.get().createResourceWithWait(oauthInternalClientJob.consumerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, consumerName, testStorage.getMessageCount());
     }
 
@@ -296,7 +289,7 @@ public class OauthPlainST extends OauthAbstractST {
     @Tag(CONNECT_COMPONENTS)
     @Tag(METRICS)
     void testProducerConsumerConnectWithOauthMetrics() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String consumerName = OAUTH_CONSUMER_NAME + "-" + testStorage.getClusterName();
 
@@ -312,11 +305,11 @@ public class OauthPlainST extends OauthAbstractST {
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), oauthClusterName).build());
-        resourceManager.createResourceWithWait(oauthExampleClients.producerStrimziOauthPlain());
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), oauthClusterName).build());
+        KubeResourceManager.get().createResourceWithWait(oauthExampleClients.producerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, producerName, testStorage.getMessageCount());
 
-        resourceManager.createResourceWithWait(oauthExampleClients.consumerStrimziOauthPlain());
+        KubeResourceManager.get().createResourceWithWait(oauthExampleClients.consumerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, consumerName, testStorage.getMessageCount());
 
         KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, oauthClusterName, 1)
@@ -345,12 +338,13 @@ public class OauthPlainST extends OauthAbstractST {
         // This is required to be able to remove the TLS setting, the builder cannot remove it
         connect.getSpec().setTls(null);
 
-        resourceManager.createResourceWithWait(connect);
+        KubeResourceManager.get().createResourceWithWait(connect);
 
         // Allow connections from scraper to Connect Pod when NetworkPolicies are set to denied by default
-        NetworkPolicyResource.allowNetworkPolicySettingsForResource(connect, KafkaConnectResources.componentName(oauthClusterName));
+        NetworkPolicyUtils.allowNetworkPolicySettingsForResource(connect, KafkaConnectResources.componentName(oauthClusterName));
 
-        final String kafkaConnectPodName = kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        final String kafkaConnectPodName = KubeResourceManager.get().kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE,
+                LabelSelectors.connectLabelSelector(oauthClusterName, KafkaConnectResources.componentName(oauthClusterName))).get(0).getMetadata().getName();
 
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(Environment.TEST_SUITE_NAMESPACE, kafkaConnectPodName);
 
@@ -358,7 +352,7 @@ public class OauthPlainST extends OauthAbstractST {
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(Environment.TEST_SUITE_NAMESPACE, kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
 
-        final String kafkaConnectLogs = KubeClusterResource.cmdKubeClient(Environment.TEST_SUITE_NAMESPACE).execInCurrentNamespace(Level.DEBUG, "logs", kafkaConnectPodName).out();
+        final String kafkaConnectLogs = KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).logs(kafkaConnectPodName);
         verifyOauthConfiguration(kafkaConnectLogs);
 
         assertOauthMetricsForComponent(
@@ -375,7 +369,7 @@ public class OauthPlainST extends OauthAbstractST {
     @Tag(METRICS)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testProducerConsumerMirrorMaker2WithOauthMetrics() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String consumerName = OAUTH_CONSUMER_NAME + "-" + testStorage.getClusterName();
 
@@ -391,20 +385,20 @@ public class OauthPlainST extends OauthAbstractST {
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), oauthClusterName).build());
-        resourceManager.createResourceWithWait(oauthExampleClients.producerStrimziOauthPlain());
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), oauthClusterName).build());
+        KubeResourceManager.get().createResourceWithWait(oauthExampleClients.producerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, producerName, testStorage.getMessageCount());
 
-        resourceManager.createResourceWithWait(oauthExampleClients.consumerStrimziOauthPlain());
+        KubeResourceManager.get().createResourceWithWait(oauthExampleClients.consumerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, consumerName, testStorage.getMessageCount());
 
         String kafkaSourceClusterName = oauthClusterName;
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetBrokerPoolName(), testStorage.getTargetClusterName(), 1).build(),
             KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getTargetControllerPoolName(), testStorage.getTargetClusterName(), 1).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(Environment.TEST_SUITE_NAMESPACE, testStorage.getTargetClusterName(), 1)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(Environment.TEST_SUITE_NAMESPACE, testStorage.getTargetClusterName(), 1)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -474,7 +468,7 @@ public class OauthPlainST extends OauthAbstractST {
 
         String kafkaTargetClusterTopicName = kafkaSourceClusterName + "." + testStorage.getTopicName();
 
-        resourceManager.createResourceWithWait(KafkaMirrorMaker2Templates.kafkaMirrorMaker2(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafkaSourceClusterName, testStorage.getTargetClusterName(), 1, false)
+        KubeResourceManager.get().createResourceWithWait(KafkaMirrorMaker2Templates.kafkaMirrorMaker2(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafkaSourceClusterName, testStorage.getTargetClusterName(), 1, false)
             .editSpec()
                 .withMetricsConfig(OAUTH_METRICS)
                 .withClusters(sourceClusterWithOauth, targetClusterWithOauth)
@@ -484,8 +478,9 @@ public class OauthPlainST extends OauthAbstractST {
             .endSpec()
             .build());
 
-        final String kafkaMirrorMaker2PodName = kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND).get(0).getMetadata().getName();
-        final String kafkaMirrorMaker2Logs = KubeClusterResource.cmdKubeClient(Environment.TEST_SUITE_NAMESPACE).execInCurrentNamespace(Level.DEBUG, "logs", kafkaMirrorMaker2PodName).out();
+        final String kafkaMirrorMaker2PodName = KubeResourceManager.get().kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE,
+            LabelSelectors.mirrorMaker2LabelSelector(oauthClusterName, KafkaMirrorMaker2Resources.componentName(oauthClusterName))).get(0).getMetadata().getName();
+        final String kafkaMirrorMaker2Logs = KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).logs(kafkaMirrorMaker2PodName);
         verifyOauthConfiguration(kafkaMirrorMaker2Logs);
 
         TestUtils.waitFor("MirrorMaker2 to copy messages from " + kafkaSourceClusterName + " to " + testStorage.getTargetClusterName(),
@@ -508,7 +503,7 @@ public class OauthPlainST extends OauthAbstractST {
                     .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                     .build();
 
-                resourceManager.createResourceWithWait(kafkaOauthClientJob.consumerStrimziOauthPlain());
+                KubeResourceManager.get().createResourceWithWait(kafkaOauthClientJob.consumerStrimziOauthPlain());
 
                 try {
                     ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, consumerName, testStorage.getMessageCount());
@@ -533,7 +528,7 @@ public class OauthPlainST extends OauthAbstractST {
     @Tag(BRIDGE)
     @Tag(METRICS)
     void testProducerConsumerBridgeWithOauthMetrics() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
         String consumerName = OAUTH_CONSUMER_NAME + "-" + testStorage.getClusterName();
 
@@ -549,18 +544,18 @@ public class OauthPlainST extends OauthAbstractST {
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), oauthClusterName).build());
-        resourceManager.createResourceWithWait(oauthExampleClients.producerStrimziOauthPlain());
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), oauthClusterName).build());
+        KubeResourceManager.get().createResourceWithWait(oauthExampleClients.producerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, producerName, testStorage.getMessageCount());
 
-        resourceManager.createResourceWithWait(oauthExampleClients.consumerStrimziOauthPlain());
+        KubeResourceManager.get().createResourceWithWait(oauthExampleClients.consumerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, consumerName, testStorage.getMessageCount());
 
         // needed for a verification of oauth configuration
         InlineLogging ilDebug = new InlineLogging();
         ilDebug.setLoggers(Map.of("rootLogger.level", "DEBUG"));
 
-        resourceManager.createResourceWithWait(KafkaBridgeTemplates.kafkaBridgeWithMetrics(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, KafkaResources.plainBootstrapAddress(oauthClusterName), 1)
+        KubeResourceManager.get().createResourceWithWait(KafkaBridgeTemplates.kafkaBridgeWithMetrics(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, KafkaResources.plainBootstrapAddress(oauthClusterName), 1)
             .editSpec()
                 .withNewKafkaClientAuthenticationOAuth()
                     .withEnableMetrics()
@@ -578,10 +573,11 @@ public class OauthPlainST extends OauthAbstractST {
             .build());
 
         // Allow connections from scraper to Bridge pods when NetworkPolicies are set to denied by default
-        NetworkPolicyResource.allowNetworkPolicySettingsForBridgeScraper(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaBridgeResources.componentName(oauthClusterName));
+        NetworkPolicyUtils.allowNetworkPolicySettingsForBridgeScraper(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaBridgeResources.componentName(oauthClusterName));
 
-        final String kafkaBridgePodName = kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND).get(0).getMetadata().getName();
-        final String kafkaBridgeLogs = KubeClusterResource.cmdKubeClient(Environment.TEST_SUITE_NAMESPACE).execInCurrentNamespace(Level.DEBUG, "logs", kafkaBridgePodName).out();
+        final String kafkaBridgePodName = KubeResourceManager.get().kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE,
+            LabelSelectors.bridgeLabelSelector(oauthClusterName, KafkaBridgeResources.componentName(oauthClusterName))).get(0).getMetadata().getName();
+        final String kafkaBridgeLogs = KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).logs(kafkaBridgePodName);
         verifyOauthConfiguration(kafkaBridgeLogs);
 
         String bridgeProducerName = "bridge-producer-" + testStorage.getClusterName();
@@ -598,7 +594,7 @@ public class OauthPlainST extends OauthAbstractST {
             .withPollInterval(1000)
             .build();
 
-        resourceManager.createResourceWithWait(kafkaBridgeClientJob.producerStrimziBridge());
+        KubeResourceManager.get().createResourceWithWait(kafkaBridgeClientJob.producerStrimziBridge());
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, bridgeProducerName, testStorage.getMessageCount());
 
         assertOauthMetricsForComponent(
@@ -610,9 +606,9 @@ public class OauthPlainST extends OauthAbstractST {
 
     @ParallelTest
     void testSaslPlainAuthenticationKafkaConnectIsAbleToConnectToKafkaOAuth() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        resourceManager.createResourceWithoutWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), oauthClusterName, 1)
+        KubeResourceManager.get().createResourceWithoutWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), oauthClusterName, 1)
             .withNewSpec()
                 .withReplicas(1)
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(oauthClusterName))
@@ -658,13 +654,13 @@ public class OauthPlainST extends OauthAbstractST {
         keycloakInstance.setRealm("internal", false);
 
         // Deploy OAuth metrics CM
-        cmdKubeClient(Environment.TEST_SUITE_NAMESPACE).apply(FileUtils.updateNamespaceOfYamlFile(Environment.TEST_SUITE_NAMESPACE, OAUTH_METRICS_CM_PATH));
+        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).apply(FileUtils.updateNamespaceOfYamlFile(Environment.TEST_SUITE_NAMESPACE, OAUTH_METRICS_CM_PATH));
 
-        resourceManager.createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPool(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getBrokerPoolName(oauthClusterName), oauthClusterName, 3).build(),
-            KafkaNodePoolTemplates.controllerPool(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getControllerPoolName(oauthClusterName), oauthClusterName, 3).build()
+        KubeResourceManager.get().createResourceWithWait(
+            KafkaNodePoolTemplates.brokerPool(Environment.TEST_SUITE_NAMESPACE, KafkaComponents.getBrokerPoolName(oauthClusterName), oauthClusterName, 3).build(),
+            KafkaNodePoolTemplates.controllerPool(Environment.TEST_SUITE_NAMESPACE, KafkaComponents.getControllerPoolName(oauthClusterName), oauthClusterName, 3).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, 3)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -723,8 +719,8 @@ public class OauthPlainST extends OauthAbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, scraperName).build());
-        scraperPodName = kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, scraperName).get(0).getMetadata().getName();
+        KubeResourceManager.get().createResourceWithWait(ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, scraperName).build());
+        scraperPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, scraperName).get(0).getMetadata().getName();
 
         metricsCollector = new MetricsCollector.Builder()
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
@@ -732,8 +728,8 @@ public class OauthPlainST extends OauthAbstractST {
             .withComponent(KafkaMetricsComponent.create(oauthClusterName))
             .build();
 
-        String brokerPodName = kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE,
-            KafkaResource.getLabelSelector(oauthClusterName, StrimziPodSetResource.getBrokerComponentName(oauthClusterName))).get(0).getMetadata().getName();
-        verifyOauthListenerConfiguration(kubeClient().logsInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, brokerPodName));
+        String brokerPodName = KubeResourceManager.get().kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE,
+            LabelSelectors.kafkaLabelSelector(oauthClusterName, KafkaComponents.getBrokerPodSetName(oauthClusterName))).get(0).getMetadata().getName();
+        verifyOauthListenerConfiguration(KubeResourceManager.get().kubeClient().getLogsFromPod(Environment.TEST_SUITE_NAMESPACE, brokerPodName));
     }
 }

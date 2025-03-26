@@ -7,12 +7,13 @@ package io.strimzi.systemtest.resources;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.NamespaceStatus;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.logs.CollectorElement;
-import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
@@ -24,9 +25,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 /**
  * Class for managing Namespaces during test execution.
@@ -104,7 +104,12 @@ public class NamespaceManager {
         }
 
         LOGGER.info("Creating Namespace: {}", namespaceName);
-        kubeClient().createNamespace(namespaceName);
+        KubeResourceManager.get().createResourceWithWait(new NamespaceBuilder()
+            .withNewMetadata()
+                .withName(namespaceName)
+            .endMetadata()
+            .build()
+        );
     }
 
     /**
@@ -142,9 +147,9 @@ public class NamespaceManager {
      * @param namespaceName name of Namespace that should be created
      */
     public void createNamespaceAndPrepare(String namespaceName) {
-        final String testSuiteName = ResourceManager.getTestContext().getRequiredTestClass().getName();
-        final String testCaseName = ResourceManager.getTestContext().getTestMethod().orElse(null) == null ?
-            "" : ResourceManager.getTestContext().getRequiredTestMethod().getName();
+        final String testSuiteName = KubeResourceManager.get().getTestContext().getRequiredTestClass().getName();
+        final String testCaseName = KubeResourceManager.get().getTestContext().getTestMethod().orElse(null) == null ?
+            "" : KubeResourceManager.get().getTestContext().getRequiredTestMethod().getName();
 
         createNamespaceAndPrepare(namespaceName, new CollectorElement(testSuiteName, testCaseName));
     }
@@ -161,7 +166,7 @@ public class NamespaceManager {
      */
     public void createNamespaceAndPrepare(String namespaceName, CollectorElement collectorElement) {
         createNamespaceAndAddToSet(namespaceName, collectorElement);
-        NetworkPolicyResource.applyDefaultNetworkPolicySettings(Collections.singletonList(namespaceName));
+        NetworkPolicyUtils.applyDefaultNetworkPolicySettings(Collections.singletonList(namespaceName));
         StUtils.copyImagePullSecrets(namespaceName);
     }
 
@@ -186,7 +191,10 @@ public class NamespaceManager {
      */
     public void deleteNamespace(String namespaceName) {
         LOGGER.info("Deleting Namespace: {}", namespaceName);
-        kubeClient().deleteNamespace(namespaceName);
+        Namespace nsToBeDeleted = KubeResourceManager.get().kubeClient().getClient().namespaces().withName(namespaceName).get();
+        if (nsToBeDeleted != null) {
+            KubeResourceManager.get().deleteResourceWithWait(nsToBeDeleted);
+        }
     }
 
     /**
@@ -216,20 +224,6 @@ public class NamespaceManager {
     }
 
     /**
-     * For all entries inside the {@link #MAP_WITH_SUITE_NAMESPACES} it deletes all Namespaces in the particular Set
-     * After that, it clears the whole Map
-     * It is used mainly in {@code AbstractST.afterAllMayOverride} to remove everything after all test cases are executed
-     */
-    public void deleteAllNamespacesFromSet() {
-        MAP_WITH_SUITE_NAMESPACES.values()
-            .forEach(setOfNamespaces ->
-                setOfNamespaces.parallelStream()
-                    .forEach(this::deleteNamespaceWithWait));
-
-        MAP_WITH_SUITE_NAMESPACES.clear();
-    }
-
-    /**
      * Waits for the Namespace with {@param namespaceName} to be deleted.
      * In case that the Namespace is stuck in `Terminating` state (and because of finalizers), it sets the finalizers of
      * all KafkaTopics to {@code null} - using {@link KafkaTopicUtils#setFinalizersInAllTopicsToNull(String)}.
@@ -241,7 +235,7 @@ public class NamespaceManager {
      */
     private void waitForNamespaceDeletion(String namespaceName) {
         TestUtils.waitFor("Namespace: " + namespaceName + " to be deleted", TestConstants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT, () -> {
-            Namespace namespace = kubeClient().getNamespace(namespaceName);
+            Namespace namespace = KubeResourceManager.get().kubeClient().getClient().namespaces().withName(namespaceName).get();
 
             if (namespace == null) {
                 return true;
@@ -263,7 +257,7 @@ public class NamespaceManager {
      */
     private void waitForNamespaceCreation(String namespaceName) {
         TestUtils.waitFor("Namespace: " + namespaceName + "to be created", TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, TestConstants.GLOBAL_TIMEOUT,
-            () -> kubeClient().getNamespace(namespaceName) != null);
+            () -> KubeResourceManager.get().kubeClient().namespaceExists(namespaceName));
     }
 
     /**
@@ -286,7 +280,7 @@ public class NamespaceManager {
      * @return {@code boolean} value determining if the Namespace should be deleted or not
      */
     private boolean shouldDeleteNamespace(String namespaceName) {
-        return kubeClient().getNamespace(namespaceName) != null
+        return KubeResourceManager.get().kubeClient().namespaceExists(namespaceName)
             && !Environment.SKIP_TEARDOWN;
     }
 
@@ -304,7 +298,7 @@ public class NamespaceManager {
             TestConstants.GLOBAL_STATUS_TIMEOUT,
             () -> {
                 try {
-                    kubeClient().getClient().namespaces().withName(namespaceName).edit(namespace ->
+                    KubeResourceManager.get().kubeClient().getClient().namespaces().withName(namespaceName).edit(namespace ->
                         new NamespaceBuilder(namespace)
                             .editOrNewMetadata()
                                 .addToLabels(labels)
@@ -316,7 +310,7 @@ public class NamespaceManager {
                     return false;
                 }
 
-                Namespace namespace = kubeClient().getNamespace(namespaceName);
+                Namespace namespace = KubeResourceManager.get().kubeClient().getClient().namespaces().withName(namespaceName).get();
 
                 if (namespace != null) {
                     Map<String, String> namespaceLabels = namespace.getMetadata().getLabels();
@@ -338,14 +332,11 @@ public class NamespaceManager {
      */
     public List<String> getListOfNamespacesForTestClassAndTestCase(String testClass, String testCase) {
         List<String> namespaces = new ArrayList<>();
-        namespaces.addAll(getMapWithSuiteNamespaces().get(new CollectorElement(testClass)));
+
+        Optional.ofNullable(getMapWithSuiteNamespaces().get(new CollectorElement(testClass))).ifPresent(namespaces::addAll);
 
         if (testCase != null) {
-            Set<String> namespacesForTestCase = getMapWithSuiteNamespaces().get(new CollectorElement(testClass, testCase));
-
-            if (namespacesForTestCase != null) {
-                namespaces.addAll(getMapWithSuiteNamespaces().get(new CollectorElement(testClass, testCase)));
-            }
+            Optional.ofNullable(getMapWithSuiteNamespaces().get(new CollectorElement(testClass, testCase))).ifPresent(namespaces::addAll);
         }
 
         return namespaces;

@@ -6,9 +6,9 @@ package io.strimzi.systemtest.kafkaclients.clientproperties;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import org.apache.kafka.clients.CommonClientConfigs;
@@ -34,8 +34,6 @@ import java.security.cert.CertificateFactory;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 /**
  * Class KafkaClientProperties, which holds inner class builder for fluent way to invoke objects. It is used inside
@@ -161,7 +159,7 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
                 if (!properties.getProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG).equals(CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL) &&
                     !properties.getProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG).equals("SASL_" + CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL)
                 ) {
-                    Secret clusterCaCertSecret = kubeClient().getSecret(namespaceName, caSecretName);
+                    Secret clusterCaCertSecret = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(namespaceName).withName(caSecretName).get();
                     File tsFile = Files.createTempFile(AbstractKafkaClientProperties.class.getName(), ".truststore").toFile();
                     tsFile.deleteOnExit();
                     KeyStore ts = KeyStore.getInstance(TRUSTSTORE_TYPE_CONFIG);
@@ -169,7 +167,7 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
                     if (caSecretName.contains("custom-certificate")) {
                         ts.load(null, tsPassword.toCharArray());
                         CertificateFactory cf = CertificateFactory.getInstance("X.509");
-                        String clusterCaCert = kubeClient().getSecret(namespaceName, caSecretName).getData().get("ca.crt");
+                        String clusterCaCert = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(namespaceName).withName(caSecretName).get().getData().get("ca.crt");
                         Certificate cert = cf.generateCertificate(new ByteArrayInputStream(Util.decodeBytesFromBase64(clusterCaCert)));
                         ts.setCertificateEntry("ca.crt", cert);
                         try (FileOutputStream tsOs = new FileOutputStream(tsFile)) {
@@ -190,7 +188,7 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
                     && !properties.getProperty(SaslConfigs.SASL_MECHANISM).equals("OAUTHBEARER")) {
 
                     properties.setProperty(SaslConfigs.SASL_MECHANISM, "SCRAM-SHA-512");
-                    Secret userSecret = kubeClient().getSecret(namespaceName, kafkaUsername);
+                    Secret userSecret = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(namespaceName).withName(kafkaUsername).get();
                     String password = Util.decodeFromBase64(userSecret.getData().get("password"), StandardCharsets.UTF_8);
 
                     String jaasTemplate = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"%s\" password=\"%s\";";
@@ -199,7 +197,7 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
                     properties.setProperty(SaslConfigs.SASL_JAAS_CONFIG, jaasCfg);
                 } else if (!kafkaUsername.isEmpty()) {
 
-                    Secret userSecret = kubeClient().getSecret(namespaceName, kafkaUsername);
+                    Secret userSecret = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(namespaceName).withName(kafkaUsername).get();
 
                     String clientsCaCert = userSecret.getData().get("ca.crt");
                     LOGGER.debug("Clients CA cert: {}", clientsCaCert);
@@ -291,9 +289,9 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
     }
 
     private static void importKeycloakCertificateToTruststore(Properties clientProperties) throws IOException {
-
+        String nodeAddress = KubeResourceManager.get().kubeClient().getClient().nodes().list().getItems().get(0).getStatus().getAddresses().get(0).getAddress();
         String responseKeycloak = Exec.exec("openssl", "s_client", "-showcerts", "-connect",
-            ResourceManager.kubeClient().getNodeAddress() + ":" + TestConstants.HTTPS_KEYCLOAK_DEFAULT_NODE_PORT).out();
+            nodeAddress + ":" + TestConstants.HTTPS_KEYCLOAK_DEFAULT_NODE_PORT).out();
         Matcher matcher = Pattern.compile("-----(?s)(.*)-----").matcher(responseKeycloak);
 
         if (matcher.find()) {

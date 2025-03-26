@@ -6,16 +6,19 @@ package io.strimzi.systemtest.resources.minio;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.DeploymentTypes;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
+import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -77,7 +80,7 @@ public class SetupMinio {
             .build();
 
         // Create the deployment
-        ResourceManager.getInstance().createResourceWithWait(minioDeployment);
+        KubeResourceManager.get().createResourceWithWait(minioDeployment);
 
         // Create a service to expose Minio
         Service minioService = new ServiceBuilder()
@@ -94,8 +97,8 @@ public class SetupMinio {
             .endSpec()
             .build();
 
-        ResourceManager.getInstance().createResourceWithoutWait(minioService);
-        NetworkPolicyResource.allowNetworkPolicyAllIngressForMatchingLabel(namespace, MINIO, Map.of(TestConstants.APP_POD_LABEL, MINIO));
+        KubeResourceManager.get().createResourceWithoutWait(minioService);
+        NetworkPolicyUtils.allowNetworkPolicyAllIngressForMatchingLabel(namespace, MINIO, Map.of(TestConstants.APP_POD_LABEL, MINIO));
 
         initMinioClient(namespace);
     }
@@ -105,9 +108,13 @@ public class SetupMinio {
      * @param namespace where Minio is installed
      */
     private static void initMinioClient(String namespace) {
-        final String minioPod = ResourceManager.kubeClient().listPods(namespace, Map.of(TestConstants.APP_POD_LABEL, MINIO)).get(0).getMetadata().getName();
+        LabelSelector labelSelector = new LabelSelectorBuilder()
+            .withMatchLabels(Map.of(TestConstants.APP_POD_LABEL, MINIO))
+            .build();
 
-        ResourceManager.cmdKubeClient().namespace(namespace).execInPod(minioPod,
+        final String minioPod = PodUtils.listPodNames(namespace, labelSelector).get(0);
+
+        KubeResourceManager.get().kubeCmdClient().inNamespace(namespace).execInPod(minioPod,
             "mc",
             "config",
             "host",
@@ -123,9 +130,13 @@ public class SetupMinio {
      * @param bucketName name of the bucket that will be created and used within the tests
      */
     public static void createBucket(String namespace, String bucketName) {
-        final String minioPod = ResourceManager.kubeClient().listPods(namespace, Map.of(TestConstants.APP_POD_LABEL, MINIO)).get(0).getMetadata().getName();
+        LabelSelector labelSelector = new LabelSelectorBuilder()
+            .withMatchLabels(Map.of(TestConstants.APP_POD_LABEL, MINIO))
+            .build();
 
-        ResourceManager.cmdKubeClient().namespace(namespace).execInPod(minioPod,
+        final String minioPod = PodUtils.listPodNames(namespace, labelSelector).get(0);
+
+        KubeResourceManager.get().kubeCmdClient().inNamespace(namespace).execInPod(minioPod,
             "mc",
             "mb",
             MINIO_STORAGE_ALIAS + "/" + bucketName);

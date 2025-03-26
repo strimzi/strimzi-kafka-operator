@@ -8,12 +8,9 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.SecurityContext;
-import io.strimzi.api.kafka.model.bridge.KafkaBridge;
-import io.strimzi.api.kafka.model.connect.KafkaConnect;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
-import io.strimzi.api.kafka.model.mirrormaker2.KafkaMirrorMaker2;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
@@ -22,8 +19,9 @@ import io.strimzi.systemtest.enums.PodSecurityProfile;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.NamespaceManager;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
+import io.strimzi.systemtest.resources.crd.KafkaComponents;
+import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -41,11 +39,11 @@ import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
@@ -90,7 +88,7 @@ public class PodSecurityProfilesST extends AbstractST {
     @RequiredMinKubeOrOcpBasedKubeVersion(kubeVersion = 1.23, ocpBasedKubeVersion = 1.24)
     void testOperandsWithRestrictedSecurityProfile() {
 
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         final String mm1TargetClusterName = testStorage.getTargetClusterName() + "-mm1";
         final String mm2TargetClusterName = testStorage.getTargetClusterName() + "-mm2";
@@ -103,17 +101,17 @@ public class PodSecurityProfilesST extends AbstractST {
         // 1 source Kafka Cluster, 2 target Kafka Cluster, 1 for MM1 and MM2 each having different target Kafka Cluster,
 
         LOGGER.info("Deploy Kafka Clusters resources");
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
             KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build(),
 
-            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaNodePoolResource.getBrokerPoolName(mm1TargetClusterName), mm1TargetClusterName, 1).build(),
-            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaNodePoolResource.getControllerPoolName(mm1TargetClusterName), mm1TargetClusterName, 1).build(),
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaComponents.getBrokerPoolName(mm1TargetClusterName), mm1TargetClusterName, 1).build(),
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaComponents.getControllerPoolName(mm1TargetClusterName), mm1TargetClusterName, 1).build(),
 
-            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaNodePoolResource.getBrokerPoolName(mm2TargetClusterName), mm2TargetClusterName, 1).build(),
-            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaNodePoolResource.getControllerPoolName(mm2TargetClusterName), mm2TargetClusterName, 1).build()
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaComponents.getBrokerPoolName(mm2TargetClusterName), mm2TargetClusterName, 1).build(),
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), KafkaComponents.getControllerPoolName(mm2TargetClusterName), mm2TargetClusterName, 1).build()
         );
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 1).build(),
             KafkaTemplates.kafka(testStorage.getNamespaceName(), mm1TargetClusterName, 1).build(),
             KafkaTemplates.kafka(testStorage.getNamespaceName(), mm2TargetClusterName, 1).build(),
@@ -124,7 +122,7 @@ public class PodSecurityProfilesST extends AbstractST {
         // MM1 and MM2 shares source Kafka Cluster and each have their own target kafka cluster
 
         LOGGER.info("Deploy all additional operands: MM1, MM2, Bridge, KafkaConnect");
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
@@ -148,7 +146,7 @@ public class PodSecurityProfilesST extends AbstractST {
                 .build());
 
         LOGGER.info("Deploy File Sink Kafka Connector: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
-        resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), testStorage.getClusterName())
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), testStorage.getClusterName())
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .addToConfig("topics", testStorage.getTopicName())
@@ -163,21 +161,21 @@ public class PodSecurityProfilesST extends AbstractST {
         final KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage)
             .withPodSecurityPolicy(PodSecurityProfile.RESTRICTED)
             .build();
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             kafkaClients.producerStrimzi(),
             kafkaClients.consumerStrimzi()
         );
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
         // verifies that Pods and Containers have proper generated SC
-        final List<Pod> podsWithProperlyGeneratedSecurityContexts = PodUtils.getKafkaClusterPods(testStorage);
-        podsWithProperlyGeneratedSecurityContexts.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND));
-        podsWithProperlyGeneratedSecurityContexts.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND));
-        podsWithProperlyGeneratedSecurityContexts.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND));
+        final List<Pod> podsWithProperlyGeneratedSecurityContexts = new ArrayList<>(PodUtils.getKafkaClusterPods(testStorage));
+        podsWithProperlyGeneratedSecurityContexts.addAll(KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getBridgeSelector()));
+        podsWithProperlyGeneratedSecurityContexts.addAll(KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()));
+        podsWithProperlyGeneratedSecurityContexts.addAll(KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getMM2Selector()));
         verifyPodAndContainerSecurityContext(podsWithProperlyGeneratedSecurityContexts);
 
         // verify KafkaConnect
-        final String kafkaConnectPodName = kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        final String kafkaConnectPodName = KubeResourceManager.get().kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector()).get(0).getMetadata().getName();
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
 
         // verify MM2
@@ -185,7 +183,7 @@ public class PodSecurityProfilesST extends AbstractST {
             .withTopicName(mm2SourceMirroredTopicName)
             .withPodSecurityPolicy(PodSecurityProfile.RESTRICTED)
             .build();
-        resourceManager.createResourceWithWait(mm2Client.consumerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(mm2Client.consumerStrimzi());
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
         // verify that client incorrectly configured Pod Security Profile wont successfully communicate.
@@ -199,7 +197,7 @@ public class PodSecurityProfilesST extends AbstractST {
         // unrestricted capabilities (container "..." must set securityContext.capabilities.drop=["ALL"]),
         // runAsNonRoot != true (pod or container "..." must set securityContext.runAsNonRoot=true),
         // seccompProfile (pod or container "..." must set securityContext.seccompProfile.type to "RuntimeDefault" or "Localhost")
-        resourceManager.createResourceWithoutWait(incorrectKafkaClients.producerStrimzi());
+        KubeResourceManager.get().createResourceWithoutWait(incorrectKafkaClients.producerStrimzi());
         ClientUtils.waitForInstantProducerClientTimeout(testStorage);
     }
 
@@ -207,15 +205,17 @@ public class PodSecurityProfilesST extends AbstractST {
     void beforeAll() {
         // we configure Pod Security via provider class, which sets SecurityContext to all containers (e.g., Kafka,
         // Entity Operator, Bridge). Another alternative but more complicated is to set it via .template section inside each CR.
-        clusterOperator = clusterOperator
-            .defaultInstallation()
-            .withExtraEnvVars(Collections.singletonList(new EnvVarBuilder()
-                .withName("STRIMZI_POD_SECURITY_PROVIDER_CLASS")
-                // default is `baseline` and thus other tests suites are testing it
-                .withValue("restricted")
-                .build()))
-            .createInstallation()
-            .runInstallation();
+        SetupClusterOperator
+            .getInstance()
+            .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
+                .withExtraEnvVars(new EnvVarBuilder()
+                    .withName("STRIMZI_POD_SECURITY_PROVIDER_CLASS")
+                    // default is `baseline` and thus other tests suites are testing it
+                    .withValue("restricted")
+                    .build())
+                .build()
+            )
+            .install();
     }
 
     private void verifyPodAndContainerSecurityContext(final Iterable<? extends Pod> brokerPods) {

@@ -5,17 +5,17 @@
 package io.strimzi.systemtest.utils.specific;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.skodjob.testframe.executor.ExecResult;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.KafkaTopicDescription;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
+import io.strimzi.systemtest.labels.LabelSelectors;
+import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.utils.AdminClientUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.executor.ExecResult;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -26,8 +26,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Properties;
 
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -111,7 +109,7 @@ public class CruiseControlUtils {
         }
 
         String curl = "curl -X " + method.name() + " " + args + " " + scheme + "://localhost:" + port + endpoint + endpointParameters;
-        return new ApiResult(cmdKubeClient(namespaceName).execInPodContainer(Level.DEBUG, ccPodName, CONTAINER_NAME, "/bin/bash", "-c", curl));
+        return new ApiResult(KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPodContainer(ccPodName, CONTAINER_NAME, "/bin/bash", "-c", curl));
     }
 
     @SuppressWarnings("BooleanExpressionComplexity")
@@ -155,10 +153,10 @@ public class CruiseControlUtils {
     }
 
     public static Properties getKafkaCruiseControlMetricsReporterConfiguration(String namespaceName, String clusterName) throws IOException {
-        String cmName = kubeClient().listPods(namespaceName, KafkaResource.getLabelSelector(clusterName, StrimziPodSetResource.getBrokerComponentName(clusterName))).get(0).getMetadata().getName();
+        String cmName = KubeResourceManager.get().kubeClient().listPods(namespaceName, LabelSelectors.kafkaLabelSelector(clusterName, KafkaComponents.getBrokerPodSetName(clusterName))).get(0).getMetadata().getName();
 
-        InputStream configurationFileStream = new ByteArrayInputStream(kubeClient(namespaceName).getConfigMap(namespaceName, cmName)
-                .getData().get("server.config").getBytes(StandardCharsets.UTF_8));
+        InputStream configurationFileStream = new ByteArrayInputStream(KubeResourceManager.get().kubeClient().getClient().configMaps().inNamespace(namespaceName).withName(cmName).get()
+            .getData().get("server.config").getBytes(StandardCharsets.UTF_8));
 
         Properties configurationOfKafka = new Properties();
         configurationOfKafka.load(configurationFileStream);

@@ -9,16 +9,16 @@ import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
+import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.testframe.resources.ResourceItem;
 import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
-import io.strimzi.systemtest.resources.ResourceItem;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.templates.kubernetes.NetworkPolicyTemplates;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.specific.KeycloakUtils;
 import io.strimzi.test.TestUtils;
@@ -36,9 +36,6 @@ import java.nio.file.Paths;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class SetupKeycloak {
     private static final List<String> KEYCLOAK_REALMS_FILE_NAMES = List.of("internal_realm.json", "authorization_realm.json", "scope_audience_realm.json");
@@ -66,7 +63,7 @@ public class SetupKeycloak {
         Exec.exec(Level.INFO, "/bin/bash", PATH_TO_KEYCLOAK_PREPARE_SCRIPT, deploymentNamespace, KeycloakUtils.LATEST_KEYCLOAK_VERSION, watchNamespace);
         DeploymentUtils.waitForDeploymentAndPodsReady(deploymentNamespace, KEYCLOAK_OPERATOR_DEPLOYMENT_NAME, 1);
 
-        ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(() -> deleteKeycloakOperator(deploymentNamespace, watchNamespace)));
+        KubeResourceManager.get().pushToStack(new ResourceItem<>(() -> deleteKeycloakOperator(deploymentNamespace, watchNamespace)));
 
         LOGGER.info("Keycloak Operator in Namespace: {} is ready", deploymentNamespace);
     }
@@ -83,7 +80,7 @@ public class SetupKeycloak {
         deployKeycloak(namespaceName);
 
         KeycloakInstance keycloakInstance = createKeycloakInstance(namespaceName);
-        NetworkPolicyResource.allowNetworkPolicyAllIngressForMatchingLabel(namespaceName, KEYCLOAK + "-allow", Map.of(TestConstants.APP_POD_LABEL, KEYCLOAK));
+        NetworkPolicyUtils.allowNetworkPolicyAllIngressForMatchingLabel(namespaceName, KEYCLOAK + "-allow", Map.of(TestConstants.APP_POD_LABEL, KEYCLOAK));
         importRealms(namespaceName, keycloakInstance);
 
         return keycloakInstance;
@@ -91,11 +88,11 @@ public class SetupKeycloak {
 
     private static void deployKeycloak(String namespaceName) {
         LOGGER.info("Deploying Keycloak instance into Namespace: {}", namespaceName);
-        cmdKubeClient(namespaceName).apply(KEYCLOAK_INSTANCE_FILE_PATH);
+        KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).apply(KEYCLOAK_INSTANCE_FILE_PATH);
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(namespaceName, "keycloak", 1);
 
-        ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(() -> deleteKeycloak(namespaceName)));
+        KubeResourceManager.get().pushToStack(new ResourceItem<>(() -> deleteKeycloak(namespaceName)));
 
         LOGGER.info("Waiting for Keycloak Secret: {}/{} to be present", namespaceName, KEYCLOAK_SECRET_NAME);
         SecretUtils.waitForSecretReady(namespaceName, KEYCLOAK_SECRET_NAME, () -> { });
@@ -109,14 +106,14 @@ public class SetupKeycloak {
             final String postgresYaml =  Files.readString(Paths.get(POSTGRES_FILE_PATH)).replace(
                 "${POSTGRES_IMAGE}", Environment.POSTGRES_IMAGE
             );
-            cmdKubeClient(namespaceName).applyContent(postgresYaml);
+            KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).applyContent(postgresYaml);
         } catch (IOException e) {
             throw new RuntimeException("Failed to update the Postgres deployment YAML", e);
         }
 
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, "postgres", 1);
 
-        ResourceManager.STORED_RESOURCES.get(ResourceManager.getTestContext().getDisplayName()).push(new ResourceItem<>(() -> deletePostgres(namespaceName)));
+        KubeResourceManager.get().pushToStack(new ResourceItem<>(() -> deletePostgres(namespaceName)));
 
         Secret postgresSecret = new SecretBuilder()
             .withNewMetadata()
@@ -128,13 +125,11 @@ public class SetupKeycloak {
             .addToData("password", Base64.getEncoder().encodeToString(POSTGRES_PASSWORD.getBytes(StandardCharsets.UTF_8)))
             .build();
 
-
-        kubeClient().createSecret(postgresSecret);
-        SecretUtils.waitForSecretReady(namespaceName, POSTGRES_SECRET_NAME, () -> { });
+        KubeResourceManager.get().createResourceWithWait(postgresSecret);
     }
 
     private static KeycloakInstance createKeycloakInstance(String namespaceName) {
-        Secret keycloakSecret = kubeClient().getSecret(namespaceName, KEYCLOAK_SECRET_NAME);
+        Secret keycloakSecret = KubeResourceManager.get().kubeClient().getClient().secrets().inNamespace(namespaceName).withName(KEYCLOAK_SECRET_NAME).get();
 
         String usernameEncoded = keycloakSecret.getData().get("username");
         String username = Util.decodeFromBase64(usernameEncoded, StandardCharsets.UTF_8);
@@ -184,21 +179,21 @@ public class SetupKeycloak {
                 .endSpec()
                 .build();
 
-            ResourceManager.getInstance().createResourceWithWait(networkPolicy);
+            KubeResourceManager.get().createResourceWithWait(networkPolicy);
         }
     }
 
     private static void deleteKeycloak(String namespaceName) {
         LOGGER.info("Deleting Keycloak in Namespace: {}", namespaceName);
-        cmdKubeClient(namespaceName).delete(KEYCLOAK_INSTANCE_FILE_PATH);
-        kubeClient().deleteSecret(namespaceName, KEYCLOAK_SECRET_NAME);
+        KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).delete(KEYCLOAK_INSTANCE_FILE_PATH);
+        SecretUtils.deleteSecretWithWait(namespaceName, KEYCLOAK_SECRET_NAME);
         DeploymentUtils.waitForDeploymentDeletion(namespaceName, KEYCLOAK_DEPLOYMENT_NAME);
     }
 
     private static void deletePostgres(String namespaceName) {
         LOGGER.info("Deleting Postgres in Namespace: {}", namespaceName);
-        cmdKubeClient(namespaceName).delete(POSTGRES_FILE_PATH);
-        kubeClient().deleteSecret(namespaceName, POSTGRES_SECRET_NAME);
+        KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).delete(POSTGRES_FILE_PATH);
+        SecretUtils.deleteSecretWithWait(namespaceName, POSTGRES_SECRET_NAME);
         DeploymentUtils.waitForDeploymentDeletion(namespaceName, "postgres");
     }
 }

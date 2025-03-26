@@ -5,8 +5,6 @@
 package io.strimzi.test.k8s.cluster;
 
 import io.strimzi.test.executor.Exec;
-import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
-import io.strimzi.test.k8s.cmdClient.Oc;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,11 +34,6 @@ public class OpenShift implements KubeCluster {
             LOGGER.debug(e);
             return false;
         }
-    }
-
-    @Override
-    public KubeCmdClient defaultCmdClient() {
-        return new Oc();
     }
 
     public String toString() {
