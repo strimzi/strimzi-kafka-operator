@@ -4,6 +4,13 @@
  */
 package io.strimzi.systemtest;
 
+import io.skodjob.testframe.resources.ClusterRoleBindingType;
+import io.skodjob.testframe.resources.ClusterRoleType;
+import io.skodjob.testframe.resources.CustomResourceDefinitionType;
+import io.skodjob.testframe.resources.DeploymentType;
+import io.skodjob.testframe.resources.JobType;
+import io.skodjob.testframe.resources.KubeResourceManager;
+import io.skodjob.testframe.resources.NamespaceType;
 import io.strimzi.systemtest.exceptions.KubernetesClusterUnstableException;
 import io.strimzi.systemtest.interfaces.IndicativeSentences;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
@@ -12,6 +19,17 @@ import io.strimzi.systemtest.parallel.TestSuiteNamespaceManager;
 import io.strimzi.systemtest.resources.NamespaceManager;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
+import io.strimzi.systemtest.resources.types.KafkaAccessType;
+import io.strimzi.systemtest.resources.types.KafkaBridgeType;
+import io.strimzi.systemtest.resources.types.KafkaConnectType;
+import io.strimzi.systemtest.resources.types.KafkaConnectorType;
+import io.strimzi.systemtest.resources.types.KafkaMirrorMaker2Type;
+import io.strimzi.systemtest.resources.types.KafkaNodePoolType;
+import io.strimzi.systemtest.resources.types.KafkaRebalanceType;
+import io.strimzi.systemtest.resources.types.KafkaTopicType;
+import io.strimzi.systemtest.resources.types.KafkaType;
+import io.strimzi.systemtest.resources.types.KafkaUserType;
+import io.strimzi.systemtest.resources.types.StrimziPodSetType;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.interfaces.TestSeparator;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -40,9 +58,29 @@ public abstract class AbstractST implements TestSeparator {
     public static final List<String> LB_FINALIZERS;
     static {
         LB_FINALIZERS = Environment.LB_FINALIZERS ? List.of(TestConstants.LOAD_BALANCER_CLEANUP) : null;
+        KubeResourceManager.getInstance().setResourceTypes(
+            new ClusterRoleBindingType(),
+            new ClusterRoleType(),
+            new CustomResourceDefinitionType(),
+            new DeploymentType(),
+            new NamespaceType(),
+            new JobType(),
+            new KafkaAccessType(),
+            new KafkaBridgeType(),
+            new KafkaConnectorType(),
+            new KafkaConnectType(),
+            new KafkaMirrorMaker2Type(),
+            new KafkaNodePoolType(),
+            new KafkaRebalanceType(),
+            new KafkaTopicType(),
+            new KafkaType(),
+            new KafkaUserType(),
+            new StrimziPodSetType()
+        );
     }
 
     protected final ResourceManager resourceManager = ResourceManager.getInstance();
+    protected final KubeResourceManager kubeResourceManager = KubeResourceManager.getInstance();
     protected final TestSuiteNamespaceManager testSuiteNamespaceManager = TestSuiteNamespaceManager.getInstance();
     private final SuiteThreadController parallelSuiteController = SuiteThreadController.getInstance();
     protected SetupClusterOperator clusterOperator = SetupClusterOperator.getInstance();
