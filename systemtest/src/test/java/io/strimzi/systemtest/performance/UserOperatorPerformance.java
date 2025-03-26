@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.performance;
 
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -16,6 +17,8 @@ import io.strimzi.systemtest.performance.gather.schedulers.UserOperatorMetricsCo
 import io.strimzi.systemtest.performance.report.UserOperatorPerformanceReporter;
 import io.strimzi.systemtest.performance.report.parser.TopicOperatorMetricsParser;
 import io.strimzi.systemtest.performance.utils.UserOperatorPerformanceUtils;
+import io.strimzi.systemtest.resources.CrdClients;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -42,7 +45,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.TestTags.USER_CAPACITY;
-import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class UserOperatorPerformance extends AbstractST {
 
@@ -105,7 +108,7 @@ public class UserOperatorPerformance extends AbstractST {
         final String workerQueueSize = "10000";
 
         try {
-            resourceManager.createResourceWithWait(
+            KubeResourceManager.get().createResourceWithWait(
                 KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), brokerReplicas)
                     .editSpec()
                         .withNewPersistentClaimStorage()
@@ -115,7 +118,7 @@ public class UserOperatorPerformance extends AbstractST {
                     .build(),
                 KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), controllerReplicas).build()
             );
-            resourceManager.createResourceWithWait(
+            KubeResourceManager.get().createResourceWithWait(
                 KafkaTemplates.kafkaMetricsConfigMap(testStorage.getNamespaceName(), testStorage.getClusterName()),
                 KafkaTemplates.kafkaWithMetrics(testStorage.getNamespaceName(), testStorage.getClusterName(), brokerReplicas)
                     .editSpec()
@@ -204,7 +207,8 @@ public class UserOperatorPerformance extends AbstractST {
         } finally {
             // to enchantment a process of deleting we should delete all resources at once
             // I saw a behaviour where deleting one by one might lead to 10s delay for deleting each KafkaUser
-            resourceManager.deleteResourcesOfTypeWithoutWait(KafkaUser.RESOURCE_KIND);
+            List<KafkaUser> kafkaUsers = CrdClients.kafkaUserClient().inNamespace(testStorage.getNamespaceName()).list().getItems();
+            KubeResourceManager.get().deleteResource(kafkaUsers.toArray(new KafkaUser[0]));
             KafkaUserUtils.waitForUserWithPrefixDeletion(testStorage.getNamespaceName(), testStorage.getUsername());
 
             if (this.userOperatorMetricsGatherer != null) {
@@ -238,10 +242,10 @@ public class UserOperatorPerformance extends AbstractST {
     // Additional setup and utility methods as needed
     @BeforeAll
     void setup() {
-        this.clusterOperator = this.clusterOperator
-            .defaultInstallation()
-            .createInstallation()
-            .runInstallation();
+        SetupClusterOperator
+            .getInstance()
+            .withDefaultConfiguration()
+            .install();
     }
 
     @AfterAll

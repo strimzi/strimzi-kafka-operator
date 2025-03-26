@@ -26,6 +26,7 @@ import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.ResourceAnnotations;
 import io.strimzi.api.kafka.model.common.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.common.ConnectorState;
@@ -55,11 +56,9 @@ import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
-import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
-import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
+import io.strimzi.systemtest.resources.CrdClients;
+import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
@@ -76,6 +75,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonObject;
@@ -144,7 +144,7 @@ class ConnectST extends AbstractST {
         }
     )
     void testDeployRollUndeploy() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         final int connectReplicasCount = 2;
 
@@ -159,12 +159,12 @@ class ConnectST extends AbstractST {
                 "status.storage.topic=" + KafkaConnectResources.configStorageTopicStatus(testStorage.getClusterName()) + "\n" +
                 "offset.storage.topic=" + KafkaConnectResources.configStorageTopicOffsets(testStorage.getClusterName()) + "\n");
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), connectReplicasCount).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), connectReplicasCount).build());
 
         // Test ManualRolling Update
         LOGGER.info("KafkaConnect manual rolling update");
@@ -178,7 +178,7 @@ class ConnectST extends AbstractST {
         Map<String, Object> config = StUtils.loadProperties(connectConfigurations);
         assertThat(config.entrySet().containsAll(exceptedConfig.entrySet()), is(true));
 
-        VerificationUtils.verifyClusterOperatorConnectDockerImage(clusterOperator.getDeploymentNamespace(), testStorage.getNamespaceName(), testStorage.getClusterName());
+        VerificationUtils.verifyClusterOperatorConnectDockerImage(SetupClusterOperator.getInstance().getOperatorNamespace(), testStorage.getNamespaceName(), testStorage.getClusterName());
 
         VerificationUtils.verifyPodsLabels(testStorage.getNamespaceName(), KafkaConnectResources.componentName(testStorage.getClusterName()), testStorage.getKafkaConnectSelector());
         VerificationUtils.verifyServiceLabels(testStorage.getNamespaceName(), KafkaConnectResources.serviceName(testStorage.getClusterName()), testStorage.getKafkaConnectSelector());
@@ -202,15 +202,15 @@ class ConnectST extends AbstractST {
         }
     )
     void testKafkaConnectAndConnectorStateWithFileSinkPlugin() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -227,7 +227,7 @@ class ConnectST extends AbstractST {
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(testStorage.getNamespaceName(), connectPodName);
 
         LOGGER.info("Creating KafkaConnector: {}/{} without 'spec.pause' or 'spec.state' specified", testStorage.getNamespaceName(), testStorage.getClusterName());
-        resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), testStorage.getClusterName())
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), testStorage.getClusterName())
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .addToConfig("topics", testStorage.getTopicName())
@@ -259,7 +259,7 @@ class ConnectST extends AbstractST {
         description = @Desc("Test verifying Kafka Connect functionalities with Plain and SCRAM-SHA authentication."),
         steps = {
             @Step(value = "Create object instance of TestStorage.", expected = "Instance of TestStorage is created."),
-            @Step(value = "Create KafkaNodePools using resourceManager based on the configuration.", expected = "KafkaNodePools for broker and controller are created or not based on configuration."),
+            @Step(value = "Create KafkaNodePools based on the configuration.", expected = "KafkaNodePools for broker and controller are created or not based on configuration."),
             @Step(value = "Deploy Kafka with SCRAM-SHA-512 listener", expected = "Kafka is deployed with the specified listener authentication"),
             @Step(value = "Create KafkaUser with SCRAM-SHA authentication", expected = "KafkaUser is created using SCRAM-SHA authentication with the given credentials"),
             @Step(value = "Create KafkaTopic", expected = "KafkaTopic is created"),
@@ -274,14 +274,14 @@ class ConnectST extends AbstractST {
         }
     )
     void testKafkaConnectWithPlainAndScramShaAuthentication() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
         // Use a Kafka with plain listener disabled
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -297,8 +297,8 @@ class ConnectST extends AbstractST {
 
         KafkaUser kafkaUser =  KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), testStorage.getUsername(), testStorage.getClusterName()).build();
 
-        resourceManager.createResourceWithWait(kafkaUser);
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
+        KubeResourceManager.get().createResourceWithWait(kafkaUser);
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
         KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editSpec()
@@ -321,10 +321,10 @@ class ConnectST extends AbstractST {
         // This is required to be able to remove the TLS setting, the builder cannot remove it
         connect.getSpec().setTls(null);
         
-        resourceManager.createResourceWithWait(connect, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
+        KubeResourceManager.get().createResourceWithWait(connect, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
 
         LOGGER.info("Deploying NetworkPolicies for KafkaConnect");
-        NetworkPolicyResource.deployNetworkPolicyForResource(connect, KafkaConnectResources.componentName(testStorage.getClusterName()));
+        NetworkPolicyUtils.deployNetworkPolicyForResource(connect, KafkaConnectResources.componentName(testStorage.getClusterName()));
 
         final String kafkaConnectPodName = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(KafkaConnectResources.componentName(testStorage.getClusterName())).get(0).getMetadata().getName();
         final String scraperPodName = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(testStorage.getScraperName()).get(0).getMetadata().getName();
@@ -336,7 +336,7 @@ class ConnectST extends AbstractST {
             TestConstants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(testStorage.getClusterName(), testStorage.getNamespaceName(), 8083));
 
         final KafkaClients plainScramShaClients = ClientUtils.getInstantScramShaOverPlainClients(testStorage);
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             plainScramShaClients.producerScramShaPlainStrimzi(),
             plainScramShaClients.consumerScramShaPlainStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
@@ -349,7 +349,7 @@ class ConnectST extends AbstractST {
         description = @Desc("Test the functionality of Kafka Connect with a File Sink Plugin in a parallel namespace setup."),
         steps = {
             @Step(value = "Create and configure test storage", expected = "Test storage is set up with necessary configurations."),
-            @Step(value = "Create KafkaNodePools using resourceManager based on the configuration", expected = "KafkaNodePools for broker and controller are created or not based on configuration"),
+            @Step(value = "Create KafkaNodePools based on the configuration", expected = "KafkaNodePools for broker and controller are created or not based on configuration"),
             @Step(value = "Create and wait for the broker and controller pools", expected = "Broker and controller pools are created and running."),
             @Step(value = "Deploy and configure Kafka Connect with File Sink Plugin", expected = "Kafka Connect with File Sink Plugin is deployed and configured."),
             @Step(value = "Deploy Network Policies for Kafka Connect", expected = "Network Policies are successfully deployed for Kafka Connect."),
@@ -363,13 +363,13 @@ class ConnectST extends AbstractST {
         }
     )
     void testKafkaConnectAndConnectorFileSinkPlugin() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
 
         KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editMetadata()
@@ -381,14 +381,14 @@ class ConnectST extends AbstractST {
             .endSpec()
             .build();
 
-        resourceManager.createResourceWithWait(connect, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
+        KubeResourceManager.get().createResourceWithWait(connect, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
 
         String connectorName = "license-source";
 
         LOGGER.info("Deploying NetworkPolicies for KafkaConnect");
-        NetworkPolicyResource.deployNetworkPolicyForResource(connect, KafkaConnectResources.componentName(testStorage.getClusterName()));
+        NetworkPolicyUtils.deployNetworkPolicyForResource(connect, KafkaConnectResources.componentName(testStorage.getClusterName()));
 
-        resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), connectorName, testStorage.getClusterName(), 2)
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), connectorName, testStorage.getClusterName(), 2)
             .editSpec()
                 .addToConfig("topic", testStorage.getTopicName())
             .endSpec()
@@ -397,7 +397,7 @@ class ConnectST extends AbstractST {
         final String scraperPodName = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(testStorage.getScraperName()).get(0).getMetadata().getName();
 
         final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
-        resourceManager.createResourceWithWait(kafkaClients.consumerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerStrimzi());
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
         String service = KafkaConnectResources.url(testStorage.getClusterName(), testStorage.getNamespaceName(), 8083);
@@ -413,7 +413,7 @@ class ConnectST extends AbstractST {
         description = @Desc("Test ensuring the JVM options and resource requests/limits are correctly applied to Kafka Connect components."),
         steps = {
             @Step(value = "Create TestStorage instance", expected = "TestStorage instance is created"),
-            @Step(value = "Create KafkaNodePools using resourceManager based on the configuration", expected = "KafkaNodePools for broker and controller are created or not based on configuration"),
+            @Step(value = "Create KafkaNodePools based on the configuration", expected = "KafkaNodePools for broker and controller are created or not based on configuration"),
             @Step(value = "Create broker and controller KafkaNodePools.", expected = "KafkaNodePools are created and ready"),
             @Step(value = "Create Kafka cluster", expected = "Kafka cluster is created and operational"),
             @Step(value = "Setup JVM options and resource requirements for Kafka Connect", expected = "Kafka Connect is configured with specified JVM options and resources"),
@@ -424,18 +424,18 @@ class ConnectST extends AbstractST {
         }
     )
     void testJvmAndResources() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
 
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
 
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editSpec()
                 .withResources(new ResourceRequirementsBuilder()
                     .addToLimits("memory", new Quantity("400M"))
@@ -464,7 +464,7 @@ class ConnectST extends AbstractST {
         description = @Desc("Test verifying the scaling up and down functionality of Kafka Connect in a Kubernetes environment."),
         steps = {
             @Step(value = "Create TestStorage object instance", expected = "Instance of TestStorage is created"),
-            @Step(value = "Create KafkaNodePools using resourceManager based on the configuration", expected = "KafkaNodePools for broker and controller are created or not based on configuration"),
+            @Step(value = "Create KafkaNodePools based on the configuration", expected = "KafkaNodePools for broker and controller are created or not based on configuration"),
             @Step(value = "Create resources for KafkaNodePools and KafkaCluster", expected = "Resources are created and ready"),
             @Step(value = "Deploy Kafka Connect with file plugin", expected = "Kafka Connect is deployed with 1 initial replica"),
             @Step(value = "Verify the initial replica count", expected = "Initial replica count is verified to be 1"),
@@ -478,15 +478,15 @@ class ConnectST extends AbstractST {
         }
     )
     void testKafkaConnectScaleUpScaleDown() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
 
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1).build());
 
         // kafka cluster Connect already deployed
         List<Pod> connectPods = kubeClient(testStorage.getNamespaceName()).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.componentName(testStorage.getClusterName()));
@@ -495,14 +495,14 @@ class ConnectST extends AbstractST {
         final int scaleTo = initialReplicas + 3;
 
         LOGGER.info("Scaling up to {}", scaleTo);
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), c -> c.getSpec().setReplicas(scaleTo));
+        KafkaConnectUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), c -> c.getSpec().setReplicas(scaleTo));
 
         PodUtils.waitForPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector(), scaleTo, true);
         connectPods = kubeClient(testStorage.getNamespaceName()).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.componentName(testStorage.getClusterName()));
         assertThat(connectPods.size(), is(scaleTo));
 
         LOGGER.info("Scaling down to {}", initialReplicas);
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), c -> c.getSpec().setReplicas(initialReplicas));
+        KafkaConnectUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), c -> c.getSpec().setReplicas(initialReplicas));
 
         PodUtils.waitForPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector(), initialReplicas, true);
         connectPods = kubeClient(testStorage.getNamespaceName()).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.componentName(testStorage.getClusterName()));
@@ -514,7 +514,7 @@ class ConnectST extends AbstractST {
         description = @Desc("This test verifies that Kafka Connect works with TLS and TLS client authentication."),
         steps = {
             @Step(value = "Create test storage instance", expected = "Test storage instance is created"),
-            @Step(value = "Create KafkaNodePools using resourceManager based on the configuration", expected = "KafkaNodePools for broker and controller are created or not based on configuration"),
+            @Step(value = "Create KafkaNodePools based on the configuration", expected = "KafkaNodePools for broker and controller are created or not based on configuration"),
             @Step(value = "Create resources for Kafka broker and Kafka Connect components", expected = "Resources are created and ready"),
             @Step(value = "Configure Kafka broker with TLS listener and client authentication", expected = "Kafka broker is configured correctly"),
             @Step(value = "Deploy Kafka user with TLS authentication", expected = "Kafka user is deployed with TLS authentication"),
@@ -530,13 +530,13 @@ class ConnectST extends AbstractST {
         }
     )
     void testSecretsWithKafkaConnectWithTlsAndTlsClientAuthentication() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -552,8 +552,8 @@ class ConnectST extends AbstractST {
 
         KafkaUser kafkaUser = KafkaUserTemplates.tlsUser(testStorage).build();
 
-        resourceManager.createResourceWithWait(kafkaUser);
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
+        KubeResourceManager.get().createResourceWithWait(kafkaUser);
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
         KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editSpec()
@@ -578,10 +578,10 @@ class ConnectST extends AbstractST {
             .endSpec()
             .build();
 
-        resourceManager.createResourceWithWait(connect, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
+        KubeResourceManager.get().createResourceWithWait(connect, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
 
         LOGGER.info("Deploying NetworkPolicies for KafkaConnect");
-        NetworkPolicyResource.deployNetworkPolicyForResource(connect, KafkaConnectResources.componentName(testStorage.getClusterName()));
+        NetworkPolicyUtils.deployNetworkPolicyForResource(connect, KafkaConnectResources.componentName(testStorage.getClusterName()));
 
         final String kafkaConnectPodName = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(KafkaConnectResources.componentName(testStorage.getClusterName())).get(0).getMetadata().getName();
         final String scraperPodName = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(testStorage.getScraperName()).get(0).getMetadata().getName();
@@ -593,7 +593,7 @@ class ConnectST extends AbstractST {
             TestConstants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(testStorage.getClusterName(), testStorage.getNamespaceName(), 8083));
 
         final KafkaClients kafkaClients = ClientUtils.getInstantTlsClients(testStorage);
-        resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
+        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
@@ -621,13 +621,13 @@ class ConnectST extends AbstractST {
         }
     )
     void testSecretsWithKafkaConnectWithTlsAndScramShaAuthentication() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -643,8 +643,8 @@ class ConnectST extends AbstractST {
 
         KafkaUser kafkaUser = KafkaUserTemplates.scramShaUser(testStorage).build();
 
-        resourceManager.createResourceWithWait(kafkaUser);
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
+        KubeResourceManager.get().createResourceWithWait(kafkaUser);
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage).build());
 
         KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editSpec()
@@ -669,10 +669,10 @@ class ConnectST extends AbstractST {
             .endSpec()
             .build();
 
-        resourceManager.createResourceWithWait(connect, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
+        KubeResourceManager.get().createResourceWithWait(connect, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
 
         LOGGER.info("Deploying NetworkPolicies for KafkaConnect");
-        NetworkPolicyResource.deployNetworkPolicyForResource(connect, KafkaConnectResources.componentName(testStorage.getClusterName()));
+        NetworkPolicyUtils.deployNetworkPolicyForResource(connect, KafkaConnectResources.componentName(testStorage.getClusterName()));
 
         final String kafkaConnectPodName = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(KafkaConnectResources.componentName(testStorage.getClusterName())).get(0).getMetadata().getName();
         final String scraperPodName = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(testStorage.getScraperName()).get(0).getMetadata().getName();
@@ -682,7 +682,7 @@ class ConnectST extends AbstractST {
             TestConstants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(testStorage.getClusterName(), testStorage.getNamespaceName(), 8083));
 
         final KafkaClients kafkaClients = ClientUtils.getInstantScramShaOverTlsClients(testStorage);
-        resourceManager.createResourceWithWait(kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerScramShaTlsStrimzi(testStorage.getClusterName()));
+        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerScramShaTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
@@ -710,17 +710,17 @@ class ConnectST extends AbstractST {
         }
     )
     void testConnectorTaskAutoRestart() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
 
         final String imageFullPath = Environment.getImageOutputRegistry(testStorage.getNamespaceName(), TestConstants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName(), 3, 3).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName(), 3, 3).build());
 
         final Plugin echoSinkPlugin = new PluginBuilder()
             .withName(TestConstants.ECHO_SINK_CONNECTOR_NAME)
@@ -747,9 +747,9 @@ class ConnectST extends AbstractST {
             .endSpec()
             .build();
 
-        resourceManager.createResourceWithWait(connect, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
+        KubeResourceManager.get().createResourceWithWait(connect, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
         LOGGER.info("Deploying NetworkPolicies for KafkaConnect");
-        NetworkPolicyResource.deployNetworkPolicyForResource(connect, KafkaConnectResources.componentName(testStorage.getClusterName()));
+        NetworkPolicyUtils.deployNetworkPolicyForResource(connect, KafkaConnectResources.componentName(testStorage.getClusterName()));
 
         // How many messages should be sent and at what count should the test connector fail
         final int failMessageCount = 5;
@@ -765,7 +765,7 @@ class ConnectST extends AbstractST {
         echoSinkConfig.put("fail.task.after.records", failMessageCount);
 
         LOGGER.info("Creating EchoSink KafkaConnector");
-        resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), TestConstants.ECHO_SINK_CONNECTOR_NAME, testStorage.getClusterName())
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), TestConstants.ECHO_SINK_CONNECTOR_NAME, testStorage.getClusterName())
             .editOrNewSpec()
                 .withTasksMax(1)
                 .withClassName(TestConstants.ECHO_SINK_CLASS_NAME)
@@ -778,7 +778,7 @@ class ConnectST extends AbstractST {
         KafkaClients kafkaClients = ClientUtils.getInstantPlainClientBuilder(testStorage)
             .withMessageCount(firstBatchMessageCount)
             .build();
-        resourceManager.createResourceWithWait(kafkaClients.producerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerStrimzi());
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
         // Send second batch of messages to the topic
@@ -786,7 +786,7 @@ class ConnectST extends AbstractST {
             .withMessageCount(secondBatchMessageCount)
             .build();
 
-        resourceManager.createResourceWithWait(kafkaClients.producerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerStrimzi());
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
         // After connector picks up messages from topic it fails task
@@ -803,7 +803,7 @@ class ConnectST extends AbstractST {
         description = @Desc("Test that verifies custom and updated environment variables and readiness/liveness probes for Kafka Connect."),
         steps = {
             @Step(value = "Create and configure Kafka Connect with initial values", expected = "Kafka Connect is created and configured with initial environment variables and readiness/liveness probes"),
-            @Step(value = "Create KafkaNodePools using resourceManager based on the configuration", expected = "KafkaNodePools for broker and controller are created or not based on configuration"),
+            @Step(value = "Create KafkaNodePools based on the configuration", expected = "KafkaNodePools for broker and controller are created or not based on configuration"),
             @Step(value = "Verify initial configuration and environment variables", expected = "Initial configuration and environment variables are as expected"),
             @Step(value = "Update Kafka Connect configuration and environment variables", expected = "Kafka Connect configuration and environment variables are updated"),
             @Step(value = "Verify updated configuration and environment variables", expected = "Updated configuration and environment variables are as expected")
@@ -813,7 +813,7 @@ class ConnectST extends AbstractST {
         }
     )
     void testCustomAndUpdatedValues() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         LinkedHashMap<String, String> envVarGeneral = new LinkedHashMap<>();
         envVarGeneral.put("TEST_ENV_1", "test.env.one");
@@ -838,12 +838,12 @@ class ConnectST extends AbstractST {
         final int updatedPeriodSeconds = 5;
         final int updatedFailureThreshold = 1;
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editSpec()
                 .withNewTemplate()
                     .withNewConnectContainer()
@@ -877,7 +877,7 @@ class ConnectST extends AbstractST {
 
         LOGGER.info("Updating values in Connect container");
 
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kc -> {
+        KafkaConnectUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kc -> {
             kc.getSpec().getTemplate().getConnectContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
             kc.getSpec().setConfig(connectConfig);
             kc.getSpec().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
@@ -924,17 +924,17 @@ class ConnectST extends AbstractST {
         }
     )
     void testMultiNodeKafkaConnectWithConnectorCreation() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         final String connectClusterName = testStorage.getClusterName() + "-2";
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
         // Create connect cluster with default connect image
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -946,7 +946,7 @@ class ConnectST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), testStorage.getClusterName())
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), testStorage.getClusterName())
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .addToConfig("topics", testStorage.getTopicName())
@@ -967,7 +967,7 @@ class ConnectST extends AbstractST {
         String connectorPodName = workerNode.substring(0, workerNode.indexOf("."));
 
         final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
-        resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
@@ -979,7 +979,7 @@ class ConnectST extends AbstractST {
         description = @Desc("Test verifying Kafka connect TLS authentication with a username containing unusual characters."),
         steps = {
             @Step(value = "Set up a name of username containing dots and 64 characters", expected = ""),
-            @Step(value = "Create KafkaNodePools using resourceManager based on the configuration", expected = "KafkaNodePools for broker and controller are created or not based on configuration"),
+            @Step(value = "Create KafkaNodePools based on the configuration", expected = "KafkaNodePools for broker and controller are created or not based on configuration"),
             @Step(value = "Create Kafka broker, controller, topic, and Kafka user with the specified username", expected = "Resources are created with the expected configurations"),
             @Step(value = "Setup Kafka Connect with the created Kafka instance and TLS authentication", expected = "Kafka Connect is set up with the expected configurations"),
             @Step(value = "Check if the user can produce messages to Kafka", expected = "Messages are produced successfully"),
@@ -990,16 +990,16 @@ class ConnectST extends AbstractST {
         }
     )
     void testConnectTlsAuthWithWeirdUserName() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         // Create weird named user with . and maximum of 64 chars -> TLS
         final String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasd";
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -1013,9 +1013,9 @@ class ConnectST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName()).build());
-        resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), weirdUserName, testStorage.getClusterName()).build());
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName()).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), weirdUserName, testStorage.getClusterName()).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -1040,7 +1040,7 @@ class ConnectST extends AbstractST {
                 .withBootstrapServers(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
             .endSpec()
             .build());
-        resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), testStorage.getClusterName())
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), testStorage.getClusterName())
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .addToConfig("topics", testStorage.getTopicName())
@@ -1053,7 +1053,7 @@ class ConnectST extends AbstractST {
             .build();
 
         LOGGER.info("Checking if user is able to produce messages");
-        resourceManager.createResourceWithWait(clients.producerTlsStrimzi(testStorage.getClusterName()));
+        KubeResourceManager.get().createResourceWithWait(clients.producerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
         LOGGER.info("Checking if connector is able to consume messages");
@@ -1067,7 +1067,7 @@ class ConnectST extends AbstractST {
         description = @Desc("Test verifying that Kafka Connect can authenticate with SCRAM-SHA-512 using a username with special characters and length exceeding typical constraints."),
         steps = {
             @Step(value = "Create resource with KafkaNodePools", expected = "KafkaNodePools created successfully"),
-            @Step(value = "Create KafkaNodePools using resourceManager based on the configuration", expected = "KafkaNodePools for broker and controller are created or not based on configuration"),
+            @Step(value = "Create KafkaNodePools based on the configuration", expected = "KafkaNodePools for broker and controller are created or not based on configuration"),
             @Step(value = "Deploy Kafka cluster with SCRAM-SHA-512 authentication", expected = "Kafka cluster deployed with specified authentications"),
             @Step(value = "Create Kafka Topic", expected = "Topic created successfully"),
             @Step(value = "Create Kafka SCRAM-SHA-512 user with a weird username", expected = "User created successfully with SCRAM-SHA-512 credentials"),
@@ -1081,16 +1081,16 @@ class ConnectST extends AbstractST {
         }
     )
     void testConnectScramShaAuthWithWeirdUserName() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         // Create weird named user with . and 92 characters which is more than 64 -> SCRAM-SHA
         final String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasdsadasdasdasdasdgasgadfasdad";
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -1104,9 +1104,9 @@ class ConnectST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName()).build());
-        resourceManager.createResourceWithWait(KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), weirdUserName, testStorage.getClusterName()).build());
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName()).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), weirdUserName, testStorage.getClusterName()).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
@@ -1131,7 +1131,7 @@ class ConnectST extends AbstractST {
                     .endTls()
                 .endSpec()
                 .build());
-        resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), testStorage.getClusterName())
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), testStorage.getClusterName())
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .addToConfig("topics", testStorage.getTopicName())
@@ -1144,7 +1144,7 @@ class ConnectST extends AbstractST {
             .build();
 
         LOGGER.info("Checking if user is able to send messages");
-        resourceManager.createResourceWithWait(clients.producerScramShaTlsStrimzi(testStorage.getClusterName()));
+        KubeResourceManager.get().createResourceWithWait(clients.producerScramShaTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
         LOGGER.info("Checking if connector is able to consume messages");
@@ -1171,27 +1171,27 @@ class ConnectST extends AbstractST {
         }
     )
     void testScaleConnectWithoutConnectorToZero() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 2).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 2).build());
 
         List<Pod> connectPods = kubeClient(testStorage.getNamespaceName()).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.componentName(testStorage.getClusterName()));
 
         assertThat(connectPods.size(), is(2));
         //scale down
         LOGGER.info("Scaling KafkaConnect down to zero");
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaConnect -> kafkaConnect.getSpec().setReplicas(0));
+        KafkaConnectUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaConnect -> kafkaConnect.getSpec().setReplicas(0));
 
         KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
         PodUtils.waitForPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector(), 0, true);
 
         connectPods = kubeClient(testStorage.getNamespaceName()).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.componentName(testStorage.getClusterName()));
-        KafkaConnectStatus connectStatus = KafkaConnectResource.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
+        KafkaConnectStatus connectStatus = CrdClients.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
 
         assertThat(connectPods.size(), is(0));
         assertThat(connectStatus.getConditions().get(0).getType(), is(Ready.toString()));
@@ -1219,20 +1219,20 @@ class ConnectST extends AbstractST {
         }
     )
     void testScaleConnectWithConnectorToZero() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 2)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 2)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .build());
 
-        resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), testStorage.getClusterName())
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), testStorage.getClusterName())
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .addToConfig("file", TestConstants.DEFAULT_SINK_FILE_PATH)
@@ -1247,15 +1247,15 @@ class ConnectST extends AbstractST {
         assertThat(connectPods.size(), is(2));
         //scale down
         LOGGER.info("Scaling KafkaConnect down to zero");
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaConnect -> kafkaConnect.getSpec().setReplicas(0));
+        KafkaConnectUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaConnect -> kafkaConnect.getSpec().setReplicas(0));
 
         KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
         PodUtils.waitForPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector(), 0, true);
         KafkaConnectorUtils.waitForConnectorNotReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         connectPods = kubeClient(testStorage.getNamespaceName()).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.componentName(testStorage.getClusterName()));
-        KafkaConnectStatus connectStatus = KafkaConnectResource.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
-        KafkaConnectorStatus connectorStatus = KafkaConnectorResource.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
+        KafkaConnectStatus connectStatus = CrdClients.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
+        KafkaConnectorStatus connectorStatus = CrdClients.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
 
         assertThat(connectPods.size(), is(0));
         assertThat(connectStatus.getConditions().get(0).getType(), is(Ready.toString()));
@@ -1270,7 +1270,7 @@ class ConnectST extends AbstractST {
         description = @Desc("This test verifies the scaling functionality of Kafka Connect and KafkaConnector subresources."),
         steps = {
             @Step(value = "Initialize the test storage and create broker and controller pools", expected = "Broker and controller pools are created successfully"),
-            @Step(value = "Create KafkaNodePools using resourceManager based on the configuration", expected = "KafkaNodePools for broker and controller are created or not based on configuration"),
+            @Step(value = "Create KafkaNodePools based on the configuration", expected = "KafkaNodePools for broker and controller are created or not based on configuration"),
             @Step(value = "Deploy Kafka, Kafka Connect and KafkaConnector resources", expected = "Kafka, Kafka Connect and KafkaConnector resources are deployed successfully"),
             @Step(value = "Scale Kafka Connect subresource", expected = "Kafka Connect subresource is scaled successfully"),
             @Step(value = "Verify Kafka Connect subresource scaling", expected = "Kafka Connect replicas and observed generation are as expected"),
@@ -1282,20 +1282,20 @@ class ConnectST extends AbstractST {
         }
     )
     void testScaleConnectAndConnectorSubresource() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .build());
 
-        resourceManager.createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), testStorage.getClusterName())
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectorTemplates.kafkaConnector(testStorage.getNamespaceName(), testStorage.getClusterName())
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .addToConfig("file", TestConstants.DEFAULT_SINK_FILE_PATH)
@@ -1306,7 +1306,7 @@ class ConnectST extends AbstractST {
             .build());
 
         final int scaleTo = 4;
-        final long connectObsGen = KafkaConnectResource.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getObservedGeneration();
+        final long connectObsGen = CrdClients.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getObservedGeneration();
 
         LOGGER.info("-------> Scaling KafkaConnect subresource <-------");
         LOGGER.info("Scaling subresource replicas to {}", scaleTo);
@@ -1318,15 +1318,15 @@ class ConnectST extends AbstractST {
 
         StUtils.waitUntilSupplierIsSatisfied("KafkaConnect expected size (status, replicas, pod count)",
             () -> kubeClient(testStorage.getNamespaceName()).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.componentName(testStorage.getClusterName())).size() == scaleTo &&
-                KafkaConnectResource.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getReplicas() == scaleTo &&
-                KafkaConnectResource.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getReplicas() == scaleTo);
+                CrdClients.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getReplicas() == scaleTo &&
+                CrdClients.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getReplicas() == scaleTo);
 
         List<Pod> connectPods = kubeClient(testStorage.getNamespaceName()).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.componentName(testStorage.getClusterName()));
         /*
         observed generation should be higher than before scaling -> after change of spec and successful reconciliation,
         the observed generation is increased
         */
-        assertThat(connectObsGen < KafkaConnectResource.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getObservedGeneration(), is(true));
+        assertThat(connectObsGen < CrdClients.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getObservedGeneration(), is(true));
 
         LOGGER.info("-------> Scaling KafkaConnector subresource <-------");
         LOGGER.info("Scaling subresource task max to {}", scaleTo);
@@ -1334,8 +1334,8 @@ class ConnectST extends AbstractST {
         KafkaConnectorUtils.waitForConnectorsTaskMaxChange(testStorage.getNamespaceName(), testStorage.getClusterName(), scaleTo);
 
         LOGGER.info("Check if taskMax is set to {}", scaleTo);
-        assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getTasksMax(), is(scaleTo));
-        assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getTasksMax(), is(scaleTo));
+        assertThat(CrdClients.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getTasksMax(), is(scaleTo));
+        assertThat(CrdClients.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getTasksMax(), is(scaleTo));
 
         LOGGER.info("Check taskMax on Connect Pods API");
         for (Pod pod : connectPods) {
@@ -1355,7 +1355,7 @@ class ConnectST extends AbstractST {
         steps = {
             @Step(value = "Create Secrets and ConfigMaps", expected = "Secrets and ConfigMaps are created successfully."),
             @Step(value = "Create Kafka environment", expected = "Kafka broker, Kafka Connect, and other resources are deployed successfully."),
-            @Step(value = "Create KafkaNodePools using resourceManager based on the configuration", expected = "KafkaNodePools for broker and controller are created or not based on configuration"),
+            @Step(value = "Create KafkaNodePools based on the configuration", expected = "KafkaNodePools for broker and controller are created or not based on configuration"),
             @Step(value = "Bind Secrets and ConfigMaps to Kafka Connect", expected = "Secrets and ConfigMaps are bound to Kafka Connect as volumes and environment variables."),
             @Step(value = "Verify environment variables", expected = "Kafka Connect environment variables contain expected values from Secrets and ConfigMaps."),
             @Step(value = "Verify mounted volumes", expected = "Kafka Connect mounted volumes contain expected values from Secrets and ConfigMaps.")
@@ -1365,7 +1365,7 @@ class ConnectST extends AbstractST {
         }
     )
     void testMountingSecretAndConfigMapAsVolumesAndEnvVars() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         final String secretPassword = "password";
         final String encodedPassword = Base64.getEncoder().encodeToString(secretPassword.getBytes());
@@ -1452,12 +1452,12 @@ class ConnectST extends AbstractST {
         kubeClient().createConfigMapInNamespace(testStorage.getNamespaceName(), configMap);
         kubeClient().createConfigMapInNamespace(testStorage.getNamespaceName(), dotedConfigMap);
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -1575,7 +1575,7 @@ class ConnectST extends AbstractST {
     @TestDoc(
         description = @Desc("Verifies Kafka Connect functionality when SCRAM-SHA authentication password is changed and the component is rolled."),
         steps = {
-            @Step(value = "Create KafkaNodePools using resourceManager based on the configuration", expected = "KafkaNodePools for broker and controller are created or not based on configuration"),
+            @Step(value = "Create KafkaNodePools based on the configuration", expected = "KafkaNodePools for broker and controller are created or not based on configuration"),
             @Step(value = "Create Kafka cluster with SCRAM-SHA authentication", expected = "Kafka cluster is created with SCRAM-SHA authentication enabled"),
             @Step(value = "Create a Kafka user with SCRAM-SHA authentication", expected = "Kafka user with SCRAM-SHA authentication is created"),
             @Step(value = "Deploy Kafka Connect with the created user credentials", expected = "Kafka Connect is deployed successfully"),
@@ -1587,13 +1587,13 @@ class ConnectST extends AbstractST {
         }
     )
     void testKafkaConnectWithScramShaAuthenticationRolledAfterPasswordChanged() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -1629,10 +1629,10 @@ class ConnectST extends AbstractST {
                 .endSpec()
                 .build();
 
-        resourceManager.createResourceWithWait(kafkaUser);
+        KubeResourceManager.get().createResourceWithWait(kafkaUser);
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName()).build());
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName()).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnect(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
                 .withNewSpec()
                     .withBootstrapServers(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
                     .withNewKafkaClientAuthenticationScramSha512()
@@ -1678,7 +1678,7 @@ class ConnectST extends AbstractST {
                 .endSpec()
                 .build();
 
-        KafkaUserResource.kafkaUserClient().inNamespace(testStorage.getNamespaceName()).resource(kafkaUser).update();
+        CrdClients.kafkaUserClient().inNamespace(testStorage.getNamespaceName()).resource(kafkaUser).update();
 
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaConnectSelector(), 1, connectSnapshot);
 
@@ -1733,18 +1733,18 @@ class ConnectST extends AbstractST {
         }
     )
     void testConnectorOffsetManagement() throws JsonProcessingException {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String offsetConfigMap = testStorage.getClusterName() + "-offsets";
         final int desiredNewOffset = 20;
 
         // Create ObjectMapper instance for parsing the JSON from the offset ConfigMaps
         final ObjectMapper mapper = new ObjectMapper();
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3).build(),
             KafkaTopicTemplates.topic(testStorage).build()
         );
@@ -1771,26 +1771,26 @@ class ConnectST extends AbstractST {
             .endSpec()
             .build();
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             connect,
             kafkaConnector,
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
         );
 
         LOGGER.info("Deploying network policies for KafkaConnect");
-        NetworkPolicyResource.deployNetworkPolicyForResource(connect, KafkaConnectResources.componentName(testStorage.getClusterName()));
+        NetworkPolicyUtils.deployNetworkPolicyForResource(connect, KafkaConnectResources.componentName(testStorage.getClusterName()));
         final String scraperPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
         KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
 
-        resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
 
         KafkaConnectorUtils.waitForOffsetInFileSinkConnector(testStorage.getNamespaceName(), scraperPodName, testStorage.getClusterName(), testStorage.getClusterName(), TestConstants.MESSAGE_COUNT);
 
         LOGGER.info("Listing the Connector's offsets using the {} annotation set to 'list'", ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
 
         // annotate the KafkaConnector resource to list the offsets of the file sink connector
-        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+        KafkaConnectorUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
             connector -> connector.getMetadata().getAnnotations().put(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, "list"));
 
         // wait for creation of the CM
@@ -1808,7 +1808,7 @@ class ConnectST extends AbstractST {
         ((ObjectNode) offsets.get("offsets").get(0).get("offset")).put("kafka_offset", desiredNewOffset);
 
         // update the connector to be stopped
-        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+        KafkaConnectorUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
             connector -> connector.getSpec().setState(ConnectorState.STOPPED));
 
         offsetsConfigMap = new ConfigMapBuilder(offsetsConfigMap)
@@ -1819,7 +1819,7 @@ class ConnectST extends AbstractST {
         kubeClient().updateConfigMapInNamespace(testStorage.getNamespaceName(), offsetsConfigMap);
 
         // annotate the KafkaConnector with alter annotation
-        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+        KafkaConnectorUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
             connector -> connector.getMetadata().getAnnotations().put(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, "alter"));
 
         LOGGER.info("Once the offset is altered, the {} annotation should be removed from the KafkaConnector CR - waiting for that to happen", ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
@@ -1837,7 +1837,7 @@ class ConnectST extends AbstractST {
         LOGGER.info("Finally, resetting the offset completely using {} set to 'reset'", ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
 
         // reset the offset
-        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
+        KafkaConnectorUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(),
             connector -> connector.getMetadata().getAnnotations().put(ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS, "reset"));
 
         LOGGER.info("Once the offset is altered, the {} annotation should be removed from the KafkaConnector CR - waiting for that to happen", ResourceAnnotations.ANNO_STRIMZI_IO_CONNECTOR_OFFSETS);
@@ -1870,7 +1870,7 @@ class ConnectST extends AbstractST {
      */
     void verifySinkConnectorByBlockAndUnblock(TestStorage testStorage, String kafkaConnectPodName, Consumer<KafkaConnector> connectorBlockEditor, Consumer<KafkaConnector> connectorUnblockEditor) {
         LOGGER.info("Blocking KafkaConnector: {}", testStorage.getClusterName());
-        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), connectorBlockEditor);
+        KafkaConnectorUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), connectorBlockEditor);
 
         LOGGER.info("Clearing FileSink file to check if KafkaConnector will be really paused/stopped");
         KafkaConnectUtils.clearFileSinkFile(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH);
@@ -1878,24 +1878,26 @@ class ConnectST extends AbstractST {
         // messages need to be produced for each run (although there are more messages in topic eventually, sink will not copy messages it copied previously (before clearing them)
         LOGGER.info("Producing new messages which are to be watched KafkaConnector once it is resumed");
         final KafkaClients kafkaClients = ClientUtils.getInstantPlainClients(testStorage);
-        resourceManager.createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
         LOGGER.info("Because KafkaConnector is blocked, no messages should appear to FileSink file");
         assertThrows(Exception.class, () -> KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount()));
 
         LOGGER.info("Unblocking KafkaConnector, newly produced messages should again appear to FileSink file");
-        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), connectorUnblockEditor);
+        KafkaConnectorUtils.replaceInNamespace(testStorage.getNamespaceName(), testStorage.getClusterName(), connectorUnblockEditor);
         KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), testStorage.getClusterName());
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, testStorage.getMessageCount());
     }
 
     @BeforeAll
     void setUp() {
-        clusterOperator = clusterOperator
-            .defaultInstallation()
-            .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_MEDIUM)
-            .createInstallation()
-            .runInstallation();
+        SetupClusterOperator
+            .getInstance()
+            .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
+                .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_MEDIUM)
+                .build()
+            )
+            .install();
     }
 }

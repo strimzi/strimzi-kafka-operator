@@ -13,7 +13,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.StandardCharsets;
 
-import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class JmxUtils {

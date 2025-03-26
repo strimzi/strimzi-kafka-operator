@@ -7,12 +7,13 @@ package io.strimzi.systemtest.resources;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.NamespaceStatus;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.logs.CollectorElement;
-import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.NetworkPolicyUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
@@ -24,6 +25,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -142,9 +144,9 @@ public class NamespaceManager {
      * @param namespaceName name of Namespace that should be created
      */
     public void createNamespaceAndPrepare(String namespaceName) {
-        final String testSuiteName = ResourceManager.getTestContext().getRequiredTestClass().getName();
-        final String testCaseName = ResourceManager.getTestContext().getTestMethod().orElse(null) == null ?
-            "" : ResourceManager.getTestContext().getRequiredTestMethod().getName();
+        final String testSuiteName = KubeResourceManager.get().getTestContext().getRequiredTestClass().getName();
+        final String testCaseName = KubeResourceManager.get().getTestContext().getTestMethod().orElse(null) == null ?
+            "" : KubeResourceManager.get().getTestContext().getRequiredTestMethod().getName();
 
         createNamespaceAndPrepare(namespaceName, new CollectorElement(testSuiteName, testCaseName));
     }
@@ -161,7 +163,7 @@ public class NamespaceManager {
      */
     public void createNamespaceAndPrepare(String namespaceName, CollectorElement collectorElement) {
         createNamespaceAndAddToSet(namespaceName, collectorElement);
-        NetworkPolicyResource.applyDefaultNetworkPolicySettings(Collections.singletonList(namespaceName));
+        NetworkPolicyUtils.applyDefaultNetworkPolicySettings(Collections.singletonList(namespaceName));
         StUtils.copyImagePullSecrets(namespaceName);
     }
 
@@ -338,14 +340,11 @@ public class NamespaceManager {
      */
     public List<String> getListOfNamespacesForTestClassAndTestCase(String testClass, String testCase) {
         List<String> namespaces = new ArrayList<>();
-        namespaces.addAll(getMapWithSuiteNamespaces().get(new CollectorElement(testClass)));
+
+        Optional.ofNullable(getMapWithSuiteNamespaces().get(new CollectorElement(testClass))).ifPresent(namespaces::addAll);
 
         if (testCase != null) {
-            Set<String> namespacesForTestCase = getMapWithSuiteNamespaces().get(new CollectorElement(testClass, testCase));
-
-            if (namespacesForTestCase != null) {
-                namespaces.addAll(getMapWithSuiteNamespaces().get(new CollectorElement(testClass, testCase)));
-            }
+            Optional.ofNullable(getMapWithSuiteNamespaces().get(new CollectorElement(testClass, testCase))).ifPresent(namespaces::addAll);
         }
 
         return namespaces;

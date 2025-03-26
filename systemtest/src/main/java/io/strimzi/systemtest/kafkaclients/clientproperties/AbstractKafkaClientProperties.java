@@ -8,7 +8,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import org.apache.kafka.clients.CommonClientConfigs;
@@ -293,7 +292,7 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
     private static void importKeycloakCertificateToTruststore(Properties clientProperties) throws IOException {
 
         String responseKeycloak = Exec.exec("openssl", "s_client", "-showcerts", "-connect",
-            ResourceManager.kubeClient().getNodeAddress() + ":" + TestConstants.HTTPS_KEYCLOAK_DEFAULT_NODE_PORT).out();
+            kubeClient().getNodeAddress() + ":" + TestConstants.HTTPS_KEYCLOAK_DEFAULT_NODE_PORT).out();
         Matcher matcher = Pattern.compile("-----(?s)(.*)-----").matcher(responseKeycloak);
 
         if (matcher.find()) {

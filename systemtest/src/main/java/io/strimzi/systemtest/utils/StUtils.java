@@ -22,11 +22,10 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.TestTags;
 import io.strimzi.systemtest.annotations.SkipDefaultNetworkPolicyCreation;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
+import io.strimzi.systemtest.labels.LabelSelectors;
+import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.KubeClusterResource;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -55,7 +54,7 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class StUtils {
@@ -371,9 +370,9 @@ public class StUtils {
 
     public static String getLineFromPodContainer(String namespaceName, String podName, String containerName, String filePath, String grepString) {
         if (containerName == null) {
-            return KubeClusterResource.cmdKubeClient(namespaceName).execInPod(podName, "grep", "-i", grepString, filePath).out().trim();
+            return cmdKubeClient(namespaceName).execInPod(podName, "grep", "-i", grepString, filePath).out().trim();
         } else {
-            return KubeClusterResource.cmdKubeClient(namespaceName).execInPodContainer(podName, containerName, "grep", "-i", grepString, filePath).out().trim();
+            return cmdKubeClient(namespaceName).execInPodContainer(podName, containerName, "grep", "-i", grepString, filePath).out().trim();
         }
     }
 
@@ -551,7 +550,7 @@ public class StUtils {
      * @return                  List with ConfigMaps containing the configuration
      */
     public static List<String> getKafkaConfigurationConfigMaps(String namespaceName, String kafkaClusterName) {
-        return kubeClient().listPodNames(namespaceName, KafkaResource.getLabelSelector(kafkaClusterName, StrimziPodSetResource.getBrokerComponentName(kafkaClusterName)));
+        return kubeClient().listPodNames(namespaceName, LabelSelectors.kafkaLabelSelector(kafkaClusterName, KafkaComponents.getBrokerPodSetName(kafkaClusterName)));
     }
 
     public static void waitUntilSuppliersAreMatching(final Supplier<?> sup, final Supplier<?> anotherSup) {
@@ -628,5 +627,22 @@ public class StUtils {
         } else {
             return Collections.emptyMap();
         }
+    }
+
+    /**
+     * Method for cutting the length of the test case in case that it's too long for having it as label in the particular resource.
+     *
+     * @param testCaseName  test case name that should be trimmed
+     *
+     * @return  trimmed test case name if needed
+     */
+    public static String trimTestCaseBaseOnItsLength(String testCaseName) {
+        // because label values `must be no more than 63 characters`
+        if (testCaseName.length() > 63) {
+            // we cut to 62 characters
+            return testCaseName.substring(0, 62);
+        }
+
+        return testCaseName;
     }
 }

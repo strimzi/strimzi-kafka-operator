@@ -5,19 +5,20 @@
 package io.strimzi.systemtest.operators;
 
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
-import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import org.junit.jupiter.api.Tag;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -34,21 +35,23 @@ class NamespaceRbacScopeOperatorST extends AbstractST {
 
     @IsolatedTest("This test case needs own Cluster Operator")
     void testNamespacedRbacScopeDeploysRoles() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
-        this.clusterOperator = this.clusterOperator.defaultInstallation()
-            .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
-            .withWatchingNamespaces(Environment.TEST_SUITE_NAMESPACE)
-            .withBindingsNamespaces(Arrays.asList(TestConstants.CO_NAMESPACE, Environment.TEST_SUITE_NAMESPACE))
-            .createInstallation()
-            .runInstallation();
+        SetupClusterOperator
+            .getInstance()
+            .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
+                .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
+                .withNamespacesToWatch(TestConstants.CO_NAMESPACE + "," + Environment.TEST_SUITE_NAMESPACE)
+                .build()
+            )
+            .install();
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),
             KafkaNodePoolTemplates.controllerPool(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 3).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 3)
             .editMetadata()
                 .addToLabels("app", "strimzi")
             .endMetadata()

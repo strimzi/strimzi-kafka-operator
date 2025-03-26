@@ -5,31 +5,34 @@
 package io.strimzi.systemtest.upgrade;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.Subscription;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.topic.KafkaTopicBuilder;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.enums.OlmInstallationStrategy;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.operator.configuration.OlmConfiguration;
-import io.strimzi.systemtest.resources.operator.configuration.OlmConfigurationBuilder;
+import io.strimzi.systemtest.resources.operator.ClusterOperatorConfiguration;
+import io.strimzi.systemtest.resources.operator.ClusterOperatorConfigurationBuilder;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
+import io.strimzi.systemtest.templates.openshift.SubscriptionTemplates;
 import io.strimzi.systemtest.upgrade.VersionModificationDataLoader.ModificationType;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.specific.OlmUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 
 import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
@@ -53,8 +56,15 @@ public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
 
     @IsolatedTest
     void testStrimziUpgrade() throws IOException {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), CO_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext(), CO_NAMESPACE);
         final String fromVersion = olmUpgradeData.getFromVersion();
+        ClusterOperatorConfiguration clusterOperatorConfiguration = new ClusterOperatorConfigurationBuilder()
+            .withNamespaceName(CO_NAMESPACE)
+            .withNamespacesToWatch(CO_NAMESPACE)
+            .withOlmChannelName(olmUpgradeData.getFromOlmChannelName())
+            .withOlmOperatorVersion(fromVersion)
+            .withOlmInstallationStrategy(OlmInstallationStrategy.Manual)
+            .build();
 
         LOGGER.info("====================================================================================");
         LOGGER.info("---------------- Updating Cluster Operator version " + fromVersion + " => HEAD -----------------");
@@ -66,7 +76,10 @@ public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
         // Install operator via Olm
         //  1. Create subscription with manual approval and operator group if needed
         //  2. Approve installation (get install-plan and patch it)
-        clusterOperator.runManualOlmInstallation(olmUpgradeData.getFromOlmChannelName(), fromVersion);
+        SetupClusterOperator
+            .getInstance()
+            .withCustomConfiguration(clusterOperatorConfiguration)
+            .installUsingOlm();
 
         // In this test we intend to setup Kafka once at the beginning and then upgrade it with CO
         File dir = FileUtils.downloadAndUnzip(olmUpgradeData.getFromUrl());
@@ -93,7 +106,7 @@ public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
             .endSpec()
             .build();
 
-        resourceManager.createResourceWithWait(kafkaUpgradeTopic);
+        KubeResourceManager.get().createResourceWithWait(kafkaUpgradeTopic);
 
         KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
@@ -105,27 +118,25 @@ public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
             .withDelayMs(1000)
             .build();
 
-        resourceManager.createResourceWithWait(kafkaBasicClientJob.producerStrimzi(), kafkaBasicClientJob.consumerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(kafkaBasicClientJob.producerStrimzi(), kafkaBasicClientJob.consumerStrimzi());
 
-        String clusterOperatorDeploymentName = ResourceManager.kubeClient().namespace(CO_NAMESPACE).getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
-        LOGGER.info("Old deployment name of Cluster Operator is {}", clusterOperatorDeploymentName);
+        clusterOperatorConfiguration.setOperatorDeploymentName(kubeClient().namespace(CO_NAMESPACE).getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME));
+        LOGGER.info("Old deployment name of Cluster Operator is {}", clusterOperatorConfiguration.getOperatorDeploymentName());
 
         // ======== Cluster Operator upgrade starts ========
         makeComponentsSnapshots(CO_NAMESPACE);
 
-        OlmConfiguration upgradeOlmConfig = new OlmConfigurationBuilder(clusterOperator.getOlmResource().getOlmConfiguration())
-            .withChannelName("stable")
+        clusterOperatorConfiguration = new ClusterOperatorConfigurationBuilder(clusterOperatorConfiguration)
+            .withOlmChannelName("stable")
             .build();
 
-        // Cluster Operator upgrade
-        clusterOperator.upgradeClusterOperator(CO_NAMESPACE, upgradeOlmConfig);
+        // Perform upgrade of the Cluster Operator
+        upgradeClusterOperator(clusterOperatorConfiguration);
 
-        clusterOperatorDeploymentName = ResourceManager.kubeClient().namespace(CO_NAMESPACE).getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
-        LOGGER.info("New deployment name of Cluster Operator is {}", clusterOperatorDeploymentName);
-        ResourceManager.setCoDeploymentName(clusterOperatorDeploymentName);
+        LOGGER.info("New deployment name of Cluster Operator is {}", clusterOperatorConfiguration.getOperatorDeploymentName());
 
         // Verification that Cluster Operator has been upgraded to a correct version
-        String afterUpgradeVersionOfCo = kubeClient().getCsvWithPrefix(CO_NAMESPACE, upgradeOlmConfig.getOlmAppBundlePrefix()).getSpec().getVersion();
+        String afterUpgradeVersionOfCo = kubeClient().getCsvWithPrefix(CO_NAMESPACE, clusterOperatorConfiguration.getOlmAppBundlePrefix()).getSpec().getVersion();
         assertThat(afterUpgradeVersionOfCo, is(not(fromVersion)));
 
         // Wait for Rolling Update to finish
@@ -144,12 +155,21 @@ public class KRaftOlmUpgradeST extends AbstractKRaftUpgradeST {
         ClientUtils.waitForClientsSuccess(CO_NAMESPACE, testStorage.getConsumerName(), testStorage.getProducerName(), testStorage.getMessageCount());
     }
 
-    @BeforeAll
-    void setup() {
-        clusterOperator = clusterOperator.defaultInstallation()
-            .withNamespace(CO_NAMESPACE)
-            .withBindingsNamespaces(Collections.singletonList(CO_NAMESPACE))
-            .withWatchingNamespaces(CO_NAMESPACE)
-            .createInstallation();
+    private void upgradeClusterOperator(ClusterOperatorConfiguration clusterOperatorConfiguration) {
+        updateSubscription(clusterOperatorConfiguration);
+
+        // Because we are updating to latest available CO, we want to wait for new install plan with CSV prefix, not with the exact CSV (containing the prefix and version)
+        OlmUtils.waitForNonApprovedInstallPlanWithCsvNameOrPrefix(clusterOperatorConfiguration.getNamespaceName(), clusterOperatorConfiguration.getOlmAppBundlePrefix());
+        String newDeploymentName = OlmUtils.approveNonApprovedInstallPlanAndReturnDeploymentName(clusterOperatorConfiguration.getNamespaceName(), clusterOperatorConfiguration.getOlmAppBundlePrefix());
+
+        clusterOperatorConfiguration.setOperatorDeploymentName(kubeClient().getDeploymentNameByPrefix(clusterOperatorConfiguration.getNamespaceName(), newDeploymentName));
+        DeploymentUtils.waitForCreationOfDeploymentWithPrefix(clusterOperatorConfiguration.getNamespaceName(), clusterOperatorConfiguration.getOperatorDeploymentName());
+
+        DeploymentUtils.waitForDeploymentAndPodsReady(clusterOperatorConfiguration.getNamespaceName(), clusterOperatorConfiguration.getOperatorDeploymentName(), 1);
+    }
+
+    private void updateSubscription(ClusterOperatorConfiguration clusterOperatorConfiguration) {
+        Subscription subscription = SubscriptionTemplates.clusterOperatorSubscription(clusterOperatorConfiguration);
+        KubeResourceManager.get().updateResource(subscription);
     }
 }

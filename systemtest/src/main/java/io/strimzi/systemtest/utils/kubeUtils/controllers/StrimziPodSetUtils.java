@@ -8,14 +8,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 import io.strimzi.api.kafka.model.podset.StrimziPodSetStatus;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.labels.LabelSelectors;
 import io.strimzi.systemtest.resources.ResourceOperation;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -23,6 +22,9 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.function.Consumer;
+
+import static io.strimzi.systemtest.resources.CrdClients.strimziPodSetClient;
 
 public class StrimziPodSetUtils {
 
@@ -34,8 +36,20 @@ public class StrimziPodSetUtils {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
+    /**
+     * Replaces StrimziPodSet in specific Namespace based on the edited resource from {@link Consumer}.
+     *
+     * @param namespaceName  name of the Namespace where the resource should be replaced.
+     * @param resourceName   name of the StrimziPodSet's name.
+     * @param editor         editor containing all the changes that should be done to the resource.
+     */
+    public static void replaceInNamespace(String namespaceName, String resourceName, Consumer<StrimziPodSet> editor) {
+        StrimziPodSet strimziPodSet = strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get();
+        KubeResourceManager.get().replaceResourceWithRetries(strimziPodSet, editor);
+    }
+
     public static Pod getFirstPodFromSpec(String namespaceName, String resourceName) {
-        Map<String, Object> podMap = StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(resourceName)
+        Map<String, Object> podMap = strimziPodSetClient().inNamespace(namespaceName).withName(resourceName)
             .get().getSpec().getPods().stream().findFirst().get();
 
         return mapToPod(podMap);
@@ -46,7 +60,7 @@ public class StrimziPodSetUtils {
             LOGGER.info("Waiting for StrimziPodSet: {}/{} to change label: {} -> {}", namespaceName, resourceName, labelKey, null);
             TestUtils.waitFor("StrimziPodSet: " + namespaceName + "/" + resourceName + " to change label: " + labelKey + " -> " + null, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
                 DELETION_TIMEOUT, () ->
-                    StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getMetadata().getLabels().get(labelKey) == null
+                    strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getMetadata().getLabels().get(labelKey) == null
             );
             LOGGER.info("StrimziPodSet: {}/{} changed label: {} -> {}", namespaceName, resourceName, labelKey, null);
         }
@@ -61,7 +75,7 @@ public class StrimziPodSetUtils {
                 LOGGER.info("Waiting for StrimziPodSet: {}/{} to change label: {} -> {}", namespaceName, resourceName, entry.getKey(), entry.getValue());
                 TestUtils.waitFor("StrimziPodSet: " + namespaceName + "/" + resourceName + " to change label: " + entry.getKey() + " -> " + entry.getValue(), TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
                     TestConstants.GLOBAL_TIMEOUT, () ->
-                        StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getMetadata().getLabels().get(entry.getKey()).equals(entry.getValue())
+                        strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getMetadata().getLabels().get(entry.getKey()).equals(entry.getValue())
                 );
             }
         }
@@ -76,19 +90,18 @@ public class StrimziPodSetUtils {
      * @param expectPods The number of pods expected.
      */
     public static void waitForAllStrimziPodSetAndPodsReady(String namespaceName, String clusterName, String componentName, int expectPods, long timeout) {
-        LabelSelector labelSelector = KafkaResource.getLabelSelector(clusterName, componentName);
+        LabelSelector labelSelector = LabelSelectors.kafkaLabelSelector(clusterName, componentName);
 
         LOGGER.info("Waiting for StrimziPodSet: {}/{} to be ready", namespaceName, componentName);
         TestUtils.waitFor("readiness of StrimziPodSet: " + namespaceName + "/" + componentName, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, timeout,
             () -> {
-                StrimziPodSetStatus podSetStatus = StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(componentName).get().getStatus();
+                StrimziPodSetStatus podSetStatus = strimziPodSetClient().inNamespace(namespaceName).withName(componentName).get().getStatus();
                 return podSetStatus.getPods() == podSetStatus.getReadyPods();
-            },
-            () -> ResourceManager.logCurrentResourceStatus(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get()));
+            }
+        );
 
         LOGGER.info("Waiting for {} Pod(s) of StrimziPodSet {}/{} to be ready", expectPods, namespaceName, componentName);
-        PodUtils.waitForPodsReady(namespaceName, labelSelector, expectPods, true,
-            () -> ResourceManager.logCurrentResourceStatus(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get()));
+        PodUtils.waitForPodsReady(namespaceName, labelSelector, expectPods, true);
         LOGGER.info("StrimziPodSet: {}/{} is ready", namespaceName, componentName);
     }
 
@@ -103,7 +116,7 @@ public class StrimziPodSetUtils {
     public static void waitForStrimziPodSetRecovery(String namespaceName, String resourceName, String resourceUID) {
         LOGGER.info("Waiting for StrimziPodSet: {}/{}-{} recovery", namespaceName, resourceName, resourceUID);
         TestUtils.waitFor("readiness of StrimziPodSet: " + namespaceName + "/" + resourceName, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, TestConstants.TIMEOUT_FOR_RESOURCE_RECOVERY,
-            () -> !StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getMetadata().getUid().equals(resourceUID));
+            () -> !strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getMetadata().getUid().equals(resourceUID));
         LOGGER.info("StrimziPodSet: {}/{} was recovered", namespaceName, resourceName);
     }
 
@@ -119,16 +132,15 @@ public class StrimziPodSetUtils {
 
     public static void annotateStrimziPodSet(String namespaceName, String resourceName, Map<String, String> annotations) {
         LOGGER.info("Annotating StrimziPodSet {}/{} with annotations: {}", namespaceName, resourceName, annotations);
-        StrimziPodSetResource.replaceStrimziPodSetInSpecificNamespace(namespaceName, resourceName, strimziPodSet -> strimziPodSet.getMetadata().setAnnotations(annotations)
-        );
+        replaceInNamespace(namespaceName, resourceName, strimziPodSet -> strimziPodSet.getMetadata().setAnnotations(annotations));
     }
 
     public static Map<String, String> getAnnotationsOfStrimziPodSet(String namespaceName, String resourceName) {
-        return StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getMetadata().getAnnotations();
+        return strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getMetadata().getAnnotations();
     }
 
     public static Map<String, String> getLabelsOfStrimziPodSet(String namespaceName, String resourceName) {
-        return StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getMetadata().getLabels();
+        return strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getMetadata().getLabels();
     }
 
     public static Affinity getStrimziPodSetAffinity(String namespaceName, String resourceName) {
@@ -137,10 +149,10 @@ public class StrimziPodSetUtils {
     }
 
     public static void deleteStrimziPodSet(String namespaceName, String resourceName) {
-        StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).delete();
+        strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).delete();
     }
 
     public static String getStrimziPodSetUID(String namespaceName, String resourceName) {
-        return StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getMetadata().getUid();
+        return strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getMetadata().getUid();
     }
 }

@@ -9,6 +9,7 @@ import io.skodjob.annotations.Label;
 import io.skodjob.annotations.Step;
 import io.skodjob.annotations.SuiteDoc;
 import io.skodjob.annotations.TestDoc;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerType;
@@ -18,7 +19,7 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.docs.TestDocsLabels;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -72,15 +73,15 @@ public class QuotasST extends AbstractST {
     void testKafkaQuotasPluginIntegration() {
         assumeFalse(cluster.isMinikube() || cluster.isMicroShift());
 
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String excludedPrincipal = "User:" + testStorage.getUsername();
         final String minAvailableBytes = "800000000";
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
             KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
         );
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
                 .editSpec()
                     .editKafka()
@@ -111,7 +112,7 @@ public class QuotasST extends AbstractST {
                 .endSpec()
                 .build()
         );
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName()).build(),
             KafkaUserTemplates.scramShaUser(testStorage).build()
         );
@@ -123,7 +124,7 @@ public class QuotasST extends AbstractST {
             .build();
 
         LOGGER.info("Sending messages without any user, we should hit the quota");
-        resourceManager.createResourceWithWait(clients.producerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(clients.producerStrimzi());
         // Kafka Quotas Plugin should stop producer after it reaches the minimum available bytes
         JobUtils.waitForJobContainingLogMessage(testStorage.getNamespaceName(), testStorage.getProducerName(), "Failed to send messages");
         JobUtils.deleteJobWithWait(testStorage.getNamespaceName(), testStorage.getProducerName());
@@ -139,7 +140,7 @@ public class QuotasST extends AbstractST {
 
         clients = ClientUtils.getInstantScramShaClientBuilder(testStorage, KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9095").build();
 
-        resourceManager.createResourceWithWait(clients.producerScramShaPlainStrimzi());
+        KubeResourceManager.get().createResourceWithWait(clients.producerScramShaPlainStrimzi());
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
     }
 
@@ -160,14 +161,14 @@ public class QuotasST extends AbstractST {
         }
     )
     void testKafkaQuotasPluginWithBandwidthLimitation() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String excludedPrincipal = "User:" + testStorage.getUsername();
 
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
             KafkaNodePoolTemplates.controllerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getControllerPoolName(), testStorage.getClusterName(), 1).build()
         );
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaTemplates.kafka(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
                 .editSpec()
                     .editKafka()
@@ -197,7 +198,7 @@ public class QuotasST extends AbstractST {
                 .endSpec()
                 .build()
         );
-        resourceManager.createResourceWithWait(
+        KubeResourceManager.get().createResourceWithWait(
             KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getClusterName()).build(),
             KafkaUserTemplates.scramShaUser(testStorage).build()
         );
@@ -209,7 +210,7 @@ public class QuotasST extends AbstractST {
 
         LOGGER.info("Sending messages with normal user, quota applies");
         long startTimeNormal = System.currentTimeMillis();
-        resourceManager.createResourceWithWait(clients.producerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(clients.producerStrimzi());
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
         long endTimeNormal = System.currentTimeMillis();
         long durationNormal = endTimeNormal - startTimeNormal;
@@ -220,7 +221,7 @@ public class QuotasST extends AbstractST {
         clients = ClientUtils.getInstantScramShaClientBuilder(testStorage, KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9095").build();
 
         long startTimeExcluded = System.currentTimeMillis();
-        resourceManager.createResourceWithWait(clients.producerScramShaPlainStrimzi());
+        KubeResourceManager.get().createResourceWithWait(clients.producerScramShaPlainStrimzi());
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
         long endTimeExcluded = System.currentTimeMillis();
         long durationExcluded = endTimeExcluded - startTimeExcluded;
@@ -232,15 +233,15 @@ public class QuotasST extends AbstractST {
 
     @AfterEach
     void afterEach() {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, ResourceManager.getTestContext());
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, KubeResourceManager.get().getTestContext());
         kubeClient().getClient().persistentVolumeClaims().inNamespace(namespaceName).delete();
     }
 
     @BeforeAll
     void setup() {
-        this.clusterOperator = this.clusterOperator
-            .defaultInstallation()
-            .createInstallation()
-            .runInstallation();
+        SetupClusterOperator
+            .getInstance()
+            .withDefaultConfiguration()
+            .install();
     }
 }

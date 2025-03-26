@@ -10,7 +10,6 @@ import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.security.CertAndKeyFiles;
 import io.strimzi.systemtest.security.OpenSsl;
@@ -34,6 +33,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class SecretUtils {
@@ -211,7 +211,7 @@ public class SecretUtils {
 
     public static String annotateSecret(String namespaceName, String secretName, String annotationKey, String annotationValue) {
         LOGGER.info("Annotating Secret: {}/{} with annotation {}={}", namespaceName, secretName, annotationKey, annotationValue);
-        return ResourceManager.cmdKubeClient().namespace(namespaceName)
+        return cmdKubeClient().namespace(namespaceName)
                 .execInCurrentNamespace("annotate", "secret", secretName, annotationKey + "=" + annotationValue)
                 .out()
                 .trim();
