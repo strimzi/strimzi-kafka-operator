@@ -4,10 +4,10 @@
  */
 package io.strimzi.systemtest.performance.utils;
 
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.topic.KafkaTopicSpecBuilder;
 import io.strimzi.systemtest.enums.ConditionStatus;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicScalabilityUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -76,7 +76,7 @@ public class TopicOperatorPerformanceUtils {
     public static void processKafkaTopicBatchesAsync(TestStorage testStorage, int numberOfTopics) {
         final int topicsPerBatch = (numberOfTopics + AVAILABLE_CPUS - 1) / AVAILABLE_CPUS; // Ensures all topics are covered
 
-        final ExtensionContext currentContext = ResourceManager.getTestContext();
+        final ExtensionContext currentContext = KubeResourceManager.get().getTestContext();
         final CompletableFuture<?>[] futures = new CompletableFuture[AVAILABLE_CPUS];
 
         for (int batch = 0; batch < AVAILABLE_CPUS; batch++) {
@@ -120,12 +120,12 @@ public class TopicOperatorPerformanceUtils {
      * @param currentContext    the current test context
      * @param testStorage       storage containing test information such as namespace, cluster, and topic names
      *
-     * <p>Note: The {@code ResourceManager.setTestContext(currentContext);} is needed because this method is invoked in a new thread.
+     * <p>Note: The {@code KubeResourceManager.get().setTestContext(currentContext);} is needed because this method is invoked in a new thread.
      * Therefore, if you do not set the context, you would end up with a NullPointerException (NPE) because a new thread does not hold
      * the state of the {@code ExtensionContext}, and so you need to set it.</p>
      */
     private static void performCreationWithWait(int start, int end, ExtensionContext currentContext, TestStorage testStorage) {
-        ResourceManager.setTestContext(currentContext);
+        KubeResourceManager.get().setTestContext(currentContext);
         LOGGER.info("Creating Kafka topics from index {} to {}", start, end);
         KafkaTopicScalabilityUtils.createTopicsViaK8s(testStorage.getNamespaceName(), testStorage.getClusterName(),
             testStorage.getTopicName(), start, end, 12, 3, 2);
@@ -142,12 +142,12 @@ public class TopicOperatorPerformanceUtils {
      * @param testStorage                storage containing test information such as namespace and topic names
      * @param kafkaTopicConfigToModify   configuration to modify in the Kafka topics
      *
-     * <p>Note: The {@code ResourceManager.setTestContext(currentContext);} is needed because this method is invoked in a new thread.
+     * <p>Note: The {@code KubeResourceManager.get().setTestContext(currentContext);} is needed because this method is invoked in a new thread.
      * Therefore, if you do not set the context, you would end up with a NullPointerException (NPE) because a new thread does not hold
      * the state of the {@code ExtensionContext}, and so you need to set it.</p>
      */
     private static void performModificationWithWait(int start, int end, ExtensionContext currentContext, TestStorage testStorage, Map<String, Object> kafkaTopicConfigToModify) {
-        ResourceManager.setTestContext(currentContext);
+        KubeResourceManager.get().setTestContext(currentContext);
         LOGGER.info("Modifying Kafka topics from index {} to {}", start, end);
         KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(testStorage.getNamespaceName(), testStorage.getTopicName(),
             start, end, new KafkaTopicSpecBuilder().withConfig(kafkaTopicConfigToModify).build());
@@ -163,12 +163,12 @@ public class TopicOperatorPerformanceUtils {
      * @param currentContext the current test context
      * @param testStorage   storage containing test information such as namespace and topic names
      *
-     * <p>Note: The {@code ResourceManager.setTestContext(currentContext);} is needed because this method is invoked in a new thread.
+     * <p>Note: The {@code KubeResourceManager.get().setTestContext(currentContext);} is needed because this method is invoked in a new thread.
      * Therefore, if you do not set the context, you would end up with a NullPointerException (NPE) because a new thread does not hold
      * the state of the {@code ExtensionContext}, and so you need to set it.</p>
      */
     private static void performDeletionWithWait(int start, int end, ExtensionContext currentContext, TestStorage testStorage) {
-        ResourceManager.setTestContext(currentContext);
+        KubeResourceManager.get().setTestContext(currentContext);
         LOGGER.info("Deleting Kafka topics from index {} to {}", start, end);
         KafkaTopicUtils.deleteKafkaTopicsInRange(testStorage.getNamespaceName(), testStorage.getTopicName(), start, end);
         KafkaTopicUtils.waitForTopicWithPrefixDeletion(testStorage.getNamespaceName(), testStorage.getTopicName(), start, end);
@@ -208,7 +208,7 @@ public class TopicOperatorPerformanceUtils {
         }
 
         List<CompletableFuture<Void>> futures = new ArrayList<>();
-        ExtensionContext extensionContext = ResourceManager.getTestContext();
+        ExtensionContext extensionContext = KubeResourceManager.get().getTestContext();
 
         long startTime = System.nanoTime();
 

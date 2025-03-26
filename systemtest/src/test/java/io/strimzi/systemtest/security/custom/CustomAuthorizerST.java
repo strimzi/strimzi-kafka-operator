@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.security.custom;
 
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
@@ -17,7 +18,7 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
-import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -59,12 +60,12 @@ public class CustomAuthorizerST extends AbstractST {
      */
     @ParallelTest
     void testAclRuleReadAndWrite() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String kafkaUserWrite = "kafka-user-write";
         final String kafkaUserRead = "kafka-user-read";
         final String consumerGroupName = "consumer-group-name-1";
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), sharedTestStorage.getClusterName()).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), sharedTestStorage.getClusterName()).build());
 
         KafkaUser writeUser = KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, kafkaUserWrite, sharedTestStorage.getClusterName())
             .editSpec()
@@ -98,8 +99,8 @@ public class CustomAuthorizerST extends AbstractST {
             .endSpec()
             .build();
 
-        resourceManager.createResourceWithWait(writeUser);
-        resourceManager.createResourceWithWait(readUser);
+        KubeResourceManager.get().createResourceWithWait(writeUser);
+        KubeResourceManager.get().createResourceWithWait(readUser);
 
         LOGGER.info("Checking KafkaUser {} that is able to send messages to Topic: {}", kafkaUserWrite, testStorage.getTopicName());
 
@@ -108,22 +109,22 @@ public class CustomAuthorizerST extends AbstractST {
             .withConsumerGroup(consumerGroupName)
             .build();
 
-        resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(sharedTestStorage.getClusterName()));
+        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(sharedTestStorage.getClusterName()));
         ClientUtils.waitForInstantProducerClientSuccess(testStorage);
 
-        resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(sharedTestStorage.getClusterName()));
+        KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(sharedTestStorage.getClusterName()));
         ClientUtils.waitForInstantConsumerClientTimeout(testStorage);
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
             .withUsername(kafkaUserRead)
             .build();
 
-        resourceManager.createResourceWithWait(kafkaClients.consumerTlsStrimzi(sharedTestStorage.getClusterName()));
+        KubeResourceManager.get().createResourceWithWait(kafkaClients.consumerTlsStrimzi(sharedTestStorage.getClusterName()));
         ClientUtils.waitForInstantConsumerClientSuccess(testStorage);
 
         LOGGER.info("Checking KafkaUser: {}/{} that is not able to send messages to Topic: {}", testStorage.getNamespaceName(), kafkaUserRead, testStorage.getTopicName());
 
-        resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(sharedTestStorage.getClusterName()));
+        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(sharedTestStorage.getClusterName()));
         ClientUtils.waitForInstantProducerClientTimeout(testStorage);
     }
 
@@ -145,34 +146,34 @@ public class CustomAuthorizerST extends AbstractST {
      */
     @ParallelTest
     void testAclWithSuperUser() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), sharedTestStorage.getClusterName()).build());
-        resourceManager.createResourceWithWait(KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, ADMIN, sharedTestStorage.getClusterName()).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), sharedTestStorage.getClusterName()).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, ADMIN, sharedTestStorage.getClusterName()).build());
 
         final KafkaClients kafkaClients = ClientUtils.getInstantTlsClientBuilder(testStorage, KafkaResources.tlsBootstrapAddress(sharedTestStorage.getClusterName()))
             .withUsername(ADMIN)
             .build();
 
         LOGGER.info("Checking Kafka Super User: {}/{} is able to produce/consume despite having no explicit rights in KafkaUser", Environment.TEST_SUITE_NAMESPACE, ADMIN);
-        resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(sharedTestStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(sharedTestStorage.getClusterName()));
+        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(sharedTestStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(sharedTestStorage.getClusterName()));
         ClientUtils.waitForInstantClientSuccess(testStorage);
     }
 
     @BeforeAll
     public void setup() {
-        sharedTestStorage = new TestStorage(ResourceManager.getTestContext());
-        
-        this.clusterOperator = this.clusterOperator
-            .defaultInstallation()
-            .createInstallation()
-            .runInstallation();
+        sharedTestStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
-        resourceManager.createResourceWithWait(
+        SetupClusterOperator
+            .getInstance()
+            .withDefaultConfiguration()
+            .install();
+
+        KubeResourceManager.get().createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(sharedTestStorage.getNamespaceName(), sharedTestStorage.getBrokerPoolName(), sharedTestStorage.getClusterName(), 1).build(),
             KafkaNodePoolTemplates.controllerPoolPersistentStorage(sharedTestStorage.getNamespaceName(), sharedTestStorage.getControllerPoolName(), sharedTestStorage.getClusterName(), 1).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), 1)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), 1)
             .editSpec()
                 .editKafka()
                     .addToConfig("auto.create.topics.enable", "true")

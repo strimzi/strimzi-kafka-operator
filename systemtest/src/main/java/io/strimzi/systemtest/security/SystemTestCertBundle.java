@@ -5,6 +5,9 @@
 package io.strimzi.systemtest.security;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.client.dsl.base.PatchContext;
+import io.fabric8.kubernetes.client.dsl.base.PatchType;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.skodjob.testframe.security.CertAndKey;
 import io.skodjob.testframe.security.CertAndKeyFiles;
 import io.strimzi.operator.common.model.Ca;
@@ -25,7 +28,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static io.strimzi.systemtest.security.SystemTestCertGenerator.convertPrivateKeyToPKCS8Format;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 /**
  * Provides representation of custom chain key-pair i.e., {@code strimziRootCa}, {@code intermediateCa},
@@ -87,8 +89,7 @@ public class SystemTestCertBundle {
             //      b) Create the new (custom) secret.
 
             Secret secret = SecretUtils.createSecretFromFile(namespaceName, "ca.key", this.caKeySecretName, strimziKeyPKCS8.getAbsolutePath(), additionalSecretLabels);
-            kubeClient().namespace(namespaceName).createSecret(secret);
-            SecretUtils.waitForSecretReady(namespaceName, this.caKeySecretName, () -> { });
+            KubeResourceManager.get().createResourceWithWait(secret);
 
             // 4. Annotate the secrets
             SecretUtils.annotateSecret(namespaceName, this.caCertSecretName, Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "0");
@@ -115,7 +116,8 @@ public class SystemTestCertBundle {
             int generationNumber = Integer.parseInt(clusterCaSecretAnnotations.get(annotationKey));
             clusterCaSecretAnnotations.put(annotationKey, String.valueOf(++generationNumber));
         }
-        kubeClient(testStorage.getNamespaceName()).patchSecret(testStorage.getNamespaceName(), secret.getMetadata().getName(), secret);
+        KubeResourceManager.get().kubeClient().getClient()
+            .secrets().inNamespace(testStorage.getNamespaceName()).withName(secret.getMetadata().getName()).patch(PatchContext.of(PatchType.JSON), secret);
     }
 
     public CertAndKey getStrimziRootCa() {

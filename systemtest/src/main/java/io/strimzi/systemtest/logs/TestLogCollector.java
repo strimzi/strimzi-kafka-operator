@@ -4,10 +4,13 @@
  */
 package io.strimzi.systemtest.logs;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.skodjob.testframe.LogCollector;
 import io.skodjob.testframe.LogCollectorBuilder;
 import io.skodjob.testframe.clients.KubeClient;
 import io.skodjob.testframe.clients.cmdClient.Kubectl;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.bridge.KafkaBridge;
 import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
@@ -19,8 +22,7 @@ import io.strimzi.api.kafka.model.topic.KafkaTopic;
 import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.NamespaceManager;
-import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.utils.StUtils;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -31,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Class for encapsulating Test-Frame's {@link LogCollector}.
@@ -164,6 +167,7 @@ public class TestLogCollector {
             .withKubeCmdClient(new Kubectl())
             .withRootFolderPath(Environment.TEST_LOG_DIR)
             .withNamespacedResources(resources.toArray(new String[0]))
+            .withCollectPreviousLogs()
             .build();
     }
 
@@ -227,12 +231,12 @@ public class TestLogCollector {
 
     /**
      * Method that encapsulates {@link #collectLogs(String, String)}, taking the test-class and test-case names from
-     * {@link ResourceManager#getTestContext()}
+     * {@link KubeResourceManager#getTestContext()}
      */
     public void collectLogs() {
         collectLogs(
-            ResourceManager.getTestContext().getRequiredTestClass().getName(),
-            ResourceManager.getTestContext().getRequiredTestMethod().getName()
+            KubeResourceManager.get().getTestContext().getRequiredTestClass().getName(),
+            KubeResourceManager.get().getTestContext().getRequiredTestMethod().getName()
         );
     }
 
@@ -254,14 +258,85 @@ public class TestLogCollector {
      * @param testCase      name of the test-case, for which the logs should be collected
      */
     public void collectLogs(String testClass, String testCase) {
+        String testClassShortName = StUtils.removePackageName(testClass);
         Path rootPathToLogsForTestCase = buildFullPathToLogs(testClass, testCase);
 
         final LogCollector testCaseCollector = new LogCollectorBuilder(logCollector)
             .withRootFolderPath(rootPathToLogsForTestCase.toString())
             .build();
 
-        List<String> namespaces = NamespaceManager.getInstance().getListOfNamespacesForTestClassAndTestCase(testClass, testCase);
+        // List Namespaces with specified test class name and test case name
+        List<String> namespaces = new ArrayList<>(getListOfNamespaces(testClassShortName, testCase));
+
+        namespaces = namespaces.stream().distinct().toList();
 
         testCaseCollector.collectFromNamespaces(namespaces.toArray(new String[0]));
+    }
+
+    /**
+     * For {@param testClass} and {@param testCase} returns list of Namespaces based on the LabelSelector.
+     * In case that {@param testCase} is `null` it returns just the Namespaces that are labeled with the test class.
+     *
+     * @param testClass     name of the test class for which we should collect logs
+     * @param testCase      name of the test case for which we should collect logs
+     *
+     * @return  list of Namespaces from which we should collect logs
+     */
+    private List<String> getListOfNamespaces(String testClass, String testCase) {
+        List<String> namespaces = new ArrayList<>(KubeResourceManager.get().kubeClient().getClient()
+            .namespaces()
+            .withLabelSelector(getTestClassLabelSelector(testClass))
+            .list()
+            .getItems()
+            .stream()
+            .map(namespace -> namespace.getMetadata().getName())
+            .toList());
+
+        if (testCase != null) {
+            namespaces.addAll(
+                KubeResourceManager.get().kubeClient().getClient()
+                    .namespaces()
+                    .withLabelSelector(getTestCaseLabelSelector(testClass, testCase))
+                    .list()
+                    .getItems()
+                    .stream()
+                    .map(namespace -> namespace.getMetadata().getName())
+                    .toList()
+            );
+        }
+
+        return namespaces;
+    }
+
+    /**
+     * Returns LabelSelector for the {@param testClass}.
+     *
+     * @param testClass     name of the test class for which we should collect logs
+     *
+     * @return  LabelSelector for the test class
+     */
+    private LabelSelector getTestClassLabelSelector(String testClass) {
+        return new LabelSelectorBuilder()
+            .withMatchLabels(Map.of(TestConstants.TEST_SUITE_NAME_LABEL, testClass))
+            .build();
+    }
+
+    /**
+     * Returns LabelSelector for the {@param testClass} and {@param testCase}.
+     *
+     * @param testClass     name of the test class for which we should collect logs
+     * @param testCase      name of the test case for which we should collect logs
+     *
+     * @return  LabelSelector for the test class and test case
+     */
+    private LabelSelector getTestCaseLabelSelector(String testClass, String testCase) {
+        return new LabelSelectorBuilder()
+            .withMatchLabels(
+                Map.of(
+                    TestConstants.TEST_SUITE_NAME_LABEL, testClass,
+                    TestConstants.TEST_CASE_NAME_LABEL, StUtils.trimTestCaseBaseOnItsLength(testCase)
+                )
+            )
+            .build();
     }
 }

@@ -4,8 +4,10 @@
  */
 package io.strimzi.systemtest.utils.specific;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.minio.SetupMinio;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -29,9 +31,13 @@ public class MinioUtils {
      * @return Overall statistics about the bucket in String format
      */
     public static String getBucketSizeInfo(String namespaceName, String bucketName) {
-        final String minioPod = ResourceManager.kubeClient().listPods(namespaceName, Map.of(TestConstants.APP_POD_LABEL, SetupMinio.MINIO)).get(0).getMetadata().getName();
+        LabelSelector labelSelector = new LabelSelectorBuilder()
+            .withMatchLabels(Map.of(TestConstants.APP_POD_LABEL, SetupMinio.MINIO))
+            .build();
 
-        return ResourceManager.cmdKubeClient().namespace(namespaceName).execInPod(minioPod,
+        final String minioPod = KubeResourceManager.get().kubeClient().listPods(namespaceName, labelSelector).get(0).getMetadata().getName();
+
+        return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(minioPod,
             "mc",
             "stat",
             "local/" + bucketName).out();

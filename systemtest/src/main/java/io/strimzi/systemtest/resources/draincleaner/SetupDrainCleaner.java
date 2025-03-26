@@ -10,6 +10,8 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.admissionregistration.v1.ValidatingWebhookConfiguration;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
@@ -17,10 +19,11 @@ import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleBuilder;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.skodjob.testframe.security.CertAndKey;
 import io.skodjob.testframe.security.CertAndKeyFiles;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.enums.DeploymentTypes;
 import io.strimzi.systemtest.security.SystemTestCertGenerator;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.ReadWriteUtils;
@@ -44,6 +47,7 @@ public class SetupDrainCleaner {
     private static final String KUBERNETES_DIRECTORY = "kubernetes";
     public static final String DRAIN_CLEANER_DIRECTORY = KubeClusterResource.getInstance().isOpenShiftLikeCluster() ? OPENSHIFT_DIRECTORY : KUBERNETES_DIRECTORY;
     public static final String PATH_TO_DC_CONFIG = TestUtils.USER_PATH + "/../packaging/install/drain-cleaner/" + DRAIN_CLEANER_DIRECTORY;
+    private static final String PATH_TO_DRAIN_CLEANER_DEP = TestUtils.USER_PATH + "/../packaging/install/drain-cleaner/kubernetes/060-Deployment.yaml";
 
     private static final Logger LOGGER = LogManager.getLogger(SetupDrainCleaner.class);
 
@@ -86,7 +90,7 @@ public class SetupDrainCleaner {
                 switch (resourceType) {
                     case TestConstants.ROLE:
                         Role role = ReadWriteUtils.readObjectFromYamlFilepath(file, Role.class);
-                        ResourceManager.getInstance().createResourceWithWait(new RoleBuilder(role)
+                        KubeResourceManager.get().createResourceWithWait(new RoleBuilder(role)
                             .editMetadata()
                                 .withNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE)
                             .endMetadata()
@@ -94,7 +98,7 @@ public class SetupDrainCleaner {
                         break;
                     case TestConstants.ROLE_BINDING:
                         RoleBinding roleBinding = ReadWriteUtils.readObjectFromYamlFilepath(file, RoleBinding.class);
-                        ResourceManager.getInstance().createResourceWithWait(new RoleBindingBuilder(roleBinding)
+                        KubeResourceManager.get().createResourceWithWait(new RoleBindingBuilder(roleBinding)
                             .editMetadata()
                                 .withNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE)
                             .endMetadata()
@@ -105,11 +109,11 @@ public class SetupDrainCleaner {
                         break;
                     case TestConstants.CLUSTER_ROLE:
                         ClusterRole clusterRole = ReadWriteUtils.readObjectFromYamlFilepath(file, ClusterRole.class);
-                        ResourceManager.getInstance().createResourceWithWait(clusterRole);
+                        KubeResourceManager.get().createResourceWithWait(clusterRole);
                         break;
                     case TestConstants.SERVICE_ACCOUNT:
                         ServiceAccount serviceAccount = ReadWriteUtils.readObjectFromYamlFilepath(file, ServiceAccount.class);
-                        ResourceManager.getInstance().createResourceWithWait(new ServiceAccountBuilder(serviceAccount)
+                        KubeResourceManager.get().createResourceWithWait(new ServiceAccountBuilder(serviceAccount)
                             .editMetadata()
                                 .withNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE)
                             .endMetadata()
@@ -117,14 +121,14 @@ public class SetupDrainCleaner {
                         break;
                     case TestConstants.CLUSTER_ROLE_BINDING:
                         ClusterRoleBinding clusterRoleBinding = ReadWriteUtils.readObjectFromYamlFilepath(file, ClusterRoleBinding.class);
-                        ResourceManager.getInstance().createResourceWithWait(new ClusterRoleBindingBuilder(clusterRoleBinding).build());
+                        KubeResourceManager.get().createResourceWithWait(new ClusterRoleBindingBuilder(clusterRoleBinding).build());
                         break;
                     case TestConstants.SECRET:
-                        ResourceManager.getInstance().createResourceWithWait(customDrainCleanerSecret);
+                        KubeResourceManager.get().createResourceWithWait(customDrainCleanerSecret);
                         break;
                     case TestConstants.SERVICE:
                         Service service = ReadWriteUtils.readObjectFromYamlFilepath(file, Service.class);
-                        ResourceManager.getInstance().createResourceWithWait(service);
+                        KubeResourceManager.get().createResourceWithWait(service);
                         break;
                     case TestConstants.VALIDATION_WEBHOOK_CONFIG:
                         ValidatingWebhookConfiguration webhookConfiguration = ReadWriteUtils.readObjectFromYamlFilepath(file, ValidatingWebhookConfiguration.class);
@@ -135,7 +139,7 @@ public class SetupDrainCleaner {
                             webhookConfiguration.getWebhooks().stream().findFirst().get().getClientConfig().setCaBundle(customDrainCleanerSecret.getData().get("tls.crt"));
                         }
 
-                        ResourceManager.getInstance().createResourceWithWait(webhookConfiguration);
+                        KubeResourceManager.get().createResourceWithWait(webhookConfiguration);
                         break;
                     default:
                         LOGGER.error("Unknown installation resource type: {}", resourceType);
@@ -147,6 +151,14 @@ public class SetupDrainCleaner {
 
     public void createDrainCleaner() {
         applyInstallFiles();
-        ResourceManager.getInstance().createResourceWithWait(new DrainCleanerResource().buildDrainCleanerDeployment().build());
+        Deployment drainCleaner = ReadWriteUtils.readObjectFromYamlFilepath(PATH_TO_DRAIN_CLEANER_DEP, Deployment.class);
+
+        KubeResourceManager.get().createResourceWithWait(
+            new DeploymentBuilder(drainCleaner)
+                .editOrNewMetadata()
+                    .addToLabels(TestConstants.DEPLOYMENT_TYPE, DeploymentTypes.DrainCleaner.name())
+                .endMetadata()
+                .build()
+        );
     }
 }

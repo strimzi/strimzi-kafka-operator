@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.security;
 
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.kafka.listener.KafkaListenerAuthenticationTls;
@@ -15,8 +16,8 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
+import io.strimzi.systemtest.resources.crd.KafkaComponents;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -34,7 +35,6 @@ import org.junit.jupiter.api.Tag;
 import java.io.IOException;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 @Tag(REGRESSION)
 public class OpaIntegrationST extends AbstractST {
@@ -46,13 +46,13 @@ public class OpaIntegrationST extends AbstractST {
 
     @ParallelTest
     void testOpaAuthorization() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         KafkaUser goodUser = KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), OPA_GOOD_USER, CLUSTER_NAME).build();
         KafkaUser badUser = KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), OPA_BAD_USER, CLUSTER_NAME).build();
 
-        resourceManager.createResourceWithWait(goodUser);
-        resourceManager.createResourceWithWait(badUser);
+        KubeResourceManager.get().createResourceWithWait(goodUser);
+        KubeResourceManager.get().createResourceWithWait(badUser);
 
         LOGGER.info("Checking KafkaUser: {}/{} that is able to send and receive messages to/from Topic: {}/{}", testStorage.getNamespaceName(), OPA_GOOD_USER, testStorage.getNamespaceName(), testStorage.getTopicName());
 
@@ -60,7 +60,7 @@ public class OpaIntegrationST extends AbstractST {
             .withUsername(OPA_GOOD_USER)
             .build();
 
-        resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(CLUSTER_NAME), kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
+        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(CLUSTER_NAME), kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
         ClientUtils.waitForInstantClientSuccess(testStorage);
 
         LOGGER.info("Checking KafkaUser: {}/{} that is not able to send or receive messages to/from Topic: {}/{}", testStorage.getNamespaceName(), OPA_BAD_USER, testStorage.getNamespaceName(), testStorage.getTopicName());
@@ -69,18 +69,18 @@ public class OpaIntegrationST extends AbstractST {
             .withUsername(OPA_BAD_USER)
             .build();
 
-        resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(CLUSTER_NAME), kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
+        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(CLUSTER_NAME), kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
         ClientUtils.waitForInstantClientsTimeout(testStorage);
     }
 
     @ParallelTest
     void testOpaAuthorizationSuperUser() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         KafkaUser superuser = KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), OPA_SUPERUSER, CLUSTER_NAME).build();
 
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), CLUSTER_NAME).build());
-        resourceManager.createResourceWithWait(superuser);
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), CLUSTER_NAME).build());
+        KubeResourceManager.get().createResourceWithWait(superuser);
 
         LOGGER.info("Checking KafkaUser: {}/{} that is able to send and receive messages to/from Topic: {}/{}", testStorage.getNamespaceName(), OPA_GOOD_USER, testStorage.getNamespaceName(), testStorage.getTopicName());
 
@@ -88,25 +88,25 @@ public class OpaIntegrationST extends AbstractST {
             .withUsername(OPA_SUPERUSER)
             .build();
 
-        resourceManager.createResourceWithWait(kafkaClients.producerTlsStrimzi(CLUSTER_NAME), kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
+        KubeResourceManager.get().createResourceWithWait(kafkaClients.producerTlsStrimzi(CLUSTER_NAME), kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
         ClientUtils.waitForInstantClientSuccess(testStorage);
     }
 
     @BeforeAll
     void setup() throws Exception {
-        this.clusterOperator = this.clusterOperator
-            .defaultInstallation()
-            .createInstallation()
-            .runInstallation();
+        SetupClusterOperator
+            .getInstance()
+            .withDefaultConfiguration()
+            .install();
 
         // Install OPA
-        cmdKubeClient(Environment.TEST_SUITE_NAMESPACE).apply(FileUtils.updateNamespaceOfYamlFile(Environment.TEST_SUITE_NAMESPACE, TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml"));
+        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).apply(FileUtils.updateNamespaceOfYamlFile(Environment.TEST_SUITE_NAMESPACE, TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml"));
 
-        resourceManager.createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPool(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getBrokerPoolName(CLUSTER_NAME), CLUSTER_NAME, 3).build(),
-            KafkaNodePoolTemplates.controllerPool(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getControllerPoolName(CLUSTER_NAME), CLUSTER_NAME, 1).build()
+        KubeResourceManager.get().createResourceWithWait(
+            KafkaNodePoolTemplates.brokerPool(Environment.TEST_SUITE_NAMESPACE, KafkaComponents.getBrokerPoolName(CLUSTER_NAME), CLUSTER_NAME, 3).build(),
+            KafkaNodePoolTemplates.controllerPool(Environment.TEST_SUITE_NAMESPACE, KafkaComponents.getControllerPoolName(CLUSTER_NAME), CLUSTER_NAME, 1).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(Environment.TEST_SUITE_NAMESPACE, CLUSTER_NAME, 3)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(Environment.TEST_SUITE_NAMESPACE, CLUSTER_NAME, 3)
             .editSpec()
                 .editKafka()
                     .withNewKafkaAuthorizationOpa()
@@ -128,6 +128,6 @@ public class OpaIntegrationST extends AbstractST {
     @AfterAll
     void teardown() throws IOException {
         // Delete OPA
-        cmdKubeClient().delete(FileUtils.updateNamespaceOfYamlFile(Environment.TEST_SUITE_NAMESPACE, TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml"));
+        KubeResourceManager.get().kubeCmdClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).delete(FileUtils.updateNamespaceOfYamlFile(Environment.TEST_SUITE_NAMESPACE, TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml"));
     }
 }

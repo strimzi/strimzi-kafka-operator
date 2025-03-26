@@ -17,10 +17,10 @@ import io.fabric8.openshift.api.model.BuildRequest;
 import io.fabric8.openshift.api.model.BuildRequestBuilder;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.ImageStreamBuilder;
+import io.fabric8.openshift.client.OpenShiftClient;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.TestConstants;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.openshift.BuildConfigResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.BuildUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -111,7 +111,7 @@ public class ImageBuild {
             .endSpec()
             .build();
 
-        ResourceManager.getInstance().createResourceWithWait(kanikoJob);
+        KubeResourceManager.get().createResourceWithWait(kanikoJob);
         JobUtils.waitForJobSuccess(namespace, name, TestConstants.GLOBAL_TIMEOUT);
     }
 
@@ -168,9 +168,9 @@ public class ImageBuild {
             .endMetadata()
             .build();
 
-        ResourceManager.getInstance().createResourceWithoutWait(imageStream);
-        ResourceManager.getInstance().createResourceWithoutWait(buildConfig);
-        BuildConfigResource.buildConfigClient().inNamespace(namespace).withName(name).instantiate(buildRequest);
+        KubeResourceManager.get().createResourceWithoutWait(imageStream);
+        KubeResourceManager.get().createResourceWithoutWait(buildConfig);
+        KubeResourceManager.get().kubeClient().getClient().adapt(OpenShiftClient.class).buildConfigs().inNamespace(namespace).withName(name).instantiate(buildRequest);
 
         BuildUtils.waitForBuildComplete(namespace, name);
     }
@@ -193,6 +193,6 @@ public class ImageBuild {
             .addToData("Dockerfile", dockerfileContent)
             .build();
 
-        ResourceManager.getInstance().createResourceWithWait(configMap);
+        KubeResourceManager.get().createResourceWithWait(configMap);
     }
 }

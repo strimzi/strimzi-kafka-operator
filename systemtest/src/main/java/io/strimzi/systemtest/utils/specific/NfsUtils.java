@@ -4,15 +4,13 @@
  */
 package io.strimzi.systemtest.utils.specific;
 
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.function.Predicate;
-
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class NfsUtils {
     private static final Logger LOGGER = LogManager.getLogger(NfsUtils.class);
@@ -23,11 +21,11 @@ public class NfsUtils {
     }
 
     private static String getNfsVolumeName(String namespaceName) {
-        return kubeClient().getPersistentVolumeClaim(namespaceName, NFS_PVC_NAME).getSpec().getVolumeName();
+        return KubeResourceManager.get().kubeClient().getClient().persistentVolumeClaims().inNamespace(namespaceName).withName(NFS_PVC_NAME).get().getSpec().getVolumeName();
     }
 
     private static String getNfsPodName(String namespaceName) {
-        return kubeClient().listPodsByPrefixInName(namespaceName, NFS_POD_NAME_PREFIX).get(0).getMetadata().getName();
+        return KubeResourceManager.get().kubeClient().listPodsByPrefixInName(namespaceName, NFS_POD_NAME_PREFIX).get(0).getMetadata().getName();
     }
 
     /**
@@ -38,7 +36,7 @@ public class NfsUtils {
      * @param path          the path to check size
      */
     private static String getSizeOfDirectoryInPod(final String namespaceName, String podName, String path) {
-        return cmdKubeClient().namespace(namespaceName).execInPod(podName, "du", "-sb", path).out();
+        return KubeResourceManager.get().kubeCmdClient().inNamespace(namespaceName).execInPod(podName, "du", "-sb", path).out();
     }
 
     /**

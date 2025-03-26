@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.security.oauth;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.api.kafka.model.connect.KafkaConnectResources;
 import io.strimzi.api.kafka.model.kafka.KafkaResources;
 import io.strimzi.api.kafka.model.kafka.listener.GenericKafkaListener;
@@ -17,10 +18,8 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
+import io.strimzi.systemtest.labels.LabelSelectors;
+import io.strimzi.systemtest.resources.crd.KafkaComponents;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -29,6 +28,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.junit.jupiter.api.BeforeAll;
@@ -40,7 +40,6 @@ import java.util.Map;
 import static io.strimzi.systemtest.TestTags.CONNECT;
 import static io.strimzi.systemtest.TestTags.OAUTH;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
-import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -60,10 +59,10 @@ public class OauthScopeST extends OauthAbstractST {
     @ParallelTest
     @Tag(CONNECT)
     void testScopeKafkaConnectSetIncorrectly() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         // SCOPE TESTING
-        resourceManager.createResourceWithoutWait(KafkaConnectTemplates.kafkaConnect(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), testStorage.getClusterName(), 1)
+        KubeResourceManager.get().createResourceWithoutWait(KafkaConnectTemplates.kafkaConnect(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), testStorage.getClusterName(), 1)
             .withNewSpec()
                 .withReplicas(1)
                 .withBootstrapServers(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + scopeListenerPort)
@@ -95,10 +94,10 @@ public class OauthScopeST extends OauthAbstractST {
     @ParallelTest
     @Tag(CONNECT)
     void testScopeKafkaConnectSetCorrectly() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
 
         // SCOPE TESTING
-        resourceManager.createResourceWithWait(KafkaConnectTemplates.kafkaConnect(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), testStorage.getClusterName(), 1)
+        KubeResourceManager.get().createResourceWithWait(KafkaConnectTemplates.kafkaConnect(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName(), testStorage.getClusterName(), 1)
             .withNewSpec()
                 .withReplicas(1)
                 .withBootstrapServers(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + scopeListenerPort)
@@ -123,9 +122,9 @@ public class OauthScopeST extends OauthAbstractST {
 
         // Kafka connect passed the validation process (implicit the KafkaConnect is up)
         // explicitly verifying also logs
-        String kafkaConnectPodName = kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, StrimziPodSetResource.getBrokerComponentName(oauthClusterName)).get(0).getMetadata().getName();
+        String kafkaConnectPodName = KubeResourceManager.get().kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, KafkaComponents.getBrokerPodSetName(oauthClusterName)).get(0).getMetadata().getName();
 
-        String kafkaLog = kubeClient().logsInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, kafkaConnectPodName);
+        String kafkaLog = KubeResourceManager.get().kubeClient().getLogsFromPod(Environment.TEST_SUITE_NAMESPACE, kafkaConnectPodName);
         assertThat("Kafka's log doesn't contain information about expiration of the access token",
             kafkaLog.contains("Access token expires at"), is(true));
         assertThat("Kafka's log doesn't contain information about evaluating path",
@@ -140,7 +139,7 @@ public class OauthScopeST extends OauthAbstractST {
 
     @ParallelTest
     void testClientScopeKafkaSetCorrectly() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
         final String consumerName = OAUTH_CONSUMER_NAME + "-" + testStorage.getClusterName();
 
@@ -158,19 +157,19 @@ public class OauthScopeST extends OauthAbstractST {
         // clientScope is set to 'test' by default
 
         // verification phase the KafkaClient to authenticate.
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), oauthClusterName).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), oauthClusterName).build());
 
-        resourceManager.createResourceWithWait(oauthInternalClientChecksJob.producerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(oauthInternalClientChecksJob.producerStrimzi());
         // client should succeed because we set to `clientScope=test` and also Kafka has `scope=test`
         ClientUtils.waitForClientSuccess(Environment.TEST_SUITE_NAMESPACE, producerName, testStorage.getMessageCount());
     }
 
     @IsolatedTest("Modification of shared Kafka cluster")
     void testClientScopeKafkaSetIncorrectly() {
-        final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
+        final TestStorage testStorage = new TestStorage(KubeResourceManager.get().getTestContext());
         final String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
         final String consumerName = OAUTH_CONSUMER_NAME + "-" + testStorage.getClusterName();
-        final LabelSelector brokerSelector = KafkaResource.getLabelSelector(oauthClusterName, StrimziPodSetResource.getBrokerComponentName(oauthClusterName));
+        final LabelSelector brokerSelector = LabelSelectors.kafkaLabelSelector(oauthClusterName, KafkaComponents.getBrokerPodSetName(oauthClusterName));
 
         KafkaClients oauthInternalClientChecksJob = new KafkaClientsBuilder()
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
@@ -186,7 +185,7 @@ public class OauthScopeST extends OauthAbstractST {
         Map<String, String> brokerPods = PodUtils.podSnapshot(Environment.TEST_SUITE_NAMESPACE, brokerSelector);
 
         // re-configuring Kafka listener to have client scope assigned to null
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafka -> {
+        KafkaUtils.replace(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafka -> {
             List<GenericKafkaListener> scopeListeners = kafka.getSpec().getKafka().getListeners()
                 .stream()
                 .filter(listener -> listener.getName().equals(scopeListener))
@@ -199,9 +198,9 @@ public class OauthScopeST extends OauthAbstractST {
         brokerPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Environment.TEST_SUITE_NAMESPACE, brokerSelector, 3, brokerPods);
 
         // verification phase client should fail here because clientScope is set to 'null'
-        resourceManager.createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), oauthClusterName).build());
+        KubeResourceManager.get().createResourceWithWait(KafkaTopicTemplates.topic(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName(), oauthClusterName).build());
 
-        resourceManager.createResourceWithWait(oauthInternalClientChecksJob.producerStrimzi());
+        KubeResourceManager.get().createResourceWithWait(oauthInternalClientChecksJob.producerStrimzi());
         // client should fail because the listener requires scope: 'test' in JWT token but was (the listener) temporarily
         // configured without clientScope resulting in a JWT token without the scope claim when using the clientId and
         // secret passed via SASL/PLAIN to obtain an access token in client's name.
@@ -210,7 +209,7 @@ public class OauthScopeST extends OauthAbstractST {
 
         // rollback previous configuration
         // re-configuring Kafka listener to have client scope assigned to 'test'
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafka -> {
+        KafkaUtils.replace(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, kafka -> {
             List<GenericKafkaListener> scopeListeners = kafka.getSpec().getKafka().getListeners()
                 .stream()
                 .filter(listener -> listener.getName().equals(scopeListener))
@@ -229,11 +228,11 @@ public class OauthScopeST extends OauthAbstractST {
 
         keycloakInstance.setRealm("scope-test", false);
 
-        resourceManager.createResourceWithWait(
-            KafkaNodePoolTemplates.brokerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getBrokerPoolName(oauthClusterName), oauthClusterName, 3).build(),
-            KafkaNodePoolTemplates.controllerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getControllerPoolName(oauthClusterName), oauthClusterName, 3).build()
+        KubeResourceManager.get().createResourceWithWait(
+            KafkaNodePoolTemplates.brokerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaComponents.getBrokerPoolName(oauthClusterName), oauthClusterName, 3).build(),
+            KafkaNodePoolTemplates.controllerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaComponents.getControllerPoolName(oauthClusterName), oauthClusterName, 3).build()
         );
-        resourceManager.createResourceWithWait(KafkaTemplates.kafka(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, 3)
+        KubeResourceManager.get().createResourceWithWait(KafkaTemplates.kafka(Environment.TEST_SUITE_NAMESPACE, oauthClusterName, 3)
             .editSpec()
                 .editKafka()
                 .withListeners(

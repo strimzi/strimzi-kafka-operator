@@ -9,11 +9,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
+import io.skodjob.testframe.resources.KubeResourceManager;
 import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.DeploymentTypes;
 import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -80,7 +80,7 @@ public class AdminClientUtils {
      * settings to interact with a Kafka cluster
      */
     public static AdminClient getConfiguredAdminClient(String namespaceName, String adminName) {
-        final String adminClientPodName = KubeClusterResource.kubeClient().listPods(namespaceName, getLabelSelector(adminName)).get(0).getMetadata().getName();
+        final String adminClientPodName = KubeResourceManager.get().kubeClient().listPods(namespaceName, getLabelSelector(adminName)).get(0).getMetadata().getName();
         final AdminClient targetClusterAdminClient = new AdminClient(namespaceName, adminClientPodName);
         targetClusterAdminClient.configureFromEnv();
 
