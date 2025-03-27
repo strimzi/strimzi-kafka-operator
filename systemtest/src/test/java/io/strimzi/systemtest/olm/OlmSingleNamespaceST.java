@@ -4,14 +4,13 @@
  */
 package io.strimzi.systemtest.olm;
 
+import io.strimzi.systemtest.resources.operator.testframe.ClusterOperatorConfigurationBuilder;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-
-import java.util.Collections;
 
 import static io.strimzi.systemtest.TestTags.BRIDGE;
 import static io.strimzi.systemtest.TestTags.CONNECT;
@@ -73,13 +72,13 @@ public class OlmSingleNamespaceST extends OlmAbstractST {
 
     @BeforeAll
     void setup() {
-        clusterOperator = clusterOperator.defaultInstallation()
-            .withNamespace(NAMESPACE)
-            .withWatchingNamespaces(NAMESPACE)
-            .withBindingsNamespaces(Collections.singletonList(NAMESPACE))
-            .createInstallation()
-            // run always OLM installation
-            .runOlmInstallation();
+        setupClusterOperator
+            .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
+                .withNamespaceName(NAMESPACE)
+                .withNamespacesToWatch(NAMESPACE)
+                .build()
+            )
+            .installUsingOlm();
 
         cluster.setNamespace(NAMESPACE);
     }

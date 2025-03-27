@@ -47,8 +47,6 @@ import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
-import java.util.List;
-
 import static io.strimzi.systemtest.TestTags.ACCEPTANCE;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -413,12 +411,10 @@ class UserST extends AbstractST {
     @BeforeAll
     void setup() {
         sharedTestStorage = new TestStorage(ResourceManager.getTestContext());
-        
-        this.clusterOperator = this.clusterOperator
-            .defaultInstallation()
-            .withBindingsNamespaces(List.of(Environment.TEST_SUITE_NAMESPACE, TestConstants.CO_NAMESPACE))
-            .createInstallation()
-            .runInstallation();
+
+        setupClusterOperator
+            .withDefaultConfiguration()
+            .install();
 
         resourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(sharedTestStorage.getNamespaceName(), sharedTestStorage.getBrokerPoolName(), sharedTestStorage.getClusterName(), 1).build(),

@@ -246,11 +246,10 @@ public class DynamicConfSharedST extends AbstractST {
     @BeforeAll
     void setup() {
         suiteTestStorage = new TestStorage(ResourceManager.getTestContext());
-        
-        this.clusterOperator = this.clusterOperator
-            .defaultInstallation()
-            .createInstallation()
-            .runInstallation();
+
+        setupClusterOperator
+            .withDefaultConfiguration()
+            .install();
 
         LOGGER.info("Deploying shared Kafka across all test cases!");
         resourceManager.createResourceWithWait(

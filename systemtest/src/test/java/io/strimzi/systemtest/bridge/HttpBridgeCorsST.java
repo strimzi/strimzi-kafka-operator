@@ -168,9 +168,9 @@ public class HttpBridgeCorsST extends AbstractST {
     void beforeAll() {
         suiteTestStorage = new TestStorage(ResourceManager.getTestContext());
 
-        clusterOperator = clusterOperator.defaultInstallation()
-                .createInstallation()
-                .runInstallation();
+        setupClusterOperator
+            .withDefaultConfiguration()
+            .install();
 
         resourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(suiteTestStorage.getNamespaceName(), suiteTestStorage.getBrokerPoolName(), suiteTestStorage.getClusterName(), 3).build(),

@@ -19,6 +19,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
+import io.strimzi.systemtest.resources.operator.testframe.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -155,10 +156,13 @@ class RecoveryST extends AbstractST {
 
     @BeforeEach
     void setup() {
-        this.clusterOperator = this.clusterOperator.defaultInstallation()
-            .withReconciliationInterval(TestConstants.CO_OPERATION_TIMEOUT_SHORT)
-            .createInstallation()
-            .runInstallation();
+        setupClusterOperator
+            .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
+                .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_SHORT)
+                .build()
+            )
+            .install();
+
         cluster.setNamespace(Environment.TEST_SUITE_NAMESPACE);
 
         sharedClusterName = generateRandomNameOfKafka("recovery-cluster");

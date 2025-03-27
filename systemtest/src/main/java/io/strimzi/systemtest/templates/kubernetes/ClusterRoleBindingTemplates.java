@@ -25,13 +25,11 @@ public class ClusterRoleBindingTemplates {
     public static List<ClusterRoleBinding> clusterRoleBindingsForAllNamespaces(String namespaceName, String coName) {
         LOGGER.info("Creating ClusterRoleBinding that grant cluster-wide access to all OpenShift projects");
 
-        final List<ClusterRoleBinding> kCRBList = Arrays.asList(
+        return Arrays.asList(
             getClusterOperatorNamespacedCrb(namespaceName, coName),
             getClusterOperatorEntityOperatorCrb(namespaceName, coName),
             getClusterOperatorWatchedCrb(namespaceName, coName)
         );
-
-        return kCRBList;
     }
 
     public static ClusterRoleBinding getClusterOperatorNamespacedCrb(final String namespaceName, final String coName) {

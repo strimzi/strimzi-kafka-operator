@@ -553,10 +553,9 @@ class LogSettingST extends AbstractST {
 
     @BeforeAll
     void setup() {
-        this.clusterOperator = this.clusterOperator
-            .defaultInstallation()
-            .createInstallation()
-            .runInstallation();
+        setupClusterOperator
+            .withDefaultConfiguration()
+            .install();
 
         resourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(Environment.TEST_SUITE_NAMESPACE, KafkaNodePoolResource.getBrokerPoolName(LOG_SETTING_CLUSTER_NAME), LOG_SETTING_CLUSTER_NAME, 3)

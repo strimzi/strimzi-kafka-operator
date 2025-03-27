@@ -26,7 +26,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.metrics.KafkaExporterMetricsComponent;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
+import io.strimzi.systemtest.resources.operator.testframe.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -42,7 +42,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -106,11 +105,12 @@ public class NetworkPoliciesST extends AbstractST {
         final String consumerNameDeniedTls = testStorage.getConsumerName() + "-denied-tls";
         final String consumerNameDeniedPlain = testStorage.getConsumerName() + "-denied-plain";
 
-        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(ResourceManager.getTestContext())
-            .withNamespace(testStorage.getNamespaceName())
-            .createInstallation()
-            .runInstallation();
+        setupClusterOperator
+            .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
+                .withNamespaceName(testStorage.getNamespaceName())
+                .build()
+            )
+            .install();
 
         resourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 1).build(),
@@ -261,14 +261,14 @@ public class NetworkPoliciesST extends AbstractST {
                 .withValue(labels.toString().replaceAll("\\{|}", ""))
                 .build();
 
-        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(ResourceManager.getTestContext())
-            .withNamespace(Environment.TEST_SUITE_NAMESPACE)
-            .withWatchingNamespaces(TestConstants.WATCH_ALL_NAMESPACES)
-            .withBindingsNamespaces(Arrays.asList(Environment.TEST_SUITE_NAMESPACE, secondNamespace))
-            .withExtraEnvVars(Collections.singletonList(operatorLabelsEnv))
-            .createInstallation()
-            .runInstallation();
+        setupClusterOperator
+            .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
+                .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
+                .withNamespacesToWatch(TestConstants.WATCH_ALL_NAMESPACES)
+                .withExtraEnvVars(operatorLabelsEnv)
+                .build()
+            )
+            .install();
 
         Namespace actualNamespace = kubeClient().getClient().namespaces().withName(Environment.TEST_SUITE_NAMESPACE).get();
         kubeClient().getClient().namespaces().withName(Environment.TEST_SUITE_NAMESPACE).edit(ns -> new NamespaceBuilder(actualNamespace)
@@ -311,12 +311,13 @@ public class NetworkPoliciesST extends AbstractST {
             .withValue("false")
             .build();
 
-        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(ResourceManager.getTestContext())
-            .withNamespace(Environment.TEST_SUITE_NAMESPACE)
-            .withExtraEnvVars(Collections.singletonList(networkPolicyGenerationEnv))
-            .createInstallation()
-            .runInstallation();
+        setupClusterOperator
+            .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
+                .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
+                .withExtraEnvVars(networkPolicyGenerationEnv)
+                .build()
+            )
+            .install();
 
         resourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),

@@ -200,6 +200,7 @@
         <junit4.version>4.13.2</junit4.version>
         <skodjob.test-frame.version>0.8.0</skodjob.test-frame.version>
         <skodjob-doc.version>0.3.0</skodjob-doc.version>
+        <helm-client.version>0.0.15</helm-client.version>
         <!--
             Currently, there are no released versions in Maven repository of this module,
             using SNAPSHOT for having the `api` module available and usable in the STs.
@@ -743,7 +744,6 @@
                 <groupId>io.skodjob</groupId>
                 <artifactId>test-frame-kubernetes</artifactId>
                 <version>${skodjob.test-frame.version}</version>
-                <scope>test</scope>
             </dependency>
             <!-- Test dependencies -->
             <dependency>
@@ -867,6 +867,11 @@
                 <groupId>com.dajudge.kindcontainer</groupId>
                 <artifactId>kindcontainer</artifactId>
                 <version>${kindcontainer.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.marcnuri.helm-java</groupId>
+                <artifactId>helm-java</artifactId>
+                <version>${helm-client.version}</version>
             </dependency>
             <!-- JUnit dependency is needed at compile time by MockKube because of how Test Containers are designed -->
             <dependency>
