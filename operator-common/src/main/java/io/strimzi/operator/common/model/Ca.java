@@ -294,10 +294,10 @@ public abstract class Ca {
     protected final boolean generateCa;
     protected String caCertSecretName;
     protected Secret caCertSecret;
-    private int caCertGeneration;
+    protected int caCertGeneration;
     protected String caKeySecretName;
     protected Secret caKeySecret;
-    private int caKeyGeneration;
+    protected int caKeyGeneration;
     protected RenewalType renewalType;
     protected boolean caCertsRemoved;
     protected final CertificateExpirationPolicy policy;
@@ -330,10 +330,10 @@ public abstract class Ca {
         this.commonName = commonName;
         this.caCertSecret = caCertSecret;
         this.caCertSecretName = caCertSecretName;
-        this.caCertGeneration = initCaCertGeneration();
+        this.caCertGeneration = initCaCertGeneration(caCertSecret);
         this.caKeySecret = caKeySecret;
         this.caKeySecretName = caKeySecretName;
-        this.caKeyGeneration = initCaKeyGeneration();
+        this.caKeyGeneration = initCaKeyGeneration(caKeySecret);
         this.certManager = certManager;
         this.passwordGenerator = passwordGenerator;
         this.validityDays = validityDays;
@@ -357,11 +357,12 @@ public abstract class Ca {
     }
 
     /**
-     * Extracts the CA generation from the CA
+     * Extracts the CA generation from the CA cert Secret
      *
+     * @param caCertSecret Secret to extract the CA cert from
      * @return CA generation or the initial generation if no generation is set
      */
-    private int initCaCertGeneration() {
+    private int initCaCertGeneration(Secret caCertSecret) {
         if (caCertSecret != null) {
             if (!Annotations.hasAnnotation(caCertSecret, ANNO_STRIMZI_IO_CA_CERT_GENERATION)) {
                 LOGGER.warnOp("Secret {}/{} is missing generation annotation {}",
@@ -373,11 +374,12 @@ public abstract class Ca {
     }
 
     /**
-     * Extracts the CA key generation from the CA
+     * Extracts the CA key generation from the CA key Secret
      *
+     * @param caKeySecret Secret to extract the CA key from
      * @return CA key generation or the initial generation if no generation is set
      */
-    private int initCaKeyGeneration() {
+    private int initCaKeyGeneration(Secret caKeySecret) {
         if (caKeySecret != null) {
             if (!Annotations.hasAnnotation(caKeySecret, ANNO_STRIMZI_IO_CA_KEY_GENERATION)) {
                 LOGGER.warnOp("Secret {}/{} is missing generation annotation {}",
