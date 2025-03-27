@@ -342,7 +342,7 @@ public class KafkaBridgeClusterTest {
         ConfigMap configMap = kbc.generateBridgeConfigMap(metricsAndLogging);
         String bridgeConfigurations = configMap.getData().get(BRIDGE_CONFIGURATION_FILENAME);
         assertThat(bridgeConfigurations, containsString("kafka.sasl.mechanism=SCRAM-SHA-512"));
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=user1 password=${strimzidir:/opt/strimzi/bridge-password/user1-secret:password};"));
+        assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"user1\" password=\"${strimzidir:/opt/strimzi/bridge-password/user1-secret:password}\";"));
     }
 
     @ParallelTest
@@ -370,7 +370,7 @@ public class KafkaBridgeClusterTest {
         ConfigMap configMap = kbc.generateBridgeConfigMap(metricsAndLogging);
         String bridgeConfigurations = configMap.getData().get(BRIDGE_CONFIGURATION_FILENAME);
         assertThat(bridgeConfigurations, containsString("kafka.sasl.mechanism=SCRAM-SHA-256"));
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=user1 password=${strimzidir:/opt/strimzi/bridge-password/user1-secret:password};"));
+        assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username=\"user1\" password=\"${strimzidir:/opt/strimzi/bridge-password/user1-secret:password}\";"));
     }
 
     @ParallelTest
@@ -398,7 +398,7 @@ public class KafkaBridgeClusterTest {
         ConfigMap configMap = kbc.generateBridgeConfigMap(metricsAndLogging);
         String bridgeConfigurations = configMap.getData().get(BRIDGE_CONFIGURATION_FILENAME);
         assertThat(bridgeConfigurations, containsString("kafka.sasl.mechanism=PLAIN"));
-        assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=user1 password=${strimzidir:/opt/strimzi/bridge-password/user1-secret:password};"));
+        assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=\"user1\" password=\"${strimzidir:/opt/strimzi/bridge-password/user1-secret:password}\";"));
     }
 
     @ParallelTest
@@ -1012,7 +1012,7 @@ public class KafkaBridgeClusterTest {
         String bridgeConfigurations = configMap.getData().get(BRIDGE_CONFIGURATION_FILENAME);
         assertThat(bridgeConfigurations, containsString("kafka.sasl.mechanism=OAUTHBEARER"));
         assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " +
-                "oauth.access.token=${strimzidir:/opt/strimzi/oauth/my-token-secret:my-token-key};"));
+                "oauth.access.token=\"${strimzidir:/opt/strimzi/oauth/my-token-secret:my-token-key}\";"));
         assertThat(bridgeConfigurations, containsString("kafka.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
     }
 
@@ -1058,7 +1058,7 @@ public class KafkaBridgeClusterTest {
         assertThat(bridgeConfigurations, containsString("kafka.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required " +
                 "oauth.client.id=\"my-client-id\" " +
                 "oauth.token.endpoint.uri=\"http://my-oauth-server\" " +
-                "oauth.refresh.token=${strimzidir:/opt/strimzi/oauth/my-token-secret:my-token-key};"));
+                "oauth.refresh.token=\"${strimzidir:/opt/strimzi/oauth/my-token-secret:my-token-key}\";"));
         assertThat(bridgeConfigurations, containsString("kafka.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
     }
 
@@ -1089,7 +1089,7 @@ public class KafkaBridgeClusterTest {
                 "oauth.token.endpoint.uri=\"http://my-oauth-server\" " +
                 "oauth.scope=\"all\" " +
                 "oauth.audience=\"kafka\" " +
-                "oauth.client.secret=${strimzidir:/opt/strimzi/oauth/my-secret-secret:my-secret-key};"));
+                "oauth.client.secret=\"${strimzidir:/opt/strimzi/oauth/my-secret-secret:my-secret-key}\";"));
         assertThat(bridgeConfigurations, containsString("kafka.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
     }
 
@@ -1123,7 +1123,7 @@ public class KafkaBridgeClusterTest {
                 "oauth.audience=\"kafka\" " +
                 "oauth.sasl.extension.key1=\"value1\" " +
                 "oauth.sasl.extension.key2=\"value2\" " +
-                "oauth.client.secret=${strimzidir:/opt/strimzi/oauth/my-secret-secret:my-secret-key};"));
+                "oauth.client.secret=\"${strimzidir:/opt/strimzi/oauth/my-secret-secret:my-secret-key}\";"));
         assertThat(bridgeConfigurations, containsString("kafka.sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler"));
     }
 
@@ -1154,7 +1154,7 @@ public class KafkaBridgeClusterTest {
                 "oauth.token.endpoint.uri=\"http://my-oauth-server\" " +
                 "oauth.scope=\"all\" " +
                 "oauth.audience=\"kafka\" " +
-                "oauth.client.assertion=${strimzidir:/opt/strimzi/oauth/my-secret-secret:my-secret-key};"));
+                "oauth.client.assertion=\"${strimzidir:/opt/strimzi/oauth/my-secret-secret:my-secret-key}\";"));
     }
 
     @ParallelTest
@@ -1186,8 +1186,8 @@ public class KafkaBridgeClusterTest {
                 "oauth.client.id=\"my-client-id\" " +
                 "oauth.password.grant.username=\"user1\" " +
                 "oauth.token.endpoint.uri=\"http://my-oauth-server\" " +
-                "oauth.client.secret=${strimzidir:/opt/strimzi/oauth/my-secret-secret:my-secret-key} " +
-                "oauth.password.grant.password=${strimzidir:/opt/strimzi/oauth/my-password-secret:user1.password};"));
+                "oauth.client.secret=\"${strimzidir:/opt/strimzi/oauth/my-secret-secret:my-secret-key}\" " +
+                "oauth.password.grant.password=\"${strimzidir:/opt/strimzi/oauth/my-password-secret:user1.password}\";"));
     }
 
     @ParallelTest
@@ -1280,9 +1280,9 @@ public class KafkaBridgeClusterTest {
                 "oauth.client.id=\"my-client-id\" " +
                 "oauth.token.endpoint.uri=\"http://my-oauth-server\" " +
                 "oauth.ssl.endpoint.identification.algorithm=\"\" " +
-                "oauth.client.secret=${strimzidir:/opt/strimzi/oauth/my-secret-secret:my-secret-key} " +
+                "oauth.client.secret=\"${strimzidir:/opt/strimzi/oauth/my-secret-secret:my-secret-key}\" " +
                 "oauth.ssl.truststore.location=\"/tmp/strimzi/oauth.truststore.p12\" " +
-                "oauth.ssl.truststore.password=${strimzienv:CERTS_STORE_PASSWORD} " +
+                "oauth.ssl.truststore.password=\"${strimzienv:CERTS_STORE_PASSWORD}\" " +
                 "oauth.ssl.truststore.type=\"PKCS12\";"));
     }
 
@@ -1325,7 +1325,7 @@ public class KafkaBridgeClusterTest {
                 "oauth.http.retry.pause.millis=\"500\" " +
                 "oauth.enable.metrics=\"true\" " +
                 "oauth.include.accept.header=\"false\" " +
-                "oauth.client.secret=${strimzidir:/opt/strimzi/oauth/my-secret-secret:my-secret-key};"));
+                "oauth.client.secret=\"${strimzidir:/opt/strimzi/oauth/my-secret-secret:my-secret-key}\";"));
     }
 
     @ParallelTest
