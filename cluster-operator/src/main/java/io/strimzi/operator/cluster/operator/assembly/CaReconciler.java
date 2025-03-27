@@ -383,8 +383,8 @@ public class CaReconciler {
                         return Future.succeededFuture();
                     }
 
-                    int clusterCaCertGeneration = clusterCa.certGeneration();
-                    int clusterCaKeyGeneration = clusterCa.keyGeneration();
+                    int clusterCaCertGeneration = clusterCa.caCertGeneration();
+                    int clusterCaKeyGeneration = clusterCa.caKeyGeneration();
 
                     LOGGER.debugCr(reconciliation, "Current cluster CA cert generation {}", clusterCaCertGeneration);
                     LOGGER.debugCr(reconciliation, "Current cluster CA key generation {}", clusterCaKeyGeneration);
