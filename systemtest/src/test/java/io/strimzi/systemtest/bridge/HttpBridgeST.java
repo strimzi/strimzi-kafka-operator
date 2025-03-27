@@ -28,6 +28,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
+import io.strimzi.systemtest.resources.operator.testframe.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -46,7 +47,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -54,7 +54,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
 import static io.strimzi.systemtest.TestTags.BRIDGE;
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
@@ -489,25 +488,23 @@ class HttpBridgeST extends AbstractST {
 
     @BeforeAll
     void createClassResources() {
-        final String namespaceToWatch = Environment.isNamespaceRbacScope() ? CO_NAMESPACE : TestConstants.WATCH_ALL_NAMESPACES;
         suiteTestStorage = new TestStorage(ResourceManager.getTestContext());
 
-        clusterOperator = clusterOperator.defaultInstallation()
-                .withNamespace(CO_NAMESPACE)
-                .withWatchingNamespaces(namespaceToWatch)
+        setupClusterOperator
+            .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
                 .withExtraEnvVars(
-                    Arrays.asList(
-                        new EnvVarBuilder()
-                                .withName("STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_LABELS")
-                                .withValue("app=bar")
-                                .build(),
-                        new EnvVarBuilder()
-                                .withName("STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_ANNOTATIONS")
-                                .withValue("bar=app")
-                                .build()
-                    ))
-                .createInstallation()
-                .runInstallation();
+                    new EnvVarBuilder()
+                        .withName("STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_LABELS")
+                        .withValue("app=bar")
+                        .build(),
+                    new EnvVarBuilder()
+                        .withName("STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_ANNOTATIONS")
+                        .withValue("bar=app")
+                        .build()
+                )
+                .build()
+            )
+            .install();
 
         LOGGER.info("Deploying Kafka and KafkaBridge before tests");
 

@@ -25,6 +25,7 @@ import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
+import io.strimzi.systemtest.resources.operator.testframe.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
@@ -354,14 +355,16 @@ public class MultipleClusterOperatorsST extends AbstractST {
 
         LOGGER.info("Creating: {} in Namespace: {}", coName, clusterOperatorNamespaceName);
 
-        clusterOperator = clusterOperator.defaultInstallation()
-            .withNamespace(clusterOperatorNamespaceName)
-            .withClusterOperatorName(coName)
-            .withWatchingNamespaces(namespace)
-            .withExtraLabels(Collections.singletonMap("app.kubernetes.io/operator", coName))
-            .withExtraEnvVars(extraEnvs)
-            .createInstallation()
-            .runBundleInstallation();
+        setupClusterOperator
+            .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
+                .withNamespaceName(clusterOperatorNamespaceName)
+                .withOperatorDeploymentName(coName)
+                .withNamespacesToWatch(namespace)
+                .withExtraLabels(Collections.singletonMap("app.kubernetes.io/operator", coName))
+                .withExtraEnvVars(extraEnvs)
+                .build()
+            )
+            .install();
     }
 
     @BeforeAll

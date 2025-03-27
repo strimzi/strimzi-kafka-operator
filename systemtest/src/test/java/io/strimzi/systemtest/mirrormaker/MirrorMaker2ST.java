@@ -35,6 +35,7 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
+import io.strimzi.systemtest.resources.operator.testframe.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
@@ -1195,10 +1196,11 @@ class MirrorMaker2ST extends AbstractST {
 
     @BeforeAll
     void setup() {
-
-        clusterOperator = clusterOperator.defaultInstallation()
-            .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_MEDIUM)
-            .createInstallation()
-            .runInstallation();
+        setupClusterOperator
+            .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
+                .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_MEDIUM)
+                .build()
+            )
+            .install();
     }
 }

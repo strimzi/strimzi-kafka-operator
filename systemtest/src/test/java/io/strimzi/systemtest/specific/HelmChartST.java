@@ -54,10 +54,9 @@ class HelmChartST extends AbstractST {
 
     @BeforeAll
     void setup() {
-        clusterOperator = clusterOperator.defaultInstallation()
-            .createInstallation()
-            // run always Helm installation
-            .runHelmInstallation();
+        setupClusterOperator
+            .withDefaultConfiguration()
+            .installUsingHelm();
 
         cluster.setNamespace(Environment.TEST_SUITE_NAMESPACE);
     }

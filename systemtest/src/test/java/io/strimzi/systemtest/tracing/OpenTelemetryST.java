@@ -401,10 +401,9 @@ public class OpenTelemetryST extends AbstractST {
     void setup() {
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        this.clusterOperator = this.clusterOperator
-            .defaultInstallation()
-            .createInstallation()
-            .runInstallation();
+        setupClusterOperator
+            .withDefaultConfiguration()
+            .install();
 
         ResourceManager.STORED_RESOURCES.computeIfAbsent(ResourceManager.getTestContext().getDisplayName(), k -> new Stack<>());
         SetupJaeger.deployJaegerOperatorAndCertManager();

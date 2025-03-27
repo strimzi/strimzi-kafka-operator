@@ -11,9 +11,9 @@ import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.resources.operator.specific.HelmResource;
+import io.strimzi.systemtest.resources.operator.testframe.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Tag;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Collections;
 
 import static io.strimzi.systemtest.TestTags.REGRESSION;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
@@ -60,11 +59,12 @@ public class LeaderElectionST extends AbstractST {
     @IsolatedTest
     void testLeaderElection() {
         // create CO with 2 replicas, wait for Deployment readiness and leader election
-        clusterOperator = clusterOperator.defaultInstallation()
-            .withExtensionContext(ResourceManager.getTestContext())
-            .withReplicas(2)
-            .createInstallation()
-            .runInstallation();
+        setupClusterOperator
+            .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
+                .withReplicas(2)
+                .build()
+            )
+            .install();
 
         Lease oldLease = kubeClient().getClient().leases().inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterOperator.getClusterOperatorName()).get();
         String oldLeaderPodName = oldLease.getSpec().getHolderIdentity();
@@ -98,11 +98,12 @@ public class LeaderElectionST extends AbstractST {
         assumeTrue(!Environment.isHelmInstall());
 
         // create CO with 1 replicas and with disabled leader election, wait for Deployment readiness
-        clusterOperator = clusterOperator.defaultInstallation()
-            .withExtensionContext(ResourceManager.getTestContext())
-            .withExtraEnvVars(Collections.singletonList(LEADER_DISABLED_ENV))
-            .createInstallation()
-            .runInstallation();
+        setupClusterOperator
+            .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
+                .withExtraEnvVars(LEADER_DISABLED_ENV)
+                .build()
+            )
+            .install();
 
         String coPodName = kubeClient().listPodsByPrefixInName(clusterOperator.getDeploymentNamespace(), clusterOperator.getClusterOperatorName()).get(0).getMetadata().getName();
         Lease notExistingLease = kubeClient().getClient().leases().inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterOperator.getClusterOperatorName()).get();

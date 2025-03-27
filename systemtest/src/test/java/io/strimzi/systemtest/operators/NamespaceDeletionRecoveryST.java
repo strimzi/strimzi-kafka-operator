@@ -25,7 +25,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
+import io.strimzi.systemtest.resources.operator.testframe.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -234,11 +234,12 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         LOGGER.info("####################################");
         LOGGER.info("Creating environment for recovery");
         LOGGER.info("####################################");
-        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(ResourceManager.getTestContext())
-            .withNamespace(testStorage.getNamespaceName())
-            .createInstallation()
-            .runInstallation();
+        setupClusterOperator
+            .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
+                .withNamespaceName(testStorage.getNamespaceName())
+                .build()
+            )
+            .install();
 
         resourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPoolPersistentStorage(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3)
@@ -296,11 +297,12 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     }
 
     private void recreateClusterOperator(String namespace) {
-        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(ResourceManager.getTestContext())
-            .withNamespace(namespace)
-            .createInstallation()
-            .runInstallation();
+        setupClusterOperator
+            .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
+                .withNamespaceName(namespace)
+                .build()
+            )
+            .install();
     }
 
     private void deleteAndRecreateNamespace(String namespace) {

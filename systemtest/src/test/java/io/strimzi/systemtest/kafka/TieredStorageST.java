@@ -205,9 +205,8 @@ public class TieredStorageST extends AbstractST {
         SetupMinio.deployMinio(suiteStorage.getNamespaceName());
         SetupMinio.createBucket(suiteStorage.getNamespaceName(), BUCKET_NAME);
 
-        this.clusterOperator = this.clusterOperator
-            .defaultInstallation()
-            .createInstallation()
-            .runInstallation();
+        setupClusterOperator
+            .withDefaultConfiguration()
+            .install();
     }
 }

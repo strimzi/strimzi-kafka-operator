@@ -499,11 +499,10 @@ public class TopicST extends AbstractST {
     @BeforeAll
     void setup() {
         sharedTestStorage = new TestStorage(ResourceManager.getTestContext(), Environment.TEST_SUITE_NAMESPACE);
-        
-        this.clusterOperator = this.clusterOperator
-            .defaultInstallation()
-            .createInstallation()
-            .runInstallation();
+
+        setupClusterOperator
+            .withDefaultConfiguration()
+            .install();
 
         LOGGER.info("Deploying shared Kafka: {}/{} across all test cases", Environment.TEST_SUITE_NAMESPACE, sharedTestStorage.getClusterName());
 

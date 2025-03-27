@@ -873,9 +873,8 @@ public class CruiseControlST extends AbstractST {
         // This should be re-enabled once Cruise Control support is fixed: https://github.com/strimzi/strimzi-kafka-operator/issues/11199
         Assumptions.assumeTrue(TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0);
 
-        this.clusterOperator = this.clusterOperator
-                .defaultInstallation()
-                .createInstallation()
-                .runInstallation();
+        setupClusterOperator
+            .withDefaultConfiguration()
+            .install();
     }
 }

@@ -104,7 +104,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
         @Label(value = TestDocsLabels.KAFKA)
     }
 )
-@io.skodjob.testframe.annotations.ResourceManager
 public class ListenersST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(ListenersST.class);
 

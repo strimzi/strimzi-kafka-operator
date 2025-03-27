@@ -183,9 +183,8 @@ public class AccessOperatorST extends AbstractST {
 
     @BeforeAll
     void setup() {
-        clusterOperator = clusterOperator
-            .defaultInstallation()
-            .createInstallation()
-            .runInstallation();
+        setupClusterOperator
+            .withDefaultConfiguration()
+            .install();
     }
 }

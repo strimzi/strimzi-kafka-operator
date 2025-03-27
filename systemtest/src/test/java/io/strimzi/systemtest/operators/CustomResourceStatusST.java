@@ -43,6 +43,7 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.resources.operator.testframe.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -342,10 +343,12 @@ class CustomResourceStatusST extends AbstractST {
     void setup() {
         sharedTestStorage = new TestStorage(ResourceManager.getTestContext());
 
-        this.clusterOperator = this.clusterOperator.defaultInstallation()
-            .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_SHORT)
-            .createInstallation()
-            .runInstallation();
+        setupClusterOperator
+            .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
+                .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_SHORT)
+                .build()
+            )
+            .install();
 
         GenericKafkaListener plain = new GenericKafkaListenerBuilder()
                 .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)

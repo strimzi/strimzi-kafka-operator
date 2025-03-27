@@ -56,6 +56,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith({TestExecutionWatcher.class})
 @DisplayNameGeneration(IndicativeSentences.class)
+@io.skodjob.testframe.annotations.ResourceManager
 public abstract class AbstractST implements TestSeparator {
     public static final List<String> LB_FINALIZERS;
     static {

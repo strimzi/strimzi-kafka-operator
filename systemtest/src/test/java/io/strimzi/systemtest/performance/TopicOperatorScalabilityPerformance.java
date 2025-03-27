@@ -92,10 +92,9 @@ public class TopicOperatorScalabilityPerformance extends AbstractST {
 
     @BeforeAll
     void setUp() {
-        this.clusterOperator = this.clusterOperator
-                .defaultInstallation()
-                .createInstallation()
-                .runInstallation();
+        setupClusterOperator
+            .withDefaultConfiguration()
+            .install();
 
         suiteTestStorage = new TestStorage(ResourceManager.getTestContext(), TestConstants.CO_NAMESPACE);
 

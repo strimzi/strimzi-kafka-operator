@@ -137,8 +137,8 @@ public class SpecificST extends AbstractST {
 
     @BeforeAll
     void setUp() {
-        this.clusterOperator = this.clusterOperator
-            .defaultInstallation()
-            .createInstallation();
+        setupClusterOperator
+            .withDefaultConfiguration()
+            .install();
     }
 }

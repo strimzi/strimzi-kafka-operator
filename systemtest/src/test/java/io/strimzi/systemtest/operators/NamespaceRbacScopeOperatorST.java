@@ -11,13 +11,13 @@ import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.operator.testframe.ClusterOperatorConfigurationBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import org.junit.jupiter.api.Tag;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -37,12 +37,13 @@ class NamespaceRbacScopeOperatorST extends AbstractST {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
-        this.clusterOperator = this.clusterOperator.defaultInstallation()
-            .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
-            .withWatchingNamespaces(Environment.TEST_SUITE_NAMESPACE)
-            .withBindingsNamespaces(Arrays.asList(TestConstants.CO_NAMESPACE, Environment.TEST_SUITE_NAMESPACE))
-            .createInstallation()
-            .runInstallation();
+        setupClusterOperator
+            .withCustomConfiguration(new ClusterOperatorConfigurationBuilder()
+                .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
+                .withNamespacesToWatch(TestConstants.CO_NAMESPACE + "," + Environment.TEST_SUITE_NAMESPACE)
+                .build()
+            )
+            .install();
 
         resourceManager.createResourceWithWait(
             KafkaNodePoolTemplates.brokerPool(testStorage.getNamespaceName(), testStorage.getBrokerPoolName(), testStorage.getClusterName(), 3).build(),

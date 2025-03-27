@@ -141,9 +141,9 @@ class HttpBridgeScramShaST extends AbstractST {
     void setUp() {
         suiteTestStorage = new TestStorage(ResourceManager.getTestContext());
 
-        clusterOperator = clusterOperator.defaultInstallation()
-            .createInstallation()
-            .runInstallation();
+        setupClusterOperator
+            .withDefaultConfiguration()
+            .install();
 
         LOGGER.info("Deploying Kafka and KafkaBridge before tests");
 

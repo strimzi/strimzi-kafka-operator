@@ -223,10 +223,9 @@ public class TopicOperatorPerformance extends AbstractST {
     // Additional setup and utility methods as needed
     @BeforeAll
     void setup() {
-        this.clusterOperator = this.clusterOperator
-                .defaultInstallation()
-                .createInstallation()
-                .runInstallation();
+        setupClusterOperator
+            .withDefaultConfiguration()
+            .install();
     }
 
     @AfterAll
