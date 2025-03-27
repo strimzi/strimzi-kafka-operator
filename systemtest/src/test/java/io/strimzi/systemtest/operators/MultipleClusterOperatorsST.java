@@ -36,7 +36,6 @@ import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
-import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
@@ -253,8 +252,6 @@ public class MultipleClusterOperatorsST extends AbstractST {
     @SuppressWarnings("deprecation") // Replicas in Kafka CR are deprecated, but some API methods are still called here
     void testKafkaCCAndRebalanceWithMultipleCOs() {
         assumeFalse(Environment.isNamespaceRbacScope());
-        // Currently not supported on Kafka 4.0.0
-        assumeTrue(TestKafkaVersion.compareDottedVersions(Environment.ST_KAFKA_VERSION, "4.0.0") < 0);
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext(), DEFAULT_NAMESPACE);
 
         int scaleTo = 4;
