@@ -45,7 +45,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -77,10 +79,25 @@ public abstract class AbstractST implements TestSeparator {
             new KafkaUserType(),
             new StrimziPodSetType()
         );
+
+        KubeResourceManager.getInstance().addCreateCallback(resource -> {
+            Map<String, String> labels = new HashMap<>();
+            labels.put(TestConstants.TEST_SUITE_NAME_LABEL, StUtils.removePackageName(KubeResourceManager.getTestContext().getRequiredTestClass().getName()));
+
+            if (KubeResourceManager.getTestContext().getTestMethod().isPresent()) {
+                String testCaseName = KubeResourceManager.getTestContext().getRequiredTestMethod().getName();
+                labels.put(TestConstants.TEST_CASE_NAME_LABEL, testCaseName);
+            }
+
+            resource.getMetadata().setLabels(labels);
+        });
     }
 
-    protected final ResourceManager resourceManager = ResourceManager.getInstance();
+    // Test-Frame integration stuff, remove everything else when not needed
     protected final KubeResourceManager kubeResourceManager = KubeResourceManager.getInstance();
+    protected final io.strimzi.systemtest.resources.operator.testframe.SetupClusterOperator setupClusterOperator = new io.strimzi.systemtest.resources.operator.testframe.SetupClusterOperator();
+
+    protected final ResourceManager resourceManager = ResourceManager.getInstance();
     protected final TestSuiteNamespaceManager testSuiteNamespaceManager = TestSuiteNamespaceManager.getInstance();
     private final SuiteThreadController parallelSuiteController = SuiteThreadController.getInstance();
     protected SetupClusterOperator clusterOperator = SetupClusterOperator.getInstance();

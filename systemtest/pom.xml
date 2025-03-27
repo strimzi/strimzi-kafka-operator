@@ -259,6 +259,10 @@
             <groupId>io.strimzi.access-operator</groupId>
             <artifactId>api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.marcnuri.helm-java</groupId>
+            <artifactId>helm-java</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
