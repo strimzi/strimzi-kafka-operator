@@ -69,7 +69,6 @@ public class MetricsIT implements TestSeparator {
         kubernetesClient = mockKube.client();
 
         kafkaCluster = new StrimziKafkaCluster.StrimziKafkaClusterBuilder()
-                .withKraft()
                 .withNumberOfBrokers(1)
                 .withInternalTopicReplicationFactor(1)
                 .withSharedNetwork()

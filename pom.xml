@@ -108,6 +108,10 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
+        <repository>
+            <id>staging</id>
+            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1255/</url>
+        </repository>
     </repositories>
 
     <properties>
@@ -184,7 +188,7 @@
         <junit.platform.version>1.8.2</junit.platform.version>
         <opentest4j.version>1.2.0</opentest4j.version>
         <jupiter.version>5.8.2</jupiter.version>
-        <strimzi-test-container.version>0.109.1</strimzi-test-container.version>
+        <strimzi-test-container.version>0.110.0-rc1</strimzi-test-container.version>
         <mockserver.version>5.13.2</mockserver.version>
         <mockwebserver.version>3.14.7</mockwebserver.version>
         <valid4j.version>1.1</valid4j.version>

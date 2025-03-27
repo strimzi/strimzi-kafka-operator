@@ -66,7 +66,6 @@ class AlterableTopicConfigIT implements TestSeparator {
     @BeforeEach
     public void beforeEach() {
         kafkaCluster = new StrimziKafkaCluster.StrimziKafkaClusterBuilder()
-                .withKraft()
                 .withNumberOfBrokers(1)
                 .withInternalTopicReplicationFactor(1)
                 .withSharedNetwork()
